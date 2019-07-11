@@ -74,7 +74,7 @@ import { ResourceContextKey } from './resource-context-key';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { MimeService } from './mime-service';
 import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tracker';
-import { ViewContainer, ViewContainerOptions } from './view-container';
+import { ViewContainer, ViewContainerIdentifier } from './view-container';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -241,9 +241,9 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ApplicationShellMouseTracker).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ApplicationShellMouseTracker);
 
-    bind(ViewContainer.Factory).toFactory(context => (options: ViewContainerOptions) => {
+    bind(ViewContainer.Factory).toFactory(context => (options: ViewContainerIdentifier) => {
         const container = context.container.createChild();
-        container.bind(ViewContainerOptions).toConstantValue(options);
+        container.bind(ViewContainerIdentifier).toConstantValue(options);
         container.bind(ViewContainer).toSelf().inSingletonScope();
         return container.get(ViewContainer);
     });

@@ -49,7 +49,7 @@ export namespace StatefulWidget {
 
 interface WidgetDescription {
     constructionOptions: WidgetConstructionOptions,
-    innerWidgetState?: object
+    innerWidgetState?: string | object
 }
 
 @injectable()
@@ -111,7 +111,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     /**
      * Turns the layout data to a string representation.
      */
-    protected deflate(data: ApplicationShell.LayoutData): string {
+    protected deflate(data: object): string {
         return JSON.stringify(data, (property: string, value) => {
             if (this.isWidgetProperty(property)) {
                 const description = this.convertToDescription(value as Widget);
@@ -139,7 +139,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             }
             return {
                 constructionOptions: desc,
-                innerWidgetState: innerState
+                innerWidgetState: innerState && this.deflate(innerState)
             };
         }
     }
@@ -185,10 +185,11 @@ export class ShellLayoutRestorer implements CommandContribution {
     private convertToWidget(desc: WidgetDescription): Promise<Widget | undefined> {
         if (desc.constructionOptions) {
             return this.widgetManager.getOrCreateWidget(desc.constructionOptions.factoryId, desc.constructionOptions.options)
-                .then(widget => {
+                .then(async widget => {
                     if (StatefulWidget.is(widget) && desc.innerWidgetState !== undefined) {
                         try {
-                            widget.restoreState(desc.innerWidgetState);
+                            const oldState = typeof desc.innerWidgetState === 'string' ? await this.inflate(desc.innerWidgetState) : desc.innerWidgetState;
+                            widget.restoreState(oldState);
                         } catch (err) {
                             this.logger.warn(`Couldn't restore widget state for ${widget.id}. Error: ${err} `);
                         }

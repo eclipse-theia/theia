@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, ViewContainer } from '@theia/core/lib/browser';
+import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, ViewContainer, WidgetManager } from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 import { SCM_WIDGET_FACTORY_ID, ScmContribution } from './scm-contribution';
 
@@ -34,22 +34,25 @@ export default new ContainerModule(bind => {
     bind(ScmService).toSelf().inSingletonScope();
 
     bind(ScmWidget).toSelf();
-    bind(WidgetFactory).toDynamicValue(ctx => ({
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: 'scm-view',
+        createWidget: () => container.get(ScmWidget)
+    })).inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: SCM_WIDGET_FACTORY_ID,
-        createWidget: () => {
-            const container = ctx.container.get<ViewContainer.Factory>(ViewContainer.Factory)({
-                id: 'scm-view-container',
-                title: {
-                    label: 'Source Control',
-                    iconClass: 'scm-tab-icon',
-                    closeable: true
-                }
+        createWidget: async () => {
+            const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({ id: 'scm-view-container' });
+            viewContainer.setTitleOptions({
+                label: 'Source Control',
+                iconClass: 'scm-tab-icon',
+                closeable: true
             });
-            container.addWidget(ctx.container.get(ScmWidget), {
+            const widget = await container.get(WidgetManager).getOrCreateWidget('scm-view');
+            viewContainer.addWidget(widget, {
                 canHide: false,
                 initiallyCollapsed: false
             });
-            return container;
+            return viewContainer;
         }
     })).inSingletonScope();
 
