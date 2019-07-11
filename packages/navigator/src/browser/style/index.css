@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+.theia-Files {
+    height: 100%;
+}
+
 .theia-navigator-container {
     font-size: var(--theia-ui-font-size1);
     color: var(--theia-ui-font-color1);
@@ -51,11 +55,4 @@
 .navigator-tab-icon {
     -webkit-mask: url('files.svg');
     mask: url('files.svg');
-}
-
-#files > div > div > div > div:first-child {
-    background-color: var(--theia-layout-color4);
-    text-transform: uppercase;
-    font-size: 80%;
-    font-weight: 500;
 }

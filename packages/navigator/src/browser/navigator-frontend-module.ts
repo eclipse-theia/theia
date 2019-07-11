@@ -17,12 +17,12 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from 'inversify';
-import { KeybindingContext, bindViewContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { KeybindingContext, bindViewContribution, FrontendApplicationContribution, ViewContainer } from '@theia/core/lib/browser';
 import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget';
 import { NavigatorActiveContext } from './navigator-keybinding-context';
 import { FileNavigatorContribution } from './navigator-contribution';
 import { createFileNavigatorWidget } from './navigator-container';
-import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
+import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { bindFileNavigatorPreferences } from './navigator-preferences';
 import { FileNavigatorFilter } from './navigator-filter';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
@@ -44,9 +44,26 @@ export default new ContainerModule(bind => {
     bind(FileNavigatorWidget).toDynamicValue(ctx =>
         createFileNavigatorWidget(ctx.container)
     );
-    bind(WidgetFactory).toDynamicValue(context => ({
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: 'explorer-view',
+        createWidget: () => container.get(FileNavigatorWidget)
+    })).inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: FILE_NAVIGATOR_ID,
-        createWidget: () => context.container.get<FileNavigatorWidget>(FileNavigatorWidget)
+        createWidget: async () => {
+            const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({ id: 'explorer-view-container' });
+            viewContainer.setTitleOptions({
+                label: 'Explorer',
+                iconClass: 'navigator-tab-icon',
+                closeable: true
+            });
+            const widget = await container.get(WidgetManager).getOrCreateWidget('explorer-view');
+            viewContainer.addWidget(widget, {
+                canHide: false,
+                initiallyCollapsed: false
+            });
+            return viewContainer;
+        }
     }));
 
     bind(NavigatorDiff).toSelf().inSingletonScope();

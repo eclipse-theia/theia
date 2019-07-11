@@ -27,7 +27,7 @@ import {
 import { FileTreeWidget, FileNode, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { WorkspaceNode } from './navigator-tree';
+import { WorkspaceNode, WorkspaceRootNode } from './navigator-tree';
 import { FileNavigatorModel } from './navigator-model';
 import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { isOSX, environment } from '@theia/core';
@@ -35,7 +35,7 @@ import * as React from 'react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 
 export const FILE_NAVIGATOR_ID = 'files';
-export const LABEL = 'Explorer';
+export const LABEL = 'No folder opened';
 export const CLASS = 'theia-Files';
 
 @injectable()
@@ -58,10 +58,6 @@ export class FileNavigatorWidget extends FileTreeWidget {
     ) {
         super(props, model, contextMenuRenderer);
         this.id = FILE_NAVIGATOR_ID;
-        this.title.label = LABEL;
-        this.title.caption = LABEL;
-        this.title.closable = true;
-        this.title.iconClass = 'navigator-tab-icon';
         this.addClass(CLASS);
         this.initialize();
     }
@@ -96,6 +92,22 @@ export class FileNavigatorWidget extends FileTreeWidget {
                 this.model.expandNode(child);
             }
         }
+    }
+
+    protected doUpdateRows(): void {
+        super.doUpdateRows();
+        this.title.label = LABEL;
+        if (WorkspaceNode.is(this.model.root)) {
+            if (this.model.root.name === WorkspaceNode.name) {
+                const rootNode = this.model.root.children[0];
+                if (WorkspaceRootNode.is(rootNode)) {
+                    this.title.label = rootNode.name;
+                }
+            } else {
+                this.title.label = this.model.root.name;
+            }
+        }
+        this.title.caption = this.title.label;
     }
 
     protected enableDndOnMainPanel(): void {

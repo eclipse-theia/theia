@@ -21,6 +21,7 @@ import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
 import { SCM_WIDGET_FACTORY_ID } from '@theia/scm/lib/browser/scm-contribution';
+import { FILE_NAVIGATOR_ID } from '@theia/navigator/lib/browser';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -52,6 +53,10 @@ export class ViewRegistry {
             if (factoryId === SCM_WIDGET_FACTORY_ID && widget instanceof ViewContainerWidget) {
                 this.setViewContainer('scm', widget);
                 widget.disposed.connect(() => this.viewContainers.delete('scm'));
+            }
+            if (factoryId === FILE_NAVIGATOR_ID && widget instanceof ViewContainerWidget) {
+                this.setViewContainer('explorer', widget);
+                widget.disposed.connect(() => this.viewContainers.delete('explorer'));
             }
         });
     }

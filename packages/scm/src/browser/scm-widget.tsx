@@ -92,7 +92,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         this.toDisposeOnRefresh.dispose();
         this.toDispose.push(this.toDisposeOnRefresh);
         const repository = this.scmService.selectedRepository;
-        this.title.label = repository ? repository.provider.label : 'no active providers';
+        this.title.label = repository ? repository.provider.label : 'no repository opened';
         this.title.caption = this.title.label;
         this.update();
         if (repository) {
