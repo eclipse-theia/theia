@@ -889,20 +889,25 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (this.model.root) {
             state = {
                 ...state,
-                root: this.deflateForStorage(this.model.root)
+                root: this.deflateForStorage(this.model.root),
+                model: this.model.storeState()
             };
         }
+
         return state;
     }
 
     restoreState(oldState: object): void {
         // tslint:disable-next-line:no-any
-        const { root, decorations } = (oldState as any);
+        const { root, decorations, model } = (oldState as any);
         if (root) {
             this.model.root = this.inflateFromStorage(root);
         }
         if (decorations) {
             this.decorations = this.decoratorService.inflateDecorators(decorations);
+        }
+        if (model) {
+            this.model.restoreState(model);
         }
     }
 

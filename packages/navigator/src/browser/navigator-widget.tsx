@@ -84,6 +84,9 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
     protected async initialize(): Promise<void> {
         await this.model.updateRoot();
+        if (this.model.selectedNodes.length) {
+            return;
+        }
         const root = this.model.root;
         if (CompositeTreeNode.is(root) && root.children.length === 1) {
             const child = root.children[0];

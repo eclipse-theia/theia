@@ -56,7 +56,7 @@ export class TreeSelectionState {
 
     constructor(
         protected readonly tree: Tree,
-        protected readonly selectionStack: ReadonlyArray<FocusableTreeSelection> = []) {
+        readonly selectionStack: ReadonlyArray<FocusableTreeSelection> = []) {
     }
 
     nextState(selection: FocusableTreeSelection): TreeSelectionState {
