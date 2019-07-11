@@ -36,6 +36,7 @@ import { createMockPreferenceProxy } from '@theia/core/lib/browser/preferences/t
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import * as sinon from 'sinon';
+import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 
 disableJSDOM();
 
@@ -158,6 +159,7 @@ describe('FileNavigatorModel', () => {
         mockTreeNavigationService = sinon.createStubInstance(TreeNavigationService);
         mockTreeSearch = sinon.createStubInstance(TreeSearch);
         mockPreferences = createMockPreferenceProxy({});
+        const mockApplicationStateService = sinon.createStubInstance(FrontendApplicationStateService);
 
         testContainer = new Container();
         testContainer.bind(FileNavigatorModel).toSelf().inSingletonScope();
@@ -174,6 +176,7 @@ describe('FileNavigatorModel', () => {
         testContainer.bind(TreeNavigationService).toConstantValue(mockTreeNavigationService);
         testContainer.bind(TreeSearch).toConstantValue(mockTreeSearch);
         testContainer.bind(CorePreferences).toConstantValue(mockPreferences);
+        testContainer.bind(FrontendApplicationStateService).toConstantValue(mockApplicationStateService);
 
         sinon.stub(mockWorkspaceService, 'onWorkspaceChanged').value(mockWorkspaceServiceEmitter.event);
         sinon.stub(mockWorkspaceService, 'onWorkspaceLocationChanged').value(mockWorkspaceOnLocationChangeEmitter.event);

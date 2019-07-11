@@ -407,4 +407,21 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         this.addSelection({ node, type: TreeSelection.SelectionType.RANGE });
     }
 
+    storeState(): TreeModelImpl.State {
+        return {
+            selection: this.selectionService.storeState()
+        };
+    }
+
+    restoreState(state: TreeModelImpl.State) {
+        if (state.selection) {
+            this.selectionService.restoreState(state.selection);
+        }
+    }
+
+}
+export namespace TreeModelImpl {
+    export interface State {
+        selection: object
+    }
 }

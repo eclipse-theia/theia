@@ -20,6 +20,7 @@ import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
 import { OpenerService, open, TreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
 import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 
 @injectable()
 export class FileNavigatorModel extends FileTreeModel {
@@ -27,6 +28,7 @@ export class FileNavigatorModel extends FileTreeModel {
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(FrontendApplicationStateService) protected readonly applicationState: FrontendApplicationStateService;
 
     @postConstruct()
     protected init(): void {
@@ -71,6 +73,7 @@ export class FileNavigatorModel extends FileTreeModel {
     }
 
     async updateRoot(): Promise<void> {
+        await this.applicationState.reachedState('initialized_layout');
         this.root = await this.createRoot();
     }
 
@@ -99,9 +102,10 @@ export class FileNavigatorModel extends FileTreeModel {
      */
     protected createMultipleRootNode(): WorkspaceNode {
         const workspace = this.workspaceService.workspace;
-        const name = (workspace)
+        let name = workspace
             ? new URI(workspace.uri).path.name
             : 'untitled';
+        name += ' (Workspace)';
         return WorkspaceNode.createRoot(name);
     }
 

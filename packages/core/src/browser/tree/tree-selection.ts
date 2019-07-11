@@ -41,6 +41,16 @@ export interface TreeSelectionService extends Disposable, SelectionProvider<Read
      */
     addSelection(selectionOrTreeNode: TreeSelection | Readonly<SelectableTreeNode>): void;
 
+    /**
+     * Store selection state.
+     */
+    storeState(): object;
+
+    /**
+     * Restore selection state.
+     */
+    restoreState(state: object): void;
+
 }
 
 /**
