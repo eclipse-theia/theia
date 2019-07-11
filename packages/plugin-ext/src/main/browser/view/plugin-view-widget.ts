@@ -14,26 +14,23 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { Panel } from '@phosphor/widgets';
 import { MenuModelRegistry, ActionMenuNode, MenuPath, CompositeMenuNode } from '@theia/core/lib/common/menu';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { ViewContainerPart } from '@theia/core/lib/browser/view-container';
-import { View } from '../../../common';
 import { ViewContextKeyService } from './view-context-key-service';
+import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 
 export const PLUGIN_VIEW_TITLE_MENU: MenuPath = ['plugin-view-title-menu'];
 
-export const PluginViewWidgetFactory = Symbol('PluginViewWidgetFactory');
-export type PluginViewWidgetFactory = (options: PluginViewWidgetOptions) => PluginViewWidget;
-
 @injectable()
-export class PluginViewWidgetOptions {
-    view: View;
+export class PluginViewWidgetIdentifier {
+    id: string;
 }
 
 @injectable()
-export class PluginViewWidget extends Panel implements ViewContainerPart.ContainedWidget {
+export class PluginViewWidget extends Panel implements ViewContainerPart.ContainedWidget, StatefulWidget {
 
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
@@ -44,11 +41,21 @@ export class PluginViewWidget extends Panel implements ViewContainerPart.Contain
     @inject(ViewContextKeyService)
     protected readonly contextKeys: ViewContextKeyService;
 
-    @inject(PluginViewWidgetOptions)
-    protected readonly options: PluginViewWidgetOptions;
+    @inject(PluginViewWidgetIdentifier)
+    readonly options: PluginViewWidgetIdentifier;
+
+    @postConstruct()
+    protected init(): void {
+        this.id = this.options.id;
+    }
+
+    constructor() {
+        super();
+        this.node.style.height = '100%';
+    }
 
     get toolbarElements(): ViewContainerPart.ToolbarElement[] {
-        return this.contextKeys.with({ view: this.options.view.id }, () => {
+        return this.contextKeys.with({ view: this.options.id }, () => {
             const menu = this.menus.getMenu(PLUGIN_VIEW_TITLE_MENU);
             const elements: ViewContainerPart.ToolbarElement[] = [];
             for (const groupItem of menu.children) {
@@ -74,4 +81,19 @@ export class PluginViewWidget extends Panel implements ViewContainerPart.Contain
         });
     }
 
+    storeState(): PluginViewWidget.State {
+        return {
+            label: this.title.label
+        };
+    }
+
+    restoreState(state: PluginViewWidget.State): void {
+        this.title.label = state.label;
+    }
+
+}
+export namespace PluginViewWidget {
+    export interface State {
+        label: string
+    }
 }

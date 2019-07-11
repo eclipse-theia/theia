@@ -33,7 +33,7 @@ import { parseCssMagnitude } from './browser';
 import { WidgetManager } from './widget-manager';
 import { TabBarToolbarItem, TabBarToolbarRegistry } from './shell/tab-bar-toolbar';
 
-export interface ViewContainerTitle {
+export interface ViewContainerTitleOptions {
     label: string;
     caption?: string;
     iconClass?: string;
@@ -41,9 +41,8 @@ export interface ViewContainerTitle {
 }
 
 @injectable()
-export class ViewContainerOptions {
+export class ViewContainerIdentifier {
     id: string;
-    title?: ViewContainerTitle;
 }
 
 /**
@@ -75,8 +74,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     @inject(SplitPositionHandler)
     protected readonly splitPositionHandler: SplitPositionHandler;
 
-    @inject(ViewContainerOptions)
-    protected readonly options: ViewContainerOptions;
+    @inject(ViewContainerIdentifier)
+    readonly options: ViewContainerIdentifier;
 
     @inject(TabBarToolbarRegistry)
     protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry;
@@ -97,7 +96,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             }, this.splitPositionHandler)
         });
         layout.addWidget(this.panel);
-        this.updateTitle();
 
         const { commandRegistry, menuRegistry, contextMenuRenderer } = this;
         commandRegistry.registerCommand({ id: this.globalHideCommandId }, {
@@ -133,13 +131,20 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         ]);
     }
 
+    protected titleOptions: ViewContainerTitleOptions | undefined;
+
+    setTitleOptions(titleOptions: ViewContainerTitleOptions | undefined): void {
+        this.titleOptions = titleOptions;
+        this.updateTitle();
+    }
+
     protected readonly toDisposeOnUpdateTitle = new DisposableCollection();
 
     // should be a property to preserver fn identity
     protected updateTitle = (): void => {
         this.toDisposeOnUpdateTitle.dispose();
-        this.toDisposeOnDetach.push(this.toDisposeOnUpdateTitle);
-        const title = this.options.title;
+        this.toDispose.push(this.toDisposeOnUpdateTitle);
+        const title = this.titleOptions;
         if (!title) {
             return;
         }
@@ -147,8 +152,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.title.label = title.label;
         if (visibleParts.length === 1) {
             const part = visibleParts[0];
-            part.wrapped.title.changed.connect(this.updateTitle);
-            this.toDisposeOnUpdateTitle.push(Disposable.create(() => part.wrapped.title.changed.disconnect(this.updateTitle)));
+            this.toDisposeOnUpdateTitle.push(part.onTitleChanged(this.updateTitle));
             const partLabel = part.wrapped.title.label;
             if (partLabel) {
                 this.title.label += ': ' + partLabel;
@@ -198,16 +202,24 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return undefined;
     }
 
+    protected readonly toRemoveWidgets = new Map<string, DisposableCollection>();
+
     addWidget(widget: Widget, options?: ViewContainer.Factory.WidgetOptions): Disposable {
-        if (find(this.containerLayout.iter(), ({ wrapped }) => wrapped.id === widget.id)) {
-            return Disposable.NULL;
+        const existing = this.toRemoveWidgets.get(widget.id);
+        if (existing) {
+            return existing;
         }
+        const toRemoveWidget = new DisposableCollection();
+        this.toDispose.push(toRemoveWidget);
+        this.toRemoveWidgets.set(widget.id, toRemoveWidget);
+        toRemoveWidget.push(Disposable.create(() => this.toRemoveWidgets.delete(widget.id)));
+
         const description = this.widgetManager.getDescription(widget);
         const partId = description ? JSON.stringify(description) : widget.id;
         const newPart = new ViewContainerPart(widget, partId, this.id, options);
         this.registerPart(newPart);
-        if (options && options.order !== undefined) {
-            const index = this.containerLayout.widgets.findIndex(part => part.options.order === undefined || part.options.order > options.order!);
+        if (newPart.options && newPart.options.order !== undefined) {
+            const index = this.containerLayout.widgets.findIndex(part => part.options.order === undefined || part.options.order > newPart.options.order!);
             if (index >= 0) {
                 this.containerLayout.insertWidget(index, newPart);
             } else {
@@ -219,8 +231,18 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.refreshMenu(newPart);
         this.updateTitle();
         this.update();
-        return new DisposableCollection(
-            Disposable.create(() => this.removeWidget(widget)),
+        toRemoveWidget.pushAll([
+            newPart,
+            Disposable.create(() => {
+                this.unregisterPart(newPart);
+                if (!newPart.isDisposed) {
+                    this.containerLayout.removeWidget(newPart);
+                }
+                if (!this.isDisposed) {
+                    this.update();
+                    this.updateTitle();
+                }
+            }),
             newPart.onVisibilityChanged(this.updateTitle),
             newPart.onCollapsed(() => this.containerLayout.updateCollapsed(newPart, this.enableAnimation)),
             newPart.onMoveBefore(toMoveId => this.moveBefore(toMoveId, newPart.id)),
@@ -231,8 +253,21 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                     this.contextMenuRenderer.render({ menuPath: this.contextMenuPath, anchor: event });
                 }
             }),
-            newPart.onMoreContextMenu(event => this.showMoreContextMenu(event))
-        );
+            newPart.onMoreContextMenu(event => this.showMoreContextMenu(event)),
+            newPart.onTitleChanged(() => this.refreshMenu(newPart))
+        ]);
+
+        newPart.disposed.connect(() => toRemoveWidget.dispose());
+        return toRemoveWidget;
+    }
+
+    removeWidget(widget: Widget): boolean {
+        const disposable = this.toRemoveWidgets.get(widget.id);
+        if (disposable) {
+            disposable.dispose();
+            return true;
+        }
+        return false;
     }
 
     protected showMoreContextMenu(event: ViewContainerPart.MoreContextMenuEvent): void {
@@ -255,27 +290,12 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         });
     }
 
-    removeWidget(widget: Widget): boolean {
-        const part = find(this.containerLayout.iter(), ({ wrapped }) => wrapped.id === widget.id);
-        if (!part) {
-            return false;
-        }
-        this.unregisterPart(part);
-        this.containerLayout.removeWidget(part);
-        this.update();
-        return true;
-    }
-
     getTrackableWidgets(): ViewContainerPart[] {
         return this.containerLayout.widgets;
     }
 
     get containerLayout(): ViewContainerLayout {
         return this.panel.layout as ViewContainerLayout;
-    }
-
-    children(): IIterator<Widget> {
-        return this.panel.children();
     }
 
     protected get orientation(): SplitLayout.Orientation {
@@ -289,9 +309,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     protected lastVisibleState: ViewContainer.State | undefined;
 
     storeState(): ViewContainer.State {
-        if (!this.isVisible && this.lastVisibleState) {
-            return this.lastVisibleState;
-        }
         const parts = this.containerLayout.widgets;
         const availableSize = this.containerLayout.getAvailableSize();
         const orientation = this.orientation;
@@ -301,13 +318,14 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 size -= ViewContainerPart.HEADER_HEIGHT;
             }
             return <ViewContainerPart.State>{
+                widget: part.wrapped,
                 partId: part.partId,
                 collapsed: part.collapsed,
                 hidden: part.isHidden,
                 relativeSize: size && availableSize ? size / availableSize : undefined
             };
         });
-        return { parts: partStates };
+        return { parts: partStates, title: this.titleOptions };
     }
 
     /**
@@ -316,39 +334,45 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
      * it should be restored in the specific subclass or in the widget holding the view container.
      */
     restoreState(state: ViewContainer.State): void {
-        if (state.parts) {
-            const partStates = state.parts.filter(partState => some(this.containerLayout.iter(), p => p.partId === partState.partId));
-
-            // Reorder the parts according to the stored state
-            for (let index = 0; index < partStates.length; index++) {
-                const partState = partStates[index];
-                const currentIndex = this.containerLayout.widgets.findIndex(p => p.partId === partState.partId);
-                if (currentIndex > index) {
-                    this.containerLayout.moveWidget(currentIndex, index);
-                }
+        this.lastVisibleState = state;
+        this.setTitleOptions(state.title);
+        // restore widgets
+        for (const part of state.parts) {
+            if (part.widget) {
+                this.addWidget(part.widget);
             }
-
-            // Restore visibility and collapsed state
-            const parts = this.containerLayout.widgets;
-            for (let index = 0; index < parts.length; index++) {
-                const part = parts[index];
-                const partState = partStates.find(s => part.partId === s.partId);
-                if (partState) {
-                    part.collapsed = partState.collapsed || !partState.relativeSize;
-                    if (part.canHide) {
-                        part.setHidden(partState.hidden);
-                    }
-                } else if (part.canHide) {
-                    part.hide();
-                }
-                this.refreshMenu(part);
-            }
-
-            // Restore part sizes
-            this.attached.promise.then(() => {
-                this.containerLayout.setPartSizes(partStates.map(partState => partState.relativeSize));
-            });
         }
+        const partStates = state.parts.filter(partState => some(this.containerLayout.iter(), p => p.partId === partState.partId));
+
+        // Reorder the parts according to the stored state
+        for (let index = 0; index < partStates.length; index++) {
+            const partState = partStates[index];
+            const currentIndex = this.containerLayout.widgets.findIndex(p => p.partId === partState.partId);
+            if (currentIndex > index) {
+                this.containerLayout.moveWidget(currentIndex, index);
+            }
+        }
+
+        // Restore visibility and collapsed state
+        const parts = this.containerLayout.widgets;
+        for (let index = 0; index < parts.length; index++) {
+            const part = parts[index];
+            const partState = partStates.find(s => part.partId === s.partId);
+            if (partState) {
+                part.collapsed = partState.collapsed || !partState.relativeSize;
+                if (part.canHide) {
+                    part.setHidden(partState.hidden);
+                }
+            } else if (part.canHide) {
+                part.hide();
+            }
+            this.refreshMenu(part);
+        }
+
+        // Restore part sizes
+        this.attached.promise.then(() => {
+            this.containerLayout.setPartSizes(partStates.map(partState => partState.relativeSize));
+        });
     }
 
     /**
@@ -373,8 +397,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 }
                 return false;
             },
-            isEnabled: arg => toRegister.canHide && (!this.options.title || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id)),
-            isVisible: arg => !this.options.title || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id)
+            isEnabled: arg => toRegister.canHide && (!this.titleOptions || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id)),
+            isVisible: arg => !this.titleOptions || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id)
         });
     }
 
@@ -385,13 +409,16 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     protected refreshMenu(part: ViewContainerPart) {
         const commandId = this.toggleVisibilityCommandId(part);
         this.menuRegistry.unregisterMenuAction(commandId);
+        if (!part.wrapped.title.label) {
+            return;
+        }
         const action: MenuAction = {
             commandId: commandId,
             label: part.wrapped.title.label,
             order: this.containerLayout.widgets.indexOf(part).toString()
         };
         this.menuRegistry.registerMenuAction([...this.contextMenuPath, '1_widgets'], action);
-        if (this.options.title) {
+        if (this.titleOptions) {
             this.menuRegistry.registerMenuAction([...SIDE_PANEL_TOOLBAR_CONTEXT_MENU, 'navigation'], action);
         }
     }
@@ -468,7 +495,7 @@ export namespace ViewContainer {
 
     export const Factory = Symbol('ViewContainerFactory');
     export interface Factory {
-        (options: ViewContainerOptions): ViewContainer;
+        (options: ViewContainerIdentifier): ViewContainer;
     }
 
     export namespace Factory {
@@ -489,6 +516,7 @@ export namespace ViewContainer {
     }
 
     export interface State {
+        title?: ViewContainerTitleOptions;
         parts: ViewContainerPart.State[]
     }
 
@@ -515,6 +543,8 @@ export class ViewContainerPart extends BaseWidget {
     readonly onVisibilityChanged = this.onVisibilityChangedEmitter.event;
     protected readonly onMoreContextMenuEmitter = new Emitter<ViewContainerPart.MoreContextMenuEvent>();
     readonly onMoreContextMenu = this.onMoreContextMenuEmitter.event;
+    protected readonly onTitleChangedEmitter = new Emitter<void>();
+    readonly onTitleChanged = this.onTitleChangedEmitter.event;
 
     protected _collapsed: boolean;
     /**
@@ -527,6 +557,8 @@ export class ViewContainerPart extends BaseWidget {
     uncollapsedSize: number | undefined;
     animatedSize: number | undefined;
 
+    protected readonly toNoDisposeWrapped: Disposable;
+
     constructor(
         public readonly wrapped: Widget,
         public readonly partId: string,
@@ -534,11 +566,20 @@ export class ViewContainerPart extends BaseWidget {
         public readonly options: ViewContainer.Factory.WidgetOptions = {}
     ) {
         super();
+        wrapped.parent = this;
+        wrapped.disposed.connect(() => this.dispose());
         this.id = `${viewContainerId}--${wrapped.id}`;
         this.addClass('part');
+
+        const fireTitleChanged = () => this.onTitleChangedEmitter.fire(undefined);
+        this.wrapped.title.changed.connect(fireTitleChanged);
+        this.toDispose.push(Disposable.create(() => this.wrapped.title.changed.disconnect(fireTitleChanged)));
+
         const { header, body, disposable } = this.createContent();
         this.header = header;
         this.body = body;
+
+        this.toNoDisposeWrapped = this.toDispose.push(wrapped);
         this.toDispose.pushAll([
             disposable,
             this.collapsedEmitter,
@@ -720,7 +761,9 @@ export class ViewContainerPart extends BaseWidget {
 
         const title = document.createElement('span');
         title.classList.add('label', 'noselect');
-        title.innerText = this.wrapped.title.label;
+        const updateTitle = () => title.innerText = this.wrapped.title.label;
+        updateTitle();
+        disposable.push(this.onTitleChanged(updateTitle));
         header.appendChild(title);
         return {
             header,
@@ -858,6 +901,13 @@ export class ViewContainerPart extends BaseWidget {
         }
     }
 
+    protected onChildRemoved(msg: Widget.ChildMessage): void {
+        super.onChildRemoved(msg);
+        // if wrapped is not disposed, but detached then we should not dispose it, but only get rid of this part
+        this.toNoDisposeWrapped.dispose();
+        this.dispose();
+    }
+
     setFlag(flag: Widget.Flag): void {
         super.setFlag(flag);
         if (flag === Widget.Flag.IsVisible) {
@@ -901,6 +951,7 @@ export namespace ViewContainerPart {
     }
 
     export interface State {
+        widget?: Widget
         partId: string;
         collapsed: boolean;
         hidden: boolean;

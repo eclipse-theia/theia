@@ -47,6 +47,7 @@ import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-config
 import { WaitUntilEvent } from '@theia/core/lib/common/event';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { isCancelled } from '@theia/core';
+import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -104,6 +105,9 @@ export class HostedPluginSupport {
     @inject(FileSearchService)
     protected readonly fileSearchService: FileSearchService;
 
+    @inject(FrontendApplicationStateService)
+    protected readonly appState: FrontendApplicationStateService;
+
     private theiaReadyPromise: Promise<any>;
 
     protected readonly managers: PluginManagerExt[] = [];
@@ -160,6 +164,10 @@ export class HostedPluginSupport {
         // don't load plugins twice
         initData.plugins = initData.plugins.filter(value => !this.loadedPlugins.has(value.model.id));
 
+        // make sure that the previous state, including plugin widgets, is restored
+        // and core layout is initialized, i.e. explorer, scm, debug views are already added to the shell
+        // but shell is not yet revealed
+        await this.appState.reachedState('initialized_layout');
         const hostToPlugins = new Map<PluginHost, PluginMetadata[]>();
         for (const plugin of initData.plugins) {
             const host = plugin.model.entryPoint.frontend ? 'frontend' : plugin.host;
@@ -170,6 +178,8 @@ export class HostedPluginSupport {
                 this.contributionHandler.handleContributions(plugin.model.contributes);
             }
         }
+        // remove restored plugin widgets which were not registered by contributions
+        this.contributionHandler['viewRegistry'].removeStaleWidgets();
         await this.theiaReadyPromise;
         for (const [host, plugins] of hostToPlugins) {
             const pluginId = getPluginId(plugins[0].model);

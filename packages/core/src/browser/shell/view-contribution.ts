@@ -32,7 +32,7 @@ export interface OpenViewArguments extends ApplicationShell.WidgetOptions {
     reveal?: boolean;
 }
 
-export interface ViewContributionOptions<T extends Widget> {
+export interface ViewContributionOptions {
     widgetId: string;
     widgetName: string;
     defaultWidgetOptions: ApplicationShell.WidgetOptions;
@@ -61,7 +61,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
     readonly toggleCommand?: Command;
 
     constructor(
-        protected readonly options: ViewContributionOptions<T>
+        protected readonly options: ViewContributionOptions
     ) {
         if (options.toggleCommandId) {
             this.toggleCommand = {
