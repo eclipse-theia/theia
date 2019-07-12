@@ -17,7 +17,7 @@
 import { ContainerModule } from 'inversify';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, ViewContainer, WidgetManager } from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
-import { SCM_WIDGET_FACTORY_ID, ScmContribution } from './scm-contribution';
+import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID } from './scm-contribution';
 
 import { ScmWidget } from './scm-widget';
 import '../../src/browser/style/index.css';
@@ -35,19 +35,19 @@ export default new ContainerModule(bind => {
 
     bind(ScmWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: 'scm-view',
+        id: SCM_WIDGET_FACTORY_ID,
         createWidget: () => container.get(ScmWidget)
     })).inSingletonScope();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: SCM_WIDGET_FACTORY_ID,
+        id: SCM_VIEW_CONTAINER_ID,
         createWidget: async () => {
-            const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({ id: 'scm-view-container' });
+            const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({ id: SCM_VIEW_CONTAINER_ID });
             viewContainer.setTitleOptions({
                 label: 'Source Control',
                 iconClass: 'scm-tab-icon',
                 closeable: true
             });
-            const widget = await container.get(WidgetManager).getOrCreateWidget('scm-view');
+            const widget = await container.get(WidgetManager).getOrCreateWidget(SCM_WIDGET_FACTORY_ID);
             viewContainer.addWidget(widget, {
                 canHide: false,
                 initiallyCollapsed: false

@@ -59,16 +59,17 @@ export class TreeSelectionServiceImpl implements TreeSelectionService {
                     ...arg
                 };
             }
-            const node = arg;
             return {
                 type,
-                node
+                node: arg
             };
         })(selectionOrTreeNode);
 
-        if (this.validateNode(selection.node) === undefined) {
+        const node = this.validateNode(selection.node);
+        if (node === undefined) {
             return;
         }
+        Object.assign(selection, { node });
 
         const newState = this.state.nextState(selection);
         this.transiteTo(newState);
@@ -120,7 +121,8 @@ export class TreeSelectionServiceImpl implements TreeSelectionService {
      * Returns a reference to the argument if the node exists in the tree. Otherwise, `undefined`.
      */
     protected validateNode(node: Readonly<TreeNode>): Readonly<TreeNode> | undefined {
-        return this.tree.validateNode(node);
+        const result = this.tree.validateNode(node);
+        return SelectableTreeNode.isVisible(result) ? this.tree.validateNode(node) : undefined;
     }
 
     storeState(): TreeSelectionServiceImpl.State {

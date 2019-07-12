@@ -36,6 +36,7 @@ import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { TreeSearch } from './tree-search';
 import { ElementExt } from '@phosphor/domutils';
 import { TreeWidgetSelection } from './tree-widget-selection';
+import { MaybePromise } from '../../common/types';
 
 const debounce = require('lodash.debounce');
 
@@ -292,15 +293,13 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.node.focus();
-        if (this.model.selectedNodes.length === 0) {
-            const root = this.model.root;
-            if (SelectableTreeNode.is(root)) {
-                this.model.selectNode(root);
-            } else if (CompositeTreeNode.is(root) && root.children.length >= 1) {
-                const firstChild = root.children[0];
-                if (SelectableTreeNode.is(firstChild)) {
-                    this.model.selectNode(firstChild);
-                }
+    }
+
+    protected doFocus(): void {
+        if (!this.model.selectedNodes.length) {
+            const node = this.getNodeToFocus();
+            if (SelectableTreeNode.is(node)) {
+                this.model.selectNode(node);
             }
         }
         // it has to be called after nodes are selected
@@ -308,6 +307,14 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.updateGlobalSelection();
         }
         this.forceUpdate();
+    }
+
+    protected getNodeToFocus(): SelectableTreeNode | undefined {
+        const root = this.model.root;
+        if (SelectableTreeNode.isVisible(root)) {
+            return root;
+        }
+        return this.model.getNextSelectableNode(root);
     }
 
     protected onUpdateRequest(msg: Message): void {
@@ -327,8 +334,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
+        const classNames = [TREE_CONTAINER_CLASS];
+        if (!this.rows.size) {
+            classNames.push('empty');
+        }
         return {
-            className: TREE_CONTAINER_CLASS,
+            className: classNames.join(' '),
             onContextMenu: event => this.handleContextMenuEvent(this.getContainerTreeNode(), event)
         };
     }
@@ -695,6 +706,24 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.getDecorations(node).filter(data => data[key] !== undefined).map(data => data[key]).filter(notEmpty);
     }
 
+    protected lastScrollState: {
+        scrollTop: number,
+        scrollLeft: number
+    } | undefined;
+
+    protected getScrollContainer(): MaybePromise<HTMLElement> {
+        this.toDisposeOnDetach.push(Disposable.create(() => {
+            const { scrollTop, scrollLeft } = this.node;
+            this.lastScrollState = { scrollTop, scrollLeft };
+        }));
+        if (this.lastScrollState) {
+            const { scrollTop, scrollLeft } = this.lastScrollState;
+            this.node.scrollTop = scrollTop;
+            this.node.scrollLeft = scrollLeft;
+        }
+        return this.node;
+    }
+
     protected onAfterAttach(msg: Message): void {
         const up = [
             Key.ARROW_UP,
@@ -727,6 +756,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 this.view.list.Grid.handleScrollEvent({ scrollTop });
             }
         });
+        this.addEventListener(this.node, 'focus', () => this.doFocus());
     }
 
     protected async handleLeft(event: KeyboardEvent): Promise<void> {

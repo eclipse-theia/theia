@@ -35,6 +35,7 @@ import * as React from 'react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 
 export const FILE_NAVIGATOR_ID = 'files';
+export const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
 export const LABEL = 'No folder opened';
 export const CLASS = 'theia-Files';
 
@@ -57,7 +58,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
         super(props, model, contextMenuRenderer);
-        this.id = FILE_NAVIGATOR_ID;
+        this.id = EXPLORER_VIEW_CONTAINER_ID;
         this.addClass(CLASS);
         this.initialize();
     }

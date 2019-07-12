@@ -117,14 +117,6 @@ describe('FileNavigatorTree', () => {
         });
     });
 
-    describe('createWorkspaceRoot() function', () => {
-        it('should pass arguments to toNode() function', async () => {
-            const stubToNode = sinon.stub(navigatorTree, <any>'toNode').callsFake(() => { });
-            await navigatorTree.createWorkspaceRoot(workspaceRootFolder.fileStat, <WorkspaceNode>root);
-            expect(stubToNode.calledWith(workspaceRootFolder.fileStat, <WorkspaceNode>root)).to.be.true;
-        });
-    });
-
     describe('createId() function', () => {
         it('should return the concatenation of root id + node uri', () => {
             const uri = new URI('file:///home/fileC');

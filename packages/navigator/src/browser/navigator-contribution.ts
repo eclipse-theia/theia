@@ -24,7 +24,7 @@ import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/fil
 import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX, Command, DisposableCollection } from '@theia/core/lib/common';
 import { SHELL_TABBAR_CONTEXT_MENU } from '@theia/core/lib/browser';
 import { WorkspaceCommands, WorkspaceService, WorkspacePreferences } from '@theia/workspace/lib/browser';
-import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
+import { FILE_NAVIGATOR_ID, FileNavigatorWidget, EXPLORER_VIEW_CONTAINER_ID } from './navigator-widget';
 import { FileNavigatorPreferences } from './navigator-preferences';
 import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
 import { FileNavigatorFilter } from './navigator-filter';
@@ -102,6 +102,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         @inject(WorkspacePreferences) protected readonly workspacePreferences: WorkspacePreferences
     ) {
         super({
+            viewContainerId: EXPLORER_VIEW_CONTAINER_ID,
             widgetId: FILE_NAVIGATOR_ID,
             widgetName: 'Explorer',
             defaultWidgetOptions: {
@@ -131,10 +132,6 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 this.updateAddRemoveFolderActions(this.menuRegistry);
             }
         });
-    }
-
-    protected isWidget(widget: Widget | undefined): widget is FileNavigatorWidget {
-        return widget instanceof FileNavigatorWidget;
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {

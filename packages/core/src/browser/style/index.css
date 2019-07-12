@@ -107,10 +107,11 @@ body {
 }
 
 :focus {
-  outline: none;
-  border-style: solid;
-  border-width: 1px;
-  border-color: var(--theia-accent-color3);
+    outline-width: 1px;
+    outline-style: solid;
+    outline-offset: -1px;
+    opacity: 1 !important;
+    outline-color: var(--theia-accent-color3);
 }
 
 ::selection {
@@ -119,6 +120,7 @@ body {
 
 .p-Widget:focus {
     border: none;
+    outline: none;
 }
 
 button.theia-button, .theia-button {

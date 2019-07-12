@@ -20,8 +20,8 @@ import { ViewContainer, View } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
-import { SCM_WIDGET_FACTORY_ID } from '@theia/scm/lib/browser/scm-contribution';
-import { FILE_NAVIGATOR_ID } from '@theia/navigator/lib/browser';
+import { SCM_VIEW_CONTAINER_ID } from '@theia/scm/lib/browser/scm-contribution';
+import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -50,11 +50,11 @@ export class ViewRegistry {
                 this.setViewContainer('debug', viewContainer);
                 widget.disposed.connect(() => this.viewContainers.delete('debug'));
             }
-            if (factoryId === SCM_WIDGET_FACTORY_ID && widget instanceof ViewContainerWidget) {
+            if (factoryId === SCM_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
                 this.setViewContainer('scm', widget);
                 widget.disposed.connect(() => this.viewContainers.delete('scm'));
             }
-            if (factoryId === FILE_NAVIGATOR_ID && widget instanceof ViewContainerWidget) {
+            if (factoryId === EXPLORER_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
                 this.setViewContainer('explorer', widget);
                 widget.disposed.connect(() => this.viewContainers.delete('explorer'));
             }
@@ -160,10 +160,10 @@ export class ViewRegistry {
     }
 
     protected toPluginViewWidgetIdentifier(viewId: string): PluginViewWidgetIdentifier {
-        return { id: PLUGIN_VIEW_FACTORY_ID + ':' + viewId };
+        return { id: PLUGIN_VIEW_FACTORY_ID + ':' + viewId, viewId };
     }
     protected toViewId(identifier: PluginViewWidgetIdentifier): string {
-        return identifier.id.substr(PLUGIN_VIEW_FACTORY_ID.length + 1);
+        return identifier.viewId;
     }
 
 }
