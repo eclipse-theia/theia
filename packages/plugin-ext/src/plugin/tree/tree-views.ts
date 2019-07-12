@@ -124,8 +124,6 @@ class TreeViewExtImpl<T> extends Disposable {
 
     private cache: Map<string, T> = new Map<string, T>();
 
-    private idCounter: number = 0;
-
     constructor(
         private plugin: Plugin,
         private treeViewId: string,
@@ -162,42 +160,32 @@ class TreeViewExtImpl<T> extends Disposable {
         }
     }
 
-    generateId(): string {
-        return `item-${this.idCounter++}`;
-    }
-
     getTreeItem(treeItemId: string): T | undefined {
         return this.cache.get(treeItemId);
     }
 
-    async getChildren(treeItemId: string): Promise<TreeViewItem[] | undefined> {
+    async getChildren(parentId: string): Promise<TreeViewItem[] | undefined> {
         // get element from a cache
-        const cachedElement = this.getTreeItem(treeItemId);
+        const parent = this.getTreeItem(parentId);
 
         // ask data provider for children for cached element
-        const result = await this.treeDataProvider.getChildren(cachedElement);
+        const result = await this.treeDataProvider.getChildren(parent);
 
         if (result) {
             const treeItems: TreeViewItem[] = [];
-            const promises = result.map(async value => {
+            const promises = result.map(async (value, index) => {
 
                 // Ask data provider for a tree item for the value
                 // Data provider must return theia.TreeItem
                 const treeItem: TreeItem2 = await this.treeDataProvider.getTreeItem(value);
 
-                // Generate the ID
-                // ID is used for caching the element
-                const id = this.generateId();
-
-                // Add element to the cache
-                this.cache.set(id, value);
-
                 // Convert theia.TreeItem to the TreeViewItem
 
                 // Take a label
-                let label: string | TreeItemLabel | undefined = treeItem.label;
-                if (typeof label === 'object' && typeof label.label === 'string') {
-                    label = label.label;
+                let label: string | undefined;
+                const treeItemLabel: string | TreeItemLabel | undefined = treeItem.label;
+                if (typeof treeItemLabel === 'object' && typeof treeItemLabel.label === 'string') {
+                    label = treeItemLabel.label;
                 } else {
                     label = treeItem.label;
                 }
@@ -211,10 +199,17 @@ class TreeViewExtImpl<T> extends Disposable {
                     }
                 }
 
+                // Generate the ID
+                // ID is used for caching the element
+                const id = treeItem.id || `${parentId}/${index}:${label}`;
+
                 // Use item ID if item label is still not set
                 if (!label) {
-                    label = id;
+                    label = treeItem.id;
                 }
+
+                // Add element to the cache
+                this.cache.set(id, value);
 
                 let icon;
                 let iconUrl;

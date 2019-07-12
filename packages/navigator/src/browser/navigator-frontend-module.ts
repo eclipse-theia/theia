@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 
 import { ContainerModule } from 'inversify';
 import { KeybindingContext, bindViewContribution, FrontendApplicationContribution, ViewContainer } from '@theia/core/lib/browser';
-import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget';
+import { FileNavigatorWidget, FILE_NAVIGATOR_ID, EXPLORER_VIEW_CONTAINER_ID } from './navigator-widget';
 import { NavigatorActiveContext } from './navigator-keybinding-context';
 import { FileNavigatorContribution } from './navigator-contribution';
 import { createFileNavigatorWidget } from './navigator-container';
@@ -45,19 +45,19 @@ export default new ContainerModule(bind => {
         createFileNavigatorWidget(ctx.container)
     );
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: 'explorer-view',
+        id: FILE_NAVIGATOR_ID,
         createWidget: () => container.get(FileNavigatorWidget)
     })).inSingletonScope();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: FILE_NAVIGATOR_ID,
+        id: EXPLORER_VIEW_CONTAINER_ID,
         createWidget: async () => {
-            const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({ id: 'explorer-view-container' });
+            const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({ id: EXPLORER_VIEW_CONTAINER_ID });
             viewContainer.setTitleOptions({
                 label: 'Explorer',
                 iconClass: 'navigator-tab-icon',
                 closeable: true
             });
-            const widget = await container.get(WidgetManager).getOrCreateWidget('explorer-view');
+            const widget = await container.get(WidgetManager).getOrCreateWidget(FILE_NAVIGATOR_ID);
             viewContainer.addWidget(widget, {
                 canHide: false,
                 initiallyCollapsed: false

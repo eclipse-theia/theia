@@ -21,8 +21,7 @@ import {
     StatusBar,
     StatusBarAlignment,
     StatusBarEntry,
-    KeybindingRegistry,
-    Widget
+    KeybindingRegistry
 } from '@theia/core/lib/browser';
 import { CommandRegistry, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
@@ -33,6 +32,7 @@ import { ScmQuickOpenService } from './scm-quick-open-service';
 import { ScmRepository } from './scm-repository';
 
 export const SCM_WIDGET_FACTORY_ID = 'scm';
+export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
 
 export namespace SCM_COMMANDS {
     export const CHANGE_REPOSITORY = {
@@ -60,6 +60,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
 
     constructor() {
         super({
+            viewContainerId: SCM_VIEW_CONTAINER_ID,
             widgetId: SCM_WIDGET_FACTORY_ID,
             widgetName: 'SCM',
             defaultWidgetOptions: {
@@ -69,10 +70,6 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             toggleCommandId: 'scmView:toggle',
             toggleKeybinding: 'ctrlcmd+shift+g'
         });
-    }
-
-    protected isWidget(widget: Widget | undefined): widget is ScmWidget {
-        return widget instanceof ScmWidget;
     }
 
     @postConstruct()

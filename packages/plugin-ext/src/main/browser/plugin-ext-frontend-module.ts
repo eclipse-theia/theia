@@ -17,7 +17,10 @@
 import '../../../src/main/style/status-bar.css';
 
 import { ContainerModule } from 'inversify';
-import { FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution, ViewContainerIdentifier, ViewContainer } from '@theia/core/lib/browser';
+import {
+    FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution,
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl
+} from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
@@ -56,6 +59,7 @@ import { SelectionProviderCommandContribution } from './selection-provider-comma
 import { ViewColumnService } from './view-column-service';
 import { ViewContextKeyService } from './view/view-context-key-service';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './view/plugin-view-widget';
+import { PLUGIN_TREE_VIEW_FACTORY_ID, TreeViewWidgetIdentifier, VIEW_ITEM_CONTEXT_MENU, PluginTree, TreeViewWidget, PluginTreeModel } from './view/tree-views-main';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -109,6 +113,24 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(ViewContextKeyService).toSelf().inSingletonScope();
 
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: PLUGIN_TREE_VIEW_FACTORY_ID,
+        createWidget: (identifier: TreeViewWidgetIdentifier) => {
+            const child = createTreeContainer(container, {
+                contextMenuPath: VIEW_ITEM_CONTEXT_MENU,
+                globalSelection: true
+            });
+            child.bind(TreeViewWidgetIdentifier).toConstantValue(identifier);
+            child.bind(PluginTree).toSelf();
+            child.rebind(TreeImpl).toService(PluginTree);
+            child.bind(PluginTreeModel).toSelf();
+            child.rebind(TreeModelImpl).toService(PluginTreeModel);
+            child.bind(TreeViewWidget).toSelf();
+            child.rebind(TreeWidget).toService(TreeViewWidget);
+            return child.get(TreeWidget);
+        }
+    })).inSingletonScope();
+
     bind(PluginViewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: PLUGIN_VIEW_FACTORY_ID,
@@ -117,13 +139,13 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
             child.bind(PluginViewWidgetIdentifier).toConstantValue(identifier);
             return child.get(PluginViewWidget);
         }
-    }));
+    })).inSingletonScope();
 
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: PLUGIN_VIEW_CONTAINER_FACTORY_ID,
         createWidget: (identifier: ViewContainerIdentifier) =>
             container.get<ViewContainer.Factory>(ViewContainer.Factory)(identifier)
-    }));
+    })).inSingletonScope();
     bind(PluginSharedStyle).toSelf().inSingletonScope();
     bind(ViewRegistry).toSelf().inSingletonScope();
     bind(MenusContributionPointHandler).toSelf().inSingletonScope();

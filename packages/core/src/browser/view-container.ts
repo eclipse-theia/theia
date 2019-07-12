@@ -96,7 +96,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 animationDuration: 200
             }, this.splitPositionHandler)
         });
-        this.panel.node.tabIndex = 0;
+        this.panel.node.tabIndex = -1;
         layout.addWidget(this.panel);
 
         const { commandRegistry, menuRegistry, contextMenuRenderer } = this;
@@ -351,7 +351,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             const partState = partStates[index];
             const currentIndex = this.containerLayout.widgets.findIndex(p => p.partId === partState.partId);
             if (currentIndex > index) {
-                this.containerLayout.moveWidget(currentIndex, index);
+                this.containerLayout.moveWidget(currentIndex, index, this.containerLayout.widgets[currentIndex]);
             }
         }
 
@@ -457,7 +457,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         const toMoveIndex = parts.findIndex(part => part.id === toMovedId);
         const moveBeforeThisIndex = parts.findIndex(part => part.id === moveBeforeThisId);
         if (toMoveIndex >= 0 && moveBeforeThisIndex >= 0) {
-            this.containerLayout.moveWidget(toMoveIndex, moveBeforeThisIndex);
+            this.containerLayout.moveWidget(toMoveIndex, moveBeforeThisIndex, parts[toMoveIndex]);
             for (let index = Math.min(toMoveIndex, moveBeforeThisIndex); index < parts.length; index++) {
                 this.refreshMenu(parts[index]);
             }
@@ -1014,10 +1014,21 @@ export class ViewContainerLayout extends SplitLayout {
         return toArray(this.iter());
     }
 
-    moveWidget(fromIndex: number, toIndex: number): void {
-        // Note: internally, the `widget` argument is not used. See: `node_modules/@phosphor/widgets/lib/splitlayout.js`.
-        // tslint:disable-next-line:no-any
-        super.moveWidget(fromIndex, toIndex, undefined as any);
+    moveWidget(fromIndex: number, toIndex: number, widget: Widget): void {
+        const ref = this.widgets[toIndex < fromIndex ? toIndex : toIndex + 1];
+        super.moveWidget(fromIndex, toIndex, widget);
+        if (ref) {
+            this.parent!.node.insertBefore(this.handles[toIndex], ref.node);
+        } else {
+            this.parent!.node.appendChild(this.handles[toIndex]);
+        }
+        MessageLoop.sendMessage(widget, Widget.Msg.BeforeDetach);
+        this.parent!.node.removeChild(widget.node);
+        MessageLoop.sendMessage(widget, Widget.Msg.AfterDetach);
+
+        MessageLoop.sendMessage(widget, Widget.Msg.BeforeAttach);
+        this.parent!.node.insertBefore(widget.node, this.handles[toIndex]);
+        MessageLoop.sendMessage(widget, Widget.Msg.AfterAttach);
     }
 
     getPartSize(part: ViewContainerPart): number | undefined {

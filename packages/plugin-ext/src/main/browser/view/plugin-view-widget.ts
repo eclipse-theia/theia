@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Panel } from '@phosphor/widgets';
+import { Panel, Widget } from '@phosphor/widgets';
 import { MenuModelRegistry, ActionMenuNode, MenuPath, CompositeMenuNode } from '@theia/core/lib/common/menu';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { ViewContainerPart } from '@theia/core/lib/browser/view-container';
@@ -28,6 +28,7 @@ export const PLUGIN_VIEW_TITLE_MENU: MenuPath = ['plugin-view-title-menu'];
 @injectable()
 export class PluginViewWidgetIdentifier {
     id: string;
+    viewId: string;
 }
 
 @injectable()
@@ -47,7 +48,7 @@ export class PluginViewWidget extends Panel implements ViewContainerPart.Contain
 
     constructor() {
         super();
-        this.node.tabIndex = 0;
+        this.node.tabIndex = -1;
         this.node.style.height = '100%';
     }
 
@@ -57,7 +58,7 @@ export class PluginViewWidget extends Panel implements ViewContainerPart.Contain
     }
 
     get toolbarElements(): ViewContainerPart.ToolbarElement[] {
-        return this.contextKeys.with({ view: this.options.id }, () => {
+        return this.contextKeys.with({ view: this.options.viewId }, () => {
             const menu = this.menus.getMenu(PLUGIN_VIEW_TITLE_MENU);
             const elements: ViewContainerPart.ToolbarElement[] = [];
             for (const groupItem of menu.children) {
@@ -95,17 +96,22 @@ export class PluginViewWidget extends Panel implements ViewContainerPart.Contain
 
     storeState(): PluginViewWidget.State {
         return {
-            label: this.title.label
+            label: this.title.label,
+            widgets: this.widgets
         };
     }
 
     restoreState(state: PluginViewWidget.State): void {
         this.title.label = state.label;
+        for (const widget of state.widgets) {
+            this.addWidget(widget);
+        }
     }
 
 }
 export namespace PluginViewWidget {
     export interface State {
         label: string
+        widgets: ReadonlyArray<Widget>
     }
 }
