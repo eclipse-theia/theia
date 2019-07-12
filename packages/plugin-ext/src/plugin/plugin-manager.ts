@@ -71,7 +71,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
     private readonly registry = new Map<string, Plugin>();
     private readonly activations = new Map<string, (() => Promise<void>)[] | undefined>();
-    private readonly loadedPlugins = new Set<string>();
+    private readonly loadedPlugins = new Map<string, Promise<void>>();
     private readonly activatedPlugins = new Map<string, ActivatedPlugin>();
     private pluginActivationPromises = new Map<string, Deferred<void>>();
     private pluginContextsMap: Map<string, theia.PluginContext> = new Map();
@@ -143,7 +143,6 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         for (const activationEvent of pluginInit.activationEvents) {
             await this.$activateByEvent(activationEvent);
         }
-        // TODO eager activate by `workspaceContains`
 
         if (this.host.loadTests) {
             return this.host.loadTests();
@@ -167,7 +166,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             } else {
                 for (let activationEvent of plugin.rawModel.activationEvents) {
                     if (activationEvent === 'onUri') {
-                        activationEvent = `onUri:theia://${plugin.model.publisher.toLowerCase()}.${plugin.model.name.toLowerCase()}`;
+                        activationEvent = `onUri:theia://${plugin.model.id}`;
                     }
                     this.setActivation(activationEvent, activation);
                 }
@@ -180,19 +179,38 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.activations.set(activationEvent, activations);
     }
 
-    protected async loadPlugin(plugin: Plugin, configStorage: ConfigStorage): Promise<void> {
-        if (this.loadedPlugins.has(plugin.model.id)) {
+    protected async loadPlugin(plugin: Plugin, configStorage: ConfigStorage, visited = new Set<string>()): Promise<void> {
+        // in order to break cycles
+        if (visited.has(plugin.model.id)) {
             return;
         }
-        this.loadedPlugins.add(plugin.model.id);
+        visited.add(plugin.model.id);
 
-        const pluginMain = this.host.loadPlugin(plugin);
-        // able to load the plug-in ?
-        if (pluginMain !== undefined) {
-            await this.startPlugin(plugin, configStorage, pluginMain);
-        } else {
-            console.error(`Unable to load a plugin from "${plugin.pluginPath}"`);
+        let loading = this.loadedPlugins.get(plugin.model.id);
+        if (!loading) {
+            loading = (async () => {
+                if (plugin.rawModel.extensionDependencies) {
+                    for (const dependencyId of plugin.rawModel.extensionDependencies) {
+                        const dependency = this.registry.get(dependencyId);
+                        if (dependency) {
+                            await this.loadPlugin(dependency, configStorage, visited);
+                        } else {
+                            console.warn(`cannot find a dependency to '${dependencyId}' for '${plugin.model.id}' plugin`);
+                        }
+                    }
+                }
+
+                const pluginMain = this.host.loadPlugin(plugin);
+                // able to load the plug-in ?
+                if (pluginMain !== undefined) {
+                    await this.startPlugin(plugin, configStorage, pluginMain);
+                } else {
+                    console.error(`Unable to load a plugin from "${plugin.pluginPath}"`);
+                }
+            })();
         }
+        this.loadedPlugins.set(plugin.model.id, loading);
+        return loading;
     }
 
     $updateStoragePath(path: string | undefined): PromiseLike<void> {

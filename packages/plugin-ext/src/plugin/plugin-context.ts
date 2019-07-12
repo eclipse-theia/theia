@@ -598,7 +598,7 @@ export function createAPIFactory(
             },
             // tslint:disable-next-line:no-any
             getPlugin(pluginId: string): theia.Plugin<any> | undefined {
-                const plg = pluginManager.getPluginById(pluginId);
+                const plg = pluginManager.getPluginById(pluginId.toLowerCase());
                 if (plg) {
                     return new Plugin(pluginManager, plg);
                 }
