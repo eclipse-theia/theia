@@ -51,6 +51,7 @@ export interface PluginPackage {
     contributes?: PluginPackageContribution;
     packagePath: string;
     activationEvents?: string[];
+    extensionDependencies?: string[];
 }
 export namespace PluginPackage {
     export function toPluginUrl(pck: PluginPackage, relativePath: string): string {

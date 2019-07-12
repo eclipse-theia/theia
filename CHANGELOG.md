@@ -13,6 +13,7 @@ Breaking changes:
 - [plugin] added basic support of activation events [#5622](https://github.com/theia-ide/theia/pull/5622)
   - `HostedPluginSupport` is refactored to support multiple `PluginManagerExt` properly
 - [plugin] added support of `workspaceContains` activation events [#5649](https://github.com/theia-ide/theia/pull/5649)
+- [plugin] activate dependencies before activating a plugin [#5661](https://github.com/theia-ide/theia/pull/5661)
 
 ## v0.8.0
 
