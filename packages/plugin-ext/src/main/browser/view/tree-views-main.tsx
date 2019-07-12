@@ -65,7 +65,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
     }
 
     async $registerTreeDataProvider(treeViewId: string): Promise<void> {
-        const viewPanel = await this.viewRegistry.getView(treeViewId);
+        const viewPanel = await this.viewRegistry.openView(treeViewId);
         if (!viewPanel) {
             console.error('view is not registered: ' + treeViewId);
             return;
@@ -77,26 +77,22 @@ export class TreeViewsMainImpl implements TreeViewsMain {
         this.handleTreeEvents(treeViewId, treeViewWidget);
     }
 
-    protected async getTreeViewWidget(treeViewId: string): Promise<TreeViewWidget | undefined> {
+    async $refresh(treeViewId: string): Promise<void> {
         const viewPanel = await this.viewRegistry.getView(treeViewId);
         const widget = viewPanel && viewPanel.widgets[0];
-        return widget instanceof TreeViewWidget && widget || undefined;
-    }
-
-    async $refresh(treeViewId: string): Promise<void> {
-        const treeViewWidget = await this.getTreeViewWidget(treeViewId);
-        if (treeViewWidget) {
-            treeViewWidget.model.refresh();
+        if (widget instanceof TreeViewWidget) {
+            widget.model.refresh();
         }
     }
 
     // tslint:disable-next-line:no-any
     async $reveal(treeViewId: string, treeItemId: string): Promise<any> {
-        const treeViewWidget = await this.getTreeViewWidget(treeViewId);
-        if (treeViewWidget) {
-            const treeNode = treeViewWidget.model.getNode(treeItemId);
+        const viewPanel = await this.viewRegistry.openView(treeViewId);
+        const widget = viewPanel && viewPanel.widgets[0];
+        if (widget instanceof TreeViewWidget) {
+            const treeNode = widget.model.getNode(treeItemId);
             if (treeNode && SelectableTreeNode.is(treeNode)) {
-                treeViewWidget.model.selectNode(treeNode);
+                widget.model.selectNode(treeNode);
             }
         }
     }

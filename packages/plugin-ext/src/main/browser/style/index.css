@@ -50,6 +50,11 @@
     color: var(--theia-ui-font-color1);
 }
 
+.theia-plugin-test-tab-icon {
+    -webkit-mask: url('test.svg');
+    mask: url('test.svg');
+}
+
 @import './plugin-sidebar.css';
 @import './webview.css';
 @import './tree.css';

@@ -178,6 +178,7 @@ export class HostedPluginSupport {
                 this.contributionHandler.handleContributions(plugin.model.contributes);
             }
         }
+        await this.contributionHandler['viewRegistry'].initWidgets();
         // remove restored plugin widgets which were not registered by contributions
         this.contributionHandler['viewRegistry'].removeStaleWidgets();
         await this.theiaReadyPromise;

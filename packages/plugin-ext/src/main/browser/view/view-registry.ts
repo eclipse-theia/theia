@@ -15,13 +15,15 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { ApplicationShell, ViewContainer as ViewContainerWidget, Panel, WidgetManager, ViewContainerIdentifier } from '@theia/core/lib/browser';
+import { ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager, ViewContainerIdentifier, ViewContainerTitleOptions } from '@theia/core/lib/browser';
 import { ViewContainer, View } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
-import { SCM_VIEW_CONTAINER_ID } from '@theia/scm/lib/browser/scm-contribution';
+import { SCM_VIEW_CONTAINER_ID, ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
 import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser';
+import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
+import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/debug-frontend-application-contribution';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -38,97 +40,184 @@ export class ViewRegistry {
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
 
-    private readonly views = new Map<string, PluginViewWidget | undefined>();
-    private readonly viewsByContainer = new Map<string, PluginViewWidget[]>();
-    private readonly viewContainers = new Map<string, ViewContainerWidget | undefined>();
+    @inject(ScmContribution)
+    protected readonly scm: ScmContribution;
+
+    @inject(FileNavigatorContribution)
+    protected readonly explorer: FileNavigatorContribution;
+
+    @inject(DebugFrontendApplicationContribution)
+    protected readonly debug: DebugFrontendApplicationContribution;
+
+    private readonly views = new Map<string, [string, View]>();
+    private readonly viewContainers = new Map<string, [string, ViewContainerTitleOptions]>();
+    private readonly containerViews = new Map<string, string[]>();
 
     @postConstruct()
     protected init(): void {
         this.widgetManager.onDidCreateWidget(({ factoryId, widget }) => {
-            if (factoryId === DebugWidget.ID && widget instanceof DebugWidget) {
-                const viewContainer = widget['sessionWidget']['viewContainer'];
-                this.setViewContainer('debug', viewContainer);
-                widget.disposed.connect(() => this.viewContainers.delete('debug'));
+            if (factoryId === EXPLORER_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
+                this.prepareViewContainer('explorer', widget);
             }
             if (factoryId === SCM_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
-                this.setViewContainer('scm', widget);
-                widget.disposed.connect(() => this.viewContainers.delete('scm'));
+                this.prepareViewContainer('scm', widget);
             }
-            if (factoryId === EXPLORER_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
-                this.setViewContainer('explorer', widget);
-                widget.disposed.connect(() => this.viewContainers.delete('explorer'));
+            if (factoryId === DebugWidget.ID && widget instanceof DebugWidget) {
+                const viewContainer = widget['sessionWidget']['viewContainer'];
+                this.prepareViewContainer('debug', viewContainer);
+            }
+            if (factoryId === PLUGIN_VIEW_CONTAINER_FACTORY_ID && widget instanceof ViewContainerWidget) {
+                this.prepareViewContainer(this.toViewContainerId(widget.options), widget);
+            }
+            if (factoryId === PLUGIN_VIEW_FACTORY_ID && widget instanceof PluginViewWidget) {
+                this.prepareView(widget);
             }
         });
+        this.viewContainers.set('test', ['left', {
+            label: 'Test',
+            iconClass: 'theia-plugin-test-tab-icon',
+            closeable: true
+        }]);
     }
 
-    async registerViewContainer(location: string, viewContainer: ViewContainer): Promise<void> {
+    registerViewContainer(location: string, viewContainer: ViewContainer): void {
         if (this.viewContainers.has(viewContainer.id)) {
             console.warn('view container such id alredy registered: ', JSON.stringify(viewContainer));
             return;
         }
-        this.viewContainers.set(viewContainer.id, undefined);
-
-        const identifier = this.toViewContainerIdentifier(viewContainer.id);
-        const containerWidget = await this.widgetManager.getOrCreateWidget<ViewContainerWidget>(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
         const iconClass = 'plugin-view-container-icon-' + viewContainer.id;
         this.style.insertRule('.' + iconClass, () => `
-            mask: url('${viewContainer.iconUrl}') no-repeat 50% 50%;
-            -webkit-mask: url('${viewContainer.iconUrl}') no-repeat 50% 50%;
-        `);
-        containerWidget.setTitleOptions({
+                mask: url('${viewContainer.iconUrl}') no-repeat 50% 50%;
+                -webkit-mask: url('${viewContainer.iconUrl}') no-repeat 50% 50%;
+            `);
+        this.viewContainers.set(viewContainer.id, [location, {
             label: viewContainer.title,
             iconClass,
             closeable: true
-        });
-        this.setViewContainer(viewContainer.id, containerWidget);
-
-        this.applicationShell.addWidget(containerWidget, {
-            area: ApplicationShell.isSideArea(location) ? location : 'left',
-            rank: Number.MAX_SAFE_INTEGER
-        });
+        }]);
     }
 
-    async registerView(viewContainerId: string, view: View): Promise<void> {
+    registerView(viewContainerId: string, view: View): void {
         if (this.views.has(view.id)) {
             console.warn('view with such id alredy registered: ', JSON.stringify(view));
             return;
         }
-        this.views.set(view.id, undefined);
+        this.views.set(view.id, [viewContainerId, view]);
+        const containerViews = this.containerViews.get(viewContainerId) || [];
+        containerViews.push(view.id);
+        this.containerViews.set(viewContainerId, containerViews);
+    }
 
-        const identifier = this.toPluginViewWidgetIdentifier(view.id);
-        const widget = await this.widgetManager.getOrCreateWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, identifier);
+    async getView(viewId: string): Promise<PluginViewWidget | undefined> {
+        if (!this.views.has(viewId)) {
+            return undefined;
+        }
+        return this.widgetManager.getWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, this.toPluginViewWidgetIdentifier(viewId));
+    }
+
+    async openView(viewId: string): Promise<PluginViewWidget | undefined> {
+        const widget = await this.getView(viewId);
+        if (widget) {
+            return widget;
+        }
+        const data = this.views.get(viewId);
+        if (!data) {
+            return undefined;
+        }
+        const [containerId] = data;
+        await this.openViewContainer(containerId);
+        return this.getView(viewId);
+    }
+
+    protected prepareView(widget: PluginViewWidget): void {
+        const data = this.views.get(widget.options.viewId);
+        if (!data) {
+            return;
+        }
+        const [, view] = data;
         widget.title.label = view.name;
+    }
 
-        const views = this.viewsByContainer.get(viewContainerId) || [];
-        views.push(widget);
-        this.views.set(view.id, widget);
-        this.viewsByContainer.set(viewContainerId, views);
-
-        const viewContainer = this.viewContainers.get(viewContainerId);
-        if (viewContainer) {
-            this.addViewWidget(viewContainer, widget);
+    async openViewContainer(containerId: string): Promise<void> {
+        if (containerId === 'exporer') {
+            await this.explorer.openView();
+            return;
+        }
+        if (containerId === 'scm') {
+            await this.scm.openView();
+            return;
+        }
+        if (containerId === 'debug') {
+            await this.debug.openView();
+            return;
+        }
+        const data = this.viewContainers.get(containerId);
+        if (!data) {
+            return;
+        }
+        const [location] = data;
+        const identifier = this.toViewContainerIdentifier(containerId);
+        const containerWidget = await this.widgetManager.getOrCreateWidget<ViewContainerWidget>(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
+        if (!containerWidget.isAttached) {
+            this.applicationShell.addWidget(containerWidget, {
+                area: ApplicationShell.isSideArea(location) ? location : 'left',
+                rank: Number.MAX_SAFE_INTEGER
+            });
         }
     }
 
-    getView(viewId: string): Promise<PluginViewWidget | undefined> {
-        return this.widgetManager.getWidget(PLUGIN_VIEW_FACTORY_ID, this.toPluginViewWidgetIdentifier(viewId));
-    }
-
-    protected setViewContainer(id: string, viewContainer: ViewContainerWidget): void {
-        this.viewContainers.set(id, viewContainer);
-        const views = this.viewsByContainer.get(id);
-        if (views) {
-            for (const view of views) {
-                this.addViewWidget(viewContainer, view);
+    protected async prepareViewContainer(viewContainerId: string, containerWidget: ViewContainerWidget): Promise<void> {
+        const data = this.viewContainers.get(viewContainerId);
+        if (data) {
+            const [, options] = data;
+            containerWidget.setTitleOptions(options);
+        }
+        for (const viewId of this.containerViews.get(viewContainerId) || []) {
+            const identifier = this.toPluginViewWidgetIdentifier(viewId);
+            const widget = await this.widgetManager.getOrCreateWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, identifier);
+            if (containerWidget.getTrackableWidgets().indexOf(widget) === -1) {
+                containerWidget.addWidget(widget, {
+                    initiallyCollapsed: !containerWidget.getTrackableWidgets().length
+                });
             }
         }
     }
 
-    protected addViewWidget(viewContainer: ViewContainerWidget, view: Panel): void {
-        viewContainer.addWidget(view, {
-            initiallyCollapsed: !!viewContainer.children().next()
-        });
-
+    async initWidgets(): Promise<void> {
+        const promises: Promise<void>[] = [];
+        for (const id of this.viewContainers.keys()) {
+            promises.push((async () => {
+                const identifier = this.toViewContainerIdentifier(id);
+                if (!await this.widgetManager.getWidget(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier)) {
+                    await this.openViewContainer(id);
+                    const viewContainer = await this.widgetManager.getWidget<ViewContainerWidget>(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
+                    if (viewContainer && !viewContainer.getTrackableWidgets().length) {
+                        // close empty view containers
+                        viewContainer.dispose();
+                    }
+                }
+            })().catch(console.error));
+        }
+        promises.push((async () => {
+            const explorer = await this.widgetManager.getWidget(EXPLORER_VIEW_CONTAINER_ID);
+            if (explorer instanceof ViewContainerWidget) {
+                await this.prepareViewContainer('explorer', explorer);
+            }
+        })().catch(console.error));
+        promises.push((async () => {
+            const scm = await this.widgetManager.getWidget(SCM_VIEW_CONTAINER_ID);
+            if (scm instanceof ViewContainerWidget) {
+                await this.prepareViewContainer('explorer', scm);
+            }
+        })().catch(console.error));
+        promises.push((async () => {
+            const debug = await this.widgetManager.getWidget(DebugWidget.ID);
+            if (debug instanceof DebugWidget) {
+                const viewContainer = debug['sessionWidget']['viewContainer'];
+                await this.prepareViewContainer('debug', viewContainer);
+            }
+        })().catch(console.error));
+        await Promise.all(promises);
     }
 
     async removeStaleWidgets(): Promise<void> {
