@@ -355,7 +355,6 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             } else {
                 this.searchTerm = (e.target as HTMLInputElement).value;
                 this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
-                this.update();
             }
         }
     }
