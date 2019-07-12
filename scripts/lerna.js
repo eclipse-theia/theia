@@ -16,7 +16,7 @@
 // @ts-check
 const path = require('path');
 
-const lernaPath = path.resolve(__dirname, '..', 'node_modules', 'lerna', 'bin', 'lerna');
+const lernaPath = path.resolve(__dirname, '..', 'node_modules', '.bin', 'lerna');
 
 if (process.platform === 'win32') {
     console.log('Parallel lerna execution is disabled on Windows. Falling back to sequential execution with the \'--concurrency=1\' flag.');
