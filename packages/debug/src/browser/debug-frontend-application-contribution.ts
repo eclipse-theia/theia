@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { AbstractViewContribution, ApplicationShell, KeybindingRegistry } from '@theia/core/lib/browser';
+import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget } from '@theia/core/lib/browser';
 import { injectable, inject } from 'inversify';
 import { ThemeService } from '@theia/core/lib/browser/theming';
-import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command } from '@theia/core/lib/common';
+import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
 import { DebugViewLocation } from '../common/debug-configuration';
 import { EditorKeybindingContexts } from '@theia/editor/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
@@ -41,6 +41,7 @@ import { DebugConsoleContribution } from './console/debug-console-contribution';
 import { DebugService } from '../common/debug-service';
 import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugPreferences } from './debug-preferences';
+import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -178,6 +179,9 @@ export namespace DebugCommands {
         id: 'debug.breakpoint.removeAll',
         category: DEBUG_CATEGORY,
         label: 'Remove All Breakpoints',
+    };
+    export const TOGGLE_BREAKPOINTS_ENABLED: Command = {
+        id: 'debug.breakpoint.toggleEnabled'
     };
     export const SHOW_HOVER = {
         id: 'editor.debug.action.showDebugHover',
@@ -318,7 +322,7 @@ updateTheme();
 ThemeService.get().onThemeChange(() => updateTheme());
 
 @injectable()
-export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> {
+export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> implements TabBarToolbarContribution {
 
     @inject(DebugService)
     protected readonly debug: DebugService;
@@ -703,7 +707,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugCommands.REMOVE_ALL_BREAKPOINTS, {
             execute: () => this.breakpointManager.cleanAllMarkers(),
-            isEnabled: () => !!this.breakpointManager.getUris().next().value
+            isEnabled: () => !!this.breakpointManager.getUris().next().value,
+            isVisible: widget => !(widget instanceof Widget) || (widget instanceof DebugBreakpointsWidget)
+        });
+        registry.registerCommand(DebugCommands.TOGGLE_BREAKPOINTS_ENABLED, {
+            execute: () => this.breakpointManager.breakpointsEnabled = !this.breakpointManager.breakpointsEnabled,
+            isVisible: arg => arg instanceof DebugBreakpointsWidget
         });
         registry.registerCommand(DebugCommands.SHOW_HOVER, {
             execute: () => this.editors.showHover(),
@@ -869,6 +878,32 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             command: DebugBreakpointWidgetCommands.CLOSE.id,
             keybinding: 'esc',
             context: DebugKeybindingContexts.breakpointWidgetInputStrictFocus
+        });
+    }
+
+    registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
+        const onDidChangeToggleBreakpointsEnabled = new Emitter<void>();
+        const toggleBreakpointsEnabled: Mutable<TabBarToolbarItem> = {
+            id: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
+            command: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
+            icon: 'fa breakpoints-activate',
+            onDidChange: onDidChangeToggleBreakpointsEnabled.event
+        };
+        const updateToggleBreakpointsEnabled = () => {
+            const tooltip = this.breakpointManager.breakpointsEnabled ? 'Deactivate Breakpoints' : 'Activate Breakpoints';
+            if (toggleBreakpointsEnabled.tooltip !== tooltip) {
+                toggleBreakpointsEnabled.tooltip = tooltip;
+                onDidChangeToggleBreakpointsEnabled.fire(undefined);
+            }
+        };
+        updateToggleBreakpointsEnabled();
+        this.breakpointManager.onDidChangeBreakpoints(updateToggleBreakpointsEnabled);
+        toolbar.registerItem(toggleBreakpointsEnabled);
+        toolbar.registerItem({
+            id: DebugCommands.REMOVE_ALL_BREAKPOINTS.id,
+            command: DebugCommands.REMOVE_ALL_BREAKPOINTS.id,
+            icon: 'fa breakpoints-remove-all',
+            priority: 1
         });
     }
 

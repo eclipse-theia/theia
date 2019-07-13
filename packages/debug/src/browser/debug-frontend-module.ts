@@ -49,7 +49,8 @@ import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugCallStackItemTypeKey } from './debug-call-stack-item-type-key';
 import { bindLaunchPreferences } from './preferences/launch-preferences';
 import { DebugPrefixConfiguration } from './debug-prefix-configuration';
-import { CommandContribution } from '@theia/core';
+import { CommandContribution } from '@theia/core/lib/common/command';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
@@ -87,6 +88,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bind(KeybindingContext).to(BreakpointWidgetInputStrictFocusContext).inSingletonScope();
     bindViewContribution(bind, DebugFrontendApplicationContribution);
     bind(FrontendApplicationContribution).toService(DebugFrontendApplicationContribution);
+    bind(TabBarToolbarContribution).toService(DebugFrontendApplicationContribution);
 
     bind(DebugSessionContributionRegistryImpl).toSelf().inSingletonScope();
     bind(DebugSessionContributionRegistry).toService(DebugSessionContributionRegistryImpl);

@@ -33,7 +33,8 @@ import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { PluginScmProvider, PluginScmResourceGroup, PluginScmResource } from '../scm-main';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
-import { PLUGIN_VIEW_TITLE_MENU } from '../view/plugin-view-widget';
+import { PluginViewWidget } from '../view/plugin-view-widget';
+import { ViewContextKeyService } from '../view/view-context-key-service';
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -62,6 +63,9 @@ export class MenusContributionPointHandler {
     @inject(ResourceContextKey)
     protected readonly resourceContextKey: ResourceContextKey;
 
+    @inject(ViewContextKeyService)
+    protected readonly viewContextKeys: ViewContextKeyService;
+
     handle(contributions: PluginContribution): void {
         const allMenus = contributions.menus;
         if (!allMenus) {
@@ -87,8 +91,16 @@ export class MenusContributionPointHandler {
                     });
                 }
             } else if (location === 'view/title') {
-                for (const menu of allMenus[location]) {
-                    this.registerViewTitleAction(PLUGIN_VIEW_TITLE_MENU, menu);
+                for (const action of allMenus[location]) {
+                    this.registerTitleAction(location, { ...action, when: undefined }, {
+                        execute: widget => widget instanceof PluginViewWidget && this.commands.executeCommand(action.command),
+                        isEnabled: widget => widget instanceof PluginViewWidget &&
+                            this.viewContextKeys.with({ view: widget.options.viewId }, () =>
+                                this.commands.isEnabled(action.command) && this.viewContextKeys.match(action.when)),
+                        isVisible: widget => widget instanceof PluginViewWidget &&
+                            this.viewContextKeys.with({ view: widget.options.viewId }, () =>
+                                this.commands.isVisible(action.command) && this.viewContextKeys.match(action.when))
+                    });
                 }
             } else if (location === 'view/item/context') {
                 for (const menu of allMenus[location]) {
@@ -169,13 +181,13 @@ export class MenusContributionPointHandler {
         this.commands.registerCommand(command, handler);
 
         const { group, when } = action;
-        const item: Mutable<TabBarToolbarItem> = { id, command: id, group, when };
+        const item: Mutable<TabBarToolbarItem> = { id, command: id, group: group || '', when };
         this.tabBarToolbar.registerItem(item);
 
         this.onDidRegisterCommand(action.command, pluginCommand => {
             command.category = pluginCommand.category;
             item.tooltip = pluginCommand.label;
-            if (group === undefined || group === 'navigation') {
+            if (group === 'navigation') {
                 command.iconClass = pluginCommand.iconClass;
             }
         });
@@ -259,29 +271,6 @@ export class MenusContributionPointHandler {
             command.category = pluginCommand.category;
             action.label = pluginCommand.label;
             if (inline) {
-                action.icon = pluginCommand.iconClass;
-            }
-        });
-    }
-
-    protected registerViewTitleAction(menuPath: MenuPath, menu: Menu): void {
-        const commandId = this.createSyntheticCommandId(menu, { prefix: '__plugin.view.title.action.' });
-        const command: Command = { id: commandId };
-        this.commands.registerCommand(command, {
-            execute: () => this.commands.executeCommand(menu.command),
-            isEnabled: () => this.commands.isEnabled(menu.command),
-            isVisible: () => this.commands.isVisible(menu.command)
-        });
-
-        const { when } = menu;
-        const [group = 'navigation', order = undefined] = (menu.group || '').split('@');
-        const action: MenuAction = { commandId, order, when };
-        this.menuRegistry.registerMenuAction([...menuPath, group], action);
-
-        this.onDidRegisterCommand(menu.command, pluginCommand => {
-            command.category = pluginCommand.category;
-            action.label = pluginCommand.label;
-            if (group === 'navigation') {
                 action.icon = pluginCommand.iconClass;
             }
         });

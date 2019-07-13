@@ -58,7 +58,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
         super(props, model, contextMenuRenderer);
-        this.id = EXPLORER_VIEW_CONTAINER_ID;
+        this.id = FILE_NAVIGATOR_ID;
         this.addClass(CLASS);
         this.initialize();
     }

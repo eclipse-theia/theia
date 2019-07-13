@@ -79,17 +79,6 @@
     text-overflow: ellipsis;
 }
 
-.theia-view-container .part > .header .element {
-    margin-left: 8px;
-    display: flex;
-    align-items: center;
-    min-width: 16px;
-    min-height: 16px;
-    background-size: 16px;
-    line-height: 16px;
-    background-repeat: no-repeat;
-}
-
 .theia-view-container .part > .body {
     height: var(--theia-view-container-content-height);
     min-width: 50px;
@@ -122,4 +111,16 @@
     font-size: var(--theia-ui-font-size0);
     font-weight: 500;
     padding: 0 var(--theia-ui-padding) 0 var(--theia-ui-padding);
+}
+
+.p-TabBar-toolbar.theia-view-container-part-title {
+    padding: 0px;
+    padding-right: calc(var(--theia-ui-padding)*2/3);
+}
+
+.theia-view-container-part-title .item > div {
+    height: 16px;
+    width: 16px;
+    background-size: 16px;
+    line-height: 16px;
 }
