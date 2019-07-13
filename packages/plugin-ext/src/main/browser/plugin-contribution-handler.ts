@@ -18,7 +18,7 @@ import { injectable, inject } from 'inversify';
 import { ITokenTypeMap, IEmbeddedLanguagesMap, StandardTokenType } from 'vscode-textmate';
 import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService } from '@theia/monaco/lib/browser/textmate';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
-import { ViewRegistry } from './view/view-registry';
+import { PluginViewRegistry } from './view/plugin-view-registry';
 import { PluginContribution, IndentationRules, FoldingRules, ScopeMap } from '../../common';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser/preferences';
@@ -43,8 +43,8 @@ export class PluginContributionHandler {
     @inject(TextmateRegistry)
     private readonly grammarsRegistry: TextmateRegistry;
 
-    @inject(ViewRegistry)
-    private readonly viewRegistry: ViewRegistry;
+    @inject(PluginViewRegistry)
+    private readonly viewRegistry: PluginViewRegistry;
 
     @inject(MenusContributionPointHandler)
     private readonly menusContributionHandler: MenusContributionPointHandler;

@@ -68,6 +68,11 @@ export interface FrontendApplicationContribution {
      * Should return a promise if it runs asynchronously.
      */
     initializeLayout?(app: FrontendApplication): MaybePromise<void>;
+
+    /**
+     * An event is emmited when a layout is initialized, but before the shell is attached.
+     */
+    onDidInitializeLayout?(app: FrontendApplication): MaybePromise<void>;
 }
 
 /**
@@ -125,6 +130,7 @@ export class FrontendApplication {
 
         await this.initializeLayout();
         this.stateService.state = 'initialized_layout';
+        await this.fireOnDidInitializeLayout();
 
         await this.revealShell(host);
         this.registerEventListeners();
@@ -237,6 +243,16 @@ export class FrontendApplication {
             if (contribution.initializeLayout) {
                 await this.measure(contribution.constructor.name + '.initializeLayout',
                     () => contribution.initializeLayout!(this)
+                );
+            }
+        }
+    }
+
+    protected async fireOnDidInitializeLayout(): Promise<void> {
+        for (const contribution of this.contributions.getContributions()) {
+            if (contribution.onDidInitializeLayout) {
+                await this.measure(contribution.constructor.name + '.onDidInitializeLayout',
+                    () => contribution.onDidInitializeLayout!(this)
                 );
             }
         }

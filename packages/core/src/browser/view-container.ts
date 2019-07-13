@@ -145,7 +145,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected readonly toDisposeOnUpdateTitle = new DisposableCollection();
 
-    // should be a property to preserver fn identity
+    // should be a property to preserve fn identity
     protected updateTitle = (): void => {
         this.toDisposeOnUpdateTitle.dispose();
         this.toDispose.push(this.toDisposeOnUpdateTitle);
