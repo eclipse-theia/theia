@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Widget, Title } from '@phosphor/widgets';
-import { TabBarToolbar, TabBarToolbarRegistry } from './tab-bar-toolbar';
+import { TabBarToolbar, TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
 import { Message } from '@phosphor/messaging';
 import { BaseWidget } from '../widgets';
 import { Emitter } from '../../common/event';
@@ -31,7 +31,7 @@ export class SidePanelToolbar extends BaseWidget {
 
     constructor(
         protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
-        protected readonly tabBarToolbarFactory: () => TabBarToolbar,
+        protected readonly tabBarToolbarFactory: TabBarToolbarFactory,
         protected readonly side: 'left' | 'right') {
         super();
         this.toDispose.push(this.onContextMenuEmitter);

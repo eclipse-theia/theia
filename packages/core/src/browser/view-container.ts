@@ -31,7 +31,7 @@ import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextMenuRenderer, Anchor } from './context-menu-renderer';
 import { parseCssMagnitude } from './browser';
 import { WidgetManager } from './widget-manager';
-import { TabBarToolbarItem, TabBarToolbarRegistry } from './shell/tab-bar-toolbar';
+import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
 import { Key } from './keys';
 
 export interface ViewContainerTitleOptions {
@@ -79,7 +79,10 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     readonly options: ViewContainerIdentifier;
 
     @inject(TabBarToolbarRegistry)
-    protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry;
+    protected readonly toolbarRegistry: TabBarToolbarRegistry;
+
+    @inject(TabBarToolbarFactory)
+    protected readonly toolbarFactory: TabBarToolbarFactory;
 
     @postConstruct()
     protected init(): void {
@@ -161,16 +164,25 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             }
             part.collapsed = false;
             part.hideTitle();
-            part.toolbarElements.forEach((item, index) => {
-                const { priority, group, className, tooltip } = item;
-                const iconClass = Array.isArray(className) ? className.join(' ') : className;
-                const id = `__${this.id}:toolbar:${index}`;
-                this.toDisposeOnUpdateTitle.push(this.commandRegistry.registerCommand({ id, iconClass }, {
-                    execute: (_, anchor: Anchor) => item.execute(anchor),
-                    isEnabled: (widget: Widget) => widget.id === this.id,
-                    isVisible: (widget: Widget) => widget.id === this.id
-                }));
-                this.toDisposeOnUpdateTitle.push(this.tabBarToolbarRegistry.registerItem({ id, command: id, priority, group, tooltip }));
+            this.toolbarRegistry.visibleItems(part.wrapped).forEach(partItem => {
+                const id = `__${this.id}_title:${partItem.id}`;
+                if ('command' in partItem) {
+                    const command = this.commandRegistry.getCommand(partItem.id);
+                    this.toDisposeOnUpdateTitle.push(this.commandRegistry.registerCommand({ id }, {
+                        execute: (arg, ...args) => arg instanceof Widget && arg.id === this.id && this.commandRegistry.executeCommand(partItem.command, part.wrapped, ...args),
+                        isEnabled: (arg, ...args) => arg instanceof Widget && arg.id === this.id && this.commandRegistry.isEnabled(partItem.command, part.wrapped, ...args),
+                        isVisible: (arg, ...args) => arg instanceof Widget && arg.id === this.id && this.commandRegistry.isVisible(partItem.command, part.wrapped, ...args),
+                        isToggled: (arg, ...args) => arg instanceof Widget && arg.id === this.id && this.commandRegistry.isToggled(partItem.command, part.wrapped, ...args),
+                    }));
+                    const tooltip = partItem.tooltip || (command && command.label);
+                    const icon = partItem.icon || (command && command.iconClass);
+                    this.toDisposeOnUpdateTitle.push(this.toolbarRegistry.registerItem({ ...partItem, id, command: id, tooltip, icon }));
+                } else {
+                    this.toDisposeOnUpdateTitle.push(this.toolbarRegistry.registerItem({
+                        ...partItem,
+                        isVisible: widget => widget.id === this.id && (!partItem.isVisible || partItem.isVisible(part.wrapped))
+                    }));
+                }
             });
         } else {
             visibleParts.forEach(part => part.showTitle());
@@ -218,7 +230,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
         const description = this.widgetManager.getDescription(widget);
         const partId = description ? JSON.stringify(description) : widget.id;
-        const newPart = new ViewContainerPart(widget, partId, this.id, options);
+        const newPart = new ViewContainerPart(widget, partId, this.id, this.toolbarRegistry, this.toolbarFactory, options);
         this.registerPart(newPart);
         if (newPart.options && newPart.options.order !== undefined) {
             const index = this.containerLayout.widgets.findIndex(part => part.options.order === undefined || part.options.order > newPart.options.order!);
@@ -255,7 +267,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                     this.contextMenuRenderer.render({ menuPath: this.contextMenuPath, anchor: event });
                 }
             }),
-            newPart.onMoreContextMenu(event => this.showMoreContextMenu(event)),
             newPart.onTitleChanged(() => this.refreshMenu(newPart))
         ]);
 
@@ -270,26 +281,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             return true;
         }
         return false;
-    }
-
-    protected showMoreContextMenu(event: ViewContainerPart.MoreContextMenuEvent): void {
-        const menuPath = ['VIEW_CONTAINER_TOOLBAR_MORE_CONTEXT_MENU'];
-        const toDisposeOnHide = new DisposableCollection();
-        event.items.forEach((item, index) => {
-            const commandId = `__command_${this.id}_${index}`;
-            toDisposeOnHide.push(this.commandRegistry.registerCommand({ id: commandId }, {
-                execute: () => item.execute(event.anchor)
-            }));
-            toDisposeOnHide.push(this.menuRegistry.registerMenuAction([...menuPath, item.group!], {
-                label: item.tooltip,
-                commandId
-            }));
-        });
-        this.contextMenuRenderer.render({
-            menuPath,
-            anchor: event.anchor,
-            onHide: () => toDisposeOnHide.dispose()
-        });
     }
 
     getTrackableWidgets(): ViewContainerPart[] {
@@ -550,8 +541,6 @@ export class ViewContainerPart extends BaseWidget {
     protected readonly contextMenuEmitter = new Emitter<MouseEvent>();
     protected readonly onVisibilityChangedEmitter = new Emitter<boolean>();
     readonly onVisibilityChanged = this.onVisibilityChangedEmitter.event;
-    protected readonly onMoreContextMenuEmitter = new Emitter<ViewContainerPart.MoreContextMenuEvent>();
-    readonly onMoreContextMenu = this.onMoreContextMenuEmitter.event;
     protected readonly onTitleChangedEmitter = new Emitter<void>();
     readonly onTitleChanged = this.onTitleChangedEmitter.event;
 
@@ -569,10 +558,12 @@ export class ViewContainerPart extends BaseWidget {
     protected readonly toNoDisposeWrapped: Disposable;
 
     constructor(
-        public readonly wrapped: Widget,
-        public readonly partId: string,
+        readonly wrapped: Widget,
+        readonly partId: string,
         viewContainerId: string,
-        public readonly options: ViewContainer.Factory.WidgetOptions = {}
+        protected readonly toolbarRegistry: TabBarToolbarRegistry,
+        protected readonly toolbarFactory: TabBarToolbarFactory,
+        readonly options: ViewContainer.Factory.WidgetOptions = {}
     ) {
         super();
         wrapped.parent = this;
@@ -663,10 +654,10 @@ export class ViewContainerPart extends BaseWidget {
     }
 
     hideTitle(): void {
-        const display = this.header.style.display;
-        if (display === 'none') {
+        if (this.titleHidden) {
             return;
         }
+        const display = this.header.style.display;
         const height = this.body.style.height;
         this.body.style.height = '100%';
         this.header.style.display = 'none';
@@ -674,6 +665,10 @@ export class ViewContainerPart extends BaseWidget {
             this.header.style.display = display;
             this.body.style.height = height;
         }));
+    }
+
+    get titleHidden(): boolean {
+        return !this.toShowHeader.disposed || this.collapsed;
     }
 
     protected getScrollContainer(): HTMLElement {
@@ -757,7 +752,10 @@ export class ViewContainerPart extends BaseWidget {
         const header = document.createElement('div');
         header.tabIndex = 0;
         header.classList.add('theia-header', 'header');
-        disposable.push(addEventListener(header, 'click', () => {
+        disposable.push(addEventListener(header, 'click', event => {
+            if (this.toolbar && this.toolbar.shouldHandleMouseEvent(event)) {
+                return;
+            }
             this.collapsed = !this.collapsed;
         }));
         disposable.push(addKeyListener(header, Key.ARROW_LEFT, () => this.collapsed = true));
@@ -783,62 +781,35 @@ export class ViewContainerPart extends BaseWidget {
         };
     }
 
+    protected toolbar: TabBarToolbar | undefined;
+
     protected readonly toHideToolbar = new DisposableCollection();
     hideToolbar(): void {
         this.toHideToolbar.dispose();
     }
 
     showToolbar(): void {
-        if (!this.toHideToolbar.disposed || this.collapsed) {
+        if (this.toolbarHidden) {
             return;
         }
-        const more: ViewContainerPart.ToolbarElement[] = [];
-        for (const item of this.toolbarElements.sort(TabBarToolbarItem.PRIORITY_COMPARATOR)) {
-            if (item.group === undefined || item.group === 'navigation') {
-                this.toHideToolbar.push(this.addToolbarItem(item));
-            } else {
-                more.push(item);
-            }
-        }
-        if (more.length) {
-            this.toHideToolbar.push(this.addToolbarItem({
-                className: 'fa fa-ellipsis-h',
-                tooltip: 'More Actions...',
-                execute: event => {
-                    const { x, y } = event;
-                    this.onMoreContextMenuEmitter.fire({ anchor: { x, y }, items: more });
-                }
-            }));
-        }
         this.toDisposeOnDetach.push(this.toHideToolbar);
+
+        const toolbar = this.toolbarFactory();
+        toolbar.addClass('theia-view-container-part-title');
+        this.toHideToolbar.push(toolbar);
+
+        Widget.attach(toolbar, this.header);
+        this.toHideToolbar.push(Disposable.create(() => Widget.detach(toolbar)));
+
+        this.toolbar = toolbar;
+        this.toHideToolbar.push(Disposable.create(() => this.toolbar = undefined));
+
+        const items = this.toolbarRegistry.visibleItems(this.wrapped);
+        toolbar.updateItems(items, this.wrapped);
     }
 
-    get toolbarElements(): ViewContainerPart.ToolbarElement[] {
-        if (ViewContainerPart.ContainedWidget.is(this.wrapped)) {
-            return this.wrapped.toolbarElements.filter(e => e.enabled !== false);
-        }
-        return [];
-    }
-
-    protected addToolbarItem(item: ViewContainerPart.ToolbarElement): Disposable {
-        const toolbarItem = document.createElement('span');
-        toolbarItem.classList.add('element');
-        if (typeof item.className === 'string') {
-            toolbarItem.classList.add(...item.className.split(' '));
-        } else if (Array.isArray(item.className)) {
-            item.className.forEach(a => toolbarItem.classList.add(...a.split(' ')));
-        }
-        toolbarItem.title = item.tooltip;
-        const toDispose = new DisposableCollection();
-        toDispose.push(addEventListener(toolbarItem, 'click', async event => {
-            event.stopPropagation();
-            event.preventDefault();
-            await item.execute(event);
-            this.update();
-        }));
-        this.header.appendChild(toolbarItem);
-        toDispose.push(Disposable.create(() => this.header.removeChild(toolbarItem)));
-        return toDispose;
+    get toolbarHidden(): boolean {
+        return !this.toHideToolbar.disposed || this.titleHidden;
     }
 
     protected onResize(msg: Widget.ResizeMessage): void {
@@ -952,25 +923,6 @@ export namespace ViewContainerPart {
      */
     export const HEADER_HEIGHT = 22;
 
-    export interface ToolbarElement extends TabBarToolbarItem.Comparable {
-        /** default true */
-        readonly enabled?: boolean
-        readonly className?: string | string[]
-        readonly tooltip: string
-        // tslint:disable-next-line:no-any
-        execute(event: Anchor): any
-    }
-
-    export interface ContainedWidget extends Widget {
-        readonly toolbarElements: ToolbarElement[];
-    }
-
-    export namespace ContainedWidget {
-        export function is(widget: Widget | undefined): widget is ViewContainerPart.ContainedWidget {
-            return !!widget && ('toolbarElements' in widget);
-        }
-    }
-
     export interface State {
         widget?: Widget
         partId: string;
@@ -987,11 +939,6 @@ export namespace ViewContainerPart {
             }
         }
         return undefined;
-    }
-
-    export interface MoreContextMenuEvent {
-        anchor: Anchor
-        items: ToolbarElement[]
     }
 }
 

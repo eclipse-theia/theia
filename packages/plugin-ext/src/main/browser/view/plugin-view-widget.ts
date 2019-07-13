@@ -16,14 +16,11 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { Panel, Widget } from '@phosphor/widgets';
-import { MenuModelRegistry, ActionMenuNode, MenuPath, CompositeMenuNode } from '@theia/core/lib/common/menu';
+import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommandRegistry } from '@theia/core/lib/common/command';
-import { ViewContainerPart } from '@theia/core/lib/browser/view-container';
 import { ViewContextKeyService } from './view-context-key-service';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { Message } from '@phosphor/messaging';
-
-export const PLUGIN_VIEW_TITLE_MENU: MenuPath = ['plugin-view-title-menu'];
 
 @injectable()
 export class PluginViewWidgetIdentifier {
@@ -32,7 +29,7 @@ export class PluginViewWidgetIdentifier {
 }
 
 @injectable()
-export class PluginViewWidget extends Panel implements ViewContainerPart.ContainedWidget, StatefulWidget {
+export class PluginViewWidget extends Panel implements StatefulWidget {
 
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
@@ -55,33 +52,6 @@ export class PluginViewWidget extends Panel implements ViewContainerPart.Contain
     @postConstruct()
     protected init(): void {
         this.id = this.options.id;
-    }
-
-    get toolbarElements(): ViewContainerPart.ToolbarElement[] {
-        return this.contextKeys.with({ view: this.options.viewId }, () => {
-            const menu = this.menus.getMenu(PLUGIN_VIEW_TITLE_MENU);
-            const elements: ViewContainerPart.ToolbarElement[] = [];
-            for (const groupItem of menu.children) {
-                if (groupItem instanceof CompositeMenuNode) {
-                    const group = groupItem.id;
-                    for (const item of groupItem.children) {
-                        if (item instanceof ActionMenuNode) {
-                            if (this.commands.isVisible(item.action.commandId) && this.contextKeys.match(item.action.when)) {
-                                const priority = item.action.order !== undefined && Number(item.action.order) || undefined;
-                                elements.push({
-                                    className: item.icon,
-                                    tooltip: item.label,
-                                    group,
-                                    priority,
-                                    execute: () => this.commands.executeCommand(item.action.commandId)
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-            return elements;
-        });
     }
 
     protected onActivateRequest(msg: Message): void {
