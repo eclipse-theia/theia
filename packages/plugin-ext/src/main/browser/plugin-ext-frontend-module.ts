@@ -39,7 +39,7 @@ import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-
 import { UntitledResourceResolver } from './editor/untitled-resource';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginContributionHandler } from './plugin-contribution-handler';
-import { ViewRegistry, PLUGIN_VIEW_CONTAINER_FACTORY_ID, PLUGIN_VIEW_FACTORY_ID } from './view/view-registry';
+import { PluginViewRegistry, PLUGIN_VIEW_CONTAINER_FACTORY_ID, PLUGIN_VIEW_FACTORY_ID, PLUGIN_VIEW_DATA_FACTORY_ID } from './view/plugin-view-registry';
 import { TextContentResourceResolver } from './workspace-main';
 import { MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-paths-protocol';
@@ -59,7 +59,7 @@ import { SelectionProviderCommandContribution } from './selection-provider-comma
 import { ViewColumnService } from './view-column-service';
 import { ViewContextKeyService } from './view/view-context-key-service';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './view/plugin-view-widget';
-import { PLUGIN_TREE_VIEW_FACTORY_ID, TreeViewWidgetIdentifier, VIEW_ITEM_CONTEXT_MENU, PluginTree, TreeViewWidget, PluginTreeModel } from './view/tree-views-main';
+import { TreeViewWidgetIdentifier, VIEW_ITEM_CONTEXT_MENU, PluginTree, TreeViewWidget, PluginTreeModel } from './view/tree-views-main';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -114,7 +114,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ViewContextKeyService).toSelf().inSingletonScope();
 
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: PLUGIN_TREE_VIEW_FACTORY_ID,
+        id: PLUGIN_VIEW_DATA_FACTORY_ID,
         createWidget: (identifier: TreeViewWidgetIdentifier) => {
             const child = createTreeContainer(container, {
                 contextMenuPath: VIEW_ITEM_CONTEXT_MENU,
@@ -147,7 +147,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
             container.get<ViewContainer.Factory>(ViewContainer.Factory)(identifier)
     })).inSingletonScope();
     bind(PluginSharedStyle).toSelf().inSingletonScope();
-    bind(ViewRegistry).toSelf().inSingletonScope();
+    bind(PluginViewRegistry).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(PluginViewRegistry);
     bind(MenusContributionPointHandler).toSelf().inSingletonScope();
 
     bind(KeybindingsContributionPointHandler).toSelf().inSingletonScope();

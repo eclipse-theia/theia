@@ -15,7 +15,11 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager, ViewContainerIdentifier, ViewContainerTitleOptions } from '@theia/core/lib/browser';
+import {
+    ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager,
+    ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
+    StatefulWidget, CommonMenus
+} from '@theia/core/lib/browser';
 import { ViewContainer, View } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
@@ -24,15 +28,19 @@ import { SCM_VIEW_CONTAINER_ID, ScmContribution } from '@theia/scm/lib/browser/s
 import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/debug-frontend-application-contribution';
+import { Disposable } from '@theia/core/lib/common/disposable';
+import { CommandRegistry } from '@theia/core/lib/common/command';
+import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
+export const PLUGIN_VIEW_DATA_FACTORY_ID = 'plugin-view-data';
 
 @injectable()
-export class ViewRegistry {
+export class PluginViewRegistry implements FrontendApplicationContribution {
 
     @inject(ApplicationShell)
-    protected readonly applicationShell: ApplicationShell;
+    protected readonly shell: ApplicationShell;
 
     @inject(PluginSharedStyle)
     protected readonly style: PluginSharedStyle;
@@ -49,9 +57,18 @@ export class ViewRegistry {
     @inject(DebugFrontendApplicationContribution)
     protected readonly debug: DebugFrontendApplicationContribution;
 
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
+
+    @inject(MenuModelRegistry)
+    protected readonly menus: MenuModelRegistry;
+
     private readonly views = new Map<string, [string, View]>();
     private readonly viewContainers = new Map<string, [string, ViewContainerTitleOptions]>();
     private readonly containerViews = new Map<string, string[]>();
+
+    private readonly viewDataProviders = new Map<string, (state?: object) => Promise<Widget>>();
+    private readonly viewDataState = new Map<string, object>();
 
     @postConstruct()
     protected init(): void {
@@ -73,11 +90,11 @@ export class ViewRegistry {
                 this.prepareView(widget);
             }
         });
-        this.viewContainers.set('test', ['left', {
+        this.doRegisterViewContainer('test', 'left', {
             label: 'Test',
             iconClass: 'theia-plugin-test-tab-icon',
             closeable: true
-        }]);
+        });
     }
 
     registerViewContainer(location: string, viewContainer: ViewContainer): void {
@@ -90,11 +107,36 @@ export class ViewRegistry {
                 mask: url('${viewContainer.iconUrl}') no-repeat 50% 50%;
                 -webkit-mask: url('${viewContainer.iconUrl}') no-repeat 50% 50%;
             `);
-        this.viewContainers.set(viewContainer.id, [location, {
+        this.doRegisterViewContainer(viewContainer.id, location, {
             label: viewContainer.title,
             iconClass,
             closeable: true
-        }]);
+        });
+    }
+
+    protected doRegisterViewContainer(id: string, location: string, options: ViewContainerTitleOptions): void {
+        this.viewContainers.set(id, [location, options]);
+        const toggleCommandId = `plugin.view-container.${id}.toggle`;
+        this.commands.registerCommand({
+            id: toggleCommandId,
+            label: 'Toggle ' + options.label + ' View'
+        }, {
+                execute: async () => {
+                    let widget = await this.getPluginViewContainer(id);
+                    if (widget) {
+                        widget.dispose();
+                    } else {
+                        widget = await this.openViewContainer(id);
+                        if (widget) {
+                            this.shell.activateWidget(widget.id);
+                        }
+                    }
+                }
+            });
+        this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
+            commandId: toggleCommandId,
+            label: options.label
+        });
     }
 
     registerView(viewContainerId: string, view: View): void {
@@ -129,41 +171,58 @@ export class ViewRegistry {
         return this.getView(viewId);
     }
 
-    protected prepareView(widget: PluginViewWidget): void {
+    protected async prepareView(widget: PluginViewWidget): Promise<void> {
         const data = this.views.get(widget.options.viewId);
         if (!data) {
             return;
         }
         const [, view] = data;
         widget.title.label = view.name;
+        const currentDataWidget = widget.widgets[0];
+        const viewDataWidget = await this.createViewDataWidget(view.id);
+        if (currentDataWidget !== viewDataWidget) {
+            if (currentDataWidget) {
+                currentDataWidget.dispose();
+            }
+            if (viewDataWidget) {
+                widget.addWidget(viewDataWidget);
+            }
+        }
     }
 
-    async openViewContainer(containerId: string): Promise<void> {
+    async openViewContainer(containerId: string): Promise<ViewContainerWidget | undefined> {
         if (containerId === 'exporer') {
-            await this.explorer.openView();
-            return;
+            const widget = await this.explorer.openView();
+            if (widget.parent instanceof ViewContainerWidget) {
+                return widget.parent;
+            }
+            return undefined;
         }
         if (containerId === 'scm') {
-            await this.scm.openView();
-            return;
+            const widget = await this.scm.openView();
+            if (widget.parent instanceof ViewContainerWidget) {
+                return widget.parent;
+            }
+            return undefined;
         }
         if (containerId === 'debug') {
-            await this.debug.openView();
-            return;
+            const widget = await this.debug.openView();
+            return widget['sessionWidget']['viewContainer'];
         }
         const data = this.viewContainers.get(containerId);
         if (!data) {
-            return;
+            return undefined;
         }
         const [location] = data;
         const identifier = this.toViewContainerIdentifier(containerId);
         const containerWidget = await this.widgetManager.getOrCreateWidget<ViewContainerWidget>(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
         if (!containerWidget.isAttached) {
-            this.applicationShell.addWidget(containerWidget, {
+            this.shell.addWidget(containerWidget, {
                 area: ApplicationShell.isSideArea(location) ? location : 'left',
                 rank: Number.MAX_SAFE_INTEGER
             });
         }
+        return containerWidget;
     }
 
     protected async prepareViewContainer(viewContainerId: string, containerWidget: ViewContainerWidget): Promise<void> {
@@ -183,14 +242,17 @@ export class ViewRegistry {
         }
     }
 
+    protected getPluginViewContainer(viewContainerId: string): Promise<ViewContainerWidget | undefined> {
+        const identifier = this.toViewContainerIdentifier(viewContainerId);
+        return this.widgetManager.getWidget(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
+    }
+
     async initWidgets(): Promise<void> {
         const promises: Promise<void>[] = [];
         for (const id of this.viewContainers.keys()) {
             promises.push((async () => {
-                const identifier = this.toViewContainerIdentifier(id);
-                if (!await this.widgetManager.getWidget(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier)) {
-                    await this.openViewContainer(id);
-                    const viewContainer = await this.widgetManager.getWidget<ViewContainerWidget>(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
+                if (!await this.getPluginViewContainer(id)) {
+                    const viewContainer = await this.openViewContainer(id);
                     if (viewContainer && !viewContainer.getTrackableWidgets().length) {
                         // close empty view containers
                         viewContainer.dispose();
@@ -207,7 +269,7 @@ export class ViewRegistry {
         promises.push((async () => {
             const scm = await this.widgetManager.getWidget(SCM_VIEW_CONTAINER_ID);
             if (scm instanceof ViewContainerWidget) {
-                await this.prepareViewContainer('explorer', scm);
+                await this.prepareViewContainer('scm', scm);
             }
         })().catch(console.error));
         promises.push((async () => {
@@ -253,6 +315,57 @@ export class ViewRegistry {
     }
     protected toViewId(identifier: PluginViewWidgetIdentifier): string {
         return identifier.viewId;
+    }
+
+    /**
+     * retrieve restored layout state from previous user session but close widgets
+     * widgets should be opened only when view data providers are registered
+     */
+    onDidInitializeLayout(): void {
+        const widgets = this.widgetManager.getWidgets(PLUGIN_VIEW_DATA_FACTORY_ID);
+        for (const widget of widgets) {
+            if (StatefulWidget.is(widget)) {
+                this.viewDataState.set(widget.id, widget.storeState());
+            }
+            widget.dispose();
+        }
+    }
+
+    registerViewDataProvider(viewId: string, provider: (state?: object) => Promise<Widget>): Disposable {
+        if (this.viewDataProviders.has(viewId)) {
+            console.error(`data provider for '${viewId}' view is already registrered`);
+            return Disposable.NULL;
+        }
+        (async () => {
+            const view = await this.getView(viewId);
+            if (view) {
+                await this.prepareView(view);
+            }
+        })();
+        this.viewDataProviders.set(viewId, provider);
+        return Disposable.create(() => {
+            this.viewDataProviders.delete(viewId);
+            this.viewDataState.delete(viewId);
+        });
+    }
+
+    protected async createViewDataWidget(viewId: string): Promise<Widget | undefined> {
+        const provider = this.viewDataProviders.get(viewId);
+        if (!provider) {
+            return undefined;
+        }
+        const state = this.viewDataState.get(viewId);
+        const widget = await provider(state);
+        if (StatefulWidget.is(widget)) {
+            const dispose = widget.dispose.bind(widget);
+            widget.dispose = () => {
+                this.viewDataState.set(viewId, widget.storeState());
+                dispose();
+            };
+        } else {
+            this.viewDataState.delete(viewId);
+        }
+        return widget;
     }
 
 }

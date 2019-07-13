@@ -131,7 +131,7 @@ class TreeViewExtImpl<T> extends Disposable {
         private proxy: TreeViewsMain) {
 
         super(() => {
-            this.dispose();
+            proxy.$unregisterTreeDataProvider(treeViewId);
         });
 
         proxy.$registerTreeDataProvider(treeViewId);
@@ -141,9 +141,6 @@ class TreeViewExtImpl<T> extends Disposable {
                 proxy.$refresh(treeViewId);
             });
         }
-    }
-
-    dispose() {
     }
 
     async reveal(element: T, selectionOptions?: { select?: boolean }): Promise<void> {

@@ -418,6 +418,7 @@ export interface DialogsMain {
 
 export interface TreeViewsMain {
     $registerTreeDataProvider(treeViewId: string): void;
+    $unregisterTreeDataProvider(treeViewId: string): void;
     $refresh(treeViewId: string): void;
     $reveal(treeViewId: string, treeItemId: string): Promise<any>;
 }
