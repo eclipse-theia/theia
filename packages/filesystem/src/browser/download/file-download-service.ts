@@ -79,7 +79,10 @@ export class FileDownloadService {
                 const downloadUrl = `${this.endpoint()}/download/?id=${jsonResponse.id}`;
                 if (copyLink) {
                     if (document.documentElement) {
-                        addClipboardListener(document.documentElement, 'copy', e => this.handleCopy(e, downloadUrl));
+                        const toDispose = addClipboardListener(document.documentElement, 'copy', e => {
+                            toDispose.dispose();
+                            this.handleCopy(e, downloadUrl);
+                        });
                         document.execCommand('copy');
                     }
                 } else {
