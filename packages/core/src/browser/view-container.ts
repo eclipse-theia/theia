@@ -57,6 +57,11 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     protected panel: SplitPanel;
     protected attached = new Deferred<void>();
 
+    protected currentPart: ViewContainerPart | undefined;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
     @inject(FrontendApplicationStateService)
     protected readonly applicationStateService: FrontendApplicationStateService;
 
@@ -134,6 +139,23 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             Disposable.create(() => commandRegistry.unregisterCommand(this.globalHideCommandId)),
             Disposable.create(() => menuRegistry.unregisterMenuAction(this.globalHideCommandId))
         ]);
+        this.shell.currentChanged.connect(this.updateCurrentPart);
+        this.toDispose.push(Disposable.create(() => this.shell.currentChanged.disconnect(this.updateCurrentPart)));
+    }
+
+    protected readonly toDisposeOnCurrentPart = new DisposableCollection();
+
+    protected updateCurrentPart = (): void => {
+        const widget = this.shell.currentWidget;
+        if (widget instanceof ViewContainerPart && this.containerLayout.widgets.indexOf(widget) !== -1) {
+            this.currentPart = widget;
+        }
+        if (this.currentPart && !this.currentPart.isDisposed && !this.currentPart.isHidden) {
+            return;
+        }
+        const visibleParts = this.containerLayout.widgets.filter(p => !p.isHidden);
+        const expandedParts = visibleParts.filter(p => !p.collapsed);
+        this.currentPart = expandedParts[0] || visibleParts[0];
     }
 
     protected titleOptions: ViewContainerTitleOptions | undefined;
@@ -145,8 +167,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected readonly toDisposeOnUpdateTitle = new DisposableCollection();
 
-    // should be a property to preserve fn identity
-    protected updateTitle = (): void => {
+    protected updateTitle(): void {
         this.toDisposeOnUpdateTitle.dispose();
         this.toDispose.push(this.toDisposeOnUpdateTitle);
         const title = this.titleOptions;
@@ -157,7 +178,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.title.label = title.label;
         if (visibleParts.length === 1) {
             const part = visibleParts[0];
-            this.toDisposeOnUpdateTitle.push(part.onTitleChanged(this.updateTitle));
+            this.toDisposeOnUpdateTitle.push(part.onTitleChanged(() => this.updateTitle()));
             const partLabel = part.wrapped.title.label;
             if (partLabel) {
                 this.title.label += ': ' + partLabel;
@@ -244,6 +265,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         }
         this.refreshMenu(newPart);
         this.updateTitle();
+        this.updateCurrentPart();
         this.update();
         toRemoveWidget.pushAll([
             newPart,
@@ -255,10 +277,17 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 if (!this.isDisposed) {
                     this.update();
                     this.updateTitle();
+                    this.updateCurrentPart();
                 }
             }),
-            newPart.onVisibilityChanged(this.updateTitle),
-            newPart.onCollapsed(() => this.containerLayout.updateCollapsed(newPart, this.enableAnimation)),
+            newPart.onVisibilityChanged(() => {
+                this.updateTitle();
+                this.updateCurrentPart();
+            }),
+            newPart.onCollapsed(() => {
+                this.containerLayout.updateCollapsed(newPart, this.enableAnimation);
+                this.updateCurrentPart();
+            }),
             newPart.onMoveBefore(toMoveId => this.moveBefore(toMoveId, newPart.id)),
             newPart.onContextMenu(event => {
                 if (event.button === 2) {
@@ -457,11 +486,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        const visibleParts = this.containerLayout.widgets.filter(p => !p.isHidden);
-        const expandedParts = visibleParts.filter(p => !p.collapsed);
-        const part = expandedParts[0] || visibleParts[0];
-        if (part) {
-            part.activate();
+        if (this.currentPart) {
+            this.currentPart.activate();
         } else {
             this.panel.node.focus();
         }
