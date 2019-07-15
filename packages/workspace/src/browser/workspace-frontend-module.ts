@@ -33,7 +33,7 @@ import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceServer, workspacePath } from '../common';
 import { WorkspaceFrontendContribution } from './workspace-frontend-contribution';
 import { WorkspaceService } from './workspace-service';
-import { WorkspaceCommandContribution, FileMenuContribution, EditMenuContribution } from './workspace-commands';
+import { WorkspaceCommandContribution, FileMenuContribution } from './workspace-commands';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 import { WorkspaceStorageService } from './workspace-storage-service';
 import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
@@ -73,7 +73,6 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(WorkspaceCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(WorkspaceCommandContribution);
     bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
-    bind(MenuContribution).to(EditMenuContribution).inSingletonScope();
     bind(WorkspaceDeleteHandler).toSelf().inSingletonScope();
     bind(WorkspaceDuplicateHandler).toSelf().inSingletonScope();
     bind(WorkspaceCompareHandler).toSelf().inSingletonScope();

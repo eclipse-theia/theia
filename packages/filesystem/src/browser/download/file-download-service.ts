@@ -38,37 +38,31 @@ export class FileDownloadService {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    protected handleCopy(event: ClipboardEvent, downloadUrl: string): void {
-        if (downloadUrl && event.clipboardData) {
+    protected handleCopy(event: ClipboardEvent, downloadUrl: string) {
+        if (downloadUrl) {
             event.clipboardData.setData('text/plain', downloadUrl);
             event.preventDefault();
-            this.messageService.info('Copied the download link to the clipboard.');
+            this.messageService.info('Download link copied!');
         }
     }
 
-    async cancelDownload(id: string): Promise<void> {
+    async cancelDownload(id: string) {
         await fetch(`${this.endpoint()}/download/?id=${id}&cancel=true`);
     }
 
-    async download(uris: URI[], options?: FileDownloadService.DownloadOptions): Promise<void> {
+    async download(uris: URI[]): Promise<void> {
         let cancel = false;
         if (uris.length === 0) {
             return;
         }
-        const copyLink = options && options.copyLink ? true : false;
         try {
-            const [progress, result] = await Promise.all([
+            const [progress, response] = await Promise.all([
                 this.messageService.showProgress({
-                    text: `Preparing download${copyLink ? ' link' : ''}...`, options: { cancelable: true }
+                    text: 'Preparing download link...', options: { cancelable: true }
                 }, () => { cancel = true; }),
-                // tslint:disable-next-line:no-any
-                new Promise<{ response: Response, jsonResponse: any }>(async resolve => {
-                    const resp = await fetch(this.request(uris));
-                    const jsonResp = await resp.json();
-                    resolve({ response: resp, jsonResponse: jsonResp });
-                })
+                fetch(this.request(uris))
             ]);
-            const { response, jsonResponse } = result;
+            const jsonResponse = await response.json();
             if (cancel) {
                 this.cancelDownload(jsonResponse.id);
                 return;
@@ -77,14 +71,19 @@ export class FileDownloadService {
             if (status === 200) {
                 progress.cancel();
                 const downloadUrl = `${this.endpoint()}/download/?id=${jsonResponse.id}`;
-                if (copyLink) {
-                    if (document.documentElement) {
-                        addClipboardListener(document.documentElement, 'copy', e => this.handleCopy(e, downloadUrl));
-                        document.execCommand('copy');
+                this.messageService.info(downloadUrl, 'Download', 'Copy Download Link').then(action => {
+                    if (action === 'Download') {
+                        this.forceDownload(jsonResponse.id, decodeURIComponent(jsonResponse.name));
+                        this.messageService.info('Download started!');
+                    } else if (action === 'Copy Download Link') {
+                        if (document.documentElement) {
+                            addClipboardListener(document.documentElement, 'copy', e => this.handleCopy(e, downloadUrl));
+                            document.execCommand('copy');
+                        }
+                    } else {
+                        this.cancelDownload(jsonResponse.id);
                     }
-                } else {
-                    this.forceDownload(jsonResponse.id, decodeURIComponent(jsonResponse.name));
-                }
+                });
             } else {
                 throw new Error(`Received unexpected status code: ${status}. [${statusText}]`);
             }
@@ -163,13 +162,4 @@ export class FileDownloadService {
         return new Endpoint({ path: 'files' }).getRestUrl().toString();
     }
 
-}
-
-export namespace FileDownloadService {
-    export interface DownloadOptions {
-        /**
-         * `true` if the download link has to be copied to the clipboard. This will not trigger the actual download. Defaults to `false`.
-         */
-        readonly copyLink?: boolean;
-    }
 }
