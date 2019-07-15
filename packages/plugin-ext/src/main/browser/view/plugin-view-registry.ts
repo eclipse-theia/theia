@@ -31,6 +31,7 @@ import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/d
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
+import { QuickViewService } from '@theia/core/lib/browser/quick-view-service';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -62,6 +63,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
+
+    @inject(QuickViewService)
+    protected readonly quickView: QuickViewService;
 
     private readonly views = new Map<string, [string, View]>();
     private readonly viewContainers = new Map<string, [string, ViewContainerTitleOptions]>();
@@ -148,6 +152,15 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const containerViews = this.containerViews.get(viewContainerId) || [];
         containerViews.push(view.id);
         this.containerViews.set(viewContainerId, containerViews);
+        this.quickView.registerItem({
+            label: view.name,
+            open: async () => {
+                const widget = await this.openView(view.id);
+                if (widget) {
+                    this.shell.activateWidget(widget.id);
+                }
+            }
+        });
     }
 
     async getView(viewId: string): Promise<PluginViewWidget | undefined> {
@@ -217,7 +230,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const identifier = this.toViewContainerIdentifier(containerId);
         const containerWidget = await this.widgetManager.getOrCreateWidget<ViewContainerWidget>(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
         if (!containerWidget.isAttached) {
-            this.shell.addWidget(containerWidget, {
+            await this.shell.addWidget(containerWidget, {
                 area: ApplicationShell.isSideArea(location) ? location : 'left',
                 rank: Number.MAX_SAFE_INTEGER
             });

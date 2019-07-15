@@ -59,9 +59,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected currentPart: ViewContainerPart | undefined;
 
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
-
     @inject(FrontendApplicationStateService)
     protected readonly applicationStateService: FrontendApplicationStateService;
 
@@ -88,6 +85,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     @inject(TabBarToolbarFactory)
     protected readonly toolbarFactory: TabBarToolbarFactory;
+
+    protected readonly onDidChangeTrackableWidgetsEmitter = new Emitter<Widget[]>();
+    readonly onDidChangeTrackableWidgets = this.onDidChangeTrackableWidgetsEmitter.event;
 
     @postConstruct()
     protected init(): void {
@@ -137,23 +137,21 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 }
             }),
             Disposable.create(() => commandRegistry.unregisterCommand(this.globalHideCommandId)),
-            Disposable.create(() => menuRegistry.unregisterMenuAction(this.globalHideCommandId))
+            Disposable.create(() => menuRegistry.unregisterMenuAction(this.globalHideCommandId)),
+            this.onDidChangeTrackableWidgetsEmitter
         ]);
-        this.shell.currentChanged.connect(this.updateCurrentPart);
-        this.toDispose.push(Disposable.create(() => this.shell.currentChanged.disconnect(this.updateCurrentPart)));
     }
 
     protected readonly toDisposeOnCurrentPart = new DisposableCollection();
 
-    protected updateCurrentPart = (): void => {
-        const widget = this.shell.currentWidget;
-        if (widget instanceof ViewContainerPart && this.containerLayout.widgets.indexOf(widget) !== -1) {
-            this.currentPart = widget;
+    protected updateCurrentPart(part?: ViewContainerPart): void {
+        if (part && this.getParts().indexOf(part) !== -1) {
+            this.currentPart = part;
         }
-        if (this.currentPart && !this.currentPart.isDisposed && !this.currentPart.isHidden) {
+        if (this.currentPart && !this.currentPart.isDisposed) {
             return;
         }
-        const visibleParts = this.containerLayout.widgets.filter(p => !p.isHidden);
+        const visibleParts = this.getParts().filter(p => !p.isHidden);
         const expandedParts = visibleParts.filter(p => !p.collapsed);
         this.currentPart = expandedParts[0] || visibleParts[0];
     }
@@ -174,7 +172,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         if (!title) {
             return;
         }
-        const visibleParts = this.containerLayout.widgets.filter(part => !part.isHidden);
+        const visibleParts = this.getParts().filter(part => !part.isHidden);
         this.title.label = title.label;
         if (visibleParts.length === 1) {
             const part = visibleParts[0];
@@ -254,7 +252,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         const newPart = new ViewContainerPart(widget, partId, this.id, this.toolbarRegistry, this.toolbarFactory, options);
         this.registerPart(newPart);
         if (newPart.options && newPart.options.order !== undefined) {
-            const index = this.containerLayout.widgets.findIndex(part => part.options.order === undefined || part.options.order > newPart.options.order!);
+            const index = this.getParts().findIndex(part => part.options.order === undefined || part.options.order > newPart.options.order!);
             if (index >= 0) {
                 this.containerLayout.insertWidget(index, newPart);
             } else {
@@ -267,6 +265,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.updateTitle();
         this.updateCurrentPart();
         this.update();
+        this.fireDidChangeTrackableWidgets();
         toRemoveWidget.pushAll([
             newPart,
             Disposable.create(() => {
@@ -278,6 +277,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                     this.update();
                     this.updateTitle();
                     this.updateCurrentPart();
+                    this.fireDidChangeTrackableWidgets();
                 }
             }),
             newPart.onVisibilityChanged(() => {
@@ -296,7 +296,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                     this.contextMenuRenderer.render({ menuPath: this.contextMenuPath, anchor: event });
                 }
             }),
-            newPart.onTitleChanged(() => this.refreshMenu(newPart))
+            newPart.onTitleChanged(() => this.refreshMenu(newPart)),
+            newPart.onDidFocus(() => this.updateCurrentPart(newPart))
         ]);
 
         newPart.disposed.connect(() => toRemoveWidget.dispose());
@@ -312,7 +313,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return false;
     }
 
-    getTrackableWidgets(): ViewContainerPart[] {
+    getParts(): ViewContainerPart[] {
         return this.containerLayout.widgets;
     }
 
@@ -331,7 +332,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     protected lastVisibleState: ViewContainer.State | undefined;
 
     storeState(): ViewContainer.State {
-        const parts = this.containerLayout.widgets;
+        const parts = this.getParts();
         const availableSize = this.containerLayout.getAvailableSize();
         const orientation = this.orientation;
         const partStates = parts.map(part => {
@@ -369,14 +370,14 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         // Reorder the parts according to the stored state
         for (let index = 0; index < partStates.length; index++) {
             const partState = partStates[index];
-            const currentIndex = this.containerLayout.widgets.findIndex(p => p.partId === partState.partId);
+            const currentIndex = this.getParts().findIndex(p => p.partId === partState.partId);
             if (currentIndex > index) {
-                this.containerLayout.moveWidget(currentIndex, index, this.containerLayout.widgets[currentIndex]);
+                this.containerLayout.moveWidget(currentIndex, index, this.getParts()[currentIndex]);
             }
         }
 
         // Restore visibility and collapsed state
-        const parts = this.containerLayout.widgets;
+        const parts = this.getParts();
         for (let index = 0; index < parts.length; index++) {
             const part = parts[index];
             const partState = partStates.find(s => part.partId === s.partId);
@@ -437,7 +438,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         const action: MenuAction = {
             commandId: commandId,
             label: part.wrapped.title.label,
-            order: this.containerLayout.widgets.indexOf(part).toString()
+            order: this.getParts().indexOf(part).toString()
         };
         this.menuRegistry.registerMenuAction([...this.contextMenuPath, '1_widgets'], action);
         if (this.titleOptions) {
@@ -473,15 +474,48 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     protected moveBefore(toMovedId: string, moveBeforeThisId: string): void {
-        const parts = this.containerLayout.widgets;
+        const parts = this.getParts();
         const toMoveIndex = parts.findIndex(part => part.id === toMovedId);
         const moveBeforeThisIndex = parts.findIndex(part => part.id === moveBeforeThisId);
         if (toMoveIndex >= 0 && moveBeforeThisIndex >= 0) {
             this.containerLayout.moveWidget(toMoveIndex, moveBeforeThisIndex, parts[toMoveIndex]);
             for (let index = Math.min(toMoveIndex, moveBeforeThisIndex); index < parts.length; index++) {
                 this.refreshMenu(parts[index]);
+                this.activate();
             }
         }
+    }
+
+    getTrackableWidgets(): Widget[] {
+        return this.getParts().map(w => w.wrapped);
+    }
+
+    protected fireDidChangeTrackableWidgets(): void {
+        this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
+    }
+
+    activateWidget(id: string): Widget | undefined {
+        const part = this.revealPart(id);
+        if (!part) {
+            return undefined;
+        }
+        this.updateCurrentPart(part);
+        return part.wrapped;
+    }
+
+    revealWidget(id: string): Widget | undefined {
+        const part = this.revealPart(id);
+        return part && part.wrapped;
+    }
+
+    protected revealPart(id: string): ViewContainerPart | undefined {
+        const part = this.getParts().find(p => p.wrapped.id === id);
+        if (!part) {
+            return undefined;
+        }
+        part.setHidden(false);
+        part.collapsed = false;
+        return part;
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -497,7 +531,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         const orientation = this.orientation;
         this.containerLayout.orientation = orientation;
         if (orientation === 'horizontal') {
-            for (const part of this.containerLayout.widgets) {
+            for (const part of this.getParts()) {
                 part.collapsed = false;
             }
         }
@@ -569,6 +603,8 @@ export class ViewContainerPart extends BaseWidget {
     readonly onVisibilityChanged = this.onVisibilityChangedEmitter.event;
     protected readonly onTitleChangedEmitter = new Emitter<void>();
     readonly onTitleChanged = this.onTitleChangedEmitter.event;
+    protected readonly onDidFocusEmitter = new Emitter<this>();
+    readonly onDidFocus = this.onDidFocusEmitter.event;
 
     protected _collapsed: boolean;
     /**
@@ -613,7 +649,10 @@ export class ViewContainerPart extends BaseWidget {
             this.contextMenuEmitter,
             this.onVisibilityChangedEmitter,
             this.registerDND(),
-            this.registerContextMenu()
+            this.registerContextMenu(),
+            this.onDidFocusEmitter,
+            // focus event does not bubble, capture it
+            addEventListener(this.node, 'focus', () => this.onDidFocusEmitter.fire(this), true)
         ]);
         this.scrollOptions = {
             suppressScrollX: true,
@@ -636,6 +675,9 @@ export class ViewContainerPart extends BaseWidget {
             return;
         }
         this._collapsed = collapsed;
+        if (collapsed && this.wrapped.node.contains(document.activeElement)) {
+            this.header.focus();
+        }
         this.wrapped.setHidden(collapsed);
         const toggleIcon = this.header.querySelector(`span.${EXPANSION_TOGGLE_CLASS}`);
         if (toggleIcon) {

@@ -15,12 +15,11 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { ProblemWidget } from './problem-widget';
+import { ProblemWidget, PROBLEMS_WIDGET_ID } from './problem-widget';
 import { ProblemContribution } from './problem-contribution';
 import { createProblemWidget } from './problem-container';
 import { FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
 import { ProblemManager } from './problem-manager';
-import { PROBLEM_KIND } from '../../common/problem-marker';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser/navigator-decorator-service';
 import { ProblemDecorator } from './problem-decorator';
@@ -35,7 +34,7 @@ export default new ContainerModule(bind => {
         createProblemWidget(ctx.container)
     );
     bind(WidgetFactory).toDynamicValue(context => ({
-        id: PROBLEM_KIND,
+        id: PROBLEMS_WIDGET_ID,
         createWidget: () => context.container.get<ProblemWidget>(ProblemWidget)
     }));
 

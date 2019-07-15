@@ -43,6 +43,8 @@ import { ScmResource, ScmResourceGroup } from './scm-provider';
 @injectable()
 export class ScmWidget extends ReactWidget implements StatefulWidget {
 
+    static ID = 'scm-view';
+
     static RESOURCE_GROUP_CONTEXT_MENU = ['RESOURCE_GROUP_CONTEXT_MENU'];
     static RESOURCE_GROUP_INLINE_MENU = ['RESOURCE_GROUP_INLINE_MENU'];
 
@@ -76,7 +78,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
     constructor() {
         super();
         this.node.tabIndex = 0;
-        this.id = 'theia-scmContainer';
+        this.id = ScmWidget.ID;
         this.addClass('theia-scm');
         this.scrollContainer = ScmWidget.Styles.GROUPS_CONTAINER;
     }

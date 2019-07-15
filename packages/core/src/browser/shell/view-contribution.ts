@@ -24,6 +24,7 @@ import { KeybindingContribution, KeybindingRegistry } from '../keybinding';
 import { WidgetManager } from '../widget-manager';
 import { CommonMenus } from '../common-frontend-contribution';
 import { ApplicationShell } from './application-shell';
+import { QuickViewService } from '../quick-view-service';
 
 export interface OpenViewArguments extends ApplicationShell.WidgetOptions {
     toggle?: boolean
@@ -58,6 +59,9 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
     @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
+    @inject(QuickViewService)
+    protected readonly quickView: QuickViewService;
+
     readonly toggleCommand?: Command;
 
     constructor(
@@ -90,15 +94,15 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
                 ...this.options.defaultWidgetOptions,
                 ...args
             };
-            shell.addWidget(widget, widgetArgs);
+            await shell.addWidget(widget, widgetArgs);
         } else if (args.toggle && area && shell.isExpanded(area) && tabBar.currentTitle === widget.title) {
             // The widget is attached and visible, so close it (toggle)
             widget.close();
         }
         if (widget.isAttached && args.activate) {
-            shell.activateWidget(widget.id);
+            shell.activateWidget(this.options.widgetId);
         } else if (widget.isAttached && args.reveal) {
-            shell.revealWidget(widget.id);
+            shell.revealWidget(this.options.widgetId);
         }
         return this.widget;
     }
@@ -112,6 +116,10 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
                 })
             });
         }
+        this.quickView.registerItem({
+            label: this.options.widgetName,
+            open: () => this.openView({ activate: true })
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
