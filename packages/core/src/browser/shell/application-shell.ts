@@ -670,7 +670,7 @@ export class ApplicationShell extends Widget {
      *
      * Widgets added to the top area are not tracked regarding the _current_ and _active_ states.
      */
-    addWidget(widget: Widget, options: Readonly<ApplicationShell.WidgetOptions> = {}) {
+    async addWidget(widget: Widget, options: Readonly<ApplicationShell.WidgetOptions> = {}): Promise<void> {
         if (!widget.id) {
             console.error('Widgets added to the application shell must have a unique id property.');
             return;
@@ -720,7 +720,7 @@ export class ApplicationShell extends Widget {
                 throw new Error('Unexpected area: ' + options.area);
         }
         if (area !== 'top') {
-            this.track(widget);
+            await this.track(widget);
         }
     }
 
@@ -869,13 +869,25 @@ export class ApplicationShell extends Widget {
         Saveable.apply(widget);
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
             for (const toTrack of await widget.getTrackableWidgets()) {
-                this.tracker.add(toTrack);
-                Saveable.apply(toTrack);
+                await this.track(toTrack);
             }
             if (widget.onDidChangeTrackableWidgets) {
                 widget.onDidChangeTrackableWidgets(widgets => widgets.forEach(w => this.track(w)));
             }
         }
+    }
+
+    protected toTrackedStack(id: string): Widget[] {
+        const tracked = new Map<string, Widget>(this.tracker.widgets.map(w => [w.id, w] as [string, Widget]));
+        let current = tracked.get(id);
+        const stack: Widget[] = [];
+        while (current) {
+            if (tracked.has(current.id)) {
+                stack.push(current);
+            }
+            current = current.parent || undefined;
+        }
+        return stack;
     }
 
     /**
@@ -889,38 +901,45 @@ export class ApplicationShell extends Widget {
      * @returns the activated widget if it was found
      */
     activateWidget(id: string): Widget | undefined {
-        let widget = this.tracker.widgets.find(w => w.id === id);
-        while (widget) {
-            if (widget.id) {
-                const result = this.doActivateWidget(widget.id);
-                if (result) {
-                    return result;
-                }
-            }
-            widget = widget.parent || undefined;
+        const stack = this.toTrackedStack(id);
+        let current = stack.pop();
+        if (current && !this.doActivateWidget(current.id)) {
+            return undefined;
         }
-        return undefined;
+        while (current && stack.length) {
+            const child = stack.pop()!;
+            if (ApplicationShell.TrackableWidgetProvider.is(current) && current.activateWidget) {
+                current = current.activateWidget(child.id);
+            } else {
+                child.activate();
+                current = child;
+            }
+        }
+        return current && this.checkActivation(current);
     }
 
+    /**
+     * Activate top-level area widget.
+     */
     protected doActivateWidget(id: string): Widget | undefined {
         let widget = find(this.mainPanel.widgets(), w => w.id === id);
         if (widget) {
             this.mainPanel.activateWidget(widget);
-            return this.checkActivation(widget);
+            return widget;
         }
         widget = find(this.bottomPanel.widgets(), w => w.id === id);
         if (widget) {
             this.expandBottomPanel();
             this.bottomPanel.activateWidget(widget);
-            return this.checkActivation(widget);
+            return widget;
         }
         widget = this.leftPanelHandler.activate(id);
         if (widget) {
-            return this.checkActivation(widget);
+            return widget;
         }
         widget = this.rightPanelHandler.activate(id);
         if (widget) {
-            return this.checkActivation(widget);
+            return widget;
         }
     }
 
@@ -947,6 +966,26 @@ export class ApplicationShell extends Widget {
      * @returns the revealed widget if it was found
      */
     revealWidget(id: string): Widget | undefined {
+        const stack = this.toTrackedStack(id);
+        let current = stack.pop();
+        if (current && !this.doRevealWidget(current.id)) {
+            return undefined;
+        }
+        while (current && stack.length) {
+            const child = stack.pop()!;
+            if (ApplicationShell.TrackableWidgetProvider.is(current) && current.revealWidget) {
+                current = current.revealWidget(child.id);
+            } else {
+                current = child;
+            }
+        }
+        return current;
+    }
+
+    /**
+     * Reveal top-level area widget.
+     */
+    protected doRevealWidget(id: string): Widget | undefined {
         let widget = find(this.mainPanel.widgets(), w => w.id === id);
         if (!widget) {
             widget = find(this.bottomPanel.widgets(), w => w.id === id);
@@ -965,10 +1004,7 @@ export class ApplicationShell extends Widget {
         if (widget) {
             return widget;
         }
-        widget = this.rightPanelHandler.expand(id);
-        if (widget) {
-            return widget;
-        }
+        return this.rightPanelHandler.expand(id);
     }
 
     /**
@@ -1545,6 +1581,16 @@ export namespace ApplicationShell {
     export interface TrackableWidgetProvider {
         getTrackableWidgets(): MaybePromise<Widget[]>
         readonly onDidChangeTrackableWidgets?: CommonEvent<Widget[]>
+        /**
+         * Make visible and focus a trackable widget for the given id.
+         * If not implemented then `activate` request will be sent to a child widget directly.
+         */
+        activateWidget?(id: string): Widget | undefined;
+        /**
+         * Make visible a trackable widget for the given id.
+         * If not implemented then a widget should be always visible when an owner is visible.
+         */
+        revealWidget?(id: string): Widget | undefined;
     }
 
     export namespace TrackableWidgetProvider {

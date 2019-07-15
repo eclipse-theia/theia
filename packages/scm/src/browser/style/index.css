@@ -42,31 +42,31 @@
     justify-content: space-between;
 }
 
-#theia-scmContainer .changesHeader {
+.theia-scm .changesHeader {
     font-weight: bold;
 }
 
-#theia-scmContainer .changesContainer {
+.theia-scm .changesContainer {
     margin: 5px 0;
 }
 
-#theia-scmContainer #messageInputContainer {
+.theia-scm #messageInputContainer {
     position: relative;
 }
 
-#theia-scmContainer #repositoryListContainer {
+.theia-scm #repositoryListContainer {
     display: flex;
     margin-bottom: 5px;
     flex: 1;
 }
 
-#theia-scmContainer .groups-outer-container {
+.theia-scm .groups-outer-container {
     overflow-y: auto;
     width: 100%;
     flex-grow: 1;
 }
 
-#theia-scmContainer .warn {
+.theia-scm .warn {
     background-color: var(--theia-error-color2) !important;
 }
 

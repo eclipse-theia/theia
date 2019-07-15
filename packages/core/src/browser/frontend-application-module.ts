@@ -75,6 +75,7 @@ import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { MimeService } from './mime-service';
 import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tracker';
 import { ViewContainer, ViewContainerIdentifier } from './view-container';
+import { QuickViewService } from './quick-view-service';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -247,6 +248,9 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         container.bind(ViewContainer).toSelf().inSingletonScope();
         return container.get(ViewContainer);
     });
+
+    bind(QuickViewService).toSelf().inSingletonScope();
+    bind(QuickOpenContribution).toService(QuickViewService);
 });
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {

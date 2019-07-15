@@ -31,7 +31,7 @@ import URI from '@theia/core/lib/common/uri';
 import { ScmQuickOpenService } from './scm-quick-open-service';
 import { ScmRepository } from './scm-repository';
 
-export const SCM_WIDGET_FACTORY_ID = 'scm';
+export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
 
 export namespace SCM_COMMANDS {

@@ -35,6 +35,8 @@ import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
 import { Navigatable } from './navigatable';
+import { QuickViewService } from './quick-view-service';
+import { PrefixQuickOpenService } from './quick-open';
 
 export namespace CommonMenus {
 
@@ -156,6 +158,11 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Maximized'
     };
+    export const OPEN_VIEW: Command = {
+        id: 'core.openView',
+        category: VIEW_CATEGORY,
+        label: 'Open View...'
+    };
 
     export const SAVE: Command = {
         id: 'core.save',
@@ -223,6 +230,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(StorageService)
     protected readonly storageService: StorageService;
+
+    @inject(QuickViewService)
+    protected readonly quickView: QuickViewService;
+
+    @inject(PrefixQuickOpenService)
+    protected readonly quickOpen: PrefixQuickOpenService;
 
     @postConstruct()
     protected init(): void {
@@ -347,6 +360,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.ABOUT_COMMAND.id,
             label: 'About',
             order: '9'
+        });
+
+        registry.registerMenuAction(CommonMenus.VIEW_PRIMARY, {
+            commandId: CommonCommands.OPEN_VIEW.id
         });
     }
 
@@ -485,6 +502,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
         commandRegistry.registerCommand(CommonCommands.ABOUT_COMMAND, {
             execute: () => this.openAbout()
+        });
+
+        commandRegistry.registerCommand(CommonCommands.OPEN_VIEW, {
+            execute: () => this.quickOpen.open(this.quickView.prefix)
         });
     }
 

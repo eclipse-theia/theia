@@ -59,7 +59,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
 
     constructor() {
         super({
-            widgetId: PROBLEM_KIND,
+            widgetId: PROBLEMS_WIDGET_ID,
             widgetName: 'Problems',
             defaultWidgetOptions: {
                 area: 'bottom'
