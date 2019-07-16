@@ -196,6 +196,7 @@ is not optimized for dense, information rich UIs.
   --theia-scrollbar-rail-color: transparent;
   --theia-scrollbar-active-thumb-color: hsla(0,0%,61%,.4);
   --theia-scrollbar-active-rail-color: transparent;
+  --theia-scrollbar-box-shadow-color: #000;
 
   /* Menu */
   --theia-menu-color0: var(--theia-layout-color4);
