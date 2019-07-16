@@ -182,8 +182,8 @@
 }
 
 .theia-scm .scmItem {
-    margin: 1px 0 1px 3px;
-    padding: 2px;
+    margin: 1px 0 1px 0;
+    padding: 2px 5px 2px 5px;
     font-size: var(--theia-ui-font-size1);
     display: flex;
     justify-content: space-between;
@@ -205,7 +205,10 @@
 }
 
 .theia-scm .scmItem .status {
-    padding: 2px 4px;
+    width: 16px;
+    text-align: center;
+    padding-top: 2px;
+    padding-bottom: 2px;
     font-size: var(--theia-ui-font-size0);
 }
 .scm-change-count {
