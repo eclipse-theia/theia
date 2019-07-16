@@ -317,6 +317,10 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return this.containerLayout.widgets;
     }
 
+    getPartFor(widget: Widget): ViewContainerPart | undefined {
+        return this.getParts().find(p => p.wrapped.id === widget.id);
+    }
+
     get containerLayout(): ViewContainerLayout {
         return this.panel.layout as ViewContainerLayout;
     }
@@ -648,6 +652,7 @@ export class ViewContainerPart extends BaseWidget {
             this.moveBeforeEmitter,
             this.contextMenuEmitter,
             this.onVisibilityChangedEmitter,
+            this.onTitleChangedEmitter,
             this.registerDND(),
             this.registerContextMenu(),
             this.onDidFocusEmitter,

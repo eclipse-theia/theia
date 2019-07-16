@@ -28,10 +28,11 @@ import { SCM_VIEW_CONTAINER_ID, ScmContribution } from '@theia/scm/lib/browser/s
 import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/debug-frontend-application-contribution';
-import { Disposable } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { QuickViewService } from '@theia/core/lib/browser/quick-view-service';
+import { Emitter } from '@theia/core/lib/common/event';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -66,6 +67,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     @inject(QuickViewService)
     protected readonly quickView: QuickViewService;
+
+    protected readonly onDidExpandViewEmitter = new Emitter<string>();
+    readonly onDidExpandView = this.onDidExpandViewEmitter.event;
 
     private readonly views = new Map<string, [string, View]>();
     private readonly viewContainers = new Map<string, [string, ViewContainerTitleOptions]>();
@@ -249,8 +253,22 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             const widget = await this.widgetManager.getOrCreateWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, identifier);
             if (containerWidget.getTrackableWidgets().indexOf(widget) === -1) {
                 containerWidget.addWidget(widget, {
-                    initiallyCollapsed: !containerWidget.getTrackableWidgets().length
+                    initiallyCollapsed: !!containerWidget.getParts().length
                 });
+            }
+            const part = containerWidget.getPartFor(widget);
+            if (part) {
+                const tryFireOnDidExpandView = () => {
+                    if (!part.collapsed && !part.isHidden) {
+                        toFire.dispose();
+                    }
+                };
+                const toFire = new DisposableCollection(
+                    Disposable.create(() => this.onDidExpandViewEmitter.fire(viewId)),
+                    part.onCollapsed(tryFireOnDidExpandView),
+                    part.onVisibilityChanged(tryFireOnDidExpandView)
+                );
+                tryFireOnDidExpandView();
             }
         }
     }
@@ -264,12 +282,15 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const promises: Promise<void>[] = [];
         for (const id of this.viewContainers.keys()) {
             promises.push((async () => {
-                if (!await this.getPluginViewContainer(id)) {
-                    const viewContainer = await this.openViewContainer(id);
+                let viewContainer = await this.getPluginViewContainer(id);
+                if (!viewContainer) {
+                    viewContainer = await this.openViewContainer(id);
                     if (viewContainer && !viewContainer.getTrackableWidgets().length) {
                         // close empty view containers
                         viewContainer.dispose();
                     }
+                } else {
+                    await this.prepareViewContainer(this.toViewContainerId(viewContainer.options), viewContainer);
                 }
             })().catch(console.error));
         }
