@@ -55,6 +55,9 @@
 
 #files > div > div > div > div:first-child {
     background-color: var(--theia-layout-color4);
+}
+
+#files > div > div > div > div:first-child .theia-TreeNodeSegment.theia-TreeNodeSegmentGrow {
     text-transform: uppercase;
     font-size: 80%;
     font-weight: 500;
