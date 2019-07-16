@@ -29,3 +29,20 @@
     background: none !important;
     min-height: 20px;
 }
+
+.webview-icon::before {
+    background-size: 13px;
+    background-repeat: no-repeat;
+    vertical-align: middle;
+    display: inline-block;
+    text-align: center;
+    height: 15px;
+    width: 15px;
+    content: "";
+}
+
+.p-TabBar.theia-app-sides .webview-icon::before {
+    width: var(--theia-private-sidebar-icon-size);
+    height: var(--theia-private-sidebar-icon-size);
+    background-size: contain;
+}

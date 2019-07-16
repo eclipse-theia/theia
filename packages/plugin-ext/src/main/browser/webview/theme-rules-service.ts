@@ -120,15 +120,7 @@ export class ThemeRulesService {
         if (!this.styleElement) {
             return;
         }
-        const cssRules: string[] = [`.webview-icon::before {
-            background-repeat: no-repeat;
-            vertical-align: middle;
-            display: inline-block;
-            text-align: center;
-            height: 11px;
-            width: 11px;
-            content: "";
-        }`];
+        const cssRules: string[] = [];
         this.icons.forEach((value, key) => {
             let path: string;
             if (typeof value === 'string') {
