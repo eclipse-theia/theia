@@ -55,7 +55,7 @@ export class ViewRegistry {
         }
         const iconClass = 'plugin-view-container-icon-' + viewsContainer.id;
         this.style.insertRule('.' + iconClass, () => `
-            mask: : url('${viewsContainer.iconUrl}') no-repeat 50% 50%;
+            mask: url('${viewsContainer.iconUrl}') no-repeat 50% 50%;
             -webkit-mask: url('${viewsContainer.iconUrl}') no-repeat 50% 50%;
         `);
 
