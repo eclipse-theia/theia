@@ -28,10 +28,6 @@
     padding-right: 4px;
 }
 
-.theia-CallHierarchyTree .noCallers {
-    margin: 5px 19px;
-}
-
 .theia-CallHierarchyTree .definitionNode {
     display: flex;
 }

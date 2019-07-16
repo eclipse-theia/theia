@@ -82,7 +82,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
 
     protected renderTree(model: TreeModel): React.ReactNode {
         return super.renderTree(model)
-            || <div className='noCallers'>No callers have been detected.</div>;
+            || <div className='theia-widget-noInfo'>No callers have been detected.</div>;
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {

@@ -126,7 +126,7 @@ export class OutlineViewWidget extends TreeWidget {
 
     protected renderTree(model: TreeModel): React.ReactNode {
         if (CompositeTreeNode.is(this.model.root) && !this.model.root.children.length) {
-            return <div className='no-outline'>No outline information available.</div>;
+            return <div className='theia-widget-noInfo no-outline'>No outline information available.</div>;
         }
         return super.renderTree(model);
     }
