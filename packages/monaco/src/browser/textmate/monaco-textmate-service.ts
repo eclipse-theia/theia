@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { Registry, IOnigLib, IRawGrammar, parseRawGrammar } from 'vscode-textmate';
-import { ILogger, ContributionProvider, Emitter } from '@theia/core';
+import { ILogger, ContributionProvider, Emitter, DisposableCollection, Disposable } from '@theia/core';
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './textmate-contribution';
@@ -98,26 +98,31 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             }
         });
 
-        this.themeService.onThemeChange(themeChange => {
-            if (themeChange.oldTheme && themeChange.oldTheme.editorTheme) {
-                document.body.classList.remove(themeChange.oldTheme.editorTheme);
-            }
-            const currentEditorTheme = this.currentEditorTheme;
-            document.body.classList.add(currentEditorTheme);
-
-            // first update registry to run tokenization with the proper theme
-            const theme = this.monacoThemeRegistry.getTheme(currentEditorTheme);
-            if (theme) {
-                this.grammarRegistry.setTheme(theme);
-            }
-
-            // then trigger tokenization by setting monaco theme
-            monaco.editor.setTheme(currentEditorTheme);
-        });
+        this.updateTheme();
+        this.themeService.onThemeChange(() => this.updateTheme());
 
         for (const { id } of monaco.languages.getLanguages()) {
             monaco.languages.onLanguage(id, () => this.activateLanguage(id));
         }
+    }
+
+    protected readonly toDisposeOnUpdateTheme = new DisposableCollection();
+
+    protected updateTheme(): void {
+        this.toDisposeOnUpdateTheme.dispose();
+
+        const currentEditorTheme = this.currentEditorTheme;
+        document.body.classList.add(currentEditorTheme);
+        this.toDisposeOnUpdateTheme.push(Disposable.create(() => document.body.classList.remove(currentEditorTheme)));
+
+        // first update registry to run tokenization with the proper theme
+        const theme = this.monacoThemeRegistry.getTheme(currentEditorTheme);
+        if (theme) {
+            this.grammarRegistry.setTheme(theme);
+        }
+
+        // then trigger tokenization by setting monaco theme
+        monaco.editor.setTheme(currentEditorTheme);
     }
 
     protected get currentEditorTheme(): string {
