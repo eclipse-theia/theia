@@ -19,10 +19,6 @@
     color: var(--theia-ui-font-color1);
 }
 
-.theia-marker-container .noMarkers {
-    padding: 5px;
-}
-
 .theia-side-panel .theia-marker-container .noMarkers {
     padding-left: 19px;
 }

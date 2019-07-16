@@ -96,7 +96,7 @@ export class ProblemWidget extends TreeWidget {
         if (MarkerRootNode.is(model.root) && model.root.children.length > 0) {
             return super.renderTree(model);
         }
-        return <div className='noMarkers'>No problems have been detected in the workspace so far.</div>;
+        return <div className='theia-widget-noInfo noMarkers'>No problems have been detected in the workspace so far.</div>;
     }
 
     protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
