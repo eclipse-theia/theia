@@ -66,7 +66,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onLanguage',
         'onCommand',
         'onDebug', 'onDebugInitialConfigurations', 'onDebugResolve', 'onDebugAdapterProtocolTracker',
-        'workspaceContains'
+        'workspaceContains',
+        'onView'
     ]);
 
     private readonly registry = new Map<string, Plugin>();

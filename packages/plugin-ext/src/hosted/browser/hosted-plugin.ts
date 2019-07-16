@@ -48,6 +48,7 @@ import { WaitUntilEvent } from '@theia/core/lib/common/event';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { isCancelled } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -108,6 +109,9 @@ export class HostedPluginSupport {
     @inject(FrontendApplicationStateService)
     protected readonly appState: FrontendApplicationStateService;
 
+    @inject(PluginViewRegistry)
+    protected readonly viewRegistry: PluginViewRegistry;
+
     private theiaReadyPromise: Promise<any>;
 
     protected readonly managers: PluginManagerExt[] = [];
@@ -130,6 +134,7 @@ export class HostedPluginSupport {
         this.debugSessionManager.onWillStartDebugSession(event => this.ensureDebugActivation(event));
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));
         this.debugConfigurationManager.onWillProvideDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugInitialConfigurations'));
+        this.viewRegistry.onDidExpandView(id => this.activateByView(id));
     }
 
     checkAndLoadPlugin(container: interfaces.Container): void {
@@ -178,9 +183,9 @@ export class HostedPluginSupport {
                 this.contributionHandler.handleContributions(plugin.model.contributes);
             }
         }
-        await this.contributionHandler['viewRegistry'].initWidgets();
+        await this.viewRegistry.initWidgets();
         // remove restored plugin widgets which were not registered by contributions
-        this.contributionHandler['viewRegistry'].removeStaleWidgets();
+        this.viewRegistry.removeStaleWidgets();
         await this.theiaReadyPromise;
         for (const [host, plugins] of hostToPlugins) {
             const pluginId = getPluginId(plugins[0].model);
@@ -249,6 +254,10 @@ export class HostedPluginSupport {
             activation.push(manager.$activateByEvent(activationEvent));
         }
         await Promise.all(activation);
+    }
+
+    async activateByView(viewId: string): Promise<void> {
+        await this.activateByEvent(`onView:${viewId}`);
     }
 
     async activateByLanguage(languageId: string): Promise<void> {
