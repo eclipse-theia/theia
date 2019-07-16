@@ -36,6 +36,9 @@
  * we need to disable the background image when using file-icons
  */
 .monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.file-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
     background-image: none;
     margin-right: 0px;
 }
