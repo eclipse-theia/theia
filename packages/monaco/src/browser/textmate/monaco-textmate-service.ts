@@ -74,7 +74,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
         this.grammarRegistry = new Registry({
             getOnigLib: () => this.onigasmPromise,
-            theme: this.monacoThemeRegistry.getTheme(MonacoThemeRegistry.DARK_DEFAULT_THEME),
+            theme: this.monacoThemeRegistry.getTheme(this.currentEditorTheme),
             loadGrammar: async (scopeName: string) => {
                 const provider = this.textmateRegistry.getProvider(scopeName);
                 if (provider) {
@@ -99,15 +99,29 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         });
 
         this.themeService.onThemeChange(themeChange => {
-            const theme = this.monacoThemeRegistry.getTheme(themeChange.newTheme.editorTheme || MonacoThemeRegistry.DARK_DEFAULT_THEME);
+            if (themeChange.oldTheme && themeChange.oldTheme.editorTheme) {
+                document.body.classList.remove(themeChange.oldTheme.editorTheme);
+            }
+            const currentEditorTheme = this.currentEditorTheme;
+            document.body.classList.add(currentEditorTheme);
+
+            // first update registry to run tokenization with the proper theme
+            const theme = this.monacoThemeRegistry.getTheme(currentEditorTheme);
             if (theme) {
                 this.grammarRegistry.setTheme(theme);
             }
+
+            // then trigger tokenization by setting monaco theme
+            monaco.editor.setTheme(currentEditorTheme);
         });
 
         for (const { id } of monaco.languages.getLanguages()) {
             monaco.languages.onLanguage(id, () => this.activateLanguage(id));
         }
+    }
+
+    protected get currentEditorTheme(): string {
+        return this.themeService.getCurrentTheme().editorTheme || MonacoThemeRegistry.DARK_DEFAULT_THEME;
     }
 
     async activateLanguage(languageId: string) {
