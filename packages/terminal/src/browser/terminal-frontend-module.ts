@@ -49,12 +49,33 @@ export default new ContainerModule(bind => {
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: TERMINAL_WIDGET_FACTORY_ID,
         createWidget: (options: TerminalWidgetOptions) => {
+            let counter = terminalNum;
+            let domId = options.id || 'terminal-' + counter;
+            let termWidget: TerminalWidget | undefined;
+            if (options.id) {
+                termWidget = ctx.container.get(TerminalFrontendContribution).getById(options.id);
+                if (termWidget !== undefined) {
+                    while (termWidget !== undefined) {
+                        counter = terminalNum++;
+                        domId = 'terminal-' + counter;
+                        termWidget = ctx.container.get(TerminalFrontendContribution).getById(domId);
+                    }
+                }
+            } else {
+                counter = terminalNum++;
+                domId = 'terminal-' + counter;
+                termWidget = ctx.container.get(TerminalFrontendContribution).getById(domId);
+                while (termWidget !== undefined) {
+                    counter = terminalNum++;
+                    domId = 'terminal-' + counter;
+                    termWidget = ctx.container.get(TerminalFrontendContribution).getById(domId);
+                }
+            }
+
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
-            const counter = terminalNum++;
-            const domId = options.id || 'terminal-' + counter;
             const widgetOptions: TerminalWidgetOptions = {
-                title: 'Terminal ' + counter,
+                title: domId,
                 useServerTitle: true,
                 destroyTermOnClose: true,
                 ...options
