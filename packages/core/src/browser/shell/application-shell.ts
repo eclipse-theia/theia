@@ -45,7 +45,7 @@ const MAIN_AREA_CLASS = 'theia-app-main';
 /** The class name added to the bottom area panel. */
 const BOTTOM_AREA_CLASS = 'theia-app-bottom';
 
-const LAYOUT_DATA_VERSION = '2.0';
+const LAYOUT_DATA_VERSION = '3.0';
 
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
