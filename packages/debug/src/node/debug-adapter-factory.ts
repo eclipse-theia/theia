@@ -39,6 +39,7 @@ import {
     DebugAdapterSpawnExecutable
 } from '../common/debug-model';
 import { DebugAdapterSessionImpl } from './debug-adapter-session';
+import { environment } from '@theia/application-package';
 
 /**
  * [DebugAdapterFactory](#DebugAdapterFactory) implementation based on
@@ -68,7 +69,7 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
             !!forkOptions && !!forkOptions.modulePath;
 
         if (!isForkOptions(executable)) {
-            if ((executable as DebugAdapterSpawnExecutable).command === 'node') {
+            if ((executable as DebugAdapterSpawnExecutable).command === 'node' && !environment.electron.is()) {
                 (executable as DebugAdapterSpawnExecutable).command = process.execPath;
             }
         }
