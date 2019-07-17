@@ -16,10 +16,11 @@
 
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
+import { isChrome } from '@theia/core/lib/browser/browser';
 import { environment } from '@theia/application-package/lib/environment';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
-import { UriAwareCommandHandler, UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
+import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileDownloadService } from './file-download-service';
 
 @injectable()
@@ -32,20 +33,26 @@ export class FileDownloadCommandContribution implements CommandContribution {
     protected readonly selectionService: SelectionService;
 
     registerCommands(registry: CommandRegistry): void {
-        const handler = new UriAwareCommandHandler<URI[]>(this.selectionService, this.downloadHandler(), { multi: true });
-        registry.registerCommand(FileDownloadCommands.DOWNLOAD, handler);
+        registry.registerCommand(
+            FileDownloadCommands.DOWNLOAD,
+            new UriAwareCommandHandler<URI[]>(this.selectionService, {
+                execute: uris => this.executeDownload(uris),
+                isEnabled: uris => this.isDownloadEnabled(uris),
+                isVisible: uris => this.isDownloadVisible(uris),
+            }, { multi: true })
+        );
+        registry.registerCommand(
+            FileDownloadCommands.COPY_DOWNLOAD_LINK,
+            new UriAwareCommandHandler<URI[]>(this.selectionService, {
+                execute: uris => this.executeDownload(uris, { copyLink: true }),
+                isEnabled: uris => isChrome && this.isDownloadEnabled(uris),
+                isVisible: uris => isChrome && this.isDownloadVisible(uris),
+            }, { multi: true })
+        );
     }
 
-    protected downloadHandler(): UriCommandHandler<URI[]> {
-        return {
-            execute: uris => this.executeDownload(uris),
-            isEnabled: uris => this.isDownloadEnabled(uris),
-            isVisible: uris => this.isDownloadVisible(uris),
-        };
-    }
-
-    protected async executeDownload(uris: URI[]): Promise<void> {
-        this.downloadService.download(uris);
+    protected async executeDownload(uris: URI[], options?: { copyLink?: boolean }): Promise<void> {
+        this.downloadService.download(uris, options);
     }
 
     protected isDownloadEnabled(uris: URI[]): boolean {
@@ -64,6 +71,12 @@ export namespace FileDownloadCommands {
         id: 'file.download',
         category: 'File',
         label: 'Download'
+    };
+
+    export const COPY_DOWNLOAD_LINK: Command = {
+        id: 'file.copyDownloadLink',
+        category: 'File',
+        label: 'Copy Download Link'
     };
 
 }

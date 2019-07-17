@@ -67,6 +67,11 @@ cache:
 # end_cache_directories
   - packages/java-debug/download
   - packages/debug-nodejs/download
+before_cache:
+  # Runs before the cache is updated, after successful CI
+  - rm -f node_modules/@theia/electron/post-install.log
+  - rm -rf node_modules/@theia/electron/download
+  - rm -rf node_modules/electron
 branches:
   only:
   - master
@@ -97,8 +102,9 @@ before_install:
   - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.13.0
   - export PATH=$HOME/.yarn/bin:$PATH
 install:
-  - THEIA_SKIP_NPM_PREPARE=1 yarn install
-  - npx electron-h264-test
+  - THEIA_SKIP_NPM_PREPARE=1 yarn install --skip-integrity-check
+  - npx electron-replace-ffmpeg # re-download library (in case it was cached)
+  - npx electron-codecs-test # test library
   - yarn prepare
   - scripts/check_git_status.sh
 script:
@@ -131,9 +137,13 @@ jobs:
     script: skip
     install: skip
     before_deploy:
-      - printf "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}\n" >> ~/.npmrc
-      - yarn
-      - yarn run docs
+      - |
+        if ! [ "$BEFORE_DEPLOY_RUN" ]; then
+          export BEFORE_DEPLOY_RUN=1
+          printf "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}\n" >> ~/.npmrc
+          THEIA_SKIP_NPM_PREPARE=1 yarn install --skip-integrity-check # fix cache we meddled-with
+          yarn run docs
+        fi
     deploy:
       - provider: script
         script: yarn run publish:next
@@ -141,7 +151,7 @@ jobs:
           branch: master
         skip_cleanup: true
       - provider: pages
-        skip-cleanup: true
+        skip_cleanup: true
         github-token: $GITHUB_TOKEN
         local-dir: gh-pages
         on:

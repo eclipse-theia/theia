@@ -30,7 +30,7 @@ import { NavigatableWidgetOptions } from '@theia/core/lib/browser/navigatable';
 import { MiniBrowserOpenHandler } from './mini-browser-open-handler';
 import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service';
 import { MiniBrowser, MiniBrowserOptions } from './mini-browser';
-import { MiniBrowserProps, MiniBrowserContentFactory, MiniBrowserMouseClickTracker, MiniBrowserContent } from './mini-browser-content';
+import { MiniBrowserProps, MiniBrowserContentFactory, MiniBrowserContent } from './mini-browser-content';
 import {
     LocationMapperService,
     FileLocationMapper,
@@ -41,8 +41,6 @@ import {
 } from './location-mapper-service';
 
 export default new ContainerModule(bind => {
-    bind(MiniBrowserMouseClickTracker).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(MiniBrowserMouseClickTracker);
 
     bind(MiniBrowserContent).toSelf();
     bind(MiniBrowserContentFactory).toFactory(context => (props: MiniBrowserProps) => {

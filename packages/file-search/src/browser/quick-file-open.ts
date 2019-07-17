@@ -192,7 +192,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 const first = sortedResults[0];
                 sortedResults.shift();
                 if (first) {
-                    const item = await this.toItem(first.getUri()!, { groupLabel: 'file results', showBorder: true });
+                    const item = await this.toItem(first.getUri()!, { groupLabel: 'file results', showBorder: !!recentlyUsedItems.length });
                     if (token.isCancellationRequested) {
                         return;
                     }
@@ -319,7 +319,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
     private async toItem(uriOrString: URI | string, group?: QuickOpenGroupItemOptions) {
         const uri = uriOrString instanceof URI ? uriOrString : new URI(uriOrString);
         let description = this.labelProvider.getLongName(uri.parent);
-        if (this.workspaceService.workspace && !this.workspaceService.workspace.isDirectory) {
+        if (this.workspaceService.isMultiRootWorkspaceOpened) {
             const rootUri = this.workspaceService.getWorkspaceRootUri(uri);
             if (rootUri) {
                 description = `${rootUri.displayName} • ${description}`;

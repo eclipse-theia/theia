@@ -39,7 +39,10 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     private readonly hostedPlugin: HostedPluginSupport;
 
     dispose(): void {
-        this.hostedInstanceManager.terminate();
+        // Terminate the hosted instance if it is currently running.
+        if (this.hostedInstanceManager.isRunning()) {
+            this.hostedInstanceManager.terminate();
+        }
     }
     setClient(client: HostedPluginClient): void {
 

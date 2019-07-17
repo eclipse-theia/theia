@@ -9,11 +9,13 @@ Each task configuration looks like this:
 {
     "label": "Test task - list workspace files recursively",
     "type": "shell",
-    "cwd": "${workspaceFolder}",
     "command": "ls",
     "args": [
         "-alR"
     ],
+    "options": {
+        "cwd": "${workspaceFolder}"
+    },
     "windows": {
         "command": "cmd.exe",
         "args": [
@@ -29,13 +31,22 @@ Each task configuration looks like this:
 
 *type*: determines what type of process will be used to execute the task. Can be "process" or "shell". "Shell" processes' output can be shown in Theia's frontend, in a terminal widget. If type set as "process" then task will be run without their output being shown.
 
-*cwd*: the current working directory, in which the task's command will execute. This is the equivalent of doing a "cd" to that directory, on the command-line, before running the command. This can contain the variable *${workspaceFolder}*, which will be replaced at execution time by the path of the current workspace. If left undefined, will by default be set to workspace root.
-
 *command*: the actual command or script to execute. The command can have no path (e.g. "ls") if it can be found in the system path. Else it can have an absolute path, in which case there is no confusion. Or it can have a relative path, in which case it will be interpreted to be relative to cwd. e.g. "./task" would be interpreted to mean a script or binary called "task", right under the workspace root directory.
 
 *args*: a list of strings, each one being one argument to pass to the command.
 
-*windows*: by default, *command* and *args* above are used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on both Linux/MacOS and Windows, it can be better to have two separate process options. If *windows* is defined, it will be used instead of *command* and *args*, when a task is executed on a Windows backend.
+*options*: the command options used when the command is executed. This is the place to provide the
+- *cwd*: the current working directory, in which the task's command will execute. This is the equivalent of doing a "cd" to that directory, on the command-line, before running the command. This can contain the variable *${workspaceFolder}*, which will be replaced at execution time by the path of the current workspace. If left undefined, will by default be set to workspace root.
+- *env*: the environment of the executed program or shell. If omitted the parent process' environment is used.
+- *shell*: configuration of the shell when task type is `shell`, where users can specify the shell to use with *shell*, and the arguments to be passed to the shell executable to run in command mode with *args*.
+
+By default, *command* and *args* above are used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on Linux, MacOS, and Windows, it is better to have separated command, command arguments, and options.
+
+*windows*: if *windows* is defined, its command, command arguments, and options (i.e., *windows.command*, *windows.args*, and *windows.options*) will take precedence over the *command*, *args*, and *options*, when the task is executed on a Windows backend.
+
+*osx*: if *osx* is defined, its command, command arguments, and options (i.e., *osx.command*, *osx.args*, and *osx.options*) will take precedence over the *command*, *args*, and *options*, when the task is executed on a MacOS backend.
+
+*linux*: if *linux* is defined, its command, command arguments, and options (i.e., *linux.command*, *linux.args*, and *linux.options*) will take precedence over the *command*, *args*, and *options*, when the task is executed on a Linux backend.
 
 Here is a sample tasks.json that can be used to test tasks. Just add this content under the theia source directory, in directory `.theia`:
 ``` json
@@ -45,28 +56,39 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
         {
             "label": "[Task] short running test task (~3s)",
             "type": "shell",
-            "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/",
             "command": "./task",
             "args": [
-                "1",
-                "2",
-                "3"
+                "default 1",
+                "default 2",
+                "default 3"
             ],
+            "options": {
+                "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/"
+            },
             "windows": {
                 "command": "cmd.exe",
                 "args": [
                     "/c",
                     "task.bat",
-                    "abc"
+                    "windows abc"
+                ]
+            },
+            "linux": {
+                "args": [
+                    "linux 1",
+                    "linux 2",
+                    "linux 3"
                 ]
             }
         },
         {
             "label": "[Task] long running test task (~300s)",
             "type": "shell",
-            "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/",
             "command": "./task-long-running",
             "args": [],
+            "options": {
+                "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/"
+            },
             "windows": {
                 "command": "cmd.exe",
                 "args": [
@@ -78,11 +100,13 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
         {
             "label": "[Task] recursively list files from workspace root",
             "type": "shell",
-            "cwd": "${workspaceFolder}",
             "command": "ls",
             "args": [
                 "-alR"
             ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
             "windows": {
                 "command": "cmd.exe",
                 "args": [
@@ -95,12 +119,14 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
         {
             "label": "[Task] Echo a string",
             "type": "shell",
-            "cwd": "${workspaceFolder}",
             "command": "bash",
             "args": [
                 "-c",
                 "echo 1 2 3"
-            ]
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            }
         }
     ]
 }
@@ -108,11 +134,18 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
 
 ## Variables substitution
 The variables are supported in the following properties, using `${variableName}` syntax:
-- `cwd`
 - `command`
 - `args`
+- `options.cwd`
 - `windows.command`
 - `windows.args`
+- `windows.options.cwd`
+- `osx.command`
+- `osx.args`
+- `osx.options.cwd`
+- `linux.command`
+- `linux.args`
+- `linux.options.cwd`
 
 See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
 

@@ -15,18 +15,29 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { ILogger } from '@theia/core/lib/common/';
-import { TaskClient, TaskExitedEvent, TaskInfo, TaskServer, TaskConfiguration } from '../common/task-protocol';
+import { Disposable, DisposableCollection, ILogger } from '@theia/core/lib/common/';
+import {
+    TaskClient,
+    TaskExitedEvent,
+    TaskInfo,
+    TaskServer,
+    TaskConfiguration,
+    TaskOutputProcessedEvent,
+    RunTaskOption,
+} from '../common';
 import { TaskManager } from './task-manager';
 import { TaskRunnerRegistry } from './task-runner';
 import { Task } from './task';
 import { ProcessTask } from './process/process-task';
+import { ProblemCollector } from './task-problem-collector';
 
 @injectable()
-export class TaskServerImpl implements TaskServer {
+export class TaskServerImpl implements TaskServer, Disposable {
 
     /** Task clients, to send notifications-to. */
     protected clients: TaskClient[] = [];
+    /** Map of task id and task disposable */
+    protected readonly toDispose = new Map<number, DisposableCollection>();
 
     @inject(ILogger) @named('task')
     protected readonly logger: ILogger;
@@ -37,13 +48,25 @@ export class TaskServerImpl implements TaskServer {
     @inject(TaskRunnerRegistry)
     protected readonly runnerRegistry: TaskRunnerRegistry;
 
+    /** task context - {task id - problem collector} */
+    private problemCollectors: Map<string, Map<number, ProblemCollector>> = new Map();
+
     dispose() {
-        // do nothing
+        for (const toDispose of this.toDispose.values()) {
+            toDispose.dispose();
+        }
+        this.toDispose.clear();
+    }
+
+    protected disposeByTaskId(taskId: number): void {
+        if (this.toDispose.has(taskId)) {
+            this.toDispose.get(taskId)!.dispose();
+            this.toDispose.delete(taskId);
+        }
     }
 
     async getTasks(context?: string): Promise<TaskInfo[]> {
         const taskInfo: TaskInfo[] = [];
-
         const tasks = this.taskManager.getTasks(context);
         if (tasks !== undefined) {
             for (const task of tasks) {
@@ -55,14 +78,44 @@ export class TaskServerImpl implements TaskServer {
         return Promise.resolve(taskInfo);
     }
 
-    async run(taskConfiguration: TaskConfiguration, ctx?: string): Promise<TaskInfo> {
+    async run(taskConfiguration: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo> {
         const runner = this.runnerRegistry.getRunner(taskConfiguration.type);
         const task = await runner.run(taskConfiguration, ctx);
 
-        task.onExit(event => {
-            this.taskManager.delete(task);
-            this.fireTaskExitedEvent(event);
-        });
+        if (!this.toDispose.has(task.id)) {
+            this.toDispose.set(task.id, new DisposableCollection());
+        }
+        this.toDispose.get(task.id)!.push(
+            task.onExit(event => {
+                this.taskManager.delete(task);
+                this.fireTaskExitedEvent(event);
+                this.removedCachedProblemCollector(event.ctx || '', event.taskId);
+                this.disposeByTaskId(event.taskId);
+            })
+        );
+
+        const resolvedMatchers = option && option.customization ? option.customization.problemMatcher || [] : [];
+        if (resolvedMatchers.length > 0) {
+            this.toDispose.get(task.id)!.push(
+                task.onOutput(event => {
+                    let collector: ProblemCollector | undefined = this.getCachedProblemCollector(event.ctx || '', event.taskId);
+                    if (!collector) {
+                        collector = new ProblemCollector(resolvedMatchers);
+                        this.cacheProblemCollector(event.ctx || '', event.taskId, collector);
+                    }
+
+                    const problems = collector.processLine(event.line);
+                    if (problems.length > 0) {
+                        this.fireTaskOutputProcessedEvent({
+                            taskId: event.taskId,
+                            ctx: event.ctx,
+                            problems
+                        });
+                    }
+                })
+            );
+        }
+        this.toDispose.get(task.id)!.push(task);
 
         const taskInfo = await task.getRuntimeInfo();
         this.fireTaskCreatedEvent(taskInfo);
@@ -101,6 +154,10 @@ export class TaskServerImpl implements TaskServer {
         }
     }
 
+    protected fireTaskOutputProcessedEvent(event: TaskOutputProcessedEvent) {
+        this.clients.forEach(client => client.onDidProcessTaskOutput(event));
+    }
+
     /** Kill task for a given id. Rejects if task is not found */
     async kill(id: number): Promise<void> {
         const taskToKill = this.taskManager.get(id);
@@ -125,6 +182,30 @@ export class TaskServerImpl implements TaskServer {
         const idx = this.clients.indexOf(client);
         if (idx > -1) {
             this.clients.splice(idx, 1);
+        }
+    }
+
+    private getCachedProblemCollector(ctx: string, taskId: number): ProblemCollector | undefined {
+        if (this.problemCollectors.has(ctx)) {
+            return this.problemCollectors.get(ctx)!.get(taskId);
+        }
+    }
+
+    private cacheProblemCollector(ctx: string, taskId: number, problemCollector: ProblemCollector): void {
+        if (this.problemCollectors.has(ctx)) {
+            if (!this.problemCollectors.get(ctx)!.has(taskId)) {
+                this.problemCollectors.get(ctx)!.set(taskId, problemCollector);
+            }
+        } else {
+            const forNewContext = new Map<number, ProblemCollector>();
+            forNewContext.set(taskId, problemCollector);
+            this.problemCollectors.set(ctx, forNewContext);
+        }
+    }
+
+    private removedCachedProblemCollector(ctx: string, taskId: number): void {
+        if (this.problemCollectors.has(ctx) && this.problemCollectors.get(ctx)!.has(taskId)) {
+            this.problemCollectors.get(ctx)!.delete(taskId);
         }
     }
 }

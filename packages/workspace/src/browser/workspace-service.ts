@@ -261,10 +261,18 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
-     * Returns `true` if there is an opened workspace in theia, and the workspace has more than one root.
+     * Returns `true` if a multiple-root workspace is currently open.
      * @returns {boolean}
      */
     get isMultiRootWorkspaceOpened(): boolean {
+        return !!this.workspace && !this.workspace.isDirectory;
+    }
+
+    /**
+     * Returns `true` if there is an opened workspace, and multi root workspace support is enabled.
+     * @returns {boolean}
+     */
+    get isMultiRootWorkspaceEnabled(): boolean {
         return this.opened && this.preferences['workspace.supportMultiRootWorkspace'];
     }
 

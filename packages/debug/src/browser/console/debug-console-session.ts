@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import throttle = require('lodash.throttle');
 import { injectable, inject, postConstruct } from 'inversify';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { MessageType } from '@theia/core/lib/common';
@@ -169,8 +170,6 @@ export class DebugConsoleSession extends ConsoleSession {
         this.fireDidChange();
     }
 
-    protected fireDidChange(): void {
-        this.onDidChangeEmitter.fire(undefined);
-    }
+    protected fireDidChange = throttle(() => super.fireDidChange(), 50);
 
 }

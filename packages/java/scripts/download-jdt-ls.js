@@ -30,6 +30,9 @@ let downloadUrl = 'https://www.eclipse.org/downloads/download.php?file=/che/che-
 if (packageJson.ls && packageJson.ls.downloadUrl) {
     downloadUrl = packageJson.ls.downloadUrl;
 }
+if (process.env.JAVA_LS_DOWNLOAD_URL) {
+    downloadUrl = process.env.JAVA_LS_DOWNLOAD_URL;
+}
 const downloadUrlHash = sha1(downloadUrl);
 const filename = `jdt.ls-${downloadUrlHash}`;
 const downloadDir = 'download';

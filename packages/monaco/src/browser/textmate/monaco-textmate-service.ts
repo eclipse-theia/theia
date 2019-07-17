@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { Registry, IOnigLib, IRawGrammar, parseRawGrammar } from 'vscode-textmate';
-import { ILogger, ContributionProvider } from '@theia/core';
+import { ILogger, ContributionProvider, Emitter, DisposableCollection, Disposable } from '@theia/core';
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './textmate-contribution';
@@ -29,6 +29,14 @@ export type OnigasmPromise = Promise<IOnigLib>;
 
 @injectable()
 export class MonacoTextmateService implements FrontendApplicationContribution {
+
+    protected readonly _activatedLanguages = new Set<string>();
+    get activatedLanguages(): ReadonlySet<string> {
+        return this._activatedLanguages;
+    }
+
+    protected readonly onDidActivateLanguageEmitter = new Emitter<string>();
+    readonly onDidActivateLanguage = this.onDidActivateLanguageEmitter.event;
 
     protected grammarRegistry: Registry;
 
@@ -66,7 +74,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
         this.grammarRegistry = new Registry({
             getOnigLib: () => this.onigasmPromise,
-            theme: this.monacoThemeRegistry.getTheme(MonacoThemeRegistry.DARK_DEFAULT_THEME),
+            theme: this.monacoThemeRegistry.getTheme(this.currentEditorTheme),
             loadGrammar: async (scopeName: string) => {
                 const provider = this.textmateRegistry.getProvider(scopeName);
                 if (provider) {
@@ -90,42 +98,65 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             }
         });
 
-        this.themeService.onThemeChange(themeChange => {
-            const theme = this.monacoThemeRegistry.getTheme(themeChange.newTheme.editorTheme || MonacoThemeRegistry.DARK_DEFAULT_THEME);
-            if (theme) {
-                this.grammarRegistry.setTheme(theme);
-            }
-        });
+        this.updateTheme();
+        this.themeService.onThemeChange(() => this.updateTheme());
 
-        const registered = new Set<string>();
         for (const { id } of monaco.languages.getLanguages()) {
-            if (!registered.has(id)) {
-                monaco.languages.onLanguage(id, () => this.activateLanguage(id));
-                registered.add(id);
-            }
+            monaco.languages.onLanguage(id, () => this.activateLanguage(id));
         }
     }
 
+    protected readonly toDisposeOnUpdateTheme = new DisposableCollection();
+
+    protected updateTheme(): void {
+        this.toDisposeOnUpdateTheme.dispose();
+
+        const currentEditorTheme = this.currentEditorTheme;
+        document.body.classList.add(currentEditorTheme);
+        this.toDisposeOnUpdateTheme.push(Disposable.create(() => document.body.classList.remove(currentEditorTheme)));
+
+        // first update registry to run tokenization with the proper theme
+        const theme = this.monacoThemeRegistry.getTheme(currentEditorTheme);
+        if (theme) {
+            this.grammarRegistry.setTheme(theme);
+        }
+
+        // then trigger tokenization by setting monaco theme
+        monaco.editor.setTheme(currentEditorTheme);
+    }
+
+    protected get currentEditorTheme(): string {
+        return this.themeService.getCurrentTheme().editorTheme || MonacoThemeRegistry.DARK_DEFAULT_THEME;
+    }
+
     async activateLanguage(languageId: string) {
-        const scopeName = this.textmateRegistry.getScope(languageId);
-        if (!scopeName) {
+        if (this._activatedLanguages.has(languageId)) {
             return;
         }
-        const provider = this.textmateRegistry.getProvider(scopeName);
-        if (!provider) {
-            return;
-        }
-
-        const configuration = this.textmateRegistry.getGrammarConfiguration(languageId);
-        const initialLanguage = getEncodedLanguageId(languageId);
-
-        await this.onigasmPromise;
+        this._activatedLanguages.add(languageId);
         try {
-            const grammar = await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, initialLanguage, configuration);
-            const options = configuration.tokenizerOption ? configuration.tokenizerOption : TokenizerOption.DEFAULT;
-            monaco.languages.setTokensProvider(languageId, createTextmateTokenizer(grammar, options));
-        } catch (error) {
-            this.logger.warn('No grammar for this language id', languageId, error);
+            const scopeName = this.textmateRegistry.getScope(languageId);
+            if (!scopeName) {
+                return;
+            }
+            const provider = this.textmateRegistry.getProvider(scopeName);
+            if (!provider) {
+                return;
+            }
+
+            const configuration = this.textmateRegistry.getGrammarConfiguration(languageId);
+            const initialLanguage = getEncodedLanguageId(languageId);
+
+            await this.onigasmPromise;
+            try {
+                const grammar = await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, initialLanguage, configuration);
+                const options = configuration.tokenizerOption ? configuration.tokenizerOption : TokenizerOption.DEFAULT;
+                monaco.languages.setTokensProvider(languageId, createTextmateTokenizer(grammar, options));
+            } catch (error) {
+                this.logger.warn('No grammar for this language id', languageId, error);
+            }
+        } finally {
+            this.onDidActivateLanguageEmitter.fire(languageId);
         }
     }
 }

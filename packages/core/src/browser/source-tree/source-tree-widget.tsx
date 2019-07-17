@@ -74,7 +74,7 @@ export class SourceTreeWidget extends TreeWidget {
         if (TreeSourceNode.is(model.root) && model.root.children.length === 0) {
             const { placeholder } = model.root.source;
             if (placeholder) {
-                return <div className='theia-tree-source-node-placeholder'>{placeholder}</div>;
+                return <div className='theia-tree-source-node-placeholder noselect'>{placeholder}</div>;
             }
         }
         return super.renderTree(model);

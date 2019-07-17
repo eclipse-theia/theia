@@ -228,6 +228,7 @@ export class HelpQuickOpenHandler implements QuickOpenHandler, QuickOpenContribu
     init(): void {
         this.items = this.handlers.getHandlers()
             .filter(handler => handler.prefix !== this.prefix)
+            .sort((a, b) => this.comparePrefix(a.prefix, b.prefix))
             .map(handler => new QuickOpenItem({
                 label: handler.prefix,
                 description: handler.description,
@@ -262,5 +263,15 @@ export class HelpQuickOpenHandler implements QuickOpenHandler, QuickOpenContribu
 
     registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
         handlers.registerHandler(this);
+    }
+
+    /**
+     * Compare two prefixes.
+     *
+     * @param a {string} first prefix.
+     * @param b {string} second prefix.
+     */
+    protected comparePrefix(a: string, b: string): number {
+        return a.toLowerCase().localeCompare(b.toLowerCase());
     }
 }

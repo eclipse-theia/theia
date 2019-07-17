@@ -38,18 +38,32 @@ export class ProcessTaskResolver implements TaskResolver {
             throw new Error('Unsupported task configuration type.');
         }
 
-        const options = { context: new URI(taskConfig._source).withScheme('file') };
+        const variableResolverOptions = { context: new URI(taskConfig._source).withScheme('file') };
         const processTaskConfig = taskConfig as ProcessTaskConfiguration;
         const result: ProcessTaskConfiguration = {
             ...processTaskConfig,
-            command: await this.variableResolverService.resolve(processTaskConfig.command, options),
-            args: processTaskConfig.args ? await this.variableResolverService.resolveArray(processTaskConfig.args, options) : undefined,
+            command: await this.variableResolverService.resolve(processTaskConfig.command, variableResolverOptions),
+            args: processTaskConfig.args ? await this.variableResolverService.resolveArray(processTaskConfig.args, variableResolverOptions) : undefined,
             windows: processTaskConfig.windows ? {
-                command: await this.variableResolverService.resolve(processTaskConfig.windows.command, options),
-                args: processTaskConfig.windows.args ? await this.variableResolverService.resolveArray(processTaskConfig.windows.args, options) : undefined,
+                command: await this.variableResolverService.resolve(processTaskConfig.windows.command, variableResolverOptions),
+                args: processTaskConfig.windows.args ? await this.variableResolverService.resolveArray(processTaskConfig.windows.args, variableResolverOptions) : undefined,
                 options: processTaskConfig.windows.options
             } : undefined,
-            cwd: await this.variableResolverService.resolve(processTaskConfig.cwd || '${workspaceFolder}', options)
+            osx: processTaskConfig.osx ? {
+                command: await this.variableResolverService.resolve(processTaskConfig.osx.command, variableResolverOptions),
+                args: processTaskConfig.osx.args ? await this.variableResolverService.resolveArray(processTaskConfig.osx.args, variableResolverOptions) : undefined,
+                options: processTaskConfig.osx.options
+            } : undefined,
+            linux: processTaskConfig.linux ? {
+                command: await this.variableResolverService.resolve(processTaskConfig.linux.command, variableResolverOptions),
+                args: processTaskConfig.linux.args ? await this.variableResolverService.resolveArray(processTaskConfig.linux.args, variableResolverOptions) : undefined,
+                options: processTaskConfig.linux.options
+            } : undefined,
+            options: {
+                cwd: await this.variableResolverService.resolve(processTaskConfig.options && processTaskConfig.options.cwd || '${workspaceFolder}', variableResolverOptions),
+                env: processTaskConfig.options && processTaskConfig.options.env,
+                shell: processTaskConfig.options && processTaskConfig.options.shell
+            }
         };
         return result;
     }

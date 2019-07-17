@@ -29,7 +29,7 @@ import debounce = require('lodash.debounce');
 @injectable()
 export class ElectronMainMenuFactory {
 
-    protected _menu: Electron.Menu;
+    protected _menu: Electron.Menu | undefined;
     protected _toggledCommands: Set<string> = new Set();
 
     @inject(ContextKeyService)
@@ -42,10 +42,12 @@ export class ElectronMainMenuFactory {
         @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry
     ) {
         preferencesService.onPreferenceChanged(debounce(() => {
-            for (const item of this._toggledCommands) {
-                this._menu.getMenuItemById(item).checked = this.commandRegistry.isToggled(item);
+            if (this._menu) {
+                for (const item of this._toggledCommands) {
+                    this._menu.getMenuItemById(item).checked = this.commandRegistry.isToggled(item);
+                }
+                electron.remote.getCurrentWindow().setMenu(this._menu);
             }
-            electron.remote.getCurrentWindow().setMenu(this._menu);
         }, 10));
         keybindingRegistry.onKeybindingsChanged(() => {
             const createdMenuBar = this.createMenuBar();
@@ -182,7 +184,7 @@ export class ElectronMainMenuFactory {
             // We need to check if we can execute it.
             if (this.commandRegistry.isEnabled(command, ...args)) {
                 await this.commandRegistry.executeCommand(command, ...args);
-                if (this.commandRegistry.isVisible(command, ...args)) {
+                if (this._menu && this.commandRegistry.isVisible(command, ...args)) {
                     this._menu.getMenuItemById(command).checked = this.commandRegistry.isToggled(command, ...args);
                     electron.remote.getCurrentWindow().setMenu(this._menu);
                 }

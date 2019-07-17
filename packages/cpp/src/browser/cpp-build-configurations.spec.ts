@@ -14,6 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+let disableJSDOM = enableJSDOM();
+
 import { ContainerModule, Container } from 'inversify';
 import { expect } from 'chai';
 import { FileSystem } from '@theia/filesystem/lib/common';
@@ -25,6 +28,9 @@ import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem';
 import { bindCppPreferences } from './cpp-preferences';
 import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { MockPreferenceService } from '@theia/core/lib/browser/preferences/test/mock-preference-service';
+import { TaskDefinitionRegistry } from '@theia/task/lib/browser';
+
+disableJSDOM();
 
 let container: Container;
 
@@ -33,6 +39,7 @@ beforeEach(function () {
         bind(CppBuildConfigurationManager).to(CppBuildConfigurationManagerImpl).inSingletonScope();
         bind(StorageService).to(MockStorageService).inSingletonScope();
         bind(FileSystem).to(FileSystemNode).inSingletonScope();
+        bind(TaskDefinitionRegistry).toSelf().inSingletonScope();
         bindCppPreferences(bind);
         bind(PreferenceService).to(MockPreferenceService).inSingletonScope();
     });
@@ -77,6 +84,14 @@ async function initializeTest(buildConfigurations: CppBuildConfiguration[] | und
 }
 
 describe('build-configurations', function () {
+    before(() => {
+        disableJSDOM = enableJSDOM();
+    });
+
+    after(() => {
+        disableJSDOM();
+    });
+
     it('should work with no preferences', async function () {
         const cppBuildConfigurations = await initializeTest(undefined, undefined);
 

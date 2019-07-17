@@ -1,6 +1,6 @@
 {
   "name": "@theia/electron",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Electron runtime dependencies for Theia",
   "publishConfig": {
     "access": "public"
@@ -17,6 +17,7 @@
   "bin": {
     "electron": "electron-cli.js",
     "electron-h264-test": "electron-h264-test.js",
+    "electron-codecs-test": "electron-codecs-test.js",
     "electron-replace-ffmpeg": "electron-replace-ffmpeg.js"
   },
   "dependencies": {
@@ -25,9 +26,11 @@
     "electron-store": "^2.0.0",
     "fix-path": "^2.1.0",
     "native-keymap": "^1.2.5",
-    "unzipper": "^0.9.11"
+    "node-gyp": "^3.6.0",
+    "unzipper": "^0.9.11",
+    "yargs": "^11.1.0"
   },
   "scripts": {
-    "postinstall": "node ./scripts/skip-replace-ffmpeg || (node ./electron-replace-ffmpeg)"
+    "postinstall": "node scripts/post-install.js"
   }
 }

@@ -21,10 +21,11 @@ import { MiniBrowserEndpoint } from '@theia/mini-browser/lib/browser/location-ma
 @injectable()
 export class PreviewLinkNormalizer {
 
+    protected urlScheme = new RegExp('^[a-z][a-z|0-9|\+|\-|\.]*:', 'i');
+
     normalizeLink(documentUri: URI, link: string): string {
         try {
-            const uri = new URI(link);
-            if (!uri.scheme) {
+            if (!this.urlScheme.test(link)) {
                 const location = documentUri.parent.resolve(link).path.toString();
                 return new MiniBrowserEndpoint().getRestUrl().resolve(location).toString();
             }

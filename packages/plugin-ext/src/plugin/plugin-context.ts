@@ -94,6 +94,8 @@ import {
     TaskRevealKind,
     TaskGroup,
     Task,
+    DebugAdapterExecutable,
+    DebugAdapterServer,
     Breakpoint,
     SourceBreakpoint,
     FunctionBreakpoint,
@@ -104,7 +106,8 @@ import {
     ColorPresentation,
     OperatingSystem,
     WebviewPanelTargetArea,
-    FileSystemError
+    FileSystemError,
+    CommentThreadCollapsibleState
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -130,7 +133,6 @@ import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
 import { FileSystemExtImpl } from './file-system';
 import { QuickPick, QuickPickItem } from '@theia/plugin';
-import { SelectionServiceExt } from './selection-provider-ext';
 import { ScmExtImpl } from './scm';
 import { DecorationProvider, LineChange } from '@theia/plugin';
 import { DecorationsExtImpl } from './decorations';
@@ -143,11 +145,10 @@ export function createAPIFactory(
     preferenceRegistryExt: PreferenceRegistryExtImpl,
     editorsAndDocumentsExt: EditorsAndDocumentsExtImpl,
     workspaceExt: WorkspaceExtImpl,
-    messageRegistryExt: MessageRegistryExt,
-    selectionServiceExt: SelectionServiceExt
+    messageRegistryExt: MessageRegistryExt
 ): PluginAPIFactory {
 
-    const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc, selectionServiceExt));
+    const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
     const dialogsExt = new DialogsExtImpl(rpc);
     const windowStateExt = rpc.set(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT, new WindowStateExtImpl());
@@ -159,7 +160,7 @@ export function createAPIFactory(
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents));
-    const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry, selectionServiceExt));
+    const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
     const webviewExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, new WebviewsExtImpl(rpc));
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
@@ -602,6 +603,9 @@ export function createAPIFactory(
                     return new Plugin(pluginManager, plg);
                 }
                 return undefined;
+            },
+            get onDidChange(): theia.Event<void> {
+                return pluginManager.onDidChange;
             }
         };
 
@@ -632,6 +636,9 @@ export function createAPIFactory(
             },
             get onDidChangeBreakpoints(): theia.Event<theia.BreakpointsChangeEvent> {
                 return debugExt.onDidChangeBreakpoints;
+            },
+            registerDebugAdapterDescriptorFactory(debugType: string, factory: theia.DebugAdapterDescriptorFactory): Disposable {
+                return debugExt.registerDebugAdapterDescriptorFactory(debugType, factory);
             },
             registerDebugConfigurationProvider(debugType: string, provider: theia.DebugConfigurationProvider): Disposable {
                 return debugExt.registerDebugConfigurationProvider(debugType, provider);
@@ -690,9 +697,31 @@ export function createAPIFactory(
             }
         };
 
+        const comment: typeof theia.comment = {
+            createCommentController(id: string, label: string): theia.CommentController {
+                return {
+                    id, label, inputBox: undefined,
+                    createCommentThread(commentId: string, resource: Uri, range: Range, comments: Comment[]): theia.CommentThread {
+                        return {
+                            id: commentId,
+                            resource,
+                            range,
+                            comments,
+                            collapsibleState: 0,
+                            dispose(): void {
+                            }
+                        };
+                    },
+                    dispose(): void {
+                    }
+                };
+            }
+        };
+
         return <typeof theia>{
             version: require('../../package.json').version,
             commands,
+            comment,
             window,
             workspace,
             env,
@@ -767,6 +796,8 @@ export function createAPIFactory(
             TaskPanelKind,
             TaskGroup,
             Task,
+            DebugAdapterExecutable,
+            DebugAdapterServer,
             Breakpoint,
             SourceBreakpoint,
             FunctionBreakpoint,
@@ -777,7 +808,8 @@ export function createAPIFactory(
             FoldingRangeKind,
             OperatingSystem,
             WebviewPanelTargetArea,
-            FileSystemError
+            FileSystemError,
+            CommentThreadCollapsibleState
         };
     };
 }

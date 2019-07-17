@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { AbstractDialog, DialogProps } from './dialogs';
-import { ApplicationServer } from '../common/application-protocol';
+import { ApplicationServer, ExtensionInfo } from '../common/application-protocol';
 
 export const ABOUT_CONTENT_CLASS = 'theia-aboutDialog';
 export const ABOUT_EXTENSIONS_CLASS = 'theia-aboutExtensions';
@@ -62,17 +62,20 @@ export class AboutDialog extends AbstractDialog<void> {
         extensionInfoContent.classList.add(ABOUT_EXTENSIONS_CLASS);
         messageNode.appendChild(extensionInfoContent);
 
-        const extensionsInfos = await this.appServer.getExtensionsInfos();
+        const extensionsInfos: ExtensionInfo[] = await this.appServer.getExtensionsInfos();
 
-        extensionsInfos.forEach(extension => {
-            const extensionInfo = document.createElement('li');
-            extensionInfo.textContent = extension.name + ' ' + extension.version;
-            extensionInfoContent.appendChild(extensionInfo);
-        });
+        extensionsInfos
+            .sort((a: ExtensionInfo, b: ExtensionInfo) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
+            .forEach((extension: ExtensionInfo) => {
+                const extensionInfo = document.createElement('li');
+                extensionInfo.textContent = extension.name + ' ' + extension.version;
+                extensionInfoContent.appendChild(extensionInfo);
+            });
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
         this.contentNode.appendChild(messageNode);
         this.appendAcceptButton('Ok');
     }
 
     get value(): undefined { return undefined; }
+
 }

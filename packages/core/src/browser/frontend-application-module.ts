@@ -73,6 +73,9 @@ import { ContextKeyService } from './context-key-service';
 import { ResourceContextKey } from './resource-context-key';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { MimeService } from './mime-service';
+import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tracker';
+import { ViewContainer } from './view-container';
+import { Widget } from './widgets';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -166,7 +169,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         bind(serviceIdentifier).toService(QuickCommandFrontendContribution)
     );
 
-    bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation(({ container }, quickPickService) => {
+    bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation(({ container }, quickPickService: QuickPickService) => {
         WebSocketConnectionProvider.createProxy(container, quickPickServicePath, quickPickService);
         return quickPickService;
     });
@@ -235,6 +238,25 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindCorePreferences(bind);
 
     bind(MimeService).toSelf().inSingletonScope();
+
+    bind(ApplicationShellMouseTracker).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ApplicationShellMouseTracker);
+
+    bind(ViewContainer.Services).toSelf();
+    bind(ViewContainer.Factory).toFactory(context => (...descriptors: ViewContainer.Factory.WidgetDescriptor[]) => {
+        const { container } = context;
+        const services = container.get(ViewContainer.Services);
+        const inputs: Array<{ widget: Widget, options?: ViewContainer.Factory.WidgetOptions }> = [];
+        for (const descriptor of descriptors) {
+            const { widget, options } = descriptor;
+            if (widget instanceof Widget) {
+                inputs.push({ widget, options });
+            } else {
+                inputs.push({ widget: container.get(widget), options });
+            }
+        }
+        return new ViewContainer(services, ...inputs);
+    });
 });
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {

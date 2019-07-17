@@ -31,6 +31,7 @@ import { fromViewColumn } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { createUntitledResource } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
+import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -66,6 +67,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly diffService: DiffService;
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+    @inject(ApplicationShellMouseTracker)
+    protected readonly mouseTracker: ApplicationShellMouseTracker;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -126,7 +129,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             // tslint:disable-next-line: no-any
             execute: async (resource: URI, position?: any, label?: string, options?: any) => {
                 label = label || resource.fsPath;
-                const view = new WebviewWidget(label, { allowScripts: true }, {});
+                const view = new WebviewWidget(label, { allowScripts: true }, {}, this.mouseTracker);
                 const res = await this.resources(new TheiaURI(resource));
                 const str = await res.readContents();
                 const html = this.getHtml(str);

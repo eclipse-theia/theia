@@ -17,7 +17,6 @@
   color: var(--theia-ui-font-color1);
   background: var(--theia-layout-color1);
   font-size: var(--theia-ui-font-size1);
-  cursor: pointer;
 }
 
 .p-TabBar[data-orientation='horizontal'].theia-app-bottom {
@@ -41,6 +40,10 @@
   overflow-x: hidden;
   overflow-y: hidden;
   min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
+}
+
+.p-TabBar .p-TabBar-content {
+  cursor: pointer;
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-content {

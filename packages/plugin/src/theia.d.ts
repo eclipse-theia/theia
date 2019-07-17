@@ -155,6 +155,12 @@ declare module '@theia/plugin' {
          * All plug-ins currently known to the system.
          */
         export let all: Plugin<any>[];
+
+        /**
+         * An event which fires when `plugins.all` changes. This can happen when extensions are
+         * installed, uninstalled, enabled or disabled.
+         */
+        export let onDidChange: Event<void>;
     }
 
     /**
@@ -4472,35 +4478,35 @@ declare module '@theia/plugin' {
          */
         export function getQueryParameters(): { [key: string]: string | string[] } | undefined;
 
-		/**
-		 * The application name of the editor, like 'Eclipse Theia'.
-		 */
+        /**
+         * The application name of the editor, like 'Eclipse Theia'.
+         */
         export const appName: string;
 
-		/**
-		 * The application root folder from which the editor is running.
-		 */
+        /**
+         * The application root folder from which the editor is running.
+         */
         export const appRoot: string;
 
-		/**
-		 * The custom uri scheme the editor registers to in the operating system.
-		 */
+        /**
+         * The custom uri scheme the editor registers to in the operating system.
+         */
         export const uriScheme: string;
 
-		/**
-		 * Represents the preferred user-language, like `de-CH`, `fr`, or `en-US`.
-		 */
+        /**
+         * Represents the preferred user-language, like `de-CH`, `fr`, or `en-US`.
+         */
         export const language: string;
 
-		/**
-		 * A unique identifier for the computer.
-		 */
+        /**
+         * A unique identifier for the computer.
+         */
         export const machineId: string;
 
-		/**
-		 * A unique identifier for the current session.
-		 * Changes each time the editor is started.
-		 */
+        /**
+         * A unique identifier for the current session.
+         * Changes each time the editor is started.
+         */
         export const sessionId: string;
 
     }
@@ -7176,41 +7182,136 @@ declare module '@theia/plugin' {
 	 * A Debug Adapter Tracker is a means to track the communication between VS Code and a Debug Adapter.
 	 */
     export interface DebugAdapterTracker {
-		/**
-		 * A session with the debug adapter is about to be started.
-		 */
+        /**
+         * A session with the debug adapter is about to be started.
+         */
         onWillStartSession?(): void;
-		/**
-		 * The debug adapter is about to receive a Debug Adapter Protocol message from VS Code.
-		 */
+        /**
+         * The debug adapter is about to receive a Debug Adapter Protocol message from VS Code.
+         */
         onWillReceiveMessage?(message: any): void;
-		/**
-		 * The debug adapter has sent a Debug Adapter Protocol message to VS Code.
-		 */
+        /**
+         * The debug adapter has sent a Debug Adapter Protocol message to VS Code.
+         */
         onDidSendMessage?(message: any): void;
-		/**
-		 * The debug adapter session is about to be stopped.
-		 */
+        /**
+         * The debug adapter session is about to be stopped.
+         */
         onWillStopSession?(): void;
-		/**
-		 * An error with the debug adapter has occurred.
-		 */
+        /**
+         * An error with the debug adapter has occurred.
+         */
         onError?(error: Error): void;
-		/**
-		 * The debug adapter has exited with the given exit code or signal.
-		 */
+        /**
+         * The debug adapter has exited with the given exit code or signal.
+         */
         onExit?(code: number | undefined, signal: string | undefined): void;
     }
 
     export interface DebugAdapterTrackerFactory {
-		/**
-		 * The method 'createDebugAdapterTracker' is called at the start of a debug session in order
-		 * to return a "tracker" object that provides read-access to the communication between VS Code and a debug adapter.
-		 *
-		 * @param session The [debug session](#DebugSession) for which the debug adapter tracker will be used.
-		 * @return A [debug adapter tracker](#DebugAdapterTracker) or undefined.
-		 */
+        /**
+         * The method 'createDebugAdapterTracker' is called at the start of a debug session in order
+         * to return a "tracker" object that provides read-access to the communication between VS Code and a debug adapter.
+         *
+         * @param session The [debug session](#DebugSession) for which the debug adapter tracker will be used.
+         * @return A [debug adapter tracker](#DebugAdapterTracker) or undefined.
+         */
         createDebugAdapterTracker(session: DebugSession): ProviderResult<DebugAdapterTracker>;
+    }
+
+    /**
+     * Represents a debug adapter executable and optional arguments and runtime options passed to it.
+     */
+    export class DebugAdapterExecutable {
+
+        /**
+         * Creates a description for a debug adapter based on an executable program.
+         *
+         * @param command The command or executable path that implements the debug adapter.
+         * @param args Optional arguments to be passed to the command or executable.
+         * @param options Optional options to be used when starting the command or executable.
+         */
+        constructor(command: string, args?: string[], options?: DebugAdapterExecutableOptions);
+
+        /**
+         * The command or path of the debug adapter executable.
+         * A command must be either an absolute path of an executable or the name of an command to be looked up via the PATH environment variable.
+         * The special value 'node' will be mapped to VS Code's built-in Node.js runtime.
+         */
+        readonly command: string;
+
+        /**
+         * The arguments passed to the debug adapter executable. Defaults to an empty array.
+         */
+        readonly args: string[];
+
+        /**
+         * Optional options to be used when the debug adapter is started.
+         * Defaults to undefined.
+         */
+        readonly options?: DebugAdapterExecutableOptions;
+    }
+
+	/**
+	 * Options for a debug adapter executable.
+	 */
+    export interface DebugAdapterExecutableOptions {
+
+        /**
+         * The additional environment of the executed program or shell. If omitted
+         * the parent process' environment is used. If provided it is merged with
+         * the parent process' environment.
+         */
+        env?: { [key: string]: string };
+
+        /**
+         * The current working directory for the executed debug adapter.
+         */
+        cwd?: string;
+    }
+
+    /**
+     * Represents a debug adapter running as a socket based server.
+     */
+    export class DebugAdapterServer {
+
+        /**
+         * The port.
+         */
+        readonly port: number;
+
+        /**
+         * The host.
+         */
+        readonly host?: string;
+
+        /**
+         * Create a description for a debug adapter running as a socket based server.
+         */
+        constructor(port: number, host?: string);
+    }
+
+    export type DebugAdapterDescriptor = DebugAdapterExecutable | DebugAdapterServer;
+
+    export interface DebugAdapterDescriptorFactory {
+        /**
+         * 'createDebugAdapterDescriptor' is called at the start of a debug session to provide details about the debug adapter to use.
+         * These details must be returned as objects of type [DebugAdapterDescriptor](#DebugAdapterDescriptor).
+         * Currently two types of debug adapters are supported:
+         * - a debug adapter executable is specified as a command path and arguments (see [DebugAdapterExecutable](#DebugAdapterExecutable)),
+         * - a debug adapter server reachable via a communication port (see [DebugAdapterServer](#DebugAdapterServer)).
+         * If the method is not implemented the default behavior is this:
+         *   createDebugAdapter(session: DebugSession, executable: DebugAdapterExecutable) {
+         *      if (typeof session.configuration.debugServer === 'number') {
+         *         return new DebugAdapterServer(session.configuration.debugServer);
+         *      }
+         *      return executable;
+         *   }
+         * @param session The [debug session](#DebugSession) for which the debug adapter will be used.
+         * @param executable The debug adapter's executable information as specified in the package.json (or undefined if no such information exists).
+         * @return a [debug adapter descriptor](#DebugAdapterDescriptor) or undefined.
+         */
+        createDebugAdapterDescriptor(session: DebugSession, executable: DebugAdapterExecutable | undefined): ProviderResult<DebugAdapterDescriptor>;
     }
 
     /**
@@ -7361,6 +7462,17 @@ declare module '@theia/plugin' {
         export const onDidChangeBreakpoints: Event<BreakpointsChangeEvent>;
 
         /**
+         * Register a [debug adapter descriptor factory](#DebugAdapterDescriptorFactory) for a specific debug type.
+         * An extension is only allowed to register a DebugAdapterDescriptorFactory for the debug type(s) defined by the extension. Otherwise an error is thrown.
+         * Registering more than one DebugAdapterDescriptorFactory for a debug type results in an error.
+         *
+         * @param debugType The debug type for which the factory is registered.
+         * @param factory The [debug adapter descriptor factory](#DebugAdapterDescriptorFactory) to register.
+         * @return A [disposable](#Disposable) that unregisters this factory when being disposed.
+         */
+        export function registerDebugAdapterDescriptorFactory(debugType: string, factory: DebugAdapterDescriptorFactory): Disposable;
+
+        /**
          * Register a [debug configuration provider](#DebugConfigurationProvider) for a specific debug type.
          * More than one provider can be registered for the same type.
          *
@@ -7370,13 +7482,13 @@ declare module '@theia/plugin' {
          */
         export function registerDebugConfigurationProvider(debugType: string, provider: DebugConfigurationProvider): Disposable;
 
-		/**
-		 * Register a debug adapter tracker factory for the given debug type.
-		 *
-		 * @param debugType The debug type for which the factory is registered or '*' for matching all debug types.
-		 * @param factory The [debug adapter tracker factory](#DebugAdapterTrackerFactory) to register.
-		 * @return A [disposable](#Disposable) that unregisters this factory when being disposed.
-		 */
+        /**
+         * Register a debug adapter tracker factory for the given debug type.
+         *
+         * @param debugType The debug type for which the factory is registered or '*' for matching all debug types.
+         * @param factory The [debug adapter tracker factory](#DebugAdapterTrackerFactory) to register.
+         * @return A [disposable](#Disposable) that unregisters this factory when being disposed.
+         */
         export function registerDebugAdapterTrackerFactory(debugType: string, factory: DebugAdapterTrackerFactory): Disposable;
 
         /**
@@ -8002,5 +8114,220 @@ declare module '@theia/plugin' {
          * the given `symbol` is used.
          */
         resolveWorkspaceSymbol?(symbol: SymbolInformation, token: CancellationToken | undefined): ProviderResult<SymbolInformation>;
+    }
+
+    /**
+     * Collapsible state of a [comment thread](#CommentThread)
+     */
+    export enum CommentThreadCollapsibleState {
+        /**
+         * Determines an item is collapsed
+         */
+        Collapsed = 0,
+
+        /**
+         * Determines an item is expanded
+         */
+        Expanded = 1
+    }
+
+    /**
+     * A collection of [comments](#Comment) representing a conversation at a particular range in a document.
+     */
+    export interface CommentThread {
+        /**
+         * A unique identifier of the comment thread.
+         */
+        readonly id: string;
+
+        /**
+         * The uri of the document the thread has been created on.
+         */
+        readonly resource: Uri;
+
+        /**
+         * The range the comment thread is located within the document. The thread icon will be shown
+         * at the first line of the range.
+         */
+        readonly range: Range;
+
+        /**
+         * The ordered comments of the thread.
+         */
+        comments: Comment[];
+
+        /**
+         * Whether the thread should be collapsed or expanded when opening the document.
+         * Defaults to Collapsed.
+         */
+        collapsibleState: CommentThreadCollapsibleState;
+
+        /**
+         * The optional human-readable label describing the [Comment Thread](#CommentThread)
+         */
+        label?: string;
+
+        /**
+         * Optional accept input command
+         *
+         * `acceptInputCommand` is the default action rendered on Comment Widget, which is always placed rightmost.
+         * This command will be invoked when users the user accepts the value in the comment editor.
+         * This command will disabled when the comment editor is empty.
+         */
+        acceptInputCommand?: Command;
+
+        /**
+         * Optional additonal commands.
+         *
+         * `additionalCommands` are the secondary actions rendered on Comment Widget.
+         */
+        additionalCommands?: Command[];
+
+        /**
+         * The command to be executed when users try to delete the comment thread. Currently, this is only called
+         * when the user collapses a comment thread that has no comments in it.
+         */
+        deleteCommand?: Command;
+
+        /**
+         * Dispose this comment thread.
+         *
+         * Once disposed, this comment thread will be removed from visible editors and Comment Panel when approriate.
+         */
+        dispose(): void;
+    }
+
+    /**
+     * Commenting range provider for a [comment controller](#CommentController).
+     */
+    export interface CommentingRangeProvider {
+        /**
+         * Provide a list of ranges which allow new comment threads creation or null for a given document
+         */
+        provideCommentingRanges(document: TextDocument, token: CancellationToken): ProviderResult<Range[]>;
+    }
+
+    /**
+     * Comment thread template for new comment thread creation.
+     */
+    export interface CommentThreadTemplate {
+        /**
+         * The human-readable label describing the [Comment Thread](#CommentThread)
+         */
+        readonly label: string;
+
+        /**
+         * Optional accept input command
+         *
+         * `acceptInputCommand` is the default action rendered on Comment Widget, which is always placed rightmost.
+         * This command will be invoked when users the user accepts the value in the comment editor.
+         * This command will disabled when the comment editor is empty.
+         */
+        readonly acceptInputCommand?: Command;
+
+        /**
+         * Optional additonal commands.
+         *
+         * `additionalCommands` are the secondary actions rendered on Comment Widget.
+         */
+        readonly additionalCommands?: Command[];
+
+        /**
+         * The command to be executed when users try to delete the comment thread. Currently, this is only called
+         * when the user collapses a comment thread that has no comments in it.
+         */
+        readonly deleteCommand?: Command;
+    }
+
+    /**
+     * The comment input box in Comment Widget.
+     */
+    export interface CommentInputBox {
+        /**
+         * Setter and getter for the contents of the comment input box
+         */
+        value: string;
+
+        /**
+         * The uri of the document comment input box has been created on
+         */
+        resource: Uri;
+
+        /**
+         * The range the comment input box is located within the document
+         */
+        range: Range;
+    }
+
+    /**
+     * A comment controller is able to provide [comments](#CommentThread) support to the editor and
+     * provide users various ways to interact with comments.
+     */
+    export interface CommentController {
+        /**
+         * The id of this comment controller.
+         */
+        readonly id: string;
+
+        /**
+         * The human-readable label of this comment controller.
+         */
+        readonly label: string;
+
+        /**
+         * The active [comment input box](#CommentInputBox) or `undefined`. The active `inputBox` is the input box of
+         * the comment thread widget that currently has focus. It's `undefined` when the focus is not in any CommentInputBox.
+         */
+        readonly inputBox: CommentInputBox | undefined;
+
+        /**
+         * Optional comment thread template information.
+         *
+         * The comment controller will use this information to create the comment widget when users attempt to create new comment thread
+         * from the gutter or command palette.
+         *
+         * When users run `CommentThreadTemplate.acceptInputCommand` or `CommentThreadTemplate.additionalCommands`, extensions should create
+         * the approriate [CommentThread](#CommentThread).
+         *
+         * If not provided, users won't be able to create new comment threads in the editor.
+         */
+        template?: CommentThreadTemplate;
+
+        /**
+         * Optional commenting range provider. Provide a list [ranges](#Range) which support commenting to any given resource uri.
+         *
+         * If not provided and `emptyCommentThreadFactory` exits, users can leave comments in any document opened in the editor.
+         */
+        commentingRangeProvider?: CommentingRangeProvider;
+
+        /**
+         * Create a [comment thread](#CommentThread). The comment thread will be displayed in visible text editors (if the resource matches)
+         * and Comments Panel once created.
+         *
+         * @param id An `id` for the comment thread.
+         * @param resource The uri of the document the thread has been created on.
+         * @param range The range the comment thread is located within the document.
+         * @param comments The ordered comments of the thread.
+         */
+        createCommentThread(id: string, resource: Uri, range: Range, comments: Comment[]): CommentThread;
+
+        /**
+         * Dispose this comment controller.
+         *
+         * Once disposed, all [comment threads](#CommentThread) created by this comment controller will also be removed from the editor
+         * and Comments Panel.
+         */
+        dispose(): void;
+    }
+
+    namespace comment {
+        /**
+         * Creates a new [comment controller](#CommentController) instance.
+         *
+         * @param id An `id` for the comment controller.
+         * @param label A human-readable string for the comment controller.
+         * @return An instance of [comment controller](#CommentController).
+         */
+        export function createCommentController(id: string, label: string): CommentController;
     }
 }

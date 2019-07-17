@@ -19,17 +19,20 @@
   */
 
 .dialogContent .theia-FileDialog,
-.dialogContent .theia-SaveFileDialog {
-    width: 500px;
-}
-
-.dialogContent .theia-FileDialog {
+.dialogContent .theia-SaveFileDialog,
+.dialogContent .theia-ResponsiveFileDialog {
     height: 500px;
+    width: 500px;
     background-color: var(--theia-layout-color0);
 }
 
-.dialogContent .theia-SaveFileDialog {
-    height: 450px;
+
+@media only screen and (max-height: 700px) {
+    .dialogContent .theia-FileDialog,
+    .dialogContent .theia-SaveFileDialog,
+    .dialogContent .theia-ResponsiveFileDialog {
+        height: 300px;
+    }
 }
 
 .dialogContent .theia-NavigationPanel,

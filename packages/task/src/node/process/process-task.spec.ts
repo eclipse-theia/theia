@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-// @ts-check
 /********************************************************************************
  * Copyright (C) 2019 Ericsson and others.
  *
@@ -16,9 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-if (process.env.THEIA_ELECTRON_SKIP_REPLACE_FFMPEG) {
-    console.error('skipping `electron-replace-ffmpeg`')
-    process.exit(0) // stop
-} else {
-    process.exit(1) // ok
-}
+import { expect } from 'chai';
+import { removeAnsiEscapeCodes } from './process-task';
+
+describe('removeAnsiEscapeCodes function', () => {
+    it('should remove all end line and color codes', () => {
+        const str1 = '  [2m14:21[22m  [33mwarning[39m  Missing semicolon  [2msemi[22m\r';
+        let res = removeAnsiEscapeCodes(str1);
+        expect(res).to.eq('  14:21  warning  Missing semicolon  semi');
+
+        const str2 = '[37;40mnpm[0m [0m[31;40mERR![0m [0m[35mcode[0m ELIFECYCLE\r';
+        res = removeAnsiEscapeCodes(str2);
+        expect(res).to.eq('npm ERR! code ELIFECYCLE');
+    });
+});

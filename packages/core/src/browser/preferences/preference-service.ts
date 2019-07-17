@@ -202,7 +202,16 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
                             if (scope > change.scope && value !== undefined) {
                                 // preference defined in a more specific scope
                                 break;
-                            } else if (scope === change.scope) {
+                            } else if (scope === change.scope && change.newValue !== undefined) {
+                                // preference is changed into something other than `undefined`
+                                acceptChange(change);
+                            } else if (scope < change.scope && change.newValue === undefined && value !== undefined) {
+                                // preference is changed to `undefined`, use the value from a more general scope
+                                change = {
+                                    ...change,
+                                    newValue: value,
+                                    scope
+                                };
                                 acceptChange(change);
                             }
                         }

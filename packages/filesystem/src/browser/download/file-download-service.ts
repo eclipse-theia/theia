@@ -18,18 +18,15 @@ import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar';
 import { FileSystem } from '../../common/filesystem';
 import { FileDownloadData } from '../../common/download/file-download-data';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { addClipboardListener } from '@theia/core/lib/browser/widgets';
 
 @injectable()
 export class FileDownloadService {
 
-    protected static PREPARING_DOWNLOAD_ID = 'theia-preparing-download';
-
     protected anchor: HTMLAnchorElement | undefined;
-    protected downloadQueue: number[] = [];
     protected downloadCounter: number = 0;
 
     @inject(ILogger)
@@ -38,60 +35,75 @@ export class FileDownloadService {
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
 
-    @inject(StatusBar)
-    protected readonly statusBar: StatusBar;
-
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    async download(uris: URI[]): Promise<void> {
+    protected handleCopy(event: ClipboardEvent, downloadUrl: string): void {
+        if (downloadUrl && event.clipboardData) {
+            event.clipboardData.setData('text/plain', downloadUrl);
+            event.preventDefault();
+            this.messageService.info('Copied the download link to the clipboard.');
+        }
+    }
+
+    async cancelDownload(id: string): Promise<void> {
+        await fetch(`${this.endpoint()}/download/?id=${id}&cancel=true`);
+    }
+
+    async download(uris: URI[], options?: FileDownloadService.DownloadOptions): Promise<void> {
+        let cancel = false;
         if (uris.length === 0) {
             return;
         }
-        let downloadId: number | undefined;
+        const copyLink = options && options.copyLink ? true : false;
         try {
-            downloadId = this.downloadCounter++;
-            if (this.downloadQueue.length === 0) {
-                await this.statusBar.setElement(FileDownloadService.PREPARING_DOWNLOAD_ID, {
-                    alignment: StatusBarAlignment.RIGHT,
-                    text: '$(spinner~spin) Preparing download...',
-                    tooltip: 'Preparing download...',
-                    priority: 1
-                });
+            const [progress, result] = await Promise.all([
+                this.messageService.showProgress({
+                    text: `Preparing download${copyLink ? ' link' : ''}...`, options: { cancelable: true }
+                }, () => { cancel = true; }),
+                // tslint:disable-next-line:no-any
+                new Promise<{ response: Response, jsonResponse: any }>(async resolve => {
+                    const resp = await fetch(this.request(uris));
+                    const jsonResp = await resp.json();
+                    resolve({ response: resp, jsonResponse: jsonResp });
+                })
+            ]);
+            const { response, jsonResponse } = result;
+            if (cancel) {
+                this.cancelDownload(jsonResponse.id);
+                return;
             }
-            this.downloadQueue.push(downloadId);
-            const response = await fetch(this.request(uris));
-            await this.statusBar.removeElement(FileDownloadService.PREPARING_DOWNLOAD_ID);
-            const title = await this.title(response, uris);
             const { status, statusText } = response;
             if (status === 200) {
-                await this.forceDownload(response, decodeURIComponent(title));
+                progress.cancel();
+                const downloadUrl = `${this.endpoint()}/download/?id=${jsonResponse.id}`;
+                if (copyLink) {
+                    if (document.documentElement) {
+                        const toDispose = addClipboardListener(document.documentElement, 'copy', e => {
+                            toDispose.dispose();
+                            this.handleCopy(e, downloadUrl);
+                        });
+                        document.execCommand('copy');
+                    }
+                } else {
+                    this.forceDownload(jsonResponse.id, decodeURIComponent(jsonResponse.name));
+                }
             } else {
                 throw new Error(`Received unexpected status code: ${status}. [${statusText}]`);
             }
         } catch (e) {
             this.logger.error(`Error occurred when downloading: ${uris.map(u => u.toString(true))}.`, e);
-        } finally {
-            if (downloadId !== undefined) {
-                const indexOf = this.downloadQueue.indexOf(downloadId);
-                if (indexOf !== -1) {
-                    this.downloadQueue.splice(indexOf, 1);
-                }
-                if (this.downloadQueue.length === 0) {
-                    this.statusBar.removeElement(FileDownloadService.PREPARING_DOWNLOAD_ID);
-                }
-            }
         }
     }
 
-    protected async forceDownload(response: Response, title: string): Promise<void> {
+    protected async forceDownload(id: string, title: string): Promise<void> {
         let url: string | undefined;
         try {
-            const blob = await response.blob();
-            url = URL.createObjectURL(blob);
             if (this.anchor === undefined) {
                 this.anchor = document.createElement('a');
             }
+            const endpoint = this.endpoint();
+            url = `${endpoint}/download/?id=${id}`;
             this.anchor.href = url;
             this.anchor.style.display = 'none';
             this.anchor.download = title;
@@ -106,24 +118,6 @@ export class FileDownloadService {
                 URL.revokeObjectURL(url);
             }
         }
-    }
-
-    protected async title(response: Response, uris: URI[]): Promise<string> {
-        let title = (response.headers.get('Content-Disposition') || '').split('attachment; filename=').pop();
-        if (title) {
-            return title;
-        }
-        // tslint:disable-next-line:whitespace
-        const [uri,] = uris;
-        if (uris.length === 1) {
-            const stat = await this.fileSystem.getFileStat(uri.toString());
-            if (stat === undefined) {
-                throw new Error(`Unexpected error occurred when downloading file. Files does not exist. URI: ${uri.toString(true)}.`);
-            }
-            title = uri.path.base;
-            return stat.isDirectory ? `${title}.tar` : title;
-        }
-        return `${uri.parent.path.name}.tar`;
     }
 
     protected request(uris: URI[]): Request {
@@ -172,4 +166,13 @@ export class FileDownloadService {
         return new Endpoint({ path: 'files' }).getRestUrl().toString();
     }
 
+}
+
+export namespace FileDownloadService {
+    export interface DownloadOptions {
+        /**
+         * `true` if the download link has to be copied to the clipboard. This will not trigger the actual download. Defaults to `false`.
+         */
+        readonly copyLink?: boolean;
+    }
 }

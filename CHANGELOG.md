@@ -1,16 +1,71 @@
 # Change Log
 
-## v0.8.0
+## v0.9.0
+- [task] added support for VS Code task contribution points: `taskDefinitions`, `problemMatchers`, and `problemPatterns`
+- [plugin] added support of debug activation events [#5645](https://github.com/theia-ide/theia/pull/5645)
+- [security] Bump lodash.mergewith from 4.6.1 to 4.6.2
 
 Breaking changes:
 
-- [plugin] 'Hosted mode' extracted in `plugin-dev` extension
+- [plugin] fixed typo in 'HostedInstanceState' enum from RUNNNING to RUNNING in `plugin-dev` extension
+- [plugin] removed member `processOptions` from `AbstractHostedInstanceManager` as it is not initialized or used
+- [plugin] added basic support of activation events [#5622](https://github.com/theia-ide/theia/pull/5622)
+  - `HostedPluginSupport` is refactored to support multiple `PluginManagerExt` properly
+- [plugin] added support of `workspaceContains` activation events [#5649](https://github.com/theia-ide/theia/pull/5649)
+
+## v0.8.0
+
+- [core] added bépo keyboard layout
+- [core] added sorting to the extension names in the about dialog
+- [core] added sorting to the prefixed quick-open commands
+- [core] added support for octicon icons in the statusbar
+- [core] allowed passing of command args to context menus
+- [core] added the ability to rebind the `BrowserMenuBarContribution`
+- [core] fixed issue with webview resizing
+- [core] fixed label encoding for diff uris
+- [cored] added `TextareaAutosize` for textarea resizing
+- [debug] added throttling to the debug console output
+- [debug] fixed breakpoint resizing error in the debug-widget
+- [editor] added the ability to rebind the `EditorWidgetFactory`
+- [editor] implemented `Show All Opened Editor` command and quick-open menu
+- [editor] removed the 'dirty' state of an editor if changes are reverted
+- [electron] fixed issue when exiting Electron based applications
+- [electron] improved startup performance
+- [filesystem] improved animation when dragging and dropping multiple files
+- [keymaps] added a toolbar item to open the keymaps.json
+- [keymaps] added command to `Open Keyboard Shortcuts (JSON)`
+- [keymaps] added toolbar item to clear keybindings-widget search
+- [keymaps] enhanced the keybindings-widget search to support different key orders
+- [keymaps] fixed the display of key chords in the keybindings-widget
+- [keymaps] updated the UI of the keybindings-widget when resizing
+- [monaco] fixed overflow with editor hints
+- [navigator] added VSCode-like compare for files
+- [navigator] added ability to select for compare
+- [plugin] added VSCode API to register `DebugAdapterTrackerFactory`
+- [plugin] added `setTextDocumentLanguage` Plug-in API
+- [preview] added scrolling synchronization between editor and preview
+- [preview] fixed issue where preview images were broken
+- [problems] added `copy` and `copy message` features to the problems-widget
+- [problems] fixed the problem-widget markers from wrapping when resizing
+- [task] added the ability to add comments in tasks.json
+- [task] added the display of the source folder name for detected tasks in the quick-open
+- [task] added the task label in the terminal title when executing tasks
+- [task] implemented `Show Running Tasks...` command and quick-open menu
+- [terminal] implemented `Terminate Task...` command and quick-open menu
+
+Breaking changes:
+
 - [core] `scheme` is mandatory for URI
   - `URI.withoutScheme` is removed, in order to get a path use `URI.path`
 - [core] `SelectionCommandHandler.getMulitSelection()` is renamed into `SelectionCommandHandler.getMultiSelection()`
 - [debug] align commands with VS Code [#5102](https://github.com/theia-ide/theia/issues/5102)
     - `debug.restart` renamed to `workbench.action.debug.restart`
+- [plugin] 'Hosted mode' extracted in `plugin-dev` extension
+- [preferences] removed constructor from the `FolderPreferenceProvider` class
 - [preferences] renamed overridenPreferenceName to overriddenPreferenceName
+- [task] `cwd`, which used to be defined directly under `Task`, is moved into `Task.options` object
+- [workspace] `isMultiRootWorkspaceOpened()` is renamed into `isMultiRootWorkspaceEnabled()`
+- [filesystem] Changed `FileDownloadService` API to support streaming download of huge files.
 
 ## v0.7.0
 

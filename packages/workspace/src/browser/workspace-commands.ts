@@ -157,6 +157,18 @@ export class FileMenuContribution implements MenuContribution {
 }
 
 @injectable()
+export class EditMenuContribution implements MenuContribution {
+
+    registerMenus(registry: MenuModelRegistry) {
+        registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
+            commandId: FileDownloadCommands.COPY_DOWNLOAD_LINK.id,
+            order: '9999'
+        });
+    }
+
+}
+
+@injectable()
 export class WorkspaceCommandContribution implements CommandContribution {
 
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
@@ -265,7 +277,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
         registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler(this.compareHandler));
         this.preferences.ready.then(() => {
             registry.registerCommand(WorkspaceCommands.ADD_FOLDER, this.newMultiUriAwareCommandHandler({
-                isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
+                isEnabled: () => this.workspaceService.isMultiRootWorkspaceEnabled,
                 isVisible: uris => !uris.length || this.areWorkspaceRoots(uris),
                 execute: async uris => {
                     const uri = await this.fileDialogService.showOpenDialog({
@@ -293,7 +305,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             }));
             registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, this.newMultiUriAwareCommandHandler({
                 execute: uris => this.removeFolderFromWorkspace(uris),
-                isEnabled: () => this.workspaceService.isMultiRootWorkspaceOpened,
+                isEnabled: () => this.workspaceService.isMultiRootWorkspaceEnabled,
                 isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
             }));
         });
@@ -441,7 +453,7 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
 
     protected getUri(): URI | undefined {
         const uri = super.getUri();
-        if (this.workspaceService.isMultiRootWorkspaceOpened) {
+        if (this.workspaceService.isMultiRootWorkspaceEnabled) {
             return uri;
         }
         if (uri) {

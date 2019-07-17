@@ -61,18 +61,53 @@ Code copied from project Microsoft/vscode (1.32.3)
 * Project: https://code.visualstudio.com/
 * Source: https://github.com/Microsoft/vscode
 
+Code copied from project Microsoft/vscode (1.33.1)
+
+* License: MIT
+
+code copied from project microsoft/vscode (1.33.1)
+
+* License: MIT
+
+Code copied from VSCode (n/a)
+
+* License: MIT
+
+Copied code from project VSCode (n/a)
+
+* License: MIT
+
+CSS copied from VS Code (n/a)
+
+* License: MIT
+
 dugite (1.52.0)
 
 * License: MIT
+
+Electron (3.1.7)
+
+* License: BSD-2-Clause AND BSD-3-Clause AND (MIT OR GPL-2.0) AND Apache-2.0
+   AND (BSD-2-Clause OR MIT OR Apache-2.0) AND ISC AND MIT AND X11 AND
+   BSD-2-Clause-FreeBSD AND Public-Domain AND Unlicense AND MPL-2.0 AND
+   (BSD-3-Clause OR MPL-2.0) AND CC-BY-3.0 AND (AFL-2.0
+* Project: https://electronjs.org/
+* Source: https://github.com/electron/electron
 
 electron@2.0.14 (2.0.14)
 
 * License: MIT AND BSD-2-Clause AND Apache-2.0 AND (AFL-2.1 OR BSD-3-Clause)
    AND BSD-3-Clause AND ISC AND X11 AND Public-Domain AND (GPL-2.0 OR MIT) AND
    Unlicense AND IJG AND ICU AND UNICODE-TOU AND NTP AND (MIT OR BSD-3-Clause)
-   AND Libpng AND MPL-2.0 AND LGPL-2.1+
+   AND Libpng AND MPL-2.0 AND LGPL-2.1+ 
 * Project: https://github.com/electron/electron
 * Source: https://github.com/electron/electron/releases/tag/v2.0.14
+
+getmac (1.4.6)
+
+* License: MIT
+* Project: https://github.com/bevry/getmac
+* Source: https://github.com/bevry/getmac
 
 GH-3397: Implemented the HTTP-based authentication for Git in Electron. (n/a)
 
@@ -83,6 +118,17 @@ glob promise (3.4.0)
 * License: ISC
 * Project: https://github.com/ahmadnassri/glob-promise
 * Source: https://github.com/ahmadnassri/glob-promise
+
+Icon configure-inverse.svg (n/a)
+
+* License: MIT
+* Project: https://github.com/Microsoft/vscode
+* Source:
+   https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/contrib/tasks/common/media/configure-inverse.svg#L1
+
+libffmpeg (FFmpeg) Delivered with Electron (3.1.7)
+
+* License: LGPL-2.1+
 
 long.js (3.2.0)
 
@@ -129,6 +175,10 @@ read-pkg (4.0.1)
 * License: MIT
 * Project: https://github.com/sindresorhus/read-pkg
 * Source: https://github.com/sindresorhus/read-pkg
+
+regular expressions and helper function copied from microsoft/vscode (1.33.1)
+
+* License: MIT
 
 requestretry (3.1.0)
 
@@ -180,6 +230,10 @@ VS Code (1.33.0)
 
 vscode (1.26.0)
 
+* License: MIT AND LicenseRef-Php_Tmbundle
+
+vscode (1.26.0)
+
 * License: MIT
 
 vscode (1.31.0)
@@ -191,6 +245,10 @@ vscode-debugadapter-node (n/a)
 * License: MIT
 
 vscode-java (0.36.0)
+
+* License: EPL-1.0
+
+vscode-java (0.44.0)
 
 * License: EPL-1.0
 
@@ -217,6 +275,8 @@ wjordan/browser-path SHA6719d19077b1454bff8b802f9be79cb1b69ebe7e (n/a)
 xterm.js (3.9.1)
 
 * License: MIT
+* Project: https://xtermjs.org/
+* Source: https://github.com/xtermjs/xterm.js
 
 yargs (12.0.1)
 

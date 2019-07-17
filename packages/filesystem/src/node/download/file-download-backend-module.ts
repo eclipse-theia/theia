@@ -17,13 +17,16 @@
 import { ContainerModule } from 'inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { FileDownloadEndpoint } from './file-download-endpoint';
-import { FileDownloadHandler, SingleFileDownloadHandler, MultiFileDownloadHandler } from './file-download-handler';
+import { FileDownloadHandler, SingleFileDownloadHandler, MultiFileDownloadHandler, DownloadLinkHandler } from './file-download-handler';
 import { DirectoryArchiver } from './directory-archiver';
+import { FileDownloadCache } from './file-download-cache';
 
 export default new ContainerModule(bind => {
     bind(FileDownloadEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(FileDownloadEndpoint);
+    bind(FileDownloadCache).toSelf().inSingletonScope();
     bind(FileDownloadHandler).to(SingleFileDownloadHandler).inSingletonScope().whenTargetNamed(FileDownloadHandler.SINGLE);
     bind(FileDownloadHandler).to(MultiFileDownloadHandler).inSingletonScope().whenTargetNamed(FileDownloadHandler.MULTI);
+    bind(FileDownloadHandler).to(DownloadLinkHandler).inSingletonScope().whenTargetNamed(FileDownloadHandler.DOWNLOAD_LINK);
     bind(DirectoryArchiver).toSelf().inSingletonScope();
 });

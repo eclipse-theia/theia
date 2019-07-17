@@ -80,6 +80,7 @@ export interface PluginInitData {
     workspaceState: KeysToKeysToAnyValue;
     env: EnvInit;
     extApi?: ExtPluginApi[];
+    activationEvents: string[]
 }
 
 export interface PreferenceData {
@@ -114,6 +115,7 @@ export interface PluginManager {
     getPluginExport(pluginId: string): PluginAPI | undefined;
     isRunning(pluginId: string): boolean;
     activatePlugin(pluginId: string): PromiseLike<void>;
+    onDidChange: theia.Event<void>;
 }
 
 export interface PluginAPIFactory {
@@ -162,6 +164,8 @@ export interface PluginManagerExt {
     $init(pluginInit: PluginInitData, configStorage: ConfigStorage): PromiseLike<void>;
 
     $updateStoragePath(path: string | undefined): PromiseLike<void>;
+
+    $activateByEvent(event: string): Promise<void>;
 }
 
 export interface CommandRegistryMain {
@@ -420,7 +424,6 @@ export interface TreeViewsMain {
 export interface TreeViewsExt {
     $getChildren(treeViewId: string, treeItemId: string | undefined): Promise<TreeViewItem[] | undefined>;
     $setExpanded(treeViewId: string, treeItemId: string, expanded: boolean): Promise<any>;
-    $setSelection(treeViewId: string, treeItemId: string, contextSelection: boolean): Promise<any>;
 }
 
 export class TreeViewItem {
@@ -442,6 +445,8 @@ export class TreeViewItem {
     collapsibleState?: TreeViewItemCollapsibleState;
 
     contextValue?: string;
+
+    command?: Command;
 
 }
 
@@ -995,7 +1000,10 @@ export interface LanguagesContributionMain {
 export interface CommandProperties {
     command: string;
     args?: string[];
-    options?: { [key: string]: any };
+    options?: {
+        cwd?: string;
+        [key: string]: any
+    };
 }
 
 export interface TaskDto {
@@ -1014,7 +1022,6 @@ export interface TaskExecutionDto {
 
 export interface ProcessTaskDto extends TaskDto, CommandProperties {
     windows?: CommandProperties;
-    cwd?: string;
 }
 
 export interface LanguagesExt {

@@ -355,7 +355,6 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             } else {
                 this.searchTerm = (e.target as HTMLInputElement).value;
                 this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
-                this.update();
             }
         }
     }
@@ -420,11 +419,17 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected handleBlurReplaceInputBox = () => this.contextKeyService.setReplaceInputBoxFocus(false);
 
     protected renderReplaceAllButtonContainer(): React.ReactNode {
+        // The `Replace All` button is enabled if there is a search term present with results.
+        const enabled: boolean = this.searchTerm !== '' && this.resultNumber > 0;
         return <div className='replace-all-button-container'>
             <span
                 title='Replace All'
-                className={`replace-all-button${this.searchTerm === '' ? ' disabled' : ''}`}
-                onClick={() => this.resultTreeWidget.replace(undefined)}>
+                className={`replace-all-button${enabled ? ' ' : ' disabled'}`}
+                onClick={() => {
+                    if (enabled) {
+                        this.resultTreeWidget.replace(undefined);
+                    }
+                }}>
             </span>
         </div>;
     }

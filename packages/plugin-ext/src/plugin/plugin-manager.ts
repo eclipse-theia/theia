@@ -34,6 +34,7 @@ import { PreferenceRegistryExtImpl } from './preference-registry';
 import { Memento, KeyValueStorageProxy } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../api/rpc-protocol';
+import { Emitter } from '@theia/core/lib/common/event';
 
 export interface PluginHost {
 
@@ -60,11 +61,26 @@ class ActivatedPlugin {
 
 export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
-    private registry = new Map<string, Plugin>();
-    private activatedPlugins = new Map<string, ActivatedPlugin>();
+    static SUPPORTED_ACTIVATION_EVENTS = new Set([
+        '*',
+        'onLanguage',
+        'onCommand',
+        'onDebug', 'onDebugInitialConfigurations', 'onDebugResolve', 'onDebugAdapterProtocolTracker',
+        'workspaceContains'
+    ]);
+
+    private readonly registry = new Map<string, Plugin>();
+    private readonly activations = new Map<string, (() => Promise<void>)[] | undefined>();
+    private readonly loadedPlugins = new Set<string>();
+    private readonly activatedPlugins = new Map<string, ActivatedPlugin>();
     private pluginActivationPromises = new Map<string, Deferred<void>>();
     private pluginContextsMap: Map<string, theia.PluginContext> = new Map();
     private storageProxy: KeyValueStorageProxy;
+
+    private onDidChangeEmitter = new Emitter<void>();
+    protected fireOnDidChange(): void {
+        this.onDidChangeEmitter.fire(undefined);
+    }
 
     constructor(
         private readonly host: PluginHost,
@@ -98,8 +114,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.storageProxy = this.rpc.set(
             MAIN_RPC_CONTEXT.STORAGE_EXT,
             new KeyValueStorageProxy(this.rpc.getProxy(PLUGIN_RPC_CONTEXT.STORAGE_MAIN),
-                                     pluginInit.globalState,
-                                     pluginInit.workspaceState)
+                pluginInit.globalState,
+                pluginInit.workspaceState)
         );
 
         // init query parameters
@@ -115,31 +131,68 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const [plugins, foreignPlugins] = this.host.init(pluginInit.plugins);
         // add foreign plugins
         for (const plugin of foreignPlugins) {
-            this.registry.set(plugin.model.id, plugin);
+            this.registerPlugin(plugin, configStorage);
         }
         // add own plugins, before initialization
         for (const plugin of plugins) {
-            this.registry.set(plugin.model.id, plugin);
+            this.registerPlugin(plugin, configStorage);
         }
 
-        // run plugins
-        for (const plugin of plugins) {
-            if (!plugin.pluginPath) {
-                continue;
-            }
-            const pluginMain = this.host.loadPlugin(plugin);
-            // able to load the plug-in ?
-            if (pluginMain !== undefined) {
-                await this.startPlugin(plugin, configStorage, pluginMain);
-            } else {
-                console.error(`Unable to load a plugin from "${plugin.pluginPath}"`);
-            }
+        // run eager plugins
+        await this.$activateByEvent('*');
+        for (const activationEvent of pluginInit.activationEvents) {
+            await this.$activateByEvent(activationEvent);
         }
+        // TODO eager activate by `workspaceContains`
 
         if (this.host.loadTests) {
             return this.host.loadTests();
         }
+        this.fireOnDidChange();
+
         return Promise.resolve();
+    }
+
+    protected registerPlugin(plugin: Plugin, configStorage: ConfigStorage): void {
+        this.registry.set(plugin.model.id, plugin);
+        if (plugin.pluginPath && Array.isArray(plugin.rawModel.activationEvents)) {
+            const activation = () => this.loadPlugin(plugin, configStorage);
+            // an internal activation event is a subject to change
+            this.setActivation(`onPlugin:${plugin.model.id}`, activation);
+            const unsupportedActivationEvents = plugin.rawModel.activationEvents.filter(e => !PluginManagerExtImpl.SUPPORTED_ACTIVATION_EVENTS.has(e.split(':')[0]));
+            if (unsupportedActivationEvents.length) {
+                console.warn(`Unsupported activation events: ${unsupportedActivationEvents.join(', ')}, please open an issue: https://github.com/theia-ide/theia/issues/new`);
+                console.warn(`${plugin.model.id} extension will be activated eagerly.`);
+                this.setActivation('*', activation);
+            } else {
+                for (let activationEvent of plugin.rawModel.activationEvents) {
+                    if (activationEvent === 'onUri') {
+                        activationEvent = `onUri:theia://${plugin.model.publisher.toLowerCase()}.${plugin.model.name.toLowerCase()}`;
+                    }
+                    this.setActivation(activationEvent, activation);
+                }
+            }
+        }
+    }
+    protected setActivation(activationEvent: string, activation: () => Promise<void>): void {
+        const activations = this.activations.get(activationEvent) || [];
+        activations.push(activation);
+        this.activations.set(activationEvent, activations);
+    }
+
+    protected async loadPlugin(plugin: Plugin, configStorage: ConfigStorage): Promise<void> {
+        if (this.loadedPlugins.has(plugin.model.id)) {
+            return;
+        }
+        this.loadedPlugins.add(plugin.model.id);
+
+        const pluginMain = this.host.loadPlugin(plugin);
+        // able to load the plug-in ?
+        if (pluginMain !== undefined) {
+            await this.startPlugin(plugin, configStorage, pluginMain);
+        } else {
+            console.error(`Unable to load a plugin from "${plugin.pluginPath}"`);
+        }
     }
 
     $updateStoragePath(path: string | undefined): PromiseLike<void> {
@@ -147,6 +200,17 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             pluginContext.storagePath = path ? join(path, pluginId) : undefined;
         });
         return Promise.resolve();
+    }
+
+    async $activateByEvent(activationEvent: string): Promise<void> {
+        const activations = this.activations.get(activationEvent);
+        if (!activations) {
+            return;
+        }
+        this.activations.set(activationEvent, undefined);
+        while (activations.length) {
+            await activations.pop()!();
+        }
     }
 
     // tslint:disable-next-line:no-any
@@ -215,6 +279,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         }
         this.pluginActivationPromises.set(pluginId, deferred);
         return deferred.promise;
+    }
+
+    get onDidChange(): theia.Event<void> {
+        return this.onDidChangeEmitter.event;
     }
 
 }

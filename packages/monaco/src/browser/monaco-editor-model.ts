@@ -42,6 +42,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     autoSaveDelay: number = 500;
     /* @deprecated there is no general save timeout, each participant should introduce a sensible timeout  */
     readonly onWillSaveLoopTimeOut = 1500;
+    protected bufferSavedVersionId: number;
 
     protected model: monaco.editor.IModel;
     protected readonly resolveModel: Promise<void>;
@@ -84,6 +85,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected initialize(content: string): void {
         if (!this.toDispose.disposed) {
             this.model = monaco.editor.createModel(content, undefined, monaco.Uri.parse(this.resource.uri.toString()));
+            this.updateSavedVersionId();
             this.toDispose.push(this.model);
             this.toDispose.push(this.model.onDidChangeContent(event => this.fireDidChangeContent(event)));
             if (this.resource.onDidChangeContents) {
@@ -98,7 +100,14 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
     protected setDirty(dirty: boolean): void {
         this._dirty = dirty;
+        if (dirty === false) {
+            this.updateSavedVersionId();
+        }
         this.onDirtyChangedEmitter.fire(undefined);
+    }
+
+    private updateSavedVersionId(): void {
+        this.bufferSavedVersionId = this.model.getAlternativeVersionId();
     }
 
     protected readonly onDirtyChangedEmitter = new Emitter<void>();
@@ -287,7 +296,11 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         const changeContentEvent = this.asContentChangedEvent(event);
         this.onDidChangeContentEmitter.fire(changeContentEvent);
         this.pushContentChanges(changeContentEvent.contentChanges);
-        this.markAsDirty();
+        if (this.model.getAlternativeVersionId() === this.bufferSavedVersionId) {
+            this.setDirty(false);
+        } else {
+            this.markAsDirty();
+        }
     }
     protected asContentChangedEvent(event: monaco.editor.IModelContentChangedEvent): MonacoModelContentChangedEvent {
         const contentChanges = event.changes.map(change => this.asTextDocumentContentChangeEvent(change));

@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
+import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
 
@@ -117,6 +118,10 @@ export interface CommandContribution {
     registerCommands(commands: CommandRegistry): void;
 }
 
+export interface WillExecuteCommandEvent extends WaitUntilEvent {
+    commandId: string;
+}
+
 export const commandServicePath = '/services/commands';
 export const CommandService = Symbol('CommandService');
 /**
@@ -130,6 +135,12 @@ export interface CommandService {
      */
     // tslint:disable-next-line:no-any
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
+    /**
+     * An event is emmited when a command is about to be executed.
+     *
+     * It can be used to install or activate a command handler.
+     */
+    readonly onWillExecuteCommand: Event<WillExecuteCommandEvent>;
 }
 
 /**
@@ -143,6 +154,9 @@ export class CommandRegistry implements CommandService {
 
     // List of recently used commands.
     protected _recent: Command[] = [];
+
+    protected readonly onWillExecuteCommandEmitter = new Emitter<WillExecuteCommandEvent>();
+    readonly onWillExecuteCommand = this.onWillExecuteCommandEmitter.event;
 
     constructor(
         @inject(ContributionProvider) @named(CommandContribution)
@@ -255,6 +269,7 @@ export class CommandRegistry implements CommandService {
      */
     // tslint:disable-next-line:no-any
     async executeCommand<T>(commandId: string, ...args: any[]): Promise<T | undefined> {
+        await this.fireWillExecuteCommand(commandId);
         const handler = this.getActiveHandler(commandId, ...args);
         if (handler) {
             const result = await handler.execute(...args);
@@ -266,6 +281,10 @@ export class CommandRegistry implements CommandService {
         }
         const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';
         throw new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.${argsMessage}`);
+    }
+
+    protected async fireWillExecuteCommand(commandId: string): Promise<void> {
+        await WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId }, 30000);
     }
 
     /**

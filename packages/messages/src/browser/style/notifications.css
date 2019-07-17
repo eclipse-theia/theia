@@ -126,8 +126,6 @@
     flex-direction: row;
     order: 4;
     white-space: nowrap;
-    align-self: flex-end;
-    height: 40px;
 }
 
 .theia-Notification .buttons > button {
