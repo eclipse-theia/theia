@@ -16,6 +16,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
+import { FileSystem } from '@theia/filesystem/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ApplicationShell, NavigatableWidget } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry } from '@theia/variable-resolver/lib/browser';
@@ -28,6 +29,8 @@ export class WorkspaceVariableContribution implements VariableContribution {
     protected readonly workspaceService: WorkspaceService;
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
 
     protected currentWidget: NavigatableWidget | undefined;
 
@@ -62,7 +65,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The path of the workspace root folder',
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
-                return uri && uri.path.toString();
+                return uri && this.fileSystem.getFsPath(uri.toString());
             }
         });
         variables.registerVariable({
@@ -70,7 +73,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The path of the workspace root folder',
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
-                return uri && uri.path.toString();
+                return uri && this.fileSystem.getFsPath(uri.toString());
             }
         });
         variables.registerVariable({
@@ -86,7 +89,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The path of the current working directory',
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
-                return (uri && uri.path.toString()) || '';
+                return (uri && this.fileSystem.getFsPath(uri.toString())) || '';
             }
         });
         variables.registerVariable({
@@ -94,7 +97,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The path of the currently opened file',
             resolve: () => {
                 const uri = this.getResourceUri();
-                return uri && uri.path.toString();
+                return uri && this.fileSystem.getFsPath(uri.toString());
             }
         });
         variables.registerVariable({
