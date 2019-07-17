@@ -68,14 +68,18 @@ export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
         const isForkOptions = (forkOptions: RawForkOptions | any): forkOptions is RawForkOptions =>
             !!forkOptions && !!forkOptions.modulePath;
 
+        const options: { stdio: (string|number)[], env?: object } = { stdio: ['pipe', 'pipe', 2] };
         if (!isForkOptions(executable)) {
-            if ((executable as DebugAdapterSpawnExecutable).command === 'node' && !environment.electron.is()) {
-                (executable as DebugAdapterSpawnExecutable).command = process.execPath;
+            if ((executable as DebugAdapterSpawnExecutable).command === 'node') {
+                if (environment.electron.is()) {
+                    options.env = environment.electron.runAsNodeEnv();
+                } else {
+                    (executable as DebugAdapterSpawnExecutable).command = process.execPath;
+                }
             }
         }
 
         const processOptions: RawProcessOptions | RawForkOptions = { ...executable };
-        const options = { stdio: ['pipe', 'pipe', 2] };
 
         if (isForkOptions(processOptions)) {
             options.stdio.push('ipc');
