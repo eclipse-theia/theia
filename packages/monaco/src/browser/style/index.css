@@ -36,6 +36,10 @@
     margin-right: 0px;
 }
 
+.monaco-quick-open-widget {
+    background-color: var(--theia-layout-color1) !important;
+}
+
 .quick-open-entry .quick-open-row .monaco-icon-label .monaco-icon-label-description-container .monaco-highlighted-label .highlight {
     color: var(--theia-accent-color1);
 }
