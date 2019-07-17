@@ -275,7 +275,19 @@ export class TaskConfigurations implements Disposable {
             return;
         }
 
-        const configFileUri = this.getConfigFileUri(workspace.uri);
+        const isDetectedTask = this.isDetectedTask(task);
+        let sourceFolderUri: string | undefined;
+        if (isDetectedTask) {
+            sourceFolderUri = task._scope;
+        } else {
+            sourceFolderUri = task._source;
+        }
+        if (!sourceFolderUri) {
+            console.error('Global task cannot be customized');
+            return;
+        }
+
+        const configFileUri = this.getConfigFileUri(sourceFolderUri);
         if (!this.getTasks().some(t => t.label === task.label)) {
             await this.saveTask(configFileUri, task);
         }
@@ -330,7 +342,10 @@ export class TaskConfigurations implements Disposable {
 
     /** checks if the config is a detected / contributed task */
     private isDetectedTask(task: TaskConfiguration): task is ContributedTaskConfiguration {
-        const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
+        const taskDefinition = this.taskDefinitionRegistry.getDefinition({
+            ...task,
+            type: task.taskType || task.type
+        });
         // it is considered as a customization if the task definition registry finds a def for the task configuration
         return !!taskDefinition;
     }
