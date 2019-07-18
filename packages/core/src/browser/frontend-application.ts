@@ -162,6 +162,7 @@ export class FrontendApplication {
         });
         window.addEventListener('resize', () => this.shell.update());
         document.addEventListener('keydown', event => this.keybindings.run(event), true);
+        document.addEventListener('touchmove', event => { event.preventDefault(); }, { passive: false });
         // Prevent forward/back navigation by scrolling in OS X
         if (isOSX) {
             document.body.addEventListener('wheel', preventNavigation, { passive: false });
