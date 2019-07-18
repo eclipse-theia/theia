@@ -14,6 +14,11 @@ Breaking changes:
 
 - [task] `TaskService.getConfiguredTasks()` returns `Promise<TaskConfiguration[]>` instead of `TaskConfiguration[]` [#5777](https://github.com/theia-ide/theia/pull/5777)
 
+Breaking changes:
+  - [shell][plugin] integrated view containers and views [#5665](https://github.com/theia-ide/theia/pull/5665)
+    - `Source Control` and `Explorer` are view containers now and previous layout data cannot be loaded for them. Because of it the layout is completely reset.
+
+
 ## v0.9.0
 - [core] added `theia-widget-noInfo` css class to be used by widgets when displaying no information messages [#5717](https://github.com/theia-ide/theia/pull/5717)
 - [core] added additional options to the tree search input [#5566](https://github.com/theia-ide/theia/pull/5566)
