@@ -12,6 +12,7 @@ Breaking changes:
 - [plugin] removed member `processOptions` from `AbstractHostedInstanceManager` as it is not initialized or used
 - [plugin] added basic support of activation events [#5622](https://github.com/theia-ide/theia/pull/5622)
   - `HostedPluginSupport` is refactored to support multiple `PluginManagerExt` properly
+  - Theia plugins should declare the `"activationEvents": ["*"]` entry in the root of the `package.json`. Otherwise, they won't start at app startup. See [#5743](https://github.com/theia-ide/theia/issues/5743) for more details.
 - [plugin] added support of `workspaceContains` activation events [#5649](https://github.com/theia-ide/theia/pull/5649)
 - [plugin] activate dependencies before activating a plugin [#5661](https://github.com/theia-ide/theia/pull/5661)
 
