@@ -17,7 +17,7 @@
 import * as chai from 'chai';
 import { Configuration, ConfigurationModel } from './configuration';
 import { PreferenceData } from '../../common';
-import { PreferenceScope } from '@theia/preferences/lib/browser';
+import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { WorkspaceExtImpl } from '../workspace';
 import URI from 'vscode-uri';
 
