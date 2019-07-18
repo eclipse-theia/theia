@@ -42,6 +42,9 @@ an issue. Simply choose the issue you would want to work on, and tell everyone
 that you are willing to do so and how you would approach it. The team will be
 happy to guide you and give feedback.
 
+We follow the contributing and reviewing pull request guidelines described
+[here](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md).
+
 ## Coding Guidelines
 
 We follow the coding guidelines described
