@@ -29,11 +29,16 @@ import { CommandRegistry, Command, CommandHandler } from '@theia/core/lib/common
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
 import { TaskDefinitionRegistry, ProblemMatcherRegistry, ProblemPatternRegistry } from '@theia/task/lib/browser';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { EditorManager } from '@theia/editor/lib/browser';
 
 @injectable()
 export class PluginContributionHandler {
 
     private injections = new Map<string, string[]>();
+
+    @inject(EditorManager)
+    private readonly editorManager: EditorManager;
 
     @inject(TextmateRegistry)
     private readonly grammarsRegistry: TextmateRegistry;
@@ -109,7 +114,7 @@ export class PluginContributionHandler {
             }
         }
 
-        if (contributions.grammars) {
+        if (contributions.grammars && contributions.grammars.length) {
             for (const grammar of contributions.grammars) {
                 if (grammar.injectTo) {
                     for (const injectScope of grammar.injectTo) {
@@ -139,6 +144,11 @@ export class PluginContributionHandler {
                         tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
                     });
                     monaco.languages.onLanguage(grammar.language, () => this.monacoTextmateService.activateLanguage(grammar.language!));
+                }
+            }
+            for (const editor of MonacoEditor.getAll(this.editorManager)) {
+                if (editor.languageAutoDeteceted) {
+                    editor.detectLanguage();
                 }
             }
         }
