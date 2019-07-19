@@ -109,7 +109,7 @@ export class MonacoEditor implements TextEditor {
 
     protected addHandlers(codeEditor: IStandaloneCodeEditor): void {
         this.toDispose.push(codeEditor.onDidChangeModelLanguage(e =>
-            this.onLanguageChangedEmitter.fire(e.newLanguage)
+            this.fireLanguageChanged(e.newLanguage)
         ));
         this.toDispose.push(codeEditor.onDidChangeConfiguration(() => this.refresh()));
         this.toDispose.push(codeEditor.onDidChangeModel(() => this.refresh()));
@@ -447,18 +447,31 @@ export class MonacoEditor implements TextEditor {
         this.editor.restoreViewState(state as monaco.editor.ICodeEditorViewState);
     }
 
+    /* `true` because it is derived from an URI during the instantiation */
+    protected _languageAutoDetected = true;
+
+    get languageAutoDeteceted(): boolean {
+        return this._languageAutoDetected;
+    }
+
     async detectLanguage(): Promise<void> {
         const filename = this.uri.path.toString();
         const modeService = monaco.services.StaticServices.modeService.get();
         const firstLine = this.document.textEditorModel.getLineContent(1);
         const mode = await modeService.getOrCreateModeByFilenameOrFirstLine(filename, firstLine);
         this.setLanguage(mode.getId());
+        this._languageAutoDetected = true;
     }
 
     setLanguage(languageId: string): void {
         for (const document of this.documents) {
             monaco.editor.setModelLanguage(document.textEditorModel, languageId);
         }
+    }
+
+    protected fireLanguageChanged(langaugeId: string): void {
+        this._languageAutoDetected = false;
+        this.onLanguageChangedEmitter.fire(langaugeId);
     }
 
     getResourceUri(): URI {
