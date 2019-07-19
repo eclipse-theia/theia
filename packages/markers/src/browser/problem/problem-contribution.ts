@@ -82,7 +82,9 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
 
     protected setStatusBarElement(problemStat: ProblemStat) {
         this.statusBar.setElement('problem-marker-status', {
-            text: `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings}`,
+            text: problemStat.infos <= 0
+                ? `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings}`
+                : `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings} $(info-circle) ${problemStat.infos}`,
             alignment: StatusBarAlignment.LEFT,
             priority: 10,
             command: this.toggleCommand ? this.toggleCommand.id : undefined
