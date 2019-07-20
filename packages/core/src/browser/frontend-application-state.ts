@@ -40,7 +40,9 @@ export class FrontendApplicationStateService {
 
     set state(state: FrontendApplicationState) {
         if (state !== this._state) {
-            this.deferred[this._state] = new Deferred();
+            if (this.deferred[this._state] === undefined) {
+                this.deferred[this._state] = new Deferred();
+            }
             this._state = state;
             if (this.deferred[state] === undefined) {
                 this.deferred[state] = new Deferred();
