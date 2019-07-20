@@ -108,26 +108,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         layout.addWidget(this.panel);
 
         const { commandRegistry, menuRegistry, contextMenuRenderer } = this;
-        commandRegistry.registerCommand({ id: this.globalHideCommandId }, {
-            execute: (anchor: Anchor) => {
-                const toHide = this.findPartForAnchor(anchor);
-                if (toHide && toHide.canHide) {
-                    toHide.hide();
-                }
-            },
-            isVisible: (anchor: Anchor) => {
-                const toHide = this.findPartForAnchor(anchor);
-                if (toHide) {
-                    return toHide.canHide && !toHide.isHidden;
-                } else {
-                    return some(this.containerLayout.iter(), part => !part.isHidden);
-                }
-            }
-        });
-        menuRegistry.registerMenuAction([...this.contextMenuPath, '0_global'], {
-            commandId: this.globalHideCommandId,
-            label: 'Hide'
-        });
         this.toDispose.pushAll([
             addEventListener(this.node, 'contextmenu', event => {
                 if (event.button === 2 && every(this.containerLayout.iter(), part => !!part.isHidden)) {
@@ -136,8 +116,26 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                     contextMenuRenderer.render({ menuPath: this.contextMenuPath, anchor: event });
                 }
             }),
-            Disposable.create(() => commandRegistry.unregisterCommand(this.globalHideCommandId)),
-            Disposable.create(() => menuRegistry.unregisterMenuAction(this.globalHideCommandId)),
+            commandRegistry.registerCommand({ id: this.globalHideCommandId }, {
+                execute: (anchor: Anchor) => {
+                    const toHide = this.findPartForAnchor(anchor);
+                    if (toHide && toHide.canHide) {
+                        toHide.hide();
+                    }
+                },
+                isVisible: (anchor: Anchor) => {
+                    const toHide = this.findPartForAnchor(anchor);
+                    if (toHide) {
+                        return toHide.canHide && !toHide.isHidden;
+                    } else {
+                        return some(this.containerLayout.iter(), part => !part.isHidden);
+                    }
+                }
+            }),
+            menuRegistry.registerMenuAction([...this.contextMenuPath, '0_global'], {
+                commandId: this.globalHideCommandId,
+                label: 'Hide'
+            }),
             this.onDidChangeTrackableWidgetsEmitter
         ]);
     }
