@@ -49,6 +49,8 @@ export class DebugConfigurationWidget extends ReactWidget {
     protected init(): void {
         this.addClass('debug-toolbar');
         this.toDispose.push(this.manager.onDidChange(() => this.update()));
+        this.toDispose.push(this.workspaceService.onWorkspaceChanged(() => this.update()));
+        this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(() => this.update()));
         this.update();
     }
 
@@ -97,7 +99,7 @@ export class DebugConfigurationWidget extends ReactWidget {
         return configuration.name + '__CONF__' + workspaceFolderUri;
     }
     protected toName({ configuration, workspaceFolderUri }: DebugSessionOptions): string {
-        if (!workspaceFolderUri || !this.workspaceService.isMultiRootWorkspaceEnabled) {
+        if (!workspaceFolderUri || !this.workspaceService.isMultiRootWorkspaceOpened) {
             return configuration.name;
         }
         return configuration.name + ' (' + new URI(workspaceFolderUri).path.base + ')';
