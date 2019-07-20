@@ -152,6 +152,8 @@ export class CommandRegistry implements CommandService {
     protected readonly _commands: { [id: string]: Command } = {};
     protected readonly _handlers: { [id: string]: CommandHandler[] } = {};
 
+    protected readonly toUnregisterCommands = new Map<string, Disposable>();
+
     // List of recently used commands.
     protected _recent: Command[] = [];
 
@@ -180,13 +182,13 @@ export class CommandRegistry implements CommandService {
             console.warn(`A command ${command.id} is already registered.`);
             return Disposable.NULL;
         }
+        const toDispose = new DisposableCollection(this.doRegisterCommand(command));
         if (handler) {
-            const toDispose = new DisposableCollection();
-            toDispose.push(this.doRegisterCommand(command));
             toDispose.push(this.registerHandler(command.id, handler));
-            return toDispose;
         }
-        return this.doRegisterCommand(command);
+        this.toUnregisterCommands.set(command.id, toDispose);
+        toDispose.push(Disposable.create(() => this.toUnregisterCommands.delete(command.id)));
+        return toDispose;
     }
 
     protected doRegisterCommand(command: Command): Disposable {
@@ -212,9 +214,9 @@ export class CommandRegistry implements CommandService {
     unregisterCommand(id: string): void;
     unregisterCommand(commandOrId: Command | string): void {
         const id = Command.is(commandOrId) ? commandOrId.id : commandOrId;
-
-        if (this._commands[id]) {
-            delete this._commands[id];
+        const toUnregister = this.toUnregisterCommands.get(id);
+        if (toUnregister) {
+            toUnregister.dispose();
         }
     }
 
