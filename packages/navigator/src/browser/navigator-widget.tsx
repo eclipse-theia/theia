@@ -132,7 +132,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
     protected getContainerTreeNode(): TreeNode | undefined {
         const root = this.model.root;
-        if (this.workspaceService.isMultiRootWorkspaceEnabled) {
+        if (this.workspaceService.isMultiRootWorkspaceOpened) {
             return root;
         }
         if (WorkspaceNode.is(root)) {

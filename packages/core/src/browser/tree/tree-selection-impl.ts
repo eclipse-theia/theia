@@ -122,7 +122,7 @@ export class TreeSelectionServiceImpl implements TreeSelectionService {
      */
     protected validateNode(node: Readonly<TreeNode>): Readonly<TreeNode> | undefined {
         const result = this.tree.validateNode(node);
-        return SelectableTreeNode.isVisible(result) ? this.tree.validateNode(node) : undefined;
+        return SelectableTreeNode.is(result) ? result : undefined;
     }
 
     storeState(): TreeSelectionServiceImpl.State {

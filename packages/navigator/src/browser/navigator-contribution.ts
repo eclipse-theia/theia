@@ -33,6 +33,7 @@ import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
+import { UriSelection } from '@theia/core/lib/common/selection';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
@@ -48,6 +49,9 @@ export namespace FileNavigatorCommands {
         category: 'File',
         label: 'Collapse Folders in Explorer',
         iconClass: 'collapse-all'
+    };
+    export const ADD_ROOT_FOLDER: Command = {
+        id: 'navigator.addRootFolder'
     };
 }
 
@@ -156,6 +160,19 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             execute: widget => this.withWidget(widget, () => this.collapseFileNavigatorTree()),
             isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
             isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
+        });
+        registry.registerCommand(FileNavigatorCommands.ADD_ROOT_FOLDER, {
+            execute: (...args) => registry.executeCommand(WorkspaceCommands.ADD_FOLDER.id, ...args),
+            isEnabled: (...args) => registry.isEnabled(WorkspaceCommands.ADD_FOLDER.id, ...args),
+            isVisible: (...args) => {
+                if (!registry.isVisible(WorkspaceCommands.ADD_FOLDER.id, ...args)) {
+                    return false;
+                }
+                const navigator = this.tryGetWidget();
+                const model = navigator && navigator.model;
+                const uris = UriSelection.getUris(model && model.selectedNodes);
+                return this.workspaceService.areWorkspaceRoots(uris);
+            }
         });
 
         registry.registerCommand(NavigatorDiffCommands.COMPARE_FIRST, {
@@ -361,7 +378,8 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         this.toDisposeAddRemoveFolderActions.dispose();
         if (this.workspacePreferences['workspace.supportMultiRootWorkspace']) {
             this.toDisposeAddRemoveFolderActions.push(registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
-                commandId: WorkspaceCommands.ADD_FOLDER.id
+                commandId: FileNavigatorCommands.ADD_ROOT_FOLDER.id,
+                label: WorkspaceCommands.ADD_FOLDER.label!
             }));
             this.toDisposeAddRemoveFolderActions.push(registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
                 commandId: WorkspaceCommands.REMOVE_FOLDER.id
