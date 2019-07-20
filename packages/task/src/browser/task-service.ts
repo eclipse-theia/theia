@@ -318,7 +318,7 @@ export class TaskService implements TaskConfigurationClient {
             }
         } else { // if a provided task is found, check if it is customized in tasks.json
             const taskType = task.taskType || task.type;
-            const customizations = this.taskConfigurations.getTaskCustomizations(taskType);
+            const customizations = task._scope ? this.taskConfigurations.getTaskCustomizations(taskType, task._scope) : [];
             const matcherContributions = this.getProblemMatchers(task, customizations);
             matchers.push(...matcherContributions);
         }

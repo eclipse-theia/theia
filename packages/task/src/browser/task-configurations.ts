@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { TaskConfiguration, TaskCustomization, ContributedTaskConfiguration } from '../common';
+import { ContributedTaskConfiguration, TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { Disposable, DisposableCollection, ResourceProvider } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
@@ -44,11 +44,14 @@ export class TaskConfigurations implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
     /**
-     * Map of source (path of root folder that the task config comes from) and task config map.
+     * Map of source (path of root folder that the task configs come from) and task config map.
      * For the inner map (i.e., task config map), the key is task label and value TaskConfiguration
      */
     protected tasksMap = new Map<string, Map<string, TaskConfiguration>>();
-    protected taskCustomizations: TaskCustomization[] = [];
+    /**
+     * Map of source (path of root folder that the task configs come from) and task customizations map.
+     */
+    protected taskCustomizationMap = new Map<string, TaskCustomization[]>();
 
     protected watchedConfigFileUris: string[] = [];
     protected watchersMap = new Map<string, Disposable>(); // map of watchers for task config files, where the key is folder uri
@@ -179,8 +182,26 @@ export class TaskConfigurations implements Disposable {
         this.tasksMap.delete(source);
     }
 
-    getTaskCustomizations(type: string): TaskCustomization[] {
-        return this.taskCustomizations.filter(c => c.type === type);
+    removeTaskCustomizations(configFileUri: string) {
+        const source = this.getSourceFolderFromConfigUri(configFileUri);
+        this.taskCustomizationMap.delete(source);
+    }
+
+    /**
+     * Returns the task customizations by type from a given root folder in the workspace.
+     * @param type the type of task customizations
+     * @param rootFolder the root folder to find task customizations from. If `undefined`, this function returns an empty array.
+     */
+    getTaskCustomizations(type: string, rootFolder: string | undefined): TaskCustomization[] {
+        if (!rootFolder) {
+            return [];
+        }
+
+        const customizationInRootFolder = this.taskCustomizationMap.get(new URI(rootFolder).path.toString());
+        if (customizationInRootFolder) {
+            return customizationInRootFolder.filter(c => c.type === type);
+        }
+        return [];
     }
 
     /** returns the string uri of where the config file would be, if it existed under a given root directory */
@@ -226,19 +247,19 @@ export class TaskConfigurations implements Disposable {
             // user is editing the file in the auto-save mode, having momentarily
             // non-parsing JSON.
             this.removeTasks(configFileUri);
+            this.removeTaskCustomizations(configFileUri);
+            const rootFolderUri = this.getSourceFolderFromConfigUri(configFileUri);
 
             if (configuredTasksArray.length > 0) {
                 const newTaskMap = new Map<string, TaskConfiguration>();
                 for (const task of configuredTasksArray) {
                     newTaskMap.set(task.label, task);
                 }
-                const source = this.getSourceFolderFromConfigUri(configFileUri);
-                this.tasksMap.set(source, newTaskMap);
+                this.tasksMap.set(rootFolderUri, newTaskMap);
             }
 
             if (customizations.length > 0) {
-                this.taskCustomizations.length = 0;
-                this.taskCustomizations = customizations;
+                this.taskCustomizationMap.set(rootFolderUri, customizations);
             }
         }
     }
@@ -299,6 +320,24 @@ export class TaskConfigurations implements Disposable {
         }
     }
 
+    private getTaskCustomizationTemplate(task: TaskConfiguration): TaskCustomization | undefined {
+        const definition = this.getTaskDefinition(task);
+        if (!definition) {
+            console.error('Detected / Contributed tasks should have a task definition.');
+            return;
+        }
+        const customization: TaskCustomization = { type: task.taskType || task.type };
+        definition.properties.all.forEach(p => {
+            if (task[p] !== undefined) {
+                customization[p] = task[p];
+            }
+        });
+        return {
+            ...customization,
+            problemMatcher: []
+        };
+    }
+
     /** Writes the task to a config file. Creates a config file if this one does not exist */
     async saveTask(configFileUri: string, task: TaskConfiguration): Promise<void> {
         if (configFileUri && !await this.fileSystem.exists(configFileUri)) {
@@ -306,12 +345,13 @@ export class TaskConfigurations implements Disposable {
         }
 
         const { _source, $ident, ...preparedTask } = task;
+        const customizedTaskTemplate = this.getTaskCustomizationTemplate(task) || preparedTask;
         try {
             const response = await this.fileSystem.resolveContent(configFileUri);
             const content = response.content;
 
             const formattingOptions = { tabSize: 4, insertSpaces: true, eol: '' };
-            const edits = jsoncparser.modify(content, ['tasks', -1], preparedTask, { formattingOptions });
+            const edits = jsoncparser.modify(content, ['tasks', -1], customizedTaskTemplate, { formattingOptions });
             const result = jsoncparser.applyEdits(content, edits);
 
             const resource = await this.resourceProvider(new URI(configFileUri));
@@ -342,11 +382,15 @@ export class TaskConfigurations implements Disposable {
 
     /** checks if the config is a detected / contributed task */
     private isDetectedTask(task: TaskConfiguration): task is ContributedTaskConfiguration {
-        const taskDefinition = this.taskDefinitionRegistry.getDefinition({
+        const taskDefinition = this.getTaskDefinition(task);
+        // it is considered as a customization if the task definition registry finds a def for the task configuration
+        return !!taskDefinition;
+    }
+
+    private getTaskDefinition(task: TaskConfiguration): TaskDefinition | undefined {
+        return this.taskDefinitionRegistry.getDefinition({
             ...task,
             type: task.taskType || task.type
         });
-        // it is considered as a customization if the task definition registry finds a def for the task configuration
-        return !!taskDefinition;
     }
 }
