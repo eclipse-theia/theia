@@ -15,8 +15,9 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { ContributedTaskConfiguration, TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
+import { ContributedTaskConfiguration, TaskConfiguration, TaskCustomization, TaskDefinition, ProblemMatcherContribution } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
+import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { Disposable, DisposableCollection, ResourceProvider } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
@@ -74,6 +75,9 @@ export class TaskConfigurations implements Disposable {
 
     @inject(TaskDefinitionRegistry)
     protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+
+    @inject(ProvidedTaskConfigurations)
+    protected readonly providedTaskConfigurations: ProvidedTaskConfigurations;
 
     constructor(
         @inject(FileSystemWatcher) protected readonly watcherServer: FileSystemWatcher,
@@ -163,14 +167,28 @@ export class TaskConfigurations implements Disposable {
         return Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.keys())), [] as string[]);
     }
 
-    /** returns the list of known tasks */
-    getTasks(): TaskConfiguration[] {
-        return Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as TaskConfiguration[]);
+    /**
+     * returns the list of known tasks, which includes:
+     * - all the configured tasks in `tasks.json`, and
+     * - the customized detected tasks
+     */
+    async getTasks(): Promise<TaskConfiguration[]> {
+        const configuredTasks = Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as TaskConfiguration[]);
+        const detectedTasksAsConfigured: TaskConfiguration[] = [];
+        for (const [rootFolder, customizations] of Array.from(this.taskCustomizationMap.entries())) {
+            for (const cus of customizations) {
+                const detected = await this.providedTaskConfigurations.getTaskToCustomize(cus, rootFolder);
+                if (detected) {
+                    detectedTasksAsConfigured.push(detected);
+                }
+            }
+        }
+        return [...configuredTasks, ...detectedTasksAsConfigured];
     }
 
     /** returns the task configuration for a given label or undefined if none */
-    getTask(source: string, taskLabel: string): TaskConfiguration | undefined {
-        const labelConfigMap = this.tasksMap.get(source);
+    getTask(rootFolderPath: string, taskLabel: string): TaskConfiguration | undefined {
+        const labelConfigMap = this.tasksMap.get(rootFolderPath);
         if (labelConfigMap) {
             return labelConfigMap.get(taskLabel);
         }
@@ -202,6 +220,38 @@ export class TaskConfigurations implements Disposable {
             return customizationInRootFolder.filter(c => c.type === type);
         }
         return [];
+    }
+
+    getProblemMatchers(taskConfiguration: TaskConfiguration): (string | ProblemMatcherContribution)[] {
+        if (!this.isDetectedTask(taskConfiguration)) { // problem matchers can be found from the task config, if it is not a detected task
+            if (taskConfiguration.problemMatcher) {
+                if (Array.isArray(taskConfiguration.problemMatcher)) {
+                    return taskConfiguration.problemMatcher;
+                }
+                return [taskConfiguration.problemMatcher];
+            }
+            return [];
+        }
+
+        const customizationByType = this.getTaskCustomizations(taskConfiguration.taskType || taskConfiguration.type, taskConfiguration._scope) || [];
+        const hasCustomization = customizationByType.length > 0;
+        const problemMatchers: (string | ProblemMatcherContribution)[] = [];
+        if (hasCustomization) {
+            const taskDefinition = this.taskDefinitionRegistry.getDefinition(taskConfiguration);
+            if (taskDefinition) {
+                const cus = customizationByType.filter(customization =>
+                    taskDefinition.properties.required.every(rp => customization[rp] === taskConfiguration[rp])
+                )[0]; // Only support having one customization per task
+                if (cus && cus.problemMatcher) {
+                    if (Array.isArray(cus.problemMatcher)) {
+                        problemMatchers.push(...cus.problemMatcher);
+                    } else {
+                        problemMatchers.push(cus.problemMatcher);
+                    }
+                }
+            }
+        }
+        return problemMatchers;
     }
 
     /** returns the string uri of where the config file would be, if it existed under a given root directory */
@@ -309,7 +359,8 @@ export class TaskConfigurations implements Disposable {
         }
 
         const configFileUri = this.getConfigFileUri(sourceFolderUri);
-        if (!this.getTasks().some(t => t.label === task.label)) {
+        const configuredAndCustomizedTasks = await this.getTasks();
+        if (!configuredAndCustomizedTasks.some(t => TaskConfiguration.equals(t, task))) {
             await this.saveTask(configFileUri, task);
         }
 

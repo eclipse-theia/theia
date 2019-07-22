@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { TaskDefinition, TaskConfiguration } from '../common';
+import { TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
 
 @injectable()
 export class TaskDefinitionRegistry {
@@ -41,7 +41,7 @@ export class TaskDefinitionRegistry {
      * @param taskConfiguration the task configuration
      * @return the task definition for the task configuration. If the task definition is not found, `undefined` is returned.
      */
-    getDefinition(taskConfiguration: TaskConfiguration): TaskDefinition | undefined {
+    getDefinition(taskConfiguration: TaskConfiguration | TaskCustomization): TaskDefinition | undefined {
         const definitions = this.getDefinitions(taskConfiguration.taskType || taskConfiguration.type);
         let matchedDefinition: TaskDefinition | undefined;
         let highest = -1;
