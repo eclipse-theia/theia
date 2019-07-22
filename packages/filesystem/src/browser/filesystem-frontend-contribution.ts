@@ -30,6 +30,7 @@ import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-se
 import { FileSystemPreferences } from './filesystem-preferences';
 import { FileSelection } from './file-selection';
 import { FileUploadService } from './file-upload-service';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 export namespace FileSystemCommands {
 
@@ -65,6 +66,9 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
     @inject(FileUploadService)
     protected readonly uploadService: FileUploadService;
 
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
     initialize(): void {
         this.fileSystemWatcher.onFilesChanged(event => this.run(() => this.updateWidgets(event)));
         this.fileSystemWatcher.onDidMove(event => this.run(() => this.moveWidgets(event)));
@@ -82,23 +86,40 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(FileSystemCommands.UPLOAD, new FileSelection.CommandHandler(this.selectionService, {
             multi: false,
-            isEnabled: selection => this.canUpload(selection),
-            isVisible: selection => this.canUpload(selection),
+            isEnabled: selection => this.menuItemEnabled(selection),
+            isVisible: selection => this.menuItemVisible(selection),
             execute: selection => this.upload(selection)
         }));
     }
 
-    protected canUpload({ fileStat }: FileSelection): boolean {
-        return !environment.electron.is() && fileStat.isDirectory;
+    //the top-left corner menu should always be enabled
+    protected menuItemEnabled(selection: FileSelection | undefined): boolean {
+        selection;
+        return !environment.electron.is();
+    }
+
+    //the right-click context menu should be invisible when the selected item is a regular file
+    protected menuItemVisible(selection: FileSelection | undefined): boolean {
+        //the only cases we can't upload are: electron environment, and fileSelection is a regular file
+        return !environment.electron.is() && (selection == undefined || selection.fileStat.isDirectory);
     }
 
     protected async upload(selection: FileSelection): Promise<void> {
         try {
-            const source = TreeWidgetSelection.getSource(this.selectionService.selection);
-            await this.uploadService.upload(selection.fileStat.uri);
-            if (ExpandableTreeNode.is(selection) && source) {
-                await source.model.expandNode(selection);
+            //use workspace root if there is no selection
+            if (selection == undefined) {
+                await this.uploadService.upload(this.workspaceService.tryGetRoots()[0].uri);
+                //if selection is a regular file, then upload to its parent folder
+            } else if (!selection.fileStat.isDirectory) {
+                await this.uploadService.upload((new URI(selection.fileStat.uri)).parent);
+            } else {
+                const source = TreeWidgetSelection.getSource(this.selectionService.selection);
+                await this.uploadService.upload(selection.fileStat.uri);
+                if (ExpandableTreeNode.is(selection) && source) {
+                    await source.model.expandNode(selection);
+                }
             }
+
         } catch (e) {
             if (!isCancelled(e)) {
                 console.error(e);
