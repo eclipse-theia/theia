@@ -388,6 +388,7 @@ export interface QuickOpenMain {
     $setItems(items: PickOpenItem[]): Promise<any>;
     $setError(error: Error): Promise<any>;
     $input(options: theia.InputBoxOptions, validateInput: boolean): Promise<string | undefined>;
+    $hide(): void;
 }
 
 export interface WorkspaceMain {

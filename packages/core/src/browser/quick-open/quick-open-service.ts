@@ -17,6 +17,7 @@
 import { injectable } from 'inversify';
 import { QuickOpenModel } from './quick-open-model';
 import { MessageType } from '../../common/message-service-protocol';
+import { HideReason } from '../../common/quick-pick-service';
 
 export type QuickOpenOptions = Partial<QuickOpenOptions.Resolved>;
 export namespace QuickOpenOptions {
@@ -84,6 +85,7 @@ export class QuickOpenService {
      * It should be implemented by an extension, e.g. by the monaco extension.
      */
     open(model: QuickOpenModel, options?: QuickOpenOptions): void { }
+    hide(reason?: HideReason): void { }
     showDecoration(type: MessageType): void { }
     hideDecoration(): void { }
 }

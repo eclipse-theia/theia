@@ -24,6 +24,7 @@ import {
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { MonacoContextKeyService } from './monaco-context-key-service';
+import { HideReason } from '@theia/core/lib/common/quick-pick-service';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;
@@ -69,6 +70,22 @@ export class MonacoQuickOpenService extends QuickOpenService {
 
     open(model: QuickOpenModel, options?: QuickOpenOptions): void {
         this.internalOpen(new MonacoQuickOpenControllerOptsImpl(model, this.keybindingRegistry, options));
+    }
+
+    hide(reason?: HideReason): void {
+        let hideReason: monaco.quickOpen.HideReason | undefined;
+        switch (reason) {
+            case HideReason.ELEMENT_SELECTED:
+                hideReason = monaco.quickOpen.HideReason.ELEMENT_SELECTED;
+                break;
+            case HideReason.FOCUS_LOST:
+                hideReason = monaco.quickOpen.HideReason.FOCUS_LOST;
+                break;
+            case HideReason.CANCELED:
+                hideReason = monaco.quickOpen.HideReason.CANCELED;
+                break;
+        }
+        this.widget.hide(hideReason);
     }
 
     showDecoration(type: MessageType): void {
