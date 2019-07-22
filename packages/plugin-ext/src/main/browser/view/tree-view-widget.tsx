@@ -37,7 +37,9 @@ import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/com
 import * as React from 'react';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ViewContextKeyService } from './view-context-key-service';
-import { CommandRegistry } from '@theia/core';
+import { CommandRegistry } from '@theia/core/lib/common/command';
+import { MessageService } from '@theia/core/lib/common/message-service';
+import { View } from '../../../common/plugin-protocol';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -80,18 +82,40 @@ export class PluginTree extends TreeImpl {
     @inject(TreeViewWidgetIdentifier)
     protected readonly identifier: TreeViewWidgetIdentifier;
 
+    @inject(MessageService)
+    protected readonly notification: MessageService;
+
     private _proxy: TreeViewsExt | undefined;
+    private _viewInfo: View | undefined;
 
     set proxy(proxy: TreeViewsExt) {
         this._proxy = proxy;
+    }
+
+    set viewInfo(viewInfo: View) {
+        this._viewInfo = viewInfo;
     }
 
     protected async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (!this._proxy) {
             return super.resolveChildren(parent);
         }
-        const children = await this._proxy.$getChildren(this.identifier.id, parent.id);
-        return children ? children.map(value => this.createTreeNode(value, parent)) : [];
+        const children = await this.fetchChildren(this._proxy, parent);
+        return children.map(value => this.createTreeNode(value, parent));
+    }
+
+    protected async fetchChildren(proxy: TreeViewsExt, parent: CompositeTreeNode): Promise<TreeViewItem[]> {
+        try {
+            const children = await proxy.$getChildren(this.identifier.id, parent.id);
+            return children || [];
+        } catch (e) {
+            if (e) {
+                console.error(`Failed to fetch children for '${this.identifier.id}'`, e);
+                const label = this._viewInfo ? this._viewInfo.name : this.identifier.id;
+                this.notification.error(`${label}: ${e.message}`);
+            }
+            return [];
+        }
     }
 
     protected createTreeNode(item: TreeViewItem, parent: CompositeTreeNode): TreeNode {
@@ -153,6 +177,10 @@ export class PluginTreeModel extends TreeModelImpl {
 
     set proxy(proxy: TreeViewsExt) {
         this.tree.proxy = proxy;
+    }
+
+    set viewInfo(viewInfo: View) {
+        this.tree.viewInfo = viewInfo;
     }
 
 }

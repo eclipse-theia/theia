@@ -337,6 +337,7 @@ class MessageFactory {
         if (messageToSendHostId) {
             prefix = `"hostID":"${messageToSendHostId}",`;
         }
+        err = typeof err === 'string' ? new Error(err) : err;
         if (err instanceof Error) {
             return `{${prefix}"type":${MessageType.ReplyErr},"id":"${req}","err":${JSON.stringify(transformErrorForSerialization(err))}}`;
         }
