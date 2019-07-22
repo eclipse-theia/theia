@@ -164,6 +164,10 @@ class TreeViewExtImpl<T> extends Disposable {
     async getChildren(parentId: string): Promise<TreeViewItem[] | undefined> {
         // get element from a cache
         const parent = this.getTreeItem(parentId);
+        if (parentId && !parent) {
+            console.error(`No tree item with id '${parentId}' found.`);
+            return [];
+        }
 
         // ask data provider for children for cached element
         const result = await this.treeDataProvider.getChildren(parent);
