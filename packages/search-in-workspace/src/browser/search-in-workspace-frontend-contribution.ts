@@ -55,7 +55,7 @@ export namespace SearchInWorkspaceCommands {
         id: 'search-in-workspace.collapse-all',
         category: SEARCH_CATEGORY,
         label: 'Collapse All',
-        iconClass: 'collapse-all'
+        iconClass: 'theia-collapse-all-icon'
     };
     export const CLEAR_ALL: Command = {
         id: 'search-in-workspace.clear-all',

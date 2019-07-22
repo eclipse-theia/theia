@@ -24,6 +24,7 @@ import { DebugBreakpointsWidget } from './debug-breakpoints-widget';
 import { DebugVariablesWidget } from './debug-variables-widget';
 import { DebugToolBar } from './debug-toolbar-widget';
 import { DebugViewModel, DebugViewOptions } from './debug-view-model';
+import { DebugWatchWidget } from './debug-watch-widget';
 
 export const DebugSessionWidgetFactory = Symbol('DebugSessionWidgetFactory');
 export type DebugSessionWidgetFactory = (options: DebugViewOptions) => DebugSessionWidget;
@@ -40,6 +41,7 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
         child.bind(DebugThreadsWidget).toDynamicValue(({ container }) => DebugThreadsWidget.createWidget(container));
         child.bind(DebugStackFramesWidget).toDynamicValue(({ container }) => DebugStackFramesWidget.createWidget(container));
         child.bind(DebugVariablesWidget).toDynamicValue(({ container }) => DebugVariablesWidget.createWidget(container));
+        child.bind(DebugWatchWidget).toDynamicValue(({ container }) => DebugWatchWidget.createWidget(container));
         child.bind(DebugBreakpointsWidget).toDynamicValue(({ container }) => DebugBreakpointsWidget.createWidget(container));
         child.bind(DebugSessionWidget).toSelf();
         return child;
@@ -68,6 +70,9 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
     @inject(DebugVariablesWidget)
     protected readonly variables: DebugVariablesWidget;
 
+    @inject(DebugWatchWidget)
+    protected readonly watch: DebugWatchWidget;
+
     @inject(DebugBreakpointsWidget)
     protected readonly breakpoints: DebugBreakpointsWidget;
 
@@ -75,16 +80,18 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
     protected init(): void {
         this.id = 'debug:session:' + this.model.id;
         this.title.label = this.model.label;
+        this.title.caption = this.model.label;
         this.title.closable = true;
-        this.title.iconClass = 'fa debug-tab-icon';
+        this.title.iconClass = 'debug-tab-icon';
         this.addClass('theia-session-container');
 
         this.viewContainer = this.viewContainerFactory({
-            id: 'debug:view-container'
+            id: 'debug:view-container:' + this.model.id
         });
         this.viewContainer.addWidget(this.threads, { weight: 30 });
         this.viewContainer.addWidget(this.stackFrames, { weight: 20 });
         this.viewContainer.addWidget(this.variables, { weight: 10 });
+        this.viewContainer.addWidget(this.watch, { weight: 10 });
         this.viewContainer.addWidget(this.breakpoints, { weight: 10 });
 
         this.toDispose.pushAll([

@@ -17,7 +17,7 @@
 // tslint:disable:no-any
 
 import { ReactNode } from 'react';
-import { injectable } from 'inversify';
+import { injectable, unmanaged } from 'inversify';
 import { Emitter, Event } from '../../common/event';
 import { MaybePromise } from '../../common/types';
 import { Disposable, DisposableCollection } from '../../common/disposable';
@@ -57,7 +57,7 @@ export abstract class TreeSource implements Disposable {
     readonly id: string | undefined;
     readonly placeholder: string | undefined;
 
-    constructor(options: TreeSourceOptions = {}) {
+    constructor(@unmanaged() options: TreeSourceOptions = {}) {
         this.id = options.id;
         this.placeholder = options.placeholder;
     }

@@ -9,6 +9,5 @@
     --theia-debug-step-out: url('step-out-inverse.svg');
     --theia-debug-configure: url('configure-inverse.svg');
     --theia-debug-repl: url('repl-inverse.svg');
-    --breakpoints-remove-all-url: url('remove-all-inverse.svg');
     --breakpoints-activate-url: url('breakpoints-activate-inverse.svg');
 }

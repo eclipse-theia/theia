@@ -66,6 +66,8 @@ is not optimized for dense, information rich UIs.
   --theia-icon-close-all: url(../icons/close-all-dark.svg);
   --theia-icon-collapse: url(../icons/collapse.svg);
   --theia-icon-collapse-all: url(../icons/CollapseAll_inverse.svg);
+  --theia-icon-remove-all: url(../icons/remove-all-inverse.svg);
+  --theia-icon-add: url(../icons/add-inverse.svg);
   --theia-icon-clear: url(../icons/clear-search-results-dark.svg);
   --theia-icon-replace: url(../icons/replace-inverse.svg);
   --theia-icon-replace-all: url(../icons/replace-all-inverse.svg);

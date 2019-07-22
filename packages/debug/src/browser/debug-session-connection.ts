@@ -180,7 +180,21 @@ export class DebugSessionConnection implements Disposable {
             arguments: args
         };
 
+        const onDispose = this.toDispose.push(Disposable.create(() => {
+            const pendingRequest = this.pendingRequests.get(request.seq);
+            if (pendingRequest) {
+                pendingRequest({
+                    type: 'response',
+                    request_seq: request.seq,
+                    command: request.command,
+                    seq: 0,
+                    success: false,
+                    message: 'debug session is closed'
+                });
+            }
+        }));
         this.pendingRequests.set(request.seq, (response: K) => {
+            onDispose.dispose();
             if (!response.success) {
                 result.reject(response);
             } else {

@@ -118,7 +118,7 @@ export class DebugConsoleSession extends ConsoleSession {
     }
 
     async execute(value: string): Promise<void> {
-        const expression = new ExpressionItem(value, this.manager.currentSession);
+        const expression = new ExpressionItem(value, () => this.manager.currentSession);
         this.items.push(expression);
         await expression.evaluate();
         this.fireDidChange();
@@ -160,7 +160,7 @@ export class DebugConsoleSession extends ConsoleSession {
         }
         const severity = category === 'stderr' ? Severity.Error : event.body.category === 'console' ? Severity.Warning : Severity.Info;
         if (variablesReference) {
-            const items = await new ExpressionContainer({ session, variablesReference }).getElements();
+            const items = await new ExpressionContainer({ session: () => session, variablesReference }).getElements();
             this.items.push(...items);
         } else if (typeof body.output === 'string') {
             for (const line of body.output.split('\n')) {

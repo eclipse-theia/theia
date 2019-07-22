@@ -84,12 +84,16 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         return this.scopes || (this.scopes = this.doGetScopes());
     }
     protected async doGetScopes(): Promise<DebugScope[]> {
+        let response;
         try {
-            const response = await this.session.sendRequest('scopes', this.toArgs());
-            return response.body.scopes.map(raw => new DebugScope(raw, this.session));
+            response = await this.session.sendRequest('scopes', this.toArgs());
         } catch (e) {
+            // no-op: ignore debug adapter errors
+        }
+        if (!response) {
             return [];
         }
+        return response.body.scopes.map(raw => new DebugScope(raw, () => this.session));
     }
 
     protected toArgs<T extends object>(arg?: T): { frameId: number } & T {
