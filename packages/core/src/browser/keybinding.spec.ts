@@ -253,9 +253,8 @@ describe('keybindings', () => {
         expect(bindings.partial.length > 0);
     });
 
-    it('should register a shadowing keybinding', () => {
+    it('should not register a shadowing keybinding', () => {
         const validKeyBinding = 'ctrlcmd+b a';
-        const otherValidKeyBinding = 'ctrlcmd+b';
         const command = TEST_COMMAND_SHADOW.id;
         const keybindingShadowing: Keybinding[] = [
             {
@@ -264,19 +263,18 @@ describe('keybindings', () => {
             },
             {
                 command,
-                keybinding: otherValidKeyBinding
+                keybinding: 'ctrlcmd+b'
             }
         ];
 
         keybindingRegistry.registerKeybindings(...keybindingShadowing);
 
         const bindings = keybindingRegistry.getKeybindingsForCommand(command);
-        expect(bindings.length).to.be.equal(2);
+        expect(bindings.length).to.be.equal(1);
         expect(bindings[0].keybinding).to.be.equal(validKeyBinding);
-        expect(bindings[1].keybinding).to.be.equal(otherValidKeyBinding);
     });
 
-    it('shadowed bindings should be returned', () => {
+    it('shadowed bindings should not be returned', () => {
         const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift] });
         let bindings: Keybinding[];
 
@@ -320,7 +318,7 @@ describe('keybindings', () => {
         // and finally it should fallback to DEFAULT bindings.
 
         bindings = keybindingRegistry.getKeybindingsForKeySequence([keyCode]).full;
-        expect(bindings).to.have.lengthOf(2);
+        expect(bindings).to.have.lengthOf(1);
         expect(bindings[0].command).to.be.equal(defaultBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.DEFAULT);
@@ -329,29 +327,6 @@ describe('keybindings', () => {
         bindings = keybindingRegistry.getKeybindingsForKeySequence([keyCode]).full;
         expect(bindings).to.be.empty;
 
-    });
-
-    it('should register conflicting keybindings', () => {
-        const keybindings: Keybinding[] = [{
-            command: TEST_COMMAND.id,
-            keybinding: 'ctrl+c'
-        },
-        {
-            command: TEST_COMMAND2.id,
-            keybinding: 'ctrl+c'
-        }];
-
-        keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
-
-        const bindings = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND.id);
-
-        const keyCode = KeyCode.parse(bindings[0].keybinding);
-        const bindingsForKey = keybindingRegistry.getKeybindingsForKeySequence([keyCode]).full;
-        if (bindingsForKey) {
-            expect(bindingsForKey).to.have.lengthOf(2);
-            expect(bindingsForKey[0]).to.be.equal(keybindings[0]);
-            expect(bindingsForKey[1]).to.be.equal(keybindings[1]);
-        }
     });
 });
 
