@@ -242,8 +242,10 @@ export class KeybindingRegistry {
     protected doRegisterKeybinding(binding: Keybinding, scope: KeybindingScope = KeybindingScope.DEFAULT) {
         try {
             this.resolveKeybinding(binding);
+            if (this.containsKeybinding(this.keymaps[scope], binding)) {
+                throw new Error(`"${binding.keybinding}" is in collision with something else [scope:${scope}]`);
+            }
             this.keymaps[scope].push(binding);
-            this.keybindingsChanged.fire(undefined);
         } catch (error) {
             this.logger.warn(`Could not register keybinding:\n  ${Keybinding.stringify(binding)}\n${error}`);
         }
@@ -554,7 +556,7 @@ export class KeybindingRegistry {
             return false;
         }
 
-        for (const binding of [...bindings].reverse()) {
+        for (const binding of bindings) {
             if (this.isEnabled(binding, event)) {
                 if (this.isPseudoCommand(binding.command)) {
                     /* Don't do anything, let the event propagate.  */
@@ -590,9 +592,6 @@ export class KeybindingRegistry {
             return false;
         }
         if (binding.when && !this.whenContextService.match(binding.when, <HTMLElement>event.target)) {
-            return false;
-        }
-        if (binding.command.startsWith('-')) {
             return false;
         }
         return true;
@@ -654,6 +653,7 @@ export class KeybindingRegistry {
     setKeymap(scope: KeybindingScope, bindings: Keybinding[]): void {
         this.resetKeybindingsForScope(scope);
         this.doRegisterKeybindings(bindings, scope);
+        this.keybindingsChanged.fire(undefined);
     }
 
     /**
