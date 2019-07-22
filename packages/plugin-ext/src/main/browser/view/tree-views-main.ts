@@ -48,6 +48,8 @@ export class TreeViewsMainImpl implements TreeViewsMain {
             widget.model.viewInfo = viewInfo;
             if (state) {
                 widget.restoreState(state);
+                // ensure that state is completely restored
+                await widget.model.refresh();
             } else {
                 const root: CompositeTreeNode & ExpandableTreeNode = {
                     id: '',
