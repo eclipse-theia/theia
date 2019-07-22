@@ -191,16 +191,19 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         : { filteredRecentTasks: TaskConfiguration[], filteredConfiguredTasks: TaskConfiguration[], filteredProvidedTasks: TaskConfiguration[] } {
 
         const filteredRecentTasks: TaskConfiguration[] = [];
-        recentTasks.forEach(recent => {
-            const exist = [...configuredTasks, ...providedTasks].some(t => TaskConfiguration.equals(recent, t));
-            if (exist) {
-                filteredRecentTasks.push(recent);
+        for (const recent of recentTasks) {
+            const candidate = this.findBySourceAndLabel(recent.source, recent.label, configuredTasks) ||
+                [...configuredTasks, ...providedTasks].find(task => TaskConfiguration.equals(recent, task));
+
+            if (candidate && !filteredRecentTasks.some(task => TaskConfiguration.equals(candidate, task))) {
+                filteredRecentTasks.push(candidate);
             }
-        });
+        }
 
         const filteredProvidedTasks: TaskConfiguration[] = [];
         providedTasks.forEach(provided => {
-            const exist = [...filteredRecentTasks, ...configuredTasks].some(t => TaskConfiguration.equals(provided, t));
+            const exist = filteredRecentTasks.some(task =>
+                TaskConfiguration.equals(provided, task)) || this.findBySourceAndLabel(provided.source, provided.label, configuredTasks);
             if (!exist) {
                 filteredProvidedTasks.push(provided);
             }
@@ -217,6 +220,10 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         return {
             filteredRecentTasks, filteredConfiguredTasks, filteredProvidedTasks
         };
+    }
+
+    private findBySourceAndLabel(source: string, label: string, tasks: TaskConfiguration[]): TaskConfiguration | undefined {
+        return tasks.find(task => !!source && source === task.source && label === task.label);
     }
 }
 
@@ -236,8 +243,8 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getLabel(): string {
-        if (ContributedTaskConfiguration.is(this.task)) {
-            return `${this.task._source}: ${this.task.label}`;
+        if (this.task.source) {
+            return `${this.task.source}: ${this.task.label}`;
         }
         return `${this.task.type}: ${this.task.label}`;
     }
@@ -316,7 +323,7 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
 
     getDescription(): string {
         if (this.task._scope) {
-            return this.labelProvider.getLongName(new URI(this.task._scope));
+            return new URI(this.task._scope).displayName;
         }
         return this.task._source;
     }
