@@ -38,6 +38,8 @@ export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
 export const PLUGIN_VIEW_DATA_FACTORY_ID = 'plugin-view-data';
 
+export type ViewDataProvider = (params: { state?: object, viewInfo: View }) => Promise<Widget>;
+
 @injectable()
 export class PluginViewRegistry implements FrontendApplicationContribution {
 
@@ -75,7 +77,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     private readonly viewContainers = new Map<string, [string, ViewContainerTitleOptions]>();
     private readonly containerViews = new Map<string, string[]>();
 
-    private readonly viewDataProviders = new Map<string, (state?: object) => Promise<Widget>>();
+    private readonly viewDataProviders = new Map<string, ViewDataProvider>();
     private readonly viewDataState = new Map<string, object>();
 
     @postConstruct()
@@ -259,7 +261,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             const part = containerWidget.getPartFor(widget);
             if (part) {
                 const tryFireOnDidExpandView = () => {
-                    if (!part.collapsed && !part.isHidden) {
+                    if (!part.collapsed && part.isVisible) {
                         toFire.dispose();
                     }
                 };
@@ -365,17 +367,27 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
     }
 
-    registerViewDataProvider(viewId: string, provider: (state?: object) => Promise<Widget>): Disposable {
+    registerViewDataProvider(viewId: string, provider: ViewDataProvider): Disposable {
         if (this.viewDataProviders.has(viewId)) {
             console.error(`data provider for '${viewId}' view is already registrered`);
             return Disposable.NULL;
         }
-        (async () => {
-            const view = await this.getView(viewId);
+        this.getView(viewId).then(async view => {
             if (view) {
-                await this.prepareView(view);
+                if (view.isVisible) {
+                    await this.prepareView(view);
+                } else {
+                    const toDispose = new DisposableCollection(this.onDidExpandView(async id => {
+                        if (id === viewId) {
+                            await this.prepareView(view);
+                        }
+                    }));
+                    const unsubscribe = () => toDispose.dispose();
+                    view.disposed.connect(unsubscribe);
+                    toDispose.push(Disposable.create(() => view.disposed.disconnect(unsubscribe)));
+                }
             }
-        })();
+        });
         this.viewDataProviders.set(viewId, provider);
         return Disposable.create(() => {
             this.viewDataProviders.delete(viewId);
@@ -384,12 +396,14 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     protected async createViewDataWidget(viewId: string): Promise<Widget | undefined> {
+        const view = this.views.get(viewId);
         const provider = this.viewDataProviders.get(viewId);
-        if (!provider) {
+        if (!view || !provider) {
             return undefined;
         }
+        const [, viewInfo] = view;
         const state = this.viewDataState.get(viewId);
-        const widget = await provider(state);
+        const widget = await provider({ state, viewInfo });
         if (StatefulWidget.is(widget)) {
             const dispose = widget.dispose.bind(widget);
             widget.dispose = () => {

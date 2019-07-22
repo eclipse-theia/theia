@@ -43,8 +43,9 @@ export class TreeViewsMainImpl implements TreeViewsMain {
     }
 
     async $registerTreeDataProvider(treeViewId: string): Promise<void> {
-        this.treeViewProviders.set(treeViewId, this.viewRegistry.registerViewDataProvider(treeViewId, async state => {
+        this.treeViewProviders.set(treeViewId, this.viewRegistry.registerViewDataProvider(treeViewId, async ({ state, viewInfo }) => {
             const widget = await this.widgetManager.getOrCreateWidget<TreeViewWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, { id: treeViewId });
+            widget.model.viewInfo = viewInfo;
             if (state) {
                 widget.restoreState(state);
             } else {
