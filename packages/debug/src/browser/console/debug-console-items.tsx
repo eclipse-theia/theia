@@ -21,18 +21,24 @@ import { ConsoleItem, CompositeConsoleItem } from '@theia/console/lib/browser/co
 import { DebugSession } from '../debug-session';
 import { Severity } from '@theia/core/lib/common/severity';
 
+export type DebugSessionProvider = () => DebugSession | undefined;
+
 export class ExpressionContainer implements CompositeConsoleItem {
 
     private static readonly BASE_CHUNK_SIZE = 100;
 
-    protected readonly session: DebugSession | undefined;
+    protected readonly sessionProvider: DebugSessionProvider;
+    protected get session(): DebugSession | undefined {
+        return this.sessionProvider();
+    }
+
     protected variablesReference: number;
     protected namedVariables: number | undefined;
     protected indexedVariables: number | undefined;
     protected readonly startOfVariables: number;
 
     constructor(options: ExpressionContainer.Options) {
-        this.session = options.session;
+        this.sessionProvider = options.session;
         this.variablesReference = options.variablesReference || 0;
         this.namedVariables = options.namedVariables;
         this.indexedVariables = options.indexedVariables;
@@ -72,9 +78,10 @@ export class ExpressionContainer implements CompositeConsoleItem {
                 for (let i = 0; i < numberOfChunks; i++) {
                     const start = this.startOfVariables + i * chunkSize;
                     const count = Math.min(chunkSize, this.indexedVariables - i * chunkSize);
-                    const { session, variablesReference } = this;
+                    const { variablesReference } = this;
                     result.push(new DebugVirtualVariable({
-                        session, variablesReference,
+                        session: this.sessionProvider,
+                        variablesReference,
                         namedVariables: 0,
                         indexedVariables: count,
                         startOfVariables: start,
@@ -98,7 +105,7 @@ export class ExpressionContainer implements CompositeConsoleItem {
             const names = new Set<string>();
             for (const variable of variables) {
                 if (!names.has(variable.name)) {
-                    result.push(new DebugVariable(this.session, variable, this));
+                    result.push(new DebugVariable(this.sessionProvider, variable, this));
                     names.add(variable.name);
                 }
             }
@@ -114,7 +121,7 @@ export class ExpressionContainer implements CompositeConsoleItem {
 }
 export namespace ExpressionContainer {
     export interface Options {
-        session: DebugSession | undefined,
+        session: DebugSessionProvider,
         variablesReference?: number
         namedVariables?: number
         indexedVariables?: number
@@ -128,7 +135,7 @@ export class DebugVariable extends ExpressionContainer {
     static stringRegex = /^(['"]).*\1$/;
 
     constructor(
-        protected readonly session: DebugSession | undefined,
+        session: DebugSessionProvider,
         protected readonly variable: DebugProtocol.Variable,
         protected readonly parent: ExpressionContainer
     ) {
@@ -264,6 +271,10 @@ export class ExpressionItem extends ExpressionContainer {
     get value(): string {
         return this._value;
     }
+    protected _type: string | undefined;
+    get type(): string | undefined {
+        return this._type;
+    }
 
     protected _available = false;
     get available(): boolean {
@@ -271,10 +282,14 @@ export class ExpressionItem extends ExpressionContainer {
     }
 
     constructor(
-        protected readonly expression: string,
-        protected readonly session: DebugSession | undefined
+        protected _expression: string,
+        session: DebugSessionProvider
     ) {
         super({ session });
+    }
+
+    get expression(): string {
+        return this._expression;
     }
 
     render(): React.ReactNode {
@@ -284,35 +299,44 @@ export class ExpressionItem extends ExpressionContainer {
             valueClassNames.push('theia-debug-console-unavailable');
         }
         return <div className={'theia-debug-console-expression'}>
-            <div>{this.expression}</div>
+            <div>{this._expression}</div>
             <div className={valueClassNames.join(' ')}>{this._value}</div>
         </div>;
     }
 
     async evaluate(context: string = 'repl'): Promise<void> {
-        if (this.session) {
+        const session = this.session;
+        if (session) {
             try {
-                const { expression } = this;
-                const body = await this.session.evaluate(expression, context);
-                if (body) {
-                    this._value = body.result;
-                    this._available = true;
-                    this.variablesReference = body.variablesReference;
-                    this.namedVariables = body.namedVariables;
-                    this.indexedVariables = body.indexedVariables;
-                    this.elements = undefined;
-                    this.severity = Severity.Log;
-                }
+                const body = await session.evaluate(this._expression, context);
+                this.setResult(body);
             } catch (err) {
-                this._value = err.message;
-                this._available = false;
-                this.severity = Severity.Error;
+                this.setResult(undefined, err.message);
             }
         } else {
-            this._value = 'Please start a debug session to evaluate';
+            this.setResult(undefined, 'Please start a debug session to evaluate');
+        }
+    }
+
+    protected setResult(body?: DebugProtocol.EvaluateResponse['body'], error: string = ExpressionItem.notAvailable): void {
+        if (body) {
+            this._value = body.result;
+            this._type = body.type;
+            this._available = true;
+            this.variablesReference = body.variablesReference;
+            this.namedVariables = body.namedVariables;
+            this.indexedVariables = body.indexedVariables;
+            this.severity = Severity.Log;
+        } else {
+            this._value = error;
+            this._type = undefined;
             this._available = false;
+            this.variablesReference = 0;
+            this.namedVariables = undefined;
+            this.indexedVariables = undefined;
             this.severity = Severity.Error;
         }
+        this.elements = undefined;
     }
 
 }
@@ -321,7 +345,7 @@ export class DebugScope extends ExpressionContainer {
 
     constructor(
         protected readonly raw: DebugProtocol.Scope,
-        protected readonly session: DebugSession
+        session: DebugSessionProvider
     ) {
         super({
             session,

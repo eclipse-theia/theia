@@ -48,6 +48,12 @@ export class SourceTree extends TreeImpl {
         const updated = existing && <TreeElementNode>Object.assign(existing, { element, parent });
         if (CompositeTreeElement.hasElements(element)) {
             if (updated) {
+                if (!ExpandableTreeNode.is(updated)) {
+                    Object.assign(updated, { expanded: false });
+                }
+                if (!CompositeTreeNode.is(updated)) {
+                    Object.assign(updated, { children: [] });
+                }
                 return updated;
             }
             return {
@@ -65,6 +71,12 @@ export class SourceTree extends TreeImpl {
             delete updated.children;
         }
         if (updated) {
+            if (ExpandableTreeNode.is(updated)) {
+                delete updated.expanded;
+            }
+            if (CompositeTreeNode.is(updated)) {
+                delete updated.children;
+            }
             return updated;
         }
         return {

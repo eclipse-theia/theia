@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2019 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -17,41 +17,41 @@
 import { injectable, inject, postConstruct, interfaces, Container } from 'inversify';
 import { MenuPath } from '@theia/core/lib/common';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
-import { DebugVariablesSource } from './debug-variables-source';
+import { DebugWatchSource } from './debug-watch-source';
 import { DebugViewModel } from './debug-view-model';
 
 @injectable()
-export class DebugVariablesWidget extends SourceTreeWidget {
+export class DebugWatchWidget extends SourceTreeWidget {
 
-    static CONTEXT_MENU: MenuPath = ['debug-variables-context-menu'];
-    static EDIT_MENU: MenuPath = [...DebugVariablesWidget.CONTEXT_MENU, 'a_edit'];
-    static WATCH_MENU: MenuPath = [...DebugVariablesWidget.CONTEXT_MENU, 'b_watch'];
+    static CONTEXT_MENU: MenuPath = ['debug-watch-context-menu'];
+    static EDIT_MENU = [...DebugWatchWidget.CONTEXT_MENU, 'a_edit'];
+    static REMOVE_MENU = [...DebugWatchWidget.CONTEXT_MENU, 'b_remove'];
     static createContainer(parent: interfaces.Container): Container {
         const child = SourceTreeWidget.createContainer(parent, {
-            contextMenuPath: DebugVariablesWidget.CONTEXT_MENU,
+            contextMenuPath: DebugWatchWidget.CONTEXT_MENU,
             virtualized: false,
             scrollIfActive: true
         });
-        child.bind(DebugVariablesSource).toSelf();
+        child.bind(DebugWatchSource).toSelf();
         child.unbind(SourceTreeWidget);
-        child.bind(DebugVariablesWidget).toSelf();
+        child.bind(DebugWatchWidget).toSelf();
         return child;
     }
-    static createWidget(parent: interfaces.Container): DebugVariablesWidget {
-        return DebugVariablesWidget.createContainer(parent).get(DebugVariablesWidget);
+    static createWidget(parent: interfaces.Container): DebugWatchWidget {
+        return DebugWatchWidget.createContainer(parent).get(DebugWatchWidget);
     }
 
     @inject(DebugViewModel)
-    protected readonly viewModel: DebugViewModel;
+    readonly viewModel: DebugViewModel;
 
-    @inject(DebugVariablesSource)
-    protected readonly variables: DebugVariablesSource;
+    @inject(DebugWatchSource)
+    protected readonly variables: DebugWatchSource;
 
     @postConstruct()
     protected init(): void {
         super.init();
-        this.id = 'debug:variables:' + this.viewModel.id;
-        this.title.label = 'Variables';
+        this.id = 'debug:watch:' + this.viewModel.id;
+        this.title.label = 'Watch';
         this.toDispose.push(this.variables);
         this.source = this.variables;
     }

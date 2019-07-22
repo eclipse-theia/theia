@@ -60,7 +60,7 @@ export namespace FileNavigatorCommands {
         id: 'navigator.collapse.all',
         category: 'File',
         label: 'Collapse Folders in Explorer',
-        iconClass: 'collapse-all'
+        iconClass: 'theia-collapse-all-icon'
     };
     export const ADD_ROOT_FOLDER: Command = {
         id: 'navigator.addRootFolder'

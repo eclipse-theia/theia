@@ -37,3 +37,15 @@
     height: var(--theia-icon-size);
     background: var(--theia-icon-open-json) no-repeat;
 }
+
+.theia-collapse-all-icon {
+    background: var(--theia-icon-collapse-all) center center no-repeat;
+}
+
+.theia-remove-all-icon {
+	background: var(--theia-icon-remove-all) center center no-repeat;
+}
+
+.theia-add-icon {
+	background: var(--theia-icon-add) center center no-repeat;
+}

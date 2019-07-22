@@ -300,9 +300,6 @@
     background: var(--theia-debug-step-out) center center no-repeat;
 }
 
-.breakpoints-remove-all {
-	background: var(--breakpoints-remove-all-url) center center no-repeat;
-}
 .breakpoints-activate {
 	background: var(--breakpoints-activate-url) center center no-repeat;
 }

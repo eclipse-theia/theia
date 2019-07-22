@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget } from '@theia/core/lib/browser';
+import { AbstractViewContribution, ApplicationShell, KeybindingRegistry, Widget, CompositeTreeNode } from '@theia/core/lib/browser';
 import { injectable, inject } from 'inversify';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
@@ -42,6 +42,9 @@ import { DebugService } from '../common/debug-service';
 import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugPreferences } from './debug-preferences';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { DebugWatchWidget } from './view/debug-watch-widget';
+import { DebugWatchExpression } from './view/debug-watch-expression';
+import { DebugWatchManager } from './debug-watch-manager';
 import { DebugSessionOptions } from './debug-session-options';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
@@ -217,6 +220,42 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         label: 'Copy As Expression',
     };
+    export const WATCH_VARIABLE: Command = {
+        id: 'debug.variable.watch',
+        category: DEBUG_CATEGORY,
+        label: 'Add to Watch',
+    };
+
+    export const ADD_WATCH_EXPRESSION: Command = {
+        id: 'debug.watch.addExpression',
+        category: DEBUG_CATEGORY,
+        label: 'Add Watch Expression'
+    };
+    export const EDIT_WATCH_EXPRESSION: Command = {
+        id: 'debug.watch.editExpression',
+        category: DEBUG_CATEGORY,
+        label: 'Edit Watch Expression'
+    };
+    export const COPY_WATCH_EXPRESSION_VALUE: Command = {
+        id: 'debug.watch.copyExpressionValue',
+        category: DEBUG_CATEGORY,
+        label: 'Copy Watch Expression Value'
+    };
+    export const REMOVE_WATCH_EXPRESSION: Command = {
+        id: 'debug.watch.removeExpression',
+        category: DEBUG_CATEGORY,
+        label: 'Remove Watch Expression'
+    };
+    export const COLLAPSE_ALL_WATCH_EXPRESSIONS: Command = {
+        id: 'debug.watch.collapseAllExpressions',
+        category: DEBUG_CATEGORY,
+        label: 'Collapse All Watch Expressions'
+    };
+    export const REMOVE_ALL_WATCH_EXPRESSIONS: Command = {
+        id: 'debug.watch.removeAllExpressions',
+        category: DEBUG_CATEGORY,
+        label: 'Remove All Watch Expresssions'
+    };
 }
 export namespace DebugThreadContextCommands {
     export const STEP_OVER = {
@@ -357,6 +396,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     @inject(DebugPreferences)
     protected readonly preference: DebugPreferences;
 
+    @inject(DebugWatchManager)
+    protected readonly watchManager: DebugWatchManager;
+
     constructor() {
         super({
             widgetId: DebugWidget.ID,
@@ -405,11 +447,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         this.schemaUpdater.update();
         this.configurations.load();
         await this.breakpointManager.load();
+        await this.watchManager.load();
     }
 
     onStop(): void {
         this.configurations.save();
         this.breakpointManager.save();
+        this.watchManager.save();
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -480,10 +524,22 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             DebugCommands.COPY_CALL_STACK
         );
 
-        registerMenuActions(DebugVariablesWidget.CONTEXT_MENU,
+        registerMenuActions(DebugVariablesWidget.EDIT_MENU,
             DebugCommands.SET_VARIABLE_VALUE,
             DebugCommands.COPY_VARIABLE_VALUE,
             DebugCommands.COPY_VARIABLE_AS_EXPRESSION
+        );
+        registerMenuActions(DebugVariablesWidget.WATCH_MENU,
+            DebugCommands.WATCH_VARIABLE
+        );
+
+        registerMenuActions(DebugWatchWidget.EDIT_MENU,
+            { ...DebugCommands.EDIT_WATCH_EXPRESSION, label: 'Edit Expression' },
+            { ...DebugCommands.COPY_WATCH_EXPRESSION_VALUE, label: 'Copy Value' }
+        );
+        registerMenuActions(DebugWatchWidget.REMOVE_MENU,
+            { ...DebugCommands.REMOVE_WATCH_EXPRESSION, label: 'Remove Expression' },
+            { ...DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS, label: 'Remove All Expressions' }
         );
 
         registerMenuActions(DebugBreakpointsWidget.EDIT_MENU,
@@ -752,6 +808,16 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => !!this.selectedVariable && this.selectedVariable.supportCopyAsExpression,
             isVisible: () => !!this.selectedVariable && this.selectedVariable.supportCopyAsExpression
         });
+        registry.registerCommand(DebugCommands.WATCH_VARIABLE, {
+            execute: () => {
+                const { selectedVariable, watch } = this;
+                if (selectedVariable && watch) {
+                    watch.viewModel.addWatchExpression(selectedVariable.name);
+                }
+            },
+            isEnabled: () => !!this.selectedVariable && !!this.watch,
+            isVisible: () => !!this.selectedVariable && !!this.watch,
+        });
 
         // Debug context menu commands
         registry.registerCommand(DebugEditorContextCommands.ADD_BREAKPOINT, {
@@ -815,6 +881,68 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugBreakpointWidgetCommands.CLOSE, {
             execute: () => this.editors.closeBreakpoint()
+        });
+
+        registry.registerCommand(DebugCommands.ADD_WATCH_EXPRESSION, {
+            execute: widget => {
+                if (widget instanceof Widget) {
+                    if (widget instanceof DebugWatchWidget) {
+                        widget.viewModel.addWatchExpression();
+                    }
+                } else if (this.watch) {
+                    this.watch.viewModel.addWatchExpression();
+                }
+            },
+            isEnabled: widget => widget instanceof Widget ? widget instanceof DebugWatchWidget : !!this.watch,
+            isVisible: widget => widget instanceof Widget ? widget instanceof DebugWatchWidget : !!this.watch
+        });
+        registry.registerCommand(DebugCommands.EDIT_WATCH_EXPRESSION, {
+            execute: () => {
+                const { watchExpression } = this;
+                if (watchExpression) {
+                    watchExpression.open();
+                }
+            },
+            isEnabled: () => !!this.watchExpression,
+            isVisible: () => !!this.watchExpression
+        });
+        registry.registerCommand(DebugCommands.COPY_WATCH_EXPRESSION_VALUE, {
+            execute: () => this.watchExpression && this.watchExpression.copyValue(),
+            isEnabled: () => !!this.watchExpression && this.watchExpression.supportCopyValue,
+            isVisible: () => !!this.watchExpression && this.watchExpression.supportCopyValue
+        });
+        registry.registerCommand(DebugCommands.COLLAPSE_ALL_WATCH_EXPRESSIONS, {
+            execute: widget => {
+                if (widget instanceof DebugWatchWidget) {
+                    const root = widget.model.root;
+                    widget.model.collapseAll(CompositeTreeNode.is(root) ? root : undefined);
+                }
+            },
+            isEnabled: widget => widget instanceof DebugWatchWidget,
+            isVisible: widget => widget instanceof DebugWatchWidget
+        });
+        registry.registerCommand(DebugCommands.REMOVE_WATCH_EXPRESSION, {
+            execute: () => {
+                const { watch, watchExpression } = this;
+                if (watch && watchExpression) {
+                    watch.viewModel.removeWatchExpression(watchExpression);
+                }
+            },
+            isEnabled: () => !!this.watchExpression,
+            isVisible: () => !!this.watchExpression
+        });
+        registry.registerCommand(DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS, {
+            execute: widget => {
+                if (widget instanceof Widget) {
+                    if (widget instanceof DebugWatchWidget) {
+                        widget.viewModel.removeWatchExpressions();
+                    }
+                } else if (this.watch) {
+                    this.watch.viewModel.removeWatchExpressions();
+                }
+            },
+            isEnabled: widget => widget instanceof Widget ? widget instanceof DebugWatchWidget : !!this.watch,
+            isVisible: widget => widget instanceof Widget ? widget instanceof DebugWatchWidget : !!this.watch
         });
     }
 
@@ -904,8 +1032,29 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         toolbar.registerItem({
             id: DebugCommands.REMOVE_ALL_BREAKPOINTS.id,
             command: DebugCommands.REMOVE_ALL_BREAKPOINTS.id,
-            icon: 'fa breakpoints-remove-all',
+            icon: 'theia-remove-all-icon',
             priority: 1
+        });
+
+        toolbar.registerItem({
+            id: DebugCommands.ADD_WATCH_EXPRESSION.id,
+            command: DebugCommands.ADD_WATCH_EXPRESSION.id,
+            icon: 'theia-add-icon',
+            tooltip: 'Add Expression'
+        });
+        toolbar.registerItem({
+            id: DebugCommands.COLLAPSE_ALL_WATCH_EXPRESSIONS.id,
+            command: DebugCommands.COLLAPSE_ALL_WATCH_EXPRESSIONS.id,
+            icon: 'theia-collapse-all-icon',
+            tooltip: 'Collapse All',
+            priority: 1
+        });
+        toolbar.registerItem({
+            id: DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS.id,
+            command: DebugCommands.REMOVE_ALL_WATCH_EXPRESSIONS.id,
+            icon: 'theia-remove-all-icon',
+            tooltip: 'Remove All Expressions',
+            priority: 2
         });
     }
 
@@ -1019,6 +1168,15 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     get selectedVariable(): DebugVariable | undefined {
         const { variables } = this;
         return variables && variables.selectedElement instanceof DebugVariable && variables.selectedElement || undefined;
+    }
+
+    get watch(): DebugWatchWidget | undefined {
+        const { currentWidget } = this.shell;
+        return currentWidget instanceof DebugWatchWidget && currentWidget || undefined;
+    }
+    get watchExpression(): DebugWatchExpression | undefined {
+        const { watch } = this;
+        return watch && watch.selectedElement instanceof DebugWatchExpression && watch.selectedElement || undefined;
     }
 
     protected isPosition(position: monaco.Position): boolean {

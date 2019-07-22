@@ -41,7 +41,7 @@ export namespace ProblemsCommands {
     };
     export const COLLAPSE_ALL_TOOLBAR: Command = {
         id: 'problems.collapse.all.toolbar',
-        iconClass: 'collapse-all'
+        iconClass: 'theia-collapse-all-icon'
     };
     export const COPY: Command = {
         id: 'problems.copy'

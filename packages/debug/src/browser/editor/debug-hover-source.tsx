@@ -60,7 +60,7 @@ export class DebugHoverSource extends TreeSource {
             return undefined;
         }
         if (currentSession.capabilities.supportsEvaluateForHovers) {
-            const item = new ExpressionItem(expression, currentSession);
+            const item = new ExpressionItem(expression, () => currentSession);
             await item.evaluate('hover');
             return item.available && item || undefined;
         }
