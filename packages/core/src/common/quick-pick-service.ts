@@ -54,4 +54,12 @@ export interface QuickPickService {
 
     show<T>(elements: QuickPickItem<T>[], options?: QuickPickOptions): Promise<T | undefined>;
 
+    hide(reason?: HideReason): void
+
+}
+
+export enum HideReason {
+    ELEMENT_SELECTED,
+    FOCUS_LOST,
+    CANCELED,
 }

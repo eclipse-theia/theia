@@ -129,8 +129,11 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         return hookCancellationToken(token, promise);
     }
 
-}
+    hide(): void {
+        this.proxy.$hide();
+    }
 
+}
 /**
  * Base implementation of {@link QuickPick} that uses {@link QuickOpenExt}.
  * Missing functionality is going to be implemented in the scope of https://github.com/theia-ide/theia/issues/5059
@@ -231,6 +234,7 @@ export class QuickPickExt<T extends QuickPickItem> implements QuickPick<T> {
     }
 
     hide(): void {
+        this.quickOpen.hide();
         this.dispose();
     }
 

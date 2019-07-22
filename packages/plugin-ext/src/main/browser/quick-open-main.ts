@@ -110,4 +110,8 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
         }
     }
 
+    $hide(): void {
+        this.delegate.hide();
+    }
+
 }
