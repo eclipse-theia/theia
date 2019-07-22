@@ -234,7 +234,7 @@ export class TaskConfigurations implements Disposable {
                         console.error(`Error parsing ${uri}: error: ${e.error}, length:  ${e.length}, offset:  ${e.offset}`);
                     }
                 } else {
-                    return this.filterDuplicates(tasks['tasks']).map(t => Object.assign(t, { _source: t.source || this.getSourceFolderFromConfigUri(uri) }));
+                    return this.filterDuplicates(tasks['tasks']).map(t => Object.assign(t, { _source: this.getSourceFolderFromConfigUri(uri) }));
                 }
             } catch (err) {
                 console.error(`Error(s) reading config file: ${uri}`);
@@ -267,7 +267,7 @@ export class TaskConfigurations implements Disposable {
             await this.fileSystem.createFile(configFileUri);
         }
 
-        const { _source, $ident, ...preparedTask } = task;
+        const { _source, _scope, $ident, ...preparedTask } = task;
         try {
             const response = await this.fileSystem.resolveContent(configFileUri);
             const content = response.content;

@@ -23,7 +23,7 @@ import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { TaskServer, TaskExitedEvent, TaskInfo, TaskConfiguration, ContributedTaskConfiguration } from '../common/task-protocol';
+import { TaskServer, TaskExitedEvent, TaskInfo, TaskConfiguration } from '../common/task-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskWatcher } from '../common/task-watcher';
@@ -114,8 +114,8 @@ export class TaskService implements TaskConfigurationClient {
                 const task = event.config;
                 const taskIdentifier =
                     task
-                        ? ContributedTaskConfiguration.is(task)
-                            ? `${task._source}: ${task.label}`
+                        ? task.source
+                            ? `${task.source}: ${task.label}`
                             : `${task.type}: ${task.label}`
                         : `${event.taskId}`;
                 this.messageService.info(`Task ${taskIdentifier} has been started`);
@@ -131,8 +131,8 @@ export class TaskService implements TaskConfigurationClient {
             const taskConfiguration = event.config;
             const taskIdentifier =
                 taskConfiguration
-                    ? ContributedTaskConfiguration.is(taskConfiguration)
-                        ? `${taskConfiguration._source}: ${taskConfiguration.label}`
+                    ? taskConfiguration.source
+                        ? `${taskConfiguration.source}: ${taskConfiguration.label}`
                         : `${taskConfiguration.type}: ${taskConfiguration.label}`
                     : `${event.taskId}`;
 
