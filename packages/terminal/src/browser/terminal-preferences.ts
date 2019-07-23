@@ -65,6 +65,11 @@ export const TerminalConfigSchema: PreferenceSchema = {
             minimum: 1,
             default: 1
         },
+        'terminal.integrated.scrollback': {
+            description: 'Controls the maximum amount of lines the terminal keeps in its buffer.',
+            type: 'number',
+            default: 1000,
+        }
     }
 };
 
@@ -76,7 +81,8 @@ export interface TerminalConfiguration {
     'terminal.integrated.fontWeight': FontWeight
     'terminal.integrated.fontWeightBold': FontWeight
     'terminal.integrated.letterSpacing': number
-    'terminal.integrated.lineHeight': number
+    'terminal.integrated.lineHeight': number,
+    'terminal.integrated.scrollback': number,
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
