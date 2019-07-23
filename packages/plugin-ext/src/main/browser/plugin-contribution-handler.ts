@@ -147,7 +147,7 @@ export class PluginContributionHandler {
                 }
             }
             for (const editor of MonacoEditor.getAll(this.editorManager)) {
-                if (editor.languageAutoDeteceted) {
+                if (editor.languageAutoDetected) {
                     editor.detectLanguage();
                 }
             }
