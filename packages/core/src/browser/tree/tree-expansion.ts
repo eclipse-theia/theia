@@ -89,7 +89,7 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
         this.tree.onNodeRefreshed(node => {
             for (const child of node.children) {
                 if (ExpandableTreeNode.isExpanded(child)) {
-                    this.tree.refresh(child);
+                    node.waitUntil(this.tree.refresh(child));
                 }
             }
         });

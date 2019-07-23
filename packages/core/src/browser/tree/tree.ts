@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { Event, Emitter, Disposable, DisposableCollection } from '../../common';
+import { Event, Emitter, Disposable, DisposableCollection, WaitUntilEvent } from '../../common';
 
 export const Tree = Symbol('Tree');
 
@@ -52,7 +52,7 @@ export interface Tree extends Disposable {
     /**
      * Emit when the children of the given node are refreshed.
      */
-    readonly onNodeRefreshed: Event<Readonly<CompositeTreeNode>>;
+    readonly onNodeRefreshed: Event<Readonly<CompositeTreeNode> & WaitUntilEvent>;
 }
 
 /**
@@ -202,7 +202,7 @@ export class TreeImpl implements Tree {
 
     protected _root: TreeNode | undefined;
     protected readonly onChangedEmitter = new Emitter<void>();
-    protected readonly onNodeRefreshedEmitter = new Emitter<CompositeTreeNode>();
+    protected readonly onNodeRefreshedEmitter = new Emitter<CompositeTreeNode & WaitUntilEvent>();
     protected readonly toDispose = new DisposableCollection();
 
     protected nodes: {
@@ -238,12 +238,12 @@ export class TreeImpl implements Tree {
         this.onChangedEmitter.fire(undefined);
     }
 
-    get onNodeRefreshed(): Event<CompositeTreeNode> {
+    get onNodeRefreshed(): Event<CompositeTreeNode & WaitUntilEvent> {
         return this.onNodeRefreshedEmitter.event;
     }
 
-    protected fireNodeRefreshed(parent: CompositeTreeNode): void {
-        this.onNodeRefreshedEmitter.fire(parent);
+    protected async fireNodeRefreshed(parent: CompositeTreeNode): Promise<void> {
+        await WaitUntilEvent.fire(this.onNodeRefreshedEmitter, parent);
         this.fireChanged();
     }
 
@@ -260,7 +260,7 @@ export class TreeImpl implements Tree {
         const parent = !raw ? this._root : this.validateNode(raw);
         if (CompositeTreeNode.is(parent)) {
             const children = await this.resolveChildren(parent);
-            this.setChildren(parent, children);
+            await this.setChildren(parent, children);
         }
         // FIXME: it should not be here
         // if the idea was to support refreshing of all kind of nodes, then API should be adapted
@@ -271,11 +271,11 @@ export class TreeImpl implements Tree {
         return Promise.resolve(Array.from(parent.children));
     }
 
-    protected setChildren(parent: CompositeTreeNode, children: TreeNode[]): void {
+    protected async setChildren(parent: CompositeTreeNode, children: TreeNode[]): Promise<void> {
         this.removeNode(parent);
         parent.children = children;
         this.addNode(parent);
-        this.fireNodeRefreshed(parent);
+        await this.fireNodeRefreshed(parent);
     }
 
     protected removeNode(node: TreeNode | undefined): void {

@@ -272,10 +272,13 @@ export namespace WaitUntilEvent {
                 waitables.push(thenable);
             }
         }) as T;
-        emitter.fire(asyncEvent);
-        // Asynchronous calls to `waitUntil` should fail.
-        Object.freeze(waitables);
-        delete asyncEvent['waitUntil'];
+        try {
+            emitter.fire(asyncEvent);
+            // Asynchronous calls to `waitUntil` should fail.
+            Object.freeze(waitables);
+        } finally {
+            delete asyncEvent['waitUntil'];
+        }
         if (!waitables.length) {
             return;
         }
