@@ -25,7 +25,7 @@ export interface SourceBreakpoint {
     id: string;
     uri: string;
     enabled: boolean;
-    raw: DebugProtocol.SourceBreakpoint
+    raw: DebugProtocol.SourceBreakpoint;
 }
 export namespace SourceBreakpoint {
     export function create(uri: URI, data: DebugProtocol.SourceBreakpoint, origin?: SourceBreakpoint): SourceBreakpoint {
@@ -47,5 +47,21 @@ export interface BreakpointMarker extends Marker<SourceBreakpoint> {
 export namespace BreakpointMarker {
     export function is(node: Marker<object>): node is BreakpointMarker {
         return 'kind' in node && node.kind === BREAKPOINT_KIND;
+    }
+}
+
+export interface ExceptionBreakpoint {
+    enabled: boolean;
+    raw: DebugProtocol.ExceptionBreakpointsFilter;
+}
+export namespace ExceptionBreakpoint {
+    export function create(data: DebugProtocol.ExceptionBreakpointsFilter, origin?: ExceptionBreakpoint): ExceptionBreakpoint {
+        return {
+            enabled: origin ? origin.enabled : false,
+            raw: {
+                ...(origin && origin.raw),
+                ...data
+            }
+        };
     }
 }

@@ -34,7 +34,7 @@ import URI from '@theia/core/lib/common/uri';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
 import { DebugConfiguration } from '../common/debug-common';
-import { SourceBreakpoint } from './breakpoint/breakpoint-marker';
+import { SourceBreakpoint, ExceptionBreakpoint } from './breakpoint/breakpoint-marker';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 
@@ -282,6 +282,15 @@ export class DebugSession implements CompositeTreeElement {
     protected initialized = false;
     protected async configure(): Promise<void> {
         await this.updateBreakpoints({ sourceModified: false });
+        if (this.capabilities.exceptionBreakpointFilters) {
+            const exceptionBreakpoints = [];
+            for (const filter of this.capabilities.exceptionBreakpointFilters) {
+                const origin = this.breakpoints.getExceptionBreakpoint(filter.filter);
+                exceptionBreakpoints.push(ExceptionBreakpoint.create(filter, origin));
+            }
+            this.breakpoints.setExceptionBreakpoints(exceptionBreakpoints);
+        }
+        await this.updateBreakpoints({ uri: BreakpointManager.EXCEPTION_URI, sourceModified: false });
         if (this.capabilities.supportsConfigurationDoneRequest) {
             await this.sendRequest('configurationDone', {});
         }
@@ -543,6 +552,16 @@ export class DebugSession implements CompositeTreeElement {
             return;
         }
         const { uri, sourceModified } = options;
+        if (uri && uri.toString() === BreakpointManager.EXCEPTION_URI.toString()) {
+            const filters = [];
+            for (const breakpoint of this.breakpoints.getExceptionBreakpoints()) {
+                if (breakpoint.enabled) {
+                    filters.push(breakpoint.raw.filter);
+                }
+            }
+            await this.sendRequest('setExceptionBreakpoints', { filters });
+            return;
+        }
         for (const affectedUri of this.getAffectedUris(uri)) {
             const source = await this.toSource(affectedUri);
             const all = this.breakpoints.findMarkers({ uri: affectedUri }).map(({ data }) =>

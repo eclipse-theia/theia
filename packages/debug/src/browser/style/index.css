@@ -362,3 +362,26 @@
     color: var(--theia-statusBar-debuggingForeground);
     border-top: var(--theia-border-width) solid var(--theia-statusBar-debuggingBorder);
 }
+
+/** Exception Widget */
+.monaco-editor .zone-widget .zone-widget-container.theia-debug-exception-widget {
+    color: var(--theia-content-font-color0);
+    font-size: var(--theia-code-font-size);
+    line-height: var(--theia-code-line-height);
+    font-family: var(--theia-code-font-family);
+    border-top-color: var(--theia-debug-exception-widget-border-color);
+    border-bottom-color: var(--theia-debug-exception-widget-border-color);
+    background-color: var(--theia-debug-exception-widget-background-color);
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding)*1.5);
+	white-space: pre-wrap;
+	user-select: text;
+    overflow: hidden;
+}
+
+.theia-debug-exception-widget .title {
+	font-weight: bold;
+}
+
+.theia-debug-exception-widget .stack-trace {
+	margin-top: 0.5em;
+}

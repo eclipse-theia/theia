@@ -20,7 +20,7 @@ import { StorageService } from '@theia/core/lib/browser';
 import { Marker } from '@theia/markers/lib/common/marker';
 import { MarkerManager } from '@theia/markers/lib/browser/marker-manager';
 import URI from '@theia/core/lib/common/uri';
-import { SourceBreakpoint, BREAKPOINT_KIND } from './breakpoint-marker';
+import { SourceBreakpoint, BREAKPOINT_KIND, ExceptionBreakpoint } from './breakpoint-marker';
 
 export interface BreakpointsChangeEvent {
     uri: URI
@@ -31,6 +31,8 @@ export interface BreakpointsChangeEvent {
 
 @injectable()
 export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
+
+    static EXCEPTION_URI = new URI('debug:exception://');
 
     protected readonly owner = 'breakpoint';
 
@@ -126,22 +128,58 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         }
     }
 
+    protected readonly exceptionBreakpoints = new Map<string, ExceptionBreakpoint>();
+
+    getExceptionBreakpoint(filter: string): ExceptionBreakpoint | undefined {
+        return this.exceptionBreakpoints.get(filter);
+    }
+
+    getExceptionBreakpoints(): IterableIterator<ExceptionBreakpoint> {
+        return this.exceptionBreakpoints.values();
+    }
+
+    setExceptionBreakpoints(exceptionBreakpoints: ExceptionBreakpoint[]): void {
+        const toRemove = new Set(this.exceptionBreakpoints.keys());
+        for (const exceptionBreakpoint of exceptionBreakpoints) {
+            const filter = exceptionBreakpoint.raw.filter;
+            toRemove.delete(filter);
+            this.exceptionBreakpoints.set(filter, exceptionBreakpoint);
+        }
+        for (const filter of toRemove) {
+            this.exceptionBreakpoints.delete(filter);
+        }
+        if (toRemove.size || exceptionBreakpoints.length) {
+            this.fireOnDidChangeMarkers(BreakpointManager.EXCEPTION_URI);
+        }
+    }
+
+    toggleExceptionBreakpoint(filter: string): void {
+        const breakpoint = this.getExceptionBreakpoint(filter);
+        if (breakpoint) {
+            breakpoint.enabled = !breakpoint.enabled;
+            this.fireOnDidChangeMarkers(BreakpointManager.EXCEPTION_URI);
+        }
+    }
+
     async load(): Promise<void> {
         const data = await this.storage.getData<BreakpointManager.Data>('breakpoints', {
             breakpointsEnabled: true,
-            breakpoints: {}
+            breakpoints: {},
+            exceptionBreakpoints: []
         });
         this._breakpointsEnabled = data.breakpointsEnabled;
         // tslint:disable-next-line:forin
         for (const uri in data.breakpoints) {
             this.setBreakpoints(new URI(uri), data.breakpoints[uri]);
         }
+        this.setExceptionBreakpoints(data.exceptionBreakpoints);
     }
 
     save(): void {
         const data: BreakpointManager.Data = {
             breakpointsEnabled: this._breakpointsEnabled,
-            breakpoints: {}
+            breakpoints: {},
+            exceptionBreakpoints: [...this.exceptionBreakpoints.values()]
         };
         const uris = this.getUris();
         for (const uri of uris) {
@@ -157,5 +195,6 @@ export namespace BreakpointManager {
         breakpoints: {
             [uri: string]: SourceBreakpoint[]
         }
+        exceptionBreakpoints: ExceptionBreakpoint[]
     }
 }

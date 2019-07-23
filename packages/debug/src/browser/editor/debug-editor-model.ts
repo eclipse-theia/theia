@@ -26,6 +26,7 @@ import { SourceBreakpoint } from '../breakpoint/breakpoint-marker';
 import { DebugEditor } from './debug-editor';
 import { DebugHoverWidget, createDebugHoverWidgetContainer } from './debug-hover-widget';
 import { DebugBreakpointWidget } from './debug-breakpoint-widget';
+import { DebugExceptionWidget } from './debug-exception-widget';
 
 export const DebugEditorModelFactory = Symbol('DebugEditorModelFactory');
 export type DebugEditorModelFactory = (editor: DebugEditor) => DebugEditorModel;
@@ -37,6 +38,7 @@ export class DebugEditorModel implements Disposable {
         const child = createDebugHoverWidgetContainer(parent, editor);
         child.bind(DebugEditorModel).toSelf();
         child.bind(DebugBreakpointWidget).toSelf();
+        child.bind(DebugExceptionWidget).toSelf();
         return child;
     }
     static createModel(parent: interfaces.Container, editor: DebugEditor): DebugEditorModel {
@@ -77,12 +79,16 @@ export class DebugEditorModel implements Disposable {
     @inject(DebugBreakpointWidget)
     readonly breakpointWidget: DebugBreakpointWidget;
 
+    @inject(DebugExceptionWidget)
+    readonly exceptionWidget: DebugExceptionWidget;
+
     @postConstruct()
     protected init(): void {
         this.uri = new URI(this.editor.getControl().getModel()!.uri.toString());
         this.toDispose.pushAll([
             this.hover,
             this.breakpointWidget,
+            this.exceptionWidget,
             this.editor.getControl().onMouseDown(event => this.handleMouseDown(event)),
             this.editor.getControl().onMouseMove(event => this.handleMouseMove(event)),
             this.editor.getControl().onMouseLeave(event => this.handleMouseLeave(event)),
@@ -99,6 +105,7 @@ export class DebugEditorModel implements Disposable {
     }
 
     protected readonly renderFrames = debounce(() => {
+        this.toggleExceptionWidget();
         const decorations = this.createFrameDecorations();
         this.frameDecorations = this.deltaDecorations(this.frameDecorations, decorations);
     }, 100);
@@ -148,6 +155,26 @@ export class DebugEditorModel implements Disposable {
             });
         }
         return decorations;
+    }
+
+    protected async toggleExceptionWidget(): Promise<void> {
+        const { currentFrame } = this.sessions;
+        if (!currentFrame ||
+            !currentFrame.source || currentFrame.source.uri.toString() !== this.uri.toString() ||
+            !currentFrame.raw.line || !currentFrame.raw.column) {
+            this.exceptionWidget.hide();
+            return;
+        }
+        const info = await currentFrame.thread.getExceptionInfo();
+        if (!info) {
+            this.exceptionWidget.hide();
+            return;
+        }
+        this.exceptionWidget.show({
+            info,
+            lineNumber: currentFrame.raw.line,
+            column: currentFrame.raw.column
+        });
     }
 
     render(): void {
