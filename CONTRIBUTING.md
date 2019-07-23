@@ -1,4 +1,4 @@
-# Contributing to Theia
+# Contributing to Eclipse Theia
 
 Theia is a young open-source project with a modular architecture. One of the
 goals is to make sure that we can customize and enhance any Theia application
