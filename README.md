@@ -32,6 +32,7 @@
 - [**Feedback**](#feedback)
 - [**Roadmap**](#roadmap)
 - [**License**](#license)
+- [**Trademark**](#trademark)
 
 ## Website
 
@@ -103,4 +104,9 @@ Read below how to engage with Theia community:
 
 - [Eclipse Public License 2.0](LICENSE)
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](LICENSE)
+
+
+## Trademark
+"Theia" is a trademark of the Eclipse Foundation 
+https://www.eclipse.org/theia
 
