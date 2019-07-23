@@ -450,7 +450,7 @@ export class MonacoEditor implements TextEditor {
     /* `true` because it is derived from an URI during the instantiation */
     protected _languageAutoDetected = true;
 
-    get languageAutoDeteceted(): boolean {
+    get languageAutoDetected(): boolean {
         return this._languageAutoDetected;
     }
 
