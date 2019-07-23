@@ -31,6 +31,12 @@ export class DebugThreadData {
     readonly stoppedDetails: StoppedDetails | undefined;
 }
 
+export interface DebugExceptionInfo {
+    id?: string
+    description?: string
+    details?: DebugProtocol.ExceptionDetails
+}
+
 export class DebugThread extends DebugThreadData implements TreeElement {
 
     protected readonly onDidChangedEmitter = new Emitter<void>();
@@ -91,6 +97,23 @@ export class DebugThread extends DebugThreadData implements TreeElement {
 
     pause(): Promise<DebugProtocol.PauseResponse> {
         return this.session.sendRequest('pause', this.toArgs());
+    }
+
+    async getExceptionInfo(): Promise<DebugExceptionInfo | undefined> {
+        if (this.stoppedDetails && this.stoppedDetails.reason === 'exception') {
+            if (this.session.capabilities.supportsExceptionInfoRequest) {
+                const response = await this.session.sendRequest('exceptionInfo', this.toArgs());
+                return {
+                    id: response.body.exceptionId,
+                    description: response.body.description,
+                    details: response.body.details
+                };
+            }
+            return {
+                description: this.stoppedDetails.text
+            };
+        }
+        return undefined;
     }
 
     get supportsTerminate(): boolean {

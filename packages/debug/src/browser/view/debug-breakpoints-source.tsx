@@ -17,12 +17,17 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugViewModel } from './debug-view-model';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager';
+import { DebugExceptionBreakpoint } from './debug-exception-breakpoint';
 
 @injectable()
 export class DebugBreakpointsSource extends TreeSource {
 
     @inject(DebugViewModel)
     protected readonly model: DebugViewModel;
+
+    @inject(BreakpointManager)
+    protected readonly breakpoints: BreakpointManager;
 
     constructor() {
         super({
@@ -36,8 +41,13 @@ export class DebugBreakpointsSource extends TreeSource {
         this.toDispose.push(this.model.onDidChangeBreakpoints(() => this.fireDidChange()));
     }
 
-    getElements(): IterableIterator<TreeElement> {
-        return this.model.breakpoints[Symbol.iterator]();
+    *getElements(): IterableIterator<TreeElement> {
+        for (const exceptionBreakpoint of this.breakpoints.getExceptionBreakpoints()) {
+            yield new DebugExceptionBreakpoint(exceptionBreakpoint, this.breakpoints);
+        }
+        for (const breakpoint of this.model.breakpoints) {
+            yield breakpoint;
+        }
     }
 
 }

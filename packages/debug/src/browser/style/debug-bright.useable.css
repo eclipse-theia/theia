@@ -10,4 +10,6 @@
     --theia-debug-configure: url('configure.svg');
     --theia-debug-repl: url('repl.svg');
     --breakpoints-activate-url: url('breakpoints-activate.svg');
+    --theia-debug-exception-widget-border-color: #a31515;
+    --theia-debug-exception-widget-background-color: #f1dfde;
 }
