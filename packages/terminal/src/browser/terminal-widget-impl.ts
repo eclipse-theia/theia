@@ -108,6 +108,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             fontWeightBold: this.preferences['terminal.integrated.fontWeightBold'],
             letterSpacing: this.preferences['terminal.integrated.letterSpacing'],
             lineHeight: this.preferences['terminal.integrated.lineHeight'],
+            scrollback: this.preferences['terminal.integrated.scrollback'],
             theme: {
                 foreground: cssProps.foreground,
                 background: cssProps.background,
