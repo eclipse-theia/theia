@@ -25,7 +25,7 @@ import { RPCProtocol } from '../../../common/rpc-protocol';
 import { PluginWebSocketChannel } from '../../../common/connection';
 import { CommandRegistryImpl } from '../../command-registry';
 import { ConnectionExtImpl } from '../../connection-ext';
-import { Disposable } from '../../types-impl';
+import { Disposable, Breakpoint as BreakpointExt, SourceBreakpoint, FunctionBreakpoint, Location, Range } from '../../types-impl';
 import { resolveDebugAdapterExecutable } from './plugin-debug-adapter-executable-resolver';
 import { PluginDebugAdapterSession } from './plugin-debug-adapter-session';
 import { connectDebugAdapter, startDebugAdapter } from './plugin-debug-adapter-starter';
@@ -67,7 +67,12 @@ export class DebugExtImpl implements DebugExt {
 
     activeDebugSession: theia.DebugSession | undefined;
     activeDebugConsole: theia.DebugConsole;
-    breakpoints: theia.Breakpoint[] = [];
+
+    private readonly _breakpoints = new Map<string, theia.Breakpoint>();
+
+    get breakpoints(): theia.Breakpoint[] {
+        return [...this._breakpoints.values()];
+    }
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.DEBUG_MAIN);
@@ -123,11 +128,35 @@ export class DebugExtImpl implements DebugExt {
     }
 
     addBreakpoints(breakpoints: theia.Breakpoint[]): void {
-        this.proxy.$addBreakpoints(breakpoints);
+        const added: theia.Breakpoint[] = [];
+        for (const b of breakpoints) {
+            if (this._breakpoints.has(b.id)) {
+                continue;
+            }
+            this._breakpoints.set(b.id, b);
+            added.push(b);
+        }
+        if (added.length) {
+            this.onDidChangeBreakpointsEmitter.fire({ added, removed: [], changed: [] });
+            this.proxy.$addBreakpoints(added);
+        }
     }
 
     removeBreakpoints(breakpoints: theia.Breakpoint[]): void {
-        this.proxy.$removeBreakpoints(breakpoints);
+        const removed: theia.Breakpoint[] = [];
+        const removedIds: string[] = [];
+        for (const b of breakpoints) {
+            if (!this._breakpoints.has(b.id)) {
+                continue;
+            }
+            this._breakpoints.delete(b.id);
+            removed.push(b);
+            removedIds.push(b.id);
+        }
+        if (removed.length) {
+            this.onDidChangeBreakpointsEmitter.fire({ added: [], removed, changed: [] });
+            this.proxy.$removeBreakpoints(removedIds);
+        }
     }
 
     startDebugging(folder: theia.WorkspaceFolder | undefined, nameOrConfiguration: string | theia.DebugConfiguration): PromiseLike<boolean> {
@@ -197,9 +226,52 @@ export class DebugExtImpl implements DebugExt {
         this.onDidChangeActiveDebugSessionEmitter.fire(this.activeDebugSession);
     }
 
-    async $breakpointsDidChange(all: Breakpoint[], added: Breakpoint[], removed: Breakpoint[], changed: Breakpoint[]): Promise<void> {
-        this.breakpoints = all;
-        this.onDidChangeBreakpointsEmitter.fire({ added, removed, changed });
+    async $breakpointsDidChange(added: Breakpoint[], removed: string[], changed: Breakpoint[]): Promise<void> {
+        const a: theia.Breakpoint[] = [];
+        const r: theia.Breakpoint[] = [];
+        const c: theia.Breakpoint[] = [];
+        for (const b of added) {
+            if (this._breakpoints.has(b.id)) {
+                continue;
+            }
+            const bExt = this.toBreakpointExt(b);
+            if (bExt) {
+                this._breakpoints.set(bExt.id, bExt);
+                a.push(bExt);
+            }
+        }
+        for (const id of removed) {
+            const bExt = this._breakpoints.get(id);
+            if (bExt) {
+                this._breakpoints.delete(id);
+                r.push(bExt);
+            }
+        }
+        for (const b of changed) {
+            const bExt = this._breakpoints.get(b.id);
+            if (bExt) {
+                const { functionName, location, enabled, condition, hitCondition, logMessage } = b;
+                if (bExt instanceof FunctionBreakpoint && functionName) {
+                    Object.assign(bExt, { enabled, condition, hitCondition, logMessage, functionName });
+                } else if (bExt instanceof SourceBreakpoint && location) {
+                    const range = new Range(location.range.startLineNumber, location.range.startColumn, location.range.endLineNumber, location.range.endColumn);
+                    Object.assign(bExt, { enabled, condition, hitCondition, logMessage, location: new Location(URI.revive(location.uri), range) });
+                }
+                c.push(bExt);
+            }
+        }
+        this.onDidChangeBreakpointsEmitter.fire({ added: a, removed: r, changed: c });
+    }
+
+    protected toBreakpointExt({ functionName, location, enabled, condition, hitCondition, logMessage }: Breakpoint): BreakpointExt | undefined {
+        if (location) {
+            const range = new Range(location.range.startLineNumber, location.range.startColumn, location.range.endLineNumber, location.range.endColumn);
+            return new SourceBreakpoint(new Location(URI.revive(location.uri), range), enabled, condition, hitCondition, logMessage);
+        }
+        if (functionName) {
+            return new FunctionBreakpoint(functionName!, enabled, condition, hitCondition, logMessage);
+        }
+        return undefined;
     }
 
     async $createDebugSession(debugConfiguration: theia.DebugConfiguration): Promise<string> {

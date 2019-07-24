@@ -21,8 +21,8 @@ import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { DebugSessionManager } from '../debug-session-manager';
 import { DebugEditorModel, DebugEditorModelFactory } from './debug-editor-model';
-import { BreakpointManager, BreakpointsChangeEvent } from '../breakpoint/breakpoint-manager';
-import { DebugBreakpoint } from '../model/debug-breakpoint';
+import { BreakpointManager, SourceBreakpointsChangeEvent } from '../breakpoint/breakpoint-manager';
+import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugBreakpointWidget } from './debug-breakpoint-widget';
 
 @injectable()
@@ -84,7 +84,7 @@ export class DebugEditorService {
         return uri && this.models.get(uri.toString());
     }
 
-    getLogpoint(position: monaco.Position): DebugBreakpoint | undefined {
+    getLogpoint(position: monaco.Position): DebugSourceBreakpoint | undefined {
         const logpoint = this.anyBreakpoint(position);
         return logpoint && logpoint.logMessage ? logpoint : undefined;
     }
@@ -93,7 +93,7 @@ export class DebugEditorService {
         return logpoint && logpoint.enabled;
     }
 
-    getBreakpoint(position: monaco.Position): DebugBreakpoint | undefined {
+    getBreakpoint(position: monaco.Position): DebugSourceBreakpoint | undefined {
         const breakpoint = this.anyBreakpoint(position);
         return breakpoint && breakpoint.logMessage ? undefined : breakpoint;
     }
@@ -102,7 +102,7 @@ export class DebugEditorService {
         return breakpoint && breakpoint.enabled;
     }
 
-    anyBreakpoint(position?: monaco.Position): DebugBreakpoint | undefined {
+    anyBreakpoint(position?: monaco.Position): DebugSourceBreakpoint | undefined {
         return this.model && this.model.getBreakpoint(position);
     }
 
@@ -150,7 +150,7 @@ export class DebugEditorService {
             }
         }
     }
-    async editBreakpoint(breakpointOrPosition?: DebugBreakpoint | monaco.Position): Promise<void> {
+    async editBreakpoint(breakpointOrPosition?: DebugSourceBreakpoint | monaco.Position): Promise<void> {
         if (breakpointOrPosition instanceof monaco.Position) {
             breakpointOrPosition = this.anyBreakpoint(breakpointOrPosition);
         }
@@ -175,7 +175,7 @@ export class DebugEditorService {
             model.acceptBreakpoint();
         }
     }
-    protected closeBreakpointIfAffected({ uri, removed }: BreakpointsChangeEvent): void {
+    protected closeBreakpointIfAffected({ uri, removed }: SourceBreakpointsChangeEvent): void {
         const model = this.models.get(uri.toString());
         if (!model) {
             return;

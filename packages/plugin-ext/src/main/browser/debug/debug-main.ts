@@ -27,11 +27,11 @@ import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-mana
 import { Breakpoint, WorkspaceFolder } from '../../../common/plugin-api-rpc-model';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
-import { DebugBreakpoint } from '@theia/debug/lib/browser/model/debug-breakpoint';
+import { BreakpointManager, BreakpointsChangeEvent } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
+import { DebugSourceBreakpoint } from '@theia/debug/lib/browser/model/debug-source-breakpoint';
 import Uri from 'vscode-uri';
 import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-console-session';
-import { SourceBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
+import { SourceBreakpoint, FunctionBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { ConnectionMainImpl } from '../connection-main';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
@@ -49,6 +49,7 @@ import { PluginWebSocketChannel } from '../../../common/connection';
 import { PluginDebugAdapterContributionRegistrator, PluginDebugService } from './plugin-debug-service';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
+import { DebugFunctionBreakpoint } from '@theia/debug/lib/browser/model/debug-function-breakpoint';
 
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
@@ -88,16 +89,17 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.fileSystem = container.get(FileSystem);
         this.pluginService = container.get(HostedPluginSupport);
 
-        this.toDispose.push(this.breakpointsManager.onDidChangeBreakpoints(({ added, removed, changed }) => {
-            // TODO can we get rid of all to reduce amount of data set each time, should not it be possible to recover on another side from deltas?
-            const all = this.breakpointsManager.getBreakpoints();
+        const fireDidChangeBreakpoints = ({ added, removed, changed }: BreakpointsChangeEvent<SourceBreakpoint | FunctionBreakpoint>) => {
             this.debugExt.$breakpointsDidChange(
-                this.toTheiaPluginApiBreakpoints(all),
                 this.toTheiaPluginApiBreakpoints(added),
-                this.toTheiaPluginApiBreakpoints(removed),
+                removed.map(b => b.id),
                 this.toTheiaPluginApiBreakpoints(changed)
             );
-        }));
+        };
+        this.debugExt.$breakpointsDidChange(this.toTheiaPluginApiBreakpoints(this.breakpointsManager.getBreakpoints()), [], []);
+        this.breakpointsManager.onDidChangeBreakpoints(fireDidChangeBreakpoints);
+        this.debugExt.$breakpointsDidChange(this.toTheiaPluginApiBreakpoints(this.breakpointsManager.getFunctionBreakpoints()), [], []);
+        this.breakpointsManager.onDidChangeFunctionBreakpoints(fireDidChangeBreakpoints);
 
         this.toDispose.pushAll([
             this.sessionManager.onDidCreateDebugSession(debugSession => this.debugExt.$sessionDidCreate(debugSession.id)),
@@ -177,13 +179,21 @@ export class DebugMainImpl implements DebugMain, Disposable {
                 return false;
             }
         });
+        let addedFunctionBreakpoints = false;
+        const functionBreakpoints = this.breakpointsManager.getFunctionBreakpoints();
+        for (const breakpoint of functionBreakpoints) {
+            // install only new breakpoints
+            if (newBreakpoints.has(breakpoint.id)) {
+                newBreakpoints.delete(breakpoint.id);
+            }
+        }
         for (const breakpoint of newBreakpoints.values()) {
             if (breakpoint.location) {
                 const location = breakpoint.location;
                 this.breakpointsManager.addBreakpoint({
                     id: breakpoint.id,
                     uri: Uri.revive(location.uri).toString(),
-                    enabled: true,
+                    enabled: breakpoint.enabled,
                     raw: {
                         line: breakpoint.location.range.startLineNumber + 1,
                         column: 1,
@@ -192,16 +202,36 @@ export class DebugMainImpl implements DebugMain, Disposable {
                         logMessage: breakpoint.logMessage
                     }
                 });
+            } else if (breakpoint.functionName) {
+                addedFunctionBreakpoints = true;
+                functionBreakpoints.push({
+                    id: breakpoint.id,
+                    enabled: breakpoint.enabled,
+                    raw: {
+                        name: breakpoint.functionName
+                    }
+                });
             }
+        }
+        if (addedFunctionBreakpoints) {
+            this.breakpointsManager.setFunctionBreakpoints(functionBreakpoints);
         }
     }
 
-    async $removeBreakpoints(breakpoints: Breakpoint[]): Promise<void> {
-        const ids = new Set<string>();
-        breakpoints.forEach(b => ids.add(b.id));
+    async $removeBreakpoints(breakpoints: string[]): Promise<void> {
+        const { labelProvider, breakpointsManager, editorManager } = this;
+        const session = this.sessionManager.currentSession;
+
+        const ids = new Set<string>(breakpoints);
         for (const origin of this.breakpointsManager.findMarkers({ dataFilter: data => ids.has(data.id) })) {
-            const breakpoint = new DebugBreakpoint(origin.data, this.labelProvider, this.breakpointsManager, this.editorManager, this.sessionManager.currentSession);
+            const breakpoint = new DebugSourceBreakpoint(origin.data, { labelProvider, breakpoints: breakpointsManager, editorManager, session });
             breakpoint.remove();
+        }
+        for (const origin of this.breakpointsManager.getFunctionBreakpoints()) {
+            if (ids.has(origin.id)) {
+                const breakpoint = new DebugFunctionBreakpoint(origin, { labelProvider, breakpoints: breakpointsManager, editorManager, session });
+                breakpoint.remove();
+            }
         }
     }
 
@@ -240,22 +270,34 @@ export class DebugMainImpl implements DebugMain, Disposable {
         return !!session;
     }
 
-    private toTheiaPluginApiBreakpoints(sourceBreakpoints: SourceBreakpoint[]): Breakpoint[] {
-        return sourceBreakpoints.map(b => ({
-            id: b.id,
-            enabled: b.enabled,
-            condition: b.raw.condition,
-            hitCondition: b.raw.hitCondition,
-            logMessage: b.raw.logMessage,
-            location: {
-                uri: Uri.parse(b.uri),
-                range: {
-                    startLineNumber: b.raw.line - 1,
-                    startColumn: (b.raw.column || 1) - 1,
-                    endLineNumber: b.raw.line - 1,
-                    endColumn: (b.raw.column || 1) - 1
+    private toTheiaPluginApiBreakpoints(breakpoints: (SourceBreakpoint | FunctionBreakpoint)[]): Breakpoint[] {
+        return breakpoints.map(b => this.toTheiaPluginApiBreakpoint(b));
+    }
+
+    private toTheiaPluginApiBreakpoint(breakpoint: SourceBreakpoint | FunctionBreakpoint): Breakpoint {
+        if ('uri' in breakpoint) {
+            const raw = breakpoint.raw;
+            return {
+                id: breakpoint.id,
+                enabled: breakpoint.enabled,
+                condition: breakpoint.raw.condition,
+                hitCondition: breakpoint.raw.hitCondition,
+                logMessage: raw.logMessage,
+                location: {
+                    uri: Uri.parse(breakpoint.uri),
+                    range: {
+                        startLineNumber: raw.line - 1,
+                        startColumn: (raw.column || 1) - 1,
+                        endLineNumber: raw.line - 1,
+                        endColumn: (raw.column || 1) - 1
+                    }
                 }
-            }
-        }));
+            };
+        }
+        return {
+            id: breakpoint.id,
+            enabled: breakpoint.enabled,
+            functionName: breakpoint.raw.name
+        };
     }
 }

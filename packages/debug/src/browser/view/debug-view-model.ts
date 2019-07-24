@@ -22,9 +22,10 @@ import { DebugSession, DebugState } from '../debug-session';
 import { DebugSessionManager } from '../debug-session-manager';
 import { DebugThread } from '../model/debug-thread';
 import { DebugStackFrame } from '../model/debug-stack-frame';
-import { DebugBreakpoint } from '../model/debug-breakpoint';
+import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugWatchExpression } from './debug-watch-expression';
 import { DebugWatchManager } from '../debug-watch-manager';
+import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
 
 export const DebugViewOptions = Symbol('DebugViewOptions');
 export interface DebugViewOptions {
@@ -154,8 +155,12 @@ export class DebugViewModel implements Disposable {
         return currentThread && currentThread.currentFrame;
     }
 
-    get breakpoints(): DebugBreakpoint[] {
+    get breakpoints(): DebugSourceBreakpoint[] {
         return this.manager.getBreakpoints(this.currentSession);
+    }
+
+    get functionBreakpoints(): DebugFunctionBreakpoint[] {
+        return this.manager.getFunctionBreakpoints(this.currentSession);
     }
 
     async start(): Promise<void> {
