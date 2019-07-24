@@ -246,6 +246,16 @@
     background: url('breakpoint-log-unverified.svg') center center no-repeat;
 }
 
+.theia-debug-function {
+	background: url('breakpoint-function.svg') center center no-repeat;
+}
+.theia-debug-function-disabled {
+	background: url('breakpoint-function-disabled.svg') center center no-repeat;
+}
+.theia-debug-function-unverified {
+	background: url('breakpoint-function-unverified.svg') center center no-repeat;
+}
+
 .monaco-editor .theia-debug-top-stack-frame {
 	background: url('current-arrow.svg') center center no-repeat;
 }

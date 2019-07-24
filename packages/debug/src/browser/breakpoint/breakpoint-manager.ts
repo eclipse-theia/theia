@@ -15,24 +15,28 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { Emitter, Event } from '@theia/core/lib/common';
+import { Emitter } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
 import { Marker } from '@theia/markers/lib/common/marker';
 import { MarkerManager } from '@theia/markers/lib/browser/marker-manager';
 import URI from '@theia/core/lib/common/uri';
-import { SourceBreakpoint, BREAKPOINT_KIND, ExceptionBreakpoint } from './breakpoint-marker';
+import { SourceBreakpoint, BREAKPOINT_KIND, ExceptionBreakpoint, FunctionBreakpoint, BaseBreakpoint } from './breakpoint-marker';
 
-export interface BreakpointsChangeEvent {
+export interface BreakpointsChangeEvent<T extends BaseBreakpoint> {
     uri: URI
-    added: SourceBreakpoint[]
-    removed: SourceBreakpoint[]
-    changed: SourceBreakpoint[]
+    added: T[]
+    removed: T[]
+    changed: T[]
 }
+export type SourceBreakpointsChangeEvent = BreakpointsChangeEvent<SourceBreakpoint>;
+export type FunctionBreakpointsChangeEvent = BreakpointsChangeEvent<FunctionBreakpoint>;
 
 @injectable()
 export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
 
     static EXCEPTION_URI = new URI('debug:exception://');
+
+    static FUNCTION_URI = new URI('debug:function://');
 
     protected readonly owner = 'breakpoint';
 
@@ -43,8 +47,11 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         return BREAKPOINT_KIND;
     }
 
-    protected readonly onDidChangeBreakpointsEmitter = new Emitter<BreakpointsChangeEvent>();
-    readonly onDidChangeBreakpoints: Event<BreakpointsChangeEvent> = this.onDidChangeBreakpointsEmitter.event;
+    protected readonly onDidChangeBreakpointsEmitter = new Emitter<SourceBreakpointsChangeEvent>();
+    readonly onDidChangeBreakpoints = this.onDidChangeBreakpointsEmitter.event;
+
+    protected readonly onDidChangeFunctionBreakpointsEmitter = new Emitter<FunctionBreakpointsChangeEvent>();
+    readonly onDidChangeFunctionBreakpoints = this.onDidChangeFunctionBreakpointsEmitter.event;
 
     setMarkers(uri: URI, owner: string, newMarkers: SourceBreakpoint[]): Marker<SourceBreakpoint>[] {
         const result = super.setMarkers(uri, owner, newMarkers);
@@ -113,6 +120,17 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
                 this.fireOnDidChangeMarkers(uri);
             }
         }
+        let didChangeFunction = false;
+        for (const breakpoint of this.getFunctionBreakpoints()) {
+            if (breakpoint.enabled !== enabled) {
+                breakpoint.enabled = enabled;
+                didChangeFunction = true;
+
+            }
+        }
+        if (didChangeFunction) {
+            this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
+        }
     }
 
     protected _breakpointsEnabled = true;
@@ -125,6 +143,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
             for (const uri of this.getUris()) {
                 this.fireOnDidChangeMarkers(new URI(uri));
             }
+            this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
         }
     }
 
@@ -161,29 +180,79 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         }
     }
 
+    protected functionBreakpoints: FunctionBreakpoint[] = [];
+
+    getFunctionBreakpoints(): FunctionBreakpoint[] {
+        return this.functionBreakpoints;
+    }
+
+    setFunctionBreakpoints(functionBreakpoints: FunctionBreakpoint[]): void {
+        const oldBreakpoints = new Map(this.functionBreakpoints.map(b => [b.id, b] as [string, FunctionBreakpoint]));
+
+        this.functionBreakpoints = functionBreakpoints;
+        this.fireOnDidChangeMarkers(BreakpointManager.FUNCTION_URI);
+
+        const added: FunctionBreakpoint[] = [];
+        const removed: FunctionBreakpoint[] = [];
+        const changed: FunctionBreakpoint[] = [];
+        const ids = new Set<string>();
+        for (const newBreakpoint of functionBreakpoints) {
+            ids.add(newBreakpoint.id);
+            if (oldBreakpoints.has(newBreakpoint.id)) {
+                changed.push(newBreakpoint);
+            } else {
+                added.push(newBreakpoint);
+            }
+        }
+        for (const [id, breakpoint] of oldBreakpoints.entries()) {
+            if (!ids.has(id)) {
+                removed.push(breakpoint);
+            }
+        }
+        this.onDidChangeFunctionBreakpointsEmitter.fire({ uri: BreakpointManager.FUNCTION_URI, added, removed, changed });
+    }
+
+    hasBreakpoints(): boolean {
+        return !!this.getUris().next().value || !!this.functionBreakpoints.length;
+    }
+
+    removeBreakpoints(): void {
+        this.cleanAllMarkers();
+        this.setFunctionBreakpoints([]);
+    }
+
     async load(): Promise<void> {
         const data = await this.storage.getData<BreakpointManager.Data>('breakpoints', {
             breakpointsEnabled: true,
-            breakpoints: {},
-            exceptionBreakpoints: []
+            breakpoints: {}
         });
         this._breakpointsEnabled = data.breakpointsEnabled;
         // tslint:disable-next-line:forin
         for (const uri in data.breakpoints) {
             this.setBreakpoints(new URI(uri), data.breakpoints[uri]);
         }
-        this.setExceptionBreakpoints(data.exceptionBreakpoints);
+        if (data.functionBreakpoints) {
+            this.setFunctionBreakpoints(data.functionBreakpoints);
+        }
+        if (data.exceptionBreakpoints) {
+            this.setExceptionBreakpoints(data.exceptionBreakpoints);
+        }
     }
 
     save(): void {
         const data: BreakpointManager.Data = {
             breakpointsEnabled: this._breakpointsEnabled,
-            breakpoints: {},
-            exceptionBreakpoints: [...this.exceptionBreakpoints.values()]
+            breakpoints: {}
         };
         const uris = this.getUris();
         for (const uri of uris) {
             data.breakpoints[uri] = this.findMarkers({ uri: new URI(uri) }).map(marker => marker.data);
+        }
+        if (this.functionBreakpoints.length) {
+            data.functionBreakpoints = this.functionBreakpoints;
+        }
+        if (this.exceptionBreakpoints.size) {
+            data.exceptionBreakpoints = [...this.exceptionBreakpoints.values()];
         }
         this.storage.setData('breakpoints', data);
     }
@@ -195,6 +264,7 @@ export namespace BreakpointManager {
         breakpoints: {
             [uri: string]: SourceBreakpoint[]
         }
-        exceptionBreakpoints: ExceptionBreakpoint[]
+        exceptionBreakpoints?: ExceptionBreakpoint[]
+        functionBreakpoints?: FunctionBreakpoint[]
     }
 }

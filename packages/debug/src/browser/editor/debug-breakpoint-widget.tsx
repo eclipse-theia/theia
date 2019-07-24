@@ -24,13 +24,13 @@ import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-pr
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { DebugEditor } from './debug-editor';
-import { DebugBreakpoint } from '../model/debug-breakpoint';
+import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 
-export type ShowDebugBreakpointOptions = DebugBreakpoint | {
+export type ShowDebugBreakpointOptions = DebugSourceBreakpoint | {
     position: monaco.Position,
     context: DebugBreakpointWidget.Context
 } | {
-    breakpoint: DebugBreakpoint,
+    breakpoint: DebugSourceBreakpoint,
     context: DebugBreakpointWidget.Context
 };
 
@@ -141,13 +141,13 @@ export class DebugBreakpointWidget implements Disposable {
         if (!this._input) {
             return;
         }
-        const breakpoint = options instanceof DebugBreakpoint ? options : 'breakpoint' in options ? options.breakpoint : undefined;
+        const breakpoint = options instanceof DebugSourceBreakpoint ? options : 'breakpoint' in options ? options.breakpoint : undefined;
         this._values = breakpoint ? {
             condition: breakpoint.condition,
             hitCondition: breakpoint.hitCondition,
             logMessage: breakpoint.logMessage
         } : {};
-        if (options instanceof DebugBreakpoint) {
+        if (options instanceof DebugSourceBreakpoint) {
             if (options.logMessage) {
                 this.context = 'logMessage';
             } else if (options.hitCondition && !options.condition) {

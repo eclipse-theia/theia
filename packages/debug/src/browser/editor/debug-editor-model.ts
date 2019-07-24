@@ -20,7 +20,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
-import { DebugBreakpoint } from '../model/debug-breakpoint';
+import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugSessionManager } from '../debug-session-manager';
 import { SourceBreakpoint } from '../breakpoint/breakpoint-marker';
 import { DebugEditor } from './debug-editor';
@@ -216,7 +216,7 @@ export class DebugEditorModel implements Disposable {
         const breakpoints = this.sessions.getBreakpoints(this.uri);
         return breakpoints.map(breakpoint => this.createCurrentBreakpointDecoration(breakpoint));
     }
-    protected createCurrentBreakpointDecoration(breakpoint: DebugBreakpoint): monaco.editor.IModelDeltaDecoration {
+    protected createCurrentBreakpointDecoration(breakpoint: DebugSourceBreakpoint): monaco.editor.IModelDeltaDecoration {
         const lineNumber = breakpoint.line;
         const range = new monaco.Range(lineNumber, 1, lineNumber, 1);
         const { className, message } = breakpoint.getDecoration();
@@ -270,7 +270,7 @@ export class DebugEditorModel implements Disposable {
     get position(): monaco.Position {
         return this.editor.getControl().getPosition()!;
     }
-    getBreakpoint(position: monaco.Position = this.position): DebugBreakpoint | undefined {
+    getBreakpoint(position: monaco.Position = this.position): DebugSourceBreakpoint | undefined {
         return this.sessions.getBreakpoint(this.uri, position.lineNumber);
     }
     toggleBreakpoint(position: monaco.Position = this.position): void {

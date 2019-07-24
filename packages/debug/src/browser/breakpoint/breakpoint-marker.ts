@@ -21,10 +21,13 @@ import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 
 export const BREAKPOINT_KIND = 'breakpoint';
 
-export interface SourceBreakpoint {
+export interface BaseBreakpoint {
     id: string;
-    uri: string;
     enabled: boolean;
+}
+
+export interface SourceBreakpoint extends BaseBreakpoint {
+    uri: string;
     raw: DebugProtocol.SourceBreakpoint;
 }
 export namespace SourceBreakpoint {
@@ -58,6 +61,22 @@ export namespace ExceptionBreakpoint {
     export function create(data: DebugProtocol.ExceptionBreakpointsFilter, origin?: ExceptionBreakpoint): ExceptionBreakpoint {
         return {
             enabled: origin ? origin.enabled : false,
+            raw: {
+                ...(origin && origin.raw),
+                ...data
+            }
+        };
+    }
+}
+
+export interface FunctionBreakpoint extends BaseBreakpoint {
+    raw: DebugProtocol.FunctionBreakpoint;
+}
+export namespace FunctionBreakpoint {
+    export function create(data: DebugProtocol.FunctionBreakpoint, origin?: FunctionBreakpoint): FunctionBreakpoint {
+        return {
+            id: origin ? origin.id : UUID.uuid4(),
+            enabled: origin ? origin.enabled : true,
             raw: {
                 ...(origin && origin.raw),
                 ...data
