@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { DocumentsExtImpl } from '@theia/plugin-ext/src/plugin/documents';
+import { DocumentsExtImpl } from '../documents';
 import URI from 'vscode-uri/lib/umd';
 import * as Converter from '../type-converters';
 import * as model from '../../api/model';

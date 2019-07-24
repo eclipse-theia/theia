@@ -8,6 +8,7 @@
     "@theia/editor": "^0.8.0",
     "@theia/filesystem": "^0.8.0",
     "@theia/json": "^0.8.0",
+    "@theia/languages": "^0.8.0",
     "@theia/markers": "^0.8.0",
     "@theia/monaco": "^0.8.0",
     "@theia/output": "^0.8.0",

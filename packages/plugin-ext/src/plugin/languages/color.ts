@@ -16,9 +16,9 @@
 
 import * as theia from '@theia/plugin';
 import URI from 'vscode-uri/lib/umd';
-import { DocumentsExtImpl } from '@theia/plugin-ext/src/plugin/documents';
+import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
-import { RawColorInfo } from '@theia/plugin-ext/src/api/plugin-api';
+import { RawColorInfo } from '../../api/plugin-api';
 import { ColorPresentation } from '../../api/model';
 
 export class ColorProviderAdapter {
