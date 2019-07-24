@@ -4,6 +4,7 @@
   "description": "Theia - Task extension. This extension adds support for executing raw or terminal processes in the backend.",
   "dependencies": {
     "@theia/core": "^0.8.0",
+    "@theia/editor": "^0.8.0",
     "@theia/filesystem": "^0.8.0",
     "@theia/markers": "^0.8.0",
     "@theia/monaco": "^0.8.0",

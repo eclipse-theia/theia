@@ -3,6 +3,7 @@
   "version": "0.8.0",
   "description": "Theia - JSON Extension",
   "dependencies": {
+    "@theia/application-package": "^0.8.0",
     "@theia/core": "^0.8.0",
     "@theia/languages": "^0.8.0",
     "@theia/monaco": "^0.8.0",
