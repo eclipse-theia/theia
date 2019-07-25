@@ -40,7 +40,7 @@ export class Memento implements theia.Memento {
     get<T>(key: string): T | undefined;
     get<T>(key: string, defaultValue: T): T;
     get<T>(key: string, defaultValue?: T): T | undefined {
-        if (key && this.cache[key]) {
+        if (key && this.cache.hasOwnProperty(key)) {
             return this.cache[key];
         } else {
             return defaultValue;
