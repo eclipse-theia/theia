@@ -190,13 +190,14 @@ export class DebugMainImpl implements DebugMain, Disposable {
         for (const breakpoint of newBreakpoints.values()) {
             if (breakpoint.location) {
                 const location = breakpoint.location;
+                const column = breakpoint.location.range.startColumn;
                 this.breakpointsManager.addBreakpoint({
                     id: breakpoint.id,
                     uri: Uri.revive(location.uri).toString(),
                     enabled: breakpoint.enabled,
                     raw: {
                         line: breakpoint.location.range.startLineNumber + 1,
-                        column: 1,
+                        column: column > 0 ? column + 1 : undefined,
                         condition: breakpoint.condition,
                         hitCondition: breakpoint.hitCondition,
                         logMessage: breakpoint.logMessage

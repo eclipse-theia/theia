@@ -45,7 +45,6 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
         return !session || !!session.capabilities.supportsFunctionBreakpoints;
     }
 
-
     remove(): void {
         const breakpoints = this.breakpoints.getFunctionBreakpoints();
         const newBreakpoints = breakpoints.filter(b => b.id !== this.id);

@@ -410,12 +410,23 @@ export class DebugSessionManager {
         return this.breakpoints.findMarkers({ uri }).map(({ data }) => new DebugSourceBreakpoint(data, { labelProvider, breakpoints, editorManager }));
     }
 
-    getBreakpoint(uri: URI, line: number): DebugSourceBreakpoint | undefined {
+    getLineBreakpoints(uri: URI, line: number): DebugSourceBreakpoint[] {
         const session = this.currentSession;
         if (session && session.state > DebugState.Initializing) {
-            return session.getSourceBreakpoints(uri).filter(breakpoint => breakpoint.line === line)[0];
+            return session.getSourceBreakpoints(uri).filter(breakpoint => breakpoint.line === line);
         }
-        const origin = this.breakpoints.getBreakpoint(uri, line);
+        const { labelProvider, breakpoints, editorManager } = this;
+        return this.breakpoints.getLineBreakpoints(uri, line).map(origin =>
+            new DebugSourceBreakpoint(origin, { labelProvider, breakpoints, editorManager })
+        );
+    }
+
+    getInlineBreakpoint(uri: URI, line: number, column: number): DebugSourceBreakpoint | undefined {
+        const session = this.currentSession;
+        if (session && session.state > DebugState.Initializing) {
+            return session.getSourceBreakpoints(uri).filter(breakpoint => breakpoint.line === line && breakpoint.column === column)[0];
+        }
+        const origin = this.breakpoints.getInlineBreakpoint(uri, line, column);
         const { labelProvider, breakpoints, editorManager } = this;
         return origin && new DebugSourceBreakpoint(origin, { labelProvider, breakpoints, editorManager });
     }

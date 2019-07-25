@@ -524,7 +524,7 @@ export class DebugSession implements CompositeTreeElement {
             if (body.reason === 'new') {
                 if (raw.source && typeof raw.line === 'number') {
                     const uri = DebugSource.toUri(raw.source);
-                    const origin = SourceBreakpoint.create(uri, { line: raw.line, column: 1 });
+                    const origin = SourceBreakpoint.create(uri, { line: raw.line, column: raw.column });
                     if (this.breakpoints.addBreakpoint(origin)) {
                         const breakpoints = this.getSourceBreakpoints(uri);
                         const breakpoint = new DebugSourceBreakpoint(origin, this.asDebugBreakpointOptions());
@@ -550,7 +550,14 @@ export class DebugSession implements CompositeTreeElement {
                 const toUpdate = this.findBreakpoint(b => b.idFromAdapter === raw.id);
                 if (toUpdate) {
                     toUpdate.update({ raw });
-                    this.fireDidChangeBreakpoints(toUpdate.uri);
+                    if (toUpdate instanceof DebugSourceBreakpoint) {
+                        const sourceBreakpoints = this.getSourceBreakpoints(toUpdate.uri);
+                        // in order to dedup again if a debugger converted line breakpoint to inline breakpoint
+                        // i.e. assigned a column to a line breakpoint
+                        this.setSourceBreakpoints(toUpdate.uri, sourceBreakpoints);
+                    } else {
+                        this.fireDidChangeBreakpoints(toUpdate.uri);
+                    }
                 }
             }
         } finally {
@@ -682,19 +689,19 @@ export class DebugSession implements CompositeTreeElement {
         this.setBreakpoints(uri, distinct);
     }
     protected dedupSourceBreakpoints(all: DebugSourceBreakpoint[]): DebugSourceBreakpoint[] {
-        const lines = new Map<number, DebugSourceBreakpoint>();
+        const positions = new Map<string, DebugSourceBreakpoint>();
         for (const breakpoint of all) {
-            let primary = lines.get(breakpoint.line) || breakpoint;
+            let primary = positions.get(breakpoint.renderPosition()) || breakpoint;
             if (primary !== breakpoint) {
                 let secondary = breakpoint;
-                if (secondary.raw && secondary.raw.line === secondary.origin.raw.line) {
+                if (secondary.raw && secondary.raw.line === secondary.origin.raw.line && secondary.raw.column === secondary.origin.raw.column) {
                     [primary, secondary] = [breakpoint, primary];
                 }
                 primary.origins.push(...secondary.origins);
             }
-            lines.set(primary.line, primary);
+            positions.set(primary.renderPosition(), primary);
         }
-        return [...lines.values()];
+        return [...positions.values()];
     }
     protected *getAffectedUris(uri?: URI): IterableIterator<URI> {
         if (uri) {
