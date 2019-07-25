@@ -247,9 +247,6 @@ export class DebugBreakpointWidget implements Disposable {
     }
 
 }
-
-monaco.services.StaticServices.codeEditorService.get().registerDecorationType(DebugBreakpointWidget.PLACEHOLDER_DECORATION, {});
-
 export namespace DebugBreakpointWidget {
     export type Context = keyof Pick<DebugProtocol.SourceBreakpoint, 'condition' | 'hitCondition' | 'logMessage'>;
 }

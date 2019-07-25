@@ -49,14 +49,14 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
     setEnabled(enabled: boolean): void {
         const { uri, raw } = this;
         let shouldUpdate = false;
-        let breakpoints = raw && this.doRemove(this.origins.filter(origin => origin.raw.line !== raw.line));
+        let breakpoints = raw && this.doRemove(this.origins.filter(origin => !(origin.raw.line === raw.line && origin.raw.column === raw.column)));
         if (breakpoints) {
             shouldUpdate = true;
         } else {
             breakpoints = this.breakpoints.getBreakpoints(uri);
         }
         for (const breakpoint of breakpoints) {
-            if (breakpoint.raw.line === this.origin.raw.line && breakpoint.enabled !== enabled) {
+            if (breakpoint.raw.line === this.origin.raw.line && breakpoint.raw.column === this.origin.raw.column && breakpoint.enabled !== enabled) {
                 breakpoint.enabled = enabled;
                 shouldUpdate = true;
             }
@@ -69,10 +69,10 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
     updateOrigins(data: Partial<DebugProtocol.SourceBreakpoint>): void {
         const breakpoints = this.breakpoints.getBreakpoints(this.uri);
         let shouldUpdate = false;
-        const originLines = new Set();
-        this.origins.forEach(origin => originLines.add(origin.raw.line));
+        const originPositions = new Set();
+        this.origins.forEach(origin => originPositions.add(origin.raw.line + ':' + origin.raw.column));
         for (const breakpoint of breakpoints) {
-            if (originLines.has(breakpoint.raw.line)) {
+            if (originPositions.has(breakpoint.raw.line + ':' + breakpoint.raw.column)) {
                 Object.assign(breakpoint.raw, data);
                 shouldUpdate = true;
             }
@@ -149,8 +149,12 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
                 <span className='name'>{this.labelProvider.getName(this.uri)} </span>
                 <span className='path'>{this.labelProvider.getLongName(this.uri.parent)} </span>
             </span>
-            <span className='line'>{this.line}</span>
+            <span className='line'>{this.renderPosition()}</span>
         </React.Fragment>;
+    }
+
+    renderPosition(): string {
+        return this.line + (typeof this.column === 'number' ? ':' + this.column : '');
     }
 
     doGetDecoration(messages: string[] = []): DebugBreakpointDecoration {
@@ -216,12 +220,12 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         }
         const { uri } = this;
         const toRemove = new Set();
-        origins.forEach(origin => toRemove.add(origin.raw.line));
+        origins.forEach(origin => toRemove.add(origin.raw.line + ':' + origin.raw.column));
         let shouldUpdate = false;
         const breakpoints = this.breakpoints.findMarkers({
             uri,
             dataFilter: data => {
-                const result = !toRemove.has(data.raw.line);
+                const result = !toRemove.has(data.raw.line + ':' + data.raw.column);
                 shouldUpdate = shouldUpdate || !result;
                 return result;
             }

@@ -50,6 +50,7 @@ import { DebugSessionOptions } from './debug-session-options';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
+import { DebugBreakpoint } from './model/debug-breakpoint';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -57,7 +58,9 @@ export namespace DebugMenus {
     export const DEBUG_CONFIGURATION = [...DEBUG, 'b_configuration'];
     export const DEBUG_THREADS = [...DEBUG, 'c_threads'];
     export const DEBUG_SESSIONS = [...DEBUG, 'd_sessions'];
-    export const DEBUG_BREAKPOINTS = [...DEBUG, 'e_breakpoints'];
+    export const DEBUG_BREAKPOINT = [...DEBUG, 'e_breakpoint'];
+    export const DEBUG_NEW_BREAKPOINT = [...DEBUG_BREAKPOINT, 'a_new_breakpoint'];
+    export const DEBUG_BREAKPOINTS = [...DEBUG, 'f_breakpoints'];
 }
 
 export namespace DebugCommands {
@@ -142,6 +145,11 @@ export namespace DebugCommands {
         id: 'editor.debug.action.toggleBreakpoint',
         category: DEBUG_CATEGORY,
         label: 'Toggle Breakpoint',
+    };
+    export const INLINE_BREAKPOINT: Command = {
+        id: 'editor.debug.action.inlineBreakpoint',
+        category: DEBUG_CATEGORY,
+        label: 'Inline Breakpoint',
     };
     export const ADD_CONDITIONAL_BREAKPOINT: Command = {
         id: 'debug.breakpoint.add.conditional',
@@ -504,8 +512,17 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             DebugCommands.CONTINUE_ALL,
             DebugCommands.PAUSE_ALL
         );
+        registerMenuActions(DebugMenus.DEBUG_BREAKPOINT,
+            DebugCommands.TOGGLE_BREAKPOINT
+        );
+        menus.registerSubmenu(DebugMenus.DEBUG_NEW_BREAKPOINT, 'New Breakpoint');
+        registerMenuActions(DebugMenus.DEBUG_NEW_BREAKPOINT,
+            DebugCommands.ADD_CONDITIONAL_BREAKPOINT,
+            DebugCommands.INLINE_BREAKPOINT,
+            DebugCommands.ADD_FUNCTION_BREAKPOINT,
+            DebugCommands.ADD_LOGPOINT,
+        );
         registerMenuActions(DebugMenus.DEBUG_BREAKPOINTS,
-            DebugCommands.TOGGLE_BREAKPOINT,
             DebugCommands.ENABLE_ALL_BREAKPOINTS,
             DebugCommands.DISABLE_ALL_BREAKPOINTS,
             DebugCommands.REMOVE_ALL_BREAKPOINTS
@@ -719,6 +736,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             execute: () => this.editors.toggleBreakpoint(),
             isEnabled: () => !!this.editors.model
         });
+        registry.registerCommand(DebugCommands.INLINE_BREAKPOINT, {
+            execute: () => this.editors.addInlineBreakpoint(),
+            isEnabled: () => !!this.editors.model && !this.editors.inlineBreakpoint
+        });
         registry.registerCommand(DebugCommands.ADD_CONDITIONAL_BREAKPOINT, {
             execute: () => this.editors.addBreakpoint('condition'),
             isEnabled: () => !!this.editors.model && !this.editors.anyBreakpoint
@@ -746,13 +767,15 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugCommands.EDIT_BREAKPOINT, {
             execute: async () => {
-                const { selectedBreakpoint } = this;
+                const { selectedBreakpoint, selectedFunctionBreakpoint } = this;
                 if (selectedBreakpoint) {
                     await this.editors.editBreakpoint(selectedBreakpoint);
+                } else if (selectedFunctionBreakpoint) {
+                    await selectedFunctionBreakpoint.open();
                 }
             },
-            isEnabled: () => !!this.selectedBreakpoint,
-            isVisible: () => !!this.selectedBreakpoint
+            isEnabled: () => !!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint,
+            isVisible: () => !!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint
         });
         registry.registerCommand(DebugCommands.EDIT_LOGPOINT, {
             execute: async () => {
@@ -766,13 +789,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugCommands.REMOVE_BREAKPOINT, {
             execute: () => {
-                const { selectedBreakpoint } = this;
+                const selectedBreakpoint = this.selectedBreakpoint || this.selectedFunctionBreakpoint;
                 if (selectedBreakpoint) {
                     selectedBreakpoint.remove();
                 }
             },
-            isEnabled: () => !!this.selectedBreakpoint,
-            isVisible: () => !!this.selectedBreakpoint
+            isEnabled: () => !!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint,
+            isVisible: () => !!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint,
         });
         registry.registerCommand(DebugCommands.REMOVE_LOGPOINT, {
             execute: () => {
@@ -1020,6 +1043,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             keybinding: 'f9',
             context: EditorKeybindingContexts.editorTextFocus
         });
+        keybindings.registerKeybinding({
+            command: DebugCommands.INLINE_BREAKPOINT.id,
+            keybinding: 'shift+f9',
+            context: EditorKeybindingContexts.editorTextFocus
+        });
 
         keybindings.registerKeybinding({
             command: DebugBreakpointWidgetCommands.ACCEPT.id,
@@ -1177,17 +1205,22 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         const { currentWidget } = this.shell;
         return currentWidget instanceof DebugBreakpointsWidget && currentWidget || undefined;
     }
-    get selectedAnyBreakpoint(): DebugSourceBreakpoint | undefined {
+    get selectedAnyBreakpoint(): DebugBreakpoint | undefined {
         const { breakpoints } = this;
-        return breakpoints && breakpoints.selectedElement instanceof DebugSourceBreakpoint && breakpoints.selectedElement || undefined;
+        const selectedElement = breakpoints && breakpoints.selectedElement;
+        return selectedElement instanceof DebugBreakpoint ? selectedElement : undefined;
     }
     get selectedBreakpoint(): DebugSourceBreakpoint | undefined {
         const breakpoint = this.selectedAnyBreakpoint;
-        return breakpoint && !breakpoint.logMessage ? breakpoint : undefined;
+        return breakpoint && breakpoint instanceof DebugSourceBreakpoint && !breakpoint.logMessage ? breakpoint : undefined;
     }
     get selectedLogpoint(): DebugSourceBreakpoint | undefined {
         const breakpoint = this.selectedAnyBreakpoint;
-        return breakpoint && !!breakpoint.logMessage ? breakpoint : undefined;
+        return breakpoint && breakpoint instanceof DebugSourceBreakpoint && !!breakpoint.logMessage ? breakpoint : undefined;
+    }
+    get selectedFunctionBreakpoint(): DebugFunctionBreakpoint | undefined {
+        const breakpoint = this.selectedAnyBreakpoint;
+        return breakpoint && breakpoint instanceof DebugFunctionBreakpoint ? breakpoint : undefined;
     }
 
     get variables(): DebugVariablesWidget | undefined {

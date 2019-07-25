@@ -27,6 +27,7 @@ import { DebugEditor } from './debug-editor';
 import { DebugHoverWidget, createDebugHoverWidgetContainer } from './debug-hover-widget';
 import { DebugBreakpointWidget } from './debug-breakpoint-widget';
 import { DebugExceptionWidget } from './debug-exception-widget';
+import { DebugProtocol } from 'vscode-debugprotocol';
 
 export const DebugEditorModelFactory = Symbol('DebugEditorModelFactory');
 export type DebugEditorModelFactory = (editor: DebugEditor) => DebugEditorModel;
@@ -124,26 +125,18 @@ export class DebugEditorModel implements Disposable {
                 options: DebugEditorModel.TOP_STACK_FRAME_MARGIN,
                 range
             });
-
-            if (currentFrame.thread.stoppedDetails && currentFrame.thread.stoppedDetails.reason === 'exception') {
+            decorations.push({
+                options: DebugEditorModel.TOP_STACK_FRAME_DECORATION,
+                range: columnUntilEOLRange
+            });
+            const { topFrameRange } = this;
+            if (topFrameRange && topFrameRange.startLineNumber === currentFrame.raw.line && topFrameRange.startColumn !== currentFrame.raw.column) {
                 decorations.push({
-                    options: DebugEditorModel.TOP_STACK_FRAME_EXCEPTION_DECORATION,
+                    options: DebugEditorModel.TOP_STACK_FRAME_INLINE_DECORATION,
                     range: columnUntilEOLRange
                 });
-            } else {
-                decorations.push({
-                    options: DebugEditorModel.TOP_STACK_FRAME_DECORATION,
-                    range: columnUntilEOLRange
-                });
-                const { topFrameRange } = this;
-                if (topFrameRange && topFrameRange.startLineNumber === currentFrame.raw.line && topFrameRange.startColumn !== currentFrame.raw.column) {
-                    decorations.push({
-                        options: DebugEditorModel.TOP_STACK_FRAME_INLINE_DECORATION,
-                        range: columnUntilEOLRange
-                    });
-                }
-                this.topFrameRange = columnUntilEOLRange;
             }
+            this.topFrameRange = columnUntilEOLRange;
         } else {
             decorations.push({
                 options: DebugEditorModel.FOCUSED_STACK_FRAME_MARGIN,
@@ -192,7 +185,8 @@ export class DebugEditorModel implements Disposable {
     }
     protected createBreakpointDecoration(breakpoint: SourceBreakpoint): monaco.editor.IModelDeltaDecoration {
         const lineNumber = breakpoint.raw.line;
-        const range = new monaco.Range(lineNumber, 1, lineNumber, 2);
+        const column = breakpoint.raw.column;
+        const range = typeof column === 'number' ? new monaco.Range(lineNumber, column, lineNumber, column + 1) : new monaco.Range(lineNumber, 1, lineNumber, 2);
         return {
             range,
             options: {
@@ -218,14 +212,16 @@ export class DebugEditorModel implements Disposable {
     }
     protected createCurrentBreakpointDecoration(breakpoint: DebugSourceBreakpoint): monaco.editor.IModelDeltaDecoration {
         const lineNumber = breakpoint.line;
-        const range = new monaco.Range(lineNumber, 1, lineNumber, 1);
+        const column = breakpoint.column;
+        const range = typeof column === 'number' ? new monaco.Range(lineNumber, column, lineNumber, column + 1) : new monaco.Range(lineNumber, 1, lineNumber, 1);
         const { className, message } = breakpoint.getDecoration();
         return {
             range,
             options: {
                 glyphMarginClassName: className,
                 glyphMarginHoverMessage: message.map(value => ({ value })),
-                stickiness: DebugEditorModel.STICKINESS
+                stickiness: DebugEditorModel.STICKINESS,
+                beforeContentClassName: typeof column === 'number' ? `theia-debug-breakpoint-column ${className}-column` : undefined
             }
         };
     }
@@ -257,9 +253,10 @@ export class DebugEditorModel implements Disposable {
             const range = this.editor.getControl().getModel()!.getDecorationRange(decoration);
             if (range && !lines.has(range.startLineNumber)) {
                 const line = range.startLineNumber;
+                const column = range.startColumn;
                 const oldRange = this.breakpointRanges.get(decoration);
-                const oldBreakpoint = oldRange && this.breakpoints.getBreakpoint(uri, oldRange.startLineNumber);
-                const breakpoint = SourceBreakpoint.create(uri, { line, column: 1 }, oldBreakpoint);
+                const oldBreakpoint = oldRange && this.breakpoints.getInlineBreakpoint(uri, oldRange.startLineNumber, oldRange.startColumn);
+                const breakpoint = SourceBreakpoint.create(uri, { line, column }, oldBreakpoint);
                 breakpoints.push(breakpoint);
                 lines.add(line);
             }
@@ -271,32 +268,57 @@ export class DebugEditorModel implements Disposable {
         return this.editor.getControl().getPosition()!;
     }
     getBreakpoint(position: monaco.Position = this.position): DebugSourceBreakpoint | undefined {
-        return this.sessions.getBreakpoint(this.uri, position.lineNumber);
+return this.inlineBreakpoint || this.getLineBreakpoints()[0];
     }
+
+get inlineBreakpoint(): DebugSourceBreakpoint | undefined {
+return this.getInlineBreakpoint();
+}
+
+protected getInlineBreakpoint(position: monaco.Position = this.position): DebugSourceBreakpoint | undefined {
+return this.sessions.getInlineBreakpoint(this.uri, position.lineNumber, position.column);
+}
+
+    protected getLineBreakpoints(position: monaco.Position = this.position): DebugSourceBreakpoint[] {
+        return this.sessions.getLineBreakpoints(this.uri, position.lineNumber);
+    }
+
+    protected addBreakpoint(raw: DebugProtocol.SourceBreakpoint): void {
+        this.breakpoints.addBreakpoint(SourceBreakpoint.create(this.uri, raw));
+    }
+
     toggleBreakpoint(position: monaco.Position = this.position): void {
-        const breakpoint = this.getBreakpoint(position);
-        if (breakpoint) {
-            breakpoint.remove();
+        const { lineNumber } = position;
+        const breakpoints = this.getLineBreakpoints(position);
+        if (breakpoints.length) {
+            for (const breakpoint of breakpoints) {
+                breakpoint.remove();
+            }
         } else {
-            this.breakpoints.addBreakpoint(SourceBreakpoint.create(this.uri, {
-                line: position.lineNumber,
-                column: 1
-            }));
+            this.addBreakpoint({ line: lineNumber });
         }
+    }
+
+    addInlineBreakpoint(): void {
+        const { position } = this;
+        const { lineNumber, column } = position;
+        const breakpoint = this.getInlineBreakpoint(position);
+        if (breakpoint) {
+            return;
+        }
+        this.addBreakpoint({ line: lineNumber, column });
     }
 
     acceptBreakpoint(): void {
         const { position, values } = this.breakpointWidget;
         if (position && values) {
-            const breakpoint = this.getBreakpoint(position);
+            const breakpoint = position.column > 0 ? this.getInlineBreakpoint(position) : this.getLineBreakpoints(position)[0];
             if (breakpoint) {
                 breakpoint.updateOrigins(values);
             } else {
-                this.breakpoints.addBreakpoint(SourceBreakpoint.create(this.uri, {
-                    line: position.lineNumber,
-                    column: 1,
-                    ...values
-                }));
+                const { lineNumber } = position;
+                const column = position.column > 0 ? position.column : undefined;
+                this.addBreakpoint({ line: lineNumber, column, ...values });
             }
             this.breakpointWidget.hide();
         }
@@ -339,7 +361,7 @@ export class DebugEditorModel implements Disposable {
     protected createHintDecorations(event: monaco.editor.IEditorMouseEvent): monaco.editor.IModelDeltaDecoration[] {
         if (event.target && event.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN && event.target.position) {
             const lineNumber = event.target.position.lineNumber;
-            if (!!this.sessions.getBreakpoint(this.uri, lineNumber)) {
+            if (this.getLineBreakpoints(event.target.position).length) {
                 return [];
             }
             return [{
@@ -402,11 +424,6 @@ export class DebugEditorModel implements Disposable {
     static TOP_STACK_FRAME_DECORATION: monaco.editor.IModelDecorationOptions = {
         isWholeLine: true,
         className: 'theia-debug-top-stack-frame-line',
-        stickiness: DebugEditorModel.STICKINESS
-    };
-    static TOP_STACK_FRAME_EXCEPTION_DECORATION: monaco.editor.IModelDecorationOptions = {
-        isWholeLine: true,
-        className: 'theia-debug-top-stack-frame-exception-line',
         stickiness: DebugEditorModel.STICKINESS
     };
     static TOP_STACK_FRAME_INLINE_DECORATION: monaco.editor.IModelDecorationOptions = {

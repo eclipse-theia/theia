@@ -77,10 +77,17 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         return result;
     }
 
-    getBreakpoint(uri: URI, line: number): SourceBreakpoint | undefined {
-        const marker = this.findMarkers({
+    getLineBreakpoints(uri: URI, line: number): SourceBreakpoint[] {
+        return this.findMarkers({
             uri,
             dataFilter: breakpoint => breakpoint.raw.line === line
+        }).map(({ data }) => data);
+    }
+
+    getInlineBreakpoint(uri: URI, line: number, column: number): SourceBreakpoint | undefined {
+        const marker = this.findMarkers({
+            uri,
+            dataFilter: breakpoint => breakpoint.raw.line === line && breakpoint.raw.column === column
         })[0];
         return marker && marker.data;
     }
@@ -90,13 +97,13 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
     }
 
     setBreakpoints(uri: URI, breakpoints: SourceBreakpoint[]): void {
-        this.setMarkers(uri, this.owner, breakpoints.sort((a, b) => a.raw.line - b.raw.line));
+        this.setMarkers(uri, this.owner, breakpoints.sort((a, b) => (a.raw.line - b.raw.line) || ((a.raw.column || 0) - (b.raw.column || 0))));
     }
 
     addBreakpoint(breakpoint: SourceBreakpoint): boolean {
         const uri = new URI(breakpoint.uri);
         const breakpoints = this.getBreakpoints(uri);
-        const newBreakpoints = breakpoints.filter(({ raw }) => raw.line !== breakpoint.raw.line);
+        const newBreakpoints = breakpoints.filter(({ raw }) => !(raw.line === breakpoint.raw.line && raw.column === breakpoint.raw.column));
         if (breakpoints.length === newBreakpoints.length) {
             newBreakpoints.push(breakpoint);
             this.setBreakpoints(uri, newBreakpoints);
