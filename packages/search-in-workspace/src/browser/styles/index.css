@@ -314,7 +314,8 @@
 .result-node-buttons > span {
     width: 15px;
     height: 15px;
-    margin-right: 3px;
+    margin-left: 2.5px;
+    margin-right: 0.5px;
     background-repeat:  no-repeat;
     background-position: center;
     background-size: contain;
