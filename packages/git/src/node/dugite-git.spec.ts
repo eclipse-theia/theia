@@ -14,8 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// tslint:disable-next-line:no-implicit-dependencies
+ import * as upath from 'upath';
+
 import * as path from 'path';
-import * as upath from 'upath';
 import * as temp from 'temp';
 import * as fs from 'fs-extra';
 import { expect } from 'chai';
