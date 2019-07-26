@@ -55,6 +55,7 @@ import { PythonContribution } from './python';
 import { GoContribution } from './go';
 import { RustContribution } from './rust';
 import { PhpGrammarContribution } from './php';
+import { CppContribution } from './cpp';
 
 export default new ContainerModule(bind => {
     bind(BatContribution).toSelf().inSingletonScope();
@@ -173,4 +174,7 @@ export default new ContainerModule(bind => {
 
     bind(PhpGrammarContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(PhpGrammarContribution);
+
+    bind(CppContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(CppContribution);
 });
