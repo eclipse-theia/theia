@@ -16,10 +16,13 @@
 
 import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
-import { C_LANGUAGE_ID, CPP_LANGUAGE_ID } from '../common';
 
 @injectable()
-export class CppGrammarContribution implements LanguageGrammarDefinitionContribution {
+export class CppContribution implements LanguageGrammarDefinitionContribution {
+
+    readonly C_LANGUAGE_ID = 'c';
+    readonly CPP_LANGUAGE_ID = 'cpp';
+    readonly CPP_LANGUAGE_NAME = 'C/C++';
 
     readonly config: monaco.languages.LanguageConfiguration = {
         comments: {
@@ -56,12 +59,12 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
 
     registerTextmateLanguage(registry: TextmateRegistry) {
         monaco.languages.register({
-            id: C_LANGUAGE_ID,
+            id: this.C_LANGUAGE_ID,
             extensions: ['.c'],
             aliases: ['C', 'c']
         });
 
-        monaco.languages.setLanguageConfiguration(C_LANGUAGE_ID, this.config);
+        monaco.languages.setLanguageConfiguration(this.C_LANGUAGE_ID, this.config);
 
         const platformGrammar = require('../../data/platform.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.c.platform', {
@@ -82,16 +85,16 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
                 };
             }
         });
-        registry.mapLanguageIdToTextmateGrammar(C_LANGUAGE_ID, 'source.c');
+        registry.mapLanguageIdToTextmateGrammar(this.C_LANGUAGE_ID, 'source.c');
 
         // cpp
         monaco.languages.register({
-            id: CPP_LANGUAGE_ID,
+            id: this.CPP_LANGUAGE_ID,
             extensions: ['.cpp', '.cc', '.cxx', '.hpp', '.hh', '.hxx', '.h', '.ino', '.inl', '.ipp', 'cl'],
             aliases: ['C++', 'Cpp', 'cpp'],
         });
 
-        monaco.languages.setLanguageConfiguration(CPP_LANGUAGE_ID, this.config);
+        monaco.languages.setLanguageConfiguration(this.CPP_LANGUAGE_ID, this.config);
 
         const cppGrammar = require('../../data/cpp.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.cpp', {
@@ -102,6 +105,6 @@ export class CppGrammarContribution implements LanguageGrammarDefinitionContribu
                 };
             }
         });
-        registry.mapLanguageIdToTextmateGrammar(CPP_LANGUAGE_ID, 'source.cpp');
+        registry.mapLanguageIdToTextmateGrammar(this.CPP_LANGUAGE_ID, 'source.cpp');
     }
 }
