@@ -26,7 +26,6 @@ import { MockMenuModelRegistry } from '@theia/core/lib/common/test/mock-menu';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { MenusContributionPointHandler } from './menus-contribution-handler';
-import 'mocha';
 import * as sinon from 'sinon';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { QuickCommandService } from '@theia/core/lib/browser';

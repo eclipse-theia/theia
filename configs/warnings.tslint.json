@@ -8,40 +8,6 @@
         "PromiseLike"
       ]
     },
-    "no-implicit-dependencies": {
-      "severity": "warning",
-      "options": [
-        true,
-        [
-          "@phosphor/algorithm",
-          "@phosphor/commands",
-          "@phosphor/coreutils",
-          "@phosphor/domutils",
-          "@phosphor/dragdrop",
-          "@phosphor/messaging",
-          "@phosphor/properties",
-          "@phosphor/signaling",
-          "@phosphor/virtualdom",
-          "@phosphor/widgets",
-          "chai",
-          "chai-string",
-          "inversify",
-          "jsdom",
-          "monaco-languageclient",
-          "react",
-          "react-dom",
-          "react-virtualized",
-          "sinon",
-          "temp",
-          "typescript",
-          "vscode-languageserver-protocol",
-          "vscode-languageserver-types",
-          "vscode-ws-jsonrpc",
-          "vscode-uri",
-          "yargs"
-        ]
-      ]
-    },
     "no-return-await": {
       "severity": "warning"
     }

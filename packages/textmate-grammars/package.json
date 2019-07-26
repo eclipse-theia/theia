@@ -3,7 +3,8 @@
   "version": "0.9.0",
   "description": "Theia - Textmate Grammars",
   "dependencies": {
-    "@theia/monaco": "^0.9.0"
+    "@theia/monaco": "^0.9.0",
+    "vscode-textmate": "^4.0.1"
   },
   "publishConfig": {
     "access": "public"

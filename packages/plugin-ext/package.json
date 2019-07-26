@@ -24,12 +24,15 @@
     "@theia/task": "^0.9.0",
     "@theia/terminal": "^0.9.0",
     "@theia/workspace": "^0.9.0",
+    "@types/request": "^2.0.3",
     "decompress": "^4.2.0",
     "getmac": "^1.4.6",
     "jsonc-parser": "^2.0.2",
     "lodash.clonedeep": "^4.5.0",
+    "request": "^2.82.0",
     "uuid": "^3.2.1",
-    "vscode-debugprotocol": "^1.32.0"
+    "vscode-debugprotocol": "^1.32.0",
+    "vscode-textmate": "^4.0.1"
   },
   "publishConfig": {
     "access": "public"
