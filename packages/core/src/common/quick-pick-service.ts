@@ -13,6 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+import { QuickOpenHideReason } from './quick-open-service';
 
 export type QuickPickItem<T> = QuickPickValue<T> | QuickPickSeparator;
 
@@ -54,12 +55,6 @@ export interface QuickPickService {
 
     show<T>(elements: QuickPickItem<T>[], options?: QuickPickOptions): Promise<T | undefined>;
 
-    hide(reason?: HideReason): void
+    hide(reason?: QuickOpenHideReason): void
 
-}
-
-export enum HideReason {
-    ELEMENT_SELECTED,
-    FOCUS_LOST,
-    CANCELED,
 }
