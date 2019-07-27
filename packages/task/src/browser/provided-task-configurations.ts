@@ -15,8 +15,10 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { TaskConfiguration } from '../common/task-protocol';
 import { TaskProviderRegistry } from './task-contribution';
+import { TaskDefinitionRegistry } from './task-definition-registry';
+import { TaskConfiguration, TaskCustomization } from '../common';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class ProvidedTaskConfigurations {
@@ -30,13 +32,14 @@ export class ProvidedTaskConfigurations {
     @inject(TaskProviderRegistry)
     protected readonly taskProviderRegistry: TaskProviderRegistry;
 
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+
     /** returns a list of provided tasks */
     async getTasks(): Promise<TaskConfiguration[]> {
-        const providedTasks: TaskConfiguration[] = [];
         const providers = this.taskProviderRegistry.getProviders();
-        for (const provider of providers) {
-            providedTasks.push(...await provider.provideTasks());
-        }
+        const providedTasks: TaskConfiguration[] = (await Promise.all(providers.map(p => p.provideTasks())))
+            .reduce((acc, taskArray) => acc.concat(taskArray), []);
         this.cacheTasks(providedTasks);
         return providedTasks;
     }
@@ -50,6 +53,51 @@ export class ProvidedTaskConfigurations {
             await this.getTasks();
             return this.getCachedTask(source, taskLabel);
         }
+    }
+
+    /**
+     * Finds the detected task for the given task customization.
+     * The detected task is considered as a "match" to the task customization if it has all the `required` properties.
+     * In case that more than one customization is found, return the one that has the biggest number of matched properties.
+     *
+     * @param customization the task customization
+     * @return the detected task for the given task customization. If the task customization is not found, `undefined` is returned.
+     */
+    async getTaskToCustomize(customization: TaskCustomization, rootFolderPath: string): Promise<TaskConfiguration | undefined> {
+        const definition = this.taskDefinitionRegistry.getDefinition(customization);
+        if (!definition) {
+            return undefined;
+        }
+
+        const matchedTasks: TaskConfiguration[] = [];
+        let highest = -1;
+        const tasks = await this.getTasks();
+        for (const task of tasks) { // find detected tasks that match the `definition`
+            let score = 0;
+            if (!definition.properties.required.every(requiredProp => customization[requiredProp] !== undefined)) {
+                continue;
+            }
+            score += definition.properties.required.length; // number of required properties
+            const requiredProps = new Set(definition.properties.required);
+            // number of optional properties
+            score += definition.properties.all.filter(p => !requiredProps.has(p) && customization[p] !== undefined).length;
+            if (score >= highest) {
+                if (score > highest) {
+                    highest = score;
+                    matchedTasks.length = 0;
+                }
+                matchedTasks.push(task);
+            }
+        }
+
+        // find the task that matches the `customization`.
+        // The scenario where more than one match is found should not happen unless users manually enter multiple customizations for one type of task
+        // If this does happen, return the first match
+        const rootFolderUri = new URI(rootFolderPath).toString();
+        const matchedTask = matchedTasks.filter(t =>
+            rootFolderUri === t._scope && definition.properties.all.every(p => t[p] === customization[p])
+        )[0];
+        return matchedTask;
     }
 
     protected getCachedTask(source: string, taskLabel: string): TaskConfiguration | undefined {

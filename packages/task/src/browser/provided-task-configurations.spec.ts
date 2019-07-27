@@ -17,6 +17,7 @@
 import { assert } from 'chai';
 import { Container } from 'inversify';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
+import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskProviderRegistry } from './task-contribution';
 import { TaskConfiguration } from '../common';
 
@@ -26,6 +27,7 @@ describe('provided-task-configurations', () => {
         container = new Container();
         container.bind(ProvidedTaskConfigurations).toSelf().inSingletonScope();
         container.bind(TaskProviderRegistry).toSelf().inSingletonScope();
+        container.bind(TaskDefinitionRegistry).toSelf().inSingletonScope();
     });
 
     it('provided-task-search', async () => {

@@ -35,7 +35,8 @@ export interface TaskConfiguration extends TaskCustomization {
 }
 export namespace TaskConfiguration {
     export function equals(one: TaskConfiguration, other: TaskConfiguration): boolean {
-        return one.label === other.label && one._source === other._source;
+        return (one.taskType || one.type) === (other.taskType || other.type) &&
+            one.label === other.label && one._source === other._source;
     }
 }
 
@@ -51,6 +52,11 @@ export interface ContributedTaskConfiguration extends TaskConfiguration {
      * This field is not supposed to be used in `tasks.json`
      */
     readonly _scope: string | undefined;
+}
+export namespace ContributedTaskConfiguration {
+    export function equals(one: TaskConfiguration, other: TaskConfiguration): boolean {
+        return TaskConfiguration.equals(one, other) && one._scope === other._scope;
+    }
 }
 
 /** Runtime information about Task. */
