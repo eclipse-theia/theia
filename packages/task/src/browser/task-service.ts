@@ -27,14 +27,14 @@ import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manag
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import {
+    ContributedTaskConfiguration,
     ProblemMatcher,
     ProblemMatchData,
-    ProblemMatcherContribution,
+    TaskCustomization,
     TaskServer,
     TaskExitedEvent,
     TaskInfo,
     TaskConfiguration,
-    TaskCustomization,
     TaskOutputProcessedEvent,
     RunTaskOption
 } from '../common';
@@ -203,13 +203,16 @@ export class TaskService implements TaskConfigurationClient {
 
     /** Returns an array of the task configurations configured in tasks.json and provided by the extensions. */
     async getTasks(): Promise<TaskConfiguration[]> {
-        const configuredTasks = this.getConfiguredTasks();
+        const configuredTasks = await this.getConfiguredTasks();
         const providedTasks = await this.getProvidedTasks();
-        return [...configuredTasks, ...providedTasks];
+        const notCustomizedProvidedTasks = providedTasks.filter(provided =>
+            !configuredTasks.some(configured => ContributedTaskConfiguration.equals(configured, provided))
+        );
+        return [...configuredTasks, ...notCustomizedProvidedTasks];
     }
 
     /** Returns an array of the task configurations which are configured in tasks.json files */
-    getConfiguredTasks(): TaskConfiguration[] {
+    getConfiguredTasks(): Promise<TaskConfiguration[]> {
         return this.taskConfigurations.getTasks();
     }
 
@@ -299,33 +302,34 @@ export class TaskService implements TaskConfigurationClient {
 
     /**
      * Runs a task, by the source and label of the task configuration.
-     * It looks for configured and provided tasks.
+     * It looks for configured and detected tasks.
      */
     async run(source: string, taskLabel: string): Promise<void> {
         let task = await this.getProvidedTask(source, taskLabel);
-        const matchers: (string | ProblemMatcherContribution)[] = [];
-        if (!task) { // if a provided task cannot be found, search from tasks.json
+        const customizationObject: TaskCustomization = { type: '' };
+        if (!task) { // if a detected task cannot be found, search from tasks.json
             task = this.taskConfigurations.getTask(source, taskLabel);
             if (!task) {
                 this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
                 return;
             } else if (task.problemMatcher) {
-                if (Array.isArray(task.problemMatcher)) {
-                    matchers.push(...task.problemMatcher);
-                } else {
-                    matchers.push(task.problemMatcher);
-                }
+                Object.assign(customizationObject, {
+                    type: task.type,
+                    problemMatcher: task.problemMatcher
+                });
             }
-        } else { // if a provided task is found, check if it is customized in tasks.json
-            const taskType = task.taskType || task.type;
-            const customizations = this.taskConfigurations.getTaskCustomizations(taskType);
-            const matcherContributions = this.getProblemMatchers(task, customizations);
-            matchers.push(...matcherContributions);
+        } else { // if a detected task is found, check if it is customized in tasks.json
+            const customizationFound = this.taskConfigurations.getCustomizationForTask(task);
+            if (customizationFound) {
+                Object.assign(customizationObject, customizationFound);
+            }
         }
         await this.problemMatcherRegistry.onReady();
+        const notResolvedMatchers = customizationObject.problemMatcher ?
+            (Array.isArray(customizationObject.problemMatcher) ? customizationObject.problemMatcher : [customizationObject.problemMatcher]) : [];
         const resolvedMatchers: ProblemMatcher[] = [];
         // resolve matchers before passing them to the server
-        for (const matcher of matchers) {
+        for (const matcher of notResolvedMatchers) {
             let resolvedMatcher: ProblemMatcher | undefined;
             if (typeof matcher === 'string') {
                 resolvedMatcher = this.problemMatcherRegistry.get(matcher);
@@ -343,13 +347,24 @@ export class TaskService implements TaskConfigurationClient {
             }
         }
         this.runTask(task, {
-            customization: { type: task.taskType || task.type, problemMatcher: resolvedMatchers }
+            customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
         });
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<void> {
         const source = task._source;
         const taskLabel = task.label;
+        if (option && option.customization) {
+            const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
+            if (taskDefinition) { // use the customization object to override the task config
+                Object.keys(option.customization).forEach(customizedProperty => {
+                    // properties used to define the task cannot be customized
+                    if (customizedProperty !== 'type' && !taskDefinition.properties.all.some(pDefinition => pDefinition === customizedProperty)) {
+                        task[customizedProperty] = option.customization![customizedProperty];
+                    }
+                });
+            }
+        }
 
         const resolver = this.taskResolverRegistry.getResolver(task.type);
         let resolvedTask: TaskConfiguration;
@@ -381,27 +396,6 @@ export class TaskService implements TaskConfigurationClient {
         if (taskInfo.terminalId !== undefined) {
             this.attach(taskInfo.terminalId, taskInfo.taskId);
         }
-    }
-
-    private getProblemMatchers(taskConfiguration: TaskConfiguration, customizations: TaskCustomization[]): (string | ProblemMatcherContribution)[] {
-        const hasCustomization = customizations.length > 0;
-        const problemMatchers: (string | ProblemMatcherContribution)[] = [];
-        if (hasCustomization) {
-            const taskDefinition = this.taskDefinitionRegistry.getDefinition(taskConfiguration);
-            if (taskDefinition) {
-                const cus = customizations.filter(customization =>
-                    taskDefinition.properties.required.every(rp => customization[rp] === taskConfiguration[rp])
-                )[0]; // Only support having one customization per task
-                if (cus && cus.problemMatcher) {
-                    if (Array.isArray(cus.problemMatcher)) {
-                        problemMatchers.push(...cus.problemMatcher);
-                    } else {
-                        problemMatchers.push(cus.problemMatcher);
-                    }
-                }
-            }
-        }
-        return problemMatchers;
     }
 
     private async removeProblemMarks(option?: RunTaskOption): Promise<void> {

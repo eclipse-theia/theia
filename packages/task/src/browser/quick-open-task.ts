@@ -20,7 +20,7 @@ import {
     QuickOpenGroupItem, QuickOpenMode, QuickOpenHandler, QuickOpenOptions, QuickOpenActionProvider, QuickOpenGroupItemOptions
 } from '@theia/core/lib/browser/quick-open/';
 import { TaskService } from './task-service';
-import { TaskInfo, TaskConfiguration } from '../common/task-protocol';
+import { ContributedTaskConfiguration, TaskInfo, TaskConfiguration } from '../common/task-protocol';
 import { TaskConfigurations } from './task-configurations';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import URI from '@theia/core/lib/common/uri';
@@ -66,7 +66,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
     /** Initialize this quick open model with the tasks. */
     async init(): Promise<void> {
         const recentTasks = this.taskService.recentTasks;
-        const configuredTasks = this.taskService.getConfiguredTasks();
+        const configuredTasks = await this.taskService.getConfiguredTasks();
         const providedTasks = await this.taskService.getProvidedTasks();
 
         const { filteredRecentTasks, filteredConfiguredTasks, filteredProvidedTasks } = this.getFilteredTasks(recentTasks, configuredTasks, providedTasks);
@@ -213,7 +213,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
         const filteredProvidedTasks: TaskConfiguration[] = [];
         providedTasks.forEach(provided => {
-            const exist = [...filteredRecentTasks, ...configuredTasks].some(t => TaskConfiguration.equals(provided, t));
+            const exist = [...filteredRecentTasks, ...configuredTasks].some(t => ContributedTaskConfiguration.equals(provided, t));
             if (!exist) {
                 filteredProvidedTasks.push(provided);
             }
