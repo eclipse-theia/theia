@@ -169,7 +169,12 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return this.services.applicationStateService.state === 'ready';
     }
 
+    protected lastVisibleState: ViewContainer.State | undefined;
+
     storeState(): ViewContainer.State {
+        if (!this.isVisible && this.lastVisibleState) {
+            return this.lastVisibleState;
+        }
         const parts = this.layout.widgets;
         const availableSize = this.layout.getAvailableSize();
         const orientation = this.orientation;
@@ -343,6 +348,16 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         }
         super.onAfterAttach(msg);
         requestAnimationFrame(() => this.attached.resolve());
+    }
+
+    protected onBeforeHide(msg: Message): void {
+        super.onBeforeHide(msg);
+        this.lastVisibleState = this.storeState();
+    }
+
+    protected onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
+        this.lastVisibleState = undefined;
     }
 
 }
