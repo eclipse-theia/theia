@@ -334,6 +334,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     protected lastVisibleState: ViewContainer.State | undefined;
 
     storeState(): ViewContainer.State {
+        if (!this.isVisible && this.lastVisibleState) {
+            return this.lastVisibleState;
+        }
         const parts = this.getParts();
         const availableSize = this.containerLayout.getAvailableSize();
         const orientation = this.orientation;
