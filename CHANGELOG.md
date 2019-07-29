@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.10.0
+
+- [vscode] added env variable substitution support [5811](https://github.com/theia-ide/theia/pull/5811)
+
 ## v0.9.0
 - [core] added `theia-widget-noInfo` css class to be used by widgets when displaying no information messages [#5717](https://github.com/theia-ide/theia/pull/5717)
 - [core] added additional options to the tree search input [#5566](https://github.com/theia-ide/theia/pull/5566)
