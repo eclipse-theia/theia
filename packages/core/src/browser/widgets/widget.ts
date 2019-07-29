@@ -91,6 +91,7 @@ export class BaseWidget extends Widget {
                 const container = await this.getScrollContainer();
                 container.style.overflow = 'hidden';
                 this.scrollBar = new PerfectScrollbar(container, this.scrollOptions);
+                this.disableScrollBarFocus(container);
                 this.toDisposeOnDetach.push(addEventListener(container, <any>'ps-y-reach-end', () => { this.onScrollYReachEndEmitter.fire(undefined); }));
                 this.toDisposeOnDetach.push(addEventListener(container, <any>'ps-scroll-up', () => { this.onScrollUpEmitter.fire(undefined); }));
                 this.toDisposeOnDetach.push(Disposable.create(() => {
@@ -107,6 +108,17 @@ export class BaseWidget extends Widget {
 
     protected getScrollContainer(): MaybePromise<HTMLElement> {
         return this.node;
+    }
+
+    protected disableScrollBarFocus(scrollContainer: HTMLElement): void {
+        for (const thumbs of [scrollContainer.getElementsByClassName('ps__thumb-x'), scrollContainer.getElementsByClassName('ps__thumb-y')]) {
+            for (let i = 0; i < thumbs.length; i++) {
+                const element = thumbs.item(i);
+                if (element) {
+                    element.removeAttribute('tabIndex');
+                }
+            }
+        }
     }
 
     protected onUpdateRequest(msg: Message): void {
