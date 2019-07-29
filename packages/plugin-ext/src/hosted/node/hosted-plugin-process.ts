@@ -25,6 +25,7 @@ import { RPCProtocolImpl } from '../../api/rpc-protocol';
 import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginProcessesCache } from './hosted-plugin-processes-cache';
+import * as psTree from 'ps-tree';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -129,9 +130,17 @@ export class HostedPluginProcess implements ServerPluginRunner {
         const hostedPluginManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
         hostedPluginManager.$stopPlugin('').then(() => {
             emitter.dispose();
-            cp.kill();
+            this.killProcessTree(cp.pid);
         });
+    }
 
+    private killProcessTree(parentPid: number): void {
+        psTree(parentPid, (err: Error, childProcesses: Array<psTree.PS>) => {
+            childProcesses.forEach((p: psTree.PS) => {
+                process.kill(parseInt(p.PID));
+            });
+            process.kill(parentPid);
+        });
     }
 
     public runPluginServer(): void {
