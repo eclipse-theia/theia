@@ -31,6 +31,7 @@
     "yargs": "^11.1.0"
   },
   "scripts": {
-    "postinstall": "node scripts/post-install.js"
+    "postinstall": "node scripts/post-install.js",
+    "test": "mocha \"tests/**/*.spec.js\""
   }
 }
