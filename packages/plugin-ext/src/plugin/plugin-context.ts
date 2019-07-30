@@ -107,7 +107,8 @@ import {
     OperatingSystem,
     WebviewPanelTargetArea,
     FileSystemError,
-    CommentThreadCollapsibleState
+    CommentThreadCollapsibleState,
+    CommentMode
 } from './types-impl';
 import { SymbolKind } from '../api/model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -701,7 +702,7 @@ export function createAPIFactory(
             createCommentController(id: string, label: string): theia.CommentController {
                 return {
                     id, label, inputBox: undefined,
-                    createCommentThread(commentId: string, resource: Uri, range: Range, comments: Comment[]): theia.CommentThread {
+                    createCommentThread(commentId: string, resource: Uri, range: Range, comments: theia.Comment[]): theia.CommentThread {
                         return {
                             id: commentId,
                             resource,
@@ -809,7 +810,8 @@ export function createAPIFactory(
             OperatingSystem,
             WebviewPanelTargetArea,
             FileSystemError,
-            CommentThreadCollapsibleState
+            CommentThreadCollapsibleState,
+            CommentMode
         };
     };
 }
