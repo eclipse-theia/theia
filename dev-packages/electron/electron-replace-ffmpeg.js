@@ -20,28 +20,15 @@
 
 const downloadElectron = require('electron-download');
 const unzipper = require('unzipper');
-const crypto = require('crypto');
 const yargs = require('yargs');
 const path = require('path');
 const fs = require('fs');
 
-const { platforms, libffmpegLocation } = require('./electron-ffmpeg-lib')
+const { hashFile, platforms, libffmpegLocation } = require('./electron-ffmpeg-lib')
 
 const downloadCache = path.resolve(__dirname, 'download');
 if (!fs.existsSync(downloadCache)) {
     fs.mkdirSync(downloadCache);
-}
-
-/**
- * @param {String} path
- * @return {Buffer} Hash of the file.
- */
-async function hashFile(path) {
-    return new Promise((resolve, reject) => {
-        const hash = crypto.createHash('md5');
-        const stream = fs.createReadStream(path);
-        stream.pipe(hash).on('finish', () => resolve(hash.digest()));
-    });
 }
 
 async function main() {
@@ -125,7 +112,7 @@ async function main() {
         // Extract file to cache.
         await new Promise((resolve, reject) => {
             file.stream()
-                .pipe(fs.createWriteStream(libffmpegCachedPath, {  }))
+                .pipe(fs.createWriteStream(libffmpegCachedPath))
                 .on('finish', resolve)
                 .on('error', reject);
         });

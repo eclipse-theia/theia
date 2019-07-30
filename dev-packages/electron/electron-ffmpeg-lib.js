@@ -18,8 +18,25 @@
 
 // @ts-check
 
+const crypto = require('crypto');
 const path = require('path');
+const fs = require('fs');
+
 const ffmpeg = require('./native/build/Release/ffmpeg.node');
+
+/**
+ * @param {String} path
+ * @return {Buffer} Hash of the file.
+ */
+exports.hashFile = async function (path) {
+    return new Promise((resolve, reject) => {
+        const sha256 = crypto.createHash('sha256');
+        fs.createReadStream(path)
+            .on('close', () => resolve(sha256.digest()))
+            .on('data', data => sha256.update(data))
+            .on('error', reject);
+    });
+}
 
 /**
  * @type {NodeJS.Platform[]}
