@@ -1231,6 +1231,11 @@ export enum CommentThreadCollapsibleState {
     Expanded = 1
 }
 
+export enum CommentMode {
+    Editing = 0,
+    Preview = 1
+}
+
 export class FileSystemError extends Error {
 
     static FileExists(messageOrUri?: string | URI): FileSystemError {
