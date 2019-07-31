@@ -23,7 +23,7 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import {
     FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider
 } from '@theia/core/lib/browser';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Deferred, PromiseQueue } from '@theia/core/lib/common/promise-util';
 import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
@@ -40,6 +40,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     private _roots: FileStat[] = [];
     private deferredRoots = new Deferred<FileStat[]>();
+
+    protected readonly writeQueue = new PromiseQueue();
 
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
@@ -70,20 +72,21 @@ export class WorkspaceService implements FrontendApplicationContribution {
     @postConstruct()
     protected async init(): Promise<void> {
         this.applicationName = FrontendApplicationConfigProvider.get().applicationName;
-        const wpUriString = await this.getDefaultWorkspacePath();
-        const wpStat = await this.toFileStat(wpUriString);
-        await this.setWorkspace(wpStat);
-
         this.watcher.onFilesChanged(event => {
             if (this._workspace && FileChangeEvent.isAffected(event, new URI(this._workspace.uri))) {
-                this.updateWorkspace();
+                this.writeQueue.push(() => this.updateWorkspace());
             }
         });
         this.preferences.onPreferenceChanged(event => {
             const multiRootPrefName = 'workspace.supportMultiRootWorkspace';
             if (event.preferenceName === multiRootPrefName) {
-                this.updateWorkspace();
+                this.writeQueue.push(() => this.updateWorkspace());
             }
+        });
+        await this.writeQueue.push(async () => {
+            const wpUriString = await this.getDefaultWorkspacePath();
+            const wpStat = await this.toFileStat(wpUriString);
+            await this.setWorkspace(wpStat);
         });
     }
 
@@ -315,7 +318,10 @@ export class WorkspaceService implements FrontendApplicationContribution {
     /**
      * Removes root folder(s) from workspace.
      */
-    async removeRoots(uris: URI[]): Promise<void> {
+    removeRoots(uris: URI[]): Promise<void> {
+        return this.writeQueue.push(() => this.doRemoveRoots(uris));
+    }
+    protected async doRemoveRoots(uris: URI[]): Promise<void> {
         if (!this.opened) {
             throw new Error('Folder cannot be removed as there is no active folder in the current workspace.');
         }
@@ -330,7 +336,10 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
     }
 
-    async spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]> {
+    spliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]> {
+        return this.writeQueue.push(async () => this.doSpliceRoots(start, deleteCount, ...rootsToAdd));
+    }
+    protected async doSpliceRoots(start: number, deleteCount?: number, ...rootsToAdd: URI[]): Promise<URI[]> {
         if (!this._workspace) {
             throw new Error('There is not active workspace');
         }
@@ -351,7 +360,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         if (this._workspace.isDirectory) {
             const untitledWorkspace = await this.getUntitledWorkspace();
             if (untitledWorkspace) {
-                await this.save(untitledWorkspace);
+                await this.doSave(untitledWorkspace);
             }
         }
         const currentData = await this.getWorkspaceDataFromFile();
@@ -486,6 +495,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * @param uri URI or FileStat of the workspace file
      */
     async save(uri: URI | FileStat): Promise<void> {
+        return this.writeQueue.push(() => this.doSave(uri));
+    }
+    protected async doSave(uri: URI | FileStat): Promise<void> {
         const uriStr = uri instanceof URI ? uri.toString() : uri.uri;
         if (!await this.fileSystem.exists(uriStr)) {
             await this.fileSystem.createFile(uriStr);
@@ -512,7 +524,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     protected readonly rootWatchers = new Map<string, Disposable>();
 
-    protected async watchRoots(): Promise<void> {
+    protected watchRoots(): void {
         const rootUris = new Set(this._roots.map(r => r.uri));
         for (const [uri, watcher] of this.rootWatchers.entries()) {
             if (!rootUris.has(uri)) {
@@ -524,7 +536,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
     }
 
-    protected async watchRoot(root: FileStat): Promise<void> {
+    protected watchRoot(root: FileStat): void {
         const uriStr = root.uri;
         if (this.rootWatchers.has(uriStr)) {
             return;

@@ -717,7 +717,7 @@ describe('WorkspaceService', () => {
         const fooDir = <FileStat>{ uri: 'file:///foo', isDirectory: true };
         const workspaceService: WorkspaceService = new WorkspaceService();
         workspaceService['getUntitledWorkspace'] = async () => new URI('file:///untitled.theia-workspace');
-        workspaceService['save'] = async () => { };
+        workspaceService['doSave'] = async () => { };
         workspaceService['getWorkspaceDataFromFile'] = async () => ({ folders: [] });
         workspaceService['writeWorkspaceFile'] = async (_, data) => {
             workspaceService['_roots'] = data.folders.map(({ path }) => <FileStat>{ uri: path });
