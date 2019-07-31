@@ -23,7 +23,7 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial, MaybePromise, Event as CommonEvent } from '../../common';
+import { RecursivePartial, MaybePromise, Event as CommonEvent, DisposableCollection, Disposable } from '../../common';
 import { Saveable } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
@@ -865,7 +865,11 @@ export class ApplicationShell extends Widget {
      * Track the given widget so it is considered in the `current` and `active` state of the shell.
      */
     protected async track(widget: Widget): Promise<void> {
+        if (this.tracker.widgets.indexOf(widget) !== -1) {
+            return;
+        }
         this.tracker.add(widget);
+        this.checkActivation(widget);
         Saveable.apply(widget);
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
             for (const toTrack of await widget.getTrackableWidgets()) {
@@ -915,7 +919,7 @@ export class ApplicationShell extends Widget {
                 current = child;
             }
         }
-        return current && this.checkActivation(current);
+        return current;
     }
 
     /**
@@ -951,12 +955,35 @@ export class ApplicationShell extends Widget {
      * `activeWidget` property.
      */
     private checkActivation(widget: Widget): Widget {
-        window.requestAnimationFrame(() => {
-            if (this.activeWidget !== widget) {
-                console.warn('Widget was activated, but did not accept focus: ' + widget.id);
-            }
-        });
+        const onActivateRequest = widget['onActivateRequest'].bind(widget);
+        widget['onActivateRequest'] = (msg: Message) => {
+            onActivateRequest(msg);
+            this.assertActivated(widget);
+        };
         return widget;
+    }
+
+    private readonly activationTimeout = 2000;
+    private readonly toDisposeOnActivationCheck = new DisposableCollection();
+    private assertActivated(widget: Widget): void {
+        this.toDisposeOnActivationCheck.dispose();
+        let start = 0;
+        const step: FrameRequestCallback = timestamp => {
+            if (document.activeElement && widget.node.contains(document.activeElement)) {
+                return;
+            }
+            if (!start) {
+                start = timestamp;
+            }
+            const delta = timestamp - start;
+            if (delta < this.activationTimeout) {
+                request = window.requestAnimationFrame(step);
+            } else {
+                console.warn(`Widget was activated, but did not accept focus after ${this.activationTimeout}ms: ${widget.id}`);
+            }
+        };
+        let request = window.requestAnimationFrame(step);
+        this.toDisposeOnActivationCheck.push(Disposable.create(() => window.cancelAnimationFrame(request)));
     }
 
     /**
