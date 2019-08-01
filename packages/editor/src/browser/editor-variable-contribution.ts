@@ -34,6 +34,14 @@ export class EditorVariableContribution implements VariableContribution {
                 return editor ? `${editor.cursor.line + 1}` : undefined;
             }
         });
+        variables.registerVariable({
+            name: 'selectedText',
+            description: 'The current selected text in the active file',
+            resolve: () => {
+                const editor = this.getCurrentEditor();
+                return editor ? editor.document.getText(editor.selection) : undefined;
+            }
+        });
     }
 
     protected getCurrentEditor(): TextEditor | undefined {
