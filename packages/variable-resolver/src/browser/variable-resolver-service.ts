@@ -19,6 +19,7 @@
 import { injectable, inject } from 'inversify';
 import { VariableRegistry } from './variable';
 import URI from '@theia/core/lib/common/uri';
+import { JSONExt, ReadonlyJSONValue } from '@phosphor/coreutils/lib/json';
 
 export interface VariableResolveOptions {
     context?: URI;
@@ -140,7 +141,8 @@ export namespace VariableResolverService {
                 }
                 const variable = this.variableRegistry.getVariable(variableName);
                 const value = variable && await variable.resolve(this.options.context, argument);
-                this.resolved.set(name, value);
+                const stringValue = value !== undefined && value !== null && JSONExt.isPrimitive(value as ReadonlyJSONValue) ? String(value) : undefined;
+                this.resolved.set(name, stringValue);
             } catch (e) {
                 console.error(`Failed to resolved '${name}' variable`, e);
                 this.resolved.set(name, undefined);

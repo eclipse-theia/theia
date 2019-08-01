@@ -17,12 +17,16 @@
 import { injectable, inject } from 'inversify';
 import { VariableContribution, VariableRegistry } from './variable';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { CommandService } from '@theia/core/lib/common/command';
 
 @injectable()
-export class EnvVariableContribution implements VariableContribution {
+export class CommonVariableContribution implements VariableContribution {
 
     @inject(EnvVariablesServer)
     protected readonly env: EnvVariablesServer;
+
+    @inject(CommandService)
+    protected readonly commands: CommandService;
 
     async registerVariables(variables: VariableRegistry): Promise<void> {
         const execPath = await this.env.getExecPath();
@@ -32,10 +36,16 @@ export class EnvVariableContribution implements VariableContribution {
         });
         variables.registerVariable({
             name: 'env',
-            resolve: async (_, argument) => {
-                const envVariable = argument && await this.env.getValue(argument);
+            resolve: async (_, envVariableName) => {
+                const envVariable = envVariableName && await this.env.getValue(envVariableName);
                 return envVariable && envVariable.value;
             }
+        });
+        variables.registerVariable({
+            name: 'command',
+            resolve: async (_, command) =>
+                // tslint:disable-next-line:no-return-await
+                command && await this.commands.executeCommand(command)
         });
     }
 

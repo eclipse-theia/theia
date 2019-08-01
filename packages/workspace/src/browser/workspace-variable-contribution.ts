@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { JSONExt, ReadonlyJSONValue } from '@phosphor/coreutils/lib/json';
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
 import { FileSystem } from '@theia/filesystem/lib/common';
@@ -73,8 +72,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
                     return undefined;
                 }
                 const resourceUri = context || this.getResourceUri();
-                const value = this.preferences.get<ReadonlyJSONValue>(preferenceName, undefined, resourceUri && resourceUri.toString());
-                return value !== undefined && value !== null && JSONExt.isPrimitive(value) ? String(value) : undefined;
+                return this.preferences.get(preferenceName, undefined, resourceUri && resourceUri.toString());
             }
         });
 
@@ -124,8 +122,8 @@ export class WorkspaceVariableContribution implements VariableContribution {
         const scoped = (variable: Variable): Variable => ({
             name: variable.name,
             description: variable.description,
-            resolve: (context, argument) => {
-                const workspaceRoot = argument && this.workspaceService.tryGetRoots().find(r => new URI(r.uri).path.name === argument);
+            resolve: (context, workspaceRootName) => {
+                const workspaceRoot = workspaceRootName && this.workspaceService.tryGetRoots().find(r => new URI(r.uri).path.name === workspaceRootName);
                 return variable.resolve(workspaceRoot ? new URI(workspaceRoot.uri) : context);
             }
         });
