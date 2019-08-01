@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ApplicationShell, NavigatableWidget, PreferenceService } from '@theia/core/lib/browser';
+import { ApplicationShell, NavigatableWidget } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
 
@@ -32,8 +32,6 @@ export class WorkspaceVariableContribution implements VariableContribution {
     protected readonly shell: ApplicationShell;
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
-    @inject(PreferenceService)
-    protected readonly preferences: PreferenceService;
 
     protected currentWidget: NavigatableWidget | undefined;
 
@@ -64,17 +62,6 @@ export class WorkspaceVariableContribution implements VariableContribution {
 
     registerVariables(variables: VariableRegistry): void {
         this.registerWorkspaceRootVariables(variables);
-
-        variables.registerVariable({
-            name: 'config',
-            resolve: (context, preferenceName) => {
-                if (!preferenceName) {
-                    return undefined;
-                }
-                const resourceUri = context || this.getResourceUri();
-                return this.preferences.get(preferenceName, undefined, resourceUri && resourceUri.toString());
-            }
-        });
 
         variables.registerVariable({
             name: 'file',
@@ -191,6 +178,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
     }
 
     getResourceUri(): URI | undefined {
+        // TODO replace with ResourceContextKey.get?
         return this.currentWidget && this.currentWidget.getResourceUri();
     }
 

@@ -23,6 +23,10 @@ import { JSONExt, ReadonlyJSONValue } from '@phosphor/coreutils/lib/json';
 
 export interface VariableResolveOptions {
     context?: URI;
+    /**
+     * Used for resolving inputs, see https://code.visualstudio.com/docs/editor/variables-reference#_input-variables
+     */
+    configurationSection?: string;
 }
 
 /**
@@ -140,7 +144,7 @@ export namespace VariableResolverService {
                     argument = parts[1];
                 }
                 const variable = this.variableRegistry.getVariable(variableName);
-                const value = variable && await variable.resolve(this.options.context, argument);
+                const value = variable && await variable.resolve(this.options.context, argument, this.options.configurationSection);
                 const stringValue = value !== undefined && value !== null && JSONExt.isPrimitive(value as ReadonlyJSONValue) ? String(value) : undefined;
                 this.resolved.set(name, stringValue);
             } catch (e) {
