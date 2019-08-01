@@ -1,6 +1,5 @@
 {
   "rules": {
-    "deprecation": true,
     "await-promise": {
       "severity": "warning",
       "options": [
@@ -8,8 +7,14 @@
         "PromiseLike"
       ]
     },
+    "deprecation": true,
     "no-return-await": {
       "severity": "warning"
-    }
+    },
+    "typedef": [
+      true,
+      "call-signature",
+      "property-declaration"
+    ]
   }
 }
