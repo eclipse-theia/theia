@@ -17,11 +17,10 @@ Breaking changes:
 - [plugin] files from 'plugin-ext/src/api' moved to 'plugin-ext/src/common', renamed 'model.ts' to 'plugin-api-rpc-model.ts', 'plugin-api.ts' to 'plugin-api-rpc.ts'
 - [task] ensure that plugin tasks are registered before accessing them [5869](https://github.com/theia-ide/theia/pull/5869)
   - `TaskProviderRegistry` and `TaskResolverRegistry` are promisified
-
-Breaking changes:
-  - [shell][plugin] integrated view containers and views [#5665](https://github.com/theia-ide/theia/pull/5665)
-    - `Source Control` and `Explorer` are view containers now and previous layout data cannot be loaded for them. Because of it the layout is completely reset.
-
+- [shell][plugin] integrated view containers and views [#5665](https://github.com/theia-ide/theia/pull/5665)
+  - `Source Control` and `Explorer` are view containers now and previous layout data cannot be loaded for them. Because of it the layout is completely reset.
+- [vscode] complete support of variable substitution [#5835](https://github.com/theia-ide/theia/pull/5835)
+  - inline `VariableQuickOpenItem`
 
 ## v0.9.0
 - [core] added `theia-widget-noInfo` css class to be used by widgets when displaying no information messages [#5717](https://github.com/theia-ide/theia/pull/5717)

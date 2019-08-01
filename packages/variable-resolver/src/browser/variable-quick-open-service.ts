@@ -15,13 +15,17 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/';
-import { VariableRegistry } from './variable';
+import { MessageService } from '@theia/core/lib/common/message-service';
+import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open';
+import { VariableRegistry, Variable } from './variable';
 
 @injectable()
 export class VariableQuickOpenService implements QuickOpenModel {
 
     protected items: QuickOpenItem[];
+
+    @inject(MessageService)
+    protected readonly messages: MessageService;
 
     constructor(
         @inject(VariableRegistry) protected readonly variableRegistry: VariableRegistry,
@@ -29,9 +33,17 @@ export class VariableQuickOpenService implements QuickOpenModel {
     ) { }
 
     open(): void {
-        this.items = this.variableRegistry.getVariables().map(
-            v => new VariableQuickOpenItem(v.name, v.description)
-        );
+        this.items = this.variableRegistry.getVariables().map(v => new QuickOpenItem({
+            label: '${' + v.name + '}',
+            detail: v.description,
+            run: mode => {
+                if (mode === QuickOpenMode.OPEN) {
+                    this.showValue(v);
+                    return true;
+                }
+                return false;
+            }
+        }));
 
         this.quickOpenService.open(this, {
             placeholder: 'Registered variables',
@@ -44,26 +56,12 @@ export class VariableQuickOpenService implements QuickOpenModel {
     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
         acceptor(this.items);
     }
-}
 
-export class VariableQuickOpenItem extends QuickOpenItem {
-
-    constructor(
-        protected readonly name: string,
-        protected readonly description?: string
-    ) {
-        super();
+    protected async showValue(variable: Variable): Promise<void> {
+        const value = await variable.resolve();
+        if (value) {
+            this.messages.info(value);
+        }
     }
 
-    getLabel(): string {
-        return '${' + this.name + '}';
-    }
-
-    getDetail(): string {
-        return this.description || '';
-    }
-
-    run(mode: QuickOpenMode): boolean {
-        return false;
-    }
 }
