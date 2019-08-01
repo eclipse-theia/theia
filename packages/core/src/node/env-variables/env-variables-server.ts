@@ -25,8 +25,12 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     constructor() {
         const prEnv = process.env;
         Object.keys(prEnv).forEach((key: string) => {
-            this.envs[key] = {'name' : key, 'value' : prEnv[key]};
+            this.envs[key] = { 'name': key, 'value': prEnv[key] };
         });
+    }
+
+    async getExecPath(): Promise<string> {
+        return process.execPath;
     }
 
     async getVariables(): Promise<EnvVariable[]> {

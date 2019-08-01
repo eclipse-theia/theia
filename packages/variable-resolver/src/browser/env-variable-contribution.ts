@@ -25,6 +25,11 @@ export class EnvVariableContribution implements VariableContribution {
     protected readonly env: EnvVariablesServer;
 
     async registerVariables(variables: VariableRegistry): Promise<void> {
+        const execPath = await this.env.getExecPath();
+        variables.registerVariable({
+            name: 'execPath',
+            resolve: () => execPath
+        });
         for (const variable of await this.env.getVariables()) {
             variables.registerVariable({
                 name: 'env:' + variable.name,
