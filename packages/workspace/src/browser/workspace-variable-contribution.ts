@@ -18,9 +18,9 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { JSONExt, ReadonlyJSONValue } from '@phosphor/coreutils/lib/json';
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
+import { FileSystem } from '@theia/filesystem/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ApplicationShell, NavigatableWidget, PreferenceSchemaProvider, PreferenceService } from '@theia/core/lib/browser';
+import { ApplicationShell, NavigatableWidget, PreferenceService } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
 
@@ -33,8 +33,6 @@ export class WorkspaceVariableContribution implements VariableContribution {
     protected readonly shell: ApplicationShell;
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
-    @inject(PreferenceSchemaProvider)
-    protected readonly preferenceSchema: PreferenceSchemaProvider;
     @inject(PreferenceService)
     protected readonly preferences: PreferenceService;
 
@@ -67,11 +65,18 @@ export class WorkspaceVariableContribution implements VariableContribution {
 
     registerVariables(variables: VariableRegistry): void {
         this.registerWorkspaceRootVariables(variables);
-        this.updateWorkspaceRootVariables(variables);
-        this.workspaceService.onWorkspaceChanged(() => this.updateWorkspaceRootVariables(variables));
 
-        this.updatePreferenceVariables(variables);
-        this.preferenceSchema.onDidPreferenceSchemaChanged(() => this.updatePreferenceVariables(variables));
+        variables.registerVariable({
+            name: 'config',
+            resolve: (context, preferenceName) => {
+                if (!preferenceName) {
+                    return undefined;
+                }
+                const resourceUri = context || this.getResourceUri();
+                const value = this.preferences.get<ReadonlyJSONValue>(preferenceName, undefined, resourceUri && resourceUri.toString());
+                return value !== undefined && value !== null && JSONExt.isPrimitive(value) ? String(value) : undefined;
+            }
+        });
 
         variables.registerVariable({
             name: 'file',
@@ -115,86 +120,72 @@ export class WorkspaceVariableContribution implements VariableContribution {
         });
     }
 
-    protected readonly toDisposeOnUpdateWorkspaceRootVariables = new DisposableCollection();
-
-    protected updateWorkspaceRootVariables(variables: VariableRegistry): void {
-        this.toDisposeOnUpdateWorkspaceRootVariables.dispose();
-        for (const root of this.workspaceService.tryGetRoots()) {
-            this.toDisposeOnUpdateWorkspaceRootVariables.push(this.registerWorkspaceRootVariables(variables, root));
-        }
-    }
-
-    protected registerWorkspaceRootVariables(variables: VariableRegistry, workspaceRoot?: FileStat): Disposable {
-        const scoped = (variable: Variable) => {
-            if (!workspaceRoot) {
-                return variable;
+    protected registerWorkspaceRootVariables(variables: VariableRegistry): void {
+        const scoped = (variable: Variable): Variable => ({
+            name: variable.name,
+            description: variable.description,
+            resolve: (context, argument) => {
+                const workspaceRoot = argument && this.workspaceService.tryGetRoots().find(r => new URI(r.uri).path.name === argument);
+                return variable.resolve(workspaceRoot ? new URI(workspaceRoot.uri) : context);
             }
-            const workspaceRootUri = new URI(workspaceRoot.uri);
-            return {
-                name: variable.name + ':' + workspaceRootUri.path.name,
-                description: variable.description,
-                resolve: () => variable.resolve(workspaceRootUri)
-            };
-        };
-        return new DisposableCollection(
-            variables.registerVariable(scoped({
-                name: 'workspaceRoot',
-                description: 'The path of the workspace root folder',
-                resolve: (context?: URI) => {
-                    const uri = this.getWorkspaceRootUri(context);
-                    return uri && this.fileSystem.getFsPath(uri.toString());
-                }
-            })),
-            variables.registerVariable(scoped({
-                name: 'workspaceFolder',
-                description: 'The path of the workspace root folder',
-                resolve: (context?: URI) => {
-                    const uri = this.getWorkspaceRootUri(context);
-                    return uri && this.fileSystem.getFsPath(uri.toString());
-                }
-            })),
-            variables.registerVariable(scoped({
-                name: 'workspaceRootFolderName',
-                description: 'The name of the workspace root folder',
-                resolve: (context?: URI) => {
-                    const uri = this.getWorkspaceRootUri(context);
-                    return uri && uri.displayName;
-                }
-            })),
-            variables.registerVariable(scoped({
-                name: 'workspaceFolderBasename',
-                description: 'The name of the workspace root folder',
-                resolve: (context?: URI) => {
-                    const uri = this.getWorkspaceRootUri(context);
-                    return uri && uri.displayName;
-                }
-            })),
-            variables.registerVariable(scoped({
-                name: 'cwd',
-                description: "The task runner's current working directory on startup",
-                resolve: (context?: URI) => {
-                    const uri = this.getWorkspaceRootUri(context);
-                    return (uri && this.fileSystem.getFsPath(uri.toString())) || '';
-                }
-            })),
-            variables.registerVariable(scoped({
-                name: 'relativeFile',
-                description: "The currently opened file's path relative to the workspace root",
-                resolve: (context?: URI) => {
-                    const uri = this.getResourceUri();
-                    return uri && this.getWorkspaceRelativePath(uri, context);
-                }
-            })),
-            variables.registerVariable(scoped({
-                name: 'relativeFileDirname',
-                description: "The current opened file's dirname relative to ${workspaceFolder}",
-                resolve: (context?: URI) => {
-                    const uri = this.getResourceUri();
-                    const relativePath = uri && this.getWorkspaceRelativePath(uri, context);
-                    return relativePath && new Path(relativePath).dir.toString();
-                }
-            }))
-        );
+        });
+        variables.registerVariable(scoped({
+            name: 'workspaceRoot',
+            description: 'The path of the workspace root folder',
+            resolve: (context?: URI) => {
+                const uri = this.getWorkspaceRootUri(context);
+                return uri && this.fileSystem.getFsPath(uri.toString());
+            }
+        }));
+        variables.registerVariable(scoped({
+            name: 'workspaceFolder',
+            description: 'The path of the workspace root folder',
+            resolve: (context?: URI) => {
+                const uri = this.getWorkspaceRootUri(context);
+                return uri && this.fileSystem.getFsPath(uri.toString());
+            }
+        }));
+        variables.registerVariable(scoped({
+            name: 'workspaceRootFolderName',
+            description: 'The name of the workspace root folder',
+            resolve: (context?: URI) => {
+                const uri = this.getWorkspaceRootUri(context);
+                return uri && uri.displayName;
+            }
+        }));
+        variables.registerVariable(scoped({
+            name: 'workspaceFolderBasename',
+            description: 'The name of the workspace root folder',
+            resolve: (context?: URI) => {
+                const uri = this.getWorkspaceRootUri(context);
+                return uri && uri.displayName;
+            }
+        }));
+        variables.registerVariable(scoped({
+            name: 'cwd',
+            description: "The task runner's current working directory on startup",
+            resolve: (context?: URI) => {
+                const uri = this.getWorkspaceRootUri(context);
+                return (uri && this.fileSystem.getFsPath(uri.toString())) || '';
+            }
+        }));
+        variables.registerVariable(scoped({
+            name: 'relativeFile',
+            description: "The currently opened file's path relative to the workspace root",
+            resolve: (context?: URI) => {
+                const uri = this.getResourceUri();
+                return uri && this.getWorkspaceRelativePath(uri, context);
+            }
+        }));
+        variables.registerVariable(scoped({
+            name: 'relativeFileDirname',
+            description: "The current opened file's dirname relative to ${workspaceFolder}",
+            resolve: (context?: URI) => {
+                const uri = this.getResourceUri();
+                const relativePath = uri && this.getWorkspaceRelativePath(uri, context);
+                return relativePath && new Path(relativePath).dir.toString();
+            }
+        }));
     }
 
     getWorkspaceRootUri(uri: URI | undefined = this.getResourceUri()): URI | undefined {
@@ -209,40 +200,6 @@ export class WorkspaceVariableContribution implements VariableContribution {
         const workspaceRootUri = this.getWorkspaceRootUri(context || uri);
         const path = workspaceRootUri && workspaceRootUri.path.relative(uri.path);
         return path && path.toString();
-    }
-
-    protected readonly toDisposeOnUpdatePreferenceVariables = new DisposableCollection();
-
-    protected updatePreferenceVariables(variables: VariableRegistry): void {
-        this.toDisposeOnUpdatePreferenceVariables.dispose();
-        for (const preferenceName of this.preferenceSchema.getPreferenceNames()) {
-            this.toDisposeOnUpdatePreferenceVariables.push(this.registerPreferenceVariable(variables, preferenceName));
-        }
-    }
-
-    protected registerPreferenceVariable(variables: VariableRegistry, preferenceName: string): Disposable {
-        if (!preferenceName) {
-            return Disposable.NULL;
-        }
-        const name = 'config:' + preferenceName;
-        if (variables.getVariable(name)) {
-            return Disposable.NULL;
-        }
-        const toDispose = new DisposableCollection(
-            variables.registerVariable({
-                name,
-                resolve: context => {
-                    const resourceUri = context || this.getResourceUri();
-                    const value = this.preferences.get<ReadonlyJSONValue>(preferenceName, undefined, resourceUri && resourceUri.toString());
-                    return value !== undefined && value !== null && JSONExt.isPrimitive(value) ? String(value) : undefined;
-                }
-            })
-        );
-        const index = preferenceName.lastIndexOf('.');
-        if (index !== -1) {
-            toDispose.push(this.registerPreferenceVariable(variables, preferenceName.substr(0, index)));
-        }
-        return toDispose;
     }
 
 }

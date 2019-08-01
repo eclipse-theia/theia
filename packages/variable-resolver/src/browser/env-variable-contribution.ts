@@ -30,12 +30,13 @@ export class EnvVariableContribution implements VariableContribution {
             name: 'execPath',
             resolve: () => execPath
         });
-        for (const variable of await this.env.getVariables()) {
-            variables.registerVariable({
-                name: 'env:' + variable.name,
-                resolve: () => variable.value
-            });
-        }
+        variables.registerVariable({
+            name: 'env',
+            resolve: async (_, argument) => {
+                const envVariable = argument && await this.env.getValue(argument);
+                return envVariable && envVariable.value;
+            }
+        });
     }
 
 }

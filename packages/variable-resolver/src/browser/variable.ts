@@ -38,7 +38,7 @@ export interface Variable {
      * `undefined` if variable cannot be resolved.
      * Never reject.
      */
-    resolve(context?: URI): MaybePromise<string | undefined>;
+    resolve(context?: URI, argment?: string): MaybePromise<string | undefined>;
 }
 
 export const VariableContribution = Symbol('VariableContribution');
