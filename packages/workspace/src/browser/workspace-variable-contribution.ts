@@ -15,11 +15,12 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
+import { JSONExt, ReadonlyJSONValue } from '@phosphor/coreutils/lib/json';
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ApplicationShell, NavigatableWidget } from '@theia/core/lib/browser';
+import { ApplicationShell, NavigatableWidget, PreferenceSchemaProvider, PreferenceService } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
 
@@ -32,6 +33,10 @@ export class WorkspaceVariableContribution implements VariableContribution {
     protected readonly shell: ApplicationShell;
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
+    @inject(PreferenceSchemaProvider)
+    protected readonly preferenceSchema: PreferenceSchemaProvider;
+    @inject(PreferenceService)
+    protected readonly preferences: PreferenceService;
 
     protected currentWidget: NavigatableWidget | undefined;
 
@@ -64,6 +69,9 @@ export class WorkspaceVariableContribution implements VariableContribution {
         this.registerWorkspaceRootVariables(variables);
         this.updateWorkspaceRootVariables(variables);
         this.workspaceService.onWorkspaceChanged(() => this.updateWorkspaceRootVariables(variables));
+
+        this.updatePreferenceVariables(variables);
+        this.preferenceSchema.onDidPreferenceSchemaChanged(() => this.updatePreferenceVariables(variables));
 
         variables.registerVariable({
             name: 'file',
@@ -202,4 +210,39 @@ export class WorkspaceVariableContribution implements VariableContribution {
         const path = workspaceRootUri && workspaceRootUri.path.relative(uri.path);
         return path && path.toString();
     }
+
+    protected readonly toDisposeOnUpdatePreferenceVariables = new DisposableCollection();
+
+    protected updatePreferenceVariables(variables: VariableRegistry): void {
+        this.toDisposeOnUpdatePreferenceVariables.dispose();
+        for (const preferenceName of this.preferenceSchema.getPreferenceNames()) {
+            this.toDisposeOnUpdatePreferenceVariables.push(this.registerPreferenceVariable(variables, preferenceName));
+        }
+    }
+
+    protected registerPreferenceVariable(variables: VariableRegistry, preferenceName: string): Disposable {
+        if (!preferenceName) {
+            return Disposable.NULL;
+        }
+        const name = 'config:' + preferenceName;
+        if (variables.getVariable(name)) {
+            return Disposable.NULL;
+        }
+        const toDispose = new DisposableCollection(
+            variables.registerVariable({
+                name,
+                resolve: context => {
+                    const resourceUri = context || this.getResourceUri();
+                    const value = this.preferences.get<ReadonlyJSONValue>(preferenceName, undefined, resourceUri && resourceUri.toString());
+                    return value !== undefined && value !== null && JSONExt.isPrimitive(value) ? String(value) : undefined;
+                }
+            })
+        );
+        const index = preferenceName.lastIndexOf('.');
+        if (index !== -1) {
+            toDispose.push(this.registerPreferenceVariable(variables, preferenceName.substr(0, index)));
+        }
+        return toDispose;
+    }
+
 }
