@@ -21,7 +21,7 @@ import { VariableRegistry, VariableContribution } from './variable';
 import { VariableQuickOpenService } from './variable-quick-open-service';
 import { VariableResolverFrontendContribution } from './variable-resolver-frontend-contribution';
 import { VariableResolverService } from './variable-resolver-service';
-import { EnvVariableContribution } from './env-variable-contribution';
+import { CommonVariableContribution } from './common-variable-contribution';
 
 export default new ContainerModule(bind => {
     bind(VariableRegistry).toSelf().inSingletonScope();
@@ -35,6 +35,6 @@ export default new ContainerModule(bind => {
 
     bind(VariableQuickOpenService).toSelf().inSingletonScope();
 
-    bind(EnvVariableContribution).toSelf().inSingletonScope();
-    bind(VariableContribution).toService(EnvVariableContribution);
+    bind(CommonVariableContribution).toSelf().inSingletonScope();
+    bind(VariableContribution).toService(CommonVariableContribution);
 });
