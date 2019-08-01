@@ -21,6 +21,7 @@ import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { DebugService } from '../common/debug-service';
 import { debugPreferencesSchema } from './debug-preferences';
+import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 
 @injectable()
 export class DebugSchemaUpdater {
@@ -82,6 +83,7 @@ const launchSchema: IJSONSchema = {
                 'type': 'object',
                 oneOf: []
             }
-        }
+        },
+        inputs: inputsSchema.definitions!.inputs
     }
 };
