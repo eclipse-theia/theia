@@ -131,8 +131,15 @@ export namespace VariableResolverService {
                 return;
             }
             try {
-                const variable = this.variableRegistry.getVariable(name);
-                const value = variable && await variable.resolve(this.options.context);
+                let variableName = name;
+                let argument: string | undefined;
+                const parts = name.split(':');
+                if (parts.length > 1) {
+                    variableName = parts[0];
+                    argument = parts[1];
+                }
+                const variable = this.variableRegistry.getVariable(variableName);
+                const value = variable && await variable.resolve(this.options.context, argument);
                 this.resolved.set(name, value);
             } catch (e) {
                 console.error(`Failed to resolved '${name}' variable`, e);
