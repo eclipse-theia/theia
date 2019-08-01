@@ -25,6 +25,7 @@ import {
     TreeModel,
     ExpandableTreeNode
 } from '@theia/core/lib/browser';
+import { OutlineViewTreeModel } from './outline-view-tree';
 import { Message } from '@phosphor/messaging';
 import { Emitter } from '@theia/core';
 import { CompositeTreeNode } from '@theia/core/lib/browser';
@@ -50,7 +51,7 @@ export class OutlineViewWidget extends TreeWidget {
 
     constructor(
         @inject(TreeProps) protected readonly treeProps: TreeProps,
-        @inject(TreeModel) model: TreeModel,
+        @inject(OutlineViewTreeModel) model: OutlineViewTreeModel,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         super(treeProps, model, contextMenuRenderer);

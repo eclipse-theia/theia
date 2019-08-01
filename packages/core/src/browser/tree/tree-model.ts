@@ -157,11 +157,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         this.toDispose.push(this.expansionService);
         this.toDispose.push(this.expansionService.onExpansionChanged(node => {
             this.fireChanged();
-            if (!node.expanded && [...this.selectedNodes].some(selectedNode => CompositeTreeNode.isAncestor(node, selectedNode))) {
-                if (SelectableTreeNode.isVisible(node)) {
-                    this.selectNode(node);
-                }
-            }
+            this.handleExpansion(node);
         }));
 
         this.toDispose.push(this.onOpenNodeEmitter);
@@ -171,6 +167,21 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    protected handleExpansion(node: Readonly<ExpandableTreeNode>): void {
+        this.selectIfAncestorOfSelected(node);
+    }
+
+    /**
+     * Select the given node if it is the ancestor of a selected node.
+     */
+    protected selectIfAncestorOfSelected(node: Readonly<ExpandableTreeNode>): void {
+        if (!node.expanded && [...this.selectedNodes].some(selectedNode => CompositeTreeNode.isAncestor(node, selectedNode))) {
+            if (SelectableTreeNode.isVisible(node)) {
+                this.selectNode(node);
+            }
+        }
     }
 
     get root(): TreeNode | undefined {
