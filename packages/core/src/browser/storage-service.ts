@@ -51,7 +51,7 @@ export class LocalStorageService implements StorageService {
     @inject(WindowService) protected readonly windowService: WindowService;
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         if (typeof window !== 'undefined' && window.localStorage) {
             this.storage = window.localStorage;
             this.testLocalStorage();

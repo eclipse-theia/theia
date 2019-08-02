@@ -124,11 +124,11 @@ export class ConsoleCommandHandler implements CommandHandler {
         protected readonly doExecute: ConsoleExecuteFunction
     ) { }
 
-    isEnabled() {
+    isEnabled(): boolean {
         return !!this.manager.currentConsole;
     }
 
-    isVisible() {
+    isVisible(): boolean {
         return !!this.manager.currentConsole;
     }
 

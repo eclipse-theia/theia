@@ -24,7 +24,7 @@ export class LoggerWatcher {
     getLoggerClient(): ILoggerClient {
         const emitter = this.onLogLevelChangedEmitter;
         return {
-            onLogLevelChanged(event: ILogLevelChangedEvent) {
+            onLogLevelChanged(event: ILogLevelChangedEvent): void {
                 emitter.fire(event);
             }
         };
@@ -37,7 +37,7 @@ export class LoggerWatcher {
     }
 
     // FIXME: get rid of it, backend services should as well set a client on the server
-    fireLogLevelChanged(event: ILogLevelChangedEvent) {
+    fireLogLevelChanged(event: ILogLevelChangedEvent): void {
         this.onLogLevelChangedEmitter.fire(event);
     }
 }

@@ -38,6 +38,6 @@ describe('selection-service', () => {
     });
 });
 
-function createSelectionService() {
+function createSelectionService(): SelectionService {
     return new SelectionService();
 }

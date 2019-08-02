@@ -80,11 +80,11 @@ describe('fuzzy-search', () => {
         });
     });
 
-    function expectOrder(actual: FuzzySearch.Match<string>[], expected: string[]) {
+    function expectOrder(actual: FuzzySearch.Match<string>[], expected: string[]): void {
         expect(actual.map(result => result.item)).to.be.deep.equal(expected);
     }
 
-    function expectSearch(actual: FuzzySearch.Match<string>[], expected: FuzzySearch.Match<string>[]) {
+    function expectSearch(actual: FuzzySearch.Match<string>[], expected: FuzzySearch.Match<string>[]): void {
         expect(actual).to.be.deep.equal(expected);
     }
 

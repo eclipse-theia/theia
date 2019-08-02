@@ -21,7 +21,7 @@ import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
 
 import '../../../src/browser/style/diff.css';
 
-export function bindGitDiffModule(bind: interfaces.Bind) {
+export function bindGitDiffModule(bind: interfaces.Bind): void {
 
     bind(GitDiffWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({

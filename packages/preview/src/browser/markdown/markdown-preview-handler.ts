@@ -101,7 +101,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
         return linkURI;
     }
 
-    protected revealFragment(contentElement: HTMLElement, fragment: string) {
+    protected revealFragment(contentElement: HTMLElement, fragment: string): void {
         const elementToReveal = this.findElementForFragment(contentElement, fragment);
         if (!elementToReveal) {
             return;

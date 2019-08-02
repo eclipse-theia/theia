@@ -20,7 +20,7 @@ import { RPCProtocol } from '../../../api/rpc-protocol';
 // tslint:disable:no-any
 export function createDebugExtStub(rpc: RPCProtocol): DebugExtImpl {
     return new Proxy(new DebugExtImpl(rpc), {
-        apply: function (target, that, args) {
+        apply: function (target, that, args): void {
             console.error('Debug API works only in plugin container');
         }
     });

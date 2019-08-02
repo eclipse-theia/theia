@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
 
 @injectable()
@@ -23,7 +23,7 @@ export class JavaContribution implements LanguageGrammarDefinitionContribution {
     private readonly javaScope = 'source.java';
     private readonly javaDocScope = 'text.html.javadoc';
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: this.id,
             extensions: [
@@ -55,7 +55,7 @@ export class JavaContribution implements LanguageGrammarDefinitionContribution {
 
         const javaDocGrammar = require('../../data/java.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.javaDocScope, {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: javaDocGrammar
@@ -64,7 +64,7 @@ export class JavaContribution implements LanguageGrammarDefinitionContribution {
         });
         const javaGrammar = require('../../data/java.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.javaScope, {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: javaGrammar

@@ -247,13 +247,13 @@ export class DebugEditorModel implements Disposable {
     get breakpoint(): DebugBreakpoint | undefined {
         return this.getBreakpoint();
     }
-    protected getBreakpoint(position: monaco.Position = this.position) {
+    protected getBreakpoint(position: monaco.Position = this.position): DebugBreakpoint | undefined {
         return this.sessions.getBreakpoint(this.uri, position.lineNumber);
     }
     toggleBreakpoint(): void {
         this.doToggleBreakpoint();
     }
-    protected doToggleBreakpoint(position: monaco.Position = this.position) {
+    protected doToggleBreakpoint(position: monaco.Position = this.position): void {
         const breakpoint = this.getBreakpoint(position);
         if (breakpoint) {
             breakpoint.remove();

@@ -187,7 +187,7 @@ export default class URI {
         return this.codeUri.fragment;
     }
 
-    toString(skipEncoding?: boolean) {
+    toString(skipEncoding?: boolean): string {
         return this.codeUri.toString(skipEncoding);
     }
 

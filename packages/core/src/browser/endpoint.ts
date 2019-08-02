@@ -39,7 +39,7 @@ export class Endpoint {
         return new URI(`${this.httpScheme}//${this.host}${this.pathname}${this.path}`);
     }
 
-    protected get pathname() {
+    protected get pathname(): string {
         if (this.location.protocol === Endpoint.PROTO_FILE) {
             return '';
         }
@@ -52,7 +52,7 @@ export class Endpoint {
         return this.location.pathname;
     }
 
-    protected get host() {
+    protected get host(): string {
         if (this.location.host) {
             return this.location.host;
         }
@@ -76,7 +76,7 @@ export class Endpoint {
             })[0] || defaultValue;
     }
 
-    protected get wsScheme() {
+    protected get wsScheme(): string {
         return this.httpScheme === Endpoint.PROTO_HTTPS ? Endpoint.PROTO_WSS : Endpoint.PROTO_WS;
     }
 
@@ -84,7 +84,7 @@ export class Endpoint {
      * The HTTP/HTTPS scheme of the endpoint, or the user defined one.
      * See: `Endpoint.Options.httpScheme`.
      */
-    get httpScheme() {
+    get httpScheme(): string {
         if (this.options.httpScheme) {
             return this.options.httpScheme;
         }
@@ -95,7 +95,7 @@ export class Endpoint {
         return Endpoint.PROTO_HTTP;
     }
 
-    protected get path() {
+    protected get path(): string {
         if (this.options.path) {
             if (this.options.path.startsWith('/')) {
                 return this.options.path;

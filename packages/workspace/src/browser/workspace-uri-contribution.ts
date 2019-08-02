@@ -42,7 +42,7 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         return 0;
     }
 
-    private getUri(element: URI | FileStat) {
+    private getUri(element: URI | FileStat): URI {
         if (FileStat.is(element)) {
             return new URI(element.uri);
         }

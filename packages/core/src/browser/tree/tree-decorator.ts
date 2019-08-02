@@ -88,7 +88,8 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
         this.emitter.dispose();
     }
 
-    getDecorations() {
+    // tslint:disable-next-line:no-any
+    getDecorations(): Map<any, any> {
         return new Map();
     }
 

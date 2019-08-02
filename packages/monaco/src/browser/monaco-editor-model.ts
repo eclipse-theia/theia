@@ -126,7 +126,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     /**
      * It's a hack to dispatch close notification with an old language id, don't use it.
      */
-    setLanguageId(languageId: string | undefined) {
+    setLanguageId(languageId: string | undefined): void {
         this._languageId = languageId;
     }
 

@@ -434,7 +434,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
      * Register a menu action to toggle the visibility of the new part.
      * The menu action is unregistered first to enable refreshing the order of menu actions.
      */
-    protected refreshMenu(part: ViewContainerPart) {
+    protected refreshMenu(part: ViewContainerPart): void {
         const commandId = this.toggleVisibilityCommandId(part);
         this.menuRegistry.unregisterMenuAction(commandId);
         if (!part.wrapped.title.label) {
@@ -697,7 +697,7 @@ export class ViewContainerPart extends BaseWidget {
         this.collapsedEmitter.fire(collapsed);
     }
 
-    get canHide() {
+    get canHide(): boolean {
         return this.options.canHide === undefined || this.options.canHide;
     }
 

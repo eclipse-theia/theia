@@ -16,7 +16,7 @@
  ********************************************************************************/
 
 // tslint:disable-next-line:no-any
-export function ok(val?: any, message?: string) {
+export function ok(val?: any, message?: string): void {
     if (!val || val === null) {
         throw new Error(message ? `Assertion failed (${message})` : 'Assertion failed');
     }

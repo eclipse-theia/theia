@@ -43,7 +43,7 @@ export class HostedPluginProcessesCache {
         return clientId;
     }
 
-    public linkLiveClientAndProcess(clientId: number, childProcess: cp.ChildProcess) {
+    public linkLiveClientAndProcess(clientId: number, childProcess: cp.ChildProcess): void {
         this.cachedCPMap.set(clientId, {
             cp: childProcess,
             toBeKilledAfter: Infinity
@@ -55,7 +55,7 @@ export class HostedPluginProcessesCache {
         return childProcessDatum && childProcessDatum.cp;
     }
 
-    public scheduleChildProcessTermination(hostedPluginProcess: HostedPluginProcess, childProcess: cp.ChildProcess) {
+    public scheduleChildProcessTermination(hostedPluginProcess: HostedPluginProcess, childProcess: cp.ChildProcess): void {
         for (const cachedChildProcessesDatum of this.cachedCPMap.values()) {
             if (cachedChildProcessesDatum.cp === childProcess) {
                 cachedChildProcessesDatum.toBeKilledAfter = new Date().getTime() + this.minKeepAliveDisconnectTime;

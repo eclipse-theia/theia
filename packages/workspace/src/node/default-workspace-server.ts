@@ -67,7 +67,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     protected readonly cliParams: WorkspaceCliContribution;
 
     @postConstruct()
-    protected async init() {
+    protected async init(): Promise<void> {
         const root = await this.getRoot();
         this.root.resolve(root);
     }

@@ -37,7 +37,7 @@ describe('menu-model-registry', () => {
                     });
                 }
             }, {
-                    registerCommands(reg: CommandRegistry) {
+                    registerCommands(reg: CommandRegistry): void {
                         reg.registerCommand({
                             id: 'open',
                             label: 'A'
@@ -64,7 +64,7 @@ describe('menu-model-registry', () => {
     });
 });
 
-function createMenuRegistry(menuContrib: MenuContribution, commandContrib: CommandContribution) {
+function createMenuRegistry(menuContrib: MenuContribution, commandContrib: CommandContribution): MenuModelRegistry {
     const cmdReg = new CommandRegistry({ getContributions: () => [commandContrib] });
     cmdReg.onStart();
     const menuReg = new MenuModelRegistry({ getContributions: () => [menuContrib] }, cmdReg);

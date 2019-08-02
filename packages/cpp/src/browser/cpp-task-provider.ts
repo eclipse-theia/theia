@@ -69,11 +69,11 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
         });
     }
 
-    registerProviders(registry: TaskProviderRegistry) {
+    registerProviders(registry: TaskProviderRegistry): void {
         registry.register(CPP_BUILD_TASK_SOURCE, this);
     }
 
-    registerResolvers(registry: TaskResolverRegistry) {
+    registerResolvers(registry: TaskResolverRegistry): void {
         registry.register(CPP_BUILD_TASK_TYPE_KEY, this);
     }
 

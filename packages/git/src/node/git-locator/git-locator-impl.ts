@@ -89,7 +89,7 @@ export class GitLocatorImpl implements GitLocator {
         });
     }
 
-    protected * generateNested(repositoryPaths: string[], context: GitLocateContext) {
+    protected * generateNested(repositoryPaths: string[], context: GitLocateContext): IterableIterator<Promise<string[]>> {
         for (const repository of repositoryPaths) {
             yield this.locateNested(repository, context);
         }
@@ -110,7 +110,7 @@ export class GitLocatorImpl implements GitLocator {
         });
     }
 
-    protected * generateRepositories(repositoryPath: string, files: string[], context: GitLocateContext) {
+    protected * generateRepositories(repositoryPath: string, files: string[], context: GitLocateContext): IterableIterator<Promise<string[]>> {
         for (const file of files) {
             if (file !== '.git') {
                 yield this.doLocate(path.join(repositoryPath, file), {

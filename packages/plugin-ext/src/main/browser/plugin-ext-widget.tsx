@@ -98,7 +98,7 @@ export class PluginWidget extends ReactWidget {
         </div>;
     }
 
-    private renderPlugin(plugin: PluginMetadata) {
+    private renderPlugin(plugin: PluginMetadata): JSX.Element {
         return <div key={plugin.model.name} className={this.createPluginClassName(plugin)}>
             <div className='column flexcontainer pluginInformationContainer'>
                 <div className='row flexcontainer'>

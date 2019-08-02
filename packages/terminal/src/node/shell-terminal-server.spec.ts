@@ -23,7 +23,7 @@ import { IShellTerminalServer } from '../common/shell-terminal-protocol';
 
 const expect = chai.expect;
 
-describe('ShellServer', function () {
+describe('ShellServer', function (): void {
 
     this.timeout(5000);
     let shellTerminalServer: IShellTerminalServer;
@@ -32,7 +32,7 @@ describe('ShellServer', function () {
         shellTerminalServer = createTerminalTestContainer().get(IShellTerminalServer);
     });
 
-    it('test shell terminal create', async function () {
+    it('test shell terminal create', async function (): Promise<void> {
         const createResult = shellTerminalServer.create({});
 
         expect(await createResult).to.be.greaterThan(-1);

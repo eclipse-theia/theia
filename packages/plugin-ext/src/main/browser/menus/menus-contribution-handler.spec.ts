@@ -93,7 +93,7 @@ describe.skip('MenusContributionHandler', () => {
         registerCmdHandlerSpy = sinon.spy(commandRegistry, 'registerHandler');
     });
 
-    afterEach(function () {
+    afterEach(function (): void {
         notificationWarnSpy.restore();
         registerMenuSpy.restore();
         registerCmdHandlerSpy.restore();
@@ -172,7 +172,7 @@ describe.skip('MenusContributionHandler', () => {
         sinon.assert.called(loggerWarnSpy);
     });
 
-    function assertItemIsRegistered(menuPath: MenuPath, menuGroup: string = '', order?: string) {
+    function assertItemIsRegistered(menuPath: MenuPath, menuGroup: string = '', order?: string): void {
         sinon.assert.calledWithExactly(registerMenuSpy,
             [...menuPath, menuGroup],
             <MenuAction>{

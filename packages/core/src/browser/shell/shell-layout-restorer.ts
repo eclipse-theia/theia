@@ -100,11 +100,11 @@ export class ShellLayoutRestorer implements CommandContribution {
         return true;
     }
 
-    protected isWidgetProperty(propertyName: string) {
+    protected isWidgetProperty(propertyName: string): boolean {
         return propertyName === 'widget';
     }
 
-    protected isWidgetsProperty(propertyName: string) {
+    protected isWidgetsProperty(propertyName: string): boolean {
         return propertyName === 'widgets';
     }
 

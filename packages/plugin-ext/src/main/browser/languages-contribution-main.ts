@@ -108,11 +108,11 @@ class PluginLanguageClientContribution extends BaseLanguageClientContribution {
         super(workspace, languages, languageClientFactory);
     }
 
-    protected get globPatterns() {
+    protected get globPatterns(): string[] {
         return this.patterns ? this.patterns : [];
     }
 
-    protected get workspaceContains() {
+    protected get workspaceContains(): string[] {
         return this.contains ? this.contains : [];
     }
 

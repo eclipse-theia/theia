@@ -36,7 +36,7 @@ testContainer.load(new ContainerModule(bind => {
     bind(FileSearchServiceImpl).toSelf().inSingletonScope();
 }));
 
-describe('search-service', function () {
+describe('search-service', function (): void {
 
     this.timeout(10000);
 

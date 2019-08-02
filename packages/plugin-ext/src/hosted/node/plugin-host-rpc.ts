@@ -40,7 +40,7 @@ export class PluginHostRPC {
     constructor(protected readonly rpc: any) {
     }
 
-    initialize() {
+    initialize(): void {
         const envExt = new EnvNodeExtImpl(this.rpc);
         const debugExt = new DebugExtImpl(this.rpc);
         const editorsAndDocumentsExt = new EditorsAndDocumentsExtImpl(this.rpc);
@@ -96,7 +96,7 @@ export class PluginHostRPC {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
                 try {
                     // cleaning the cache for all files of that plug-in.
-                    Object.keys(require.cache).forEach(function (key) {
+                    Object.keys(require.cache).forEach(function (key): void {
                         const mod: NodeJS.Module = require.cache[key];
 
                         // attempting to reload a native module will throw an error, so skip them
@@ -173,7 +173,7 @@ export class PluginHostRPC {
                 }
                 return [result, foreign];
             },
-            initExtApi(extApi: ExtPluginApi[]) {
+            initExtApi(extApi: ExtPluginApi[]): void {
                 for (const api of extApi) {
                     if (api.backendInitPath) {
                         try {

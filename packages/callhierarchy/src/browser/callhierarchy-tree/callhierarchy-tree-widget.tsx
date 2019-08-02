@@ -136,6 +136,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         </div>;
     }
 
+    // tslint:disable-next-line:typedef
     protected toIconClass(symbolKind: number) {
         switch (symbolKind) {
             case SymbolKind.File: return 'file';
@@ -160,7 +161,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         }
     }
 
-    private openEditor(node: TreeNode, keepFocus: boolean) {
+    private openEditor(node: TreeNode, keepFocus: boolean): void {
         let location: Location | undefined;
         if (DefinitionNode.is(node)) {
             location = node.definition.location;

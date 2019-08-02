@@ -69,7 +69,7 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
     }
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         this.repositoryTracker.onDidChangeRepository(async repository => {
             this.refreshWidget(repository ? repository.localUri : undefined);
         }
@@ -115,7 +115,7 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
         super.registerCommands(commands);
     }
 
-    protected async refreshWidget(uri: string | undefined) {
+    protected async refreshWidget(uri: string | undefined): Promise<void> {
         const widget = this.tryGetWidget();
         if (!widget) {
             // the widget doesn't exist, so don't wake it up

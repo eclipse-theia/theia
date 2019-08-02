@@ -204,7 +204,7 @@ export class CompositeMenuNode implements MenuNode {
         };
     }
 
-    public removeNode(id: string) {
+    public removeNode(id: string): void {
         const node = this._children.find(n => n.id === id);
         if (node) {
             const idx = this._children.indexOf(node);
@@ -214,7 +214,7 @@ export class CompositeMenuNode implements MenuNode {
         }
     }
 
-    get sortString() {
+    get sortString(): string {
         return this.id;
     }
 
@@ -256,7 +256,7 @@ export class ActionMenuNode implements MenuNode {
         return command && command.iconClass;
     }
 
-    get sortString() {
+    get sortString(): string {
         return this.action.order || this.label;
     }
 }

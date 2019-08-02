@@ -55,7 +55,7 @@ export function bindLogger(bind: interfaces.Bind, props?: {
 export const loggerBackendModule = new ContainerModule(bind => {
     bind(BackendApplicationContribution).toDynamicValue(ctx =>
         ({
-            initialize() {
+            initialize(): void {
                 setRootLogger(ctx.container.get<ILogger>(ILogger));
             }
         }));

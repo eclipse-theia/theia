@@ -88,15 +88,15 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
 
     constructor(@inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT) { }
 
-    get onStatusChange() {
+    get onStatusChange(): Event<ConnectionStatus> {
         return this.statusChangeEmitter.event;
     }
 
-    get currentStatus() {
+    get currentStatus(): ConnectionStatus {
         return this.connectionStatus;
     }
 
-    dispose() {
+    dispose(): void {
         this.statusChangeEmitter.dispose();
         if (this.timer) {
             this.clearTimeout(this.timer);
@@ -121,7 +121,7 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
         }, this.options.offlineTimeout);
     }
 
-    protected fireStatusChange(status: ConnectionStatus) {
+    protected fireStatusChange(status: ConnectionStatus): void {
         this.statusChangeEmitter.fire(status);
     }
 
@@ -145,7 +145,7 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
     @inject(PingService) protected readonly pingService: PingService;
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         this.schedulePing();
         this.wsConnectionProvider.onIncomingMessageActivity(() => {
             // natural activity
@@ -154,7 +154,7 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
         });
     }
 
-    protected schedulePing() {
+    protected schedulePing(): void {
         if (this.scheduledPing) {
             this.clearTimeout(this.scheduledPing);
         }
@@ -197,13 +197,13 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
 
     private statusbarId = 'connection-status';
 
-    protected handleOnline() {
+    protected handleOnline(): void {
         this.statusBar.setBackgroundColor(undefined);
         this.statusBar.setColor(undefined);
         this.statusBar.removeElement(this.statusbarId);
     }
 
-    protected handleOffline() {
+    protected handleOffline(): void {
         this.statusBar.setElement(this.statusbarId, {
             alignment: StatusBarAlignment.LEFT,
             text: 'Offline',

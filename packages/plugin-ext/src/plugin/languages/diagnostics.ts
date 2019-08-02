@@ -55,7 +55,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
 
     set(uri: theia.Uri, diagnostics: theia.Diagnostic[] | undefined): void;
     set(entries: [theia.Uri, theia.Diagnostic[] | undefined][]): void;
-    set(arg: theia.Uri | [theia.Uri, theia.Diagnostic[] | undefined][], diagnostics?: theia.Diagnostic[] | undefined) {
+    set(arg: theia.Uri | [theia.Uri, theia.Diagnostic[] | undefined][], diagnostics?: theia.Diagnostic[] | undefined): void {
         this.ensureNotDisposed();
 
         if (arg instanceof URI) {
@@ -155,7 +155,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
         }
     }
 
-    setOnDisposeCallback(onDisposeCallback: (() => void) | undefined) {
+    setOnDisposeCallback(onDisposeCallback: (() => void) | undefined): void {
         this.onDisposeCallback = onDisposeCallback;
     }
 

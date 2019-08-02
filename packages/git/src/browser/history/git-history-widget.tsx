@@ -108,7 +108,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         super.update();
     }
 
-    async setContent(options?: Git.Options.Log) {
+    async setContent(options?: Git.Options.Log): Promise<void> {
         this.resetState(options);
         if (options && options.uri) {
             const fileStat = await this.fileSystem.getFileStat(options.uri);
@@ -121,7 +121,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         }
     }
 
-    protected resetState(options?: Git.Options.Log) {
+    protected resetState(options?: Git.Options.Log): void {
         this.options = options || {};
         this.status = { state: 'loading' };
         this.gitNodes = [];
@@ -191,7 +191,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         }
     }
 
-    protected async addOrRemoveFileChangeNodes(commit: GitCommitNode) {
+    protected async addOrRemoveFileChangeNodes(commit: GitCommitNode): Promise<void> {
         const id = this.gitNodes.findIndex(node => node === commit);
         if (commit.expanded) {
             this.removeFileChangeNodes(commit, id);
@@ -202,7 +202,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         this.update();
     }
 
-    protected async addFileChangeNodes(commit: GitCommitNode, gitNodesArrayIndex: number) {
+    protected async addFileChangeNodes(commit: GitCommitNode, gitNodesArrayIndex: number): Promise<void> {
         if (commit.fileChanges) {
             const fileChangeNodes: GitFileChangeNode[] = [];
             await Promise.all(commit.fileChanges.map(async fileChange => {
@@ -219,7 +219,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         }
     }
 
-    protected removeFileChangeNodes(commit: GitCommitNode, gitNodesArrayIndex: number) {
+    protected removeFileChangeNodes(commit: GitCommitNode, gitNodesArrayIndex: number): void {
         if (commit.fileChanges) {
             this.gitNodes.splice(gitNodesArrayIndex + 1, commit.fileChanges.length);
         }
@@ -325,7 +325,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     }
 
     protected readonly handleScroll = (info: ScrollParams) => this.doHandleScroll(info);
-    protected doHandleScroll(info: ScrollParams) {
+    protected doHandleScroll(info: ScrollParams): void {
         this.node.scrollTop = info.scrollTop;
     }
 
@@ -401,7 +401,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         </div >;
     }
 
-    protected async openDetailWidget(commit: GitCommitNode) {
+    protected async openDetailWidget(commit: GitCommitNode): Promise<void> {
         const commitDetails = this.detailOpenHandler.getCommitDetailWidgetOptions(commit);
         this.detailOpenHandler.open(GitCommitDetailUri.toUri(commit.commitSha), {
             ...commitDetails
@@ -490,7 +490,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         this.update();
     }
 
-    protected openFile(change: GitFileChange, commitSha: string) {
+    protected openFile(change: GitFileChange, commitSha: string): void {
         const uri: URI = new URI(change.uri);
         let fromURI = change.oldUri ? new URI(change.oldUri) : uri; // set oldUri on renamed and copied
         fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(commitSha + '~1');
@@ -523,7 +523,7 @@ export class GitHistoryList extends React.Component<GitHistoryList.Props> {
     list: List | undefined;
 
     protected readonly checkIfRowIsLoaded = (opts: { index: number }) => this.doCheckIfRowIsLoaded(opts);
-    protected doCheckIfRowIsLoaded(opts: { index: number }) {
+    protected doCheckIfRowIsLoaded(opts: { index: number }): boolean {
         const row = this.props.rows[opts.index];
         return !!row;
     }

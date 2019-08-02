@@ -95,7 +95,7 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
         });
     }
 
-    dispose() {
+    dispose(): void {
         this.onExpansionChangedEmitter.dispose();
     }
 

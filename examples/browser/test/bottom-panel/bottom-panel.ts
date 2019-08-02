@@ -30,7 +30,7 @@ export class BottomPanel {
         return (tab.$('..').getAttribute('class').split(' ').indexOf('p-mod-current') > -1);
     }
 
-    openTab(tabName: string) {
+    openTab(tabName: string): void {
         this.driver.element('#theia-bottom-content-panel .p-TabBar .p-TabBar-content').click(`div=${tabName}`);
     }
 
@@ -38,7 +38,7 @@ export class BottomPanel {
         return this.driver.isExisting('.p-Widget div.terminal.xterm');
     }
 
-    waitForTerminal() {
+    waitForTerminal(): void {
         this.driver.waitForExist('.p-Widget div.terminal.xterm');
         // Wait for animations to finish
         this.driver.pause(300);
@@ -48,7 +48,7 @@ export class BottomPanel {
         return this.driver.isExisting('.p-Widget div.theia-marker-container');
     }
 
-    waitForProblemsView() {
+    waitForProblemsView(): void {
         this.driver.waitForExist('.p-Widget div.theia-marker-container');
         // Wait for animations to finish
         this.driver.pause(300);
@@ -58,7 +58,7 @@ export class BottomPanel {
         return this.driver.isExisting('#callhierarchy');
     }
 
-    waitForCallHierarchyView() {
+    waitForCallHierarchyView(): void {
         this.driver.waitForExist('#callhierarchy');
         // Wait for animations to finish
         this.driver.pause(300);
@@ -68,13 +68,13 @@ export class BottomPanel {
         return this.driver.isExisting('.p-Widget div.theia-output');
     }
 
-    waitForOutputView() {
+    waitForOutputView(): void {
         this.driver.waitForExist('.p-Widget div.theia-output');
         // Wait for animations to finish
         this.driver.pause(300);
     }
 
-    closeCurrentView() {
+    closeCurrentView(): void {
         this.driver.click('#theia-bottom-content-panel .p-TabBar-tab.p-mod-current .p-TabBar-tabCloseIcon');
     }
 

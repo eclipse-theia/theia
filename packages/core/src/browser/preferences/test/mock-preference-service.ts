@@ -23,7 +23,7 @@ import URI from '../../../common/uri';
 @injectable()
 export class MockPreferenceService implements PreferenceService {
     constructor() { }
-    dispose() { }
+    dispose(): void { }
     get<T>(preferenceName: string): T | undefined;
     get<T>(preferenceName: string, defaultValue: T): T;
     get<T>(preferenceName: string, defaultValue: T, resourceUri: string): T;

@@ -423,7 +423,13 @@ export class GitAmendSupport implements ScmAmendSupport {
         }
     }
 
-    private createScmCommit(gitCommit: CommitWithChanges) {
+    private createScmCommit(gitCommit: CommitWithChanges): {
+        id: string;
+        summary: string;
+        authorName: string;
+        authorEmail: string;
+        authorDateRelative: string;
+    } {
         return {
             id: gitCommit.sha,
             summary: gitCommit.summary,

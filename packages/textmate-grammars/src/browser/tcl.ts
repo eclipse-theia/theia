@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
 
 @injectable()
@@ -23,7 +23,7 @@ export class TclContribution implements LanguageGrammarDefinitionContribution {
     readonly id = 'tcl';
     readonly scopeName = 'source.tcl';
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: this.id,
             aliases: ['TCL', 'tcl', 'Tcl'],
@@ -32,7 +32,7 @@ export class TclContribution implements LanguageGrammarDefinitionContribution {
         });
         const grammar = require('../../data/Tcl.plist');
         registry.registerTextmateGrammarScope(this.scopeName, {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 const grammarResponse: Response = await fetch(grammar);
                 const grammarText: string = await grammarResponse.text();
                 return {

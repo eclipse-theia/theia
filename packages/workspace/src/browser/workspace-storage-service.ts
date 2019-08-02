@@ -33,7 +33,7 @@ export class WorkspaceStorageService implements StorageService {
     @inject(WorkspaceService) protected workspaceService: WorkspaceService;
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         this.initialized = this.workspaceService.roots.then(() => {
             this.updatePrefix();
             this.workspaceService.onWorkspaceLocationChanged(() => this.updatePrefix());

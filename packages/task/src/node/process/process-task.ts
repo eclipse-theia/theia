@@ -129,11 +129,11 @@ export class ProcessTask extends Task {
         };
     }
 
-    get process() {
+    get process(): Process {
         return this.options.process;
     }
 
-    get processType() {
+    get processType(): ProcessType {
         return this.options.processType;
     }
 }

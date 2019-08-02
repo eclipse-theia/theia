@@ -31,7 +31,7 @@ export class ConsoleLoggerServer implements ILoggerServer {
     protected cli: LogLevelCliContribution;
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         for (const name of Object.keys(this.cli.logLevels)) {
             this.setLogLevel(name, this.cli.logLevels[name]);
         }
@@ -66,7 +66,7 @@ export class ConsoleLoggerServer implements ILoggerServer {
 
     dispose(): void { }
 
-    setClient(client: ILoggerClient | undefined) {
+    setClient(client: ILoggerClient | undefined): void {
         this.client = client;
     }
 

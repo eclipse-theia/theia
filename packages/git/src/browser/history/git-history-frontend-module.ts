@@ -24,7 +24,7 @@ import '../../../src/browser/style/history.css';
 import '../../../src/browser/style/git-icons.css';
 import { GitCommitDetailOpenHandler } from './git-commit-detail-open-handler';
 
-export function bindGitHistoryModule(bind: interfaces.Bind) {
+export function bindGitHistoryModule(bind: interfaces.Bind): void {
 
     bind(GitHistoryWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({

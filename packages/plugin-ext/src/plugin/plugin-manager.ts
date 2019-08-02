@@ -307,7 +307,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 }
 
 // for electron
-function getGlobal() {
+function getGlobal(): Window | NodeJS.Global | null {
     // tslint:disable-next-line:no-null-keyword
     return typeof self === 'undefined' ? typeof global === 'undefined' ? null : global : self;
 }

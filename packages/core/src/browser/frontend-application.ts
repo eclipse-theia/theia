@@ -82,7 +82,7 @@ export interface FrontendApplicationContribution {
 @injectable()
 export abstract class DefaultFrontendApplicationContribution implements FrontendApplicationContribution {
 
-    initialize() {
+    initialize(): void {
         // NOOP
     }
 

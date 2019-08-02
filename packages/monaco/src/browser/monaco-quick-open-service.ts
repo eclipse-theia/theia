@@ -462,7 +462,7 @@ export class MonacoQuickOpenActionProvider implements monaco.quickOpen.IActionPr
         return monaco.Promise.wrap([]);
     }
 
-    getActionItem() {
+    getActionItem(): undefined {
         return undefined;
     }
 }
@@ -492,7 +492,13 @@ class TheiaResolvedKeybinding extends monaco.keybindings.ResolvedKeybinding {
         }));
     }
 
-    private getKeyAndModifiers(index: number) {
+    private getKeyAndModifiers(index: number): {
+        key: string | null;
+        modifiers: monaco.keybindings.Modifiers;
+    } | {
+        key: null;
+        modifiers: null;
+    } {
         if (index >= this.parts.length) {
             // tslint:disable-next-line:no-null-keyword
             return { key: null, modifiers: null };

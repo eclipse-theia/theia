@@ -194,7 +194,7 @@ export class PreferencesContainer extends SplitPanel implements ApplicationShell
         super.onActivateRequest(msg);
     }
 
-    protected onCloseRequest(msg: Message) {
+    protected onCloseRequest(msg: Message): void {
         if (this.treeWidget) {
             this.treeWidget.close();
         }
@@ -293,12 +293,12 @@ export class PreferencesEditorsContainer extends DockPanel {
         super.dispose();
     }
 
-    onCloseRequest(msg: Message) {
+    onCloseRequest(msg: Message): void {
         toArray(this.widgets()).forEach(widget => widget.close());
         super.onCloseRequest(msg);
     }
 
-    onUpdateRequest(msg: Message) {
+    onUpdateRequest(msg: Message): void {
         const editor = this.selectedWidgets().next();
         if (editor) {
             this.onEditorChangedEmitter.fire(<PreferencesEditorWidget>editor);
@@ -412,7 +412,7 @@ export class PreferencesEditorsContainer extends DockPanel {
         return configUri;
     }
 
-    activatePreferenceEditor(preferenceScope: PreferenceScope) {
+    activatePreferenceEditor(preferenceScope: PreferenceScope): void {
         for (const widget of toArray(this.widgets())) {
             const preferenceEditor = widget as PreferencesEditorWidget;
             if (preferenceEditor.scope === preferenceScope) {
@@ -593,7 +593,7 @@ export class PreferencesTreeWidget extends TreeWidget {
         this.model.root = root;
     }
 
-    setActiveFolder(folder: string) {
+    setActiveFolder(folder: string): void {
         this.activeFolderUri = folder;
         this.decorator.setActiveFolder(folder);
     }

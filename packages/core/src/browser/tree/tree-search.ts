@@ -38,7 +38,7 @@ export class TreeSearch implements Disposable {
     protected _filteredNodes: ReadonlyArray<Readonly<TreeNode>> = [];
 
     @postConstruct()
-    init() {
+    init(): void {
         this.disposables.push(this.filteredNodesEmitter);
     }
 
@@ -83,7 +83,7 @@ export class TreeSearch implements Disposable {
         return this.filteredNodesEmitter.event;
     }
 
-    dispose() {
+    dispose(): void {
         this.disposables.dispose();
     }
 

@@ -469,7 +469,7 @@ export class TaskService implements TaskConfigurationClient {
         return false;
     }
 
-    taskConfigurationChanged(event: string[]) {
+    taskConfigurationChanged(event: string[]): void {
         // do nothing for now
     }
 

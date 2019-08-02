@@ -123,11 +123,11 @@ export class SearchBox extends BaseWidget {
         }
     }
 
-    protected handleArrowUp() {
+    protected handleArrowUp(): void {
         this.firePrevious();
     }
 
-    protected handleArrowDown() {
+    protected handleArrowDown(): void {
         this.fireNext();
     }
 
@@ -136,7 +136,7 @@ export class SearchBox extends BaseWidget {
         this.fireClose();
     }
 
-    protected handleKey(keyCode: KeyCode) {
+    protected handleKey(keyCode: KeyCode): void {
         const character = Key.equals(Key.BACKSPACE, keyCode) ? '\b' : keyCode.character;
         const data = this.debounce.append(character);
         if (data) {

@@ -40,7 +40,7 @@ export class MonacoCommandService implements ICommandService {
         return this._onWillExecuteCommand.event;
     }
 
-    setDelegate(delegate: ICommandService | undefined) {
+    setDelegate(delegate: ICommandService | undefined): void {
         this.delegateListeners.dispose();
         this.delegate = delegate;
         if (this.delegate) {

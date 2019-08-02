@@ -34,7 +34,7 @@ export class LanguageClientContributionProviderImpl implements LanguageClientCon
     protected readonly languageClientContributors = new Map<string, LanguageClientContribution>();
 
     @postConstruct()
-    collectContributions() {
+    collectContributions(): void {
         for (const contribution of this.contributions.getContributions()) {
             this.languageClientContributors.set(contribution.id, contribution);
         }

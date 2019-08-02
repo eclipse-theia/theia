@@ -68,7 +68,7 @@ export class PreferencesDecorator implements TreeDecorator {
         return this.preferencesDecorations;
     }
 
-    setActiveFolder(folder: string) {
+    setActiveFolder(folder: string): void {
         this.activeFolderUri = folder;
         this.fireDidChangeDecorations(this.preferences);
     }

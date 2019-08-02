@@ -79,7 +79,7 @@ export abstract class AbstractDefaultCallHierarchyService implements CallHierarc
         return undefined;
     }
 
-    protected async createContext() {
+    protected async createContext(): Promise<CallHierarchyContext | undefined> {
         const languageClient = await this.languageClientProvider.getLanguageClient(this.languageId);
         if (!languageClient) {
             this.logger.error('No language client with ID ' + this.languageId);

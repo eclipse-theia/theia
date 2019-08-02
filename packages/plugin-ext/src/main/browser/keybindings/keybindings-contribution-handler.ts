@@ -73,7 +73,7 @@ export class KeybindingsContributionPointHandler {
         return keybinding || pluginKeybinding.keybinding;
     }
 
-    private handlePartialKeybindings(keybinding: Keybinding, partialKeybindings: Keybinding[]) {
+    private handlePartialKeybindings(keybinding: Keybinding, partialKeybindings: Keybinding[]): void {
         partialKeybindings.forEach(partial => {
             if (keybinding.context === undefined || keybinding.context === partial.context) {
                 this.logger.warn(`Partial keybinding is ignored; ${Keybinding.stringify(keybinding)} shadows ${Keybinding.stringify(partial)}`);
@@ -81,7 +81,7 @@ export class KeybindingsContributionPointHandler {
         });
     }
 
-    private handleShadingKeybindings(keybinding: Keybinding, shadingKeybindings: Keybinding[]) {
+    private handleShadingKeybindings(keybinding: Keybinding, shadingKeybindings: Keybinding[]): void {
         shadingKeybindings.forEach(shadow => {
             if (shadow.context === undefined || shadow.context === keybinding.context) {
                 this.keybindingRegistry.unregisterKeybinding(shadow);

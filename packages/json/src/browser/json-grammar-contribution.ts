@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
 import { JSON_LANGUAGE_ID, JSONC_LANGUAGE_ID } from '../common';
 
@@ -41,7 +41,7 @@ export class JsonGrammarContribution implements LanguageGrammarDefinitionContrib
         ]
     };
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: JSON_LANGUAGE_ID,
             'aliases': [
@@ -73,7 +73,7 @@ export class JsonGrammarContribution implements LanguageGrammarDefinitionContrib
 
         const jsonGrammar = require('../../data/json.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.json', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: jsonGrammar
@@ -98,7 +98,7 @@ export class JsonGrammarContribution implements LanguageGrammarDefinitionContrib
 
         const jsoncGrammar = require('../../data/jsonc.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.json.comments', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: jsoncGrammar

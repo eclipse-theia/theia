@@ -151,7 +151,7 @@ export class KeybindingWidget extends ReactWidget {
         }
     }
 
-    protected onActivateRequest(msg: Message) {
+    protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.focusInputField();
     }

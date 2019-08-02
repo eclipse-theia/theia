@@ -78,7 +78,7 @@ class ProgressCallback<T> implements Progress<{ message?: string, increment?: nu
         this.id = id;
         this.proxy = proxy;
     }
-    report(item: { message?: string, increment?: number }) {
+    report(item: { message?: string, increment?: number }): void {
         if (this.id) {
             this.proxy.$updateProgress(this.id, item);
         }

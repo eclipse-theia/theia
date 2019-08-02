@@ -39,7 +39,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
         this.quickInput = container.get(QuickInputService);
     }
 
-    private cleanUp() {
+    private cleanUp(): void {
         this.items = undefined;
         this.acceptor = undefined;
         if (this.activeElement) {

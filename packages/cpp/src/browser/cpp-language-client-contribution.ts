@@ -67,7 +67,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
     }
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         this.cppBuildConfigurations.onActiveConfigChange(config => this.onActiveBuildConfigChanged(config));
         this.cppPreferences.onPreferenceChanged(e => {
             if (this.running) {
@@ -93,7 +93,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         return clangdParams;
     }
 
-    async onActiveBuildConfigChanged(config: CppBuildConfiguration | undefined) {
+    async onActiveBuildConfigChanged(config: CppBuildConfiguration | undefined): Promise<void> {
         // Override the initializationOptions to put the new path to the build,
         // then restart clangd.
         if (this.running) {
@@ -103,13 +103,13 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         }
     }
 
-    protected get documentSelector() {
+    protected get documentSelector(): string[] {
         // This is used (at least) to determine which files, when they are open,
         // trigger the launch of the C/C++ language server.
         return HEADER_AND_SOURCE_FILE_EXTENSIONS;
     }
 
-    protected get globPatterns() {
+    protected get globPatterns(): string[] {
         // This is used (at least) to determine which files we watch.  Change
         // notifications are forwarded to the language server.
         return [

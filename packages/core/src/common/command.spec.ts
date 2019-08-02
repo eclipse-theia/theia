@@ -129,7 +129,7 @@ class EmptyContributionProvider implements ContributionProvider<CommandContribut
 }
 
 class ConcatCommandHandler implements CommandHandler {
-    execute(...args: string[]) {
+    execute(...args: string[]): string {
         let concat = '';
         args.forEach(element => {
             concat += element;
@@ -139,5 +139,5 @@ class ConcatCommandHandler implements CommandHandler {
 }
 
 class StubCommandHandler implements CommandHandler {
-    execute(...args: string[]) { return undefined; }
+    execute(...args: string[]): undefined { return undefined; }
 }

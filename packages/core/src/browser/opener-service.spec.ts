@@ -16,15 +16,16 @@
 
 import { DefaultOpenerService, OpenHandler } from './opener-service';
 import * as assert from 'assert';
+import { MaybePromise } from '../common/types';
 
 const id = 'my-opener';
 const openHandler: OpenHandler = {
     id,
     label: 'My Opener',
-    canHandle() {
+    canHandle(): MaybePromise<number> {
         return Promise.resolve(1);
     },
-    open() {
+    open(): MaybePromise<object | undefined> {
         return Promise.resolve(undefined);
     }
 };

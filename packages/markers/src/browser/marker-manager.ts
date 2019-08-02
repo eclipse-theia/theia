@@ -84,7 +84,7 @@ export class MarkerCollection<T> {
         }
     }
 
-    protected filterMarkers(filter: SearchFilter<T>, toFilter?: Marker<T>[]) {
+    protected filterMarkers(filter: SearchFilter<T>, toFilter?: Marker<T>[]): Marker<T>[] {
         if (!toFilter) {
             return [];
         }

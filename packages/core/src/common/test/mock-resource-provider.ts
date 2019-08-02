@@ -24,9 +24,9 @@ export class MockResourceProvider {
     constructor() { }
 
     async get(uri: URI): Promise<Resource> {
-        return await {
+        return {
             uri: new URI(''),
-            dispose() { },
+            dispose(): void { },
             readContents(options?: { encoding?: string }): Promise<string> { return Promise.resolve(''); }
         };
     }

@@ -196,7 +196,7 @@ describe('log-level-cli-contribution', () => {
         });
     });
 
-    it('should keep original levels when changing the log levels file with a broken one', async function () {
+    it('should keep original levels when changing the log levels file with a broken one', async function (): Promise<void> {
         this.timeout(5000);
 
         const file = track.openSync();

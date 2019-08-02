@@ -175,7 +175,7 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         );
     }
 
-    registerMenus(registry: MenuModelRegistry) {
+    registerMenus(registry: MenuModelRegistry): void {
         registry.registerMenuAction(ElectronMenus.HELP_TOGGLE, {
             commandId: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id
         });

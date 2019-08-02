@@ -72,7 +72,7 @@ class StatusBarMessage {
         this._item = statusBar.createStatusBarItem(StatusBarAlignment.Left, Number.MIN_VALUE);
     }
 
-    dispose() {
+    dispose(): void {
         this._messages.length = 0;
         this._item.dispose();
     }
@@ -91,7 +91,7 @@ class StatusBarMessage {
         });
     }
 
-    private _update() {
+    private _update(): void {
         if (this._messages.length > 0) {
             this._item.text = this._messages[0].message;
             this._item.show();

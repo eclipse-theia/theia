@@ -28,7 +28,7 @@ export class PluginDeployerContribution implements BackendApplicationContributio
     @inject(PluginDeployer)
     protected pluginDeployer: PluginDeployer;
 
-    initialize() {
+    initialize(): void {
         this.pluginDeployer.start();
     }
 }

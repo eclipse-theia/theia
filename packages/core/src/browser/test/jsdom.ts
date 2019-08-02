@@ -51,7 +51,7 @@ export function enableJSDOM(): () => void {
             toCleanup.push(property);
         }
     });
-    (dom.window.document as any)['queryCommandSupported'] = function () { };
+    (dom.window.document as any)['queryCommandSupported'] = function (): void { };
 
     const disableJSDOM = (global as any)['_disableJSDOM'] = () => {
         let property: string | undefined;

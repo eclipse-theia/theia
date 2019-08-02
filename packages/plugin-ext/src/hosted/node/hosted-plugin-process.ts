@@ -99,7 +99,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
     }
 
-    public markPluginServerTerminated() {
+    public markPluginServerTerminated(): void {
         if (this.childProcess) {
             this.pluginProcessCache.scheduleChildProcessTermination(this, this.childProcess);
         }
@@ -157,7 +157,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     }
 
-    private linkClientWithChildProcess(childProcess: cp.ChildProcess) {
+    private linkClientWithChildProcess(childProcess: cp.ChildProcess): void {
         childProcess.on('message', message => {
             if (this.client) {
                 this.client.postMessage(message);

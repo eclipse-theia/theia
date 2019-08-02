@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
 
 @injectable()
@@ -57,7 +57,7 @@ export class PythonContribution implements LanguageGrammarDefinitionContribution
         ]
     };
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: this.id,
             extensions: ['.py', '.rpy', '.pyw', '.cpy', '.gyp', '.gypi', '.snakefile', '.smk'],
@@ -69,7 +69,7 @@ export class PythonContribution implements LanguageGrammarDefinitionContribution
 
         const platformGrammar = require('../../data/MagicPython.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.python', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: platformGrammar
@@ -79,7 +79,7 @@ export class PythonContribution implements LanguageGrammarDefinitionContribution
 
         const cGrammar = require('../../data/MagicRegExp.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.regexp.python', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: cGrammar

@@ -32,7 +32,7 @@ export let logger: ILogger;
  * Invoking has no side-effect if `setRootLogger` was not called before. Multiple function invocation has
  * no side-effect either.
  */
-export function unsetRootLogger() {
+export function unsetRootLogger(): void {
     if (logger !== undefined) {
         ConsoleLogger.reset();
         (<any>logger) = undefined;

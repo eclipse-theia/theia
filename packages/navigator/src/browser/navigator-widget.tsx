@@ -193,12 +193,12 @@ export class FileNavigatorWidget extends FileTreeWidget {
     protected canOpenWorkspaceFileAndFolder: boolean = isOSX || !environment.electron.is();
 
     protected readonly openWorkspace = () => this.doOpenWorkspace();
-    protected doOpenWorkspace() {
+    protected doOpenWorkspace(): void {
         this.commandService.executeCommand(WorkspaceCommands.OPEN_WORKSPACE.id);
     }
 
     protected readonly openFolder = () => this.doOpenFolder();
-    protected doOpenFolder() {
+    protected doOpenFolder(): void {
         this.commandService.executeCommand(WorkspaceCommands.OPEN_FOLDER.id);
     }
 

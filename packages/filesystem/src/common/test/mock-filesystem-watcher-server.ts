@@ -20,7 +20,7 @@ import { FileSystemWatcherServer, FileSystemWatcherClient, WatchOptions } from '
 @injectable()
 export class MockFilesystemWatcherServer implements FileSystemWatcherServer {
 
-    dispose() { }
+    dispose(): void { }
 
     watchFileChanges(uri: string, options?: WatchOptions): Promise<number> {
         return Promise.resolve(0);
@@ -30,6 +30,6 @@ export class MockFilesystemWatcherServer implements FileSystemWatcherServer {
         return Promise.resolve();
     }
 
-    setClient(client: FileSystemWatcherClient) { }
+    setClient(client: FileSystemWatcherClient): void { }
 
 }

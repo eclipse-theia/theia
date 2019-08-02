@@ -294,7 +294,7 @@ interface ParsedExpressionPattern {
 
 const CACHE = new Map<string, ParsedStringPattern>();  // new LRUCache<string, ParsedStringPattern>(10000); // bounded to 10000 elements
 
-const FALSE = function () {
+const FALSE = function (): boolean {
     return false;
 };
 
@@ -329,7 +329,7 @@ function parsePattern(arg1: string | IRelativePattern, options: IGlobOptions): P
     let match: RegExpExecArray;
     if (T1.test(pattern)) { // common pattern: **/*.txt just need endsWith check
         const base = pattern.substr(4); // '**/*'.length === 4
-        parsedPattern = function (path, basename) {
+        parsedPattern = function (path, basename): string {
             return path && strings.endsWith(path, base) ? pattern : null!;
         };
     } else if (match = T2.exec(trimForExclusions(pattern, options))!) { // common pattern: **/some.txt just need basename check
@@ -359,7 +359,7 @@ function wrapRelativePattern(parsedPattern: ParsedStringPattern, arg2: string | 
         return parsedPattern;
     }
 
-    return function (path, basename) {
+    return function (path, basename): string | Promise<string> {
         if (!paths.isEqualOrParent(path, arg2.base)) {
             return null!;
         }
@@ -376,7 +376,7 @@ function trimForExclusions(pattern: string, options: IGlobOptions): string {
 function trivia2(base: string, originalPattern: string): ParsedStringPattern {
     const slashBase = `/${base}`;
     const backslashBase = `\\${base}`;
-    const parsedPattern: ParsedStringPattern = function (path, basename) {
+    const parsedPattern: ParsedStringPattern = function (path, basename): string {
         if (!path) {
             return null!;
         }
@@ -404,7 +404,7 @@ function trivia3(pattern: string, options: IGlobOptions): ParsedStringPattern {
     if (n === 1) {
         return <ParsedStringPattern>parsedPatterns[0];
     }
-    const parsedPattern: ParsedStringPattern = function (path: string, basename: string) {
+    const parsedPattern: ParsedStringPattern = function (path: string, basename: string): string {
         for (let i = 0, n = parsedPatterns.length; i < n; i++) {
             if ((<ParsedStringPattern>parsedPatterns[i])(path, basename)) {
                 return pattern;
@@ -429,10 +429,10 @@ function trivia4and5(path: string, pattern: string, matchPathEnds: boolean): Par
     const nativePath = paths.nativeSep !== paths.sep ? path.replace(ALL_FORWARD_SLASHES, paths.nativeSep) : path;
     const nativePathEnd = paths.nativeSep + nativePath;
     // tslint:disable-next-line:no-shadowed-variable
-    const parsedPattern: ParsedStringPattern = matchPathEnds ? function (path, basename) {
+    const parsedPattern: ParsedStringPattern = matchPathEnds ? function (path, basename): string {
         return path && (path === nativePath || strings.endsWith(path, nativePathEnd)) ? pattern : null!;
         // tslint:disable-next-line:no-shadowed-variable
-    } : function (path, basename) {
+    } : function (path, basename): string {
         return path && path === nativePath ? pattern : null!;
     };
     parsedPattern.allPaths = [(matchPathEnds ? '*/' : './') + path];
@@ -442,7 +442,7 @@ function trivia4and5(path: string, pattern: string, matchPathEnds: boolean): Par
 function toRegExp(pattern: string): ParsedStringPattern {
     try {
         const regExp = new RegExp(`^${parseRegExp(pattern)}$`);
-        return function (path: string, basename: string) {
+        return function (path: string, basename: string): string {
             regExp.lastIndex = 0; // reset RegExp to its initial state to reuse it!
             return path && regExp.test(path) ? pattern : null!;
         };
@@ -492,7 +492,7 @@ export function parse(arg1: string | IExpression | IRelativePattern, options: IG
         if (parsedPattern === NULL) {
             return FALSE;
         }
-        const resultPattern = function (path: string, basename: string) {
+        const resultPattern = function (path: string, basename: string): boolean {
             return !!parsedPattern(path, basename);
         };
         if (parsedPattern.allBasenames) {
@@ -510,7 +510,7 @@ export function parse(arg1: string | IExpression | IRelativePattern, options: IG
     return parsedExpression(<IExpression>arg1, options);
 }
 
-export function hasSiblingPromiseFn(siblingsFn?: () => Promise<string[]>) {
+export function hasSiblingPromiseFn(siblingsFn?: () => Promise<string[]>): ((name: string) => Promise<boolean>) | undefined {
     if (!siblingsFn) {
         return undefined;
     }
@@ -525,7 +525,7 @@ export function hasSiblingPromiseFn(siblingsFn?: () => Promise<string[]>) {
     };
 }
 
-export function hasSiblingFn(siblingsFn?: () => string[]) {
+export function hasSiblingFn(siblingsFn?: () => string[]): ((name: string) => boolean) | undefined {
     if (!siblingsFn) {
         return undefined;
     }
@@ -540,7 +540,7 @@ export function hasSiblingFn(siblingsFn?: () => string[]) {
     };
 }
 
-function listToMap(list: string[]) {
+function listToMap(list: string[]): Record<string, true> {
     const map: Record<string, true> = {};
     for (const key of list) {
         map[key] = true;
@@ -591,7 +591,7 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
         }
 
         // tslint:disable-next-line:no-shadowed-variable
-        const resultExpression: ParsedStringPattern = function (path: string, basename: string) {
+        const resultExpression: ParsedStringPattern = function (path: string, basename: string): string | Promise<string> {
             // tslint:disable-next-line:no-shadowed-variable
             // tslint:disable-next-line:one-variable-per-declaration
             for (let i = 0, n = parsedPatterns.length; i < n; i++) {
@@ -620,7 +620,7 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
         return resultExpression;
     }
 
-    const resultExpression: ParsedStringPattern = function (path: string, basename: string, hasSibling?: (name: string) => boolean | Promise<boolean>) {
+    const resultExpression: ParsedStringPattern = function (path: string, basename: string, hasSibling?: (name: string) => boolean | Promise<boolean>): string | Promise<string> {
         let name: string = null!;
 
         // tslint:disable-next-line:no-shadowed-variable
@@ -714,7 +714,7 @@ function aggregateBasenameMatches(parsedPatterns: (ParsedStringPattern | ParsedE
     } else {
         patterns = basenamePatterns.reduce((all, current) => all.concat((<ParsedStringPattern>current).patterns!), <string[]>[]);
     }
-    const aggregate: ParsedStringPattern = function (path, basename) {
+    const aggregate: ParsedStringPattern = function (path, basename): string {
         if (!path) {
             return null!;
         }

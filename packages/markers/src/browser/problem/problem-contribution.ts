@@ -69,7 +69,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         });
     }
 
-    onStart(app: FrontendApplication) {
+    onStart(app: FrontendApplication): void {
         this.setStatusBarElement(this.problemManager.getProblemStat());
         this.problemManager.onDidChangeMarkers(() => {
             this.setStatusBarElement(this.problemManager.getProblemStat());
@@ -80,7 +80,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         await this.openView();
     }
 
-    protected setStatusBarElement(problemStat: ProblemStat) {
+    protected setStatusBarElement(problemStat: ProblemStat): void {
         this.statusBar.setElement('problem-marker-status', {
             text: problemStat.infos <= 0
                 ? `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings}`
