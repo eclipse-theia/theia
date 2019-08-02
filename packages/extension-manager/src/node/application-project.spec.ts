@@ -53,9 +53,9 @@ export async function assertInstallation(expectation: {
     assert.equal(false, result.failed, 'the installation is failed');
 }
 
-describe('application-project', function () {
+describe('application-project', function (): void {
 
-    beforeEach(function () {
+    beforeEach(function (): void {
         this.timeout(50000);
 
         const dir = path.resolve(__dirname, '..', '..', 'application-project-test-temp');
@@ -69,13 +69,13 @@ describe('application-project', function () {
         }).get(ApplicationProject);
     });
 
-    afterEach(function () {
+    afterEach(function (): void {
         this.timeout(50000);
         appProject.dispose();
         fs.removeSync(appProjectPath);
     });
 
-    it.skip('install', async function () {
+    it.skip('install', async function (): Promise<void> {
         this.timeout(1800000);
 
         await fs.writeJSON(path.resolve(appProjectPath, 'package.json'), {

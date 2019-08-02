@@ -23,7 +23,7 @@ import { deepClone } from '@theia/core/lib/common/objects';
 import { injectable, unmanaged } from 'inversify';
 
 namespace nls {
-    export function localize(key: string, _default: string) {
+    export function localize(key: string, _default: string): string {
         return _default;
     }
 }

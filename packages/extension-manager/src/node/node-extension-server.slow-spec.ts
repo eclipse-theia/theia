@@ -42,9 +42,9 @@ export function waitForDidChange(): Promise<void> {
 const dir = path.resolve(__dirname, '..', '..', 'node-extension-server-test-temp');
 fs.ensureDirSync(dir);
 
-describe('node-extension-server', function () {
+describe('node-extension-server', function (): void {
 
-    beforeEach(function () {
+    beforeEach(function (): void {
         this.timeout(50000);
         appProjectPath = temp.mkdirSync({ dir });
         fs.writeJsonSync(path.resolve(appProjectPath, 'package.json'), {
@@ -64,14 +64,14 @@ describe('node-extension-server', function () {
         appProject = container.get(ApplicationProject);
     });
 
-    afterEach(function () {
+    afterEach(function (): void {
         this.timeout(50000);
         server.dispose();
         appProject.dispose();
         fs.removeSync(appProjectPath);
     });
 
-    it.skip('search', function () {
+    it.skip('search', async function (): Promise<void> {
         this.timeout(30000);
 
         return server.search({
@@ -82,7 +82,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it.skip('installed', function () {
+    it.skip('installed', async function (): Promise<void> {
         this.timeout(10000);
 
         return server.installed().then(extensions => {
@@ -93,7 +93,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it.skip('install', async function () {
+    it.skip('install', async function (): Promise<void> {
         this.timeout(10000);
 
         const before = await server.installed();
@@ -109,7 +109,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it.skip('uninstall', async function () {
+    it.skip('uninstall', async function (): Promise<void> {
         this.timeout(10000);
 
         const before = await server.installed();
@@ -125,7 +125,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it.skip('outdated', function () {
+    it.skip('outdated', async function (): Promise<void> {
         this.timeout(10000);
 
         return server.outdated().then(extensions => {
@@ -134,7 +134,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it.skip('update', async function () {
+    it.skip('update', async function (): Promise<void> {
         this.timeout(10000);
 
         const before = await server.outdated();
@@ -150,7 +150,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it.skip('list', function () {
+    it.skip('list', async function (): Promise<void> {
         this.timeout(10000);
 
         return server.list().then(extensions => {
@@ -177,7 +177,7 @@ describe('node-extension-server', function () {
         });
     });
 
-    it.skip('list with search', function () {
+    it.skip('list with search', async function (): Promise<void> {
         this.timeout(50000);
 
         return server.list({

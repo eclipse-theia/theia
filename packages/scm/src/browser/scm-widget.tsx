@@ -434,7 +434,7 @@ export namespace ScmElement {
 
 export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props> {
 
-    render() {
+    render(): JSX.Element | undefined {
         const { hover } = this.state;
         const { name, repository, resource, labelProvider, commands, menus, contextKeys } = this.props;
         const rootUri = resource.group.provider.rootUri;
@@ -494,7 +494,7 @@ export namespace ScmResourceComponent {
 }
 
 export class ScmResourceGroupsContainer extends React.Component<ScmResourceGroupsContainer.Props> {
-    render() {
+    render(): JSX.Element {
         const { groups } = this.props.repository.provider;
         return <div className={ScmWidget.Styles.GROUPS_CONTAINER + ' ' + ScmWidget.Styles.NO_SELECT}
             style={this.props.style}
@@ -525,7 +525,7 @@ export class ScmResourceGroupsContainer extends React.Component<ScmResourceGroup
             labelProvider={this.props.labelProvider} />;
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         this.props.addScmListKeyListeners(this.props.id);
     }
 }
@@ -539,7 +539,7 @@ export namespace ScmResourceGroupsContainer {
 
 export class ScmResourceGroupContainer extends ScmElement {
 
-    render() {
+    render(): JSX.Element {
         const { hover } = this.state;
         const { group, menus, commands, contextKeys } = this.props;
         return <div className='changesContainer'>

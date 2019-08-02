@@ -33,7 +33,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
     @inject(HostedPluginDeployerHandler)
     protected deployerHandler: HostedPluginDeployerHandler;
 
-    async initialize() {
+    async initialize(): Promise<void> {
         this.pluginReader.doGetPluginMetadata(process.env.HOSTED_PLUGIN)
             .then(this.hostedPlugin.resolve.bind(this.hostedPlugin));
 

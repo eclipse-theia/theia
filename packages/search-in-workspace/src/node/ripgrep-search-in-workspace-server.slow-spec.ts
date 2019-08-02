@@ -66,7 +66,7 @@ class ResultAccumulator implements SearchInWorkspaceClient {
 }
 
 // Create a test file relative to rootDir.
-function createTestFile(filename: string, text: string) {
+function createTestFile(filename: string, text: string): void {
     const dir = getRootPathFromName(filename);
     fs.writeFileSync(path.join(dir, filename), text);
     fileLines.set(filename, text.split('\n'));
@@ -204,7 +204,7 @@ after(() => {
 // The expected entries should also have the file field set relatively to
 // rootDir.  This function will update the field to contain the absolute path.
 
-function compareSearchResults(expected: SearchInWorkspaceResult[], actual: SearchInWorkspaceResult[]) {
+function compareSearchResults(expected: SearchInWorkspaceResult[], actual: SearchInWorkspaceResult[]): void {
     expect(actual.length).eq(expected.length);
 
     if (actual.length !== expected.length) {
@@ -228,7 +228,7 @@ function compareSearchResults(expected: SearchInWorkspaceResult[], actual: Searc
     }
 }
 
-describe('ripgrep-search-in-workspace-server', function () {
+describe('ripgrep-search-in-workspace-server', function (): void {
     this.timeout(10000);
 
     // Try some simple patterns with different case.
@@ -715,7 +715,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         ripgrepServer.search(pattern, [rootDirAUri, rootSubdirAUri]);
     });
 
-    it('fails gracefully when rg isn\'t found', async function () {
+    it('fails gracefully when rg isn\'t found', async function (): Promise<void> {
         const errorString = await new Promise<string>((resolve, reject) => {
             const rgServer = createInstance('/non-existent/rg');
 
@@ -733,7 +733,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         expect(errorString).contains('could not find the ripgrep (rg) binary');
     });
 
-    it('fails gracefully when rg isn\'t executable', async function () {
+    it('fails gracefully when rg isn\'t executable', async function (): Promise<void> {
         const errorString = await new Promise<string>((resolve, reject) => {
             // Create temporary file, ensure it is not executable.
             const rg = temp.openSync();

@@ -33,7 +33,7 @@ import { ContextKeyService } from './context-key-service';
 import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-import { Emitter } from '../common/event';
+import { Emitter, Event } from '../common/event';
 
 disableJSDOM();
 
@@ -355,7 +355,7 @@ class MockKeyboardLayoutProvider implements KeyboardLayoutProvider {
 @injectable()
 class MockKeyboardLayoutChangeNotifier implements KeyboardLayoutChangeNotifier {
     private emitter = new Emitter<NativeKeyboardLayout>();
-    get onDidChangeNativeLayout() {
+    get onDidChangeNativeLayout(): Event<NativeKeyboardLayout> {
         return this.emitter.event;
     }
 }

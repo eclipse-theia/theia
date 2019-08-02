@@ -102,7 +102,7 @@ export class CompletionAdapter {
         });
     }
 
-    releaseCompletionItems(id: number) {
+    releaseCompletionItems(id: number): Promise<void> {
         this.cache.delete(id);
         return Promise.resolve();
     }

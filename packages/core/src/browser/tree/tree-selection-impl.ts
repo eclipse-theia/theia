@@ -34,7 +34,7 @@ export class TreeSelectionServiceImpl implements TreeSelectionService {
         this.state = new TreeSelectionState(this.tree);
     }
 
-    dispose() {
+    dispose(): void {
         this.onSelectionChangedEmitter.dispose();
     }
 

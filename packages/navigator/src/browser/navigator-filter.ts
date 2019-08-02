@@ -59,7 +59,7 @@ export class FileNavigatorFilter {
         return this.filterPredicate.filter(item);
     }
 
-    protected fireFilterChanged() {
+    protected fireFilterChanged(): void {
         this.emitter.fire(undefined);
     }
 

@@ -35,7 +35,7 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
     protected backendOs: Promise<OS.Type>;
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         this.backendOs = this.appServer.getBackendOS();
     }
 

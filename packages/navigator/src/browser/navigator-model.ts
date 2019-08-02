@@ -112,7 +112,7 @@ export class FileNavigatorModel extends FileTreeModel {
     /**
      * Move the given source file or directory to the given target directory.
      */
-    async move(source: TreeNode, target: TreeNode) {
+    async move(source: TreeNode, target: TreeNode): Promise<void> {
         if (source.parent && WorkspaceRootNode.is(source)) {
             // do not support moving a root folder
             return;

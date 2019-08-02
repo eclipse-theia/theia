@@ -300,7 +300,7 @@ export class PluginScmResourceGroup implements ScmResourceGroup {
     ) {
     }
 
-    get resources() {
+    get resources(): PluginScmResource[] {
         return this._resources;
     }
 
@@ -316,7 +316,7 @@ export class PluginScmResourceGroup implements ScmResourceGroup {
         this.label = label;
     }
 
-    updateResources(resources: PluginScmResource[]) {
+    updateResources(resources: PluginScmResource[]): void {
         this._resources = resources;
     }
 

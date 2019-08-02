@@ -247,12 +247,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.registerCtrlWHandling();
     }
 
-    onStart() {
+    onStart(): void {
         this.storageService.getData<{ recent: Command[] }>(RECENT_COMMANDS_STORAGE_KEY, { recent: [] })
             .then(tasks => this.commandRegistry.recent = tasks.recent);
     }
 
-    onStop() {
+    onStop(): void {
         const recent = this.commandRegistry.recent;
         this.storageService.setData<{ recent: Command[] }>(RECENT_COMMANDS_STORAGE_KEY, { recent });
     }
@@ -638,7 +638,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         );
     }
 
-    protected async openAbout() {
+    protected async openAbout(): Promise<void> {
         this.aboutDialog.open();
     }
 
@@ -651,8 +651,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
      * Chrome doesn't let us rebind or prevent default the keybinding, so this
      * at least doesn't close the window immediately.
      */
-    protected registerCtrlWHandling() {
-        function isCtrlCmd(event: KeyboardEvent) {
+    protected registerCtrlWHandling(): void {
+        function isCtrlCmd(event: KeyboardEvent): boolean {
             return (isOSX && event.metaKey) || (!isOSX && event.ctrlKey);
         }
 
@@ -665,7 +665,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
     }
 
-    onWillStop() {
+    onWillStop(): true | undefined {
         try {
             if (this.shouldPreventClose || this.shell.canSaveAll()) {
                 return true;

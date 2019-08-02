@@ -158,7 +158,7 @@ export class WidgetManager {
         return undefined;
     }
 
-    protected toKey(options: WidgetConstructionOptions) {
+    protected toKey(options: WidgetConstructionOptions): string {
         return JSON.stringify(options);
     }
 

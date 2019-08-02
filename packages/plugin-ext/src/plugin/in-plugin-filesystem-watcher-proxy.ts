@@ -56,7 +56,7 @@ export class InPluginFileSystemWatcherProxy {
         return new FileSystemWatcher(subscriberPrivateData, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
     }
 
-    onFileSystemEvent(id: string, uri: URI, type: FileChangeEventType) {
+    onFileSystemEvent(id: string, uri: URI, type: FileChangeEventType): void {
         const perSubscriberEventEmitter: Emitter<FileSystemEvent> | undefined = this.subscribers.get(id);
         if (perSubscriberEventEmitter) {
             perSubscriberEventEmitter.fire({ uri, type });

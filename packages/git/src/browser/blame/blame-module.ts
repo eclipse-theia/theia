@@ -21,7 +21,7 @@ import { BlameContribution, BlameAnnotationsKeybindingContext } from './blame-co
 import { BlameDecorator } from './blame-decorator';
 import { BlameManager } from './blame-manager';
 
-export function bindBlame(bind: interfaces.Bind) {
+export function bindBlame(bind: interfaces.Bind): void {
     bind(BlameContribution).toSelf().inSingletonScope();
     bind(BlameManager).toSelf().inSingletonScope();
     bind(BlameDecorator).toSelf().inSingletonScope();

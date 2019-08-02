@@ -18,7 +18,7 @@ import fs = require('fs-extra');
 import path = require('path');
 import cp = require('child_process');
 
-export function rebuild(target: 'electron' | 'browser', modules: string[]) {
+export function rebuild(target: 'electron' | 'browser', modules: string[]): void {
     const nodeModulesPath = path.join(process.cwd(), 'node_modules');
     const browserModulesPath = path.join(process.cwd(), '.browser_modules');
     const modulesToProcess = modules || ['@theia/node-pty', 'nsfw', 'native-keymap', 'find-git-repositories'];

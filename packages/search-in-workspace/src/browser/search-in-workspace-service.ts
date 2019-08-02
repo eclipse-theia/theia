@@ -36,7 +36,7 @@ export class SearchInWorkspaceClientImpl implements SearchInWorkspaceClient {
         this.service.onDone(searchId, error);
     }
 
-    setService(service: SearchInWorkspaceClient) {
+    setService(service: SearchInWorkspaceClient): void {
         this.service = service;
     }
 }
@@ -70,7 +70,7 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
     @inject(ILogger) protected readonly logger: ILogger;
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         this.client.setService(this);
     }
 
@@ -133,7 +133,7 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
     }
 
     // Cancel an ongoing search.
-    cancel(searchId: number) {
+    cancel(searchId: number): void {
         this.pendingSearches.delete(searchId);
         this.searchServer.cancel(searchId);
     }

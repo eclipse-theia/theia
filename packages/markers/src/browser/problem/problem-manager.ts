@@ -30,7 +30,7 @@ export interface ProblemStat {
 @injectable()
 export class ProblemManager extends MarkerManager<Diagnostic> {
 
-    public getKind() {
+    public getKind(): string {
         return PROBLEM_KIND;
     }
 

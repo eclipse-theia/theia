@@ -276,7 +276,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.focusInputField();
     }
 
-    protected focusInputField() {
+    protected focusInputField(): void {
         const f = document.getElementById('search-input-field');
         if (f) {
             (f as HTMLInputElement).focus();
@@ -337,18 +337,18 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected readonly focusSearchFieldContainer = () => this.doFocusSearchFieldContainer();
-    protected doFocusSearchFieldContainer() {
+    protected doFocusSearchFieldContainer(): void {
         this.searchFieldContainerIsFocused = true;
         this.update();
     }
     protected readonly unfocusSearchFieldContainer = () => this.doUnfocusSearchFieldContainer();
-    protected doUnfocusSearchFieldContainer() {
+    protected doUnfocusSearchFieldContainer(): void {
         this.searchFieldContainerIsFocused = false;
         this.update();
     }
 
     protected readonly search = (e: React.KeyboardEvent) => this.doSearch(e);
-    protected doSearch(e: React.KeyboardEvent) {
+    protected doSearch(e: React.KeyboardEvent): void {
         if (e.target) {
             if (Key.ARROW_DOWN.keyCode === e.keyCode) {
                 this.resultTreeWidget.focusFirstResult();
@@ -388,7 +388,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected handleBlurSearchInputBox = () => this.contextKeyService.setSearchInputBoxFocus(false);
 
     protected readonly updateReplaceTerm = (e: React.KeyboardEvent) => this.doUpdateReplaceTerm(e);
-    protected doUpdateReplaceTerm(e: React.KeyboardEvent) {
+    protected doUpdateReplaceTerm(e: React.KeyboardEvent): void {
         if (e.target) {
             this.replaceTerm = (e.target as HTMLInputElement).value;
             this.resultTreeWidget.replaceTerm = this.replaceTerm;
@@ -457,7 +457,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.update();
     }
 
-    protected updateSearchOptions() {
+    protected updateSearchOptions(): void {
         this.searchInWorkspaceOptions.matchCase = this.matchCaseState.enabled;
         this.searchInWorkspaceOptions.matchWholeWord = this.wholeWordState.enabled;
         this.searchInWorkspaceOptions.useRegExp = this.regExpState.enabled;

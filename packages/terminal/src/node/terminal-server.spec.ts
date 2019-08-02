@@ -24,7 +24,7 @@ import { ITerminalServer } from '../common/terminal-protocol';
 
 const expect = chai.expect;
 
-describe('TermninalServer', function () {
+describe('TermninalServer', function (): void {
 
     this.timeout(5000);
     let terminalServer: ITerminalServer;
@@ -34,13 +34,13 @@ describe('TermninalServer', function () {
         terminalServer = container.get(ITerminalServer);
     });
 
-    it('test terminal create', async function () {
+    it('test terminal create', async function (): Promise<void> {
         const args = ['--version'];
         const createResult = await terminalServer.create({ command: process.execPath, 'args': args });
         expect(createResult).to.be.greaterThan(-1);
     });
 
-    it('test terminal create from non-existent path', async function () {
+    it('test terminal create from non-existent path', async function (): Promise<void> {
         const createError = await terminalServer.create({ command: '/non-existent' });
         expect(createError).eq(-1);
     });

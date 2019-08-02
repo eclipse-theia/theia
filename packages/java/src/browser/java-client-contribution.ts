@@ -65,15 +65,15 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         super(workspace, languages, languageClientFactory);
     }
 
-    protected get globPatterns() {
+    protected get globPatterns(): string[] {
         return ['**/*.java', '**/pom.xml', '**/*.gradle'];
     }
 
-    protected get workspaceContains() {
+    protected get workspaceContains(): string[] {
         return ['pom.xml', 'build.gradle'];
     }
 
-    get configurationSection() {
+    get configurationSection(): string {
         return 'java';
     }
 
@@ -90,7 +90,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         return client;
     }
 
-    protected showStatusMessage(message: StatusReport) {
+    protected showStatusMessage(message: StatusReport): void {
         if (this.statusBarTimeout) {
             window.clearTimeout(this.statusBarTimeout);
             this.statusBarTimeout = undefined;
@@ -135,7 +135,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         return { workspace, jvmArgs };
     }
 
-    private parseVMargs(params: string[], vmargsLine: string) {
+    private parseVMargs(params: string[], vmargsLine: string): void {
         if (!vmargsLine) {
             return;
         }

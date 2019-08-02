@@ -145,7 +145,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         super.init();
         this.addClass('resultContainer');
 
@@ -187,7 +187,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return this.focusInputEmitter.event;
     }
 
-    collapseAll() {
+    collapseAll(): void {
         this.resultTree.forEach(rootFolderNode => {
             rootFolderNode.children.forEach(fileNode => this.expansionService.collapseNode(fileNode));
             if (rootFolderNode.visible) {
@@ -263,7 +263,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         });
     }
 
-    focusFirstResult() {
+    focusFirstResult(): void {
         if (SearchInWorkspaceRoot.is(this.model.root) && this.model.root.children.length > 0) {
             const node = this.model.root.children[0];
             if (SelectableTreeNode.is(node)) {
@@ -304,7 +304,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
     }
 
-    protected updateCurrentEditorDecorations() {
+    protected updateCurrentEditorDecorations(): void {
         this.shell.allTabBars.map(tb => {
             const currentTitle = tb.currentTitle;
             if (currentTitle && currentTitle.owner instanceof EditorWidget) {
@@ -416,7 +416,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         </div>;
     }
 
-    protected doReplace(node: TreeNode, e: React.MouseEvent<HTMLElement>) {
+    protected doReplace(node: TreeNode, e: React.MouseEvent<HTMLElement>): void {
         this.replace(node);
         e.stopPropagation();
     }
@@ -476,7 +476,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }).open();
     }
 
-    protected updateRightResults(node: SearchInWorkspaceResultLineNode) {
+    protected updateRightResults(node: SearchInWorkspaceResultLineNode): void {
         const fileNode = node.parent;
         const rightPositionedNodes = fileNode.children.filter(rl => rl.line === node.line && rl.character > node.character);
         const diff = this._replaceTerm.length - this.searchTerm.length;
@@ -535,7 +535,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected readonly remove = (node: TreeNode, e: React.MouseEvent<HTMLElement>) => this.doRemove(node, e);
-    protected doRemove(node: TreeNode, e: React.MouseEvent<HTMLElement>) {
+    protected doRemove(node: TreeNode, e: React.MouseEvent<HTMLElement>): void {
         this.removeNode(node);
         e.stopPropagation();
     }
@@ -716,7 +716,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return fileUri.withScheme(MEMORY_TEXT).withQuery(lines.join('\n'));
     }
 
-    protected decorateEditor(node: SearchInWorkspaceFileNode | undefined, editorWidget: EditorWidget) {
+    protected decorateEditor(node: SearchInWorkspaceFileNode | undefined, editorWidget: EditorWidget): void {
         if (!DiffUris.isDiffUri(editorWidget.editor.uri)) {
             const key = `${editorWidget.editor.uri.toString()}#search-in-workspace-matches`;
             const oldDecorations = this.appliedDecorations.get(key) || [];

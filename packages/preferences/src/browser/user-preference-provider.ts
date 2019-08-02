@@ -28,7 +28,7 @@ export class UserPreferenceProvider extends AbstractResourcePreferenceProvider {
         return USER_PREFERENCE_URI;
     }
 
-    protected getScope() {
+    protected getScope(): PreferenceScope {
         return PreferenceScope.User;
     }
 }

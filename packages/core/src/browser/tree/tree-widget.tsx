@@ -400,7 +400,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected readonly toggle = (event: React.MouseEvent<HTMLElement>) => this.doToggle(event);
-    protected doToggle(event: React.MouseEvent<HTMLElement>) {
+    protected doToggle(event: React.MouseEvent<HTMLElement>): void {
         const nodeId = event.currentTarget.getAttribute('data-node-id');
         if (nodeId) {
             const node = this.model.getNode(nodeId);
@@ -500,7 +500,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return this.getDecorationData(node, 'captionSuffixes').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).length > 0;
     }
 
-    protected applyFontStyles(original: React.CSSProperties, fontData: TreeDecoration.FontData | undefined) {
+    protected applyFontStyles(original: React.CSSProperties, fontData: TreeDecoration.FontData | undefined): React.CSSProperties {
         if (fontData === undefined) {
             return original;
         }

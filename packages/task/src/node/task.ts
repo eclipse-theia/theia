@@ -68,19 +68,19 @@ export abstract class Task implements Disposable {
     /** Returns runtime information about task. */
     abstract getRuntimeInfo(): MaybePromise<TaskInfo>;
 
-    get id() {
+    get id(): number {
         return this.taskId;
     }
 
-    get context() {
+    get context(): string | undefined {
         return this.options.context;
     }
 
-    get label() {
+    get label(): string {
         return this.options.label;
     }
 
-    dispose() {
+    dispose(): void {
         this.toDispose.dispose();
     }
 }

@@ -81,7 +81,7 @@ export class LocationListRenderer extends ReactRenderer {
     /**
      * Asynchronously loads the drives (if not yet available) and triggers a UI update on success with the new values.
      */
-    protected doLoadDrives() {
+    protected doLoadDrives(): void {
         if (!this._drives) {
             this.service.drives().then(drives => {
                 // If the `drives` are empty, something already went wrong.

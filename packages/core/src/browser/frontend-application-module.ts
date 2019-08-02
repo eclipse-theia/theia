@@ -62,7 +62,7 @@ import { DiffUriLabelProviderContribution } from './diff-uris';
 import { ApplicationServer, applicationPath } from '../common/application-protocol';
 import { WebSocketConnectionProvider } from './messaging';
 import { AboutDialog, AboutDialogProps } from './about-dialog';
-import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
+import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/env-variables';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
@@ -204,7 +204,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         // let's reuse a simple and cheap service from this package
         const envServer: EnvVariablesServer = ctx.container.get(EnvVariablesServer);
         return {
-            ping() {
+            ping(): Promise<EnvVariable | undefined> {
                 return envServer.getValue('does_not_matter');
             }
         };
@@ -273,7 +273,7 @@ export function bindPreferenceService(bind: interfaces.Bind): void {
     bindPreferenceSchemaProvider(bind);
 }
 
-export function bindResourceProvider(bind: interfaces.Bind) {
+export function bindResourceProvider(bind: interfaces.Bind): void {
     bind(DefaultResourceProvider).toSelf().inSingletonScope();
     bind(ResourceProvider).toProvider(context => uri => context.container.get(DefaultResourceProvider).get(uri));
     bindContributionProvider(bind, ResourceResolver);

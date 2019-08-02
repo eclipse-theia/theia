@@ -24,7 +24,7 @@ import { createGit } from './test/binding-helper';
 
 const track = temp.track();
 
-describe('git-slow', async function () {
+describe('git-slow', async function (): Promise<void> {
 
     after(async () => {
         track.cleanupSync();
@@ -32,7 +32,7 @@ describe('git-slow', async function () {
 
     describe('diff-slow', async () => {
 
-        it('diff with rename/move', async function () {
+        it('diff with rename/move', async function (): Promise<void> {
             this.timeout(50000);
 
             const root = track.mkdirSync('diff-slow-rename');

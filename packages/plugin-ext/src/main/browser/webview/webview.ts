@@ -71,7 +71,7 @@ export class WebviewWidget extends BaseWidget {
         }));
     }
 
-    protected handleMessage(message: any) {
+    protected handleMessage(message: any): void {
         switch (message.command) {
             case 'onmessage':
                 this.eventDelegate.onMessage!(message.data);
@@ -87,7 +87,7 @@ export class WebviewWidget extends BaseWidget {
         this.iframe.contentWindow!.postMessage(message, '*');
     }
 
-    setOptions(options: WebviewWidgetOptions) {
+    setOptions(options: WebviewWidgetOptions): void {
         if (!this.iframe || this.options.allowScripts === options.allowScripts) {
             return;
         }
@@ -96,11 +96,11 @@ export class WebviewWidget extends BaseWidget {
         this.reloadFrame();
     }
 
-    setIconClass(iconClass: string) {
+    setIconClass(iconClass: string): void {
         this.title.iconClass = iconClass;
     }
 
-    setHTML(html: string) {
+    setHTML(html: string): void {
         const newDocument = new DOMParser().parseFromString(html, 'text/html');
         if (!newDocument || !newDocument.body) {
             return;
@@ -191,14 +191,14 @@ export class WebviewWidget extends BaseWidget {
         super.onBeforeHide(msg);
     }
 
-    public reloadFrame() {
+    public reloadFrame(): void {
         if (!this.iframe || !this.iframe.contentDocument || !this.iframe.contentDocument.documentElement) {
             return;
         }
         this.setHTML(this.iframe.contentDocument.documentElement.innerHTML);
     }
 
-    private updateSandboxAttribute(element: HTMLElement, isAllowScript?: boolean) {
+    private updateSandboxAttribute(element: HTMLElement, isAllowScript?: boolean): void {
         if (!element) {
             return;
         }
@@ -206,7 +206,7 @@ export class WebviewWidget extends BaseWidget {
         element.setAttribute('sandbox', allowScripts ? 'allow-scripts allow-forms allow-same-origin' : 'allow-same-origin');
     }
 
-    private updateApiScript(contentDocument: Document, isAllowScript?: boolean) {
+    private updateApiScript(contentDocument: Document, isAllowScript?: boolean): void {
         if (!contentDocument) {
             return;
         }
@@ -286,7 +286,7 @@ export class WebviewWidget extends BaseWidget {
     /**
      * Check if given object is ready to receive message and if it is ready, resolve promise
      */
-    waitReceiveMessage(object: WebviewWidget, resolve: any) {
+    waitReceiveMessage(object: WebviewWidget, resolve: any): void {
         if (object.readyToReceiveMessage) {
             resolve(true);
         } else {

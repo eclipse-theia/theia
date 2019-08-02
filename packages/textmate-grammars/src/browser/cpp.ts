@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
 
 @injectable()
@@ -57,7 +57,7 @@ export class CppContribution implements LanguageGrammarDefinitionContribution {
         }
     };
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: this.C_LANGUAGE_ID,
             extensions: ['.c'],
@@ -68,7 +68,7 @@ export class CppContribution implements LanguageGrammarDefinitionContribution {
 
         const platformGrammar = require('../../data/platform.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.c.platform', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: platformGrammar
@@ -78,7 +78,7 @@ export class CppContribution implements LanguageGrammarDefinitionContribution {
 
         const cGrammar = require('../../data/c.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.c', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: cGrammar
@@ -98,7 +98,7 @@ export class CppContribution implements LanguageGrammarDefinitionContribution {
 
         const cppGrammar = require('../../data/cpp.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.cpp', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: cppGrammar

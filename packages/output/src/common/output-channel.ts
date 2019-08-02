@@ -90,7 +90,7 @@ export class OutputChannelManager implements Disposable {
         return this.getChannels().filter(channel => channel.isVisible);
     }
 
-    public dispose() {
+    public dispose(): void {
         this.toDispose.dispose();
     }
 

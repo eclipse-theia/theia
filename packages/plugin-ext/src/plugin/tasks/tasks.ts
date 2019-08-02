@@ -144,7 +144,7 @@ export class TasksExtImpl implements TasksExt {
         });
     }
 
-    private async fetchTaskExecutions() {
+    private async fetchTaskExecutions(): Promise<void> {
         try {
             const taskExecutions = await this.proxy.$taskExecutions();
             taskExecutions.forEach(execution => this.getTaskExecution(execution));

@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { isOSX } from '../common/os';
-import { Emitter } from '../common/event';
+import { Emitter, Event } from '../common/event';
 import { CommandRegistry } from '../common/command';
 import { KeyCode, KeySequence, Key } from './keyboard/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
@@ -169,7 +169,7 @@ export class KeybindingRegistry {
      * Event that is fired when the resolved keybindings change due to a different keyboard layout
      * or when a new keymap is being set
      */
-    get onKeybindingsChanged() {
+    get onKeybindingsChanged(): Event<void> {
         return this.keybindingsChanged.event;
     }
 
@@ -179,7 +179,7 @@ export class KeybindingRegistry {
      *
      * @param contexts the keybinding contexts to register into the application.
      */
-    protected registerContext(...contexts: KeybindingContext[]) {
+    protected registerContext(...contexts: KeybindingContext[]): void {
         for (const context of contexts) {
             const { id } = context;
             if (this.contexts[id]) {
@@ -195,7 +195,7 @@ export class KeybindingRegistry {
      *
      * @param binding
      */
-    registerKeybinding(binding: Keybinding) {
+    registerKeybinding(binding: Keybinding): void {
         this.doRegisterKeybinding(binding, KeybindingScope.DEFAULT);
     }
 
@@ -233,13 +233,13 @@ export class KeybindingRegistry {
         });
     }
 
-    protected doRegisterKeybindings(bindings: Keybinding[], scope: KeybindingScope = KeybindingScope.DEFAULT) {
+    protected doRegisterKeybindings(bindings: Keybinding[], scope: KeybindingScope = KeybindingScope.DEFAULT): void {
         for (const binding of bindings) {
             this.doRegisterKeybinding(binding, scope);
         }
     }
 
-    protected doRegisterKeybinding(binding: Keybinding, scope: KeybindingScope = KeybindingScope.DEFAULT) {
+    protected doRegisterKeybinding(binding: Keybinding, scope: KeybindingScope = KeybindingScope.DEFAULT): void {
         try {
             this.resolveKeybinding(binding);
             if (this.containsKeybinding(this.keymaps[scope], binding)) {
@@ -507,7 +507,7 @@ export class KeybindingRegistry {
      *
      * @param keybindings Array of keybindings to be sorted in-place.
      */
-    private sortKeybindingsByPriority(keybindings: Keybinding[]) {
+    private sortKeybindingsByPriority(keybindings: Keybinding[]): void {
         keybindings.sort((a: Keybinding, b: Keybinding): number => {
 
             let acontext: KeybindingContext | undefined;
@@ -550,7 +550,7 @@ export class KeybindingRegistry {
      * @param event keyboard event.
      * @return true if the corresponding command was executed false otherwise.
      */
-    protected tryKeybindingExecution(bindings: Keybinding[], event: KeyboardEvent) {
+    protected tryKeybindingExecution(bindings: Keybinding[], event: KeyboardEvent): boolean {
 
         if (bindings.length === 0) {
             return false;

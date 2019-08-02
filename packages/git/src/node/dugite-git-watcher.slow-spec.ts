@@ -37,7 +37,7 @@ describe('git-watcher-slow', () => {
     let repository: Repository | undefined;
     let watcher: GitWatcherServer | undefined;
 
-    beforeEach(async function () {
+    beforeEach(async function (): Promise<void> {
         this.timeout(40000);
 
         const root = track.mkdirSync('git-watcher-slow');
@@ -53,12 +53,12 @@ describe('git-watcher-slow', () => {
         await git!.clone('https://github.com/TypeFox/find-git-exec.git', { localUri });
     });
 
-    after(function () {
+    after(function (): void {
         this.timeout(40000);
         track.cleanupSync();
     });
 
-    it('watching the same repository multiple times should not duplicate the events', async function () {
+    it('watching the same repository multiple times should not duplicate the events', async function (): Promise<void> {
         this.timeout(40000);
 
         let ignoredEvents = 1;
@@ -99,6 +99,6 @@ describe('git-watcher-slow', () => {
 
 });
 
-function sleep(time: number) {
+function sleep(time: number): Promise<unknown> {
     return new Promise(resolve => setTimeout(resolve, time));
 }

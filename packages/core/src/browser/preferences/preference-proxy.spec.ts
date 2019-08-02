@@ -18,9 +18,9 @@ import { createPreferenceProxy } from './preference-proxy';
 import { MockPreferenceService } from './test/mock-preference-service';
 import { expect } from 'chai';
 
-describe('preference proxy', function () {
+describe('preference proxy', function (): void {
     /** Verify the return type of the ready property.  */
-    it('.ready should return a promise', function () {
+    it('.ready should return a promise', function (): void {
 
         const proxy = createPreferenceProxy(new MockPreferenceService(), {
             properties: {}

@@ -72,7 +72,7 @@ const mockUserPreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
 const mockWorkspacePreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
 const mockFolderPreferenceEmitter = new Emitter<PreferenceProviderDataChanges>();
 
-function testContainerSetup() {
+function testContainerSetup(): void {
     testContainer = new Container();
     bindPreferenceSchemaProvider(testContainer.bind.bind(testContainer));
 
@@ -137,7 +137,7 @@ function testContainerSetup() {
         const resourceProvider = new MockResourceProvider();
         sinon.stub(resourceProvider, 'get').callsFake(() => Promise.resolve({
             uri: new URI(''),
-            dispose() { },
+            dispose(): void { },
             readContents(): Promise<string> {
                 return fs.readFile(tempPath, 'utf-8');
             },
@@ -658,7 +658,10 @@ describe('Preference Service', () => {
             assert.strictEqual(true, preferences.get('[go].editor.formatOnSave'));
         });
 
-        function prepareServices(options?: { schema: PreferenceSchema }) {
+        function prepareServices(options?: { schema: PreferenceSchema }): {
+            preferences: PreferenceServiceImpl;
+            schema: PreferenceSchemaProvider;
+        } {
             const container = new Container();
             bindPreferenceSchemaProvider(container.bind.bind(container));
             container.bind(PreferenceProviderProvider).toFactory(() => () => new MockPreferenceProvider());

@@ -36,7 +36,7 @@ export class ProblemMatcherRegistry {
     protected readonly problemPatternRegistry: ProblemPatternRegistry;
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         // tslint:disable-next-line:no-null-keyword
         this.matchers = Object.create(null);
         this.problemPatternRegistry.onReady().then(() => {

@@ -118,7 +118,7 @@ import Uri from 'vscode-uri';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { OutputChannelRegistryExt } from './output-channel-registry';
-import { TerminalServiceExtImpl } from './terminal-ext';
+import { TerminalServiceExtImpl, TerminalExtImpl } from './terminal-ext';
 import { LanguagesExtImpl, score } from './languages';
 import { fromDocumentSelector } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
@@ -137,6 +137,7 @@ import { QuickPick, QuickPickItem } from '@theia/plugin';
 import { ScmExtImpl } from './scm';
 import { DecorationProvider, LineChange } from '@theia/plugin';
 import { DecorationsExtImpl } from './decorations';
+import { TextEditorExt } from './text-editor';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -222,34 +223,41 @@ export function createAPIFactory(
         const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
         const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
         const window: typeof theia.window = {
-            get activeTerminal() {
+
+            get activeTerminal(): TerminalExtImpl | undefined {
                 return terminalExt.activeTerminal;
             },
-            get activeTextEditor() {
+            get activeTextEditor(): TextEditorExt | undefined {
                 return editors.getActiveEditor();
             },
-            get visibleTextEditors() {
+            get visibleTextEditors(): theia.TextEditor[] {
                 return editors.getVisibleTextEditors();
             },
-            get terminals() {
+            get terminals(): TerminalExtImpl[] {
                 return terminalExt.terminals;
             },
             onDidChangeActiveTerminal,
+            // tslint:disable-next-line:typedef
             onDidChangeActiveTextEditor(listener, thisArg?, disposables?) {
                 return editors.onDidChangeActiveTextEditor(listener, thisArg, disposables);
             },
+            // tslint:disable-next-line:typedef
             onDidChangeVisibleTextEditors(listener, thisArg?, disposables?) {
                 return editors.onDidChangeVisibleTextEditors(listener, thisArg, disposables);
             },
+            // tslint:disable-next-line:typedef
             onDidChangeTextEditorSelection(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorSelection(listener, thisArg, disposables);
             },
+            // tslint:disable-next-line:typedef
             onDidChangeTextEditorOptions(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorOptions(listener, thisArg, disposables);
             },
+            // tslint:disable-next-line:typedef
             onDidChangeTextEditorViewColumn(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorViewColumn(listener, thisArg, disposables);
             },
+            // tslint:disable-next-line:typedef
             onDidChangeTextEditorVisibleRanges(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorVisibleRanges(listener, thisArg, disposables);
             },
@@ -310,7 +318,7 @@ export function createAPIFactory(
             setStatusBarMessage(text: string, arg?: number | PromiseLike<any>): Disposable {
                 return statusBarMessageRegistryExt.setStatusBarMessage(text, arg);
             },
-            showInputBox(options?: theia.InputBoxOptions, token?: theia.CancellationToken) {
+            showInputBox(options?: theia.InputBoxOptions, token?: theia.CancellationToken): PromiseLike<string | undefined> {
                 if (token) {
                     const coreEvent = Object.assign(token.onCancellationRequested, { maxListeners: 0 });
                     const coreCancellationToken = { isCancellationRequested: token.isCancellationRequested, onCancellationRequested: coreEvent };
@@ -387,21 +395,26 @@ export function createAPIFactory(
             onDidChangeWorkspaceFolders(listener, thisArg?, disposables?): theia.Disposable {
                 return workspaceExt.onDidChangeWorkspaceFolders(listener, thisArg, disposables);
             },
-            get textDocuments() {
+            get textDocuments(): theia.TextDocument[] {
                 return documents.getAllDocumentData().map(data => data.document);
             },
+            // tslint:disable-next-line:typedef
             onDidChangeTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidChangeDocument(listener, thisArg, disposables);
             },
+            // tslint:disable-next-line:typedef
             onDidCloseTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidRemoveDocument(listener, thisArg, disposables);
             },
+            // tslint:disable-next-line:typedef
             onDidOpenTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidAddDocument(listener, thisArg, disposables);
             },
+            // tslint:disable-next-line:typedef
             onWillSaveTextDocument(listener, thisArg?, disposables?) {
                 return documents.onWillSaveTextDocument(listener, thisArg, disposables);
             },
+            // tslint:disable-next-line:typedef
             onDidSaveTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidSaveTextDocument(listener, thisArg, disposables);
             },
@@ -474,12 +487,12 @@ export function createAPIFactory(
         };
 
         const env: typeof theia.env = Object.freeze({
-            get appName() { return envExt.appName; },
-            get appRoot() { return envExt.appRoot; },
-            get language() { return envExt.language; },
-            get machineId() { return envExt.machineId; },
-            get sessionId() { return envExt.sessionId; },
-            get uriScheme() { return envExt.uriScheme; },
+            get appName(): string { return envExt.appName; },
+            get appRoot(): string { return envExt.appRoot; },
+            get language(): string { return envExt.language; },
+            get machineId(): string { return envExt.machineId; },
+            get sessionId(): string { return envExt.sessionId; },
+            get uriScheme(): string { return envExt.uriScheme; },
 
             getEnvVariable(envVarName: string): PromiseLike<string | undefined> {
                 return envExt.getEnvVariable(envVarName);
@@ -518,6 +531,7 @@ export function createAPIFactory(
             get onDidChangeDiagnostics(): theia.Event<theia.DiagnosticChangeEvent> {
                 return languagesExt.onDidChangeDiagnostics;
             },
+            // tslint:disable-next-line:typedef
             getDiagnostics(resource?: Uri) {
                 // tslint:disable-next-line:no-any
                 return <any>languagesExt.getDiagnostics(resource);
@@ -666,19 +680,19 @@ export function createAPIFactory(
             get taskExecutions(): ReadonlyArray<theia.TaskExecution> {
                 return tasksExt.taskExecutions;
             },
-
+            // tslint:disable-next-line:typedef
             onDidStartTask(listener, thisArg?, disposables?) {
                 return tasksExt.onDidStartTask(listener, thisArg, disposables);
             },
-
+            // tslint:disable-next-line:typedef
             onDidEndTask(listener, thisArg?, disposables?) {
                 return tasksExt.onDidEndTask(listener, thisArg, disposables);
             },
-
+            // tslint:disable-next-line:typedef
             onDidStartTaskProcess(listener, thisArg?, disposables?) {
                 return tasksExt.onDidStartTaskProcess(listener, thisArg, disposables);
             },
-
+            // tslint:disable-next-line:typedef
             onDidEndTaskProcess(listener, thisArg?, disposables?) {
                 return tasksExt.onDidEndTaskProcess(listener, thisArg, disposables);
             }

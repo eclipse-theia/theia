@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
 
 @injectable()
@@ -23,7 +23,7 @@ export class HlslContribution implements LanguageGrammarDefinitionContribution {
     readonly id = 'hlsl';
     readonly scopeName = 'source.hlsl';
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: this.id,
             extensions: ['.hlsl', '.hlsli', '.fx', '.fxh', '.vsh', '.psh', '.cginc', '.compute'],
@@ -54,7 +54,7 @@ export class HlslContribution implements LanguageGrammarDefinitionContribution {
         });
         const grammar = require('../../data/hlsl.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.scopeName, {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: grammar

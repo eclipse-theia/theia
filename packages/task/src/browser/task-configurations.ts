@@ -108,11 +108,11 @@ export class TaskConfigurations implements Disposable {
         }));
     }
 
-    setClient(client: TaskConfigurationClient) {
+    setClient(client: TaskConfigurationClient): void {
         this.client = client;
     }
 
-    dispose() {
+    dispose(): void {
         this.toDispose.dispose();
     }
 
@@ -195,7 +195,7 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** removes tasks configured in the given task config file */
-    removeTasks(configFileUri: string) {
+    removeTasks(configFileUri: string): void {
         const source = this.getSourceFolderFromConfigUri(configFileUri);
         this.tasksMap.delete(source);
     }
@@ -204,7 +204,7 @@ export class TaskConfigurations implements Disposable {
      * Removes task customization objects found in the given task config file from the memory.
      * Please note: this function does not modify the task config file.
      */
-    removeTaskCustomizations(configFileUri: string) {
+    removeTaskCustomizations(configFileUri: string): void {
         const source = this.getSourceFolderFromConfigUri(configFileUri);
         this.taskCustomizationMap.delete(source);
     }
@@ -275,7 +275,7 @@ export class TaskConfigurations implements Disposable {
      * Tries to read the tasks from a config file and if it successes then updates the list of available tasks.
      * If reading a config file wasn't successful then does nothing.
      */
-    protected async refreshTasks(configFileUri: string) {
+    protected async refreshTasks(configFileUri: string): Promise<void> {
         const tasksArray = await this.readTasks(configFileUri);
         if (tasksArray) {
             const configuredTasksArray: TaskConfiguration[] = [];

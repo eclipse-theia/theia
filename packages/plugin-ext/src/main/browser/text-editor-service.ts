@@ -71,7 +71,7 @@ export class TextEditorServiceImpl implements TextEditorService {
             this.onTextEditorAddEmitter.fire(editor);
         }
     }
-    private onEditorRemoved(editor: MonacoEditor) {
+    private onEditorRemoved(editor: MonacoEditor): void {
         if (this.editors.has(editor.getControl().getId())) {
             this.editors.delete(editor.getControl().getId());
             this.onTextEditorRemoveEmitter.fire(editor);

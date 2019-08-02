@@ -26,6 +26,7 @@ import { ThemeService } from '@theia/core/lib/browser/theming';
 import { EditorPreferences } from '@theia/editor/lib/browser';
 
 import throttle = require('lodash.throttle');
+import { Disposable } from '@theia/core/lib/common/disposable';
 
 export const PREVIEW_WIDGET_CLASS = 'theia-preview-widget';
 
@@ -112,7 +113,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
     }
 
     protected preventScrollNotification: boolean = false;
-    protected startScrollSync() {
+    protected startScrollSync(): Disposable {
         return addEventListener(this.node, 'scroll', throttle((event: UIEvent) => {
             if (this.preventScrollNotification) {
                 return;
@@ -122,7 +123,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         }, 50));
     }
 
-    protected startDoubleClickListener() {
+    protected startDoubleClickListener(): Disposable {
         return addEventListener(this.node, 'dblclick', (event: MouseEvent) => {
             if (!(event.target instanceof HTMLElement)) {
                 return;
@@ -163,7 +164,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         this.performUpdate();
     }
 
-    protected forceUpdate() {
+    protected forceUpdate(): void {
         this.previousContent = '';
         this.update();
     }

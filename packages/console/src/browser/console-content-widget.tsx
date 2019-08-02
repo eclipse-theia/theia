@@ -34,7 +34,7 @@ export class ConsoleContentWidget extends SourceTreeWidget {
         this.shouldScrollToRow = this._shouldScrollToEnd;
     }
 
-    protected get shouldScrollToEnd() {
+    protected get shouldScrollToEnd(): boolean {
         return this._shouldScrollToEnd;
     }
 

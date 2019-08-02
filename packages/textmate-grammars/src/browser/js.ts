@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { LanguageGrammarDefinitionContribution, TextmateRegistry, getEncodedLanguageId } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, getEncodedLanguageId, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { StandardTokenType } from 'vscode-textmate';
 
 @injectable()
@@ -23,11 +23,11 @@ export class JavascriptContribution implements LanguageGrammarDefinitionContribu
     readonly js_id = 'javascript';
     readonly js_react_id = 'javascriptreact';
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         this.registerJavaScript();
         const grammar = require('../../data/javascript.tmlanguage.json');
         registry.registerTextmateGrammarScope('source.js', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: grammar,
@@ -36,7 +36,7 @@ export class JavascriptContribution implements LanguageGrammarDefinitionContribu
         });
 
         registry.registerTextmateGrammarScope('source.js.regexp', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'plist',
                     content: regExpGrammar,
@@ -63,7 +63,7 @@ export class JavascriptContribution implements LanguageGrammarDefinitionContribu
 
         const jsxGrammar = require('../../data/javascript.jsx.tmlanguage.json');
         registry.registerTextmateGrammarScope('source.jsx', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: jsxGrammar,
@@ -74,7 +74,7 @@ export class JavascriptContribution implements LanguageGrammarDefinitionContribu
         registry.mapLanguageIdToTextmateGrammar(this.js_react_id, 'source.jsx');
     }
 
-    protected registerJavaScript() {
+    protected registerJavaScript(): void {
         monaco.languages.register({
             id: this.js_id,
             aliases: [

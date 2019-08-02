@@ -20,7 +20,7 @@ import { PluginHostRPC } from './plugin-host-rpc';
 console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
 
 // override exit() function, to do not allow plugin kill this node
-process.exit = function (code?: number) {
+process.exit = function (code?: number): void {
     const err = new Error('An plugin call process.exit() and it was prevented.');
     console.warn(err.stack);
 } as (code?: number) => never;
@@ -29,7 +29,7 @@ process.exit = function (code?: number) {
 // tslint:disable-next-line: no-any
 const proc = process as any;
 if (proc.crash) {
-    proc.crash = function () {
+    proc.crash = function (): void {
         const err = new Error('An plugin call process.crash() and it was prevented.');
         console.warn(err.stack);
     };

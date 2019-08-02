@@ -40,7 +40,7 @@ export class HostedPluginLogViewer {
     }
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         this.channel = this.outputChannelManager.getChannel(HostedPluginLogViewer.OUTPUT_CHANNEL_NAME);
         this.watcher.onLogMessageEvent(event => this.logMessageEventHandler(event));
     }

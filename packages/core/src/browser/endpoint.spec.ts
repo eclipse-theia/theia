@@ -135,13 +135,13 @@ describe('Endpoint', () => {
 
 });
 
-function expectWsUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string) {
+function expectWsUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string): void {
     const cut = new Endpoint(options, mockLocation);
     const uri = cut.getWebSocketUrl();
     expect(uri.toString()).to.eq(expectedUri);
 }
 
-function expectRestUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string) {
+function expectRestUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string): void {
     const cut = new Endpoint(options, mockLocation);
     const uri = cut.getRestUrl();
     expect(uri.toString()).to.eq(expectedUri);

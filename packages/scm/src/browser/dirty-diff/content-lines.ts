@@ -71,7 +71,8 @@ export namespace ContentLines {
 
     function getProxyHandler(): ProxyHandler<ContentLinesArrayLike> {
         return {
-            get(target: ContentLines, p: PropertyKey) {
+            // tslint:disable-next-line:no-any
+            get(target: ContentLines, p: PropertyKey): any {
                 switch (p) {
                     case 'prototype':
                         return undefined;
@@ -85,7 +86,7 @@ export namespace ContentLines {
                             return [0, target.length - 1];
                         };
                     case Symbol.iterator:
-                        return function* () {
+                        return function* (): IterableIterator<string> {
                             for (let i = 0; i < target.length; i++) {
                                 yield target.getLineContent(i);
                             }

@@ -68,7 +68,7 @@ export class ProblemWidget extends TreeWidget {
         }
     }
 
-    protected handleCopy(event: ClipboardEvent) {
+    protected handleCopy(event: ClipboardEvent): void {
         const uris = this.model.selectedNodes.filter(MarkerNode.is).map(node => node.uri.toString());
         if (uris.length > 0 && event.clipboardData) {
             event.clipboardData.setData('text/plain', uris.join('\n'));
@@ -108,7 +108,7 @@ export class ProblemWidget extends TreeWidget {
         return 'caption';
     }
 
-    protected renderTailDecorations(node: TreeNode, props: NodeProps) {
+    protected renderTailDecorations(node: TreeNode, props: NodeProps): JSX.Element {
         return <div className='row-button-container'>
             {this.renderRemoveButton(node)}
         </div>;
@@ -176,7 +176,7 @@ export class ProblemMarkerRemoveButton extends React.Component<{ model: ProblemT
     }
 
     protected readonly remove = (e: React.MouseEvent<HTMLElement>) => this.doRemove(e);
-    protected doRemove(e: React.MouseEvent<HTMLElement>) {
+    protected doRemove(e: React.MouseEvent<HTMLElement>): void {
         this.props.model.removeNode(this.props.node);
         e.stopPropagation();
     }

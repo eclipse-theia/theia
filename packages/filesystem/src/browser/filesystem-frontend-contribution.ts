@@ -185,7 +185,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
     protected updateWidget(uri: URI, widget: NavigatableWidget, event: FileChangeEvent, { dirty, toClose }: {
         dirty: Set<string>;
         toClose: Map<string, NavigatableWidget[]>
-    }) {
+    }): void {
         const label = widget.title.label;
         const deleted = label.endsWith(this.deletedSuffix);
         if (FileChangeEvent.isDeleted(event, uri)) {

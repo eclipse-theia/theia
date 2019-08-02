@@ -58,7 +58,7 @@ export class EditorconfigDocumentManager {
      *
      * @param editorWidget editor widget
      */
-    protected addOnSaveHandler(editorWidget: EditorWidget) {
+    protected addOnSaveHandler(editorWidget: EditorWidget): void {
         const monacoEditor = MonacoEditor.get(editorWidget);
         if (monacoEditor) {
             monacoEditor.document.onWillSaveModel(event => {
@@ -93,7 +93,7 @@ export class EditorconfigDocumentManager {
      *
      * @param editor editor
      */
-    protected refreshProperties(editor: TextEditor) {
+    protected refreshProperties(editor: TextEditor): void {
         if (editor instanceof MonacoEditor) {
             const uri = editor.uri.toString();
             this.editorconfigServer.getConfig(uri).then(properties => {

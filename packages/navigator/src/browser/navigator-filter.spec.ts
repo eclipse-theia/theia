@@ -139,10 +139,10 @@ describe('navigator-filter-glob', () => {
 
 });
 
-function includes<T>(array: T[], item: T, message: string = `Expected ${JSON.stringify(array)} to include ${JSON.stringify(item)}.`) {
+function includes<T>(array: T[], item: T, message: string = `Expected ${JSON.stringify(array)} to include ${JSON.stringify(item)}.`): void {
     expect(array).to.deep.include(item, message);
 }
 
-function excludes<T>(array: T[], item: T, message: string = `Expected ${JSON.stringify(array)} to not include ${JSON.stringify(item)}.`) {
+function excludes<T>(array: T[], item: T, message: string = `Expected ${JSON.stringify(array)} to not include ${JSON.stringify(item)}.`): void {
     expect(array).to.not.deep.include(item, message);
 }

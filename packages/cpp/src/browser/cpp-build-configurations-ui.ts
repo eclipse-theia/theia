@@ -116,7 +116,7 @@ export class CppBuildConfigurationChanger implements QuickOpenModel {
         acceptor(items);
     }
 
-    open() {
+    open(): void {
         const configs = this.cppBuildConfigurations.getValidConfigs();
         this.quickOpenService.open(this, {
             placeholder: (configs.length) ? 'Choose a build configuration...' : 'No build configurations present',

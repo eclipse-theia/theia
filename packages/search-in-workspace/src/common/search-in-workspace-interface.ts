@@ -86,7 +86,7 @@ export namespace SearchInWorkspaceResult {
      * Sort search in workspace results according to file, line, character position
      * and then length.
      */
-    export function compare(a: SearchInWorkspaceResult, b: SearchInWorkspaceResult) {
+    export function compare(a: SearchInWorkspaceResult, b: SearchInWorkspaceResult): number {
         if (a.fileUri !== b.fileUri) {
             return a.fileUri < b.fileUri ? -1 : 1;
         }

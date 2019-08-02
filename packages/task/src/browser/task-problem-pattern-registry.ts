@@ -28,7 +28,7 @@ export class ProblemPatternRegistry {
     private readyPromise: Promise<void>;
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         // tslint:disable-next-line:no-null-keyword
         this.patterns = Object.create(null);
         this.fillDefaults();

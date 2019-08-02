@@ -129,7 +129,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * This connection will be used to send/receive JSON-RPC requests and
      * response.
      */
-    listen(connection: MessageConnection) {
+    listen(connection: MessageConnection): void {
         if (this.target) {
             for (const prop in this.target) {
                 if (typeof this.target[prop] === 'function') {

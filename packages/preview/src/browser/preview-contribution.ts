@@ -71,7 +71,7 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
 
     protected scrollSyncLockTimeout: number | undefined;
 
-    onStart() {
+    onStart(): void {
         this.onCreated(previewWidget => {
             this.registerOpenOnDoubleClick(previewWidget);
             this.registerEditorAndPreviewSync(previewWidget);
@@ -81,7 +81,7 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
         });
     }
 
-    protected async lockScrollSync(on: 'preview' | 'editor', delay: number = 50) {
+    protected async lockScrollSync(on: 'preview' | 'editor', delay: number = 50): Promise<void> {
         this.scrollSyncLockOn = on;
         if (this.scrollSyncLockTimeout) {
             window.clearTimeout(this.scrollSyncLockTimeout);

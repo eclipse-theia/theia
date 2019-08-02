@@ -77,6 +77,7 @@ import { SymbolInformation } from 'vscode-languageserver-types';
 import { FoldingProviderAdapter } from './languages/folding';
 import { ColorProviderAdapter } from './languages/color';
 import { RenameAdapter } from './languages/rename';
+import { Event } from '@theia/core/lib/common/event';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -113,7 +114,7 @@ export class LanguagesExtImpl implements LanguagesExt {
         this.diagnostics = new Diagnostics(rpc);
     }
 
-    get onDidChangeDiagnostics() {
+    get onDidChangeDiagnostics(): Event<theia.DiagnosticChangeEvent> {
         return this.diagnostics.onDidChangeDiagnostics;
     }
 

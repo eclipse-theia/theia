@@ -260,12 +260,12 @@ export class TerminalProcess extends Process {
         return this.ringBuffer.getStream();
     }
 
-    get pid() {
+    get pid(): number {
         this.checkTerminal();
         return this.terminal!.pid;
     }
 
-    kill(signal?: string) {
+    kill(signal?: string): void {
         if (this.terminal && this.killed === false) {
             this.terminal.kill(signal);
         }

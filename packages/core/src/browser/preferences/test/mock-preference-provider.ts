@@ -24,7 +24,7 @@ import { PreferenceScope } from '../preference-scope';
 export class MockPreferenceProvider extends PreferenceProvider {
     readonly prefs: { [p: string]: any } = {};
 
-    getPreferences() {
+    getPreferences(): { [p: string]: any } {
         return this.prefs;
     }
     async setPreference(preferenceName: string, newValue: any, resourceUri?: string): Promise<boolean> {

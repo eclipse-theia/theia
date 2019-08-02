@@ -33,7 +33,7 @@ import { createGit } from './test/binding-helper';
 
 const track = temp.track();
 
-describe('git', async function () {
+describe('git', async function (): Promise<void> {
 
     this.timeout(10000);
 
@@ -765,7 +765,7 @@ describe('git', async function () {
 
 });
 
-describe('log', function () {
+describe('log', function (): void {
 
     // See https://github.com/theia-ide/theia/issues/2143
     it('should not fail when executed from the repository root', async () => {

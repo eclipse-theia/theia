@@ -524,7 +524,7 @@ export class MiniBrowserContent extends BaseWidget {
         }
     }
 
-    protected frameSrc() {
+    protected frameSrc(): string {
         let src = this.frame.src;
         try {
             const { contentWindow } = this.frame;

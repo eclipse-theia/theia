@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
 
 @injectable()
@@ -23,7 +23,7 @@ export class PowershellContribution implements LanguageGrammarDefinitionContribu
     readonly id = 'powershell';
     readonly scopeName = 'source.powershell';
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: this.id,
             extensions: ['.ps1', '.psm1', '.psd1', '.pssc', '.psrc'],
@@ -64,7 +64,7 @@ export class PowershellContribution implements LanguageGrammarDefinitionContribu
         });
         const grammar = require('../../data/powershell.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.scopeName, {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: grammar

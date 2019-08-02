@@ -39,17 +39,17 @@ export class MergeConflictResolver {
         execute: args => this.doAcceptBoth(args)
     };
 
-    protected doAcceptCurrent(argument: MergeConflictCommandArgument) {
+    protected doAcceptCurrent(argument: MergeConflictCommandArgument): void {
         this.doAccept(argument, (textOfRange, conflict) =>
             textOfRange(conflict.current.content!));
     }
 
-    protected doAcceptIncoming(argument: MergeConflictCommandArgument) {
+    protected doAcceptIncoming(argument: MergeConflictCommandArgument): void {
         this.doAccept(argument, (textOfRange, conflict) =>
             textOfRange(conflict.incoming.content!));
     }
 
-    protected doAcceptBoth(argument: MergeConflictCommandArgument) {
+    protected doAcceptBoth(argument: MergeConflictCommandArgument): void {
         this.doAccept(argument, (textOfRange, conflict) => {
             const currentText = textOfRange(conflict.current.content);
             const incomingText = textOfRange(conflict.incoming.content);
@@ -57,7 +57,8 @@ export class MergeConflictResolver {
         });
     }
 
-    protected async doAccept(argument: MergeConflictCommandArgument, newTextFn: ((textOfRange: (range: Range | undefined) => string, conflict: MergeConflict) => string)) {
+    protected async doAccept(argument: MergeConflictCommandArgument,
+        newTextFn: ((textOfRange: (range: Range | undefined) => string, conflict: MergeConflict) => string)): Promise<void> {
         const { uri, conflict } = argument;
         const editorWidget = await this.editorManager.getByUri(new URI(uri));
         if (!editorWidget) {

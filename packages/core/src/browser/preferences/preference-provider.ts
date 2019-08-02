@@ -105,7 +105,7 @@ export abstract class PreferenceProvider implements Disposable {
      * Resolved when the preference provider is ready to provide preferences
      * It should be resolved by subclasses.
      */
-    get ready() {
+    get ready(): Promise<void> {
         return this._ready.promise;
     }
 

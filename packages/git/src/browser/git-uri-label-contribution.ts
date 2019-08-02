@@ -45,11 +45,11 @@ export class GitUriLabelProviderContribution implements LabelProviderContributio
         return this.labelProvider.getIcon(this.toFileUri(uri));
     }
 
-    protected toFileUri(uri: URI) {
+    protected toFileUri(uri: URI): URI {
         return uri.withScheme('file');
     }
 
-    protected getTagSuffix(uri: URI) {
+    protected getTagSuffix(uri: URI): string {
         if (uri.query) {
             return ` (${uri.query})`;
         } else {

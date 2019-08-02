@@ -19,7 +19,7 @@ import { ProcessTaskContribution } from './process-task-contribution';
 import { ProcessTaskResolver } from './process-task-resolver';
 import { TaskContribution } from '../task-contribution';
 
-export function bindProcessTaskModule(bind: interfaces.Bind) {
+export function bindProcessTaskModule(bind: interfaces.Bind): void {
 
     bind(ProcessTaskResolver).toSelf().inSingletonScope();
     bind(ProcessTaskContribution).toSelf().inSingletonScope();

@@ -43,7 +43,7 @@ export namespace VirtualRenderer {
     /*
      * @deprecated use ReactDOM.render instead. VirtualRenderer will be removed with the next major release.
      */
-    export function render(child: h.Child, host: HTMLElement) {
+    export function render(child: h.Child, host: HTMLElement): void {
         const content = toContent(child);
         VirtualDOM.render(content, host);
     }

@@ -110,7 +110,7 @@ const pluginManager = new PluginManagerExtImpl({
 
         return [result, foreign];
     },
-    initExtApi(extApi: ExtPluginApi[]) {
+    initExtApi(extApi: ExtPluginApi[]): void {
         for (const api of extApi) {
             try {
                 if (api.frontendExtApi) {
@@ -161,7 +161,7 @@ rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocuments);
 rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
 rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
 
-function isElectron() {
+function isElectron(): boolean {
     if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
         return true;
     }

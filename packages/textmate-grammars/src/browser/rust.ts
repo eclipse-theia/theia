@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable } from 'inversify';
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 
 @injectable()
 export class RustContribution implements LanguageGrammarDefinitionContribution {
@@ -56,7 +56,7 @@ export class RustContribution implements LanguageGrammarDefinitionContribution {
         }
     };
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             // copied from https://github.com/Microsoft/vscode/blob/9e1975d98598ef268ca760b8381ee628f27fc121/extensions/rust/package.json#L12-L17
             id: this.id,
@@ -69,7 +69,7 @@ export class RustContribution implements LanguageGrammarDefinitionContribution {
         // copied from https://github.com/Microsoft/vscode/blob/9e1975d98598ef268ca760b8381ee628f27fc121/extensions/rust/syntaxes/rust.tmLanguage.json
         const platformGrammar = require('../../data/rust.tmLanguage.json');
         registry.registerTextmateGrammarScope('source.rust', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: platformGrammar

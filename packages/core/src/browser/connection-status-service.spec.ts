@@ -24,7 +24,7 @@ import { MockConnectionStatusService } from './test/mock-connection-status-servi
 
 disableJSDOM();
 
-describe('connection-status', function () {
+describe('connection-status', function (): void {
 
     let connectionStatusService: MockConnectionStatusService;
 
@@ -67,6 +67,6 @@ describe('connection-status', function () {
 
 });
 
-function pause(time: number = 1) {
+function pause(time: number = 1): Promise<unknown> {
     return new Promise(resolve => setTimeout(resolve, time));
 }

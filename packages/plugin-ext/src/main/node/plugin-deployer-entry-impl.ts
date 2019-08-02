@@ -100,7 +100,7 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
         return types.some(type => this.acceptedTypes.indexOf(type) >= 0);
     }
 
-    setResolvedBy(name: string) {
+    setResolvedBy(name: string): void {
         this.resolvedByName = name;
     }
 

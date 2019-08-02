@@ -76,6 +76,7 @@ export class KeymapsParser {
     }
 
     // https://github.com/Microsoft/node-jsonc-parser/issues/13
+    // tslint:disable-next-line:typedef
     protected printParseErrorCode(code: number | undefined) {
         switch (code) {
             case parser.ParseErrorCode.InvalidSymbol: return 'InvalidSymbol';

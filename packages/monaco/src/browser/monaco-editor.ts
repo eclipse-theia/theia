@@ -158,7 +158,7 @@ export class MonacoEditor implements TextEditor {
         };
     }
 
-    get onDispose() {
+    get onDispose(): Event<void> {
         return this.toDispose.onDispose;
     }
 
@@ -230,7 +230,7 @@ export class MonacoEditor implements TextEditor {
         }
     }
 
-    focus() {
+    focus(): void {
         this.editor.focus();
     }
 
@@ -280,11 +280,11 @@ export class MonacoEditor implements TextEditor {
         return this.editor.getContribution<RenameController>('editor.contrib.renameController')._renameInputVisible.get();
     }
 
-    dispose() {
+    dispose(): void {
         this.toDispose.dispose();
     }
 
-    getControl() {
+    getControl(): IStandaloneCodeEditor {
         return this.editor;
     }
 
@@ -300,7 +300,7 @@ export class MonacoEditor implements TextEditor {
         this.resize(dimension);
     }
 
-    protected autoresize() {
+    protected autoresize(): void {
         if (this.autoSizing) {
             // tslint:disable-next-line:no-null-keyword
             this.resize(null);

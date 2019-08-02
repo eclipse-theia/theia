@@ -50,7 +50,7 @@ export class ExtensionWidget extends ReactWidget {
         this.toDispose.push(extensionManager.onDidChange(() => this.update()));
     }
 
-    protected onActivateRequest(msg: Message) {
+    protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         this.fetchExtensions();
         const searchField = this.findSearchField();
@@ -119,7 +119,7 @@ export class ExtensionWidget extends ReactWidget {
 
     protected extensionClick = (extension: Extension) => open(this.openerService, ExtensionUri.toUri(extension.name));
 
-    private renderExtension(extension: Extension) {
+    private renderExtension(extension: Extension): JSX.Element {
         const extensionButtonContainer = !extension.dependent ?
             <div className='extensionButtonContainer flexcontainer'> {this.createButton(extension)}</div> : 'installed via ' + extension.dependent;
 

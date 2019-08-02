@@ -104,7 +104,7 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
 
     protected appliedDecorations = new Map<string, Disposable>();
 
-    protected async showBlame(editorWidget: EditorWidget) {
+    protected async showBlame(editorWidget: EditorWidget): Promise<void> {
         const uri = editorWidget.editor.uri.toString();
         if (this.appliedDecorations.get(uri)) {
             return;
@@ -127,7 +127,7 @@ export class BlameContribution implements CommandContribution, KeybindingContrib
         }
     }
 
-    protected clearBlame(uri: string | URI) {
+    protected clearBlame(uri: string | URI): void {
         const decorations = this.appliedDecorations.get(uri.toString());
         if (decorations) {
             this.appliedDecorations.delete(uri.toString());

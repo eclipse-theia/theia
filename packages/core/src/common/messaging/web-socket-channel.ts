@@ -42,7 +42,7 @@ export class WebSocketChannel implements IWebSocket {
         }
     }
 
-    handleMessage(message: WebSocketChannel.Message) {
+    handleMessage(message: WebSocketChannel.Message): void {
         if (message.kind === 'ready') {
             this.fireOpen();
         } else if (message.kind === 'data') {

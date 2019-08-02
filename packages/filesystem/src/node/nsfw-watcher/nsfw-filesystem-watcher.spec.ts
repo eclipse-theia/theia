@@ -27,7 +27,7 @@ import { DidFilesChangedParams } from '../../common/filesystem-watcher-protocol'
 const expect = chai.expect;
 const track = temp.track();
 
-describe('nsfw-filesystem-watcher', function () {
+describe('nsfw-filesystem-watcher', function (): void {
 
     let root: URI;
     let watcherServer: NsfwFileSystemWatcherServer;
@@ -47,7 +47,7 @@ describe('nsfw-filesystem-watcher', function () {
         watcherServer.dispose();
     });
 
-    it('Should receive file changes events from in the workspace by default.', async function () {
+    it('Should receive file changes events from in the workspace by default.', async function (): Promise<void> {
         if (process.platform === 'win32') {
             this.skip();
             return;
@@ -55,7 +55,7 @@ describe('nsfw-filesystem-watcher', function () {
         const actualUris = new Set<string>();
 
         const watcherClient = {
-            onDidFilesChanged(event: DidFilesChangedParams) {
+            onDidFilesChanged(event: DidFilesChangedParams): void {
                 event.changes.forEach(c => actualUris.add(c.uri.toString()));
             }
         };
@@ -82,7 +82,7 @@ describe('nsfw-filesystem-watcher', function () {
         assert.deepEqual(expectedUris, [...actualUris]);
     });
 
-    it('Should not receive file changes events from in the workspace by default if unwatched', async function () {
+    it('Should not receive file changes events from in the workspace by default if unwatched', async function (): Promise<void> {
         if (process.platform === 'win32') {
             this.skip();
             return;
@@ -90,7 +90,7 @@ describe('nsfw-filesystem-watcher', function () {
         const actualUris = new Set<string>();
 
         const watcherClient = {
-            onDidFilesChanged(event: DidFilesChangedParams) {
+            onDidFilesChanged(event: DidFilesChangedParams): void {
                 event.changes.forEach(c => actualUris.add(c.uri.toString()));
             }
         };
@@ -114,13 +114,13 @@ describe('nsfw-filesystem-watcher', function () {
         assert.deepEqual(0, actualUris.size);
     });
 
-    function createNsfwFileSystemWatcherServer() {
+    function createNsfwFileSystemWatcherServer(): NsfwFileSystemWatcherServer {
         return new NsfwFileSystemWatcherServer({
             verbose: true
         });
     }
 
-    function sleep(time: number) {
+    function sleep(time: number): Promise<unknown> {
         return new Promise(resolve => setTimeout(resolve, time));
     }
 

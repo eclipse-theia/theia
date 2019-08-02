@@ -50,7 +50,7 @@ export class KeymapsService {
     protected resource: Resource;
 
     @postConstruct()
-    protected async init() {
+    protected async init(): Promise<void> {
         this.resource = await this.resourceProvider(new URI().withScheme(UserStorageUri.SCHEME).withPath('keymaps.json'));
         this.reconcile();
         if (this.resource.onDidChangeContents) {

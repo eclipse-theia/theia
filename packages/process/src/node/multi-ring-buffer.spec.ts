@@ -19,9 +19,9 @@ import { MultiRingBuffer } from './multi-ring-buffer';
 
 const expect = chai.expect;
 
-describe('MultiRingBuffer', function () {
+describe('MultiRingBuffer', function (): void {
 
-    it('expect buffer to be empty initialized', function () {
+    it('expect buffer to be empty initialized', function (): void {
         const size = 2;
         const compareTo = Buffer.from('0000', 'hex');
         const ringBuffer = new MultiRingBuffer({ size });
@@ -29,7 +29,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer['buffer'].equals(compareTo)).to.be.true;
     });
 
-    it('expect enq and deq a string with unicode characters > 1 byte and no wrap around', function () {
+    it('expect enq and deq a string with unicode characters > 1 byte and no wrap around', function (): void {
         const ringBufferSize = 15;
         const ringBuffer = new MultiRingBuffer({ size: ringBufferSize });
         const buffer = '\u00bd + \u00bc = \u00be';
@@ -39,7 +39,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.size()).to.be.equal(bufferByteLength);
     });
 
-    it('expect enq and deq a string with unicode characters > 1 byte and wrap around', function () {
+    it('expect enq and deq a string with unicode characters > 1 byte and wrap around', function (): void {
         const buffer = '\u00bd + \u00bc = \u00be';
         const ringBufferSize = Buffer.byteLength(buffer[buffer.length - 1]);
         const ringBuffer = new MultiRingBuffer({ size: ringBufferSize });
@@ -56,7 +56,7 @@ describe('MultiRingBuffer', function () {
         }
     });
 
-    it('expect enq a string < ring buffer size ', function () {
+    it('expect enq a string < ring buffer size ', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffer = 'test';
@@ -70,7 +70,7 @@ describe('MultiRingBuffer', function () {
 
     });
 
-    it('expect deq a string < ring buffer size ', function () {
+    it('expect deq a string < ring buffer size ', function (): void {
         const ringBuffer = new MultiRingBuffer({ size: 5 });
         const buffer = 'test';
 
@@ -84,7 +84,7 @@ describe('MultiRingBuffer', function () {
 
     });
 
-    it('expect deq a string > ring buffer size ', function () {
+    it('expect deq a string > ring buffer size ', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffer = 'testabcd';
@@ -99,7 +99,7 @@ describe('MultiRingBuffer', function () {
 
     });
 
-    it('expect enq deq enq deq a string > ring buffer size ', function () {
+    it('expect enq deq enq deq a string > ring buffer size ', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffer = '12345678';
@@ -117,7 +117,7 @@ describe('MultiRingBuffer', function () {
         }
     });
 
-    it('expect enq a string == ring buffer size then one > ring buffer size and dequeue them ', function () {
+    it('expect enq a string == ring buffer size then one > ring buffer size and dequeue them ', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffers = ['12345', '12345678'];
@@ -140,7 +140,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect enq a string == ring buffer size then one < ring buffer size and dequeue them ', function () {
+    it('expect enq a string == ring buffer size then one < ring buffer size and dequeue them ', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffers = ['12345', '123'];
@@ -163,7 +163,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect enq a string == ring buffer size then one < ring buffer  then one < buffer size and deque ', function () {
+    it('expect enq a string == ring buffer size then one < ring buffer  then one < buffer size and deque ', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffers = ['12345', '123', '678'];
@@ -186,7 +186,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect enq buffer size then enq 1 to dequeue the right value', function () {
+    it('expect enq buffer size then enq 1 to dequeue the right value', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffers = ['12345', '1'];
@@ -209,7 +209,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect enq buffer size then enq 1 twice to dequeue the right value', function () {
+    it('expect enq buffer size then enq 1 twice to dequeue the right value', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffers = ['12345', '1', '12345', '1'];
@@ -232,7 +232,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect enq buffer size of various sizes dequeue the right value', function () {
+    it('expect enq buffer size of various sizes dequeue the right value', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffers = ['12345', '123', '678', '12345', '1', '12345', '123', '12', '12', '1', '12', '123', '1234', '12345', '1', '12'];
@@ -256,7 +256,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect enq buffer sizes < buffer size to dequeue normally', function () {
+    it('expect enq buffer sizes < buffer size to dequeue normally', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffers = ['1', '1'];
@@ -279,7 +279,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect enq buffer size of various sizes dequeue the right value', function () {
+    it('expect enq buffer size of various sizes dequeue the right value', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffers = ['1', '1', '12', '12'];
@@ -302,7 +302,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect multiple enq and deq to deq the right values', function () {
+    it('expect multiple enq and deq to deq the right values', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         ringBuffer.enq('12345');
@@ -323,7 +323,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect data from stream on enq', async function () {
+    it('expect data from stream on enq', async function (): Promise<void> {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffer = 'abc';
@@ -340,7 +340,7 @@ describe('MultiRingBuffer', function () {
         await p;
     });
 
-    it('expect data from stream when data is already enqed', async function () {
+    it('expect data from stream when data is already enqed', async function (): Promise<void> {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffer = 'abc';
@@ -357,7 +357,7 @@ describe('MultiRingBuffer', function () {
         await p;
     });
 
-    it('expect disposing of a stream to delete it from the ringbuffer', function () {
+    it('expect disposing of a stream to delete it from the ringbuffer', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const astream = ringBuffer.getStream();
@@ -366,7 +366,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.readersSize()).to.be.equal(0);
     });
 
-    it('expect disposing of a reader to delete it from the ringbuffer', function () {
+    it('expect disposing of a reader to delete it from the ringbuffer', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const reader = ringBuffer.getReader();
@@ -374,7 +374,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.readersSize()).to.be.equal(0);
     });
 
-    it('expect enq a string in utf8 and get it in hex', function () {
+    it('expect enq a string in utf8 and get it in hex', function (): void {
         const ringBuffer = new MultiRingBuffer({ size: 5 });
         const buffer = 'test';
 
@@ -385,7 +385,7 @@ describe('MultiRingBuffer', function () {
         expect(readBuffer).to.equal('74657374');
     });
 
-    it('expect enq a string in hex and get it in utf8', function () {
+    it('expect enq a string in hex and get it in utf8', function (): void {
         const ringBuffer = new MultiRingBuffer({ size: 5 });
         const buffer = '74657374';
 
@@ -396,7 +396,7 @@ describe('MultiRingBuffer', function () {
         expect(readBuffer).to.equal('test');
     });
 
-    it('expect data from stream in hex when enq in uf8', async function () {
+    it('expect data from stream in hex when enq in uf8', async function (): Promise<void> {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffer = 'test';
@@ -413,7 +413,7 @@ describe('MultiRingBuffer', function () {
         await p;
     });
 
-    it('expect deq a string < ring buffer size with the internal encoding in hex ', function () {
+    it('expect deq a string < ring buffer size with the internal encoding in hex ', function (): void {
         const ringBuffer = new MultiRingBuffer({ size: 5, encoding: 'hex' });
         const buffer = 'test';
 
@@ -427,7 +427,7 @@ describe('MultiRingBuffer', function () {
 
     });
 
-    it('expect the ringbuffer to be empty if we enq an empty string', function () {
+    it('expect the ringbuffer to be empty if we enq an empty string', function (): void {
         const ringBuffer = new MultiRingBuffer({ size: 5 });
         const buffer = '';
 
@@ -436,17 +436,17 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.empty()).to.be.equal(true);
     });
 
-    it('expect an invalid reader count to be zero', function () {
+    it('expect an invalid reader count to be zero', function (): void {
         const ringBuffer = new MultiRingBuffer({ size: 5 });
         expect(ringBuffer.sizeForReader(1)).to.be.equal(0);
     });
 
-    it('expect an invalid reader to be empty', function () {
+    it('expect an invalid reader to be empty', function (): void {
         const ringBuffer = new MultiRingBuffer({ size: 5 });
         expect(ringBuffer.emptyForReader(1)).to.be.equal(true);
     });
 
-    it('expect partially deq a string < ring buffer size ', function () {
+    it('expect partially deq a string < ring buffer size ', function (): void {
         const ringBuffer = new MultiRingBuffer({ size: 5 });
         const buffer = 'test';
 
@@ -464,7 +464,7 @@ describe('MultiRingBuffer', function () {
         expect(readBuffer).to.equal('st');
     });
 
-    it('expect partially deq a string < ring buffer size then enq and deq again ', function () {
+    it('expect partially deq a string < ring buffer size then enq and deq again ', function (): void {
         const ringBuffer = new MultiRingBuffer({ size: 5 });
         const buffer = 'test';
         const secondBuffer = 'abcd';

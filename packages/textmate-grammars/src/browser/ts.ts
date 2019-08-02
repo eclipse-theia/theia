@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
 
 @injectable()
@@ -26,12 +26,12 @@ export class TypescriptContribution implements LanguageGrammarDefinitionContribu
     @inject(MonacoSnippetSuggestProvider)
     protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         this.registerTypeScript();
         this.registerSnippets();
         const grammar = require('../../data/typescript.tmlanguage.json');
         registry.registerTextmateGrammarScope('source.ts', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: grammar,
@@ -51,7 +51,7 @@ export class TypescriptContribution implements LanguageGrammarDefinitionContribu
 
         const jsxGrammar = require('../../data/typescript.tsx.tmlanguage.json');
         registry.registerTextmateGrammarScope('source.tsx', {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: jsxGrammar,
@@ -70,7 +70,7 @@ export class TypescriptContribution implements LanguageGrammarDefinitionContribu
         });
     }
 
-    protected registerTypeScript() {
+    protected registerTypeScript(): void {
         monaco.languages.register({
             id: this.ts_id,
             aliases: [

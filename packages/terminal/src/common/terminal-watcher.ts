@@ -25,10 +25,10 @@ export class TerminalWatcher {
         const exitEmitter = this.onTerminalExitEmitter;
         const errorEmitter = this.onTerminalErrorEmitter;
         return {
-            onTerminalExitChanged(event: IBaseTerminalExitEvent) {
+            onTerminalExitChanged(event: IBaseTerminalExitEvent): void {
                 exitEmitter.fire(event);
             },
-            onTerminalError(event: IBaseTerminalErrorEvent) {
+            onTerminalError(event: IBaseTerminalErrorEvent): void {
                 errorEmitter.fire(event);
             }
         };

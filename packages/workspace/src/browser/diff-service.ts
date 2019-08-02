@@ -28,7 +28,7 @@ export class DiffService {
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(MessageService) protected readonly messageService: MessageService;
 
-    public async openDiffEditor(left: URI, right: URI, label?: string, options?: OpenerOptions) {
+    public async openDiffEditor(left: URI, right: URI, label?: string, options?: OpenerOptions): Promise<void> {
         if (left.scheme === 'file' && right.scheme === 'file') {
             const [leftExists, rightExists] = await Promise.all([
                 this.fileSystem.exists(left.toString()),

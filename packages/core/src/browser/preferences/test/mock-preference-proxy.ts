@@ -18,7 +18,7 @@ import { Emitter } from '../../../common';
 import { PreferenceChange } from '../preference-service';
 
 // tslint:disable:no-any
-export function createMockPreferenceProxy(preferences: { [p: string]: any }) {
+export function createMockPreferenceProxy(preferences: { [p: string]: any }): any {
     const unsupportedOperation = (_: any, __: string) => {
         throw new Error('Unsupported operation');
     };

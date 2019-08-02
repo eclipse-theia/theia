@@ -51,7 +51,7 @@ const commandWindowsNoop = 'rundll32.exe';
 const wsRootUri: URI = FileUri.create(__dirname).resolve('../../test-resources');
 const wsRoot: string = FileUri.fsPath(wsRootUri);
 
-describe('Task server / back-end', function () {
+describe('Task server / back-end', function (): void {
     this.timeout(10000);
 
     let server: http.Server | https.Server;
@@ -74,7 +74,7 @@ describe('Task server / back-end', function () {
         s.close();
     });
 
-    it('task running in terminal - expected data is received from the terminal ws server', async function () {
+    it('task running in terminal - expected data is received from the terminal ws server', async function (): Promise<void> {
         const someString = 'someSingleWordString';
 
         // This test is flaky on Windows and fails intermittently. Disable it for now
@@ -106,7 +106,7 @@ describe('Task server / back-end', function () {
         });
     });
 
-    it('task using raw process - task server success response shall not contain a terminal id', async function () {
+    it('task using raw process - task server success response shall not contain a terminal id', async function (): Promise<void> {
         const someString = 'someSingleWordString';
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const executable = FileUri.fsPath(wsRootUri.resolve(command));
@@ -130,7 +130,7 @@ describe('Task server / back-end', function () {
         await p;
     });
 
-    it('task is executed successfully with cwd as a file URI', async function () {
+    it('task is executed successfully with cwd as a file URI', async function (): Promise<void> {
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const config = createProcessTaskConfig('shell', command, [], FileUri.create(wsRoot).toString());
         const taskInfo: TaskInfo = await taskServer.run(config, wsRoot);
@@ -140,7 +140,7 @@ describe('Task server / back-end', function () {
         await p;
     });
 
-    it('task is executed successfully using terminal process', async function () {
+    it('task is executed successfully using terminal process', async function (): Promise<void> {
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', command, []), wsRoot);
 
@@ -149,7 +149,7 @@ describe('Task server / back-end', function () {
         await p;
     });
 
-    it('task is executed successfully using raw process', async function () {
+    it('task is executed successfully using raw process', async function (): Promise<void> {
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const executable = FileUri.fsPath(wsRootUri.resolve(command));
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', executable, []));
@@ -159,7 +159,7 @@ describe('Task server / back-end', function () {
         await p;
     });
 
-    it('task without a specific runner is executed successfully using as a process', async function () {
+    it('task without a specific runner is executed successfully using as a process', async function (): Promise<void> {
         const command = isWindows ? commandWindowsNoop : commandUnixNoop;
 
         // there's no runner registered for the 'npm' task type
@@ -171,7 +171,7 @@ describe('Task server / back-end', function () {
         await p;
     });
 
-    it('task can successfully execute command found in system path using a terminal process', async function () {
+    it('task can successfully execute command found in system path using a terminal process', async function (): Promise<void> {
         const command = isWindows ? commandWindowsNoop : commandUnixNoop;
 
         const opts: TaskConfiguration = createProcessTaskConfig('shell', command, []);
@@ -182,7 +182,7 @@ describe('Task server / back-end', function () {
         await p;
     });
 
-    it('task can successfully execute command found in system path using a raw process', async function () {
+    it('task can successfully execute command found in system path using a raw process', async function (): Promise<void> {
         const command = isWindows ? commandWindowsNoop : commandUnixNoop;
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', command, []), wsRoot);
 
@@ -191,7 +191,7 @@ describe('Task server / back-end', function () {
         await p;
     });
 
-    it('task using type "terminal" can be killed', async function () {
+    it('task using type "terminal" can be killed', async function (): Promise<void> {
         const taskInfo: TaskInfo = await taskServer.run(createTaskConfigTaskLongRunning('shell'), wsRoot);
 
         const p = new Promise<string | number>((resolve, reject) => {
@@ -226,7 +226,7 @@ describe('Task server / back-end', function () {
         }
     });
 
-    it('task using type "process" can be killed', async function () {
+    it('task using type "process" can be killed', async function (): Promise<void> {
         const taskInfo: TaskInfo = await taskServer.run(createTaskConfigTaskLongRunning('process'), wsRoot);
 
         const p = new Promise<string | number>((resolve, reject) => {
@@ -264,7 +264,7 @@ describe('Task server / back-end', function () {
     /**
      * TODO: Figure out how to debug a process that correctly starts but exits with a return code > 0
      */
-    it('task using terminal process can handle command that does not exist', async function () {
+    it('task using terminal process can handle command that does not exist', async function (): Promise<void> {
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig2('shell', bogusCommand, []), wsRoot);
 
         const p = new Promise<number>((resolve, reject) => {
@@ -288,12 +288,12 @@ describe('Task server / back-end', function () {
         }
     });
 
-    it('task using raw process can handle command that does not exist', async function () {
+    it('task using raw process can handle command that does not exist', async function (): Promise<void> {
         const p = taskServer.run(createProcessTaskConfig2('process', bogusCommand, []), wsRoot);
         await expectThrowsAsync(p, 'ENOENT');
     });
 
-    it('getTasks(ctx) returns tasks according to created context', async function () {
+    it('getTasks(ctx) returns tasks according to created context', async function (): Promise<void> {
         const context1 = 'aContext';
         const context2 = 'anotherContext';
 
@@ -326,7 +326,7 @@ describe('Task server / back-end', function () {
         await taskServer.kill(task6.taskId);
     });
 
-    it('creating and killing a bunch of tasks works as expected', async function () {
+    it('creating and killing a bunch of tasks works as expected', async function (): Promise<void> {
         // const command = isWindows ? command_absolute_path_long_running_windows : command_absolute_path_long_running;
         const numTasks = 20;
         const taskinfo: TaskInfo[] = [];

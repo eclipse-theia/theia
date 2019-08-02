@@ -20,7 +20,7 @@ import processBackendModule from '@theia/process/lib/node/process-backend-module
 import { messagingBackendModule } from '@theia/core/lib/node/messaging/messaging-backend-module';
 import terminalBackendModule from '../terminal-backend-module';
 
-export function createTerminalTestContainer() {
+export function createTerminalTestContainer(): Container {
     const container = new Container();
     container.load(backendApplicationModule);
     bindLogger(container.bind.bind(container));

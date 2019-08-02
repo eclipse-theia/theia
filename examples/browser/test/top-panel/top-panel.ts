@@ -24,52 +24,52 @@ export class TopPanel {
         return this.driver.isExisting('div#theia-top-panel');
     }
 
-    openNewTerminal() {
+    openNewTerminal(): void {
         this.clickMenuTab('Terminal');
         this.clickSubMenu('New Terminal');
     }
 
-    toggleCallHierarchyView() {
+    toggleCallHierarchyView(): void {
         this.clickMenuTab('View');
         this.clickSubMenu('Call Hierarchy');
     }
 
-    toggleFilesView() {
+    toggleFilesView(): void {
         this.clickMenuTab('View');
         this.clickSubMenu('Explorer');
     }
 
-    toggleScmView() {
+    toggleScmView(): void {
         this.clickMenuTab('View');
         this.clickSubMenu('SCM');
     }
 
-    toggleGitHistoryView() {
+    toggleGitHistoryView(): void {
         this.clickMenuTab('View');
         this.clickSubMenu('Git History');
     }
 
-    toggleOutlineView() {
+    toggleOutlineView(): void {
         this.clickMenuTab('View');
         this.clickSubMenu('Outline');
     }
 
-    toggleOutputView() {
+    toggleOutputView(): void {
         this.clickMenuTab('View');
         this.clickSubMenu('Output');
     }
 
-    openPluginsView() {
+    openPluginsView(): void {
         this.clickMenuTab('View');
         this.clickSubMenu('Plugins');
     }
 
-    openProblemsView() {
+    openProblemsView(): void {
         this.clickMenuTab('View');
         this.clickSubMenu('Problems');
     }
 
-    toggleSearchView() {
+    toggleSearchView(): void {
         this.clickMenuTab('View');
         this.clickSubMenu('Search');
     }
@@ -82,7 +82,7 @@ export class TopPanel {
         return this.driver.isExisting('div.p-Widget.p-Menu.p-MenuBar-menu');
     }
 
-    clickMenuTab(tab: number | string) {
+    clickMenuTab(tab: number | string): void {
         if (typeof tab === 'string') {
             this.driver.element('ul.p-MenuBar-content').click(`div=${tab}`);
         } else {
@@ -90,11 +90,11 @@ export class TopPanel {
         }
     }
 
-    clickSubMenu(subMenuItem: string) {
+    clickSubMenu(subMenuItem: string): void {
         this.driver.element('div.p-Widget.p-Menu.p-MenuBar-menu .p-Menu-content').click(`div=${subMenuItem}`);
     }
 
-    hoverMenuTab(tabNumber: number) {
+    hoverMenuTab(tabNumber: number): void {
         this.driver.moveToObject(`ul.p-MenuBar-content > .p-MenuBar-item:nth-child(${tabNumber})`);
     }
 
@@ -106,7 +106,7 @@ export class TopPanel {
         return this.driver.isExisting('#theia\\:menubar.p-mod-active');
     }
 
-    getxBarTabPosition(tabNumber: number) {
+    getxBarTabPosition(tabNumber: number): WebdriverIO.Client<number> & number {
         return this.driver.getLocation(`ul.p-MenuBar-content > .p-MenuBar-item:nth-child(${tabNumber}`, 'x');
     }
 

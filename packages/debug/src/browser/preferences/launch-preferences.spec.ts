@@ -416,7 +416,7 @@ describe('Launch Preferences', () => {
             let preferences: PreferenceService;
 
             const toTearDown = new DisposableCollection();
-            beforeEach(async function () {
+            beforeEach(async function (): Promise<void> {
                 toTearDown.push(Disposable.create(enableJSDOM()));
                 FrontendApplicationConfigProvider.set({
                     'applicationName': 'test',
