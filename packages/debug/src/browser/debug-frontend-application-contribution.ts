@@ -894,6 +894,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         }
         const area = ApplicationShell.isSideArea(debugViewLocation) ? debugViewLocation : 'debug';
         if (area === 'debug') {
+            this.console.openView({ reveal: true });
             return this.openView({ reveal });
         }
         const newSessionWidget = this.sessionWidgetFactory({ session });
