@@ -74,8 +74,8 @@ import { SymbolInformation } from 'vscode-languageserver-types';
 import { ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 import { ArgumentProcessor } from '../plugin/command-registry';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { QuickInputTitleButton } from '@theia/core/lib/browser/quick-open/quick-title-bar';
-import { QuickOpenItem, QuickOpenItemOptions } from '@theia/core/lib/browser/quick-open/quick-open-model';
+import { QuickOpenItem, QuickOpenItemOptions } from '@theia/core/lib/common/quick-open-model';
+import { QuickTitleButton } from '@theia/core/lib/common/quick-open-model';
 
 export interface PluginInitData {
     plugins: PluginMetadata[];
@@ -302,7 +302,7 @@ export interface QuickOpenExt {
     $acceptOnDidAccept(quickInputNumber: number): Promise<void>;
     $acceptDidChangeValue(quickInputNumber: number, changedValue: string): Promise<void>;
     $acceptOnDidHide(quickInputNumber: number): Promise<void>;
-    $acceptOnDidTriggerButton(quickInputNumber: number, btn: QuickInputTitleButton): Promise<void>;
+    $acceptOnDidTriggerButton(quickInputNumber: number, btn: QuickTitleButton): Promise<void>;
     $acceptDidChangeActive(quickInputNumber: number, changedItems: QuickOpenItem<QuickOpenItemOptions>[]): Promise<void>;
     $acceptDidChangeSelection(quickInputNumber: number, selection: string): Promise<void>;
 }
@@ -391,11 +391,11 @@ export interface WorkspaceFolderPickOptionsMain {
     ignoreFocusOut?: boolean;
 }
 
-export interface QuickInputTitleButtonHandle extends QuickInputTitleButton {
+export interface QuickInputTitleButtonHandle extends QuickTitleButton {
     index: number; // index of where they are in buttons array if QuickInputButton or -1 if QuickInputButtons.Back
 }
 
-export interface ITransferQuickInput {
+export interface TransferQuickInput {
     quickInputIndex: number;
     title: string | undefined;
     step: number | undefined;
@@ -405,7 +405,7 @@ export interface ITransferQuickInput {
     ignoreFocusOut: boolean;
 }
 
-export interface ITransferInputBox extends ITransferQuickInput {
+export interface TransferInputBox extends TransferQuickInput {
     value: string;
     placeholder: string | undefined;
     password: boolean;
@@ -415,7 +415,7 @@ export interface ITransferInputBox extends ITransferQuickInput {
     validateInput(value: string): MaybePromise<string | undefined>;
 }
 
-export interface ITransferQuickPick<T extends theia.QuickPickItem> extends ITransferQuickInput {
+export interface TransferQuickPick<T extends theia.QuickPickItem> extends TransferQuickInput {
     value: string;
     placeholder: string | undefined;
     buttons: ReadonlyArray<QuickInputButton>;
@@ -433,8 +433,8 @@ export interface QuickOpenMain {
     $setError(error: Error): Promise<any>;
     $input(options: theia.InputBoxOptions, validateInput: boolean): Promise<string | undefined>;
     $hide(): void;
-    $showInputBox(inputBox: ITransferInputBox, validateInput: boolean): void;
-    $showCustomQuickPick<T extends theia.QuickPickItem>(inputBox: ITransferQuickPick<T>): void;
+    $showInputBox(inputBox: TransferInputBox, validateInput: boolean): void;
+    $showCustomQuickPick<T extends theia.QuickPickItem>(inputBox: TransferQuickPick<T>): void;
     $setQuickInputChanged(changed: object): void;
     $refreshQuickInput(): void;
 }

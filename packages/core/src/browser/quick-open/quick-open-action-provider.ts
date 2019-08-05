@@ -14,28 +14,24 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Disposable } from '../../common/disposable';
 import { injectable } from 'inversify';
-import { QuickOpenItem } from './quick-open-model';
+import { QuickOpenItem } from '../../common/quick-open-model';
+import * as common from '../../common/quick-open-model';
 
-export interface QuickOpenActionProvider {
-    hasActions(item: QuickOpenItem): boolean;
-    getActions(item: QuickOpenItem): Promise<QuickOpenAction[]>;
-}
+/**
+ * @deprecated import from `@theia/core/lib/common/quick-open-model` instead
+ */
+export type QuickOpenActionProvider = common.QuickOpenActionProvider;
 
-export interface QuickOpenActionOptions {
-    id: string;
-    label?: string;
-    tooltip?: string;
-    class?: string | undefined;
-    enabled?: boolean;
-    checked?: boolean;
-    radio?: boolean;
-}
+/**
+ * @deprecated import from `@theia/core/lib/common/quick-open-model` instead
+ */
+export type QuickOpenActionOptions = common.QuickOpenActionOptions;
 
-export interface QuickOpenAction extends QuickOpenActionOptions, Disposable {
-    run(item?: QuickOpenItem): PromiseLike<void>;
-}
+/**
+ * @deprecated import from `@theia/core/lib/common/quick-open-model` instead
+ */
+export type QuickOpenAction = common.QuickOpenAction;
 
 @injectable()
 export abstract class QuickOpenBaseAction implements QuickOpenAction {

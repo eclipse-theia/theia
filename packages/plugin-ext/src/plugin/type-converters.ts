@@ -869,7 +869,7 @@ export function fromColorPresentation(colorPresentation: theia.ColorPresentation
     };
 }
 
-export function quickPickItemToPickOpenItem(items: Item[]) {
+export function quickPickItemToPickOpenItem(items: Item[]): PickOpenItem[] {
     const pickItems: PickOpenItem[] = [];
     for (let handle = 0; handle < items.length; handle++) {
         const item = items[handle];
