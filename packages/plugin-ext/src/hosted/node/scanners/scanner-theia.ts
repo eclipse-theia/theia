@@ -286,7 +286,8 @@ export class TheiaPluginScanner implements PluginScanner {
     private readView(rawView: PluginPackageView): View {
         const result: View = {
             id: rawView.id,
-            name: rawView.name
+            name: rawView.name,
+            when: rawView.when
         };
 
         return result;
