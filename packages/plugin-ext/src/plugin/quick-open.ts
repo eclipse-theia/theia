@@ -17,9 +17,9 @@ import {
     QuickOpenExt,
     PLUGIN_RPC_CONTEXT as Ext,
     QuickOpenMain,
-    ITransferInputBox,
+    TransferInputBox,
     Plugin,
-    ITransferQuickPick,
+    TransferQuickPick,
     QuickInputTitleButtonHandle
 } from '../api/plugin-api';
 import { QuickPickOptions, QuickPickItem, InputBoxOptions, InputBox, QuickPick, QuickInput } from '@theia/plugin';
@@ -110,7 +110,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         return hookCancellationToken<Item | Item[] | undefined>(token, promise);
     }
 
-    showCustomQuickPick<T extends QuickPickItem>(options: ITransferQuickPick<T>): void {
+    showCustomQuickPick<T extends QuickPickItem>(options: TransferQuickPick<T>): void {
         this.proxy.$showCustomQuickPick(options);
     }
 
@@ -137,7 +137,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
     hide(): void {
         this.proxy.$hide();
     }
-    showInputBox(options: ITransferInputBox): void {
+    showInputBox(options: TransferInputBox): void {
         this.validateInputHandler = options && options.validateInput;
         this.proxy.$showInputBox(options, typeof this.validateInputHandler === 'function');
     }

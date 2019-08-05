@@ -30,23 +30,27 @@ export class QuickPickServiceImpl implements QuickPickService {
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
 
+    private items: QuickOpenItem[] = [];
+
     show(elements: string[], options?: QuickPickOptions): Promise<string | undefined>;
     show<T>(elements: QuickPickItem<T>[], options?: QuickPickOptions): Promise<T | undefined>;
     async show(elements: (string | QuickPickItem<Object>)[], options?: QuickPickOptions): Promise<Object | undefined> {
         return new Promise<Object | undefined>(resolve => {
-            const items = this.toItems(elements, resolve);
-            if (items.length === 1) {
-                items[0].run(QuickOpenMode.OPEN);
+            this.items = this.toItems(elements, resolve);
+            if (this.items.length === 1) {
+                this.items[0].run(QuickOpenMode.OPEN);
                 return;
             }
-            if (options && this.quickTitleBar.shouldShowTitleBar(options.title, options.step)) {
-                this.quickTitleBar.attachTitleBar(this.quickOpenService.widgetNode, options.title, options.step, options.totalSteps, options.buttons);
-            }
             const prefix = options && options.value ? options.value : '';
+            let savedValue: string;
             this.quickOpenService.open({
-                onType: (_, acceptor) => {
-                    acceptor(items);
-                    this.onDidChangeActiveItemsEmitter.fire(items);
+                onType: (value, acceptor) => {
+                    acceptor(this.items);
+                    if (savedValue !== value) {
+                        this.onDidChangeValueEmitter.fire(value);
+                        this.onDidChangeActiveItemsEmitter.fire(this.items);
+                        savedValue = value;
+                    }
                 }
             }, Object.assign({
                 onClose: () => {
@@ -57,6 +61,9 @@ export class QuickPickServiceImpl implements QuickPickService {
                 fuzzyMatchDescription: true,
                 prefix
             }, options));
+            if (options && this.quickTitleBar.shouldShowTitleBar(options.title, options.step)) {
+                this.quickTitleBar.attachTitleBar(this.quickOpenService.widgetNode, options.title, options.step, options.totalSteps, options.buttons);
+            }
         });
     }
     protected toItems(elements: (string | QuickPickItem<Object>)[], resolve: (element: Object) => void): QuickOpenItem[] {
@@ -105,4 +112,11 @@ export class QuickPickServiceImpl implements QuickPickService {
     private readonly onDidChangeActiveItemsEmitter: Emitter<QuickOpenItem<QuickOpenItemOptions>[]> = new Emitter<QuickOpenItem<QuickOpenItemOptions>[]>();
     readonly onDidChangeActiveItems: Event<QuickOpenItem<QuickOpenItemOptions>[]> = this.onDidChangeActiveItemsEmitter.event;
 
+    private readonly onDidChangeValueEmitter: Emitter<string> = new Emitter();
+    readonly onDidChangeValue: Event<string> = this.onDidChangeValueEmitter.event;
+
+    setItems(items: QuickOpenItem[]): void {
+        this.items = items;
+        this.quickOpenService.refresh();
+    }
 }

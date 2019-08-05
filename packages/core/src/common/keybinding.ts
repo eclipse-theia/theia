@@ -14,29 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as common from '../../common/quick-open-model';
-
-/**
- * @deprecated import from `@theia/core/lib/common/quick-open-model` instead
- */
-export type Highlight = common.Highlight;
-
-/**
- * @deprecated import from `@theia/core/lib/common/quick-open-model` instead
- */
-export type QuickOpenItemOptions = common.QuickOpenItemOptions;
-
-/**
- * @deprecated import from `@theia/core/lib/common/quick-open-model` instead
- */
-export type QuickOpenGroupItemOptions = common.QuickOpenGroupItemOptions;
-
-/**
- * @deprecated import from `@theia/core/lib/common/quick-open-model` instead
- */
-export { QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from '../../common/quick-open-model';
-
-/**
- * @deprecated import from `@theia/core/lib/common/quick-open-model` instead
- */
-export type QuickOpenModel = common.QuickOpenModel;
+export interface Keybinding {
+    /** Command identifier, this needs to be a unique string.  */
+    command: string;
+    /** Keybinding string as defined in packages/keymaps/README.md.  */
+    keybinding: string;
+    /**
+     * The optional keybinding context where this binding belongs to.
+     * If not specified, then this keybinding context belongs to the NOOP
+     * keybinding context.
+     */
+    context?: string;
+    /**
+     * https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
+     */
+    when?: string;
+}
