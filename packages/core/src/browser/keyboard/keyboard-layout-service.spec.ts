@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Container, injectable } from 'inversify';
-import { Emitter } from '../../common/event';
+import { Emitter, Event } from '../../common/event';
 import { KeyCode } from './keys';
 import { KeyboardLayoutService } from './keyboard-layout-service';
 import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
@@ -23,7 +23,7 @@ import * as os from '../../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 
-describe('keyboard layout service', function () {
+describe('keyboard layout service', function (): void {
 
     let stubOSX: sinon.SinonStub;
     let stubWindows: sinon.SinonStub;
@@ -47,7 +47,7 @@ describe('keyboard layout service', function () {
         @injectable()
         class MockLayoutProvider implements KeyboardLayoutProvider, KeyboardLayoutChangeNotifier {
             emitter = new Emitter<NativeKeyboardLayout>();
-            get onDidChangeNativeLayout() {
+            get onDidChangeNativeLayout(): Event<NativeKeyboardLayout> {
                 return this.emitter.event;
             }
             getNativeLayout(): Promise<NativeKeyboardLayout> {

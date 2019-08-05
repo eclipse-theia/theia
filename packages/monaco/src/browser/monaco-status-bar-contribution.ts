@@ -60,7 +60,7 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
         }
     }
 
-    protected setConfigTabSizeWidget() {
+    protected setConfigTabSizeWidget(): void {
         const editor = this.editorManager.currentEditor;
         const editorModel = this.getModel(editor);
         if (editor && editorModel) {
@@ -75,11 +75,11 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
             });
         }
     }
-    protected removeConfigTabSizeWidget() {
+    protected removeConfigTabSizeWidget(): void {
         this.statusBar.removeElement('editor-status-tabbing-config');
     }
 
-    protected setLineEndingWidget() {
+    protected setLineEndingWidget(): void {
         const editor = this.editorManager.currentEditor;
         const editorModel = this.getModel(editor);
         if (editor && editorModel) {
@@ -93,7 +93,7 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
             });
         }
     }
-    protected removeLineEndingWidget() {
+    protected removeLineEndingWidget(): void {
         this.statusBar.removeElement('editor-status-eol');
     }
 

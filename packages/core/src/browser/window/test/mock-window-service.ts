@@ -18,6 +18,6 @@ import { WindowService } from '../window-service';
 
 @injectable()
 export class MockWindowService implements WindowService {
-    openNewWindow() { return undefined; }
-    canUnload() { return true; }
+    openNewWindow(): undefined { return undefined; }
+    canUnload(): boolean { return true; }
 }

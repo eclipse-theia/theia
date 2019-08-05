@@ -33,11 +33,11 @@ beforeEach(() => {
     terminalProcessFactory = createProcessTestContainer().get<TerminalProcessFactory>(TerminalProcessFactory);
 });
 
-describe('TerminalProcess', function () {
+describe('TerminalProcess', function (): void {
 
     this.timeout(20_000);
 
-    it('test error on non existent path', async function () {
+    it('test error on non existent path', async function (): Promise<void> {
         const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: '/non-existent' });
             proc.onStart(reject);
@@ -48,7 +48,7 @@ describe('TerminalProcess', function () {
         expect(error.code).eq('ENOENT');
     });
 
-    it('test error on trying to execute a directory', async function () {
+    it('test error on trying to execute a directory', async function (): Promise<void> {
         const error = await new Promise<ProcessErrorEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: __dirname });
             proc.onStart(reject);
@@ -66,7 +66,7 @@ describe('TerminalProcess', function () {
         }
     });
 
-    it('test exit', async function () {
+    it('test exit', async function (): Promise<void> {
         const args = ['--version'];
         const exit = await new Promise<IProcessExitEvent>((resolve, reject) => {
             const proc = terminalProcessFactory({ command: process.execPath, args });
@@ -77,7 +77,7 @@ describe('TerminalProcess', function () {
         expect(exit.code).eq(0);
     });
 
-    it('test pipe stream', async function () {
+    it('test pipe stream', async function (): Promise<void> {
         const v = await new Promise<string>((resolve, reject) => {
             const args = ['--version'];
             const terminalProcess = terminalProcessFactory({ command: process.execPath, args });
@@ -113,7 +113,7 @@ describe('TerminalProcess', function () {
  */
 if (process.platform !== 'win32' || process.env.THEIA_PROCESS_TEST_OVERRIDE) {
 
-    describe('TerminalProcess { shell: true }', function () {
+    describe('TerminalProcess { shell: true }', function (): void {
 
         this.timeout(20_000);
 
@@ -136,37 +136,37 @@ if (process.platform !== 'win32' || process.env.THEIA_PROCESS_TEST_OVERRIDE) {
             });
         }
 
-        it('should execute the command as a whole if not arguments are specified', async function () {
+        it('should execute the command as a whole if not arguments are specified', async function (): Promise<void> {
             const proc = terminalProcessFactory({ command: 'echo a b c', options: { shell: true } });
             const exit = await checkOutput(proc, /^a b c/);
             expect(exit.code).eq(0);
         });
 
-        it('should fail if user defines a full command line and arguments', async function () {
+        it('should fail if user defines a full command line and arguments', async function (): Promise<void> {
             const proc = terminalProcessFactory({ command: 'echo a b c', args: [], options: { shell: true } });
             const exit = await checkOutput(proc);
             expect(exit.code).not.eq(0);
         });
 
-        it('should be able to exec using simple arguments', async function () {
+        it('should be able to exec using simple arguments', async function (): Promise<void> {
             const proc = terminalProcessFactory({ command: 'echo', args: ['a', 'b', 'c'], options: { shell: true } });
             const exit = await checkOutput(proc, /^a b c/);
             expect(exit.code).eq(0);
         });
 
-        it('should be able to run using arguments containing whitespace', async function () {
+        it('should be able to run using arguments containing whitespace', async function (): Promise<void> {
             const proc = terminalProcessFactory({ command: 'echo', args: ['a', 'b', '   c'], options: { shell: true } });
             const exit = await checkOutput(proc, /^a b    c/);
             expect(exit.code).eq(0);
         });
 
-        it('will fail if user specify problematic arguments', async function () {
+        it('will fail if user specify problematic arguments', async function (): Promise<void> {
             const proc = terminalProcessFactory({ command: 'echo', args: ['a', 'b', 'c"'], options: { shell: true } });
             const exit = await checkOutput(proc);
             expect(exit.code).not.eq(0);
         });
 
-        it('should be able to run using arguments specifying which quoting method to use', async function () {
+        it('should be able to run using arguments specifying which quoting method to use', async function (): Promise<void> {
             const proc = terminalProcessFactory({ command: 'echo', args: ['a', 'b', { value: 'c"', quoting: 'escaped' }], options: { shell: true } });
             const exit = await checkOutput(proc, /^a b c"/);
             expect(exit.code).eq(0);

@@ -119,7 +119,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     }
 
     @postConstruct()
-    protected async init() {
+    protected async init(): Promise<void> {
         await this.fileNavigatorPreferences.ready;
         this.shell.currentChanged.connect(() => this.onCurrentWidgetChangedHandler());
 

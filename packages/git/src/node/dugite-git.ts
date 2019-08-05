@@ -238,7 +238,7 @@ export namespace GitBlameParser {
         summary?: string,
     }
 
-    export function isUncommittedSha(sha: string | undefined) {
+    export function isUncommittedSha(sha: string | undefined): boolean {
         return (sha || '').startsWith('0000000');
     }
 
@@ -808,7 +808,7 @@ export class DugiteGit implements Git {
         return this.mapBranch(branch);
     }
 
-    private getResetMode(mode: 'hard' | 'soft' | 'mixed') {
+    private getResetMode(mode: 'hard' | 'soft' | 'mixed'): GitResetMode {
         switch (mode) {
             case 'hard': return GitResetMode.Hard;
             case 'soft': return GitResetMode.Soft;

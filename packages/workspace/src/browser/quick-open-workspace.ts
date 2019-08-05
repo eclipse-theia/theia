@@ -90,7 +90,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
         acceptor(this.items);
     }
 
-    select() {
+    select(): void {
         this.items = [];
         this.opened = this.workspaceService.opened;
         this.workspaceService.recentWorkspaces().then(workspaceRoots => {

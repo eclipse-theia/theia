@@ -51,7 +51,7 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
     protected readonly corePreferences: CorePreferences;
 
     protected readonly contexts = new Map<string, string[]>();
-    pushCommandContext(commandId: string, when: string) {
+    pushCommandContext(commandId: string, when: string): void {
         const contexts = this.contexts.get(commandId) || [];
         contexts.push(when);
         this.contexts.set(commandId, contexts);
@@ -220,7 +220,7 @@ export class CommandQuickOpenItem extends QuickOpenGroupItem {
         return this.hidden;
     }
 
-    getIconClass() {
+    getIconClass(): string | undefined {
         const toggleHandler = this.commands.getToggledHandler(this.command.id);
         if (toggleHandler && toggleHandler.isToggled && toggleHandler.isToggled()) {
             return 'fa fa-check';

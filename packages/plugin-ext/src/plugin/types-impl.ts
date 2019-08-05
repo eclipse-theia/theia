@@ -99,7 +99,7 @@ export enum TextEditorSelectionChangeKind {
 }
 
 export namespace TextEditorSelectionChangeKind {
-    export function fromValue(s: string | undefined) {
+    export function fromValue(s: string | undefined): TextEditorSelectionChangeKind | undefined {
         switch (s) {
             case 'keyboard': return TextEditorSelectionChangeKind.Keyboard;
             case 'mouse': return TextEditorSelectionChangeKind.Mouse;
@@ -1515,7 +1515,7 @@ export class TaskGroup {
     public static Rebuild: TaskGroup = new TaskGroup('rebuild', 'Rebuild');
     public static Test: TaskGroup = new TaskGroup('test', 'Test');
 
-    public static from(value: string) {
+    public static from(value: string): TaskGroup | undefined {
         switch (value) {
             case 'clean':
                 return TaskGroup.Clean;

@@ -76,7 +76,7 @@ export abstract class AbstractLineMatcher {
     /**
      * Number of problem patterns that the line matcher uses.
      */
-    get patternCount() {
+    get patternCount(): number {
         return this.patterns.length;
     }
 

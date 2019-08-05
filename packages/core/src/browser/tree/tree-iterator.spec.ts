@@ -155,7 +155,7 @@ describe('iterators', () => {
         expect(array).to.be.empty;
     });
 
-    it('cycle - without start', function () {
+    it('cycle - without start', function (): void {
         this.timeout(1000);
         const array = [1, 2, 3, 4];
         const itr = Iterators.cycle(array);
@@ -173,7 +173,7 @@ describe('iterators', () => {
         }
     });
 
-    it('cycle - with start', function () {
+    it('cycle - with start', function (): void {
         this.timeout(1000);
         const array = [1, 2, 3, 4];
         const itr = Iterators.cycle(array, 2);

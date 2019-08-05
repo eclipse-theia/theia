@@ -59,7 +59,7 @@ import { RecursivePartial } from '@theia/core/lib/common/types';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common/task-protocol';
 
 namespace nls {
-    export function localize(key: string, _default: string) {
+    export function localize(key: string, _default: string): string {
         return _default;
     }
 }

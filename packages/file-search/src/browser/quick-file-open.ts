@@ -213,7 +213,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         }
     }
 
-    protected getRunFunction(uri: URI) {
+    protected getRunFunction(uri: URI): (mode: QuickOpenMode) => boolean {
         return (mode: QuickOpenMode) => {
             if (mode !== QuickOpenMode.OPEN) {
                 return false;
@@ -241,7 +241,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
          * @param str the raw string value.
          * @returns the normalized string value.
          */
-        function normalize(str: string) {
+        function normalize(str: string): string {
             return str.trim().toLowerCase();
         }
 
@@ -316,7 +316,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
             .catch(error => this.messageService.error(error));
     }
 
-    private async toItem(uriOrString: URI | string, group?: QuickOpenGroupItemOptions) {
+    private async toItem(uriOrString: URI | string, group?: QuickOpenGroupItemOptions): Promise<QuickOpenItem<QuickOpenItemOptions>> {
         const uri = uriOrString instanceof URI ? uriOrString : new URI(uriOrString);
         let description = this.labelProvider.getLongName(uri.parent);
         if (this.workspaceService.isMultiRootWorkspaceOpened) {

@@ -59,7 +59,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         this.toDispose.push(this.gitWatcher.onGitEvent(async gitEvent => {
             if (this.options) {
                 this.setContent(this.options);
@@ -67,15 +67,15 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         }));
     }
 
-    protected get toRevision() {
+    protected get toRevision(): string | undefined {
         return this.options.range && this.options.range.toRevision;
     }
 
-    protected get fromRevision() {
+    protected get fromRevision(): string | number | undefined {
         return this.options.range && this.options.range.fromRevision;
     }
 
-    async setContent(options: Git.Options.Diff) {
+    async setContent(options: Git.Options.Diff): Promise<void> {
         this.options = options;
         const repository = this.repositoryProvider.findRepositoryOrSelected(options);
         if (repository) {
@@ -191,7 +191,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
             this.renderNavigationRight()
         );
     }
-    protected doRenderToolbar(...children: React.ReactNode[]) {
+    protected doRenderToolbar(...children: React.ReactNode[]): React.ReactNode {
         return this.renderHeaderRow({
             classNames: ['space-between'],
             name: 'Files changed',
@@ -200,7 +200,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
 
     protected readonly showPreviousChange = () => this.doShowPreviousChange();
-    protected doShowPreviousChange() {
+    protected doShowPreviousChange(): void {
         this.navigateLeft();
     }
 
@@ -209,7 +209,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
 
     protected readonly showNextChange = () => this.doShowNextChange();
-    protected doShowNextChange() {
+    protected doShowNextChange(): void {
         this.navigateRight();
     }
 
@@ -234,7 +234,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
 
     protected addGitDiffListKeyListeners = (id: string) => this.doAddGitDiffListKeyListeners(id);
-    protected doAddGitDiffListKeyListeners(id: string) {
+    protected doAddGitDiffListKeyListeners(id: string): void {
         const container = document.getElementById(id);
         if (container) {
             this.addGitListNavigationKeyListeners(container);
@@ -313,7 +313,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         }
     }
 
-    protected selectNextNode() {
+    protected selectNextNode(): void {
         const idx = this.indexOfSelected;
         if (idx >= 0 && idx < this.gitNodes.length - 1) {
             this.selectNode(this.gitNodes[idx + 1]);
@@ -322,7 +322,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         }
     }
 
-    protected selectPreviousNode() {
+    protected selectPreviousNode(): void {
         const idx = this.indexOfSelected;
         if (idx > 0) {
             this.selectNode(this.gitNodes[idx - 1]);
@@ -404,16 +404,16 @@ export namespace GitDiffListContainer {
 export class GitDiffListContainer extends React.Component<GitDiffListContainer.Props> {
     protected listContainer?: HTMLDivElement;
 
-    render() {
+    render(): JSX.Element {
         const { id, files } = this.props;
         return <div ref={ref => this.listContainer = ref || undefined} className='listContainer filesChanged' id={id} tabIndex={0}>{...files}</div>;
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         this.props.addDiffListKeyListeners(this.props.id);
     }
 
-    focus() {
+    focus(): void {
         if (this.listContainer) {
             this.listContainer.focus();
         }

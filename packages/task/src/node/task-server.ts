@@ -51,7 +51,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
     /** task context - {task id - problem collector} */
     private problemCollectors: Map<string, Map<number, ProblemCollector>> = new Map();
 
-    dispose() {
+    dispose(): void {
         for (const toDispose of this.toDispose.values()) {
             toDispose.dispose();
         }
@@ -126,7 +126,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
         return this.runnerRegistry.getRunnerTypes();
     }
 
-    protected fireTaskExitedEvent(event: TaskExitedEvent, task?: Task) {
+    protected fireTaskExitedEvent(event: TaskExitedEvent, task?: Task): void {
         this.logger.debug(log => log('task has exited:', event));
 
         this.clients.forEach(client => {
@@ -140,7 +140,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
         }
     }
 
-    protected fireTaskCreatedEvent(event: TaskInfo, task?: Task) {
+    protected fireTaskCreatedEvent(event: TaskInfo, task?: Task): void {
         this.logger.debug(log => log('task created:', event));
 
         this.clients.forEach(client => {
@@ -154,7 +154,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
         }
     }
 
-    protected fireTaskOutputProcessedEvent(event: TaskOutputProcessedEvent) {
+    protected fireTaskOutputProcessedEvent(event: TaskOutputProcessedEvent): void {
         this.clients.forEach(client => client.onDidProcessTaskOutput(event));
     }
 
@@ -171,13 +171,13 @@ export class TaskServerImpl implements TaskServer, Disposable {
     }
 
     /** Adds a client to this server */
-    setClient(client: TaskClient) {
+    setClient(client: TaskClient): void {
         this.logger.debug('a client has connected - adding it to the list:');
         this.clients.push(client);
     }
 
     /** Removes a client, from this server */
-    disconnectClient(client: TaskClient) {
+    disconnectClient(client: TaskClient): void {
         this.logger.debug('a client has disconnected - removed from list:');
         const idx = this.clients.indexOf(client);
         if (idx > -1) {

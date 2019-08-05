@@ -42,13 +42,13 @@ export class PreferenceChangeImpl implements PreferenceChange {
         private change: PreferenceProviderDataChange
     ) { }
 
-    get preferenceName() {
+    get preferenceName(): string {
         return this.change.preferenceName;
     }
-    get newValue() {
+    get newValue(): string {
         return this.change.newValue;
     }
-    get oldValue() {
+    get oldValue(): string {
         return this.change.oldValue;
     }
     get scope(): PreferenceScope {

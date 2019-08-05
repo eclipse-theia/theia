@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { DisposableCollection, Event, Emitter, SelectionProvider, ILogger } from '../../common';
+import { DisposableCollection, Event, Emitter, SelectionProvider, ILogger, WaitUntilEvent } from '../../common';
 import { Tree, TreeNode, CompositeTreeNode } from './tree';
 import { TreeSelectionService, SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeExpansionService, ExpandableTreeNode } from './tree-expansion';
@@ -169,11 +169,11 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         this.toDispose.push(this.treeSearch);
     }
 
-    dispose() {
+    dispose(): void {
         this.toDispose.dispose();
     }
 
-    get root() {
+    get root(): TreeNode | undefined {
         return this.tree.root;
     }
 
@@ -193,15 +193,15 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         this.onChangedEmitter.fire(undefined);
     }
 
-    get onNodeRefreshed() {
+    get onNodeRefreshed(): Event<Readonly<CompositeTreeNode> & WaitUntilEvent> {
         return this.tree.onNodeRefreshed;
     }
 
-    getNode(id: string | undefined) {
+    getNode(id: string | undefined): TreeNode | undefined {
         return this.tree.getNode(id);
     }
 
-    validateNode(node: TreeNode | undefined) {
+    validateNode(node: TreeNode | undefined): TreeNode | undefined {
         return this.tree.validateNode(node);
     }
 
@@ -213,15 +213,17 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         }
     }
 
+    // tslint:disable-next-line:typedef
     get selectedNodes() {
         return this.selectionService.selectedNodes;
     }
 
+    // tslint:disable-next-line:typedef
     get onSelectionChanged() {
         return this.selectionService.onSelectionChanged;
     }
 
-    get onExpansionChanged() {
+    get onExpansionChanged(): Event<Readonly<ExpandableTreeNode>> {
         return this.expansionService.onExpansionChanged;
     }
 
@@ -413,7 +415,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         };
     }
 
-    restoreState(state: TreeModelImpl.State) {
+    restoreState(state: TreeModelImpl.State): void {
         if (state.selection) {
             this.selectionService.restoreState(state.selection);
         }

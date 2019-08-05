@@ -54,7 +54,7 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
         const panel = createWebviewPanel(viewType, title, showOptions, options);
         // redefine property
         Object.defineProperty(panel.webview, 'html', {
-            set: function (html: string) {
+            set: function (html: string): void {
                 const newHtml = html.replace(new RegExp('vscode-resource:/', 'g'), 'webview/');
                 this.checkIsDisposed();
                 if (this._html !== newHtml) {
@@ -109,7 +109,7 @@ function overrideInternalLoad(): void {
 
     // if we try to resolve theia module, return the filename entry to use cache.
     // tslint:disable-next-line:no-any
-    module._load = function (request: string, parent: any, isMain: {}) {
+    module._load = function (request: string, parent: any, isMain: {}): any {
         if (request !== vscodeModuleName) {
             return internalLoad.apply(this, arguments);
         }

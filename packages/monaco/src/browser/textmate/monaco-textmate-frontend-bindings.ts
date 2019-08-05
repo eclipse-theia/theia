@@ -29,7 +29,7 @@ export function fetchOnigasm(): Promise<ArrayBuffer> {
         const onigasmPath = require('onigasm/lib/onigasm.wasm'); // webpack doing its magic here
         const request = new XMLHttpRequest();
 
-        request.onreadystatechange = function () {
+        request.onreadystatechange = function (): void {
             if (this.readyState === XMLHttpRequest.DONE) {
                 if (this.status === 200) {
                     resolve(this.response);

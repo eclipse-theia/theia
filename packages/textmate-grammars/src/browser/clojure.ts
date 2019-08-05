@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
 
 @injectable()
@@ -23,7 +23,7 @@ export class ClojureContribution implements LanguageGrammarDefinitionContributio
     readonly id = 'clojure';
     readonly scopeName = 'source.clojure';
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: this.id,
             extensions: ['.clj', '.cljs', '.cljc', '.edn'],
@@ -56,7 +56,7 @@ export class ClojureContribution implements LanguageGrammarDefinitionContributio
         });
         const grammar = require('../../data/clojure.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.scopeName, {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: grammar

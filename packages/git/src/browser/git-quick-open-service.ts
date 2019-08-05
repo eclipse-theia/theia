@@ -355,7 +355,7 @@ export class GitQuickOpenService {
         this.quickOpenService.open(quickOpenModel, this.getOptions('Stash message', false));
     }
 
-    protected async doStashAction(action: 'pop' | 'apply' | 'drop', text: string, getMessage?: () => Promise<string>) {
+    protected async doStashAction(action: 'pop' | 'apply' | 'drop', text: string, getMessage?: () => Promise<string>): Promise<void> {
         const repo = this.repositoryProvider.selectedRepository;
         if (repo) {
             const list = await this.git.stash(repo, { action: 'list' });

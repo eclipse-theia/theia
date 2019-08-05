@@ -130,7 +130,7 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
     public ready: Promise<void>;
 
     @postConstruct()
-    async init() {
+    async init(): Promise<void> {
         // Try to read the active build config from local storage.
         this.ready = new Promise(async resolve => {
             await this.cppPreferences.ready;

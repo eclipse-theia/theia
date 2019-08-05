@@ -17,7 +17,7 @@ import { Container } from 'inversify';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import processBackendModule from '../process-backend-module';
 
-export function createProcessTestContainer() {
+export function createProcessTestContainer(): Container {
     const testContainer = new Container();
 
     bindLogger(testContainer.bind.bind(testContainer));

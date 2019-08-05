@@ -308,7 +308,7 @@ export class MonacoWorkspace implements lang.Workspace {
         return editorEdits;
     }
 
-    protected checkVersions(editorEdits: EditsByEditor[]) {
+    protected checkVersions(editorEdits: EditsByEditor[]): void {
         editorEdits.forEach(editorEdit => {
             if (!editorEdit.editor) {
                 throw Error(`Could not open editor for ${editorEdit.uri}`);
@@ -330,7 +330,7 @@ export class MonacoWorkspace implements lang.Workspace {
         return `Made ${totalEdits} text edits in one file`;
     }
 
-    protected groupEdits(workspaceEdit: monaco.languages.WorkspaceEdit) {
+    protected groupEdits(workspaceEdit: monaco.languages.WorkspaceEdit): EditsByEditor[] {
         const map = new Map<string, EditsByEditor>();
         const result: EditsByEditor[] = [];
         for (const edit of workspaceEdit.edits) {

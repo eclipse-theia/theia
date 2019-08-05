@@ -41,11 +41,11 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         @inject(PrefixQuickOpenService) protected quickOpenService: PrefixQuickOpenService,
         @inject(SelectionService) protected selectionService: SelectionService) { }
 
-    isEnabled() {
+    isEnabled(): boolean {
         return this.languages.workspaceSymbolProviders !== undefined;
     }
 
-    execute() {
+    execute(): void {
         this.quickOpenService.open(this.prefix);
     }
 

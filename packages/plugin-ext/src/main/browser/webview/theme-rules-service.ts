@@ -103,7 +103,7 @@ export class ThemeRulesService {
         return true;
     }
 
-    setIconPath(webviewId: string, iconPath: IconPath | string | undefined) {
+    setIconPath(webviewId: string, iconPath: IconPath | string | undefined): void {
         if (!iconPath) {
             this.icons.delete(webviewId);
         } else {
@@ -116,7 +116,7 @@ export class ThemeRulesService {
         this.updateIconStyleElement();
     }
 
-    private updateIconStyleElement() {
+    private updateIconStyleElement(): void {
         if (!this.styleElement) {
             return;
         }

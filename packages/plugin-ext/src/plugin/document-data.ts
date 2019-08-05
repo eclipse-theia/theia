@@ -79,23 +79,23 @@ export class DocumentDataExt {
         if (!this._document) {
             const that = this;
             this._document = {
-                get uri() { return that.uri; },
-                get fileName() { return that.uri.fsPath; },
-                get isUntitled() { return that.uri.scheme === 'untitled'; },
-                get languageId() { return that.languageId; },
-                get version() { return that.versionId; },
-                get isClosed() { return that.disposed; },
-                get isDirty() { return that.dirty; },
-                save() { return that.save(); },
-                getText(range?) { return range ? that.getTextInRange(range) : that.getText(); },
-                get eol() { return that.eol === '\n' ? EndOfLine.LF : EndOfLine.CRLF; },
-                get lineCount() { return that.lines.length; },
-                lineAt(lineOrPos: number | theia.Position) { return that.lineAt(lineOrPos); },
-                offsetAt(pos) { return that.offsetAt(pos); },
-                positionAt(offset) { return that.positionAt(offset); },
-                validateRange(ran) { return that.validateRange(ran); },
-                validatePosition(pos) { return that.validatePosition(pos); },
-                getWordRangeAtPosition(pos, regexp?) { return that.getWordRangeAtPosition(pos, regexp); }
+                get uri(): theia.Uri { return that.uri; },
+                get fileName(): string { return that.uri.fsPath; },
+                get isUntitled(): boolean { return that.uri.scheme === 'untitled'; },
+                get languageId(): string { return that.languageId; },
+                get version(): number { return that.versionId; },
+                get isClosed(): boolean { return that.disposed; },
+                get isDirty(): boolean { return that.dirty; },
+                save(): Promise<boolean> { return that.save(); },
+                getText(range?): string { return range ? that.getTextInRange(range) : that.getText(); },
+                get eol(): theia.EndOfLine { return that.eol === '\n' ? EndOfLine.LF : EndOfLine.CRLF; },
+                get lineCount(): number { return that.lines.length; },
+                lineAt(lineOrPos: number | theia.Position): theia.TextLine { return that.lineAt(lineOrPos); },
+                offsetAt(pos): number { return that.offsetAt(pos); },
+                positionAt(offset): theia.Position { return that.positionAt(offset); },
+                validateRange(ran): theia.Range { return that.validateRange(ran); },
+                validatePosition(pos): theia.Position { return that.validatePosition(pos); },
+                getWordRangeAtPosition(pos, regexp?): theia.Range | undefined { return that.getWordRangeAtPosition(pos, regexp); }
             };
         }
         return Object.freeze(this._document);

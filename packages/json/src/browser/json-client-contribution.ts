@@ -79,7 +79,7 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         client.sendNotification('json/schemaAssociations', registry);
     }
 
-    protected get globPatterns() {
+    protected get globPatterns(): string[] {
         return [
             '**/*.json',
             '**/*.jsonc',

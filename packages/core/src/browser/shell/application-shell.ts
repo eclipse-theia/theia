@@ -270,7 +270,7 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    protected onDragEnter({ mimeData }: IDragEvent) {
+    protected onDragEnter({ mimeData }: IDragEvent): void {
         if (!this.dragState) {
             if (mimeData && mimeData.hasData('application/vnd.phosphor.widget-factory')) {
                 // The drag contains a widget, so we'll track it and expand side panels as needed
@@ -284,7 +284,7 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    protected onDragOver(event: IDragEvent) {
+    protected onDragOver(event: IDragEvent): void {
         const state = this.dragState;
         if (state) {
             state.lastDragOver = event;
@@ -351,7 +351,7 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    protected onDrop(event: IDragEvent) {
+    protected onDrop(event: IDragEvent): void {
         const state = this.dragState;
         if (state) {
             if (state.leaveTimeout) {
@@ -373,7 +373,7 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    protected onDragLeave(event: IDragEvent) {
+    protected onDragLeave(event: IDragEvent): void {
         const state = this.dragState;
         if (state) {
             state.lastDragOver = undefined;
@@ -598,7 +598,7 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    protected getValidatedLayoutData(layoutData: ApplicationShell.LayoutData) {
+    protected getValidatedLayoutData(layoutData: ApplicationShell.LayoutData): ApplicationShell.LayoutData {
         if (layoutData.version !== LAYOUT_DATA_VERSION) {
             throw new Error(`Saved workbench layout (version ${layoutData.version || 'unknown'}) is incompatible with the current (${LAYOUT_DATA_VERSION})`);
         }
@@ -853,7 +853,7 @@ export class ApplicationShell extends Widget {
     /**
      * Set the z-index of the given element and its ancestors to the value `z`.
      */
-    private setZIndex(element: HTMLElement, z: string | null) {
+    private setZIndex(element: HTMLElement, z: string | null): void {
         element.style.zIndex = z;
         const parent = element.parentElement;
         if (parent && parent !== this.node) {
@@ -1163,7 +1163,7 @@ export class ApplicationShell extends Widget {
      * Refresh the toggle button for the bottom panel. This implementation creates a status bar entry
      * and refers to the command `core.toggle.bottom.panel`.
      */
-    protected refreshBottomPanelToggleButton() {
+    protected refreshBottomPanelToggleButton(): void {
         if (this.bottomPanel.isEmpty) {
             this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
         } else {

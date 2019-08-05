@@ -20,7 +20,7 @@ import { isWindows } from '../../common/os';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator
 } from '../../common/keyboard/keyboard-layout-provider';
-import { Emitter } from '../../common/event';
+import { Emitter, Event } from '../../common/event';
 import { KeyCode, Key } from './keys';
 
 export interface KeyboardLayout {
@@ -59,7 +59,7 @@ export class KeyboardLayoutService {
 
     protected keyboardLayoutChanged = new Emitter<KeyboardLayout>();
 
-    get onKeyboardLayoutChanged() {
+    get onKeyboardLayoutChanged(): Event<KeyboardLayout> {
         return this.keyboardLayoutChanged.event;
     }
 
@@ -196,7 +196,7 @@ export class KeyboardLayoutService {
         }
     }
 
-    private addWindowsKeyMapping(key2KeyCode: KeyCode[], mappedKey: Key, vkey: string, value: string) {
+    private addWindowsKeyMapping(key2KeyCode: KeyCode[], mappedKey: Key, vkey: string, value: string): void {
         const key = VKEY_TO_KEY[vkey];
         if (key) {
             const index = this.getCharacterIndex(key);

@@ -63,7 +63,7 @@ export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOpt
     }
     return {
         getInitialState: () => new TokenizerState(INITIAL),
-        tokenizeEncoded(line: string, state: TokenizerState) {
+        tokenizeEncoded(line: string, state: TokenizerState): monaco.languages.IEncodedLineTokens {
             let processedLine = line;
             if (options.lineLimit !== undefined && line.length > options.lineLimit) {
                 // Line is too long to be tokenized

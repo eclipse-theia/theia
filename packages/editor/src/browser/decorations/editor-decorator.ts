@@ -23,7 +23,7 @@ export abstract class EditorDecorator {
 
     protected readonly appliedDecorations = new Map<string, string[]>();
 
-    protected setDecorations(editor: TextEditor, newDecorations: EditorDecoration[]) {
+    protected setDecorations(editor: TextEditor, newDecorations: EditorDecoration[]): void {
         const uri = editor.uri.toString();
         const oldDecorations = this.appliedDecorations.get(uri) || [];
         if (oldDecorations.length === 0 && newDecorations.length === 0) {

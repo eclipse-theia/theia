@@ -113,7 +113,7 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements Comman
         return false;
     }
 
-    protected isMulti() {
+    protected isMulti(): boolean | undefined {
         return this.options && !!this.options.multi;
     }
 

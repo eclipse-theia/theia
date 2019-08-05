@@ -28,11 +28,11 @@ let logLevelCliContribution: MockLogLevelCliContribution;
 class MockLogLevelCliContribution extends LogLevelCliContribution {
 
     @postConstruct()
-    init() {
+    init(): void {
         this._logLevels['test-logger'] = LogLevel.DEBUG;
     }
 
-    changeLogLevel(newLevel: LogLevel) {
+    changeLogLevel(newLevel: LogLevel): void {
         this._logLevels['test-logger'] = newLevel;
     }
 }
@@ -48,8 +48,8 @@ beforeEach(() => {
     server = container.get<ConsoleLoggerServer>(ConsoleLoggerServer);
 });
 
-describe('ConsoleLoggerServer', function () {
-    it('should respect log level config', async function () {
+describe('ConsoleLoggerServer', function (): void {
+    it('should respect log level config', async function (): Promise<void> {
         expect(await server.getLogLevel('test-logger')).eq(LogLevel.DEBUG);
         await server.child('test-logger');
         expect(await server.getLogLevel('test-logger')).eq(LogLevel.DEBUG);

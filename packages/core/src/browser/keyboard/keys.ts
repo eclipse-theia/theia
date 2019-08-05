@@ -19,7 +19,7 @@ import { isOSX } from '../../common/os';
 export type KeySequence = KeyCode[];
 export namespace KeySequence {
 
-    export function equals(a: KeySequence, b: KeySequence) {
+    export function equals(a: KeySequence, b: KeySequence): boolean {
         if (a.length !== b.length) {
             return false;
         }
@@ -137,7 +137,7 @@ export class KeyCode {
     /**
      * Return true if this KeyCode only contains modifiers.
      */
-    public isModifierOnly() {
+    public isModifierOnly(): boolean {
         return this.key === undefined;
     }
 
@@ -222,7 +222,7 @@ export class KeyCode {
     private static keybindings: { [key: string]: KeyCode } = {};
 
     /* Reset the key hashmap, this is for testing purposes.  */
-    public static resetKeyBindings() {
+    public static resetKeyBindings(): void {
         KeyCode.keybindings = {};
     }
 
@@ -295,7 +295,7 @@ export namespace KeyCode {
     /*
      * Return true if the string is a modifier M1 to M4.
      */
-    export function isModifierString(key: string) {
+    export function isModifierString(key: string): boolean {
         return key === KeyModifier.CtrlCmd
             || key === KeyModifier.Shift
             || key === KeyModifier.Alt

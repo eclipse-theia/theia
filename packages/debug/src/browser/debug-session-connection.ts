@@ -201,7 +201,7 @@ export class DebugSessionConnection implements Disposable {
         connection.send(messageStr);
     }
 
-    protected handleMessage(data: string) {
+    protected handleMessage(data: string): void {
         if (this.traceOutputChannel) {
             this.traceOutputChannel.appendLine(`${this.sessionId.substring(0, 8)} theia <- adapter: ${data}`);
         }

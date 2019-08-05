@@ -20,7 +20,7 @@ import { ProcessTaskRunner } from './process-task-runner';
 import { ProcessTaskRunnerContribution } from './process-task-runner-contribution';
 import { TaskRunnerContribution } from '../task-runner';
 
-export function bindProcessTaskRunnerModule(bind: interfaces.Bind) {
+export function bindProcessTaskRunnerModule(bind: interfaces.Bind): void {
 
     bind(ProcessTask).toSelf().inTransientScope();
     bind(TaskFactory).toFactory(ctx =>

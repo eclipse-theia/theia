@@ -84,11 +84,11 @@ export class SearchBoxDebounce implements Disposable {
         this.disposables.dispose();
     }
 
-    protected fireChanged(value: string | undefined) {
+    protected fireChanged(value: string | undefined): void {
         this.emitter.fire(value);
     }
 
-    protected reset() {
+    protected reset(): void {
         this.state = undefined;
         this.fireChanged(undefined);
     }

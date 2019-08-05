@@ -32,7 +32,7 @@ export interface CancellationToken {
 // tslint:disable-next-line:no-any
 const shortcutEvent: Event<void> = Object.freeze(Object.assign(function (callback: any, context?: any): any {
     const handle = setTimeout(callback.bind(context), 0);
-    return { dispose() { clearTimeout(handle); } };
+    return { dispose(): void { clearTimeout(handle); } };
 }, { maxListeners: 0 }));
 
 export namespace CancellationToken {
@@ -53,7 +53,7 @@ class MutableToken implements CancellationToken {
     private _isCancelled: boolean = false;
     private _emitter: Emitter<void> | undefined;
 
-    public cancel() {
+    public cancel(): void {
         if (!this._isCancelled) {
             this._isCancelled = true;
             if (this._emitter) {

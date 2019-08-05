@@ -350,7 +350,7 @@ describe('dirty-diff-computer', () => {
 
 });
 
-function computeDirtyDiff(previous: string[], modified: string[]) {
+function computeDirtyDiff(previous: string[], modified: string[]): DirtyDiff {
     const a = ContentLines.arrayLike({
         length: previous.length,
         getLineContent: line => {

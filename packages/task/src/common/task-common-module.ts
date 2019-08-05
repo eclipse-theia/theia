@@ -23,7 +23,7 @@ import { TaskWatcher } from './task-watcher';
  *
  * @param bind The bind function from inversify.
  */
-export function createCommonBindings(bind: interfaces.Bind) {
+export function createCommonBindings(bind: interfaces.Bind): void {
 
     bind(ILogger).toDynamicValue(ctx => {
         const logger = ctx.container.get<ILogger>(ILogger);

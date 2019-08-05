@@ -128,7 +128,7 @@ export class TextEditorExt implements theia.TextEditor {
         throw readonly('viewColumn');
     }
 
-    _acceptViewColumn(value: theia.ViewColumn) {
+    _acceptViewColumn(value: theia.ViewColumn): void {
         ok(!this.disposed);
         this._viewColumn = value;
     }
@@ -368,7 +368,7 @@ export class TextEditorOptionsExt implements theia.TextEditorOptions {
         warnOnError(this.proxy.$trySetOptions(this.id, { lineNumbers: val }));
     }
 
-    public assign(newOptions: theia.TextEditorOptions) {
+    public assign(newOptions: theia.TextEditorOptions): void {
         const configurationUpdate: TextEditorConfigurationUpdate = {};
         let hasUpdate = false;
 

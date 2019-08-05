@@ -65,7 +65,7 @@ export class ScmDecorationsService {
         });
     }
 
-    async applyEditorDecorations(editor: TextEditor) {
+    async applyEditorDecorations(editor: TextEditor): Promise<void> {
         const currentRepo = this.scmService.selectedRepository;
         if (currentRepo) {
             try {

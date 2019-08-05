@@ -492,7 +492,7 @@ export namespace KnownCommands {
 }
 
 function toArrayConversion<T, U>(f: (a: T) => U): (a: T[]) => U[] {
-    return function (a: T[]) {
+    return function (a: T[]): U[] {
         return a.map(f);
     };
 }

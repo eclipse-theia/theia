@@ -41,8 +41,8 @@ export interface Event<T> {
 }
 
 export namespace Event {
-    const _disposable = { dispose() { } };
-    export const None: Event<any> = Object.assign(function () { return _disposable; }, {
+    const _disposable = { dispose(): void { } };
+    export const None: Event<any> = Object.assign(function ():  { dispose(): void } { return _disposable; }, {
         get maxListeners(): number { return 0; },
         set maxListeners(maxListeners: number) { }
     });
@@ -108,6 +108,7 @@ class CallbackList implements Iterable<Callback> {
         }
     }
 
+    // tslint:disable-next-line:typedef
     public [Symbol.iterator]() {
         if (!this._callbacks) {
             return [][Symbol.iterator]();
@@ -149,7 +150,7 @@ export interface EmitterOptions {
 
 export class Emitter<T> {
 
-    private static _noop = function () { };
+    private static _noop = function (): void { };
 
     private _event: Event<T>;
     private _callbacks: CallbackList | undefined;
@@ -235,7 +236,7 @@ export class Emitter<T> {
         }
     }
 
-    dispose() {
+    dispose(): void {
         if (this._callbacks) {
             this._callbacks.dispose();
             this._callbacks = undefined;

@@ -36,7 +36,7 @@ export class BunyanLoggerServer implements ILoggerServer {
     protected cli: LogLevelCliContribution;
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         /* Create the root logger by default.  */
         const opts = this.makeLoggerOptions(rootLoggerName);
         const rootOpts = Object.assign(opts, { name: 'Theia' });
@@ -46,14 +46,17 @@ export class BunyanLoggerServer implements ILoggerServer {
         this.cli.onLogConfigChanged(() => this.updateLogLevels());
     }
 
-    protected updateLogLevels() {
+    protected updateLogLevels(): void {
         for (const loggerName of this.loggers.keys()) {
             const newLevel = this.cli.logLevelFor(loggerName);
             this.setLogLevel(loggerName, newLevel);
         }
     }
 
-    protected makeLoggerOptions(name: string) {
+    protected makeLoggerOptions(name: string): {
+        logger: string;
+        level: number;
+    } {
         return {
             logger: name,
             level: this.toBunyanLevel(this.cli.logLevelFor(name)),
@@ -89,7 +92,7 @@ export class BunyanLoggerServer implements ILoggerServer {
     }
 
     /* Set the client to receive notifications on.  */
-    setClient(client: ILoggerClient | undefined) {
+    setClient(client: ILoggerClient | undefined): void {
         this.client = client;
     }
 

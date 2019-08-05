@@ -172,7 +172,7 @@ export class DebugEditorService {
             model.acceptBreakpoint();
         }
     }
-    protected closeBreakpointIfAffected({ uri, removed }: BreakpointsChangeEvent) {
+    protected closeBreakpointIfAffected({ uri, removed }: BreakpointsChangeEvent): void {
         const model = this.models.get(uri.toString());
         if (!model) {
             return;

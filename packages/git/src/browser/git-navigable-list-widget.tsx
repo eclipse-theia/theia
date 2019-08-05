@@ -109,7 +109,7 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         </div>;
     }
 
-    protected addGitListNavigationKeyListeners(container: HTMLElement) {
+    protected addGitListNavigationKeyListeners(container: HTMLElement): void {
         this.addKeyListener(container, Key.ARROW_LEFT, () => this.navigateLeft());
         this.addKeyListener(container, Key.ARROW_RIGHT, () => this.navigateRight());
         this.addKeyListener(container, Key.ARROW_UP, () => this.navigateUp());
@@ -141,7 +141,7 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         return this.gitNodes ? this.gitNodes.find(c => c.selected || false) : undefined;
     }
 
-    protected selectNode(node: T) {
+    protected selectNode(node: T): void {
         const n = this.getSelected();
         if (n) {
             n.selected = false;
@@ -150,7 +150,7 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         this.update();
     }
 
-    protected selectNextNode() {
+    protected selectNextNode(): void {
         const idx = this.indexOfSelected;
         if (idx >= 0 && idx < this.gitNodes.length - 1) {
             this.selectNode(this.gitNodes[idx + 1]);
@@ -159,7 +159,7 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         }
     }
 
-    protected selectPreviousNode() {
+    protected selectPreviousNode(): void {
         const idx = this.indexOfSelected;
         if (idx > 0) {
             this.selectNode(this.gitNodes[idx - 1]);

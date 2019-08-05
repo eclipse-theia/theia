@@ -174,7 +174,7 @@ export class ProcessTaskRunner implements TaskRunner {
         return { command, args, options };
     }
 
-    protected asFsPath(uriOrPath: string) {
+    protected asFsPath(uriOrPath: string): string {
         return (uriOrPath.startsWith('file:/'))
             ? FileUri.fsPath(uriOrPath)
             : uriOrPath;

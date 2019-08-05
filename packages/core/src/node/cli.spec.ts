@@ -18,11 +18,12 @@ import * as yargs from 'yargs';
 import * as chai from 'chai';
 import { CliManager, CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
+import { MaybePromise } from '../common/types';
 
 class TestCliManager extends CliManager {
     constructor(...contribs: CliContribution[]) {
         super({
-            getContributions() { return contribs; }
+            getContributions(): CliContribution[] { return contribs; }
         });
     }
 }
@@ -35,11 +36,11 @@ describe('CliManager', () => {
     it('Parses simple option', async () => {
         const value = new Deferred<string>();
         const mnr = new TestCliManager({
-            configure(conf: yargs.Argv) {
+            configure(conf: yargs.Argv): void {
                 conf.option('foo', { alias: 'f', description: 'Some foo.' });
                 conf.option('bar', { alias: 'b', description: 'Some bla.', default: 'my-default', type: 'string' });
             },
-            setArguments(args: yargs.Arguments) {
+            setArguments(args: yargs.Arguments): void {
                 value.resolve(args['foo']);
             }
         });
@@ -50,11 +51,11 @@ describe('CliManager', () => {
     it('resolves with default', async () => {
         const value = new Deferred<string>();
         const mnr = new TestCliManager({
-            configure(conf: yargs.Argv) {
+            configure(conf: yargs.Argv): void {
                 conf.option('foo', { alias: 'f', description: 'Some foo.' });
                 conf.option('bar', { alias: 'b', description: 'Some bla.', default: 'my-default', type: 'string' });
             },
-            setArguments(args: yargs.Arguments) {
+            setArguments(args: yargs.Arguments): MaybePromise<void> {
                 value.resolve(args['bar']);
             }
         });

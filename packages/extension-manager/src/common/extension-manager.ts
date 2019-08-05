@@ -129,7 +129,7 @@ export class ExtensionManager implements Disposable {
         });
     }
 
-    dispose() {
+    dispose(): void {
         this.toDispose.dispose();
     }
 

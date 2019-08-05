@@ -133,7 +133,7 @@ export class DocumentsExtImpl implements DocumentsExt {
         const promises: PromiseLike<TextEdit[] | any>[] = [];
         fireEvent(Object.freeze({
             document, reason,
-            waitUntil(p: PromiseLike<TextEdit[] | any>) {
+            waitUntil(p: PromiseLike<TextEdit[] | any>): void {
                 if (Object.isFrozen(promises)) {
                     throw new Error('waitUntil can not be called async');
                 }

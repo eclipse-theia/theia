@@ -22,7 +22,7 @@ import { isWindows } from '@theia/core/lib/common/os';
 import { FileUri } from '@theia/core/lib/node';
 import { TypescriptVersionServiceImpl, TypescriptVersionURI } from './typescript-version-service-impl';
 
-describe('TypescriptVersionServiceImpl', function () {
+describe('TypescriptVersionServiceImpl', function (): void {
 
     const projectUri = FileUri.create(path.resolve(__dirname, '../../../..'));
     let impl: TypescriptVersionServiceImpl;

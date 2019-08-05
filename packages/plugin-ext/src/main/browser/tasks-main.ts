@@ -24,7 +24,7 @@ import { DisposableCollection } from '@theia/core';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from 'inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { TaskInfo, TaskExitedEvent } from '@theia/task/lib/common/task-protocol';
+import { TaskInfo, TaskExitedEvent, TaskConfiguration } from '@theia/task/lib/common/task-protocol';
 import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 
@@ -103,7 +103,10 @@ export class TasksMainImpl implements TasksMain {
         }
     }
 
-    async $taskExecutions() {
+    async $taskExecutions(): Promise<{
+        id: number;
+        task: TaskConfiguration;
+    }[]> {
         const runningTasks = await this.taskService.getRunningTasks();
         return runningTasks.map(taskInfo => ({
             id: taskInfo.taskId,

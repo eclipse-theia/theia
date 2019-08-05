@@ -34,7 +34,7 @@ disableJSDOM();
 
 let container: Container;
 
-beforeEach(function () {
+beforeEach(function (): void {
     const m = new ContainerModule(bind => {
         bind(CppBuildConfigurationManager).to(CppBuildConfigurationManagerImpl).inSingletonScope();
         bind(StorageService).to(MockStorageService).inSingletonScope();
@@ -83,7 +83,7 @@ async function initializeTest(buildConfigurations: CppBuildConfiguration[] | und
     return configs;
 }
 
-describe('build-configurations', function () {
+describe('build-configurations', function (): void {
     before(() => {
         disableJSDOM = enableJSDOM();
     });
@@ -92,7 +92,7 @@ describe('build-configurations', function () {
         disableJSDOM();
     });
 
-    it('should work with no preferences', async function () {
+    it('should work with no preferences', async function (): Promise<void> {
         const cppBuildConfigurations = await initializeTest(undefined, undefined);
 
         const configs = cppBuildConfigurations.getConfigs();
@@ -102,7 +102,7 @@ describe('build-configurations', function () {
         expect(configs).lengthOf(0);
     });
 
-    it('should work with an empty list of builds', async function () {
+    it('should work with an empty list of builds', async function (): Promise<void> {
         const cppBuildConfigurations = await initializeTest([], undefined);
 
         const configs = cppBuildConfigurations.getConfigs();
@@ -112,7 +112,7 @@ describe('build-configurations', function () {
         expect(configs).lengthOf(0);
     });
 
-    it('should work with a simple list of builds', async function () {
+    it('should work with a simple list of builds', async function (): Promise<void> {
         const builds = [{
             name: 'Release',
             directory: '/tmp/builds/release',
@@ -130,7 +130,7 @@ describe('build-configurations', function () {
         expect(configs).to.have.deep.members(builds);
     });
 
-    it('should work with a simple list of builds and an active config', async function () {
+    it('should work with a simple list of builds and an active config', async function (): Promise<void> {
         const builds = [{
             name: 'Release',
             directory: '/tmp/builds/release',
@@ -148,7 +148,7 @@ describe('build-configurations', function () {
         expect(configs).to.have.deep.members(builds);
     });
 
-    it("should ignore an active config that doesn't exist", async function () {
+    it("should ignore an active config that doesn't exist", async function (): Promise<void> {
         const builds = [{
             name: 'Release',
             directory: '/tmp/builds/release',

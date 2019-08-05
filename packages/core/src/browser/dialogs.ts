@@ -73,7 +73,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         @inject(DialogProps) protected readonly props: DialogProps
     ) {
         super();
-        this.id = 'theia-dialog-shell';
+        this.id = `theia-dialog-${(new Date()).getTime()}`;
         this.addClass('dialogOverlay');
         this.toDispose.push(Disposable.create(() => {
             if (this.reject) {
@@ -148,7 +148,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         this.addKeyListener(document.body, Key.ENTER, e => this.handleEnter(e));
     }
 
-    protected canHandle(event: KeyboardEvent): boolean {
+    protected canHandleKeyboardEvent(event: KeyboardEvent): boolean {
         let result: boolean = false;
         if (this.id && event.currentTarget) {
             const dialogOverlay: HTMLElement = event.currentTarget as HTMLElement;
@@ -160,13 +160,13 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     }
 
     protected handleEscape(event: KeyboardEvent): boolean | void {
-        if (this.canHandle(event)) {
+        if (this.canHandleKeyboardEvent(event)) {
             this.close();
         }
     }
 
     protected handleEnter(event: KeyboardEvent): boolean | void {
-        if (this.canHandle(event)) {
+        if (this.canHandleKeyboardEvent(event)) {
             if (event.target instanceof HTMLTextAreaElement) {
                 return false;
             }
@@ -292,7 +292,6 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
         @inject(ConfirmDialogProps) protected readonly props: ConfirmDialogProps
     ) {
         super(props);
-        this.id = 'theia-confirm-dialog';
         this.contentNode.appendChild(this.createMessageNode(this.props.msg));
         this.appendCloseButton(props.cancel);
         this.appendAcceptButton(props.ok);
@@ -339,7 +338,6 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         @inject(SingleTextInputDialogProps) protected readonly props: SingleTextInputDialogProps
     ) {
         super(props);
-        this.id = 'theia-single-text-input-dialog';
         this.inputField = document.createElement('input');
         this.inputField.type = 'text';
         this.inputField.setAttribute('style', 'flex: 0;');

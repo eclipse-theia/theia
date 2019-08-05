@@ -26,7 +26,7 @@ export class ReactRenderer implements Disposable {
         this.host = host || document.createElement('div');
     }
 
-    dispose() {
+    dispose(): void {
         ReactDOM.unmountComponentAtNode(this.host);
     }
 

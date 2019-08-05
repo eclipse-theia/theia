@@ -165,7 +165,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         return Promise.resolve();
     }
 
-    setClient(client: FileSystemWatcherClient | undefined) {
+    setClient(client: FileSystemWatcherClient | undefined): void {
         if (client && this.toDispose.disposed) {
             return;
         }

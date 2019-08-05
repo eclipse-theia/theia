@@ -17,7 +17,7 @@
 import { injectable, postConstruct, inject } from 'inversify';
 import { IKeyboardLayoutInfo } from 'native-keymap';
 import { isOSX } from '../../common/os';
-import { Emitter } from '../../common/event';
+import { Emitter, Event } from '../../common/event';
 import { ILogger } from '../../common/logger';
 import { Deferred } from '../../common/promise-util';
 import {
@@ -39,7 +39,7 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
     protected readonly initialized = new Deferred();
     protected readonly nativeLayoutChanged = new Emitter<NativeKeyboardLayout>();
 
-    get onDidChangeNativeLayout() {
+    get onDidChangeNativeLayout(): Event<NativeKeyboardLayout> {
         return this.nativeLayoutChanged.event;
     }
 
@@ -47,15 +47,15 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
     protected source: KeyboardLayoutSource = 'pressed-keys';
     protected currentLayout: KeyboardLayoutData = DEFAULT_LAYOUT_DATA;
 
-    get allLayoutData() {
+    get allLayoutData(): KeyboardLayoutData[] {
         return this.tester.candidates.slice();
     }
 
-    get currentLayoutData() {
+    get currentLayoutData(): KeyboardLayoutData {
         return this.currentLayout;
     }
 
-    get currentLayoutSource() {
+    get currentLayoutSource(): KeyboardLayoutSource {
         return this.source;
     }
 
@@ -267,7 +267,7 @@ export class KeyboardTester {
 
     private readonly testedInputs = new Map<string, string>();
 
-    get inputCount() {
+    get inputCount(): number {
         return this.testedInputs.size;
     }
 

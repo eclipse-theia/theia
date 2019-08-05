@@ -28,7 +28,7 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 
 disableJSDOM();
 
-describe('Editorconfig document manager', function () {
+describe('Editorconfig document manager', function (): void {
 
     it('IsSet should return true', () => {
         const documentManager = new EditorconfigDocumentManager();

@@ -46,7 +46,7 @@ function overrideInternalLoad(): void {
 
     // if we try to resolve theia module, return the filename entry to use cache.
     // tslint:disable-next-line:no-any
-    module._load = function (request: string, parent: any, isMain: {}) {
+    module._load = function (request: string, parent: any, isMain: {}): any {
         if (request !== '@theia/plugin') {
             return internalLoad.apply(this, arguments);
         }

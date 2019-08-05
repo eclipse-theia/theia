@@ -38,6 +38,13 @@ enum HcrChangeType {
     BUILD_COMPLETE = 'BUILD_COMPLETE',
 }
 
+enum LogLevel {
+    FINE = 'FINE',
+    INFO = 'INFO',
+    SEVERE = 'SEVERE',
+    WARNING = 'WARNING'
+}
+
 export namespace JavaDebugCommands {
     export const RUN: Command = {
         id: 'java.debug.run'
@@ -238,19 +245,19 @@ export class JavaDebugFrontendContribution implements FrontendApplicationContrib
             }
         }
     }
-    protected convertLogLevel(commonLogLevel: string) {
+    protected convertLogLevel(commonLogLevel: string): LogLevel {
         // convert common log level to java log level
         switch (commonLogLevel.toLowerCase()) {
             case 'verbose':
-                return 'FINE';
+                return LogLevel.FINE;
             case 'warn':
-                return 'WARNING';
+                return LogLevel.WARNING;
             case 'error':
-                return 'SEVERE';
+                return LogLevel.SEVERE;
             case 'info':
-                return 'INFO';
+                return LogLevel.INFO;
             default:
-                return 'FINE';
+                return LogLevel.FINE;
         }
     }
 

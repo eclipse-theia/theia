@@ -47,7 +47,7 @@ export class BrowserKeyboardFrontendContribution implements CommandContribution 
         });
     }
 
-    protected async chooseLayout() {
+    protected async chooseLayout(): Promise<KeyboardLayoutData | undefined> {
         const current = this.layoutProvider.currentLayoutData;
         const autodetect: QuickPickItem<'autodetect'> = {
             label: 'Auto-detect',

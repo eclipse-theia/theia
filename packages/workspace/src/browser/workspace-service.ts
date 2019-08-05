@@ -226,7 +226,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return title ? `${title} — ${name}` : name;
     }
 
-    protected updateTitle() {
+    protected updateTitle(): void {
         let title: string | undefined;
         if (this._workspace) {
             const uri = new URI(this._workspace.uri);

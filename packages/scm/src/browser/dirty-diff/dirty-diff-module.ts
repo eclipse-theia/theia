@@ -19,6 +19,6 @@ import { DirtyDiffDecorator } from './dirty-diff-decorator';
 
 import '../../../src/browser/style/dirty-diff.css';
 
-export function bindDirtyDiff(bind: interfaces.Bind) {
+export function bindDirtyDiff(bind: interfaces.Bind): void {
     bind(DirtyDiffDecorator).toSelf().inSingletonScope();
 }

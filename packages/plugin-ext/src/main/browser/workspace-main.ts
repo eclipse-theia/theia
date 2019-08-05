@@ -263,7 +263,7 @@ export class TextContentResourceResolver implements ResourceResolver {
                 }
 
                 resource = new TextContentResource(uri, proxy, {
-                    dispose() {
+                    dispose(): void {
                         instance.resources.delete(uri.toString());
                     }
                 });
@@ -315,11 +315,11 @@ export class TextContentResource implements Resource {
         return Promise.reject(new Error(`Unable to get content for '${this.uri.toString()}'`));
     }
 
-    dispose() {
+    dispose(): void {
         this.disposable.dispose();
     }
 
-    setContent(content: string) {
+    setContent(content: string): void {
         this.cache = content;
         this.onDidChangeContentsEmitter.fire(undefined);
     }

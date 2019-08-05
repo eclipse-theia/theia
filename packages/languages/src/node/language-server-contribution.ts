@@ -128,13 +128,13 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         console.error(error);
     }
 
-    protected logError(data: string | Buffer) {
+    protected logError(data: string | Buffer): void {
         if (data) {
             console.error(`${this.name}: ${data}`);
         }
     }
 
-    protected logInfo(data: string | Buffer) {
+    protected logInfo(data: string | Buffer): void {
         if (data) {
             console.info(`${this.name}: ${data}`);
         }

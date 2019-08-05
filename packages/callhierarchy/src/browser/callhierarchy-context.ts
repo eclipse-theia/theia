@@ -46,6 +46,7 @@ export class CallHierarchyContext implements Disposable {
         return symbols;
     }
 
+    // tslint:disable-next-line:typedef
     async getEditorModelReference(uri: string) {
         const model = await this.textModelService.createModelReference(new URI(uri));
         this.disposables.push(model);
@@ -96,7 +97,7 @@ export class CallHierarchyContext implements Disposable {
         }
     }
 
-    dispose() {
+    dispose(): void {
         this.disposables.forEach(element => {
             element.dispose();
         });

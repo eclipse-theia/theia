@@ -136,7 +136,7 @@ export namespace WorkspaceCommands {
 @injectable()
 export class FileMenuContribution implements MenuContribution {
 
-    registerMenus(registry: MenuModelRegistry) {
+    registerMenus(registry: MenuModelRegistry): void {
         registry.registerMenuAction(CommonMenus.FILE_NEW, {
             commandId: WorkspaceCommands.NEW_FILE.id
         });
@@ -159,7 +159,7 @@ export class FileMenuContribution implements MenuContribution {
 @injectable()
 export class EditMenuContribution implements MenuContribution {
 
-    registerMenus(registry: MenuModelRegistry) {
+    registerMenus(registry: MenuModelRegistry): void {
         registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
             commandId: FileDownloadCommands.COPY_DOWNLOAD_LINK.id,
             order: '9999'

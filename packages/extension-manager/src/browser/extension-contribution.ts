@@ -42,7 +42,7 @@ export class ExtensionContribution extends AbstractViewContribution<ExtensionWid
         });
     }
 
-    onStart(app: FrontendApplication) {
+    onStart(app: FrontendApplication): void {
         this.extensionManager.onWillStartInstallation(({ reverting }) => {
             if (reverting) {
                 this.messageService.error('Failed to install extensions. Reverting...');

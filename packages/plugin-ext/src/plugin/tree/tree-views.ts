@@ -65,14 +65,15 @@ export class TreeViewsExtImpl implements TreeViewsExt {
         this.treeViews.set(treeViewId, treeView);
 
         return {
+            // tslint:disable-next-line:typedef
             get onDidExpandElement() {
                 return treeView.onDidExpandElement;
             },
-
+            // tslint:disable-next-line:typedef
             get onDidCollapseElement() {
                 return treeView.onDidCollapseElement;
             },
-
+            // tslint:disable-next-line:typedef
             get selection() {
                 return treeView.selectedElements;
             },

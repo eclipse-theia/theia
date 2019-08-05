@@ -71,7 +71,9 @@ export interface ViewResult {
     [key: string]: any
 }
 
-export function sortByKey(object: { [key: string]: any }) {
+export function sortByKey(object: { [key: string]: any }): {
+    [key: string]: any;
+} {
     return Object.keys(object).sort().reduce((sorted, key) => {
         sorted[key] = object[key];
         return sorted;
@@ -101,7 +103,7 @@ export class NpmRegistry {
         this.resetIndex();
     }
 
-    updateProps(props?: Partial<NpmRegistryProps>) {
+    updateProps(props?: Partial<NpmRegistryProps>): void {
         const oldRegistry = this.props.registry;
         Object.assign(this.props, props);
         const newRegistry = this.props.registry;

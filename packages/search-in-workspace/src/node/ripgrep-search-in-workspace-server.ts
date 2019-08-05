@@ -269,7 +269,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     // Send onDone to the client and clean up what we know about search searchId.
-    private wrapUpSearch(searchId: number, error?: string) {
+    private wrapUpSearch(searchId: number, error?: string): void {
         if (this.ongoingSearches.delete(searchId)) {
             if (this.client) {
                 this.logger.debug('Sending onDone for ' + searchId, error);

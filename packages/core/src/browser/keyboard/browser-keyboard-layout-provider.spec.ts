@@ -26,7 +26,7 @@ import { WindowService } from '../window/window-service';
 import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
 import { Key } from './keys';
 
-describe('browser keyboard layout provider', function () {
+describe('browser keyboard layout provider', function (): void {
 
     let stubOSX: sinon.SinonStub;
     let stubWindows: sinon.SinonStub;

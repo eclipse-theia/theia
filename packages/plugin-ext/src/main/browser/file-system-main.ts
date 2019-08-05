@@ -119,5 +119,5 @@ export class FSResource implements Resource {
         return this.proxy.$writeFile(this.handle, Uri.parse(this.uri.toString()), content, options);
     }
 
-    dispose() { }
+    dispose(): void { }
 }

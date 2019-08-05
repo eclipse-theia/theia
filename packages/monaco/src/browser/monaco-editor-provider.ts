@@ -243,7 +243,9 @@ export class MonacoEditorProvider {
         }, {});
     }
 
-    protected setOption(preferenceName: string, value: any, prefixes: string[], options: { [name: string]: any } = {}) {
+    protected setOption(preferenceName: string, value: any, prefixes: string[], options: { [name: string]: any } = {}): {
+        [name: string]: any;
+    } {
         const optionName = this.toOptionName(preferenceName, prefixes);
         this.doSetOption(options, value, optionName.split('.'));
         return options;

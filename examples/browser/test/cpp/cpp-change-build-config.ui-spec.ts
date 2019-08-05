@@ -83,7 +83,7 @@ int main() {}
 /**
  * Return whether clangd is available.
  */
-function hasClangd() {
+function hasClangd(): boolean {
     try {
         const out = cp.execSync('clangd -version', { encoding: 'utf8' });
         // Match 'clangd version' at the start of
@@ -98,7 +98,7 @@ function hasClangd() {
  * Open the build config quick open menu, click on the first config that
  * matches `name`.
  */
-function changeBuildConfig(name: string, driver: WebdriverIO.Client<void>) {
+function changeBuildConfig(name: string, driver: WebdriverIO.Client<void>): void {
     const statusBar = driver.element('#theia-statusBar');
     const statusBarButton = statusBar.element('div.element*=Build Config');
     statusBarButton.click();
@@ -110,7 +110,7 @@ function changeBuildConfig(name: string, driver: WebdriverIO.Client<void>) {
 }
 
 // skip the cpp tests for the moment since they are broken.
-describe.skip('cpp extension', function () {
+describe.skip('cpp extension', function (): void {
 
     before(() => {
         const driver = browser;
@@ -127,7 +127,7 @@ describe.skip('cpp extension', function () {
         mainPage.waitForStartup();
     });
 
-    it.skip('should be able to change build config', function () {
+    it.skip('should be able to change build config', function (): void {
         if (!hasClangd()) {
             this.skip();
             return;

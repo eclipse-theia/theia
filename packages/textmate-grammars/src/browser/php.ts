@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable, inject } from 'inversify';
 import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
 
@@ -65,7 +65,7 @@ export class PhpGrammarContribution implements LanguageGrammarDefinitionContribu
         }
     };
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: this.id,
             'extensions': [
@@ -95,7 +95,7 @@ export class PhpGrammarContribution implements LanguageGrammarDefinitionContribu
 
         const phpGrammar = require('../../data/php.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.scopeName, {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: phpGrammar

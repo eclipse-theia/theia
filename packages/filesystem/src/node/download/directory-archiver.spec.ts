@@ -33,7 +33,7 @@ describe('directory-archiver', () => {
         track.cleanupSync();
     });
 
-    it('should archive a directory', async function () {
+    it('should archive a directory', async function (): Promise<unknown> {
         this.timeout(20_000);
         const fromPath = track.mkdirSync('from');
         fs.writeFileSync(path.join(fromPath, 'A.txt'), 'A');

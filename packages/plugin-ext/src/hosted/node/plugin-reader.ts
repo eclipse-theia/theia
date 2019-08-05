@@ -64,7 +64,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
     /**
      * MUST never throw to isolate plugin deployment
      */
-    async doGetPluginMetadata(pluginPath: string | undefined) {
+    async doGetPluginMetadata(pluginPath: string | undefined): Promise<PluginMetadata | undefined> {
         try {
             if (!pluginPath) {
                 return undefined;

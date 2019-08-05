@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
 
 const EMPTY_ELEMENTS: string[] = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'keygen', 'link', 'menuitem', 'meta', 'param', 'source', 'track', 'wbr'];
@@ -25,7 +25,7 @@ export class HtmlContribution implements LanguageGrammarDefinitionContribution {
     readonly id = 'html';
     readonly scopeName = 'text.html.basic';
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: this.id,
             extensions: ['.html', '.htm', '.shtml', '.xhtml', '.mdoc', '.jsp', '.asp', '.aspx', '.jshtm'],
@@ -85,7 +85,7 @@ export class HtmlContribution implements LanguageGrammarDefinitionContribution {
 
         const grammar = require('../../data/html.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.scopeName, {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: grammar

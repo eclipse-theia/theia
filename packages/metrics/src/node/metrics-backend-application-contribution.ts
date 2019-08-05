@@ -30,7 +30,7 @@ export class MetricsBackendApplicationContribution implements BackendApplication
     ) {
     }
 
-    configure(app: express.Application) {
+    configure(app: express.Application): void {
         app.get('/metrics', (req, res) => {
             const lastMetrics = this.fetchMetricsFromProviders();
             res.send(lastMetrics);

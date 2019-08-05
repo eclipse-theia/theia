@@ -74,7 +74,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         @inject(MonacoCommandRegistry) protected readonly commands: MonacoCommandRegistry
     ) { }
 
-    registerMenus(registry: MenuModelRegistry) {
+    registerMenus(registry: MenuModelRegistry): void {
         for (const item of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {

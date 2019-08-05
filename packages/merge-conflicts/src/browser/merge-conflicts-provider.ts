@@ -39,7 +39,7 @@ export class MergeConflictsProvider {
     protected valueTimeouts = new Map<string, number>();
 
     @postConstruct()
-    protected initialize() {
+    protected initialize(): void {
         this.editorManager.onCreated(w => this.handleNewEditor(w));
     }
 

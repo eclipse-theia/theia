@@ -120,7 +120,7 @@ export abstract class Process {
 
     abstract kill(signal?: string): void;
 
-    get killed() {
+    get killed(): boolean {
         return this._killed;
     }
 
@@ -136,7 +136,7 @@ export abstract class Process {
         return this.errorEmitter.event;
     }
 
-    protected emitOnStarted() {
+    protected emitOnStarted(): void {
         this.startEmitter.fire({});
     }
 
@@ -144,13 +144,13 @@ export abstract class Process {
      * Emit the onExit event for this process.  Only one of code and signal
      * should be defined.
      */
-    protected emitOnExit(code?: number, signal?: string) {
+    protected emitOnExit(code?: number, signal?: string): void {
         const exitEvent: IProcessExitEvent = { code, signal };
         this.handleOnExit(exitEvent);
         this.exitEmitter.fire(exitEvent);
     }
 
-    protected handleOnExit(event: IProcessExitEvent) {
+    protected handleOnExit(event: IProcessExitEvent): void {
         this._killed = true;
         const signalSuffix = event.signal ? `, signal: ${event.signal}` : '';
         const executable = this.isForkOptions(this.options) ? this.options.modulePath : this.options.command;
@@ -159,16 +159,16 @@ export abstract class Process {
             executable, this.options.args);
     }
 
-    protected emitOnError(err: ProcessErrorEvent) {
+    protected emitOnError(err: ProcessErrorEvent): void {
         this.handleOnError(err);
         this.errorEmitter.fire(err);
     }
 
-    protected async emitOnErrorAsync(error: ProcessErrorEvent) {
+    protected async emitOnErrorAsync(error: ProcessErrorEvent): Promise<void> {
         process.nextTick(this.emitOnError.bind(this), error);
     }
 
-    protected handleOnError(error: ProcessErrorEvent) {
+    protected handleOnError(error: ProcessErrorEvent): void {
         this._killed = true;
         this.logger.error(error);
     }

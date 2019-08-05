@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { ITokenTypeMap, IEmbeddedLanguagesMap, StandardTokenType } from 'vscode-textmate';
-import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService } from '@theia/monaco/lib/browser/textmate';
+import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginViewRegistry } from './view/plugin-view-registry';
 import { PluginContribution, IndentationRules, FoldingRules, ScopeMap } from '../../common';
@@ -128,7 +128,7 @@ export class PluginContributionHandler {
                 }
 
                 this.grammarsRegistry.registerTextmateGrammarScope(grammar.scope, {
-                    async getGrammarDefinition() {
+                    async getGrammarDefinition(): Promise<GrammarDefinition> {
                         return {
                             format: grammar.format,
                             content: grammar.grammar || '',
@@ -223,9 +223,9 @@ export class PluginContributionHandler {
                 return handler(...args);
             },
             // Always enabled - a command can be executed programmatically or via the commands palette.
-            isEnabled() { return true; },
+            isEnabled(): boolean { return true; },
             // Visibility rules are defined via the `menus` contribution point.
-            isVisible() { return true; }
+            isVisible(): boolean { return true; }
         }));
         this.commandHandlers.set(command.id, undefined);
         toDispose.push(Disposable.create(() => this.commandHandlers.delete(command.id)));

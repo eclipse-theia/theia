@@ -37,7 +37,7 @@ export class PluginsKeyValueStorage {
         this.setupDirectories();
     }
 
-    private async setupDirectories() {
+    private async setupDirectories(): Promise<void> {
         const theiaDirPath = await this.pluginPathsService.getTheiaDirPath();
         await this.fileSystem.createFolder(theiaDirPath);
         this.theiaDirPath = theiaDirPath;

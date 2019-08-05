@@ -30,13 +30,13 @@ export class LeftPanel {
         return (tab.$('..').getAttribute('class').split(' ').indexOf('p-mod-current') !== -1);
     }
 
-    openCloseTab(tabName: string) {
+    openCloseTab(tabName: string): void {
         this.driver.element('.p-TabBar.theia-app-left .p-TabBar-content').element(`div*=${tabName}`).click('..');
         // Wait for animations to finish
         this.driver.pause(300);
     }
 
-    collapseTab(tabName: string) {
+    collapseTab(tabName: string): void {
         this.driver.element('.p-TabBar.theia-app-left .p-TabBar-content').rightClick(`div*=${tabName}`);
         this.driver.element('.p-Widget.p-Menu .p-Menu-content').click('div=Collapse');
     }
@@ -57,7 +57,7 @@ export class LeftPanel {
      * collapse it.  No check is done to make sure this node actually exists or
      * represents a directory.
      */
-    toggleDirectoryInFilesView(name: string) {
+    toggleDirectoryInFilesView(name: string): void {
         this.waitForFilesViewVisible();
         const files = this.driver.element('#files');
         const element = files.element('div=' + name);
@@ -70,7 +70,7 @@ export class LeftPanel {
      * it.  Not check is done to make sure this node actually exists or
      * represents a file.
      */
-    openFileInFilesView(name: string) {
+    openFileInFilesView(name: string): void {
         this.waitForFilesViewVisible();
         const files = this.driver.element('#files');
         const element = files.element('div=' + name);

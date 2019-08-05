@@ -197,7 +197,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
         const instance = this;
         return {
-            dispose() {
+            dispose(): void {
                 if (instance.documentContentProviders.delete(scheme)) {
                     instance.proxy.$unregisterTextDocumentContentProvider(scheme);
                 }
@@ -358,7 +358,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
      */
     public readonly onDidRenameFile: Event<theia.FileRenameEvent> = this.workspaceDidRenameFileEmitter.event;
 
-    $onFileRename(event: FileMoveEvent) {
+    $onFileRename(event: FileMoveEvent): void {
         this.workspaceDidRenameFileEmitter.fire(Object.freeze({ oldUri: URI.revive(event.oldUri), newUri: URI.revive(event.newUri) }));
     }
 

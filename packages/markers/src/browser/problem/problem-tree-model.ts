@@ -47,7 +47,7 @@ export class ProblemTreeModel extends MarkerTreeModel {
         return undefined;
     }
 
-    removeNode(node: TreeNode) {
+    removeNode(node: TreeNode): void {
         if (MarkerInfoNode.is(node)) {
             this.problemManager.cleanAllMarkers(node.uri);
         }

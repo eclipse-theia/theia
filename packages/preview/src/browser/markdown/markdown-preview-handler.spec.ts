@@ -107,8 +107,8 @@ describe('markdown-preview-handler', () => {
     });
 });
 
-async function assertRenderedContent(source: string, expectation: string) {
-    const contentElement = await previewHandler.renderContent({ content: source, originUri: new URI('file:///workspace/DEMO.md') });
+async function assertRenderedContent(source: string, expectation: string): Promise<void> {
+    const contentElement = previewHandler.renderContent({ content: source, originUri: new URI('file:///workspace/DEMO.md') });
     expect(contentElement.innerHTML).equals(expectation);
 }
 
@@ -188,13 +188,14 @@ const exampleHtml5 = //
 /**
  * `offsetTop` of elements to be `sourceLine` number times `20`.
  */
-function mockOffsetProperties() {
+function mockOffsetProperties(): void {
     Object.defineProperties(HTMLElement.prototype, {
         offsetLeft: {
             get: () => 0
         },
         offsetTop: {
-            get: function () {
+            // tslint:disable-next-line:no-any
+            get: function (): any {
                 const element = this as HTMLElement;
                 const line = Number.parseInt(element.getAttribute('data-line') || '0');
                 return offsetForLine(line);
@@ -209,6 +210,6 @@ function mockOffsetProperties() {
     });
 }
 
-function offsetForLine(line: number) {
+function offsetForLine(line: number): number {
     return line * 20;
 }

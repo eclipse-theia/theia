@@ -28,7 +28,7 @@ export class MockStorageService implements StorageService {
     onSetDataCallback?: (key: string, data?: any) => void;
 
     // tslint:disable-next-line:no-any
-    onSetData(callback: (key: string, data?: any) => void) {
+    onSetData(callback: (key: string, data?: any) => void): void {
         this.onSetDataCallback = callback;
     }
 

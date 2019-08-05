@@ -56,7 +56,7 @@ export class MainPage {
         return this.driver.waitForExist('div#theia-statusBar');
     }
 
-    closeAll() {
+    closeAll(): void {
         /* Make sure that all the "docked" layouts are closed */
         while (this.driver.isExisting('.p-Widget.p-TabBar .p-TabBar-tab.p-mod-closable')) {
             this.driver.rightClick('.p-Widget.p-TabBar .p-TabBar-tab.p-mod-closable');

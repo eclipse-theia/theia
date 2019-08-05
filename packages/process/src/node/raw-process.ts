@@ -143,14 +143,14 @@ export class RawProcess extends Process {
         }
     }
 
-    get pid() {
+    get pid(): number {
         if (!this.process) {
             throw new Error('process did not start correctly');
         }
         return this.process.pid;
     }
 
-    kill(signal?: string) {
+    kill(signal?: string): void {
         if (this.process && this.killed === false) {
             this.process.kill(signal);
         }

@@ -101,7 +101,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
         }
     }
 
-    protected handleTreeEvents(treeViewId: string, treeViewWidget: TreeViewWidget) {
+    protected handleTreeEvents(treeViewId: string, treeViewWidget: TreeViewWidget): void {
         treeViewWidget.model.onExpansionChanged(event => {
             this.proxy.$setExpanded(treeViewId, event.id, event.expanded);
         });

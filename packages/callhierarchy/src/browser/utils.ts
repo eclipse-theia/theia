@@ -64,7 +64,7 @@ export function filterUnique(locations: Location[] | null): Location[] {
     return result;
 }
 
-export function startsAfter(a: Range, b: Range) {
+export function startsAfter(a: Range, b: Range): boolean {
     if (a.start.line > b.start.line) {
         return true;
     }
@@ -81,7 +81,7 @@ export function startsAfter(a: Range, b: Range) {
     return false;
 }
 
-export function isSame(a: Location, b: Location) {
+export function isSame(a: Location, b: Location): boolean {
     return a.uri === b.uri
         && a.range.start.line === b.range.start.line
         && a.range.end.line === b.range.end.line

@@ -32,7 +32,7 @@ export class PythonClientContribution extends BaseLanguageClientContribution {
         super(workspace, languages, languageClientFactory);
     }
 
-    protected get globPatterns() {
+    protected get globPatterns(): string[] {
         return [
             '**/*.py'
         ];

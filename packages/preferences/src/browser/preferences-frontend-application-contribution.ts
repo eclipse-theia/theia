@@ -28,7 +28,7 @@ export class PreferencesFrontendApplicationContribution implements FrontendAppli
     @inject(PreferenceSchemaProvider) schemaProvider: PreferenceSchemaProvider;
     @inject(InMemoryResources) inmemoryResources: InMemoryResources;
 
-    onStart() {
+    onStart(): void {
         const serializeSchema = () => JSON.stringify(this.schemaProvider.getCombinedSchema());
         const uri = new URI('vscode://schemas/settings/user');
         this.inmemoryResources.add(uri, serializeSchema());

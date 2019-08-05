@@ -29,7 +29,7 @@ export abstract class AbstractCmdClickTerminalContribution implements TerminalCo
         return () => Promise.resolve(true);
     }
 
-    async onCreate(terminalWidget: TerminalWidgetImpl) {
+    async onCreate(terminalWidget: TerminalWidgetImpl): Promise<void> {
         const term = terminalWidget.getTerminal();
         const regexp = await this.getRegExp(terminalWidget);
         const handler = this.getHandler(terminalWidget);
@@ -79,11 +79,11 @@ export class URLMatcher extends AbstractCmdClickTerminalContribution {
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
-    async getRegExp() {
+    async getRegExp(): Promise<RegExp> {
         return /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/;
     }
 
-    getHandler() {
+    getHandler(): (event: MouseEvent, uri: string) => void {
         return (event: MouseEvent, uri: string) => {
             this.windowService.openNewWindow(uri);
         };
@@ -96,11 +96,11 @@ export class LocalhostMatcher extends AbstractCmdClickTerminalContribution {
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
-    async getRegExp() {
+    async getRegExp(): Promise<RegExp> {
         return /(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0)(:[0-9]{1,5})?([-a-zA-Z0-9@:%_\+.~#?&//=]*)/;
     }
 
-    getHandler() {
+    getHandler(): (event: MouseEvent, uri: string) => void {
         return (event: MouseEvent, matched: string) => {
             const uri = matched.startsWith('http') ? matched : `http://${matched}`;
             this.windowService.openNewWindow(uri);

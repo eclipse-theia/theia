@@ -50,7 +50,7 @@ export namespace EditorMainMenu {
 @injectable()
 export class EditorMenuContribution implements MenuContribution {
 
-    registerMenus(registry: MenuModelRegistry) {
+    registerMenus(registry: MenuModelRegistry): void {
         registry.registerMenuAction(EditorContextMenu.UNDO_REDO, {
             commandId: CommonCommands.UNDO.id
         });

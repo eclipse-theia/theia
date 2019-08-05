@@ -146,7 +146,7 @@ export class ThemingCommandContribution implements CommandContribution, MenuCont
         commands.registerCommand(this, this);
     }
 
-    registerMenus(menus: MenuModelRegistry) {
+    registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_THEME, {
             commandId: this.id,
             label: this.label,
@@ -154,7 +154,7 @@ export class ThemingCommandContribution implements CommandContribution, MenuCont
         });
     }
 
-    execute() {
+    execute(): void {
         this.resetTo = this.themeService.getCurrentTheme().id;
         this.openService.open(this, {
             placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
@@ -168,7 +168,7 @@ export class ThemingCommandContribution implements CommandContribution, MenuCont
         });
     }
 
-    private activeIndex() {
+    private activeIndex(): number {
         const current = this.themeService.getCurrentTheme().id;
         const themes = this.themeService.getThemes();
         return themes.findIndex(theme => theme.id === current);
@@ -202,10 +202,10 @@ export class BuiltinThemeProvider {
         label: 'Dark Theme',
         description: 'Bright fonts on dark backgrounds.',
         editorTheme: 'dark-plus', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-        activate() {
+        activate(): void {
             BuiltinThemeProvider.darkCss.use();
         },
-        deactivate() {
+        deactivate(): void {
             BuiltinThemeProvider.darkCss.unuse();
         }
     };
@@ -215,10 +215,10 @@ export class BuiltinThemeProvider {
         label: 'Light Theme',
         description: 'Dark fonts on light backgrounds.',
         editorTheme: 'light-plus', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
-        activate() {
+        activate(): void {
             BuiltinThemeProvider.lightCss.use();
         },
-        deactivate() {
+        deactivate(): void {
             BuiltinThemeProvider.lightCss.unuse();
         }
     };

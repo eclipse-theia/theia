@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
+import { LanguageGrammarDefinitionContribution, TextmateRegistry, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { injectable } from 'inversify';
 
 @injectable()
@@ -23,7 +23,7 @@ export class LogContribution implements LanguageGrammarDefinitionContribution {
     readonly id = 'log';
     readonly scopeName = 'text.log';
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         monaco.languages.register({
             id: this.id,
             extensions: ['.log', '*.log.?'],
@@ -31,7 +31,7 @@ export class LogContribution implements LanguageGrammarDefinitionContribution {
         });
         const grammar = require('../../data/log.tmLanguage.json');
         registry.registerTextmateGrammarScope(this.scopeName, {
-            async getGrammarDefinition() {
+            async getGrammarDefinition(): Promise<GrammarDefinition> {
                 return {
                     format: 'json',
                     content: grammar

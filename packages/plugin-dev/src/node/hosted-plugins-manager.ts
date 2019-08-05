@@ -107,7 +107,7 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
         return Promise.resolve();
     }
 
-    protected unregisterWatchScript(path: string) {
+    protected unregisterWatchScript(path: string): void {
         this.watchCompilationRegistry.delete(path);
         this.hostedPluginSupport.sendLog({
             data: 'Compilation watcher has been stopped in ' + path,

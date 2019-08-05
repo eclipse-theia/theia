@@ -300,7 +300,7 @@ export class DebugSessionManager {
             }
         }
     }
-    protected updateCurrentSession(session: DebugSession | undefined) {
+    protected updateCurrentSession(session: DebugSession | undefined): void {
         this.currentSession = session || this.sessions[0];
     }
 

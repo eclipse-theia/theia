@@ -30,13 +30,13 @@ export class RightPanel {
         return (tab.$('..').getAttribute('class').split(' ').indexOf('p-mod-current') !== -1);
     }
 
-    openCloseTab(tabName: string) {
+    openCloseTab(tabName: string): void {
         this.driver.element('.p-TabBar.theia-app-right .p-TabBar-content').element(`div=${tabName}`).click('..');
         // Wait for animations to finish
         this.driver.pause(300);
     }
 
-    collapseTab(tabName: string) {
+    collapseTab(tabName: string): void {
         this.driver.element('.p-TabBar.theia-app-right .p-TabBar-content').rightClick(`div=${tabName}`);
         this.driver.element('.p-Widget.p-Menu .p-Menu-content').click('div=Collapse');
     }

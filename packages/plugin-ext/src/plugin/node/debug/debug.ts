@@ -77,7 +77,7 @@ export class DebugExtImpl implements DebugExt {
     /**
      * Sets dependencies.
      */
-    assistedInject(connectionExt: ConnectionExtImpl, commandRegistryExt: CommandRegistryImpl) {
+    assistedInject(connectionExt: ConnectionExtImpl, commandRegistryExt: CommandRegistryImpl): void {
         this.connectionExt = connectionExt;
         this.commandRegistryExt = commandRegistryExt;
     }

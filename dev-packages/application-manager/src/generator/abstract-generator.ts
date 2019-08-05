@@ -62,11 +62,11 @@ export abstract class AbstractGenerator {
         return os.EOL + lines.join(os.EOL);
     }
 
-    protected ifBrowser(value: string, defaultValue: string = '') {
+    protected ifBrowser(value: string, defaultValue: string = ''): string {
         return this.pck.ifBrowser(value, defaultValue);
     }
 
-    protected ifElectron(value: string, defaultValue: string = '') {
+    protected ifElectron(value: string, defaultValue: string = ''): string {
         return this.pck.ifElectron(value, defaultValue);
     }
 
@@ -75,7 +75,7 @@ export abstract class AbstractGenerator {
         await fs.writeFile(path, content);
     }
 
-    protected ifMonaco(value: () => string, defaultValue: () => string = () => '') {
+    protected ifMonaco(value: () => string, defaultValue: () => string = () => ''): string {
         return (this.pck.extensionPackages.some(e => e.name === '@theia/monaco') ? value : defaultValue)();
     }
 

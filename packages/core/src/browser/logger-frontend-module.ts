@@ -23,7 +23,7 @@ import { FrontendApplicationContribution } from './frontend-application';
 
 export const loggerFrontendModule = new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
-        initialize() {
+        initialize(): void {
             setRootLogger(ctx.container.get<ILogger>(ILogger));
         }
     }));

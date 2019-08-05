@@ -21,11 +21,11 @@ import { LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/
 export class JsxTagsContribution implements LanguageGrammarDefinitionContribution {
     private readonly id = 'jsx-tags';
 
-    registerTextmateLanguage(registry: TextmateRegistry) {
+    registerTextmateLanguage(registry: TextmateRegistry): void {
         this.registerJsxTags();
     }
 
-    protected registerJsxTags() {
+    protected registerJsxTags(): void {
         monaco.languages.register({
             id: this.id
         });

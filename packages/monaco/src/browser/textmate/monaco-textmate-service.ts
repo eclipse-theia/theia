@@ -58,7 +58,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
     @inject(MonacoThemeRegistry)
     protected readonly monacoThemeRegistry: MonacoThemeRegistry;
 
-    initialize() {
+    initialize(): void {
         if (!isBasicWasmSupported) {
             console.log('Textmate support deactivated because WebAssembly is not detected.');
             return;
@@ -129,7 +129,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         return this.themeService.getCurrentTheme().editorTheme || MonacoThemeRegistry.DARK_DEFAULT_THEME;
     }
 
-    async activateLanguage(languageId: string) {
+    async activateLanguage(languageId: string): Promise<void> {
         if (this._activatedLanguages.has(languageId)) {
             return;
         }

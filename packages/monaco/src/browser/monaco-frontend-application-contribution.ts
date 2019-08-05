@@ -27,7 +27,7 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     @inject(PreferenceSchemaProvider)
     protected readonly preferenceSchema: PreferenceSchemaProvider;
 
-    async initialize() {
+    async initialize(): Promise<void> {
         monaco.suggest.setSnippetSuggestSupport(this.snippetSuggestProvider);
 
         for (const language of monaco.languages.getLanguages()) {

@@ -85,7 +85,7 @@ export class MonacoThemeRegistry {
         return result;
     }
 
-    protected transform(tokenColor: any, acceptor: (rule: monaco.editor.ITokenThemeRule) => void) {
+    protected transform(tokenColor: any, acceptor: (rule: monaco.editor.ITokenThemeRule) => void): void {
         if (typeof tokenColor.scope === 'undefined') {
             tokenColor.scope = [''];
         } else if (typeof tokenColor.scope === 'string') {
