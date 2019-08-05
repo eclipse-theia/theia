@@ -16,8 +16,8 @@
 
 import { interfaces } from 'inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { RPCProtocol } from '../../api/rpc-protocol';
-import { EnvMain } from '../../api/plugin-api';
+import { RPCProtocol } from '../../common/rpc-protocol';
+import { EnvMain } from '../../common/plugin-api-rpc';
 import { QueryParameters } from '../../common/env';
 import { isWindows, isOSX } from '@theia/core';
 import { OperatingSystem } from '../../plugin/types-impl';

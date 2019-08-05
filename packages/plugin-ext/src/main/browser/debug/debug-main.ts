@@ -17,14 +17,14 @@
 // tslint:disable:no-any
 
 import { interfaces } from 'inversify';
-import { RPCProtocol } from '../../../api/rpc-protocol';
+import { RPCProtocol } from '../../../common/rpc-protocol';
 import {
     DebugMain,
     DebugExt,
     MAIN_RPC_CONTEXT
-} from '../../../api/plugin-api';
+} from '../../../common/plugin-api-rpc';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
-import { Breakpoint, WorkspaceFolder } from '../../../api/model';
+import { Breakpoint, WorkspaceFolder } from '../../../common/plugin-api-rpc-model';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';

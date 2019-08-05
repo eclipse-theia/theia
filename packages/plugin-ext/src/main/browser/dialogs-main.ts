@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { interfaces } from 'inversify';
-import { RPCProtocol } from '../../api/rpc-protocol';
-import { OpenDialogOptionsMain, SaveDialogOptionsMain, DialogsMain } from '../../api/plugin-api';
+import { RPCProtocol } from '../../common/rpc-protocol';
+import { OpenDialogOptionsMain, SaveDialogOptionsMain, DialogsMain } from '../../common/plugin-api-rpc';
 import URI from '@theia/core/lib/common/uri';
 import { DirNode, OpenFileDialogProps, SaveFileDialogProps, OpenFileDialogFactory, SaveFileDialogFactory } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';

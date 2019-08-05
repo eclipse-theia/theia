@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { UriComponents } from '../common/uri-components';
+import { UriComponents } from './uri-components';
 import { FileStat } from '@theia/filesystem/lib/common';
 import { SymbolInformation } from 'vscode-languageserver-types';
 

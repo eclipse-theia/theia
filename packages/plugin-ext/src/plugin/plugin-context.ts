@@ -27,8 +27,8 @@ import {
     PluginManager,
     PluginAPIFactory,
     MainMessageType
-} from '../api/plugin-api';
-import { RPCProtocol } from '../api/rpc-protocol';
+} from '../common/plugin-api-rpc';
+import { RPCProtocol } from '../common/rpc-protocol';
 import { MessageRegistryExt } from './message-registry';
 import { StatusBarMessageRegistryExt } from './status-bar-message-registry';
 import { WindowStateExtImpl } from './window-state';
@@ -110,7 +110,7 @@ import {
     CommentThreadCollapsibleState,
     CommentMode
 } from './types-impl';
-import { SymbolKind } from '../api/model';
+import { SymbolKind } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
 import { DocumentsExtImpl } from './documents';

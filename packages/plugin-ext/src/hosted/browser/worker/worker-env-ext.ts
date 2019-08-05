@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { EnvExtImpl } from '../../../plugin/env';
-import { RPCProtocol } from '../../../api/rpc-protocol';
+import { RPCProtocol } from '../../../common/rpc-protocol';
 
 /**
  * Worker specific implementation not returning any FileSystem details

@@ -15,8 +15,8 @@
  ********************************************************************************/
 import { UUID } from '@phosphor/coreutils/lib/uuid';
 import { Terminal, TerminalOptions } from '@theia/plugin';
-import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../api/plugin-api';
-import { RPCProtocol } from '../api/rpc-protocol';
+import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
+import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as theia from '@theia/plugin';

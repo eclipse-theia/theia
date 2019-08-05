@@ -16,8 +16,8 @@
 
 import * as theia from '@theia/plugin';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { WorkspaceMain } from '../api/plugin-api';
-import { FileWatcherSubscriberOptions, FileChangeEventType } from '../api/model';
+import { WorkspaceMain } from '../common/plugin-api-rpc';
+import { FileWatcherSubscriberOptions, FileChangeEventType } from '../common/plugin-api-rpc-model';
 import URI from 'vscode-uri';
 
 /**

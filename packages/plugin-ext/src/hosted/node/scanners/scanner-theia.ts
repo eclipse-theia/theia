@@ -49,7 +49,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { isObject } from 'util';
 import { GrammarsReader } from './grammars-reader';
-import { CharacterPair } from '../../../api/plugin-api';
+import { CharacterPair } from '../../../common/plugin-api-rpc';
 import * as jsoncparser from 'jsonc-parser';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { deepClone } from '@theia/core/lib/common/objects';

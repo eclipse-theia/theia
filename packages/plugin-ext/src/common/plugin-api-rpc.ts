@@ -16,12 +16,11 @@
 
 /* tslint:disable:no-any */
 
-import { Plugin as InternalPlugin } from '../api/plugin-api';
 import { createProxyIdentifier, ProxyIdentifier } from './rpc-protocol';
 import * as theia from '@theia/plugin';
-import { PluginLifecycle, PluginModel, PluginMetadata, PluginPackage, IconUrl } from '../common/plugin-protocol';
-import { QueryParameters } from '../common/env';
-import { TextEditorCursorStyle } from '../common/editor-options';
+import { PluginLifecycle, PluginModel, PluginMetadata, PluginPackage, IconUrl } from './plugin-protocol';
+import { QueryParameters } from './env';
+import { TextEditorCursorStyle } from './editor-options';
 import {
     TextEditorLineNumbersStyle,
     EndOfLine,
@@ -29,7 +28,7 @@ import {
     IndentAction,
     FileOperationOptions
 } from '../plugin/types-impl';
-import { UriComponents } from '../common/uri-components';
+import { UriComponents } from './uri-components';
 import { ConfigurationTarget } from '../plugin/types-impl';
 import {
     SerializedDocumentFilter,
@@ -62,9 +61,9 @@ import {
     RenameLocation,
     FileMoveEvent,
     FileWillMoveEvent
-} from './model';
-import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
-import { KeysToAnyValues, KeysToKeysToAnyValue } from '../common/types';
+} from './plugin-api-rpc-model';
+import { ExtPluginApi } from './plugin-ext-api-contribution';
+import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
 import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
@@ -504,8 +503,8 @@ export namespace ScmCommandArg {
 }
 
 export interface ScmExt {
-    createSourceControl(plugin: InternalPlugin, id: string, label: string, rootUri?: theia.Uri): theia.SourceControl;
-    getLastInputBox(plugin: InternalPlugin): theia.SourceControlInputBox | undefined;
+    createSourceControl(plugin: Plugin, id: string, label: string, rootUri?: theia.Uri): theia.SourceControl;
+    getLastInputBox(plugin: Plugin): theia.SourceControlInputBox | undefined;
     $updateInputBox(sourceControlHandle: number, message: string): Promise<void>;
     $executeResourceCommand(sourceControlHandle: number, groupHandle: number, resourceHandle: number): Promise<void>;
     $provideOriginalResource(sourceControlHandle: number, uri: string, token: CancellationToken): Promise<UriComponents | undefined>;

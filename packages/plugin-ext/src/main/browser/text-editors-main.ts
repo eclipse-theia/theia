@@ -27,10 +27,10 @@ import {
     DecorationRenderOptions,
     DecorationOptions,
     WorkspaceEditDto
-} from '../../api/plugin-api';
-import { Range } from '../../api/model';
+} from '../../common/plugin-api-rpc';
+import { Range } from '../../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
-import { RPCProtocol } from '../../api/rpc-protocol';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { DisposableCollection } from '@theia/core';
 import { TextEditorMain } from './text-editor-main';
 import { disposed } from '../../common/errors';

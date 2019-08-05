@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { RPCProtocol } from '../api/rpc-protocol';
-import { EnvMain, PLUGIN_RPC_CONTEXT } from '../api/plugin-api';
+import { RPCProtocol } from '../common/rpc-protocol';
+import { EnvMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { QueryParameters } from '../common/env';
 import { v4 } from 'uuid';
 

@@ -20,8 +20,8 @@ import { CompletionList, Range, SnippetString } from '../types-impl';
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import { mixin } from '../../common/types';
-import { Position } from '../../api/plugin-api';
-import { CompletionContext, CompletionResultDto, Completion, CompletionDto } from '../../api/model';
+import { Position } from '../../common/plugin-api-rpc';
+import { CompletionContext, CompletionResultDto, Completion, CompletionDto } from '../../common/plugin-api-rpc-model';
 
 export class CompletionAdapter {
     private cacheId = 0;

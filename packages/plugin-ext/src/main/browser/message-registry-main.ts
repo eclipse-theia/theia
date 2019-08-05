@@ -16,7 +16,7 @@
 
 import { interfaces } from 'inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { MessageRegistryMain, MainMessageType, MainMessageOptions } from '../../api/plugin-api';
+import { MessageRegistryMain, MainMessageType, MainMessageOptions } from '../../common/plugin-api-rpc';
 import { ModalNotification, MessageType } from './dialogs/modal-notification';
 
 export class MessageRegistryMainImpl implements MessageRegistryMain {

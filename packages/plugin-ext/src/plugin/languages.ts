@@ -26,8 +26,8 @@ import {
     Selection,
     RawColorInfo,
     WorkspaceEditDto,
-} from '../api/plugin-api';
-import { RPCProtocol } from '../api/rpc-protocol';
+} from '../common/plugin-api-rpc';
+import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from './documents';
 import { PluginModel } from '../common/plugin-protocol';
@@ -55,7 +55,7 @@ import {
     Location,
     ColorPresentation,
     RenameLocation,
-} from '../api/model';
+} from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
 import { SignatureHelpAdapter } from './languages/signature';

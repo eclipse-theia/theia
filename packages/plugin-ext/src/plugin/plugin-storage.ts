@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { StorageMain, StorageExt } from '../api/plugin-api';
+import { StorageMain, StorageExt } from '../common/plugin-api-rpc';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../common/types';
 
 export class Memento implements theia.Memento {

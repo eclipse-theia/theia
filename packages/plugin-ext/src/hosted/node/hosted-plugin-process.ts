@@ -21,8 +21,8 @@ import { ILogger, ConnectionErrorHandler, ContributionProvider, MessageService }
 import { Emitter } from '@theia/core/lib/common/event';
 import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { HostedPluginClient, ServerPluginRunner, PluginMetadata, PluginHostEnvironmentVariable } from '../../common/plugin-protocol';
-import { RPCProtocolImpl } from '../../api/rpc-protocol';
-import { MAIN_RPC_CONTEXT } from '../../api/plugin-api';
+import { RPCProtocolImpl } from '../../common/rpc-protocol';
+import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginProcessesCache } from './hosted-plugin-processes-cache';
 import * as psTree from 'ps-tree';

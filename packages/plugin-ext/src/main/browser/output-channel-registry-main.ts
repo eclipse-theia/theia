@@ -18,7 +18,7 @@ import { interfaces } from 'inversify';
 import { OutputWidget } from '@theia/output/lib/browser/output-widget';
 import { OutputContribution } from '@theia/output/lib/browser/output-contribution';
 import { OutputChannel, OutputChannelManager } from '@theia/output/lib/common/output-channel';
-import { OutputChannelRegistryMain } from '../../api/plugin-api';
+import { OutputChannelRegistryMain } from '../../common/plugin-api-rpc';
 
 export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain {
     private outputChannelManager: OutputChannelManager;

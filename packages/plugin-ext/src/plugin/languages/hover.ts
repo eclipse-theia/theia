@@ -18,10 +18,10 @@
 import URI from 'vscode-uri/lib/umd';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
-import { Hover } from '../../api/model';
+import { Hover } from '../../common/plugin-api-rpc-model';
 import * as Converter from '../type-converters';
 import { Range } from '../types-impl';
-import { Position } from '../../api/plugin-api';
+import { Position } from '../../common/plugin-api-rpc';
 
 export class HoverAdapter {
 

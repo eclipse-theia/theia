@@ -19,12 +19,12 @@ import {
     DecorationsExt,
     DecorationsMain,
     MAIN_RPC_CONTEXT
-} from '../../../api/plugin-api';
+} from '../../../common/plugin-api-rpc';
 
 import { interfaces } from 'inversify';
 import { Emitter } from '@theia/core';
 import { Tree, TreeDecoration } from '@theia/core/lib/browser';
-import { RPCProtocol } from '../../../api/rpc-protocol';
+import { RPCProtocol } from '../../../common/rpc-protocol';
 import { ScmDecorationsService } from '@theia/scm/lib/browser/decorations/scm-decorations-service';
 
 export class DecorationsMainImpl implements DecorationsMain {

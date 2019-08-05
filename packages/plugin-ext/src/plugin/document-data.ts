@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { ModelChangedEvent, DocumentsMain } from '../api/plugin-api';
-import { Range as ARange } from '../api/model';
+import { ModelChangedEvent, DocumentsMain } from '../common/plugin-api-rpc';
+import { Range as ARange } from '../common/plugin-api-rpc-model';
 import URI from 'vscode-uri';
 import { ok } from '../common/assert';
 import { Range, Position, EndOfLine } from './types-impl';

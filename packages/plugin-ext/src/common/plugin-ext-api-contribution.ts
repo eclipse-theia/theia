@@ -13,8 +13,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { RPCProtocol } from '../api/rpc-protocol';
-import { PluginManager, Plugin } from '../api/plugin-api';
+import { RPCProtocol } from './rpc-protocol';
+import { PluginManager, Plugin } from './plugin-api-rpc';
 import { interfaces } from 'inversify';
 
 export const ExtPluginApiProvider = 'extPluginApi';

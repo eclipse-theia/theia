@@ -15,7 +15,7 @@
  ********************************************************************************/
 import { injectable } from 'inversify';
 import { Emitter } from '@theia/core/lib/common/event';
-import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
+import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 
 @injectable()
 export class PluginWorker {

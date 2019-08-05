@@ -27,8 +27,8 @@ import {
     PreferenceRegistryMain,
     PreferenceData,
     PreferenceChangeExt,
-} from '../../api/plugin-api';
-import { RPCProtocol } from '../../api/rpc-protocol';
+} from '../../common/plugin-api-rpc';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/filesystem';

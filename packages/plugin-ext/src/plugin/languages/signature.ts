@@ -18,8 +18,8 @@ import URI from 'vscode-uri/lib/umd';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
-import { Position } from '../../api/plugin-api';
-import { SignatureHelp } from '../../api/model';
+import { Position } from '../../common/plugin-api-rpc';
+import { SignatureHelp } from '../../common/plugin-api-rpc-model';
 
 export class SignatureHelpAdapter {
 

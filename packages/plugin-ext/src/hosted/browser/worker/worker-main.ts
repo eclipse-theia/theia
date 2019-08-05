@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { Emitter } from '@theia/core/lib/common/event';
-import { RPCProtocolImpl } from '../../../api/rpc-protocol';
+import { RPCProtocolImpl } from '../../../common/rpc-protocol';
 import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
-import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin } from '../../../api/plugin-api';
+import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin } from '../../../common/plugin-api-rpc';
 import { createAPIFactory } from '../../../plugin/plugin-context';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
 import * as theia from '@theia/plugin';

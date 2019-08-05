@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MAIN_RPC_CONTEXT, NotificationExt, NotificationMain } from '../../api/plugin-api';
+import { MAIN_RPC_CONTEXT, NotificationExt, NotificationMain } from '../../common/plugin-api-rpc';
 import { MessageService, Progress } from '@theia/core/lib/common';
 import { interfaces } from 'inversify';
-import { RPCProtocol } from '../../api/rpc-protocol';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export class NotificationMainImpl implements NotificationMain {

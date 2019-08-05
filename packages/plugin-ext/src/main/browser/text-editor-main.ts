@@ -24,8 +24,8 @@ import {
     ApplyEditsOptions,
     UndoStopOptions,
     DecorationOptions
-} from '../../api/plugin-api';
-import { Range } from '../../api/model';
+} from '../../common/plugin-api-rpc';
+import { Range } from '../../common/plugin-api-rpc-model';
 import { DisposableCollection, Emitter, Event } from '@theia/core';
 import { TextEditorCursorStyle, cursorStyleToString } from '../../common/editor-options';
 import { TextEditorLineNumbersStyle, EndOfLine } from '../../plugin/types-impl';

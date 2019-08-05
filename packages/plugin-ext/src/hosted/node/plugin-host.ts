@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Emitter } from '@theia/core/lib/common/event';
-import { RPCProtocolImpl } from '../../api/rpc-protocol';
+import { RPCProtocolImpl } from '../../common/rpc-protocol';
 import { PluginHostRPC } from './plugin-host-rpc';
 console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
 
