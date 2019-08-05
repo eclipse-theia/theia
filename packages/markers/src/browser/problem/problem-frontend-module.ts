@@ -25,10 +25,15 @@ import { ProblemManager } from './problem-manager';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser/navigator-decorator-service';
 import { ProblemDecorator } from './problem-decorator';
+import { ProblemTabBarDecorator } from './problem-tabbar-decorator';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ProblemLayoutVersion3Migration } from './problem-layout-migrations';
+import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
+import { bindProblemPreferences } from './problem-preferences';
 
 export default new ContainerModule(bind => {
+    bindProblemPreferences(bind);
+
     bind(ProblemManager).toSelf().inSingletonScope();
 
     bind(ProblemWidget).toDynamicValue(ctx =>
@@ -46,4 +51,6 @@ export default new ContainerModule(bind => {
 
     bind(ProblemDecorator).toSelf().inSingletonScope();
     bind(NavigatorTreeDecorator).toService(ProblemDecorator);
+    bind(ProblemTabBarDecorator).toSelf().inSingletonScope();
+    bind(TabBarDecorator).toService(ProblemTabBarDecorator);
 });
