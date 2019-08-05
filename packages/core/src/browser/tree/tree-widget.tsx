@@ -25,7 +25,7 @@ import { TreeNode, CompositeTreeNode } from './tree';
 import { TreeModel } from './tree-model';
 import { ExpandableTreeNode } from './tree-expansion';
 import { SelectableTreeNode, TreeSelection } from './tree-selection';
-import { TreeDecoration, TreeDecoratorService } from './tree-decorator';
+import { TreeDecoratorService, TreeDecoration, DecoratedTreeNode } from './tree-decorator';
 import { notEmpty } from '../../common/objects';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from '../widgets/react-widget';
@@ -693,7 +693,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected getDecorations(node: TreeNode): TreeDecoration.Data[] {
         const decorations: TreeDecoration.Data[] = [];
-        if (TreeDecoration.DecoratedTreeNode.is(node)) {
+        if (DecoratedTreeNode.is(node)) {
             decorations.push(node.decorationData);
         }
         if (this.decorations.has(node.id)) {

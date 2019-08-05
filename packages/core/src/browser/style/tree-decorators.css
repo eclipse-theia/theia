@@ -31,6 +31,7 @@
 }
 
 .theia-icon-wrapper {
+    top: 0px !important;
     position: relative;
     display: inline-block
 }
@@ -39,6 +40,13 @@
     transform: scale(0.7);
     text-align: center;
     height: 100%;
+    width: 100%;
+}
+
+.theia-decorator-sidebar-size {
+    height: 100%;
+    text-align: center;
+    transform: scale(1.2);
     width: 100%;
 }
 
@@ -52,6 +60,12 @@
     position: absolute;
     top: 40%;
     left: 25%;
+}
+
+.theia-bottom-right-sidebar {
+    position: absolute;
+    top: 80%;
+    left: 50%;
 }
 
 .theia-bottom-left {

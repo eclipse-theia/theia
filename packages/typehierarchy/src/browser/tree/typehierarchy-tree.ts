@@ -18,7 +18,7 @@ import { injectable } from 'inversify';
 import { v4 } from 'uuid';
 import URI from '@theia/core/lib/common/uri';
 import { Location } from '@theia/editor/lib/browser/editor';
-import { TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
+import { TreeDecoration, DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
 import { TreeImpl, TreeNode, CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode } from '@theia/core/lib/browser/tree';
 import { TypeHierarchyItem } from '@theia/languages/lib/browser/typehierarchy/typehierarchy-protocol';
 import { TypeHierarchyDirection, ResolveTypeHierarchyItemParams } from '@theia/languages/lib/browser/typehierarchy/typehierarchy-protocol';
@@ -113,7 +113,7 @@ export namespace TypeHierarchyTree {
 
     }
 
-    export interface Node extends CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode, TreeDecoration.DecoratedTreeNode {
+    export interface Node extends CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode, DecoratedTreeNode {
         readonly item: TypeHierarchyItem;
         resolved: boolean;
     }

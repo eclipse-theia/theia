@@ -17,7 +17,7 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
-import { MenuPath } from '../../common';
+import { DisposableCollection, MenuPath, notEmpty } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal } from '@phosphor/signaling';
 import { Message } from '@phosphor/messaging';
@@ -25,6 +25,8 @@ import { ArrayExt } from '@phosphor/algorithm';
 import { ElementExt } from '@phosphor/domutils';
 import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';
 import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel';
+import { WidgetDecoration } from '../widget-decoration';
+import { TabBarDecoratorService } from './tab-bar-decorator';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -71,17 +73,26 @@ export class TabBarRenderer extends TabBar.Renderer {
      */
     contextMenuPath?: MenuPath;
 
+    protected readonly toDispose = new DisposableCollection();
+
     // TODO refactor shell, rendered should only receive props with event handlers
     // events should be handled by clients, like ApplicationShell
     // right now it is mess: (1) client logic belong to renderer, (2) cyclic dependencies between renderes and clients
-    constructor(protected readonly contextMenuRenderer?: ContextMenuRenderer) {
+    constructor(
+        protected readonly contextMenuRenderer?: ContextMenuRenderer,
+        protected readonly decoratorService?: TabBarDecoratorService
+    ) {
         super();
+        if (this.decoratorService) {
+            this.toDispose.push(this.decoratorService);
+            this.toDispose.push(this.decoratorService.onDidChangeDecorations(() => this.tabBar && this.tabBar.update()));
+        }
     }
 
     /**
      * Render tabs with the default DOM structure, but additionally register a context menu listener.
-     * @param data {SideBarRenderData} data used to render the tab.
-     * @param isInSidePanel {boolean} an optional check which determines if the tab is in the side-panel.
+     * @param {SideBarRenderData} data Data used to render the tab.
+     * @param {boolean} isInSidePanel An optional check which determines if the tab is in the side-panel.
      * @returns {VirtualElement} The virtual element of the rendered tab.
      */
     renderTab(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
@@ -97,7 +108,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                 oncontextmenu: this.handleContextMenuEvent,
                 ondblclick: this.handleDblClickEvent
             },
-            this.renderIcon(data),
+            this.renderIcon(data, isInSidePanel),
             this.renderLabel(data, isInSidePanel),
             this.renderCloseIcon(data)
         );
@@ -131,10 +142,10 @@ export class TabBarRenderer extends TabBar.Renderer {
     }
 
     /**
-     * If size information is available for the label, set it as inline style. Tab padding
-     * and icon size are also considered in the `top` position.
-     * @param data {SideBarRenderData} data used to render the tab.
-     * @param isInSidePanel {boolean} an optional check which determines if the tab is in the side-panel.
+     * If size information is available for the label, set it as inline style.
+     * Tab padding and icon size are also considered in the `top` position.
+     * @param {SideBarRenderData} data Data used to render the tab.
+     * @param {boolean} isInSidePanel An optional check which determines if the tab is in the side-panel.
      * @returns {VirtualElement} The virtual element of the rendered label.
      */
     renderLabel(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
@@ -157,7 +168,7 @@ export class TabBarRenderer extends TabBar.Renderer {
             top = `${paddingTop + iconHeight}px`;
         }
         const style: ElementInlineStyle = { width, height, top };
-        // No need to check for duplicate labels if the tab is rendered in the side panel (title is not displayed)
+        // No need to check for duplicate labels if the tab is rendered in the side panel (title is not displayed),
         // or if there are less than two files in the tab bar.
         if (isInSidePanel || (this.tabBar && this.tabBar.titles.length < 2)) {
             return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
@@ -173,13 +184,48 @@ export class TabBarRenderer extends TabBar.Renderer {
     }
 
     /**
+     * Get all available decorations of a given tab.
+     * @param {string} tab The URI of the tab.
+     */
+    protected getDecorations(tab: string): WidgetDecoration.Data[] {
+        const tabDecorations = [];
+        if (this.tabBar && this.decoratorService) {
+            const allDecorations = this.decoratorService.getDecorations([...this.tabBar.titles]);
+            if (allDecorations.has(tab)) {
+                tabDecorations.push(...allDecorations.get(tab));
+            }
+        }
+        return tabDecorations;
+    }
+
+    /**
+     * Get the decoration data given the tab URI and the decoration data type.
+     * @param {string} tab The URI of the tab.
+     * @param {K} key The type of the decoration data.
+     */
+    protected getDecorationData<K extends keyof WidgetDecoration.Data>(tab: string, key: K): WidgetDecoration.Data[K][] {
+        return this.getDecorations(tab).filter(data => data[key] !== undefined).map(data => data[key]);
+
+    }
+
+    /**
+     * Get the class of an icon.
+     * @param {string | string[]} iconName The name of the icon.
+     * @param {string[]} additionalClasses Additional classes of the icon.
+     */
+    private getIconClass(iconName: string | string[], additionalClasses: string[] = []): string {
+        const iconClass = (typeof iconName === 'string') ? ['a', 'fa', `fa-${iconName}`] : ['a'].concat(iconName);
+        return iconClass.concat(additionalClasses).join(' ');
+    }
+
+    /**
      * Find duplicate labels from the currently opened tabs in the tab bar.
-     * Return the approriate partial paths that can distinguish the identical labels.
+     * Return the appropriate partial paths that can distinguish the identical labels.
      *
      * E.g., a/p/index.ts => a/..., b/p/index.ts => b/...
      *
      * To prevent excessively long path displayed, show at maximum three levels from the end by default.
-     * @param {Title<Widget>[]} titles - array of titles in the current tab bar.
+     * @param {Title<Widget>[]} titles Array of titles in the current tab bar.
      * @returns {Map<string, string>} A map from each tab's original path to its displayed partial path.
      */
     findDuplicateLabels(titles: Title<Widget>[]): Map<string, string> {
@@ -260,15 +306,54 @@ export class TabBarRenderer extends TabBar.Renderer {
     /**
      * If size information is available for the icon, set it as inline style. Tab padding
      * is also considered in the `top` position.
+     * @param {SideBarRenderData} data Data used to render the tab icon.
+     * @param {boolean} isInSidePanel An optional check which determines if the tab is in the side-panel.
      */
-    renderIcon(data: SideBarRenderData): VirtualElement {
+    renderIcon(data: SideBarRenderData, inSidePanel?: boolean): VirtualElement {
         let top: string | undefined;
         if (data.paddingTop) {
             top = `${data.paddingTop || 0}px`;
         }
-        const className = this.createIconClass(data);
         const style: ElementInlineStyle = { top };
-        return h.div({ className, style }, data.title.iconLabel);
+        const baseClassName = this.createIconClass(data);
+
+        const overlayIcons: VirtualElement[] = [];
+        const decorationData = this.getDecorationData(data.title.caption, 'iconOverlay');
+
+        // Check if the tab has decoration markers to be rendered on top.
+        if (decorationData.length > 0) {
+            const baseIcon: VirtualElement = h.div({ className: baseClassName, style }, data.title.iconLabel);
+            const wrapperClassName: string = WidgetDecoration.Styles.ICON_WRAPPER_CLASS;
+            const decoratorSizeClassName: string = inSidePanel ? WidgetDecoration.Styles.DECORATOR_SIDEBAR_SIZE_CLASS : WidgetDecoration.Styles.DECORATOR_SIZE_CLASS;
+
+            decorationData
+                .filter(notEmpty)
+                .map(overlay => [overlay.position, overlay] as [WidgetDecoration.IconOverlayPosition, WidgetDecoration.IconOverlay | WidgetDecoration.IconClassOverlay])
+                .forEach(([position, overlay]) => {
+                    const iconAdditionalClasses: string[] = [decoratorSizeClassName, WidgetDecoration.IconOverlayPosition.getStyle(position, inSidePanel)];
+                    const overlayIconStyle = (color?: string) => {
+                        if (color === undefined) {
+                            return {};
+                        }
+                        return { color };
+                    };
+                    // Parse the optional background (if it exists) of the overlay icon.
+                    if (overlay.background) {
+                        const backgroundIconClassName = this.getIconClass(overlay.background.shape, iconAdditionalClasses);
+                        overlayIcons.push(
+                            h.div({ key: data.title.label + '-background', className: backgroundIconClassName, style: overlayIconStyle(overlay.background.color) })
+                        );
+                    }
+                    // Parse the overlay icon.
+                    const overlayIcon = (overlay as WidgetDecoration.IconOverlay).icon || (overlay as WidgetDecoration.IconClassOverlay).iconClass;
+                    const overlayIconClassName = this.getIconClass(overlayIcon, iconAdditionalClasses);
+                    overlayIcons.push(
+                        h.span({ key: data.title.label, className: overlayIconClassName, style: overlayIconStyle(overlay.color) })
+                    );
+                });
+            return h.div({ className: wrapperClassName, style }, [baseIcon, ...overlayIcons]);
+        }
+        return h.div({ className: baseClassName, style }, data.title.iconLabel);
     }
 
     protected handleContextMenuEvent = (event: MouseEvent) => {
