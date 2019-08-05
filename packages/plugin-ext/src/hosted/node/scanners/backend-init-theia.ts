@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import { BackendInitializationFn } from '../../../common/plugin-protocol';
-import { PluginAPIFactory, Plugin, emptyPlugin } from '../../../api/plugin-api';
+import { PluginAPIFactory, Plugin, emptyPlugin } from '../../../common/plugin-api-rpc';
 
 const pluginsApiImpl = new Map<string, typeof theia>();
 const plugins = new Array<Plugin>();

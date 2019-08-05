@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../api/plugin-api';
+import { WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
-import { RPCProtocol } from '../api/rpc-protocol';
+import { RPCProtocol } from '../common/rpc-protocol';
 import URI from 'vscode-uri/lib/umd';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters';

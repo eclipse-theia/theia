@@ -19,8 +19,8 @@ import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
 import * as types from '../types-impl';
 import * as Converter from '../type-converters';
-import { Position } from '../../api/plugin-api';
-import { DocumentHighlight } from '../../api/model';
+import { Position } from '../../common/plugin-api-rpc';
+import { DocumentHighlight } from '../../common/plugin-api-rpc-model';
 
 export class DocumentHighlightAdapter {
 

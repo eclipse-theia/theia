@@ -18,9 +18,9 @@ import * as theia from '@theia/plugin';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { convertDiagnosticToMarkerData } from '../type-converters';
 import { DiagnosticSeverity, MarkerSeverity } from '../types-impl';
-import { MarkerData } from '../../api/model';
-import { RPCProtocol } from '../../api/rpc-protocol';
-import { PLUGIN_RPC_CONTEXT, LanguagesMain } from '../../api/plugin-api';
+import { MarkerData } from '../../common/plugin-api-rpc-model';
+import { RPCProtocol } from '../../common/rpc-protocol';
+import { PLUGIN_RPC_CONTEXT, LanguagesMain } from '../../common/plugin-api-rpc';
 import URI from 'vscode-uri';
 import { v4 } from 'uuid';
 

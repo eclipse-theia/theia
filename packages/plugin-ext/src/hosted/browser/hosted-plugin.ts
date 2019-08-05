@@ -25,8 +25,9 @@ import { injectable, inject, interfaces, named, postConstruct } from 'inversify'
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { HostedPluginServer, PluginMetadata, getPluginId } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
+import { MAIN_RPC_CONTEXT, PluginManagerExt } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
-import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
+import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import { ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent, CancellationTokenSource } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -39,7 +40,6 @@ import { getPreferences } from '../../main/browser/preference-registry-main';
 import { PluginServer } from '../../common/plugin-protocol';
 import { KeysToKeysToAnyValue } from '../../common/types';
 import { FileStat } from '@theia/filesystem/lib/common/filesystem';
-import { PluginManagerExt, MAIN_RPC_CONTEXT } from '../../common';
 import { MonacoTextmateService } from '@theia/monaco/lib/browser/textmate';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';

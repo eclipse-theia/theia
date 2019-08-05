@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { WindowState } from '@theia/plugin';
-import { WindowStateExt } from '../api/plugin-api';
+import { WindowStateExt } from '../common/plugin-api-rpc';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 
 export class WindowStateExtImpl implements WindowStateExt {

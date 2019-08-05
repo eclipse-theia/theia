@@ -17,7 +17,7 @@
 import URI from 'vscode-uri/lib/umd';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
-import { CodeLensSymbol } from '../../api/model';
+import { CodeLensSymbol } from '../../common/plugin-api-rpc-model';
 import * as Converter from '../type-converters';
 import { ObjectIdentifier } from '../../common/object-identifier';
 

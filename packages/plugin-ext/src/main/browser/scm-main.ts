@@ -21,11 +21,11 @@ import {
     ScmMain,
     SourceControlProviderFeatures,
     SourceControlResourceState
-} from '../../api/plugin-api';
+} from '../../common/plugin-api-rpc';
 import { ScmProvider, ScmResource, ScmResourceDecorations, ScmResourceGroup, ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import { RPCProtocol } from '../../api/rpc-protocol';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { interfaces } from 'inversify';
 import { CancellationToken, DisposableCollection, Emitter, Event } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';

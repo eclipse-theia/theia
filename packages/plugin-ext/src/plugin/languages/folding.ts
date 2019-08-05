@@ -18,7 +18,7 @@ import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
 import URI from 'vscode-uri/lib/umd';
 import * as Converter from '../type-converters';
-import * as model from '../../api/model';
+import * as model from '../../common/plugin-api-rpc-model';
 
 export class FoldingProviderAdapter {
 

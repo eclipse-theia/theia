@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { TreeViewsExt, TreeViewSelection } from '../../../api/plugin-api';
-import { Command } from '../../../api/model';
+import { TreeViewsExt, TreeViewSelection } from '../../../common/plugin-api-rpc';
+import { Command } from '../../../common/plugin-api-rpc-model';
 import {
     TreeWidget,
     TreeNode,
@@ -32,7 +32,7 @@ import {
     TREE_NODE_TAIL_CLASS,
     TreeModelImpl
 } from '@theia/core/lib/browser';
-import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../api/plugin-api';
+import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../common/plugin-api-rpc';
 import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
 import * as React from 'react';
 import { PluginSharedStyle } from '../plugin-shared-style';

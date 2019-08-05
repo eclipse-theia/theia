@@ -33,10 +33,10 @@ import {
     WorkspaceEditDto,
     ResourceTextEditDto,
     ResourceFileEditDto,
-} from '../../api/plugin-api';
+} from '../../common/plugin-api-rpc';
 import { interfaces } from 'inversify';
-import { SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider, RelatedInformation, MarkerSeverity } from '../../api/model';
-import { RPCProtocol } from '../../api/rpc-protocol';
+import { SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider, RelatedInformation, MarkerSeverity } from '../../common/plugin-api-rpc-model';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
 import { LanguageSelector } from '../../plugin/languages';
 import { DocumentFilter, MonacoModelIdentifier, testGlob, getLanguages } from 'monaco-languageclient/lib';

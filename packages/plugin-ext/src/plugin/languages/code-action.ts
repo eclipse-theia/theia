@@ -16,8 +16,8 @@
 
 import * as theia from '@theia/plugin';
 import URI from 'vscode-uri/lib/umd';
-import { Selection } from '../../api/plugin-api';
-import { Range } from '../../api/model';
+import { Selection } from '../../common/plugin-api-rpc';
+import { Range } from '../../common/plugin-api-rpc-model';
 import * as Converter from '../type-converters';
 import { DocumentsExtImpl } from '../documents';
 import { Diagnostics } from './diagnostics';

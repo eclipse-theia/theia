@@ -17,9 +17,9 @@
 import URI from 'vscode-uri/lib/umd';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
-import { ReferenceContext, Location } from '../../api/model';
+import { ReferenceContext, Location } from '../../common/plugin-api-rpc-model';
 import * as Converter from '../type-converters';
-import { Position } from '../../api/plugin-api';
+import { Position } from '../../common/plugin-api-rpc';
 import { isLocationArray } from './util';
 
 export class ReferenceAdapter {

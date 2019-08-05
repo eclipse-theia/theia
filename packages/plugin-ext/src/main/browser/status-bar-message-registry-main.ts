@@ -15,7 +15,7 @@
  ********************************************************************************/
 import { interfaces } from 'inversify';
 import * as types from '../../plugin/types-impl';
-import { StatusBarMessageRegistryMain } from '../../api/plugin-api';
+import { StatusBarMessageRegistryMain } from '../../common/plugin-api-rpc';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar/status-bar';
 
 export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistryMain {

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { AbstractMessageWriter, MessageWriter } from 'vscode-jsonrpc/lib/messageWriter';
-import { ConnectionMain, ConnectionExt } from '../api/plugin-api';
+import { ConnectionMain, ConnectionExt } from './plugin-api-rpc';
 import { Message } from 'vscode-jsonrpc';
 
 /**

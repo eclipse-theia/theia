@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { EnvExtImpl } from '../env';
-import { RPCProtocol } from '../../api/rpc-protocol';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { createHash } from 'crypto';
 import { getMac } from 'getmac';
 import { v4 } from 'uuid';

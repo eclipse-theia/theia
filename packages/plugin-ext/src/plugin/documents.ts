@@ -20,17 +20,17 @@
 /**
  * based on https://github.com/Microsoft/vscode/blob/bf9a27ec01f2ef82fc45f69e0c946c7d74a57d3e/src/vs/workbench/api/node/extHostDocumentSaveParticipant.ts
  */
-import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain, SingleEditOperation } from '../api/plugin-api';
+import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain, SingleEditOperation } from '../common/plugin-api-rpc';
 import URI from 'vscode-uri';
 import { UriComponents } from '../common/uri-components';
-import { RPCProtocol } from '../api/rpc-protocol';
+import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import * as theia from '@theia/plugin';
 import { DocumentDataExt, setWordDefinitionFor } from './document-data';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import * as Converter from './type-converters';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Range, TextDocumentShowOptions } from '../api/model';
+import { Range, TextDocumentShowOptions } from '../common/plugin-api-rpc-model';
 import { TextEdit } from './types-impl';
 
 export class DocumentsExtImpl implements DocumentsExt {
@@ -124,11 +124,11 @@ export class DocumentsExtImpl implements DocumentsExt {
     protected async fireTextDocumentWillSaveEvent({
         document, reason, fireEvent, accept
     }: {
-        document: theia.TextDocument,
-        reason: theia.TextDocumentSaveReason,
-        fireEvent: (e: theia.TextDocumentWillSaveEvent) => any,
-        accept: (operation: SingleEditOperation) => void
-    }): Promise<void> {
+            document: theia.TextDocument,
+            reason: theia.TextDocumentSaveReason,
+            fireEvent: (e: theia.TextDocumentWillSaveEvent) => any,
+            accept: (operation: SingleEditOperation) => void
+        }): Promise<void> {
 
         const promises: PromiseLike<TextEdit[] | any>[] = [];
         fireEvent(Object.freeze({

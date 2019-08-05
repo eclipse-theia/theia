@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
-import { RPCProtocol } from '../api/rpc-protocol';
+import { RPCProtocol } from './rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
-import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from '../api/plugin-api';
+import { CharacterPair, CommentRule, PluginAPIFactory, Plugin } from './plugin-api-rpc';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { RecursivePartial } from '@theia/core/lib/common/types';

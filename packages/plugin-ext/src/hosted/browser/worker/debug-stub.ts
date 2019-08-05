@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { DebugExtImpl } from '../../../plugin/node/debug/debug';
-import { RPCProtocol } from '../../../api/rpc-protocol';
+import { RPCProtocol } from '../../../common/rpc-protocol';
 
 // tslint:disable:no-any
 export function createDebugExtStub(rpc: RPCProtocol): DebugExtImpl {

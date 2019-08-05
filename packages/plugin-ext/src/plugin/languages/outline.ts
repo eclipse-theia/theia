@@ -18,7 +18,7 @@ import URI from 'vscode-uri/lib/umd';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
-import { DocumentSymbol, Range } from '../../api/model';
+import { DocumentSymbol, Range } from '../../common/plugin-api-rpc-model';
 import * as types from '../types-impl';
 
 /** Adapts the calls from main to extension thread for providing the document symbols. */

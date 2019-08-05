@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { EditorsAndDocumentsExt, EditorsAndDocumentsDelta, PLUGIN_RPC_CONTEXT } from '../api/plugin-api';
+import { EditorsAndDocumentsExt, EditorsAndDocumentsDelta, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { TextEditorExt } from './text-editor';
-import { RPCProtocol } from '../api/rpc-protocol';
+import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DocumentDataExt } from './document-data';
 import { ok } from '../common/assert';

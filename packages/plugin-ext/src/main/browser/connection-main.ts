@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MAIN_RPC_CONTEXT, ConnectionMain, ConnectionExt } from '../../api/plugin-api';
-import { RPCProtocol } from '../../api/rpc-protocol';
+import { MAIN_RPC_CONTEXT, ConnectionMain, ConnectionExt } from '../../common/plugin-api-rpc';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { PluginConnection } from '../../common/connection';
 import { PluginMessageReader } from '../../common/plugin-message-reader';
 import { PluginMessageWriter } from '../../common/plugin-message-writer';

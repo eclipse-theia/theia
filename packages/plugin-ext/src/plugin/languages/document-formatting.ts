@@ -18,7 +18,7 @@ import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import URI from 'vscode-uri/lib/umd';
-import { FormattingOptions, SingleEditOperation } from '../../api/model';
+import { FormattingOptions, SingleEditOperation } from '../../common/plugin-api-rpc-model';
 
 export class DocumentFormattingAdapter {
 

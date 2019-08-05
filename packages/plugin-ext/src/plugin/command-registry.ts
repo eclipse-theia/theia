@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../api/plugin-api';
-import { RPCProtocol } from '../api/rpc-protocol';
+import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../common/plugin-api-rpc';
+import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable } from './types-impl';
 import { KnownCommands } from './type-converters';
 

@@ -18,8 +18,8 @@ import { interfaces } from 'inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import * as theia from '@theia/plugin';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from '../../api/plugin-api';
-import { RPCProtocol } from '../../api/rpc-protocol';
+import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { KeybindingRegistry } from '@theia/core/lib/browser';
 import { PluginContributionHandler } from './plugin-contribution-handler';
 

@@ -15,9 +15,17 @@
  ********************************************************************************/
 
 import { interfaces } from 'inversify';
-import { RPCProtocol } from '../../api/rpc-protocol';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { TextEditorService } from './text-editor-service';
-import { MAIN_RPC_CONTEXT, EditorsAndDocumentsExt, EditorsAndDocumentsDelta, ModelAddedData, TextEditorAddData, EditorPosition, PLUGIN_RPC_CONTEXT } from '../../api/plugin-api';
+import {
+    MAIN_RPC_CONTEXT,
+    EditorsAndDocumentsExt,
+    EditorsAndDocumentsDelta,
+    ModelAddedData,
+    TextEditorAddData,
+    EditorPosition,
+    PLUGIN_RPC_CONTEXT
+} from '../../common/plugin-api-rpc';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { EditorModelService } from './text-editor-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';

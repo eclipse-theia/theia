@@ -17,8 +17,8 @@
 import { InputBoxOptions } from '@theia/plugin';
 import { interfaces } from 'inversify';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
-import { RPCProtocol } from '../../api/rpc-protocol';
-import { QuickOpenExt, QuickOpenMain, MAIN_RPC_CONTEXT, PickOptions, PickOpenItem } from '../../api/plugin-api';
+import { RPCProtocol } from '../../common/rpc-protocol';
+import { QuickOpenExt, QuickOpenMain, MAIN_RPC_CONTEXT, PickOptions, PickOpenItem } from '../../common/plugin-api-rpc';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
 import { QuickInputService } from '@theia/core/lib/browser';
 

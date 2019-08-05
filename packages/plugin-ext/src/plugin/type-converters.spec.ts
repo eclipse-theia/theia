@@ -18,9 +18,9 @@ import * as assert from 'assert';
 import * as Converter from './type-converters';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
-import * as model from '../api/model';
+import * as model from '../common/plugin-api-rpc-model';
 import { MarkdownString, isMarkdownString } from './markdown-string';
-import { ProcessTaskDto, TaskDto } from '../api/plugin-api';
+import { ProcessTaskDto, TaskDto } from '../common/plugin-api-rpc';
 
 describe('Type converters:', () => {
 

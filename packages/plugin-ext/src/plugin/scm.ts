@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { CommandRegistryExt, Plugin as InternalPlugin, PLUGIN_RPC_CONTEXT, ScmExt, ScmMain, ScmCommandArg } from '../api/plugin-api';
-import { RPCProtocol } from '../api/rpc-protocol';
+import { CommandRegistryExt, Plugin as InternalPlugin, PLUGIN_RPC_CONTEXT, ScmExt, ScmMain, ScmCommandArg } from '../common/plugin-api-rpc';
+import { RPCProtocol } from '../common/rpc-protocol';
 import { CancellationToken } from '@theia/core';
 import { UriComponents } from '../common/uri-components';
 import URI from '@theia/core/lib/common/uri';

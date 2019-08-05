@@ -15,8 +15,8 @@
  ********************************************************************************/
 import {
     PLUGIN_RPC_CONTEXT as Ext, OutputChannelRegistryMain
-} from '../api/plugin-api';
-import { RPCProtocol } from '../api/rpc-protocol';
+} from '../common/plugin-api-rpc';
+import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { OutputChannelImpl } from './output-channel/output-channel-item';
 

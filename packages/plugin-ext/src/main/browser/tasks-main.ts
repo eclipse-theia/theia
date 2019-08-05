@@ -18,8 +18,8 @@ import {
     TasksMain,
     MAIN_RPC_CONTEXT,
     TasksExt
-} from '../../api/plugin-api';
-import { RPCProtocol } from '../../api/rpc-protocol';
+} from '../../common/plugin-api-rpc';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import { DisposableCollection } from '@theia/core';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from 'inversify';

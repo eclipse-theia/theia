@@ -18,8 +18,8 @@ import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import URI from 'vscode-uri/lib/umd';
-import { FormattingOptions, SingleEditOperation } from '../../api/model';
-import { Position } from '../../api/plugin-api';
+import { FormattingOptions, SingleEditOperation } from '../../common/plugin-api-rpc-model';
+import { Position } from '../../common/plugin-api-rpc';
 
 export class OnTypeFormattingAdapter {
 

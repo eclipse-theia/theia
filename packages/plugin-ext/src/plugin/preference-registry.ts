@@ -24,8 +24,8 @@ import {
     PreferenceRegistryMain,
     PreferenceData,
     PreferenceChangeExt
-} from '../api/plugin-api';
-import { RPCProtocol } from '../api/rpc-protocol';
+} from '../common/plugin-api-rpc';
+import { RPCProtocol } from '../common/rpc-protocol';
 import { isObject, mixin } from '../common/types';
 import { Configuration, ConfigurationModel } from './preferences/configuration';
 import { WorkspaceExtImpl } from './workspace';

@@ -29,7 +29,7 @@ import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalOptionsExt } from '../../../api/plugin-api';
+import { TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 
 export class PluginDebugSession extends DebugSession {
     constructor(

@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import { interfaces } from 'inversify';
-import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt } from '../../../api/plugin-api';
-import { RPCProtocol } from '../../../api/rpc-protocol';
+import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt } from '../../../common/plugin-api-rpc';
+import { RPCProtocol } from '../../../common/rpc-protocol';
 import { PluginViewRegistry, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
 import { SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode, WidgetManager } from '@theia/core/lib/browser';
 import { ViewContextKeyService } from './view-context-key-service';

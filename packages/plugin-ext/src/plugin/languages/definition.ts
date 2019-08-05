@@ -19,8 +19,8 @@ import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
 import * as types from '../types-impl';
 import * as Converter from '../type-converters';
-import { Position } from '../../api/plugin-api';
-import { Definition, DefinitionLink, Location } from '../../api/model';
+import { Position } from '../../common/plugin-api-rpc';
+import { Definition, DefinitionLink, Location } from '../../common/plugin-api-rpc-model';
 import { isDefinitionLinkArray, isLocationArray } from './util';
 
 export class DefinitionAdapter {

@@ -17,8 +17,8 @@
 import { interfaces } from 'inversify';
 import {
     LanguagesContributionMain, MAIN_RPC_CONTEXT
-} from '../../api/plugin-api';
-import { RPCProtocol } from '../../api/rpc-protocol';
+} from '../../common/plugin-api-rpc';
+import { RPCProtocol } from '../../common/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { Workspace, Languages, MessageReader, MessageWriter } from '@theia/languages/lib/browser/language-client-services';
 import { LanguageClientFactory, BaseLanguageClientContribution } from '@theia/languages/lib/browser';

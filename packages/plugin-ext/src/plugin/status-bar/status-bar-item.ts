@@ -15,7 +15,7 @@
  ********************************************************************************/
 import * as theia from '@theia/plugin';
 import { ThemeColor, StatusBarAlignment } from '../types-impl';
-import { StatusBarMessageRegistryMain } from '../../api/plugin-api';
+import { StatusBarMessageRegistryMain } from '../../common/plugin-api-rpc';
 import { VS_COLORS } from './vscolor-const';
 import { UUID } from '@phosphor/coreutils/lib/uuid';
 

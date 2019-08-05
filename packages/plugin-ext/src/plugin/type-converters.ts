@@ -14,8 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { EditorPosition, Selection, Position, DecorationOptions, WorkspaceEditDto, ResourceTextEditDto, ResourceFileEditDto, TaskDto, ProcessTaskDto } from '../api/plugin-api';
-import * as model from '../api/model';
+import {
+    EditorPosition,
+    Selection,
+    Position,
+    DecorationOptions,
+    WorkspaceEditDto,
+    ResourceTextEditDto,
+    ResourceFileEditDto,
+    TaskDto,
+    ProcessTaskDto
+} from '../common/plugin-api-rpc';
+import * as model from '../common/plugin-api-rpc-model';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';

@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// Here we expose types from @theia/plugin, so it becames a direct dependency
+// Here we expose types from @theia/plugin, so it becomes a direct dependency
 export * from '../common/plugin-protocol';
 export * from '../plugin/plugin-context';
-export * from '../api/plugin-api';
+export * from './plugin-api-rpc';
 export * from '../main/node/temp-dir-util';
 export * from './plugin-ext-api-contribution';
