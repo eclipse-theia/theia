@@ -148,15 +148,30 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         this.addKeyListener(document.body, Key.ENTER, e => this.handleEnter(e));
     }
 
+    protected canHandle(event: KeyboardEvent): boolean {
+        let result: boolean = false;
+        if (this.id && event.currentTarget) {
+            const dialogOverlay: HTMLElement = event.currentTarget as HTMLElement;
+            if (dialogOverlay.lastElementChild && this.id.localeCompare(dialogOverlay.lastElementChild.id) === 0) {
+                result = true;
+            }
+        }
+        return result;
+    }
+
     protected handleEscape(event: KeyboardEvent): boolean | void {
-        this.close();
+        if (this.canHandle(event)) {
+            this.close();
+        }
     }
 
     protected handleEnter(event: KeyboardEvent): boolean | void {
-        if (event.target instanceof HTMLTextAreaElement) {
-            return false;
+        if (this.canHandle(event)) {
+            if (event.target instanceof HTMLTextAreaElement) {
+                return false;
+            }
+            this.accept();
         }
-        this.accept();
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -277,7 +292,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
         @inject(ConfirmDialogProps) protected readonly props: ConfirmDialogProps
     ) {
         super(props);
-
+        this.id = 'theia-confirm-dialog';
         this.contentNode.appendChild(this.createMessageNode(this.props.msg));
         this.appendCloseButton(props.cancel);
         this.appendAcceptButton(props.ok);
@@ -324,7 +339,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         @inject(SingleTextInputDialogProps) protected readonly props: SingleTextInputDialogProps
     ) {
         super(props);
-
+        this.id = 'theia-single-text-input-dialog';
         this.inputField = document.createElement('input');
         this.inputField.type = 'text';
         this.inputField.setAttribute('style', 'flex: 0;');
@@ -361,6 +376,12 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
 
     protected onActivateRequest(msg: Message): void {
         this.inputField.focus();
+    }
+
+    protected handleEnter(event: KeyboardEvent): boolean | void {
+        if (event.target instanceof HTMLInputElement) {
+            return super.handleEnter(event);
+        }
     }
 
 }

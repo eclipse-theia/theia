@@ -242,6 +242,7 @@ export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
         @inject(FileDialogWidget) readonly widget: FileDialogWidget
     ) {
         super(props, widget);
+        this.id = 'theia-open-file-dialog';
         if (props.canSelectFiles !== undefined) {
             this.widget.disableFileSelection = !props.canSelectFiles;
         }
@@ -276,6 +277,7 @@ export class OpenFileDialog extends FileDialog<MaybeArray<FileStatNode>> {
         }
         super.accept();
     }
+
 }
 
 @injectable()
@@ -288,6 +290,7 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
         @inject(FileDialogWidget) readonly widget: FileDialogWidget
     ) {
         super(props, widget);
+        this.id = 'theia-save-file-dialog';
         widget.addClass(SAVE_DIALOG_CLASS);
     }
 
