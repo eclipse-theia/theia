@@ -21,7 +21,8 @@ import { Deferred } from '../../common/promise-util';
 import { MaybePromise } from '../../common/types';
 import { MessageType } from '../../common/message-service-protocol';
 import { Emitter, Event } from '../../common/event';
-import { QuickTitleBar, QuickInputTitleButton } from './quick-title-bar';
+import { QuickTitleBar } from './quick-title-bar';
+import { QuickTitleButton } from '../../common/quick-open-model';
 
 export interface QuickInputOptions {
 
@@ -53,7 +54,7 @@ export interface QuickInputOptions {
     /**
      * Buttons that are displayed on the title panel
      */
-    buttons?: ReadonlyArray<QuickInputTitleButton>
+    buttons?: ReadonlyArray<QuickTitleButton>
 
     /**
      * Text for when there is a problem with the current input value
@@ -119,10 +120,6 @@ export class QuickInputService {
         let currentText = '';
         const validateInput = options && options.validateInput;
 
-        if (options && this.quickTitleBar.shouldShowTitleBar(options.title, options.step)) {
-            this.quickTitleBar.attachTitleBar(this.quickOpenService.widgetNode, options.title, options.step, options.totalSteps, options.buttons);
-        }
-
         this.quickOpenService.open({
             onType: async (lookFor, acceptor) => {
                 this.onDidChangeValueEmitter.fire(lookFor);
@@ -159,10 +156,15 @@ export class QuickInputService {
                     this.quickTitleBar.hide();
                 }
             });
+
+        if (options && this.quickTitleBar.shouldShowTitleBar(options.title, options.step)) {
+            this.quickTitleBar.attachTitleBar(this.quickOpenService.widgetNode, options.title, options.step, options.totalSteps, options.buttons);
+        }
+
         return result.promise;
     }
 
-    refresh() {
+    refresh(): void {
         this.quickOpenService.refresh();
     }
 

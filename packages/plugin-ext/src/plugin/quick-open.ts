@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, ITransferInputBox, Plugin } from '../common/plugin-api-rpc';
+import { QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, TransferInputBox, Plugin } from '../common/plugin-api-rpc';
 import { QuickPickOptions, QuickPickItem, InputBoxOptions, InputBox, QuickPick, QuickInput } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../common/rpc-protocol';
@@ -22,7 +22,7 @@ import { hookCancellationToken } from '../common/async-util';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { QuickInputButtons, QuickInputButton, ThemeIcon } from './types-impl';
-import { QuickInputTitleButtonHandle, ITransferQuickPick, PluginPackage } from '../common';
+import { QuickInputTitleButtonHandle, TransferQuickPick, PluginPackage } from '../common';
 import URI from 'vscode-uri';
 import * as path from 'path';
 import { quickPickItemToPickOpenItem } from './type-converters';
@@ -102,7 +102,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         return hookCancellationToken<Item | Item[] | undefined>(token, promise);
     }
 
-    showCustomQuickPick<T extends QuickPickItem>(options: ITransferQuickPick<T>): void {
+    showCustomQuickPick<T extends QuickPickItem>(options: TransferQuickPick<T>): void {
         this.proxy.$showCustomQuickPick(options);
     }
 
@@ -129,7 +129,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
     hide(): void {
         this.proxy.$hide();
     }
-    showInputBox(options: ITransferInputBox): void {
+    showInputBox(options: TransferInputBox): void {
         this.validateInputHandler = options && options.validateInput;
         this.proxy.$showInputBox(options, typeof this.validateInputHandler === 'function');
     }
@@ -291,15 +291,15 @@ export class QuickInputExt implements QuickInput {
         this.update({ value });
     }
 
-    show() {
+    show(): void {
         throw new Error('Method implementation must be provided by extenders');
     }
 
-    dispose() {
+    dispose(): void {
         this.disposableCollection.dispose();
     }
 
-    protected update(changed: object) {
+    protected update(changed: object): void {
         /**
          * The args are just going to be set when we call show for the first time.
          * We return early when its invisible to avoid race condition
@@ -341,19 +341,19 @@ export class QuickInputExt implements QuickInput {
         }
     }
 
-    _fireAccept() {
+    _fireAccept(): void {
         this.onDidAcceptEmitter.fire(undefined);
     }
 
-    _fireChangedValue(changedValue: string) {
+    _fireChangedValue(changedValue: string): void {
         this.onDidChangeValueEmitter.fire(changedValue);
     }
 
-    _fireHide() {
+    _fireHide(): void {
         this.onDidHideEmitter.fire(undefined);
     }
 
-    _fireButtonTrigger(btn: QuickInputButton) {
+    _fireButtonTrigger(btn: QuickInputButton): void {
         this.onDidTriggerButtonEmitter.fire(btn);
     }
 
@@ -550,11 +550,11 @@ export class QuickPickExt<T extends QuickPickItem> extends QuickInputExt impleme
         this.update({ placeholder });
     }
 
-    _fireChangedSelection(selections: T[]) {
+    _fireChangedSelection(selections: T[]): void {
         this.onDidChangeSelectionEmitter.fire(selections);
     }
 
-    _fireChangedActiveItem(changedItems: QuickOpenItem<QuickOpenItemOptions>[]) {
+    _fireChangedActiveItem(changedItems: QuickOpenItem<QuickOpenItemOptions>[]): void {
         this.onDidChangeActiveEmitter.fire(changedItems as unknown as T[]);
     }
 
@@ -567,6 +567,7 @@ export class QuickPickExt<T extends QuickPickItem> extends QuickInputExt impleme
     }
 
     show(): void {
+        this.visible = true;
         this.quickOpen.showCustomQuickPick({
             quickInputIndex: this.quickInputIndex,
             title: this.title,
