@@ -24,6 +24,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from '../common/logger';
 import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
 import { ContextKeyService } from './context-key-service';
+import * as common from '../common/keybinding';
 
 export enum KeybindingScope {
     DEFAULT,
@@ -60,22 +61,10 @@ export namespace Keybinding {
     }
 }
 
-export interface Keybinding {
-    /** Command identifier, this needs to be a unique string.  */
-    command: string;
-    /** Keybinding string as defined in packages/keymaps/README.md.  */
-    keybinding: string;
-    /**
-     * The optional keybinding context where this binding belongs to.
-     * If not specified, then this keybinding context belongs to the NOOP
-     * keybinding context.
-     */
-    context?: string;
-    /**
-     * https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
-     */
-    when?: string;
-}
+/**
+ * @deprecated import from `@theia/core/lib/common/keybinding` instead
+ */
+export type Keybinding = common.Keybinding;
 
 export interface ResolvedKeybinding extends Keybinding {
     /**

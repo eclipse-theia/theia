@@ -14,26 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Emitter } from '../../common/event';
-import { DisposableCollection } from '../../common/disposable';
+import { Emitter, Event } from '../../common/event';
 import { injectable } from 'inversify';
-
-export enum QuickInputTitleButtonSide {
-    LEFT = 0,
-    RIGHT = 1
-}
-
-export interface QuickInputTitleButton {
-    icon: string; // a background image coming from a url
-    iconClass?: string; // a class such as one coming from font awesome
-    tooltip?: string | undefined;
-    side: QuickInputTitleButtonSide
-}
+import { QuickTitleButton, QuickTitleButtonSide } from '../../common/quick-open-model';
 
 @injectable()
 export class QuickTitleBar {
 
-    private readonly onDidTriggerButtonEmitter: Emitter<QuickInputTitleButton>;
+    private readonly onDidTriggerButtonEmitter: Emitter<QuickTitleButton>;
     private _isAttached: boolean;
 
     private titleElement: HTMLElement;
@@ -43,21 +31,18 @@ export class QuickTitleBar {
     private _title: string | undefined;
     private _step: number | undefined;
     private _totalSteps: number | undefined;
-    private _buttons: ReadonlyArray<QuickInputTitleButton>;
+    private _buttons: ReadonlyArray<QuickTitleButton>;
 
     private tabIndex = 2; // Keep track of the tabIndex for the buttons
 
-    private disposableCollection: DisposableCollection;
     constructor() {
-        this.titleElement = document.createElement('h3');
-        this.titleElement.style.textAlign = 'center';
-        this.titleElement.style.margin = '0';
+        this.titleElement = document.createElement('div');
+        this.titleElement.className = QuickTitleBar.Styles.QUICK_TITLE_HEADER;
 
-        this.disposableCollection = new DisposableCollection();
-        this.disposableCollection.push(this.onDidTriggerButtonEmitter = new Emitter());
+        this.onDidTriggerButtonEmitter = new Emitter();
     }
 
-    get onDidTriggerButton() {
+    get onDidTriggerButton(): Event<QuickTitleButton> {
         return this.onDidTriggerButtonEmitter.event;
     }
 
@@ -96,7 +81,7 @@ export class QuickTitleBar {
         return this._totalSteps;
     }
 
-    set buttons(buttons: ReadonlyArray<QuickInputTitleButton> | undefined) {
+    set buttons(buttons: ReadonlyArray<QuickTitleButton> | undefined) {
         if (buttons === undefined) {
             this._buttons = [];
             return;
@@ -105,7 +90,7 @@ export class QuickTitleBar {
         this._buttons = buttons;
     }
 
-    get buttons() {
+    get buttons(): ReadonlyArray<QuickTitleButton> | undefined {
         return this._buttons;
     }
 
@@ -117,7 +102,7 @@ export class QuickTitleBar {
         }
 
         if (this.step && this.totalSteps) {
-            innerTitle += `(${this.step} / ${this.totalSteps})`;
+            innerTitle += `(${this.step}/${this.totalSteps})`;
         } else if (this.step) {
             innerTitle += this.step;
         }
@@ -126,66 +111,52 @@ export class QuickTitleBar {
     }
 
     // Left buttons are for the buttons dervied from QuickInputButtons
-    private getLeftButtons() {
+    private getLeftButtons(): ReadonlyArray<QuickTitleButton> {
         if (this._buttons === undefined || this._buttons.length === 0) {
             return [];
         }
-        return this._buttons.filter(btn => btn.side === QuickInputTitleButtonSide.LEFT);
+        return this._buttons.filter(btn => btn.side === QuickTitleButtonSide.LEFT);
     }
 
-    private getRightButtons() {
+    private getRightButtons(): ReadonlyArray<QuickTitleButton> {
         if (this._buttons === undefined || this._buttons.length === 0) {
             return [];
         }
-        return this._buttons.filter(btn => btn.side === QuickInputTitleButtonSide.RIGHT);
+        return this._buttons.filter(btn => btn.side === QuickTitleButtonSide.RIGHT);
     }
 
-    private createButtonElement(buttons: ReadonlyArray<QuickInputTitleButton>) {
-        const buttonDiv = document.createElement('div');
-        buttonDiv.style.display = 'inline-flex';
-        for (const btn of buttons) {
-            const aElement = document.createElement('a');
-            aElement.style.width = '16px';
-            aElement.style.height = '16px';
-            aElement.tabIndex = 0;
+    private createButtonElements(buttons: ReadonlyArray<QuickTitleButton>): HTMLSpanElement[] {
+        return buttons.map(btn => {
+            const spanElement = document.createElement('span');
+            spanElement.className = QuickTitleBar.Styles.QUICK_TITLE_BUTTON;
+            spanElement.tabIndex = 0;
             if (btn.iconClass) {
-                aElement.classList.add(...btn.iconClass.split(' '));
+                spanElement.classList.add(...btn.iconClass.split(' '));
             }
 
             if (btn.icon !== '') {
-                aElement.style.backgroundImage = `url(\'${btn.icon}\')`;
+                spanElement.style.backgroundImage = `url(\'${btn.icon}\')`;
             }
 
-            aElement.classList.add('icon');
-            aElement.style.display = 'flex';
-            aElement.style.justifyContent = 'center';
-            aElement.style.alignItems = 'center';
-            aElement.style.cursor = 'pointer';
-            aElement.tabIndex = this.tabIndex;
-            aElement.title = btn.tooltip ? btn.tooltip : '';
-            aElement.onclick = () => {
+            spanElement.classList.add('icon');
+            spanElement.tabIndex = this.tabIndex;
+            spanElement.title = btn.tooltip ? btn.tooltip : '';
+            spanElement.onclick = () => {
                 this.onDidTriggerButtonEmitter.fire(btn);
             };
-            aElement.onkeyup = event => {
+            spanElement.onkeyup = event => {
                 if (event.code === 'Enter') {
-                    aElement.click();
+                    spanElement.click();
                 }
             };
-            buttonDiv.appendChild(aElement);
             this.tabIndex += 1;
-        }
-        return buttonDiv;
+            return spanElement;
+        });
     }
 
-    private createTitleBarDiv() {
+    private createTitleBarDiv(): HTMLDivElement {
         const div = document.createElement('div');
-        div.style.display = 'flex';
-        div.style.flexDirection = 'row';
-        div.style.fontSize = '13px';
-        div.style.padding = '0px 1px';
-        div.style.justifyContent = 'flex-start';
-        div.style.alignItems = 'center';
-        div.style.background = 'var(--theia-layout-color4)';
+        div.className = QuickTitleBar.Styles.QUICK_TITLE_CONTAINER;
         div.onclick = event => {
             event.stopPropagation();
             event.preventDefault();
@@ -193,26 +164,24 @@ export class QuickTitleBar {
         return div;
     }
 
-    private createLeftButtonDiv() {
+    private createLeftButtonDiv(): HTMLDivElement {
         const leftButtonDiv = document.createElement('div'); // Holds all the buttons that get added to the left
-        leftButtonDiv.style.flex = '1';
-        leftButtonDiv.style.textAlign = 'left';
+        leftButtonDiv.className = QuickTitleBar.Styles.QUICK_TITLE_LEFT_BAR;
 
-        leftButtonDiv.appendChild(this.createButtonElement(this.getLeftButtons()));
+        this.createButtonElements(this.getLeftButtons()).forEach(btn => leftButtonDiv.appendChild(btn));
         return leftButtonDiv;
     }
 
-    private createRightButtonDiv() {
+    private createRightButtonDiv(): HTMLDivElement {
         const rightButtonDiv = document.createElement('div');
-        rightButtonDiv.style.flex = '1';
-        rightButtonDiv.style.textAlign = 'right';
+        rightButtonDiv.className = QuickTitleBar.Styles.QUICK_TITLE_RIGHT_BAR;
 
-        rightButtonDiv.appendChild(this.createButtonElement(this.getRightButtons()));
+        this.createButtonElements(this.getRightButtons()).forEach(btn => rightButtonDiv.appendChild(btn));
         return rightButtonDiv;
     }
 
     // tslint:disable-next-line:max-line-length
-    public attachTitleBar(widgetNode: HTMLElement, title: string | undefined, step: number | undefined, totalSteps: number | undefined, buttons: ReadonlyArray<QuickInputTitleButton> | undefined) {
+    public attachTitleBar(widgetNode: HTMLElement, title: string | undefined, step: number | undefined, totalSteps: number | undefined, buttons: ReadonlyArray<QuickTitleButton> | undefined): void {
         const div = this.createTitleBarDiv();
 
         this.updateInnerTitleText();
@@ -236,7 +205,7 @@ export class QuickTitleBar {
         this.isAttached = true;
     }
 
-    hide() {
+    hide(): void {
         this.title = undefined;
         this.buttons = undefined;
         this.step = undefined;
@@ -252,8 +221,14 @@ export class QuickTitleBar {
         return ((title !== undefined) || (step !== undefined));
     }
 
-    dispose() {
-        this.disposableCollection.dispose();
-    }
+}
 
+export namespace QuickTitleBar {
+    export namespace Styles {
+        export const QUICK_TITLE_CONTAINER = 'theia-quick-title-container';
+        export const QUICK_TITLE_LEFT_BAR = 'theia-quick-title-left-bar';
+        export const QUICK_TITLE_RIGHT_BAR = 'theia-quick-title-right-bar';
+        export const QUICK_TITLE_HEADER = 'theia-quick-title-header';
+        export const QUICK_TITLE_BUTTON = 'theia-quick-title-button';
+    }
 }

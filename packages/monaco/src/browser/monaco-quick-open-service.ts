@@ -113,6 +113,9 @@ export class MonacoQuickOpenService extends QuickOpenService {
     }
 
     internalOpen(opts: MonacoQuickOpenControllerOpts): void {
+        if (this.widgetNode && this.widgetNode.offsetParent !== null) {
+            this.hide();
+        }
         this.opts = opts;
         const activeContext = window.document.activeElement || undefined;
         if (!activeContext || !this.container.contains(activeContext)) {
@@ -134,7 +137,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
         }
     }
 
-    setValueSelected(value: string | undefined, selectLocation: Readonly<[number, number]> | undefined) {
+    setValueSelected(value: string | undefined, selectLocation: Readonly<[number, number]> | undefined): void {
         if (!value) {
             return;
         }
@@ -156,14 +159,14 @@ export class MonacoQuickOpenService extends QuickOpenService {
         }
     }
 
-    setEnabled(isEnabled: boolean | undefined) {
+    setEnabled(isEnabled: boolean | undefined): void {
         const widget = this.widget;
         if (widget.inputBox) {
             widget.inputBox.inputElement.readOnly = (isEnabled !== undefined) ? !isEnabled : false;
         }
     }
 
-    setValue(value: string | undefined) {
+    setValue(value: string | undefined): void {
         if (this.widget && this.widget.inputBox) {
             this.widget.inputBox.inputElement.value = (value !== undefined) ? value : '';
         }

@@ -23,8 +23,8 @@ import {
     ResourceTextEditDto,
     ResourceFileEditDto,
     TaskDto,
-    ProcessTaskDto
-, PickOpenItem
+    ProcessTaskDto,
+    PickOpenItem
 } from '../common/plugin-api-rpc';
 import * as model from '../common/plugin-api-rpc-model';
 import * as theia from '@theia/plugin';
@@ -879,7 +879,7 @@ export function fromColorPresentation(colorPresentation: theia.ColorPresentation
     };
 }
 
-export function quickPickItemToPickOpenItem(items: Item[]) {
+export function quickPickItemToPickOpenItem(items: Item[]): PickOpenItem[] {
     const pickItems: PickOpenItem[] = [];
     for (let handle = 0; handle < items.length; handle++) {
         const item = items[handle];
