@@ -1102,12 +1102,17 @@ declare module monaco.contextKeyService {
 
     export interface IContext { }
 
+    export interface IContextKeyChangeEvent {
+        affectsSome(keys: Set<string>): boolean;
+    }
+
     export class ContextKeyService implements IContextKeyService {
         constructor(configurationService: monaco.services.IConfigurationService);
         createScoped(target?: HTMLElement): IContextKeyService;
         getContext(target?: HTMLElement): IContext;
         createKey<T>(key: string, defaultValue: T | undefined): IContextKey<T>;
         contextMatchesRules(rules: monaco.contextkey.ContextKeyExpr | undefined): boolean;
+        onDidChangeContext: monaco.IEvent<IContextKeyChangeEvent>;
     }
 
 }

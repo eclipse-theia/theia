@@ -412,7 +412,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             execute: () => {
                 const toHide = find(this.containerLayout.iter(), part => part.id === toRegister.id);
                 if (toHide) {
-                    this.toggleVisibility(toHide);
+                    toHide.setHidden(!toHide.isHidden);
                 }
             },
             isToggled: () => {
@@ -469,15 +469,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return `${this.id}:toggle-visibility`;
     }
 
-    protected toggleVisibility(part: ViewContainerPart): void {
-        if (part.canHide) {
-            part.setHidden(!part.isHidden);
-            if (!part.isHidden) {
-                part.collapsed = false;
-            }
-        }
-    }
-
     protected moveBefore(toMovedId: string, moveBeforeThisId: string): void {
         const parts = this.getParts();
         const toMoveIndex = parts.findIndex(part => part.id === toMovedId);
@@ -519,7 +510,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             return undefined;
         }
         part.setHidden(false);
-        part.collapsed = false;
         return part;
     }
 
@@ -695,6 +685,16 @@ export class ViewContainerPart extends BaseWidget {
         }
         this.update();
         this.collapsedEmitter.fire(collapsed);
+    }
+
+    setHidden(hidden: boolean): void {
+        if (!this.canHide) {
+            return;
+        }
+        super.setHidden(hidden);
+        if (!this.isHidden) {
+            this.collapsed = false;
+        }
     }
 
     get canHide(): boolean {

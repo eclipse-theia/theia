@@ -78,6 +78,24 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
         }
     }
 
+    protected _suppressUpdateViewVisibility = false;
+    set suppressUpdateViewVisibility(suppressUpdateViewVisibility: boolean) {
+        this._suppressUpdateViewVisibility = !this.updatingViewVisibility && suppressUpdateViewVisibility;
+    }
+
+    protected updatingViewVisibility = false;
+    updateViewVisibility(cb: () => void): void {
+        if (this._suppressUpdateViewVisibility) {
+            return;
+        }
+        try {
+            this.updatingViewVisibility = true;
+            cb();
+        } finally {
+            this.updatingViewVisibility = false;
+        }
+    }
+
 }
 export namespace PluginViewWidget {
     export interface State {

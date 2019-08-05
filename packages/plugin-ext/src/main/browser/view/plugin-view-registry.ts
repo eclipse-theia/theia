@@ -33,6 +33,7 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { QuickViewService } from '@theia/core/lib/browser/quick-view-service';
 import { Emitter } from '@theia/core/lib/common/event';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -70,6 +71,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     @inject(QuickViewService)
     protected readonly quickView: QuickViewService;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     protected readonly onDidExpandViewEmitter = new Emitter<string>();
     readonly onDidExpandView = this.onDidExpandViewEmitter.event;
 
@@ -105,6 +109,48 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             iconClass: 'theia-plugin-test-tab-icon',
             closeable: true
         });
+        this.contextKeyService.onDidChange(e => {
+            for (const [, view] of this.views.values()) {
+                if (view.when === undefined) {
+                    continue;
+                }
+                if (e.affects(new Set([view.when]))) {
+                    this.updateViewVisibility(view.id);
+                }
+            }
+        });
+    }
+
+    protected async updateViewVisibility(viewId: string): Promise<void> {
+        const viewInfo = this.views.get(viewId);
+        if (!viewInfo) {
+            return;
+        }
+        const [viewContainerId] = viewInfo;
+        const viewContainer = await this.getPluginViewContainer(viewContainerId);
+        if (!viewContainer) {
+            return;
+        }
+        const widget = await this.getView(viewId);
+        if (!widget) {
+            return;
+        }
+        const part = viewContainer.getPartFor(widget);
+        if (!part) {
+            return;
+        }
+        widget.updateViewVisibility(() =>
+            part.setHidden(!this.isViewVisible(viewId))
+        );
+    }
+
+    protected isViewVisible(viewId: string): boolean {
+        const viewInfo = this.views.get(viewId);
+        if (!viewInfo) {
+            return false;
+        }
+        const [, view] = viewInfo;
+        return view.when === undefined || this.contextKeyService.match(view.when);
     }
 
     registerViewContainer(location: string, viewContainer: ViewContainer): void {
@@ -255,11 +301,15 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             const widget = await this.widgetManager.getOrCreateWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, identifier);
             if (containerWidget.getTrackableWidgets().indexOf(widget) === -1) {
                 containerWidget.addWidget(widget, {
-                    initiallyCollapsed: !!containerWidget.getParts().length
+                    initiallyCollapsed: !!containerWidget.getParts().length,
+                    initiallyHidden: !this.isViewVisible(viewId)
                 });
             }
             const part = containerWidget.getPartFor(widget);
             if (part) {
+                // if a view is explicilty hidden then suppress updating visibility based on `when` closure
+                part.onVisibilityChanged(() => widget.suppressUpdateViewVisibility = part.isHidden);
+
                 const tryFireOnDidExpandView = () => {
                     if (!part.collapsed && part.isVisible) {
                         toFire.dispose();
@@ -275,9 +325,21 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
     }
 
-    protected getPluginViewContainer(viewContainerId: string): Promise<ViewContainerWidget | undefined> {
+    protected async getPluginViewContainer(viewContainerId: string): Promise<ViewContainerWidget | undefined> {
+        if (viewContainerId === 'explorer') {
+            return this.widgetManager.getWidget<ViewContainerWidget>(EXPLORER_VIEW_CONTAINER_ID);
+        }
+        if (viewContainerId === 'scm') {
+            return this.widgetManager.getWidget<ViewContainerWidget>(SCM_VIEW_CONTAINER_ID);
+        }
+        if (viewContainerId === 'debug') {
+            const debug = await this.widgetManager.getWidget(DebugWidget.ID);
+            if (debug instanceof DebugWidget) {
+                return debug['sessionWidget']['viewContainer'];
+            }
+        }
         const identifier = this.toViewContainerIdentifier(viewContainerId);
-        return this.widgetManager.getWidget(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
+        return this.widgetManager.getWidget<ViewContainerWidget>(PLUGIN_VIEW_CONTAINER_FACTORY_ID, identifier);
     }
 
     async initWidgets(): Promise<void> {
