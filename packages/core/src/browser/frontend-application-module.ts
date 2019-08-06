@@ -77,6 +77,7 @@ import { ApplicationShellMouseTracker } from './shell/application-shell-mouse-tr
 import { ViewContainer, ViewContainerIdentifier } from './view-container';
 import { QuickViewService } from './quick-view-service';
 import { QuickTitleBar } from './quick-open/quick-title-bar';
+import { DialogOverlayService } from './dialogs';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -253,6 +254,9 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(QuickViewService).toSelf().inSingletonScope();
     bind(QuickOpenContribution).toService(QuickViewService);
+
+    bind(DialogOverlayService).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(DialogOverlayService);
 });
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
