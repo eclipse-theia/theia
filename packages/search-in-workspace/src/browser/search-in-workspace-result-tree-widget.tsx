@@ -36,13 +36,14 @@ import {
 import { CancellationTokenSource, Emitter, Event } from '@theia/core';
 import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileResourceResolver } from '@theia/filesystem/lib/browser';
+import { FileResourceResolver, FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
+import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
 import { MEMORY_TEXT } from './in-memory-text-resource';
 import URI from '@theia/core/lib/common/uri';
+import * as minimatch from 'minimatch';
 import * as React from 'react';
-import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
 import { ProgressService } from '@theia/core';
 
 const ROOT_ID = 'ResultTree';
@@ -101,6 +102,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected _showReplaceButtons = false;
     protected _replaceTerm = '';
     protected searchTerm = '';
+    protected dirtyFileUris = new Set<string>();
 
     protected appliedDecorations = new Map<string, string[]>();
 
@@ -117,6 +119,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
+    @inject(FileSystemPreferences) protected readonly fileSystemPreferences: FileSystemPreferences;
     @inject(SearchInWorkspacePreferences) protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
     @inject(ProgressService) protected readonly progressService: ProgressService;
 
@@ -198,9 +201,175 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         });
     }
 
+    /**
+     * Return the root folder URI that a file belongs to.
+     * In the case that a file belongs to more than one root folders, return the root folder closest to the file.
+     * If the file is not from the current workspace, return an empty URI.
+     * @param {string} filePath Path of the file.
+     * @param {string[]} rootUris URIs of the root folders in the workspace
+     * @returns URI of the root folder.
+     */
+    getRoot(filePath: string, rootUris: string[]): URI {
+        const roots = rootUris.filter(root => new URI(root).withScheme('file').isEqualOrParent(new URI(filePath).withScheme('file')));
+        if (roots.length > 0) {
+            return new URI(roots.sort((r1, r2) => r2.length - r1.length)[0]);
+        }
+        return new URI();
+    }
+
+    /**
+     * Return all matches in a dirty file.
+     */
+    findMatches(searchTerm: string, fileContent: string, options: SearchInWorkspaceOptions): { lineNumber: number, character: number, length: number, lineText: string }[] {
+        const matches = [];
+        const allLines: string[] = fileContent.split(/[\n\u0085\u2028\u2029]|\r\n?/);
+        // Check if RegEx search is supported.
+        // Since RegEx is still used for result matching, if RegEx search option is off, all the special characters need to be escaped.
+        if (!options.useRegExp) {
+            searchTerm = searchTerm.replace(/[\-\\\{\}\*\+\?\|\^\$\.\[\]\(\)\#]/g, '\\$&');
+        }
+        // Check if results should be matched case sensitively.
+        const reFlags = options.matchCase ? 'g' : 'gi';
+        // Check if only whole words should be matched.
+        if (options.matchWholeWord) {
+            searchTerm = '\\b' + searchTerm + '\\b';
+        }
+        const re = RegExp(searchTerm, reFlags);
+
+        for (let i = 0; i < allLines.length; i++) {
+            const currLine = allLines[i];
+            let reMatch: RegExpExecArray | null;
+            while (reMatch = re.exec(currLine)) {
+                const match = {
+                    lineNumber: i + 1,
+                    character: reMatch.index + 1,
+                    length: reMatch[0].length,
+                    lineText: currLine
+                };
+                matches.push(match);
+            }
+        }
+        return matches;
+    }
+
+    /**
+     * Add a search result to the result tree.
+     * If result is from a dirty file, it will be added to the `dirtyFileUris`.
+     * @param {SearchInWorkspaceResult} result The search result.
+     * @param {boolean} [isDirtyResult] Whether the search result is from a dirty file.
+     */
+    addToResultTree(result: SearchInWorkspaceResult, isDirtyResult?: boolean): void {
+        const collapseValue: string = this.searchInWorkspacePreferences['search.collapseResults'];
+        const { name, path } = this.filenameAndPath(result.root, result.fileUri);
+        const tree = this.resultTree;
+        const rootFolderNode = tree.get(result.root);
+
+        if (rootFolderNode) {
+            const fileNode = rootFolderNode.children.find(f => f.fileUri === result.fileUri);
+            if (fileNode) {
+                if (isDirtyResult) {
+                    this.dirtyFileUris.add(fileNode.fileUri);
+                }
+
+                const line = this.createResultLineNode(result, fileNode);
+                if (fileNode.children.findIndex(lineNode => lineNode.id === line.id) < 0) {
+                    fileNode.children.push(line);
+                }
+                this.collapseFileNode(fileNode, collapseValue);
+            } else {
+                const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, rootFolderNode);
+                this.collapseFileNode(newFileNode, collapseValue);
+                if (isDirtyResult) {
+                    this.dirtyFileUris.add(newFileNode.fileUri);
+                }
+
+                const line = this.createResultLineNode(result, newFileNode);
+                newFileNode.children.push(line);
+                rootFolderNode.children.push(newFileNode);
+            }
+
+        } else {
+            const newRootFolderNode = this.createRootFolderNode(result.root);
+            tree.set(result.root, newRootFolderNode);
+            const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, newRootFolderNode);
+            this.collapseFileNode(newFileNode, collapseValue);
+            if (isDirtyResult) {
+                this.dirtyFileUris.add(newFileNode.fileUri);
+            }
+
+            const line = this.createResultLineNode(result, newFileNode);
+            newFileNode.children.push(line);
+            newRootFolderNode.children.push(newFileNode);
+        }
+    }
+
+    /**
+     * Search in all dirty editors in the current workspace.
+     * @returns The number of match results in dirty files.
+     */
+    searchInDirtyFiles(searchTerm: string, searchOptions: SearchInWorkspaceOptions): number {
+        // Get all dirty editor widgets.
+        let dirtyWidgets: EditorWidget[] = this.editorManager.all.filter(w => w.saveable.dirty);
+        // Filter to exclude dirty widgets that should be ignored.
+        if (!searchOptions.includeIgnored) {
+            const ignoredPatterns = this.fileSystemPreferences.get('files.exclude');
+            dirtyWidgets = dirtyWidgets.filter(widget => {
+                for (const pattern in ignoredPatterns) {
+                    if (ignoredPatterns[pattern] && minimatch(widget.title.label, pattern)) {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        }
+        // Filter to only search dirty widgets in `files to include`.
+        if (searchOptions.include && searchOptions.include.length > 0) {
+            const includedPatterns: string[] = searchOptions.include;
+            dirtyWidgets = dirtyWidgets.filter(widget => includedPatterns.some(pattern => minimatch(widget.title.label, pattern)));
+        }
+        // Filter to only search dirty widgets that are not in `files to exclude`.
+        if (searchOptions.exclude && searchOptions.exclude.length) {
+            const excludedPatterns: string[] = searchOptions.exclude;
+            dirtyWidgets = dirtyWidgets.filter(widget => !excludedPatterns.some(pattern => minimatch(widget.title.label, pattern)));
+        }
+
+        let numberOfResults = 0;
+        dirtyWidgets.forEach(async w => {
+            const fileUri: string = w.editor.uri.toString();
+            const roots = await this.workspaceService.roots;
+            const root: string = this.getRoot(w.editor.uri.path.toString(), roots.map(r => r.uri)).toString();
+            const fileContent: string = w.editor.document.getText();
+            const matches = this.findMatches(searchTerm, fileContent, searchOptions);
+
+            if (matches.length) {
+                // Get all match results in a file.
+                const dirtyResults: SearchInWorkspaceResult[] = matches.map(match => ({
+                    fileUri,
+                    root,
+                    line: match.lineNumber,
+                    character: match.character,
+                    length: match.length,
+                    lineText: match.lineText.replace(/[\r\n]+$/, ''),
+                }));
+                // Check if the number of match results exceed the maximum amount.
+                if (searchOptions.maxResults && numberOfResults + matches.length >= searchOptions.maxResults) {
+                    dirtyResults.slice(0, searchOptions.maxResults - numberOfResults).forEach(result => this.addToResultTree(result, true));
+                    return searchOptions.maxResults;
+                }
+                dirtyResults.forEach(result => this.addToResultTree(result, true));
+                numberOfResults += matches.length;
+            }
+        });
+        return numberOfResults;
+    }
+
+    /**
+     * Search in all files in the current workspace.
+     */
     async search(searchTerm: string, searchOptions: SearchInWorkspaceOptions): Promise<void> {
         this.searchTerm = searchTerm;
-        const collapseValue: string = this.searchInWorkspacePreferences['search.collapseResults'];
+        // Stores URIs of the dirty editors to avoid duplicated search results.
+        this.dirtyFileUris.clear();
         this.resultTree.clear();
         this.cancelIndicator.cancel();
         this.cancelIndicator = new CancellationTokenSource();
@@ -210,39 +379,23 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             return;
         }
         const progress = await this.progressService.showProgress({ text: `search: ${searchTerm}`, options: { location: 'search' } });
+
+        // Search in the dirty editors first.
+        const numberOfDirtyResults = this.searchInDirtyFiles(searchTerm, searchOptions);
+        if (searchOptions.maxResults) {
+            searchOptions.maxResults -= numberOfDirtyResults;
+        }
+
         const searchId = await this.searchService.search(searchTerm, {
             onResult: (aSearchId: number, result: SearchInWorkspaceResult) => {
                 if (token.isCancellationRequested || aSearchId !== searchId) {
                     return;
                 }
-                const { name, path } = this.filenameAndPath(result.root, result.fileUri);
-                const tree = this.resultTree;
-                const rootFolderNode = tree.get(result.root);
-
-                if (rootFolderNode) {
-                    const fileNode = rootFolderNode.children.find(f => f.fileUri === result.fileUri);
-                    if (fileNode) {
-                        const line = this.createResultLineNode(result, fileNode);
-                        if (fileNode.children.findIndex(lineNode => lineNode.id === line.id) < 0) {
-                            fileNode.children.push(line);
-                        }
-                        this.collapseFileNode(fileNode, collapseValue);
-                    } else {
-                        const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, rootFolderNode);
-                        this.collapseFileNode(newFileNode, collapseValue);
-                        const line = this.createResultLineNode(result, newFileNode);
-                        newFileNode.children.push(line);
-                        rootFolderNode.children.push(newFileNode);
-                    }
-
-                } else {
-                    const newRootFolderNode = this.createRootFolderNode(result.root);
-                    tree.set(result.root, newRootFolderNode);
-                    const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, newRootFolderNode);
-                    this.collapseFileNode(newFileNode, collapseValue);
-                    newFileNode.children.push(this.createResultLineNode(result, newFileNode));
-                    newRootFolderNode.children.push(newFileNode);
+                // Break if the match is from a dirty file (already searched).
+                if (this.dirtyFileUris.has(result.fileUri)) {
+                    return;
                 }
+                this.addToResultTree(result);
             },
             onDone: () => {
                 progress.cancel();
