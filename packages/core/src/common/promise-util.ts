@@ -27,3 +27,18 @@ export class Deferred<T> {
         this.reject = reject;
     });
 }
+
+export class PromiseQueue {
+    protected queue = Promise.resolve();
+    push<T>(fn: () => Promise<T>): Promise<T> {
+        const deferred = new Deferred<T>();
+        this.queue = this.queue.then(async () => {
+            try {
+                deferred.resolve(await fn());
+            } catch (e) {
+                deferred.reject(e);
+            }
+        });
+        return deferred.promise;
+    }
+}

@@ -41,7 +41,7 @@ import { PluginServer } from '../../common/plugin-protocol';
 import { KeysToKeysToAnyValue } from '../../common/types';
 import { FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { MonacoTextmateService } from '@theia/monaco/lib/browser/textmate';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Deferred, PromiseQueue } from '@theia/core/lib/common/promise-util';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { WaitUntilEvent } from '@theia/core/lib/common/event';
@@ -121,6 +121,8 @@ export class HostedPluginSupport {
 
     protected readonly activationEvents = new Set<string>();
 
+    private loadingQueue = new PromiseQueue();
+
     @postConstruct()
     protected init(): void {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
@@ -161,7 +163,7 @@ export class HostedPluginSupport {
                 workspaceStates: metadata['5'],
                 roots: metadata['6']
             };
-            this.loadPlugins(pluginsInitData, this.container);
+            this.loadingQueue.push(() => this.loadPlugins(pluginsInitData, this.container));
         }).catch(e => console.error(e));
     }
 
