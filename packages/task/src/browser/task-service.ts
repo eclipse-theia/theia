@@ -366,7 +366,7 @@ export class TaskService implements TaskConfigurationClient {
             }
         }
 
-        const resolver = this.taskResolverRegistry.getResolver(task.type);
+        const resolver = await this.taskResolverRegistry.getResolver(task.type);
         let resolvedTask: TaskConfiguration;
         try {
             resolvedTask = resolver ? await resolver.resolveTask(task) : task;

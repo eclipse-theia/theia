@@ -17,6 +17,7 @@
 import { injectable, postConstruct } from 'inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { TaskConfiguration } from '../common/task-protocol';
+import { WaitUntilEvent, Emitter } from '@theia/core/lib/common/event';
 
 export const TaskContribution = Symbol('TaskContribution');
 
@@ -39,6 +40,9 @@ export interface TaskProvider {
 @injectable()
 export class TaskResolverRegistry {
 
+    protected readonly onWillProvideTaskResolverEmitter = new Emitter<WaitUntilEvent>();
+    readonly onWillProvideTaskResolver = this.onWillProvideTaskResolverEmitter.event;
+
     protected resolvers: Map<string, TaskResolver>;
 
     @postConstruct()
@@ -54,13 +58,17 @@ export class TaskResolverRegistry {
         };
     }
 
-    getResolver(type: string): TaskResolver | undefined {
+    async getResolver(type: string): Promise<TaskResolver | undefined> {
+        await WaitUntilEvent.fire(this.onWillProvideTaskResolverEmitter, {});
         return this.resolvers.get(type);
     }
 }
 
 @injectable()
 export class TaskProviderRegistry {
+
+    protected readonly onWillProvideTaskProviderEmitter = new Emitter<WaitUntilEvent>();
+    readonly onWillProvideTaskProvider = this.onWillProvideTaskProviderEmitter.event;
 
     protected providers: Map<string, TaskProvider>;
 
@@ -78,12 +86,14 @@ export class TaskProviderRegistry {
         };
     }
 
-    getProvider(type: string): TaskProvider | undefined {
+    async getProvider(type: string): Promise<TaskProvider | undefined> {
+        await WaitUntilEvent.fire(this.onWillProvideTaskProviderEmitter, {});
         return this.providers.get(type);
     }
 
     /** Returns all registered Task Providers. */
-    getProviders(): TaskProvider[] {
+    async getProviders(): Promise<TaskProvider[]> {
+        await WaitUntilEvent.fire(this.onWillProvideTaskProviderEmitter, {});
         return [...this.providers.values()];
     }
 }
