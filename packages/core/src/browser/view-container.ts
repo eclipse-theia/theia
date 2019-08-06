@@ -33,6 +33,8 @@ import { parseCssMagnitude } from './browser';
 import { WidgetManager } from './widget-manager';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
 import { Key } from './keys';
+import { ProgressLocationService } from './progress-location-service';
+import { ProgressBar } from './progress-bar';
 
 export interface ViewContainerTitleOptions {
     label: string;
@@ -44,6 +46,7 @@ export interface ViewContainerTitleOptions {
 @injectable()
 export class ViewContainerIdentifier {
     id: string;
+    progressLocationId?: string;
 }
 
 /**
@@ -88,6 +91,9 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected readonly onDidChangeTrackableWidgetsEmitter = new Emitter<Widget[]>();
     readonly onDidChangeTrackableWidgets = this.onDidChangeTrackableWidgetsEmitter.event;
+
+    @inject(ProgressLocationService)
+    protected readonly progressLocationService: ProgressLocationService;
 
     @postConstruct()
     protected init(): void {
@@ -138,6 +144,10 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             }),
             this.onDidChangeTrackableWidgetsEmitter
         ]);
+        if (this.options.progressLocationId) {
+            const onProgress = this.progressLocationService.onProgress(this.options.progressLocationId);
+            this.toDispose.push(new ProgressBar({ container: this.node, insertMode: 'prepend'}, onProgress));
+        }
     }
 
     protected readonly toDisposeOnCurrentPart = new DisposableCollection();

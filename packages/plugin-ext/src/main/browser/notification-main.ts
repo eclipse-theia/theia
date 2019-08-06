@@ -15,23 +15,23 @@
  ********************************************************************************/
 
 import { NotificationMain } from '../../common/plugin-api-rpc';
-import { MessageService, Progress, ProgressMessage } from '@theia/core/lib/common';
+import { ProgressService, Progress, ProgressMessage } from '@theia/core/lib/common';
 import { interfaces } from 'inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
 
 export class NotificationMainImpl implements NotificationMain {
 
-    private readonly messageService: MessageService;
+    private readonly progressService: ProgressService;
     private readonly progressMap = new Map<string, Progress>();
     private readonly progress2Work = new Map<string, number>();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
-        this.messageService = container.get(MessageService);
+        this.progressService = container.get(ProgressService);
     }
 
     async $startProgress(options: string | NotificationMain.StartProgressOptions): Promise<string> {
         const progressMessage = this.mapOptions(options);
-        const progress = await this.messageService.showProgress(progressMessage);
+        const progress = await this.progressService.showProgress(progressMessage);
         this.progressMap.set(progress.id, progress);
         this.progress2Work.set(progress.id, 0);
         return progress.id;
