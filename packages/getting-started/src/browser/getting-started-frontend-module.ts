@@ -15,13 +15,13 @@
  ********************************************************************************/
 
 import { GettingStartedContribution } from './getting-started-contribution';
-import { ContainerModule } from 'inversify';
+import { ContainerModule, interfaces } from 'inversify';
 import { GettingStartedWidget } from './getting-started-widget';
 import { WidgetFactory, FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
 
 import '../../src/browser/style/index.css';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind: interfaces.Bind) => {
     bindViewContribution(bind, GettingStartedContribution);
     bind(FrontendApplicationContribution).toService(GettingStartedContribution);
     bind(GettingStartedWidget).toSelf();
