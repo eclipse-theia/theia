@@ -363,4 +363,10 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         this.inputField.focus();
     }
 
+    protected handleEnter(event: KeyboardEvent): boolean | void {
+        if (event.target instanceof HTMLInputElement) {
+            return super.handleEnter(event);
+        }
+    }
+
 }
