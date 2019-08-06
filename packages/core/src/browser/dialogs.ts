@@ -17,7 +17,8 @@
 import { injectable, inject } from 'inversify';
 import { Disposable, MaybePromise, CancellationTokenSource } from '../common';
 import { Key } from './keyboard/keys';
-import { Widget, BaseWidget, Message } from './widgets';
+import { Widget, BaseWidget, Message, addKeyListener } from './widgets';
+import { FrontendApplicationContribution } from './frontend-application';
 
 @injectable()
 export class DialogProps {
@@ -49,6 +50,59 @@ export namespace DialogError {
         }
         return error.message;
     }
+}
+
+@injectable()
+export class DialogOverlayService implements FrontendApplicationContribution {
+
+    protected static INSTANCE: DialogOverlayService;
+
+    static get(): DialogOverlayService {
+        return DialogOverlayService.INSTANCE;
+    }
+
+    // tslint:disable-next-line:no-any
+    protected readonly dialogs: AbstractDialog<any>[] = [];
+
+    constructor() {
+        addKeyListener(document.body, Key.ENTER, e => this.handleEnter(e));
+        addKeyListener(document.body, Key.ESCAPE, e => this.handleEscape(e));
+    }
+
+    initialize(): void {
+        DialogOverlayService.INSTANCE = this;
+    }
+
+    // tslint:disable-next-line:no-any
+    protected get currentDialog(): AbstractDialog<any> | undefined {
+        return this.dialogs[0];
+    }
+
+    // tslint:disable-next-line:no-any
+    push(dialog: AbstractDialog<any>): Disposable {
+        this.dialogs.unshift(dialog);
+        return Disposable.create(() => {
+            const index = this.dialogs.indexOf(dialog);
+            if (index > -1) {
+                this.dialogs.splice(index, 1);
+            }
+        });
+    }
+
+    protected handleEscape(event: KeyboardEvent): boolean | void {
+        const dialog = this.currentDialog;
+        if (dialog) {
+            dialog['handleEscape'](event);
+        }
+    }
+
+    protected handleEnter(event: KeyboardEvent): boolean | void {
+        const dialog = this.currentDialog;
+        if (dialog) {
+            dialog['handleEnter'](event);
+        }
+    }
+
 }
 
 @injectable()
@@ -144,8 +198,8 @@ export abstract class AbstractDialog<T> extends BaseWidget {
             this.addAcceptAction(this.acceptButton, 'click');
         }
         this.addCloseAction(this.closeCrossNode, 'click');
-        this.addKeyListener(document.body, Key.ESCAPE, e => this.handleEscape(e));
-        this.addKeyListener(document.body, Key.ENTER, e => this.handleEnter(e));
+        // TODO: use DI always to create dialog instances
+        this.toDisposeOnDetach.push(DialogOverlayService.get().push(this));
     }
 
     protected handleEscape(event: KeyboardEvent): boolean | void {
