@@ -78,7 +78,7 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
     }
 
     async resolveTask(task: CppBuildTaskConfiguration): Promise<TaskConfiguration> {
-        const resolver = this.taskResolverRegistry.getResolver('shell');
+        const resolver = await this.taskResolverRegistry.getResolver('shell');
         if (!resolver) {
             throw new Error('No shell resolver found, cannot build.');
         }

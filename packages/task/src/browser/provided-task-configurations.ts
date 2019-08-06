@@ -37,7 +37,7 @@ export class ProvidedTaskConfigurations {
 
     /** returns a list of provided tasks */
     async getTasks(): Promise<TaskConfiguration[]> {
-        const providers = this.taskProviderRegistry.getProviders();
+        const providers = await this.taskProviderRegistry.getProviders();
         const providedTasks: TaskConfiguration[] = (await Promise.all(providers.map(p => p.provideTasks())))
             .reduce((acc, taskArray) => acc.concat(taskArray), []);
         this.cacheTasks(providedTasks);

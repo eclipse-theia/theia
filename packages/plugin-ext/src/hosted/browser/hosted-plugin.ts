@@ -49,6 +49,7 @@ import { FileSearchService } from '@theia/file-search/lib/common/file-search-ser
 import { isCancelled } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
+import { TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -112,6 +113,12 @@ export class HostedPluginSupport {
     @inject(PluginViewRegistry)
     protected readonly viewRegistry: PluginViewRegistry;
 
+    @inject(TaskProviderRegistry)
+    protected readonly taskProviderRegistry: TaskProviderRegistry;
+
+    @inject(TaskResolverRegistry)
+    protected readonly taskResolverRegistry: TaskResolverRegistry;
+
     private theiaReadyPromise: Promise<any>;
 
     protected readonly managers: PluginManagerExt[] = [];
@@ -135,6 +142,8 @@ export class HostedPluginSupport {
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));
         this.debugConfigurationManager.onWillProvideDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugInitialConfigurations'));
         this.viewRegistry.onDidExpandView(id => this.activateByView(id));
+        this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
+        this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
     }
 
     checkAndLoadPlugin(container: interfaces.Container): void {
@@ -288,6 +297,10 @@ export class HostedPluginSupport {
         ]);
         p.then(() => listener.dispose(), () => listener.dispose());
         event.waitUntil(p);
+    }
+
+    protected ensureTaskActivation(event: WaitUntilEvent): void {
+        event.waitUntil(this.activateByCommand('workbench.action.tasks.runTask'));
     }
 
     protected ensureDebugActivation(event: WaitUntilEvent, activationEvent?: DebugActivationEvent, debugType?: string): void {

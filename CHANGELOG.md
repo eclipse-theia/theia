@@ -14,6 +14,8 @@ Breaking changes:
 
 - [task] `TaskService.getConfiguredTasks()` returns `Promise<TaskConfiguration[]>` instead of `TaskConfiguration[]` [#5777](https://github.com/theia-ide/theia/pull/5777)
 - [plugin] files from 'plugin-ext/src/api' moved to 'plugin-ext/src/common', renamed 'model.ts' to 'plugin-api-rpc-model.ts', 'plugin-api.ts' to 'plugin-api-rpc.ts'
+- [task] ensure that plugin tasks are registered before accessing them [5869](https://github.com/theia-ide/theia/pull/5869)
+  - `TaskProviderRegistry` and `TaskResolverRegistry` are promisified
 
 Breaking changes:
   - [shell][plugin] integrated view containers and views [#5665](https://github.com/theia-ide/theia/pull/5665)
