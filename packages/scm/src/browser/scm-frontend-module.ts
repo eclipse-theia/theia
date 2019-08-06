@@ -41,7 +41,10 @@ export default new ContainerModule(bind => {
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: SCM_VIEW_CONTAINER_ID,
         createWidget: async () => {
-            const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({ id: SCM_VIEW_CONTAINER_ID });
+            const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({
+                id: SCM_VIEW_CONTAINER_ID,
+                progressLocationId: 'scm'
+            });
             viewContainer.setTitleOptions({
                 label: 'Source Control',
                 iconClass: 'scm-tab-icon',
