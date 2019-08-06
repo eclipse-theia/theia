@@ -21,6 +21,9 @@ import { GettingStartedWidget } from './getting-started-widget';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
+/**
+ * Triggers opening the `GettingStartedWidget`.
+ */
 export const GettingStartedCommand = {
     id: GettingStartedWidget.ID,
     label: GettingStartedWidget.LABEL
@@ -48,7 +51,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
     async onStart(app: FrontendApplication): Promise<void> {
         if (!this.workspaceService.opened) {
             this.stateService.reachedState('ready').then(
-                a => this.openView({ reveal: true })
+                () => this.openView({ reveal: true })
             );
         }
     }
