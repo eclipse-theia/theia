@@ -183,9 +183,11 @@ export class FileNavigatorWidget extends FileTreeWidget {
             if (!raw) {
                 return;
             }
-            const uri = new URI(raw);
-            if (this.model.copy(uri)) {
-                event.preventDefault();
+            for (const file of raw.split('\n')) {
+                const uri = new URI(file);
+                if (this.model.copy(uri)) {
+                    event.preventDefault();
+                }
             }
         }
     }
