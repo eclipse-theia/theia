@@ -28,6 +28,7 @@ import { GitRepositoryProvider } from './git-repository-provider';
 import { GitErrorHandler } from '../browser/git-error-handler';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmResource, ScmCommand } from '@theia/scm/lib/browser/scm-provider';
+import { ProgressService } from '@theia/core/lib/common/progress-service';
 
 export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
@@ -199,6 +200,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
     @inject(Git) protected readonly git: Git;
     @inject(GitErrorHandler) protected readonly gitErrorHandler: GitErrorHandler;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
+    @inject(ProgressService) protected readonly progressService: ProgressService;
 
     onStart(): void {
         this.updateStatusBar();
@@ -279,39 +281,39 @@ export class GitContribution implements CommandContribution, MenuContribution, T
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(GIT_COMMANDS.FETCH, {
-            execute: () => this.quickOpenService.fetch(),
+            execute: () => this.withProgress(() => this.quickOpenService.fetch()),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.PULL_DEFAULT, {
-            execute: () => this.quickOpenService.performDefaultGitAction(GitAction.PULL),
+            execute: () => this.withProgress(() => this.quickOpenService.performDefaultGitAction(GitAction.PULL)),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.PULL, {
-            execute: () => this.quickOpenService.pull(),
+            execute: () => this.withProgress(() => this.quickOpenService.pull()),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.PUSH_DEFAULT, {
-            execute: () => this.quickOpenService.performDefaultGitAction(GitAction.PUSH),
+            execute: () => this.withProgress(() => this.quickOpenService.performDefaultGitAction(GitAction.PUSH)),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.PUSH, {
-            execute: () => this.quickOpenService.push(),
+            execute: () => this.withProgress(() => this.quickOpenService.push()),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.MERGE, {
-            execute: () => this.quickOpenService.merge(),
+            execute: () => this.withProgress(() => this.quickOpenService.merge()),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.CHECKOUT, {
-            execute: () => this.quickOpenService.checkout(),
+            execute: () => this.withProgress(() => this.quickOpenService.checkout()),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_SIGN_OFF, {
-            execute: () => this.commit({ signOff: true }),
+            execute: () => this.withProgress(() => this.commit({ signOff: true })),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_AMEND, {
-            execute: async () => {
+            execute: () => this.withProgress(async () => {
                 try {
                     const message = await this.quickOpenService.commitMessageForAmend();
                     await this.commit({ message, amend: true });
@@ -320,27 +322,27 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                         throw e;
                     }
                 }
-            },
+            }),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.STAGE_ALL, {
             execute: () => {
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && provider.stageAll();
+                return provider && this.withProgress(() => provider.stageAll());
             },
             isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
         registry.registerCommand(GIT_COMMANDS.UNSTAGE_ALL, {
             execute: () => {
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && provider.unstageAll();
+                return provider && this.withProgress(() => provider.unstageAll());
             },
             isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
         registry.registerCommand(GIT_COMMANDS.DISCARD_ALL, {
             execute: () => {
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && provider.discardAll();
+                return provider && this.withProgress(() => provider.discardAll());
             },
             isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
@@ -355,12 +357,12 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             isVisible: widget => !!this.getOpenChangesOptions(widget)
         });
         registry.registerCommand(GIT_COMMANDS.SYNC, {
-            execute: () => this.syncService.sync(),
+            execute: () => this.withProgress(() => this.syncService.sync()),
             isEnabled: () => this.syncService.canSync(),
             isVisible: () => this.syncService.canSync()
         });
         registry.registerCommand(GIT_COMMANDS.PUBLISH, {
-            execute: () => this.syncService.publish(),
+            execute: () => this.withProgress(() => this.syncService.publish()),
             isEnabled: () => this.syncService.canPublish(),
             isVisible: () => this.syncService.canPublish()
         });
@@ -370,21 +372,21 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                 this.quickOpenService.clone(url, folder, branch)
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT, {
-            execute: () => this.commit(),
+            execute: () => this.withProgress(() => this.commit()),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.REFRESH, {
-            execute: () => this.repositoryProvider.refresh()
+            execute: () => this.withProgress(() => this.repositoryProvider.refresh())
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_ADD_SIGN_OFF, {
-            execute: async () => this.addSignOff(),
+            execute: async () => this.withProgress(() => this.addSignOff()),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.UNSTAGE, {
             execute: (arg: string | ScmResource) => {
                 const uri = typeof arg === 'string' ? arg : arg.sourceUri.toString();
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && provider.unstage(uri);
+                return provider && this.withProgress(() => provider.unstage(uri));
             },
             isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
@@ -392,7 +394,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             execute: (arg: string | ScmResource) => {
                 const uri = typeof arg === 'string' ? arg : arg.sourceUri.toString();
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && provider.stage(uri);
+                return provider && this.withProgress(() => provider.stage(uri));
             },
             isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
@@ -400,7 +402,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             execute: (arg: string | ScmResource) => {
                 const uri = typeof arg === 'string' ? arg : arg.sourceUri.toString();
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && provider.discard(uri);
+                return provider && this.withProgress(() => provider.discard(uri));
             },
             isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
@@ -436,6 +438,10 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             execute: () => this.quickOpenService.dropStash(),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
+    }
+
+    protected withProgress<T>(task: () => Promise<T>): Promise<T> {
+        return this.progressService.withProgress('', 'scm', task);
     }
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
