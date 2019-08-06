@@ -180,6 +180,9 @@ is not optimized for dense, information rich UIs.
   --theia-icon-regex: url(../icons/regex.svg);
   --theia-icon-whole-word: url(../icons/whole-word.svg);
   --theia-icon-refresh: url(../icons/Refresh.svg);
+  --theia-icon-expand: url(../icons/expand.svg);
+  --theia-icon-close-all: url(../icons/close-all-bright.svg);
+  --theia-icon-collapse: url(../icons/collapse.svg);
   --theia-icon-collapse-all: url(../icons/CollapseAll.svg);
   --theia-icon-clear: url(../icons/clear-search-results.svg);
   --theia-icon-replace: url(../icons/replace.svg);

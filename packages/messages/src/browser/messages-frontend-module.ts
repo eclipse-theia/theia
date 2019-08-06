@@ -14,16 +14,26 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import '../../src/browser/style/index.css';
+
 import { ContainerModule } from 'inversify';
 import { MessageClient } from '@theia/core/lib/common';
-
-import { NotificationsMessageClient } from './notifications-message-client';
-
-import '../../src/browser/style/index.css';
+import { NotificationManager } from './notifications-manager';
 import { bindNotificationPreferences } from './notification-preferences';
+import { NotificationsRenderer } from './notifications-renderer';
+import { NotificationsContribution, NotificationsKeybindingContext } from './notifications-contribution';
+import { FrontendApplicationContribution, KeybindingContribution, KeybindingContext } from '@theia/core/lib/browser';
+import { CommandContribution } from '@theia/core';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bind(NotificationsRenderer).toSelf().inSingletonScope();
+    bind(NotificationsContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(NotificationsContribution);
+    bind(CommandContribution).toService(NotificationsContribution);
+    bind(KeybindingContribution).toService(NotificationsContribution);
+    bind(NotificationsKeybindingContext).toSelf().inSingletonScope();
+    bind(KeybindingContext).toService(NotificationsKeybindingContext);
+    bind(NotificationManager).toSelf().inSingletonScope();
+    rebind(MessageClient).toService(NotificationManager);
     bindNotificationPreferences(bind);
-    bind(NotificationsMessageClient).toSelf().inSingletonScope();
-    rebind(MessageClient).toService(NotificationsMessageClient);
 });

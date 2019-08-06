@@ -28,8 +28,8 @@ export const NotificationConfigSchema: PreferenceSchema = {
     'properties': {
         'notification.timeout': {
             'type': 'number',
-            'description': 'The time before auto-dismiss the notification.',
-            'default': 5000 // time express in millisec. 0 means : Do not remove
+            'description': 'Informative notifications will be hidden after this timeout.',
+            'default': 30 * 1000 // `0` and negative values are treated as no timeout.
         }
     }
 };

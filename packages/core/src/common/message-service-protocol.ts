@@ -32,6 +32,7 @@ export interface Message {
     readonly text: string;
     readonly actions?: string[];
     readonly options?: MessageOptions;
+    readonly source?: string;
 }
 
 export interface ProgressMessage extends Message {
@@ -48,6 +49,10 @@ export namespace ProgressMessage {
 }
 
 export interface MessageOptions {
+    /**
+     * Timeout in milliseconds.
+     * `0` and negative values are treated as no timeout.
+     */
     readonly timeout?: number;
 }
 

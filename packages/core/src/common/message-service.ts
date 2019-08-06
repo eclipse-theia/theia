@@ -64,7 +64,7 @@ export class MessageService {
     protected processMessage(type: MessageType, text: string, args?: any[]): Promise<string | undefined> {
         if (!!args && args.length > 0) {
             const first = args[0];
-            const actions: string[] = args.filter(a => typeof a === 'string');
+            const actions = Array.from(new Set<string>(args.filter(a => typeof a === 'string')));
             const options = (typeof first === 'object' && !Array.isArray(first))
                 ? <MessageOptions>first
                 : undefined;
