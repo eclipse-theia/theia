@@ -78,6 +78,9 @@ import { ViewContainer, ViewContainerIdentifier } from './view-container';
 import { QuickViewService } from './quick-view-service';
 import { QuickTitleBar } from './quick-open/quick-title-bar';
 import { DialogOverlayService } from './dialogs';
+import { ProgressLocationService } from './progress-location-service';
+import { ProgressClient } from '../common/progress-service-protocol';
+import { ProgressService } from '../common/progress-service';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -257,6 +260,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(DialogOverlayService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(DialogOverlayService);
+
+    bind(ProgressLocationService).toSelf().inSingletonScope();
+    bind(ProgressClient).toService(ProgressLocationService);
+    bind(ProgressService).toSelf().inSingletonScope();
 });
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
