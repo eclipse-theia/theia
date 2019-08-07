@@ -68,6 +68,12 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                 this.setContent(this.options);
             }
         }));
+        this.toDispose.push(this.labelProvider.onDidChange(event => {
+            const affectsFiles = this.fileChangeNodes.some(node => event.affects(new URI(node.uri)));
+            if (this.options && affectsFiles) {
+                this.setContent(this.options);
+            }
+        }));
     }
 
     protected getScrollContainer(): MaybePromise<HTMLElement> {

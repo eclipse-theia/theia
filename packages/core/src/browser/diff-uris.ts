@@ -102,4 +102,9 @@ export class DiffUriLabelProviderContribution implements LabelProviderContributi
     getIcon(uri: URI): string {
         return 'fa fa-columns';
     }
+
+    getConstituentUris(uri: URI): URI[] {
+        return DiffUris.decode(uri);
+    }
+
 }

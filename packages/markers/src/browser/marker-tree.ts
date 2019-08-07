@@ -39,6 +39,24 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
         super();
 
         this.toDispose.push(markerManager.onDidChangeMarkers(uri => this.refreshMarkerInfo(uri)));
+        this.toDispose.push(labelProvider.onDidChange(async event => {
+            let isAnyAffectedNodes = false;
+            for (const nodeId of Object.keys(this.nodes)) {
+                const node = this.nodes[nodeId];
+                const markerInfoNode = node;
+                if (node && MarkerInfoNode.is(markerInfoNode)) {
+                    const uri = markerInfoNode.uri;
+                    if (event.affects(uri)) {
+                        node.name = this.labelProvider.getName(uri);
+                        node.icon = await this.labelProvider.getIcon(uri);
+                        isAnyAffectedNodes = true;
+                    }
+                }
+            }
+            if (isAnyAffectedNodes) {
+                this.fireChanged();
+            }
+        }));
 
         this.root = <MarkerRootNode>{
             visible: false,

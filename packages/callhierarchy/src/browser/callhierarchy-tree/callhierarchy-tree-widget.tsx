@@ -59,6 +59,9 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         this.toDispose.push(this.model.onOpenNode((node: TreeNode) => {
             this.openEditor(node, false);
         }));
+        this.toDispose.push(
+            this.labelProvider.onDidChange(() => this.update())
+        );
     }
 
     initializeModel(selection: Location | undefined, languageId: string | undefined): void {

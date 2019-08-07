@@ -23,7 +23,7 @@ import { MaybePromise } from '@theia/core';
 @injectable()
 export class GitUriLabelProviderContribution implements LabelProviderContribution {
 
-    constructor( @inject(LabelProvider) protected labelProvider: LabelProvider) {
+    constructor(@inject(LabelProvider) protected labelProvider: LabelProvider) {
     }
 
     canHandle(element: object): number {
@@ -43,6 +43,14 @@ export class GitUriLabelProviderContribution implements LabelProviderContributio
 
     getIcon(uri: URI): MaybePromise<string> {
         return this.labelProvider.getIcon(this.toFileUri(uri));
+    }
+
+    getConstituentUris(element: URI): URI[] {
+        const fileUri = this.toFileUri(element);
+        return [
+            fileUri,
+            fileUri.withoutQuery().withoutFragment(),
+        ];
     }
 
     protected toFileUri(uri: URI): URI {

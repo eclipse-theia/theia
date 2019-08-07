@@ -88,6 +88,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
     protected init(): void {
         this.refresh();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refresh()));
+        this.toDispose.push(this.labelProvider.onDidChange(() => this.update()));
     }
 
     protected readonly toDisposeOnRefresh = new DisposableCollection();

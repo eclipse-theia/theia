@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell } from '@theia/core/lib/browser';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
@@ -33,6 +33,7 @@ import { GitNavigableListWidget } from '../git-navigable-list-widget';
 import { GitFileChangeNode } from '../git-file-change-node';
 import * as React from 'react';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
+import { DidChangeLabelEvent } from '@theia/core/lib/browser/label-provider';
 
 export interface GitCommitNode extends GitCommitDetails {
     fileChanges?: GitFileChange[];
@@ -87,6 +88,30 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         this.addClass('theia-git');
         this.resetState();
         this.cancelIndicator = new CancellationTokenSource();
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.toDispose.push(this.labelProvider.onDidChange(event => this.refreshLabels(event)));
+    }
+
+    protected async refreshLabels(event: DidChangeLabelEvent): Promise<void> {
+        let isAnyAffectedNodes = false;
+        for (let i = 0; i < this.gitNodes.length; i++) {
+            const gitNode = this.gitNodes[i];
+            if (GitFileChangeNode.is(gitNode)) {
+                const uri = new URI(gitNode.uri);
+                if (event.affects(uri)) {
+                    const label = this.labelProvider.getName(uri);
+                    const icon = await this.labelProvider.getIcon(uri);
+                    this.gitNodes[i] = { ...gitNode, label, icon };
+                    isAnyAffectedNodes = true;
+                }
+            }
+        }
+        if (isAnyAffectedNodes) {
+            this.update();
+        }
     }
 
     protected onAfterAttach(msg: Message): void {
