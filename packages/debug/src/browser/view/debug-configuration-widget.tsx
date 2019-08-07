@@ -51,6 +51,7 @@ export class DebugConfigurationWidget extends ReactWidget {
         this.toDispose.push(this.manager.onDidChange(() => this.update()));
         this.toDispose.push(this.workspaceService.onWorkspaceChanged(() => this.update()));
         this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(() => this.update()));
+        this.scrollOptions = undefined;
         this.update();
     }
 
