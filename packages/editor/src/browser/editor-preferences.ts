@@ -259,9 +259,25 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'description': "Configure the editor's accessibility support."
         },
         'editor.quickSuggestions': {
-            'type': 'boolean',
-            'default': true,
-            'description': 'Enable quick suggestions (shadow suggestions).'
+            'type': ['object', 'boolean'],
+            'default': { strings: false, comments: false, other: true },
+            'properties': {
+                'strings': {
+                    'type': 'boolean',
+                    'default': false,
+                    'description': 'Enable quick suggestions inside strings.'
+                },
+                'comments': {
+                    'type': 'boolean',
+                    'default': false,
+                    'description': 'Enable quick suggestions inside comments.'
+                },
+                'other': {
+                    'type': 'boolean',
+                    'default': true,
+                    'description': 'Enable quick suggestions outside of strings and comments.'
+                },
+            }
         },
         'editor.quickSuggestionsDelay': {
             'type': 'number',
@@ -557,7 +573,7 @@ export interface EditorConfiguration {
     'editor.mouseWheelScrollSensitivity'?: number
     'editor.multiCursorModifier'?: 'ctrlCmd' | 'alt'
     'editor.accessibilitySupport'?: 'auto' | 'off' | 'on'
-    'editor.quickSuggestions'?: boolean
+    'editor.quickSuggestions'?: { other: boolean, comments: boolean, strings: boolean } | boolean;
     'editor.quickSuggestionsDelay'?: number
     'editor.suggestSelection'?: 'first' | 'recentlyUsed' | 'recentlyUsedByPrefix'
     'editor.iconsInSuggestions'?: boolean
