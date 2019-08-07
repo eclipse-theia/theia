@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Disposable, SelectionService } from '@theia/core/lib/common';
+import { Disposable, SelectionService, Event } from '@theia/core/lib/common';
 import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { TextEditor } from './editor';
@@ -82,6 +82,10 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
 
     restoreState(oldState: object): void {
         this.editor.restoreViewState(oldState);
+    }
+
+    get onDispose(): Event<void> {
+        return this.toDispose.onDispose;
     }
 
 }

@@ -147,6 +147,14 @@ export class DebugSessionManager {
         this.debugTypeKey = this.contextKeyService.createKey<string>('debugType', undefined);
         this.inDebugModeKey = this.contextKeyService.createKey<boolean>('inDebugMode', this.inDebugMode);
         this.breakpoints.onDidChangeMarkers(uri => this.fireDidChangeBreakpoints({ uri }));
+        this.labelProvider.onDidChange(event => {
+            for (const uriString of this.breakpoints.getUris()) {
+                const uri = new URI(uriString);
+                if (event.affects(uri)) {
+                    this.fireDidChangeBreakpoints({ uri });
+                }
+            }
+        });
     }
 
     get inDebugMode(): boolean {

@@ -69,6 +69,7 @@ describe('FileNavigatorTree', () => {
     let mockLabelProvider: LabelProvider;
 
     const mockFilterChangeEmitter: Emitter<void> = new Emitter();
+    const mockLabelChangeEmitter: Emitter<void> = new Emitter();
 
     let navigatorTree: FileNavigatorTree;
 
@@ -91,6 +92,7 @@ describe('FileNavigatorTree', () => {
         testContainer.bind(LabelProvider).toConstantValue(mockLabelProvider);
 
         sinon.stub(mockFileNavigatorFilter, 'onFilterChanged').value(mockFilterChangeEmitter.event);
+        sinon.stub(mockLabelProvider, 'onDidChange').value(mockLabelChangeEmitter.event);
         setup();
 
         navigatorTree = testContainer.get<FileNavigatorTree>(FileNavigatorTree);

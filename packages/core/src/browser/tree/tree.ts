@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { Event, Emitter, Disposable, DisposableCollection, WaitUntilEvent } from '../../common';
+import { Event, Emitter, Disposable, DisposableCollection, WaitUntilEvent, Mutable } from '../../common';
 
 export const Tree = Symbol('Tree');
 
@@ -206,7 +206,7 @@ export class TreeImpl implements Tree {
     protected readonly toDispose = new DisposableCollection();
 
     protected nodes: {
-        [id: string]: TreeNode | undefined
+        [id: string]: Mutable<TreeNode> | undefined
     } = {};
 
     constructor() {

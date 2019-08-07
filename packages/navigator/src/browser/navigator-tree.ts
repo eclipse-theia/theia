@@ -28,6 +28,7 @@ export class FileNavigatorTree extends FileTree {
 
     @postConstruct()
     protected init(): void {
+        super.initFileTree();
         this.toDispose.push(this.filter.onFilterChanged(() => this.refresh()));
     }
 

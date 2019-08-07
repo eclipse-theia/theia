@@ -129,6 +129,9 @@
       ],
       "@theia/task/lib/*": [
         "packages/task/src/*"
+      ],
+      "@theia/api-samples/lib/*": [
+        "examples/api-samples/src/*"
       ]
     },
     "plugins": [
@@ -140,6 +143,7 @@
   "include": [
     "dev-packages/*/src",
     "packages/*/src",
+    "examples/*/src",
     "examples/*/test"
   ]
 }
