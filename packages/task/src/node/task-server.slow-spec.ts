@@ -117,10 +117,10 @@ describe('Task server / back-end', function (): void {
         const p = new Promise((resolve, reject) => {
             const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
                 if (event.taskId === taskInfo.taskId && event.code === 0) {
-                    if (taskInfo.terminalId === undefined) {
+                    if (typeof taskInfo.terminalId === 'number') {
                         resolve();
                     } else {
-                        reject(new Error(`terminal id was expected to be undefined, actual: ${taskInfo.terminalId}`));
+                        reject(new Error(`terminal id was expected to be a number, got: ${typeof taskInfo.terminalId}`));
                     }
                     toDispose.dispose();
                 }
