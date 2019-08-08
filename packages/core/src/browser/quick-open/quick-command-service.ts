@@ -221,8 +221,8 @@ export class CommandQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getIconClass(): string | undefined {
-        const toggleHandler = this.commands.getToggledHandler(this.command.id);
-        if (toggleHandler && toggleHandler.isToggled && toggleHandler.isToggled()) {
+        const toggledHandler = this.commands.getToggledHandler(this.command.id);
+        if (toggledHandler) {
             return 'fa fa-check';
         }
         return super.getIconClass();

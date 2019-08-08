@@ -144,14 +144,14 @@ export class ElectronMainMenuFactory {
                 items.push({
                     id: menu.id,
                     label: menu.label,
-                    type: this.commandRegistry.getToggledHandler(commandId) ? 'checkbox' : 'normal',
+                    type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
                     checked: this.commandRegistry.isToggled(commandId, ...args),
                     enabled: true, // https://github.com/theia-ide/theia/issues/446
                     visible: true,
                     click: () => this.execute(commandId, args),
                     accelerator
                 });
-                if (this.commandRegistry.getToggledHandler(commandId)) {
+                if (this.commandRegistry.getToggledHandler(commandId, ...args)) {
                     this._toggledCommands.add(commandId);
                 }
             }
