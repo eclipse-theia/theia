@@ -22,6 +22,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { CppBuildConfiguration, CppBuildConfigurationServer } from '../common/cpp-build-configuration-protocol';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import URI from '@theia/core/lib/common/uri';
+import { deepClone } from '@theia/core';
 
 /**
  * @deprecated Import from `@theia/cpp/lib/common` instead
@@ -232,7 +233,7 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
         await Promise.all(roots.map(async ({ uri: root }) => {
             const context = new URI(root);
             const configs = this.getConfigsFromPreferences(root);
-            const resolvedConfigs = configs.map(config => ({ ...config })); // copy
+            const resolvedConfigs = configs.map(config => deepClone(config)); // copy
             await Promise.all(resolvedConfigs.map(async config => Promise.all<any>([
                 this.variableResolver.resolve(config.directory, { context })
                     .then(resolved => config.directory = resolved),
@@ -271,7 +272,10 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
 
     getActiveConfig(root?: string): CppBuildConfiguration | undefined {
         // Get the active workspace root for the given uri, else for the first workspace root.
-        const workspaceRoot = root ? root : this.workspaceService.tryGetRoots()[0].uri;
+        const workspaceRoot = this.getRoot(root);
+        if (!workspaceRoot) {
+            return undefined;
+        }
         return this.activeConfigurations.get(workspaceRoot);
     }
 
@@ -281,7 +285,10 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
 
     setActiveConfig(config: CppBuildConfiguration | undefined, root?: string): void {
         // Set the active workspace root for the given uri, else for the first workspace root.
-        const workspaceRoot = root ? root : this.workspaceService.tryGetRoots()[0].uri;
+        const workspaceRoot = this.getRoot(root);
+        if (!workspaceRoot) {
+            return;
+        }
         this.activeConfigurations.set(workspaceRoot, config);
         this.saveActiveConfigs(this.activeConfigurations);
 
@@ -305,7 +312,10 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
     }
 
     getConfigs(root?: string): CppBuildConfiguration[] {
-        const workspaceRoot = root ? root : this.workspaceService.tryGetRoots()[0].uri;
+        const workspaceRoot = this.getRoot(root);
+        if (!workspaceRoot) {
+            return [];
+        }
         let configs = this.resolvedConfigurations.get(workspaceRoot);
         if (!configs) {
             this.resolvedConfigurations.set(workspaceRoot, configs = []);
@@ -324,5 +334,16 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
      */
     async getMergedCompilationDatabase(params: { directories: string[] }): Promise<string> {
         return this.buildConfigurationServer.getMergedCompilationDatabase(params);
+    }
+
+    protected getRoot(root?: string): string | undefined {
+        if (root) {
+            return root;
+        }
+        const roots = this.workspaceService.tryGetRoots();
+        if (roots.length > 0) {
+            return roots[0].uri;
+        }
+        return undefined;
     }
 }
