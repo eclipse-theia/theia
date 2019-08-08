@@ -92,15 +92,17 @@ export class DialogOverlayService implements FrontendApplicationContribution {
     protected handleEscape(event: KeyboardEvent): boolean | void {
         const dialog = this.currentDialog;
         if (dialog) {
-            dialog['handleEscape'](event);
+            return dialog['handleEscape'](event);
         }
+        return false;
     }
 
     protected handleEnter(event: KeyboardEvent): boolean | void {
         const dialog = this.currentDialog;
         if (dialog) {
-            dialog['handleEnter'](event);
+            return dialog['handleEnter'](event);
         }
+        return false;
     }
 
 }
@@ -421,6 +423,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         if (event.target instanceof HTMLInputElement) {
             return super.handleEnter(event);
         }
+        return false;
     }
 
 }
