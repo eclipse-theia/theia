@@ -392,8 +392,13 @@ export class TaskService implements TaskConfigurationClient {
 
         this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
 
-        // open terminal widget if the task is based on a terminal process (type: shell)
-        if (taskInfo.terminalId !== undefined) {
+        /**
+         * open terminal widget if the task is based on a terminal process (type: 'shell' or 'process')
+         *
+         * @todo Use a different mechanism to determine if the task should be attached?
+         *       Reason: Maybe a new task type wants to also be displayed in a terminal.
+         */
+        if (typeof taskInfo.terminalId === 'number') {
             this.attach(taskInfo.terminalId, taskInfo.taskId);
         }
     }
@@ -436,7 +441,7 @@ export class TaskService implements TaskConfigurationClient {
         terminal.sendText(selectedText);
     }
 
-    async attach(terminalId: number, taskId: number): Promise<void> {
+    async attach(processId: number, taskId: number): Promise<void> {
         // Get the list of all available running tasks.
         const runningTasks: TaskInfo[] = await this.getRunningTasks();
         // Get the corresponding task information based on task id if available.
@@ -446,7 +451,7 @@ export class TaskService implements TaskConfigurationClient {
             TERMINAL_WIDGET_FACTORY_ID,
             <TerminalWidgetFactoryOptions>{
                 created: new Date().toString(),
-                id: 'terminal-' + terminalId,
+                id: 'terminal-' + processId,
                 title: taskInfo
                     ? `Task: ${taskInfo.config.label}`
                     : `Task: #${taskId}`,
@@ -455,7 +460,7 @@ export class TaskService implements TaskConfigurationClient {
         );
         this.shell.addWidget(widget, { area: 'bottom' });
         this.shell.activateWidget(widget.id);
-        widget.start(terminalId);
+        widget.start(processId);
     }
 
     async configure(task: TaskConfiguration): Promise<void> {
