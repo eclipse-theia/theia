@@ -18,7 +18,7 @@ import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandl
 import { injectable } from 'inversify';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import { getTempDir } from '@theia/plugin-ext';
+import { getTempDir } from '@theia/plugin-ext/lib/main/node/temp-dir-util';
 
 @injectable()
 export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
