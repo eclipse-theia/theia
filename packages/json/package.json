@@ -7,7 +7,7 @@
     "@theia/core": "^0.10.0",
     "@theia/languages": "^0.10.0",
     "@theia/monaco": "^0.10.0",
-    "vscode-json-languageserver": "^1.0.1"
+    "vscode-json-languageserver": "^1.2.1"
   },
   "devDependencies": {
     "@theia/ext-scripts": "^0.10.0"
