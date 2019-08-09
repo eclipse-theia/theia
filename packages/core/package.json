@@ -5,6 +5,7 @@
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
+    "@babel/runtime": "^7.5.5",
     "@phosphor/widgets": "^1.5.0",
     "@primer/octicons-react": "^9.0.0",
     "@theia/application-package": "^0.10.0",
@@ -39,9 +40,9 @@
     "reconnecting-websocket": "^3.0.7",
     "reflect-metadata": "^0.1.10",
     "route-parser": "^0.0.5",
-    "vscode-languageserver-types": "^3.10.0",
+    "vscode-languageserver-types": "^3.15.0-next",
     "vscode-uri": "^1.0.8",
-    "vscode-ws-jsonrpc": "^0.0.2-1",
+    "vscode-ws-jsonrpc": "^0.1.1",
     "ws": "^5.2.2",
     "yargs": "^11.1.0"
   },
