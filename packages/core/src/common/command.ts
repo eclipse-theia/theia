@@ -337,7 +337,7 @@ export class CommandRegistry implements CommandService {
         if (handlers) {
             for (const handler of handlers) {
                 try {
-                    if (handler.isToggled && handler.isToggled(...args)) {
+                    if (!handler.isToggled || handler.isToggled(...args)) {
                         return handler;
                     }
                 } catch (error) {
