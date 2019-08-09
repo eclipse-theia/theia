@@ -83,6 +83,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
             fuzzyMatchLabel: true,
             fuzzyMatchDetail: options.matchOnDetail,
             placeholder: options.placeHolder,
+            ignoreFocusOut: options.ignoreFocusLost,
             onClose: () => {
                 this.cleanUp();
             }
