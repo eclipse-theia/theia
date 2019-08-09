@@ -1,3 +1,6 @@
+Bogus change to test team for plugin system
+
+
 # Introduction
 
 ## Theia Plugin system description
