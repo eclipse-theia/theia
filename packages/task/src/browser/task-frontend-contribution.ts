@@ -37,6 +37,11 @@ export namespace TaskCommands {
         label: 'Run Task...'
     };
 
+    export const WORKBENCH_RUN_TASK: Command = {
+        id: 'workbench.action.tasks.runTask',
+        category: TASK_CATEGORY
+    };
+
     export const TASK_RUN_LAST: Command = {
         id: 'task:run:last',
         category: TASK_CATEGORY,
@@ -173,6 +178,19 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     }
 
     registerCommands(registry: CommandRegistry): void {
+        registry.registerCommand(
+            TaskCommands.WORKBENCH_RUN_TASK,
+            {
+                isEnabled: () => true,
+                execute: async (label: string) => {
+                    const didExecute = await this.taskService.runTaskByLabel(label);
+                    if (!didExecute) {
+                        this.quickOpenTask.open();
+                    }
+                }
+            }
+        );
+
         registry.registerCommand(
             TaskCommands.TASK_RUN,
             {

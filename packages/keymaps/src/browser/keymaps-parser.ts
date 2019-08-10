@@ -35,10 +35,11 @@ export const keymapsSchema = {
             },
             when: {
                 type: 'string'
-            }
+            },
+            args: {}
         },
         required: ['command', 'keybinding'],
-        optional: ['context', 'when'],
+        optional: ['context', 'when', 'args'],
         additionalProperties: false
     }
 };
