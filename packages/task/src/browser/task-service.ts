@@ -398,6 +398,17 @@ export class TaskService implements TaskConfigurationClient {
         }
     }
 
+    async runTaskByLabel(taskLabel: string): Promise<boolean> {
+        const tasks: TaskConfiguration[] = await this.getTasks();
+        for (const task of tasks) {
+            if (task.label === taskLabel) {
+                await this.runTask(task);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private async removeProblemMarks(option?: RunTaskOption): Promise<void> {
         if (option && option.customization) {
             const matchersFromOption = option.customization.problemMatcher || [];

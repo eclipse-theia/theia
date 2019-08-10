@@ -29,4 +29,10 @@ export interface Keybinding {
      * https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
      */
     when?: string;
+
+    /**
+     * Specified when the command has arguments that are passed to the command handler.
+     */
+    // tslint:disable-next-line no-any
+    args?: any;
 }

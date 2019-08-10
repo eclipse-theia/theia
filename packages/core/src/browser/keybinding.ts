@@ -553,10 +553,10 @@ export class KeybindingRegistry {
                 } else {
                     const command = this.commandRegistry.getCommand(binding.command);
                     if (command) {
-                        const commandHandler = this.commandRegistry.getActiveHandler(command.id);
+                        const commandHandler = this.commandRegistry.getActiveHandler(command.id, binding.args);
 
                         if (commandHandler) {
-                            commandHandler.execute();
+                            commandHandler.execute(binding.args);
                         }
 
                         /* Note that if a keybinding is in context but the command is
