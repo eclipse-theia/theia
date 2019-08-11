@@ -56,7 +56,8 @@ export class CommonVariableContribution implements VariableContribution {
             name: 'env',
             resolve: async (_, envVariableName) => {
                 const envVariable = envVariableName && await this.env.getValue(envVariableName);
-                return envVariable && envVariable.value;
+                const envValue = envVariable && envVariable.value;
+                return envValue || '';
             }
         });
         variables.registerVariable({

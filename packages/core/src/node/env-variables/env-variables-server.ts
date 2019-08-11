@@ -16,6 +16,7 @@
 
 import { injectable } from 'inversify';
 import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
+import { isWindows } from '../../common/os';
 
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {
@@ -38,6 +39,9 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     }
 
     async getValue(key: string): Promise<EnvVariable | undefined> {
+        if (isWindows) {
+            key = key.toLowerCase();
+        }
         return this.envs[key];
     }
 }
