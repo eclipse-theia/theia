@@ -99,6 +99,6 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
 
     protected getModel(editor: EditorWidget | undefined): monaco.editor.IModel | undefined {
         const monacoEditor = MonacoEditor.get(editor);
-        return monacoEditor && monacoEditor.getControl().getModel();
+        return monacoEditor && monacoEditor.getControl().getModel() || undefined;
     }
 }

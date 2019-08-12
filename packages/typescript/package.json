@@ -12,7 +12,7 @@
     "@theia/monaco": "^0.10.0",
     "@theia/workspace": "^0.10.0",
     "command-exists": "^1.2.8",
-    "typescript-language-server": "^0.3.8"
+    "typescript-language-server": "^0.4.0"
   },
   "publishConfig": {
     "access": "public"

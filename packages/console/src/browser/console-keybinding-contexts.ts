@@ -83,7 +83,7 @@ export class ConsoleNavigationBackEnabled extends ConsoleInputFocusContext {
             return false;
         }
         const editor = console.input.getControl();
-        return editor.getPosition().equals({ lineNumber: 1, column: 1 });
+        return editor.getPosition()!.equals({ lineNumber: 1, column: 1 });
     }
 
 }
@@ -98,10 +98,10 @@ export class ConsoleNavigationForwardEnabled extends ConsoleInputFocusContext {
             return false;
         }
         const editor = console.input.getControl();
-        const model = console.input.getControl().getModel();
+        const model = console.input.getControl().getModel()!;
         const lineNumber = model.getLineCount();
         const column = model.getLineMaxColumn(lineNumber);
-        return editor.getPosition().equals({ lineNumber, column });
+        return editor.getPosition()!.equals({ lineNumber, column });
     }
 
 }

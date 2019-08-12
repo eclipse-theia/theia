@@ -20,7 +20,6 @@ import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
-import MenuId = monaco.actions.MenuId;
 
 export interface MonacoActionGroup {
     id: string;
@@ -75,7 +74,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
     ) { }
 
     registerMenus(registry: MenuModelRegistry): void {
-        for (const item of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
+        for (const item of MenuRegistry.getMenuItems(7)) {
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
                 const menuPath = [...EDITOR_CONTEXT_MENU, (item.group || '')];

@@ -25,7 +25,7 @@ import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
 import { CompletionTriggerKind } from '@theia/languages/lib/browser';
 
 @injectable()
-export class MonacoSnippetSuggestProvider implements monaco.modes.ISuggestSupport {
+export class MonacoSnippetSuggestProvider implements monaco.languages.CompletionItemProvider {
 
     private static readonly _maxPrefix = 10000;
 
@@ -36,7 +36,7 @@ export class MonacoSnippetSuggestProvider implements monaco.modes.ISuggestSuppor
     protected readonly pendingSnippets = new Map<string, Promise<void>[]>();
 
     async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position,
-        context: monaco.modes.SuggestContext): Promise<monaco.modes.ISuggestResult | undefined> {
+        context: monaco.languages.CompletionContext): Promise<monaco.languages.CompletionList | undefined> {
 
         // copied and modified from https://github.com/microsoft/vscode/blob/master/src/vs/workbench/contrib/snippets/browser/snippetCompletionProvider.ts
         if (position.column >= MonacoSnippetSuggestProvider._maxPrefix) {
@@ -83,8 +83,7 @@ export class MonacoSnippetSuggestProvider implements monaco.modes.ISuggestSuppor
         for (const start of lineOffsets) {
             availableSnippets.forEach(snippet => {
                 if (this.isPatternInWord(linePrefixLow, start, linePrefixLow.length, snippet.prefix.toLowerCase(), 0, snippet.prefix.length)) {
-                    suggestions.push(new MonacoSnippetSuggestion(snippet,
-                        monaco.Range.fromPositions(this.newPositionWithDelta(position, 0, -(linePrefixLow.length - start)), position)));
+                    suggestions.push(new MonacoSnippetSuggestion(snippet, monaco.Range.fromPositions(position.delta(0, -(linePrefixLow.length - start)), position)));
                     availableSnippets.delete(snippet);
                 }
             });
@@ -102,7 +101,7 @@ export class MonacoSnippetSuggestProvider implements monaco.modes.ISuggestSuppor
         return { suggestions };
     }
 
-    resolveCompletionItem(textModel: monaco.editor.ITextModel, position: monaco.Position, item: monaco.modes.ISuggestion): monaco.modes.ISuggestion {
+    resolveCompletionItem(textModel: monaco.editor.ITextModel, position: monaco.Position, item: monaco.languages.CompletionItem): monaco.languages.CompletionItem {
         return item instanceof MonacoSnippetSuggestion ? item.resolve() : item;
     }
 
@@ -199,7 +198,7 @@ export class MonacoSnippetSuggestProvider implements monaco.modes.ISuggestSuppor
         }
     }
 
-    isPatternInWord(patternLow: string, patternPos: number, patternLen: number, wordLow: string, wordPos: number, wordLen: number): boolean {
+    protected isPatternInWord(patternLow: string, patternPos: number, patternLen: number, wordLow: string, wordPos: number, wordLen: number): boolean {
         while (patternPos < patternLen && wordPos < wordLen) {
             if (patternLow[patternPos] === wordLow[wordPos]) {
                 patternPos += 1;
@@ -207,16 +206,6 @@ export class MonacoSnippetSuggestProvider implements monaco.modes.ISuggestSuppor
             wordPos += 1;
         }
         return patternPos === patternLen; // pattern must be exhausted
-    }
-
-    newPositionWithDelta(position: monaco.Position, deltaLineNumber: number = 0, deltaColumn: number = 0): monaco.Position {
-        const newLineNumber = position.lineNumber + deltaLineNumber;
-        const newColumn = position.column + deltaColumn;
-        if (newLineNumber === position.lineNumber && newColumn === position.column) {
-            return position;
-        } else {
-            return new monaco.Position(newLineNumber, newColumn);
-        }
     }
 
 }
@@ -250,27 +239,27 @@ export interface Snippet {
     readonly source: string
 }
 
-export class MonacoSnippetSuggestion implements monaco.modes.ISuggestion {
+export class MonacoSnippetSuggestion implements monaco.languages.CompletionItem {
 
     readonly label: string;
     readonly detail: string;
     readonly sortText: string;
-    readonly range: monaco.IRange;
     readonly noAutoAccept = true;
-    readonly type: 'snippet' = 'snippet';
-    readonly snippetType: 'textmate' = 'textmate';
-    readonly overwriteBefore?: number;
+    readonly kind = monaco.languages.CompletionItemKind.Snippet;
+    readonly insertTextRules = monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet;
 
     insertText: string;
     documentation?: monaco.IMarkdownString;
 
-    constructor(protected readonly snippet: Snippet, range: monaco.IRange) {
+    constructor(
+        protected readonly snippet: Snippet,
+        readonly range: monaco.Range
+    ) {
         this.label = snippet.prefix;
         this.detail = `${snippet.description || snippet.name} (${snippet.source})`;
         this.insertText = snippet.body;
         this.sortText = `z-${snippet.prefix}`;
         this.range = range;
-        this.overwriteBefore = this.range.endColumn - this.range.startColumn;
     }
 
     protected resolved = false;

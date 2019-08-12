@@ -97,10 +97,12 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         const editor = this.editorManager.currentEditor;
         if (editor) {
             const model = MonacoEditor.get(editor)!.getControl().getModel();
-            this.toDisposeOnEditor.push(model.onDidChangeContent(() => {
-                this.roots = undefined; // Invalidate the previously resolved roots.
-                this.updateOutline();
-            }));
+            if (model) {
+                this.toDisposeOnEditor.push(model.onDidChangeContent(() => {
+                    this.roots = undefined; // Invalidate the previously resolved roots.
+                    this.updateOutline();
+                }));
+            }
             this.toDisposeOnEditor.push(editor.editor.onSelectionChanged(selection => this.updateOutline(selection)));
         }
         this.updateOutline();
@@ -145,7 +147,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
                     if (token.isCancellationRequested) {
                         return [];
                     }
-                    const nodes = this.createNodes(uri, symbols);
+                    const nodes = this.createNodes(uri, symbols || []);
                     this.roots.push(...nodes);
                 } catch {
                     /* collect symbols from other providers */

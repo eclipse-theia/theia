@@ -12,8 +12,8 @@
     "@theia/workspace": "^0.10.0",
     "deepmerge": "2.0.1",
     "jsonc-parser": "^2.0.2",
-    "monaco-css": "^2.0.1",
-    "monaco-html": "^2.0.2",
+    "monaco-css": "^2.5.0",
+    "monaco-html": "^2.5.2",
     "onigasm": "2.2.1",
     "vscode-textmate": "^4.0.1"
   },

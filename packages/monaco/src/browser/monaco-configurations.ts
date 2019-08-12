@@ -22,11 +22,15 @@ import { Configurations, ConfigurationChangeEvent, WorkspaceConfiguration } from
 import { Event, Emitter } from '@theia/core/lib/common';
 import { PreferenceServiceImpl, PreferenceChanges } from '@theia/core/lib/browser';
 
+export interface MonacoConfigurationChangeEvent extends ConfigurationChangeEvent {
+    affectedSections?: string[]
+}
+
 @injectable()
 export class MonacoConfigurations implements Configurations {
 
-    protected readonly onDidChangeConfigurationEmitter = new Emitter<ConfigurationChangeEvent>();
-    readonly onDidChangeConfiguration: Event<ConfigurationChangeEvent> = this.onDidChangeConfigurationEmitter.event;
+    protected readonly onDidChangeConfigurationEmitter = new Emitter<MonacoConfigurationChangeEvent>();
+    readonly onDidChangeConfiguration: Event<MonacoConfigurationChangeEvent> = this.onDidChangeConfigurationEmitter.event;
 
     @inject(PreferenceServiceImpl)
     protected readonly preferences: PreferenceServiceImpl;
@@ -42,6 +46,7 @@ export class MonacoConfigurations implements Configurations {
     protected reconcileData(changes?: PreferenceChanges): void {
         this.tree = MonacoConfigurations.parse(this.preferences.getPreferences());
         this.onDidChangeConfigurationEmitter.fire({
+            affectedSections: MonacoConfigurations.parseSections(changes),
             affectsConfiguration: section => this.affectsConfiguration(section, changes)
         });
     }
@@ -65,6 +70,20 @@ export class MonacoConfigurations implements Configurations {
 
 }
 export namespace MonacoConfigurations {
+    export function parseSections(changes?: PreferenceChanges): string[] | undefined {
+        if (!changes) {
+            return undefined;
+        }
+        const sections = [];
+        for (let key of Object.keys(changes)) {
+            while (key) {
+                sections.push(key);
+                const index = key.lastIndexOf('.');
+                key = key.substring(0, index);
+            }
+        }
+        return sections;
+    }
     export function parse(raw: { [section: string]: Object | undefined }): JSONObject {
         const tree = {};
         for (const section of Object.keys(raw)) {

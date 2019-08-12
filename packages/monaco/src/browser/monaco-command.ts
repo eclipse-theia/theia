@@ -25,7 +25,6 @@ import { EditorCommands } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
-import MenuId = monaco.actions.MenuId;
 
 export type MonacoCommand = Command & { delegate?: string };
 export namespace MonacoCommands {
@@ -57,22 +56,17 @@ export namespace MonacoCommands {
     export const SELECTION_ADD_PREVIOUS_OCCURRENCE = 'editor.action.addSelectionToPreviousFindMatch';
     export const SELECTION_SELECT_ALL_OCCURRENCES = 'editor.action.selectHighlights';
 
-    export const ACTIONS: MonacoCommand[] = [
-        { id: SELECTION_SELECT_ALL, label: 'Select All', delegate: 'editor.action.selectAll' }
-    ];
+    export const ACTIONS = new Map<string, MonacoCommand>();
+    ACTIONS.set(SELECTION_SELECT_ALL, { id: SELECTION_SELECT_ALL, label: 'Select All', delegate: 'editor.action.selectAll' });
     export const EXCLUDE_ACTIONS = new Set([
         ...Object.keys(COMMON_ACTIONS),
         'editor.action.quickCommand',
         'editor.action.clipboardCutAction',
         'editor.action.clipboardCopyAction',
-        'editor.action.clipboardPasteAction',
-        'editor.action.goToImplementation',
-        'editor.action.toggleTabFocusMode',
-        'find.history.showNext',
-        'find.history.showPrevious',
+        'editor.action.clipboardPasteAction'
     ]);
     const iconClasses = new Map<string, string>();
-    for (const menuItem of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
+    for (const menuItem of MenuRegistry.getMenuItems(7)) {
         if (menuItem.command.iconClass) {
             iconClasses.set(menuItem.command.id, menuItem.command.iconClass);
         }
@@ -82,7 +76,13 @@ export namespace MonacoCommands {
         if (!EXCLUDE_ACTIONS.has(id)) {
             const label = command.label;
             const iconClass = iconClasses.get(id);
-            ACTIONS.push({ id, label, iconClass });
+            ACTIONS.set(id, { id, label, iconClass });
+        }
+    }
+    for (const keybinding of monaco.keybindings.KeybindingsRegistry.getDefaultKeybindings()) {
+        const id = keybinding.command;
+        if (!ACTIONS.has(id) && !EXCLUDE_ACTIONS.has(id)) {
+            ACTIONS.set(id, { id, delegate: id });
         }
     }
 }
@@ -239,7 +239,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     }
 
     protected registerMonacoActionCommands(): void {
-        for (const action of MonacoCommands.ACTIONS) {
+        for (const action of MonacoCommands.ACTIONS.values()) {
             const handler = this.newMonacoActionHandler(action);
             this.registry.registerCommand(action, handler);
         }
@@ -251,7 +251,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 
     protected newKeyboardHandler(action: string): MonacoEditorCommandHandler {
         return {
-            execute: (editor, ...args) => editor.getControl().cursor.trigger('keyboard', action, args)
+            execute: (editor, ...args) => editor.getControl()._modelData.cursor.trigger('keyboard', action, args)
         };
     }
     protected newCommandHandler(action: string): MonacoEditorCommandHandler {

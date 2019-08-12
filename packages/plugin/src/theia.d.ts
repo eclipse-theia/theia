@@ -4991,7 +4991,7 @@ declare module '@theia/plugin' {
          * The label of this signature. Will be shown in
          * the UI.
          */
-        label: string;
+        label: string | [number, number];
 
         /**
          * The human-readable doc-comment of this signature. Will be shown
@@ -5066,6 +5066,61 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * How a [`SignatureHelpProvider`](#SignatureHelpProvider) was triggered.
+     */
+    export enum SignatureHelpTriggerKind {
+        /**
+         * Signature help was invoked manually by the user or by a command.
+         */
+        Invoke = 1,
+
+        /**
+         * Signature help was triggered by a trigger character.
+         */
+        TriggerCharacter = 2,
+
+        /**
+         * Signature help was triggered by the cursor moving or by the document content changing.
+         */
+        ContentChange = 3,
+    }
+
+    /**
+     * Additional information about the context in which a
+     * [`SignatureHelpProvider`](#SignatureHelpProvider.provideSignatureHelp) was triggered.
+     */
+    export interface SignatureHelpContext {
+        /**
+         * Action that caused signature help to be triggered.
+         */
+        readonly triggerKind: SignatureHelpTriggerKind;
+
+        /**
+         * Character that caused signature help to be triggered.
+         *
+         * This is `undefined` when signature help is not triggered by typing, such as when manually invoking
+         * signature help or when moving the cursor.
+         */
+        readonly triggerCharacter?: string;
+
+        /**
+         * `true` if signature help was already showing when it was triggered.
+         *
+         * Retriggers occur when the signature help is already active and can be caused by actions such as
+         * typing a trigger character, a cursor move, or document content changes.
+         */
+        readonly isRetrigger: boolean;
+
+        /**
+         * The currently active [`SignatureHelp`](#SignatureHelp).
+         *
+         * The `activeSignatureHelp` has its [`SignatureHelp.activeSignature`] field updated based on
+         * the user arrowing through available signatures.
+         */
+        readonly activeSignatureHelp?: SignatureHelp;
+    }
+
+    /**
      * The signature help provider interface defines the contract between extensions and
      * the [parameter hints](https://code.visualstudio.com/docs/editor/intellisense)-feature.
      */
@@ -5077,10 +5132,30 @@ declare module '@theia/plugin' {
          * @param document The document in which the command was invoked.
          * @param position The position at which the command was invoked.
          * @param token A cancellation token.
+         * @param context Information about how signature help was triggered.
+         *
          * @return Signature help or a thenable that resolves to such. The lack of a result can be
          * signaled by returning `undefined` or `null`.
          */
-        provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken | undefined): ProviderResult<SignatureHelp>;
+        provideSignatureHelp(document: TextDocument, position: Position, token: CancellationToken, context: SignatureHelpContext): ProviderResult<SignatureHelp>;
+    }
+
+    /**
+     * Metadata about a registered [`SignatureHelpProvider`](#SignatureHelpProvider).
+     */
+    export interface SignatureHelpProviderMetadata {
+        /**
+         * List of characters that trigger signature help.
+         */
+        readonly triggerCharacters: ReadonlyArray<string>;
+
+        /**
+         * List of characters that re-trigger signature help.
+         *
+         * These trigger characters are only active when signature help is already showing. All trigger characters
+         * are also counted as re-trigger characters.
+         */
+        readonly retriggerCharacters: ReadonlyArray<string>;
     }
 
     /**
@@ -5699,6 +5774,13 @@ declare module '@theia/plugin' {
          * characters will be ignored.
          */
         commitCharacters?: string[];
+
+        /**
+         * Keep whitespace of the [insertText](#CompletionItem.insertText) as is. By default, the editor adjusts leading
+         * whitespace of new lines so that they match the indentation of the line for which the item is accepted - setting
+         * this to `true` will prevent that.
+         */
+        keepWhitespace?: boolean;
 
         /**
          * An optional array of additional [text edits](#TextEdit) that are applied when
@@ -6753,9 +6835,11 @@ declare module '@theia/plugin' {
          * @param selector A selector that defines the documents this provider is applicable to.
          * @param provider A signature help provider.
          * @param triggerCharacters Trigger signature help when the user types one of the characters, like `,` or `(`.
+         * @param metadata Information about the provider.
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerSignatureHelpProvider(selector: DocumentSelector, provider: SignatureHelpProvider, ...triggerCharacters: string[]): Disposable;
+        export function registerSignatureHelpProvider(selector: DocumentSelector, provider: SignatureHelpProvider, metadata: SignatureHelpProviderMetadata): Disposable;
 
         /**
          * Register a type definition provider.

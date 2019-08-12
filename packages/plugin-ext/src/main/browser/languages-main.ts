@@ -35,7 +35,7 @@ import {
     ResourceFileEditDto,
 } from '../../common/plugin-api-rpc';
 import { interfaces } from 'inversify';
-import { SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider, RelatedInformation, MarkerSeverity } from '../../common/plugin-api-rpc-model';
+import { SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider, RelatedInformation, MarkerSeverity, DocumentLink } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
 import { DisposableCollection, Emitter } from '@theia/core';
@@ -44,6 +44,7 @@ import URI from 'vscode-uri/lib/umd';
 import CoreURI from '@theia/core/lib/common/uri';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import * as vst from 'vscode-languageserver-types';
+import * as theia from '@theia/plugin';
 
 export class LanguagesMainImpl implements LanguagesMain {
 
@@ -97,21 +98,17 @@ export class LanguagesMainImpl implements LanguagesMain {
     }
 
     $registerCompletionSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void {
-        this.disposables.set(handle, monaco.modes.SuggestRegistry.register(fromLanguageSelector(selector), {
+        this.disposables.set(handle, monaco.modes.CompletionProviderRegistry.register(fromLanguageSelector(selector), {
             triggerCharacters,
-            provideCompletionItems: (model: monaco.editor.ITextModel,
-                position: monaco.Position,
-                context: monaco.modes.SuggestContext,
-                token: monaco.CancellationToken): Thenable<monaco.modes.ISuggestResult> =>
-                Promise.resolve(this.proxy.$provideCompletionItems(handle, model.uri, position, context, token)).then(result => {
+            provideCompletionItems: (model, position, context, token) =>
+                this.proxy.$provideCompletionItems(handle, model.uri, position, context, token).then(result => {
                     if (!result) {
-                        return undefined!;
+                        return undefined;
                     }
                     return {
                         suggestions: result.completions,
                         incomplete: result.incomplete,
-                        // tslint:disable-next-line:no-any
-                        dispose: () => this.proxy.$releaseCompletionItems(handle, result.id!)
+                        dispose: () => this.proxy.$releaseCompletionItems(handle, result.id)
                     };
                 }),
             resolveCompletionItem: supportsResolveDetails
@@ -141,7 +138,7 @@ export class LanguagesMainImpl implements LanguagesMain {
             provideReferences: (model, position, context, token) =>
                 this.proxy.$provideReferences(handle, model.uri, position, context, token).then(result => {
                     if (!result) {
-                        return undefined!;
+                        return undefined;
                     }
 
                     if (Array.isArray(result)) {
@@ -152,14 +149,14 @@ export class LanguagesMainImpl implements LanguagesMain {
                         return references;
                     }
 
-                    return undefined!;
+                    return undefined;
                 })
         };
     }
 
-    $registerSignatureHelpProvider(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[]): void {
+    $registerSignatureHelpProvider(handle: number, selector: SerializedDocumentFilter[], metadata: theia.SignatureHelpProviderMetadata): void {
         const languageSelector = fromLanguageSelector(selector);
-        const signatureHelpProvider = this.createSignatureHelpProvider(handle, triggerCharacters);
+        const signatureHelpProvider = this.createSignatureHelpProvider(handle, metadata);
         const disposable = new DisposableCollection();
         disposable.push(monaco.languages.registerSignatureHelpProvider(languageSelector, signatureHelpProvider));
         this.disposables.set(handle, disposable);
@@ -191,12 +188,12 @@ export class LanguagesMainImpl implements LanguagesMain {
             provideImplementation: (model, position, token) =>
                 this.proxy.$provideImplementation(handle, model.uri, position, token).then(result => {
                     if (!result) {
-                        return undefined!;
+                        return undefined;
                     }
 
                     if (Array.isArray(result)) {
                         // using DefinitionLink because Location is mandatory part of DefinitionLink
-                        const definitionLinks: monaco.languages.DefinitionLink[] = [];
+                        const definitionLinks: monaco.languages.LocationLink[] = [];
                         for (const item of result) {
                             definitionLinks.push({ ...item, uri: monaco.Uri.revive(item.uri) });
                         }
@@ -225,12 +222,12 @@ export class LanguagesMainImpl implements LanguagesMain {
             provideTypeDefinition: (model, position, token) =>
                 this.proxy.$provideTypeDefinition(handle, model.uri, position, token).then(result => {
                     if (!result) {
-                        return undefined!;
+                        return undefined;
                     }
 
                     if (Array.isArray(result)) {
                         // using DefinitionLink because Location is mandatory part of DefinitionLink
-                        const definitionLinks: monaco.languages.DefinitionLink[] = [];
+                        const definitionLinks: monaco.languages.LocationLink[] = [];
                         for (const item of result) {
                             definitionLinks.push({ ...item, uri: monaco.Uri.revive(item.uri) });
                         }
@@ -257,7 +254,7 @@ export class LanguagesMainImpl implements LanguagesMain {
     protected createHoverProvider(handle: number): monaco.languages.HoverProvider {
         return {
             provideHover: (model, position, token) =>
-                this.proxy.$provideHover(handle, model.uri, position, token).then(v => v!)
+                this.proxy.$provideHover(handle, model.uri, position, token)
         };
     }
 
@@ -274,7 +271,7 @@ export class LanguagesMainImpl implements LanguagesMain {
             provideDocumentHighlights: (model, position, token) =>
                 this.proxy.$provideDocumentHighlights(handle, model.uri, position, token).then(result => {
                     if (!result) {
-                        return undefined!;
+                        return undefined;
                     }
 
                     if (Array.isArray(result)) {
@@ -289,7 +286,7 @@ export class LanguagesMainImpl implements LanguagesMain {
                         return highlights;
                     }
 
-                    return undefined!;
+                    return undefined;
                 })
         };
     }
@@ -318,10 +315,29 @@ export class LanguagesMainImpl implements LanguagesMain {
 
     protected createLinkProvider(handle: number): monaco.languages.LinkProvider {
         return {
-            provideLinks: (model, token) =>
-                this.proxy.$provideDocumentLinks(handle, model.uri, token).then(v => v!),
-            resolveLink: (link: monaco.languages.ILink, token) =>
-                this.proxy.$resolveDocumentLink(handle, link, token).then(v => v!)
+            provideLinks: async (model, token) => {
+                const links = await this.proxy.$provideDocumentLinks(handle, model.uri, token);
+                if (!links) {
+                    return undefined;
+                }
+                return {
+                    links: links.map(link => this.toMonacoLink(link)),
+                    dispose: () => {
+                        // TODO this.proxy.$releaseDocumentLinks(handle, links.cacheId);
+                    }
+                };
+            },
+            resolveLink: async (link, token) => {
+                const resolved = await this.proxy.$resolveDocumentLink(handle, link, token);
+                return resolved && this.toMonacoLink(resolved);
+            }
+        };
+    }
+
+    protected toMonacoLink(link: DocumentLink): monaco.languages.ILink {
+        return {
+            ...link,
+            url: !!link.url && typeof link.url !== 'string' ? monaco.Uri.revive(link.url) : link.url
         };
     }
 
@@ -342,11 +358,20 @@ export class LanguagesMainImpl implements LanguagesMain {
 
     protected createCodeLensProvider(handle: number): monaco.languages.CodeLensProvider {
         return {
-            provideCodeLenses: (model, token) =>
-                this.proxy.$provideCodeLenses(handle, model.uri, token).then(v => v!)
-            ,
+            provideCodeLenses: async (model, token) => {
+                const lenses = await this.proxy.$provideCodeLenses(handle, model.uri, token);
+                if (!lenses) {
+                    return undefined;
+                }
+                return {
+                    lenses,
+                    dispose: () => {
+                        // TODO this.proxy.$releaseCodeLenses
+                    }
+                };
+            },
             resolveCodeLens: (model, codeLens, token) =>
-                this.proxy.$resolveCodeLens(handle, model.uri, codeLens, token).then(v => v!)
+                this.proxy.$resolveCodeLens(handle, model.uri, codeLens, token)
         };
     }
 
@@ -370,7 +395,7 @@ export class LanguagesMainImpl implements LanguagesMain {
     protected createDocumentSymbolProvider(handle: number): monaco.languages.DocumentSymbolProvider {
         return {
             provideDocumentSymbols: (model, token) =>
-                this.proxy.$provideDocumentSymbols(handle, model.uri, token).then(v => v!)
+                this.proxy.$provideDocumentSymbols(handle, model.uri, token)
         };
     }
 
@@ -379,12 +404,12 @@ export class LanguagesMainImpl implements LanguagesMain {
             provideDefinition: (model, position, token) =>
                 this.proxy.$provideDefinition(handle, model.uri, position, token).then(result => {
                     if (!result) {
-                        return undefined!;
+                        return undefined;
                     }
 
                     if (Array.isArray(result)) {
                         // using DefinitionLink because Location is mandatory part of DefinitionLink
-                        const definitionLinks: monaco.languages.DefinitionLink[] = [];
+                        const definitionLinks: monaco.languages.LocationLink[] = [];
                         for (const item of result) {
                             definitionLinks.push({ ...item, uri: monaco.Uri.revive(item.uri) });
                         }
@@ -400,11 +425,24 @@ export class LanguagesMainImpl implements LanguagesMain {
         };
     }
 
-    protected createSignatureHelpProvider(handle: number, triggerCharacters: string[]): monaco.languages.SignatureHelpProvider {
+    protected createSignatureHelpProvider(handle: number, metadata: theia.SignatureHelpProviderMetadata): monaco.languages.SignatureHelpProvider {
         return {
-            signatureHelpTriggerCharacters: triggerCharacters,
-            provideSignatureHelp: (model, position, token) =>
-                this.proxy.$provideSignatureHelp(handle, model.uri, position, token).then(v => v!)
+            signatureHelpTriggerCharacters: metadata.triggerCharacters,
+            signatureHelpRetriggerCharacters: metadata.retriggerCharacters,
+            provideSignatureHelp: async (model, position, token, context) => {
+                const value = await this.proxy.$provideSignatureHelp(handle, model.uri, position, context, token);
+                if (!value) {
+                    return undefined;
+                }
+                return {
+                    value,
+                    dispose: () => {
+                        if (typeof value.id === 'number') {
+                            this.proxy.$releaseSignatureHelp(handle, value.id);
+                        }
+                    }
+                };
+            }
         };
     }
 
@@ -419,7 +457,7 @@ export class LanguagesMainImpl implements LanguagesMain {
     createDocumentFormattingSupport(handle: number): monaco.languages.DocumentFormattingEditProvider {
         return {
             provideDocumentFormattingEdits: (model, options, token) =>
-                this.proxy.$provideDocumentFormattingEdits(handle, model.uri, options, token).then(v => v!)
+                this.proxy.$provideDocumentFormattingEdits(handle, model.uri, options, token)
         };
     }
 
@@ -434,7 +472,7 @@ export class LanguagesMainImpl implements LanguagesMain {
     createRangeFormattingProvider(handle: number): monaco.languages.DocumentRangeFormattingEditProvider {
         return {
             provideDocumentRangeFormattingEdits: (model, range: Range, options, token) =>
-                this.proxy.$provideDocumentRangeFormattingEdits(handle, model.uri, range, options, token).then(v => v!)
+                this.proxy.$provideDocumentRangeFormattingEdits(handle, model.uri, range, options, token)
         };
     }
 
@@ -453,7 +491,7 @@ export class LanguagesMainImpl implements LanguagesMain {
         return {
             autoFormatTriggerCharacters,
             provideOnTypeFormattingEdits: (model, position, ch, options, token) =>
-                this.proxy.$provideOnTypeFormattingEdits(handle, model.uri, position, ch, options, token).then(v => v!)
+                this.proxy.$provideOnTypeFormattingEdits(handle, model.uri, position, ch, options, token)
         };
     }
 
@@ -468,7 +506,7 @@ export class LanguagesMainImpl implements LanguagesMain {
     createFoldingRangeProvider(handle: number): monaco.languages.FoldingRangeProvider {
         return {
             provideFoldingRanges: (model, context, token) =>
-                this.proxy.$provideFoldingRange(handle, model.uri, context, token).then(v => v!)
+                this.proxy.$provideFoldingRange(handle, model.uri, context, token)
         };
     }
 
@@ -522,8 +560,18 @@ export class LanguagesMainImpl implements LanguagesMain {
 
     protected createQuickFixProvider(handle: number, providedCodeActionKinds?: string[]): monaco.languages.CodeActionProvider {
         return {
-            provideCodeActions: (model, rangeOrSelection, monacoContext, token) =>
-                this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, monacoContext, token)
+            provideCodeActions: async (model, rangeOrSelection, monacoContext, token) => {
+                const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, monacoContext, token);
+                if (!actions) {
+                    return undefined!;
+                }
+                return {
+                    actions,
+                    dispose: () => {
+                        // TODO this.proxy.$releaseCodeActions(handle, cacheId);
+                    }
+                };
+            }
         };
     }
 
@@ -539,10 +587,10 @@ export class LanguagesMainImpl implements LanguagesMain {
         return {
             provideRenameEdits: (model, position, newName, token) =>
                 this.proxy.$provideRenameEdits(handle, model.uri, position, newName, token)
-                    .then(v => reviveWorkspaceEditDto(v!)),
+                    .then(reviveWorkspaceEditDto),
             resolveRenameLocation: supportsResolveLocation
                 ? (model, position, token) =>
-                    this.proxy.$resolveRenameLocation(handle, model.uri, position, token).then(v => v!)
+                    this.proxy.$resolveRenameLocation(handle, model.uri, position, token)
                 : undefined
         };
     }

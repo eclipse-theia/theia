@@ -94,7 +94,7 @@ export class EditorsAndDocumentsMain {
         const removedDocuments = delta.removedDocuments.map(d => d.textEditorModel.uri);
 
         for (const editor of delta.addedEditors) {
-            const textEditorMain = new TextEditorMain(editor.id, editor.editor.getControl().getModel(), editor.editor);
+            const textEditorMain = new TextEditorMain(editor.id, editor.editor.getControl().getModel()!, editor.editor);
             this.textEditors.set(editor.id, textEditorMain);
             addedEditors.push(textEditorMain);
         }
@@ -339,7 +339,7 @@ class EditorAndDocumentState {
 class EditorSnapshot {
     readonly id: string;
     constructor(readonly editor: MonacoEditor) {
-        this.id = `${editor.getControl().getId()},${editor.getControl().getModel().id}`;
+        this.id = `${editor.getControl().getId()},${editor.getControl().getModel()!.id}`;
     }
 }
 

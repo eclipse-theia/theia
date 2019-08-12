@@ -17,7 +17,12 @@
 import { injectable, inject, decorate } from 'inversify';
 import {
     MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter,
-    MonacoToProtocolConverter
+    MonacoToProtocolConverter,
+    DocumentSelector,
+    SignatureHelpProvider,
+    MonacoModelIdentifier,
+    CodeActionProvider,
+    CodeLensProvider
 } from 'monaco-languageclient';
 import { Languages, Diagnostic, DiagnosticCollection, Language, WorkspaceSymbolProvider } from '@theia/languages/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
@@ -136,6 +141,79 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
             }
         }
         return languages;
+    }
+
+    protected createSignatureHelpProvider(selector: DocumentSelector, provider: SignatureHelpProvider, ...triggerCharacters: string[]): monaco.languages.SignatureHelpProvider {
+        const signatureHelpTriggerCharacters = [...(provider.triggerCharacters || triggerCharacters || [])];
+        const signatureHelpRetriggerCharacters = [...(provider.retriggerCharacters || [])];
+        return {
+            signatureHelpTriggerCharacters,
+            signatureHelpRetriggerCharacters,
+            provideSignatureHelp: async (model, position, token) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined;
+                }
+                const params = this.m2p.asTextDocumentPositionParams(model, position);
+                const help = await provider.provideSignatureHelp(params, token, undefined! /* not used by LC */);
+                if (!help) {
+                    return undefined;
+                }
+                return {
+                    value: this.p2m.asSignatureHelp(help),
+                    dispose: () => { }
+                };
+            }
+        };
+    }
+
+    protected createCodeActionProvider(selector: DocumentSelector, provider: CodeActionProvider): monaco.languages.CodeActionProvider {
+        return {
+            provideCodeActions: async (model, range, context, token) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined!;
+                }
+                const params = this.m2p.asCodeActionParams(model, range, context);
+                const actions = await provider.provideCodeActions(params, token);
+                if (!actions) {
+                    return undefined!;
+                }
+                return {
+                    actions: this.p2m.asCodeActions(actions),
+                    dispose: () => { }
+                };
+            }
+        };
+    }
+
+    protected createCodeLensProvider(selector: DocumentSelector, provider: CodeLensProvider): monaco.languages.CodeLensProvider {
+        return {
+            provideCodeLenses: async (model, token) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return undefined;
+                }
+                const params = this.m2p.asCodeLensParams(model);
+                const lenses = await provider.provideCodeLenses(params, token);
+                if (!lenses) {
+                    return undefined;
+                }
+                return {
+                    lenses: this.p2m.asCodeLenses(lenses),
+                    dispose: () => { }
+                };
+            },
+            resolveCodeLens: provider.resolveCodeLens ? async (model, codeLens, token) => {
+                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
+                    return codeLens;
+                }
+                const protocolCodeLens = this.m2p.asCodeLens(codeLens);
+                const result = await provider.resolveCodeLens!(protocolCodeLens, token);
+                if (result) {
+                    const resolvedCodeLens = this.p2m.asCodeLens(result);
+                    Object.assign(codeLens, resolvedCodeLens);
+                }
+                return codeLens;
+            } : ((_, codeLens, __) => codeLens)
+        };
     }
 
 }

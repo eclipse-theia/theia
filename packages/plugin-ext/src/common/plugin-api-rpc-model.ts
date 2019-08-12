@@ -71,6 +71,9 @@ export interface Range {
 export interface MarkdownString {
     value: string;
     isTrusted?: boolean;
+    uris?: {
+        [href: string]: UriComponents;
+    };
 }
 
 export interface SerializedDocumentFilter {
@@ -118,34 +121,36 @@ export interface CompletionContext {
     triggerCharacter?: string;
 }
 
+export enum CompletionItemInsertTextRule {
+    KeepWhitespace = 1,
+    InsertAsSnippet = 4
+}
+
 export interface Completion {
     label: string;
-    insertText: string;
-    type: CompletionType;
+    kind: CompletionItemKind;
     detail?: string;
     documentation?: string | MarkdownString;
-    filterText?: string;
     sortText?: string;
+    filterText?: string;
     preselect?: boolean;
-    noAutoAccept?: boolean;
+    insertText: string;
+    insertTextRules?: CompletionItemInsertTextRule;
+    range: Range;
     commitCharacters?: string[];
-    overwriteBefore?: number;
-    overwriteAfter?: number;
     additionalTextEdits?: SingleEditOperation[];
     command?: Command;
-    snippetType?: SnippetType;
 }
+
 export interface SingleEditOperation {
     range: Range;
-    text: string;
+    text: string | null;
     /**
      * This indicates that this operation has "insert" semantics.
      * i.e. forceMoveMarkers = true => if `range` is collapsed, all markers at the position will be moved.
      */
     forceMoveMarkers?: boolean;
 }
-
-export type SnippetType = 'internal' | 'textmate';
 
 export interface Command {
     id: string;
@@ -155,32 +160,34 @@ export interface Command {
     arguments?: any[];
 }
 
-export type CompletionType = 'method'
-    | 'function'
-    | 'constructor'
-    | 'field'
-    | 'variable'
-    | 'class'
-    | 'struct'
-    | 'interface'
-    | 'module'
-    | 'property'
-    | 'event'
-    | 'operator'
-    | 'unit'
-    | 'value'
-    | 'constant'
-    | 'enum'
-    | 'enum-member'
-    | 'keyword'
-    | 'snippet'
-    | 'text'
-    | 'color'
-    | 'file'
-    | 'reference'
-    | 'customcolor'
-    | 'folder'
-    | 'type-parameter';
+export enum CompletionItemKind {
+    Method = 0,
+    Function = 1,
+    Constructor = 2,
+    Field = 3,
+    Variable = 4,
+    Class = 5,
+    Struct = 6,
+    Interface = 7,
+    Module = 8,
+    Property = 9,
+    Event = 10,
+    Operator = 11,
+    Unit = 12,
+    Value = 13,
+    Constant = 14,
+    Enum = 15,
+    EnumMember = 16,
+    Keyword = 17,
+    Text = 18,
+    Color = 19,
+    File = 20,
+    Reference = 21,
+    Customcolor = 22,
+    Folder = 23,
+    TypeParameter = 24,
+    Snippet = 25
+}
 
 export class IdObject {
     id?: number;
@@ -191,6 +198,7 @@ export interface CompletionDto extends Completion {
 }
 
 export interface CompletionResultDto extends IdObject {
+    id: number;
     completions: CompletionDto[];
     incomplete?: boolean;
 }
@@ -229,7 +237,7 @@ export enum MarkerTag {
 }
 
 export interface ParameterInformation {
-    label: string;
+    label: string | [number, number];
     documentation?: string | MarkdownString;
 }
 
@@ -239,10 +247,17 @@ export interface SignatureInformation {
     parameters: ParameterInformation[];
 }
 
-export interface SignatureHelp {
+export interface SignatureHelp extends IdObject {
     signatures: SignatureInformation[];
     activeSignature: number;
     activeParameter: number;
+}
+
+export interface SignatureHelpContext {
+    triggerKind: theia.SignatureHelpTriggerKind;
+    triggerCharacter?: string;
+    isRetrigger: boolean;
+    activeSignatureHelp?: SignatureHelp;
 }
 
 export interface Hover {
@@ -312,7 +327,8 @@ export interface ReferenceContext {
 
 export interface DocumentLink {
     range: Range;
-    url?: string;
+    url?: UriComponents | string;
+    tooltip?: string;
 }
 
 export interface DocumentLinkProvider {

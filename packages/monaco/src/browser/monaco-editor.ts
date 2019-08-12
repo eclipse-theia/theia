@@ -14,9 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { injectable, inject, unmanaged } from 'inversify';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter, TextEdit } from 'monaco-languageclient';
 import { ElementExt } from '@phosphor/domutils';
 import URI from '@theia/core/lib/common/uri';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DisposableCollection, Disposable, Emitter, Event } from '@theia/core/lib/common';
 import {
     Dimension,
@@ -43,11 +45,25 @@ import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
 import IIdentifiedSingleEditOperation = monaco.editor.IIdentifiedSingleEditOperation;
 import IBoxSizing = ElementExt.IBoxSizing;
-import SuggestController = monaco.suggestController.SuggestController;
-import CommonFindController = monaco.findController.CommonFindController;
-import RenameController = monaco.rename.RenameController;
 
-export class MonacoEditor implements TextEditor {
+@injectable()
+export class MonacoEditorServices {
+
+    @inject(MonacoToProtocolConverter)
+    protected readonly m2p: MonacoToProtocolConverter;
+
+    @inject(ProtocolToMonacoConverter)
+    protected readonly p2m: ProtocolToMonacoConverter;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    constructor(@unmanaged() services: MonacoEditorServices) {
+        Object.assign(this, services);
+    }
+}
+
+export class MonacoEditor extends MonacoEditorServices implements TextEditor {
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -73,11 +89,11 @@ export class MonacoEditor implements TextEditor {
         readonly uri: URI,
         readonly document: MonacoEditorModel,
         readonly node: HTMLElement,
-        protected readonly m2p: MonacoToProtocolConverter,
-        protected readonly p2m: ProtocolToMonacoConverter,
+        services: MonacoEditorServices,
         options?: MonacoEditor.IOptions,
-        override?: IEditorOverrideServices,
+        override?: IEditorOverrideServices
     ) {
+        super(services);
         this.toDispose.pushAll([
             this.onCursorPositionChangedEmitter,
             this.onSelectionChangedEmitter,
@@ -150,13 +166,14 @@ export class MonacoEditor implements TextEditor {
             this.onFocusChangedEmitter.fire(this.isFocused())
         ));
         this.toDispose.push(codeEditor.onMouseDown(e => {
-            const { position, range } = e.target;
+            const { element, position, range } = e.target;
             this.onMouseDownEmitter.fire({
                 target: {
                     ...e.target,
+                    element: element || undefined,
                     mouseColumn: this.m2p.asPosition(undefined, e.target.mouseColumn).character,
-                    range: range && this.m2p.asRange(range),
-                    position: position && this.m2p.asPosition(position.lineNumber, position.column)
+                    range: range && this.m2p.asRange(range) || undefined,
+                    position: position && this.m2p.asPosition(position.lineNumber, position.column) || undefined
                 },
                 event: e.event.browserEvent
             });
@@ -187,7 +204,7 @@ export class MonacoEditor implements TextEditor {
     }
 
     get cursor(): Position {
-        const { lineNumber, column } = this.editor.getPosition();
+        const { lineNumber, column } = this.editor.getPosition()!;
         return this.m2p.asPosition(lineNumber, column);
     }
 
@@ -201,7 +218,7 @@ export class MonacoEditor implements TextEditor {
     }
 
     get selection(): Range {
-        return this.m2p.asRange(this.editor.getSelection());
+        return this.m2p.asRange(this.editor.getSelection()!);
     }
 
     set selection(selection: Range) {
@@ -256,8 +273,10 @@ export class MonacoEditor implements TextEditor {
 
     blur(): void {
         const node = this.editor.getDomNode();
-        const textarea = node.querySelector('textarea') as HTMLElement;
-        textarea.blur();
+        if (node) {
+            const textarea = node.querySelector('textarea') as HTMLElement;
+            textarea.blur();
+        }
     }
 
     isFocused({ strict }: { strict: boolean } = { strict: false }): boolean {
@@ -282,22 +301,21 @@ export class MonacoEditor implements TextEditor {
      * `true` if the suggest widget is visible in the editor. Otherwise, `false`.
      */
     isSuggestWidgetVisible(): boolean {
-        const widget = this.editor.getContribution<SuggestController>('editor.contrib.suggestController')._widget;
-        return widget ? widget.suggestWidgetVisible.get() : false;
+        return this.contextKeyService.match('suggestWidgetVisible', this.editor.getDomNode() || this.node);
     }
 
     /**
      * `true` if the find (and replace) widget is visible in the editor. Otherwise, `false`.
      */
     isFindWidgetVisible(): boolean {
-        return this.editor.getContribution<CommonFindController>('editor.contrib.findController')._findWidgetVisible.get();
+        return this.contextKeyService.match('findWidgetVisible', this.editor.getDomNode() || this.node);
     }
 
     /**
      * `true` if the name rename refactoring input HTML element is visible. Otherwise, `false`.
      */
     isRenameInputVisible(): boolean {
-        return this.editor.getContribution<RenameController>('editor.contrib.renameController')._renameInputVisible.get();
+        return this.contextKeyService.match('renameInputVisible', this.editor.getDomNode() || this.node);
     }
 
     dispose(): void {
@@ -362,7 +380,7 @@ export class MonacoEditor implements TextEditor {
         const configuration = this.editor.getConfiguration();
 
         const lineHeight = configuration.lineHeight;
-        const lineCount = this.editor.getModel().getLineCount();
+        const lineCount = this.editor.getModel()!.getLineCount();
         const contentHeight = lineHeight * lineCount;
 
         const horizontalScrollbarHeight = configuration.layoutInfo.horizontalScrollbarHeight;
@@ -386,12 +404,11 @@ export class MonacoEditor implements TextEditor {
         return !!action && action.isSupported();
     }
 
-    runAction(id: string): monaco.Promise<void> {
+    async runAction(id: string): Promise<void> {
         const action = this.editor.getAction(id);
         if (action && action.isSupported()) {
-            return action.run();
+            await action.run();
         }
-        return monaco.Promise.as(undefined);
     }
 
     get commandService(): monaco.commands.ICommandService {
@@ -420,7 +437,7 @@ export class MonacoEditor implements TextEditor {
         const start = toPosition(startLineNumber).lineNumber;
         const end = toPosition(endLineNumber).lineNumber;
         return this.editor
-            .getModel()
+            .getModel()!
             .getLinesDecorations(start, end)
             .map(this.toEditorDecoration.bind(this));
     }
@@ -460,7 +477,7 @@ export class MonacoEditor implements TextEditor {
     }
 
     storeViewState(): object {
-        return this.editor.saveViewState();
+        return this.editor.saveViewState()!;
     }
 
     restoreViewState(state: object): void {
@@ -475,11 +492,11 @@ export class MonacoEditor implements TextEditor {
     }
 
     async detectLanguage(): Promise<void> {
-        const filename = this.uri.path.toString();
         const modeService = monaco.services.StaticServices.modeService.get();
         const firstLine = this.document.textEditorModel.getLineContent(1);
-        const mode = await modeService.getOrCreateModeByFilenameOrFirstLine(filename, firstLine);
-        this.setLanguage(mode.getId());
+        const model = this.getControl().getModel();
+        const language = modeService.createByFilepathOrFirstLine(model && model.uri, firstLine);
+        this.setLanguage(language.languageIdentifier.language);
         this._languageAutoDetected = true;
     }
 

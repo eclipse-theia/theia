@@ -25,7 +25,7 @@ import { CommandRegistry } from '@phosphor/commands';
 @injectable()
 export class MonacoContextMenuService implements IContextMenuService {
 
-    constructor( @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
+    constructor(@inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
     }
 
     showContextMenu(delegate: IContextMenuDelegate): void {
@@ -35,29 +35,28 @@ export class MonacoContextMenuService implements IContextMenuService {
         if (delegate.hasOwnProperty('getKeyBinding')) {
             this.contextMenuRenderer.render(EDITOR_CONTEXT_MENU, anchor, () => delegate.onHide(false));
         } else {
-            delegate.getActions().then(actions => {
-                const commands = new CommandRegistry();
-                const menu = new Menu({
-                    commands
-                });
-
-                for (const action of actions) {
-                    const commandId = 'quickfix_' + actions.indexOf(action);
-                    commands.addCommand(commandId, {
-                        label: action.label,
-                        className: action.class,
-                        isToggled: () => action.checked,
-                        isEnabled: () => action.enabled,
-                        execute: () => action.run()
-                    });
-                    menu.addItem({
-                        type: 'command',
-                        command: commandId
-                    });
-                }
-                menu.aboutToClose.connect(() => delegate.onHide(false));
-                menu.open(anchor.x, anchor.y);
+            const actions = delegate.getActions();
+            const commands = new CommandRegistry();
+            const menu = new Menu({
+                commands
             });
+
+            for (const action of actions) {
+                const commandId = 'quickfix_' + actions.indexOf(action);
+                commands.addCommand(commandId, {
+                    label: action.label,
+                    className: action.class,
+                    isToggled: () => action.checked,
+                    isEnabled: () => action.enabled,
+                    execute: () => action.run()
+                });
+                menu.addItem({
+                    type: 'command',
+                    command: commandId
+                });
+            }
+            menu.aboutToClose.connect(() => delegate.onHide(false));
+            menu.open(anchor.x, anchor.y);
         }
     }
 

@@ -43,7 +43,6 @@ import {
     Hover,
     DocumentHighlight,
     FormattingOptions,
-    SingleEditOperation as ModelSingleEditOperation,
     Definition,
     DefinitionLink,
     DocumentLink,
@@ -61,7 +60,8 @@ import {
     ColorPresentation,
     RenameLocation,
     FileMoveEvent,
-    FileWillMoveEvent
+    FileWillMoveEvent,
+    SignatureHelpContext
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -793,7 +793,7 @@ export enum TrackedRangeStickiness {
 }
 export interface ContentDecorationRenderOptions {
     contentText?: string;
-    contentIconPath?: string | UriComponents;
+    contentIconPath?: UriComponents;
 
     border?: string;
     borderColor?: string | ThemeColor;
@@ -828,10 +828,10 @@ export interface ThemeDecorationRenderOptions {
     textDecoration?: string;
     cursor?: string;
     color?: string | ThemeColor;
-    opacity?: number;
+    opacity?: string;
     letterSpacing?: string;
 
-    gutterIconPath?: string | UriComponents;
+    gutterIconPath?: UriComponents;
     gutterIconSize?: string;
 
     overviewRulerColor?: string | ThemeColor;
@@ -1095,13 +1095,16 @@ export interface LanguagesExt {
     $provideTypeDefinition(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
     $provideDefinition(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
     $provideReferences(handle: number, resource: UriComponents, position: Position, context: ReferenceContext, token: CancellationToken): Promise<Location[] | undefined>;
-    $provideSignatureHelp(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<SignatureHelp | undefined>;
+    $provideSignatureHelp(
+        handle: number, resource: UriComponents, position: Position, context: SignatureHelpContext, token: CancellationToken
+    ): Promise<SignatureHelp | undefined>;
+    $releaseSignatureHelp(handle: number, id: number): void;
     $provideHover(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Hover | undefined>;
     $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<DocumentHighlight[] | undefined>;
     $provideDocumentFormattingEdits(handle: number, resource: UriComponents,
-        options: FormattingOptions, token: CancellationToken): Promise<ModelSingleEditOperation[] | undefined>;
+        options: FormattingOptions, token: CancellationToken): Promise<TextEdit[] | undefined>;
     $provideDocumentRangeFormattingEdits(handle: number, resource: UriComponents, range: Range,
-        options: FormattingOptions, token: CancellationToken): Promise<ModelSingleEditOperation[] | undefined>;
+        options: FormattingOptions, token: CancellationToken): Promise<TextEdit[] | undefined>;
     $provideOnTypeFormattingEdits(
         handle: number,
         resource: UriComponents,
@@ -1109,7 +1112,7 @@ export interface LanguagesExt {
         ch: string,
         options: FormattingOptions,
         token: CancellationToken
-    ): Promise<ModelSingleEditOperation[] | undefined>;
+    ): Promise<TextEdit[] | undefined>;
     $provideDocumentLinks(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentLink[] | undefined>;
     $resolveDocumentLink(handle: number, link: DocumentLink, token: CancellationToken): Promise<DocumentLink | undefined>;
     $provideCodeLenses(handle: number, resource: UriComponents, token: CancellationToken): Promise<CodeLensSymbol[] | undefined>;
@@ -1120,7 +1123,7 @@ export interface LanguagesExt {
         rangeOrSelection: Range | Selection,
         context: monaco.languages.CodeActionContext,
         token: CancellationToken
-    ): Promise<monaco.languages.CodeAction[]>;
+    ): Promise<monaco.languages.CodeAction[] | undefined>;
     $provideDocumentSymbols(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentSymbol[] | undefined>;
     $provideWorkspaceSymbols(handle: number, query: string, token: CancellationToken): PromiseLike<SymbolInformation[]>;
     $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: CancellationToken): PromiseLike<SymbolInformation>;
@@ -1146,7 +1149,7 @@ export interface LanguagesMain {
     $registerTypeDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerReferenceProvider(handle: number, selector: SerializedDocumentFilter[]): void;
-    $registerSignatureHelpProvider(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[]): void;
+    $registerSignatureHelpProvider(handle: number, selector: SerializedDocumentFilter[], metadata: theia.SignatureHelpProviderMetadata): void;
     $registerHoverProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerDocumentHighlightProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerQuickFixProvider(handle: number, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void;

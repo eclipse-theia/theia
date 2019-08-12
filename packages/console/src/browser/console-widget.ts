@@ -193,8 +193,8 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         const value = this.history.next || '';
         const editor = this.input.getControl();
         editor.setValue(value);
-        const lineNumber = editor.getModel().getLineCount();
-        const column = editor.getModel().getLineMaxColumn(lineNumber);
+        const lineNumber = editor.getModel()!.getLineCount();
+        const column = editor.getModel()!.getLineMaxColumn(lineNumber);
         editor.setPosition({ lineNumber, column });
     }
 

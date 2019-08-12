@@ -274,7 +274,7 @@ export class KeybindingRegistry {
     containsKeybinding(bindings: Keybinding[], binding: Keybinding): boolean {
         const bindingKeySequence = this.resolveKeybinding(binding);
         const collisions = this.getKeySequenceCollisions(bindings, bindingKeySequence)
-            .filter(b => b.context === binding.context);
+            .filter(b => b.context === binding.context && !b.when && !binding.when);
 
         if (collisions.full.length > 0) {
             this.logger.warn('Collided keybinding is ignored; ',

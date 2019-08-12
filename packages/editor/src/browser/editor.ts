@@ -119,7 +119,7 @@ export interface MouseTarget {
     /**
      * The target element
      */
-    readonly element: Element;
+    readonly element?: Element;
     /**
      * The target type
      */

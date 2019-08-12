@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import {
-    ApplicationShell, BaseWidget,  DockPanel, Navigatable, PanelLayout, Saveable,
-     StatefulWidget, Title,  Widget, WidgetConstructionOptions, WidgetManager
+    ApplicationShell, BaseWidget, DockPanel, Navigatable, PanelLayout, Saveable,
+    StatefulWidget, Title, Widget, WidgetConstructionOptions, WidgetManager
 } from '@theia/core/lib/browser';
 import { Emitter, DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
@@ -70,7 +70,7 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
         return this.pinned_;
     }
 
-    get saveable(): Saveable|undefined {
+    get saveable(): Saveable | undefined {
         if (this.editorWidget_) {
             return this.editorWidget_.saveable;
         }
@@ -80,14 +80,14 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
         return this.editorWidget_ && this.editorWidget_.getResourceUri();
     }
     createMoveToUri(resourceUri: URI): URI | undefined {
-        return this.editorWidget_ &&  this.editorWidget_.createMoveToUri(resourceUri);
+        return this.editorWidget_ && this.editorWidget_.createMoveToUri(resourceUri);
     }
 
     pinEditorWidget(): void {
         this.title.className = this.title.className.replace(PREVIEW_TITLE_CLASS, '');
         this.pinListeners.dispose();
         this.pinned_ = true;
-        this.onPinnedEmitter.fire({preview: this, editorWidget: this.editorWidget_!});
+        this.onPinnedEmitter.fire({ preview: this, editorWidget: this.editorWidget_! });
     }
 
     replaceEditorWidget(editorWidget: EditorWidget): void {
@@ -156,15 +156,15 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
                 }
             };
             parent.layoutModified.connect(layoutListener);
-            this.pinListeners.push({dispose: () => parent.layoutModified.disconnect(layoutListener)});
+            this.pinListeners.push({ dispose: () => parent.layoutModified.disconnect(layoutListener) });
 
-            const tabMovedListener = (w: Widget, args: {title: Title<Widget>}) => {
+            const tabMovedListener = (w: Widget, args: { title: Title<Widget> }) => {
                 if (args.title === this.title) {
                     this.pinEditorWidget();
                 }
             };
             tabBar.tabMoved.connect(tabMovedListener);
-            this.pinListeners.push({dispose: () => tabBar.tabMoved.disconnect(tabMovedListener)});
+            this.pinListeners.push({ dispose: () => tabBar.tabMoved.disconnect(tabMovedListener) });
 
             const attachDoubleClickListener = (attempt: number): number | undefined => {
                 const tabNode = tabBar.contentNode.children.item(tabBar.currentIndex);
@@ -173,7 +173,7 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
                 }
                 const dblClickListener = (event: Event) => this.pinEditorWidget();
                 tabNode.addEventListener('dblclick', dblClickListener);
-                this.pinListeners.push({dispose: () => tabNode.removeEventListener('dblclick', dblClickListener)});
+                this.pinListeners.push({ dispose: () => tabNode.removeEventListener('dblclick', dblClickListener) });
             };
             requestAnimationFrame(() => attachDoubleClickListener(0));
         }
@@ -190,7 +190,7 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
                 const width = parseInt(this.node.style.width || '');
                 const height = parseInt(this.node.style.height || '');
                 if (width && height) {
-                    this.editorWidget_.editor.setSize({width, height});
+                    this.editorWidget_.editor.setSize({ width, height });
                 }
             }
             MessageLoop.sendMessage(this.editorWidget_, msg);
@@ -211,9 +211,9 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
     }
 
     async restoreState(state: PreviewViewState): Promise<void> {
-        const {pinned, editorState, previewDescription} = state;
+        const { pinned, editorState, previewDescription } = state;
         if (!this.editorWidget_ && previewDescription) {
-            const {factoryId, options} = previewDescription;
+            const { factoryId, options } = previewDescription;
             const editorWidget = await this.widgetManager.getOrCreateWidget(factoryId, options) as EditorWidget;
             this.replaceEditorWidget(editorWidget);
         }
