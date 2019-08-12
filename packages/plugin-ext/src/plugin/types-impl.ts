@@ -819,10 +819,10 @@ export enum MarkerTag {
 }
 
 export class ParameterInformation {
-    label: string;
+    label: string | [number, number];
     documentation?: string | MarkdownString;
 
-    constructor(label: string, documentation?: string | MarkdownString) {
+    constructor(label: string | [number, number], documentation?: string | MarkdownString) {
         this.label = label;
         this.documentation = documentation;
     }
@@ -836,13 +836,24 @@ export class SignatureInformation {
     constructor(label: string, documentation?: string | MarkdownString) {
         this.label = label;
         this.documentation = documentation;
+        this.parameters = [];
     }
+}
+
+export enum SignatureHelpTriggerKind {
+    Invoke = 1,
+    TriggerCharacter = 2,
+    ContentChange = 3,
 }
 
 export class SignatureHelp {
     signatures: SignatureInformation[];
     activeSignature: number;
     activeParameter: number;
+
+    constructor() {
+        this.signatures = [];
+    }
 }
 
 export class Hover {

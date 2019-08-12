@@ -43,14 +43,11 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             const command = this.commands.validate(item.command);
             if (command) {
                 const raw = item.keybinding;
-                const keybinding = raw.type === monaco.keybindings.KeybindingType.Simple
-                    ? this.keyCode(raw as monaco.keybindings.SimpleKeybinding).toString()
+                const when = item.when && item.when.serialize();
+                const keybinding = raw instanceof monaco.keybindings.SimpleKeybinding
+                    ? this.keyCode(raw).toString()
                     : this.keySequence(raw as monaco.keybindings.ChordKeybinding).join(' ');
-                const isInDiffEditor = item.when && /(^|[^!])\bisInDiffEditor\b/gm.test(item.when.serialize());
-                const context = isInDiffEditor
-                    ? EditorKeybindingContexts.diffEditorTextFocus
-                    : EditorKeybindingContexts.strictEditorTextFocus;
-                registry.registerKeybinding({ command, keybinding, context });
+                registry.registerKeybinding({ command, keybinding, when });
             }
         }
 
@@ -91,9 +88,6 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
     }
 
     protected keySequence(keybinding: monaco.keybindings.ChordKeybinding): KeySequence {
-        return [
-            this.keyCode(keybinding.firstPart),
-            this.keyCode(keybinding.chordPart)
-        ];
+        return keybinding.parts.map(part => this.keyCode(part));
     }
 }

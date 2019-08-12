@@ -52,8 +52,8 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         return this._models.onDidCreate;
     }
 
-    createModelReference(raw: monaco.Uri | URI): monaco.Promise<monaco.editor.IReference<MonacoEditorModel>> {
-        return monaco.Promise.wrap(this._models.acquire(raw.toString()));
+    createModelReference(raw: monaco.Uri | URI): Promise<monaco.editor.IReference<MonacoEditorModel>> {
+        return this._models.acquire(raw.toString());
     }
 
     protected async loadModel(uri: URI): Promise<MonacoEditorModel> {

@@ -89,20 +89,31 @@ export class DebugBreakpointWidget implements Disposable {
             return;
         }
         this.toDispose.push(input);
-        this.toDispose.push(monaco.modes.SuggestRegistry.register({ scheme: input.uri.scheme }, {
+        this.toDispose.push(monaco.modes.CompletionProviderRegistry.register({ scheme: input.uri.scheme }, {
             provideCompletionItems: async (model, position, context, token) => {
                 const suggestions = [];
                 if ((this.context === 'condition' || this.context === 'logMessage')
                     && input.uri.toString() === model.uri.toString()) {
                     const editor = this.editor.getControl();
                     const items = await monaco.suggest.provideSuggestionItems(
-                        editor.getModel(),
-                        new monaco.Position(editor.getPosition().lineNumber, 1),
-                        'none', undefined, context, token);
-                    for (const { suggestion } of items) {
-                        suggestion.overwriteAfter = 0;
-                        suggestion.overwriteBefore = position.column - 1;
-                        suggestions.push(suggestion);
+                        editor.getModel()!,
+                        new monaco.Position(editor.getPosition()!.lineNumber, 1),
+                        new monaco.suggest.CompletionOptions(undefined, new Set<monaco.languages.CompletionItemKind>().add(monaco.languages.CompletionItemKind.Snippet)),
+                        context, token);
+                    let overwriteBefore = 0;
+                    if (this.context === 'condition') {
+                        overwriteBefore = position.column - 1;
+                    } else {
+                        // Inside the currly brackets, need to count how many useful characters are behind the position so they would all be taken into account
+                        const value = editor.getModel()!.getValue();
+                        while ((position.column - 2 - overwriteBefore >= 0)
+                            && value[position.column - 2 - overwriteBefore] !== '{' && value[position.column - 2 - overwriteBefore] !== ' ') {
+                            overwriteBefore++;
+                        }
+                    }
+                    for (const { completion } of items) {
+                        completion.range = monaco.Range.fromPositions(position.delta(0, -overwriteBefore), position);
+                        suggestions.push(completion);
                     }
                 }
                 return { suggestions };
@@ -110,7 +121,7 @@ export class DebugBreakpointWidget implements Disposable {
         }));
         this.toDispose.push(this.zone.onDidLayoutChange(dimension => this.layout(dimension)));
         this.toDispose.push(input.getControl().onDidChangeModelContent(() => {
-            const heightInLines = input.getControl().getModel().getLineCount() + 1;
+            const heightInLines = input.getControl().getModel()!.getLineCount() + 1;
             this.zone.layout(heightInLines);
             this.updatePlaceholder();
         }));
@@ -152,9 +163,9 @@ export class DebugBreakpointWidget implements Disposable {
         const afterLineNumber = breakpoint ? breakpoint.line : position!.lineNumber;
         const afterColumn = breakpoint ? breakpoint.column : position!.column;
         const editor = this._input.getControl();
-        const heightInLines = editor.getModel().getLineCount() + 1;
+        const heightInLines = editor.getModel()!.getLineCount() + 1;
         this.zone.show({ afterLineNumber, afterColumn, heightInLines, frameWidth: 1 });
-        editor.setPosition(editor.getModel().getPositionAt(editor.getModel().getValueLength()));
+        editor.setPosition(editor.getModel()!.getPositionAt(editor.getModel()!.getValueLength()));
         this._input.focus();
     }
 
@@ -207,6 +218,7 @@ export class DebugBreakpointWidget implements Disposable {
         }
         const value = this._input.getControl().getValue();
         const decorations: monaco.editor.IDecorationOptions[] = !!value ? [] : [{
+            color: undefined,
             range: {
                 startLineNumber: 0,
                 endLineNumber: 0,

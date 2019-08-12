@@ -26,11 +26,12 @@ import {
     ProcessTaskDto,
     PickOpenItem
 } from '../common/plugin-api-rpc';
+import * as rpc from '../common/plugin-api-rpc';
 import * as model from '../common/plugin-api-rpc-model';
 import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
-import { isMarkdownString } from './markdown-string';
+import { isMarkdownString, MarkdownString } from './markdown-string';
 import URI from 'vscode-uri';
 
 const SIDE_GROUP = -2;
@@ -121,6 +122,9 @@ export function toRange(range: model.Range): types.Range {
     return new types.Range(startLineNumber - 1, startColumn - 1, endLineNumber - 1, endColumn - 1);
 }
 
+export function fromRange(range: undefined): undefined;
+export function fromRange(range: theia.Range): model.Range;
+export function fromRange(range: theia.Range | undefined): model.Range | undefined;
 export function fromRange(range: theia.Range | undefined): model.Range | undefined {
     if (!range) {
         return undefined;
@@ -210,6 +214,12 @@ export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString):
     }
 }
 
+export function toMarkdown(value: model.MarkdownString): MarkdownString {
+    const ret = new MarkdownString(value.value);
+    ret.isTrusted = value.isTrusted;
+    return ret;
+}
+
 export function fromDocumentSelector(selector: theia.DocumentSelector | undefined): LanguageSelector | undefined {
     if (!selector) {
         return undefined;
@@ -244,72 +254,70 @@ function isRelativePattern(obj: {}): obj is theia.RelativePattern {
     return rp && typeof rp.base === 'string' && typeof rp.pattern === 'string';
 }
 
-export function fromCompletionItemKind(kind?: types.CompletionItemKind): model.CompletionType {
+export function fromCompletionItemKind(kind?: types.CompletionItemKind): model.CompletionItemKind {
     switch (kind) {
-        case types.CompletionItemKind.Method: return 'method';
-        case types.CompletionItemKind.Function: return 'function';
-        case types.CompletionItemKind.Constructor: return 'constructor';
-        case types.CompletionItemKind.Field: return 'field';
-        case types.CompletionItemKind.Variable: return 'variable';
-        case types.CompletionItemKind.Class: return 'class';
-        case types.CompletionItemKind.Interface: return 'interface';
-        case types.CompletionItemKind.Struct: return 'struct';
-        case types.CompletionItemKind.Module: return 'module';
-        case types.CompletionItemKind.Property: return 'property';
-        case types.CompletionItemKind.Unit: return 'unit';
-        case types.CompletionItemKind.Value: return 'value';
-        case types.CompletionItemKind.Constant: return 'constant';
-        case types.CompletionItemKind.Enum: return 'enum';
-        case types.CompletionItemKind.EnumMember: return 'enum-member';
-        case types.CompletionItemKind.Keyword: return 'keyword';
-        case types.CompletionItemKind.Snippet: return 'snippet';
-        case types.CompletionItemKind.Text: return 'text';
-        case types.CompletionItemKind.Color: return 'color';
-        case types.CompletionItemKind.File: return 'file';
-        case types.CompletionItemKind.Reference: return 'reference';
-        case types.CompletionItemKind.Folder: return 'folder';
-        case types.CompletionItemKind.Event: return 'event';
-        case types.CompletionItemKind.Operator: return 'operator';
-        case types.CompletionItemKind.TypeParameter: return 'type-parameter';
+        case types.CompletionItemKind.Method: return model.CompletionItemKind.Method;
+        case types.CompletionItemKind.Function: return model.CompletionItemKind.Function;
+        case types.CompletionItemKind.Constructor: return model.CompletionItemKind.Constructor;
+        case types.CompletionItemKind.Field: return model.CompletionItemKind.Field;
+        case types.CompletionItemKind.Variable: return model.CompletionItemKind.Variable;
+        case types.CompletionItemKind.Class: return model.CompletionItemKind.Class;
+        case types.CompletionItemKind.Interface: return model.CompletionItemKind.Interface;
+        case types.CompletionItemKind.Struct: return model.CompletionItemKind.Struct;
+        case types.CompletionItemKind.Module: return model.CompletionItemKind.Module;
+        case types.CompletionItemKind.Property: return model.CompletionItemKind.Property;
+        case types.CompletionItemKind.Unit: return model.CompletionItemKind.Unit;
+        case types.CompletionItemKind.Value: return model.CompletionItemKind.Value;
+        case types.CompletionItemKind.Constant: return model.CompletionItemKind.Constant;
+        case types.CompletionItemKind.Enum: return model.CompletionItemKind.Enum;
+        case types.CompletionItemKind.EnumMember: return model.CompletionItemKind.EnumMember;
+        case types.CompletionItemKind.Keyword: return model.CompletionItemKind.Keyword;
+        case types.CompletionItemKind.Snippet: return model.CompletionItemKind.Snippet;
+        case types.CompletionItemKind.Text: return model.CompletionItemKind.Text;
+        case types.CompletionItemKind.Color: return model.CompletionItemKind.Color;
+        case types.CompletionItemKind.File: return model.CompletionItemKind.File;
+        case types.CompletionItemKind.Reference: return model.CompletionItemKind.Reference;
+        case types.CompletionItemKind.Folder: return model.CompletionItemKind.Folder;
+        case types.CompletionItemKind.Event: return model.CompletionItemKind.Event;
+        case types.CompletionItemKind.Operator: return model.CompletionItemKind.Operator;
+        case types.CompletionItemKind.TypeParameter: return model.CompletionItemKind.TypeParameter;
     }
-    return 'property';
+    return model.CompletionItemKind.Property;
 }
 
-export function toCompletionItemKind(type?: model.CompletionType): types.CompletionItemKind {
-    if (type) {
-        switch (type) {
-            case 'method': return types.CompletionItemKind.Method;
-            case 'function': return types.CompletionItemKind.Function;
-            case 'constructor': return types.CompletionItemKind.Constructor;
-            case 'field': return types.CompletionItemKind.Field;
-            case 'variable': return types.CompletionItemKind.Variable;
-            case 'class': return types.CompletionItemKind.Class;
-            case 'interface': return types.CompletionItemKind.Interface;
-            case 'struct': return types.CompletionItemKind.Struct;
-            case 'module': return types.CompletionItemKind.Module;
-            case 'property': return types.CompletionItemKind.Property;
-            case 'unit': return types.CompletionItemKind.Unit;
-            case 'value': return types.CompletionItemKind.Value;
-            case 'constant': return types.CompletionItemKind.Constant;
-            case 'enum': return types.CompletionItemKind.Enum;
-            case 'enum-member': return types.CompletionItemKind.EnumMember;
-            case 'keyword': return types.CompletionItemKind.Keyword;
-            case 'snippet': return types.CompletionItemKind.Snippet;
-            case 'text': return types.CompletionItemKind.Text;
-            case 'color': return types.CompletionItemKind.Color;
-            case 'file': return types.CompletionItemKind.File;
-            case 'reference': return types.CompletionItemKind.Reference;
-            case 'folder': return types.CompletionItemKind.Folder;
-            case 'event': return types.CompletionItemKind.Event;
-            case 'operator': return types.CompletionItemKind.Operator;
-            case 'type-parameter': return types.CompletionItemKind.TypeParameter;
-        }
+export function toCompletionItemKind(kind?: model.CompletionItemKind): types.CompletionItemKind {
+    switch (kind) {
+        case model.CompletionItemKind.Method: return types.CompletionItemKind.Method;
+        case model.CompletionItemKind.Function: return types.CompletionItemKind.Function;
+        case model.CompletionItemKind.Constructor: return types.CompletionItemKind.Constructor;
+        case model.CompletionItemKind.Field: return types.CompletionItemKind.Field;
+        case model.CompletionItemKind.Variable: return types.CompletionItemKind.Variable;
+        case model.CompletionItemKind.Class: return types.CompletionItemKind.Class;
+        case model.CompletionItemKind.Interface: return types.CompletionItemKind.Interface;
+        case model.CompletionItemKind.Struct: return types.CompletionItemKind.Struct;
+        case model.CompletionItemKind.Module: return types.CompletionItemKind.Module;
+        case model.CompletionItemKind.Property: return types.CompletionItemKind.Property;
+        case model.CompletionItemKind.Unit: return types.CompletionItemKind.Unit;
+        case model.CompletionItemKind.Value: return types.CompletionItemKind.Value;
+        case model.CompletionItemKind.Constant: return types.CompletionItemKind.Constant;
+        case model.CompletionItemKind.Enum: return types.CompletionItemKind.Enum;
+        case model.CompletionItemKind.EnumMember: return types.CompletionItemKind.EnumMember;
+        case model.CompletionItemKind.Keyword: return types.CompletionItemKind.Keyword;
+        case model.CompletionItemKind.Snippet: return types.CompletionItemKind.Snippet;
+        case model.CompletionItemKind.Text: return types.CompletionItemKind.Text;
+        case model.CompletionItemKind.Color: return types.CompletionItemKind.Color;
+        case model.CompletionItemKind.File: return types.CompletionItemKind.File;
+        case model.CompletionItemKind.Reference: return types.CompletionItemKind.Reference;
+        case model.CompletionItemKind.Folder: return types.CompletionItemKind.Folder;
+        case model.CompletionItemKind.Event: return types.CompletionItemKind.Event;
+        case model.CompletionItemKind.Operator: return types.CompletionItemKind.Operator;
+        case model.CompletionItemKind.TypeParameter: return types.CompletionItemKind.TypeParameter;
     }
     return types.CompletionItemKind.Property;
 }
 
-export function fromTextEdit(edit: theia.TextEdit): model.SingleEditOperation {
-    return <model.SingleEditOperation>{
+export function fromTextEdit(edit: theia.TextEdit): model.TextEdit {
+    return {
         text: edit.newText,
         range: fromRange(edit.range)
     };
@@ -442,6 +450,60 @@ export function fromDocumentHighlight(documentHighlight: theia.DocumentHighlight
         range: fromRange(documentHighlight.range),
         kind: fromDocumentHighlightKind(documentHighlight.kind)
     };
+}
+
+export namespace ParameterInformation {
+    export function from(info: types.ParameterInformation): model.ParameterInformation {
+        return {
+            label: info.label,
+            documentation: info.documentation ? fromMarkdown(info.documentation) : undefined
+        };
+    }
+    export function to(info: model.ParameterInformation): types.ParameterInformation {
+        return {
+            label: info.label,
+            documentation: isMarkdownString(info.documentation) ? toMarkdown(info.documentation) : info.documentation
+        };
+    }
+}
+
+export namespace SignatureInformation {
+
+    export function from(info: types.SignatureInformation): model.SignatureInformation {
+        return {
+            label: info.label,
+            documentation: info.documentation ? fromMarkdown(info.documentation) : undefined,
+            parameters: info.parameters && info.parameters.map(ParameterInformation.from)
+        };
+    }
+
+    export function to(info: model.SignatureInformation): types.SignatureInformation {
+        return {
+            label: info.label,
+            documentation: isMarkdownString(info.documentation) ? toMarkdown(info.documentation) : info.documentation,
+            parameters: info.parameters && info.parameters.map(ParameterInformation.to)
+        };
+    }
+}
+
+export namespace SignatureHelp {
+
+    export function from(id: number, help: types.SignatureHelp): model.SignatureHelp {
+        return {
+            id,
+            activeSignature: help.activeSignature,
+            activeParameter: help.activeParameter,
+            signatures: help.signatures && help.signatures.map(SignatureInformation.from)
+        };
+    }
+
+    export function to(help: model.SignatureHelp): types.SignatureHelp {
+        return {
+            activeSignature: help.activeSignature,
+            activeParameter: help.activeParameter,
+            signatures: help.signatures && help.signatures.map(SignatureInformation.to)
+        };
+    }
 }
 
 export namespace KnownCommands {
@@ -894,4 +956,124 @@ export function quickPickItemToPickOpenItem(items: Item[]): PickOpenItem[] {
         });
     }
     return pickItems;
+}
+
+export namespace DecorationRenderOptions {
+    export function from(options: theia.DecorationRenderOptions): rpc.DecorationRenderOptions {
+        return {
+            isWholeLine: options.isWholeLine,
+            rangeBehavior: options.rangeBehavior ? DecorationRangeBehavior.from(options.rangeBehavior) : undefined,
+            overviewRulerLane: options.overviewRulerLane,
+            light: options.light ? ThemableDecorationRenderOptions.from(options.light) : undefined,
+            dark: options.dark ? ThemableDecorationRenderOptions.from(options.dark) : undefined,
+
+            backgroundColor: <string | types.ThemeColor>options.backgroundColor,
+            outline: options.outline,
+            outlineColor: <string | types.ThemeColor>options.outlineColor,
+            outlineStyle: options.outlineStyle,
+            outlineWidth: options.outlineWidth,
+            border: options.border,
+            borderColor: <string | types.ThemeColor>options.borderColor,
+            borderRadius: options.borderRadius,
+            borderSpacing: options.borderSpacing,
+            borderStyle: options.borderStyle,
+            borderWidth: options.borderWidth,
+            fontStyle: options.fontStyle,
+            fontWeight: options.fontWeight,
+            textDecoration: options.textDecoration,
+            cursor: options.cursor,
+            color: <string | types.ThemeColor>options.color,
+            opacity: options.opacity,
+            letterSpacing: options.letterSpacing,
+            gutterIconPath: options.gutterIconPath ? pathOrURIToURI(options.gutterIconPath) : undefined,
+            gutterIconSize: options.gutterIconSize,
+            overviewRulerColor: <string | types.ThemeColor>options.overviewRulerColor,
+            before: options.before ? ThemableDecorationAttachmentRenderOptions.from(options.before) : undefined,
+            after: options.after ? ThemableDecorationAttachmentRenderOptions.from(options.after) : undefined,
+        };
+    }
+}
+
+export namespace DecorationRangeBehavior {
+    export function from(value: types.DecorationRangeBehavior): rpc.TrackedRangeStickiness {
+        if (typeof value === 'undefined') {
+            return value;
+        }
+        switch (value) {
+            case types.DecorationRangeBehavior.OpenOpen:
+                return rpc.TrackedRangeStickiness.AlwaysGrowsWhenTypingAtEdges;
+            case types.DecorationRangeBehavior.ClosedClosed:
+                return rpc.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges;
+            case types.DecorationRangeBehavior.OpenClosed:
+                return rpc.TrackedRangeStickiness.GrowsOnlyWhenTypingBefore;
+            case types.DecorationRangeBehavior.ClosedOpen:
+                return rpc.TrackedRangeStickiness.GrowsOnlyWhenTypingAfter;
+        }
+    }
+}
+
+export namespace ThemableDecorationRenderOptions {
+    export function from(options: theia.ThemableDecorationRenderOptions): rpc.ThemeDecorationRenderOptions {
+        if (typeof options === 'undefined') {
+            return options;
+        }
+        return {
+            backgroundColor: <string | types.ThemeColor>options.backgroundColor,
+            outline: options.outline,
+            outlineColor: <string | types.ThemeColor>options.outlineColor,
+            outlineStyle: options.outlineStyle,
+            outlineWidth: options.outlineWidth,
+            border: options.border,
+            borderColor: <string | types.ThemeColor>options.borderColor,
+            borderRadius: options.borderRadius,
+            borderSpacing: options.borderSpacing,
+            borderStyle: options.borderStyle,
+            borderWidth: options.borderWidth,
+            fontStyle: options.fontStyle,
+            fontWeight: options.fontWeight,
+            textDecoration: options.textDecoration,
+            cursor: options.cursor,
+            color: <string | types.ThemeColor>options.color,
+            opacity: options.opacity,
+            letterSpacing: options.letterSpacing,
+            gutterIconPath: options.gutterIconPath ? pathOrURIToURI(options.gutterIconPath) : undefined,
+            gutterIconSize: options.gutterIconSize,
+            overviewRulerColor: <string | types.ThemeColor>options.overviewRulerColor,
+            before: options.before ? ThemableDecorationAttachmentRenderOptions.from(options.before) : undefined,
+            after: options.after ? ThemableDecorationAttachmentRenderOptions.from(options.after) : undefined,
+        };
+    }
+}
+
+export namespace ThemableDecorationAttachmentRenderOptions {
+    export function from(options: theia.ThemableDecorationAttachmentRenderOptions): rpc.ContentDecorationRenderOptions {
+        if (typeof options === 'undefined') {
+            return options;
+        }
+        return {
+            contentText: options.contentText,
+            contentIconPath: options.contentIconPath ? pathOrURIToURI(options.contentIconPath) : undefined,
+            border: options.border,
+            borderColor: <string | types.ThemeColor>options.borderColor,
+            fontStyle: options.fontStyle,
+            fontWeight: options.fontWeight,
+            textDecoration: options.textDecoration,
+            color: <string | types.ThemeColor>options.color,
+            backgroundColor: <string | types.ThemeColor>options.backgroundColor,
+            margin: options.margin,
+            width: options.width,
+            height: options.height,
+        };
+    }
+}
+
+export function pathOrURIToURI(value: string | URI): URI {
+    if (typeof value === 'undefined') {
+        return value;
+    }
+    if (typeof value === 'string') {
+        return URI.file(value);
+    } else {
+        return value;
+    }
 }

@@ -18,7 +18,7 @@ import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import URI from 'vscode-uri/lib/umd';
-import { FormattingOptions, SingleEditOperation } from '../../common/plugin-api-rpc-model';
+import { FormattingOptions, TextEdit } from '../../common/plugin-api-rpc-model';
 import { Position } from '../../common/plugin-api-rpc';
 
 export class OnTypeFormattingAdapter {
@@ -29,7 +29,7 @@ export class OnTypeFormattingAdapter {
     ) { }
 
     provideOnTypeFormattingEdits(resource: URI, position: Position, ch: string,
-        options: FormattingOptions, token: theia.CancellationToken): Promise<SingleEditOperation[] | undefined> {
+        options: FormattingOptions, token: theia.CancellationToken): Promise<TextEdit[] | undefined> {
         const document = this.documents.getDocumentData(resource);
         if (!document) {
             return Promise.reject(new Error(`There are no document for ${resource}`));

@@ -23,7 +23,7 @@ export class MonacoBulkEditService implements monaco.editor.IBulkEditService {
     @inject(MonacoWorkspace)
     protected readonly workspace: MonacoWorkspace;
 
-    apply(edit: monaco.languages.WorkspaceEdit): monaco.Promise<monaco.editor.IBulkEditResult> {
+    apply(edit: monaco.languages.WorkspaceEdit): Promise<monaco.editor.IBulkEditResult> {
         return this.workspace.applyBulkEdit(edit);
     }
 

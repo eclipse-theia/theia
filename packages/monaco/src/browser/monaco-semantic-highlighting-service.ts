@@ -79,7 +79,7 @@ export class MonacoSemanticHighlightingService extends SemanticHighlightingServi
     protected async model(uri: string | URI): Promise<monaco.editor.ITextModel | undefined> {
         const editor = await this.editor(uri);
         if (editor) {
-            return editor.getControl().getModel();
+            return editor.getControl().getModel() || undefined;
         }
         return undefined;
     }

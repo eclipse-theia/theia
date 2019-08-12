@@ -18,7 +18,7 @@
 // disable no-unused-expression for chai.
 // tslint:disable:no-any no-unused-expression
 
-import {enableJSDOM} from '@theia/core/lib/browser/test/jsdom';
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJsDom = enableJSDOM();
 
 import URI from '@theia/core/lib/common/uri';
@@ -38,7 +38,7 @@ sinon.stub(mockEditorWidget, 'id').get(() => 'mockEditorWidget');
 
 const mockPreviewWidget = sinon.createStubInstance(EditorPreviewWidget);
 sinon.stub(mockPreviewWidget, 'id').get(() => 'mockPreviewWidget');
-sinon.stub(mockPreviewWidget, 'disposed').get(() => ({connect: () => 1}));
+sinon.stub(mockPreviewWidget, 'disposed').get(() => ({ connect: () => 1 }));
 let onPinnedListeners: Function[] = [];
 sinon.stub(mockPreviewWidget, 'onPinned').get(() => (fn: Function) => onPinnedListeners.push(fn));
 
@@ -50,10 +50,10 @@ let onCreateListners: Function[] = [];
 mockWidgetManager.onDidCreateWidget = sinon.stub().callsFake((fn: Function) => onCreateListners.push(fn));
 (mockWidgetManager.getOrCreateWidget as sinon.SinonStub).returns(mockPreviewWidget);
 
-const mockShell = sinon.createStubInstance(ApplicationShell);
+const mockShell = sinon.createStubInstance(ApplicationShell) as ApplicationShell;
 
 const mockPreference = sinon.createStubInstance(PreferenceServiceImpl);
-mockPreference.onPreferenceChanged = sinon.stub().returns({dispose: () => {}});
+mockPreference.onPreferenceChanged = sinon.stub().returns({ dispose: () => { } });
 
 let testContainer: Container;
 
@@ -62,7 +62,7 @@ before(() => {
     // Mock out injected dependencies.
     testContainer.bind(EditorManager).toDynamicValue(ctx => mockEditorManager);
     testContainer.bind(WidgetManager).toDynamicValue(ctx => mockWidgetManager);
-    testContainer.bind(ApplicationShell).toDynamicValue(ctx => mockShell);
+    testContainer.bind(ApplicationShell).toConstantValue(mockShell);
     testContainer.bind(PreferenceService).toDynamicValue(ctx => mockPreference);
 
     testContainer.load(previewFrontEndModule.default);
@@ -77,6 +77,8 @@ describe('editor-preview-manager', () => {
 
     beforeEach(() => {
         previewManager = testContainer.get<EditorPreviewManager>(OpenHandler);
+        sinon.stub(previewManager as any, 'onActive').resolves();
+        sinon.stub(previewManager as any, 'onReveal').resolves();
     });
     afterEach(() => {
         onCreateListners = [];
@@ -86,23 +88,23 @@ describe('editor-preview-manager', () => {
     it('should handle preview requests if editor.enablePreview enabled', async () => {
         (mockPreference.get as sinon.SinonStub).returns(true);
         (mockPreference.validate as sinon.SinonStub).returns(true);
-        expect(await previewManager.canHandle(new URI(), {preview: true})).to.be.greaterThan(0);
+        expect(await previewManager.canHandle(new URI(), { preview: true })).to.be.greaterThan(0);
     });
     it('should not handle preview requests if editor.enablePreview disabled', async () => {
         (mockPreference.get as sinon.SinonStub).returns(false);
         (mockPreference.validate as sinon.SinonStub).returns(true);
-        expect(await previewManager.canHandle(new URI(), {preview: true})).to.equal(0);
+        expect(await previewManager.canHandle(new URI(), { preview: true })).to.equal(0);
     });
     it('should not handle requests that are not preview or currently being previewed', async () => {
         expect(await previewManager.canHandle(new URI())).to.equal(0);
     });
     it('should create a preview editor and replace where required.', async () => {
-        const w = await previewManager.open(new URI(), {preview: true});
+        const w = await previewManager.open(new URI(), { preview: true });
         expect(w instanceof EditorPreviewWidget).to.be.true;
         expect((w as any).replaceEditorWidget.calledOnce).to.be.false;
 
         // Replace the EditorWidget with another open call to an editor that doesn't exist.
-        const afterReplace = await previewManager.open(new URI(), {preview: true});
+        const afterReplace = await previewManager.open(new URI(), { preview: true });
         expect((afterReplace as any).replaceEditorWidget.calledOnce).to.be.true;
 
         // Ensure the same preview widget was re-used.
@@ -116,7 +118,7 @@ describe('editor-preview-manager', () => {
 
         // Activate existing preview
         mockEditorWidget.parent = mockPreviewWidget;
-        expect(await previewManager.open(new URI(), {preview: true})).to.equal(mockPreviewWidget);
+        expect(await previewManager.open(new URI(), { preview: true })).to.equal(mockPreviewWidget);
         // Ensure it is not pinned.
         expect((mockPreviewWidget.pinEditorWidget as sinon.SinonStub).calledOnce).to.be.false;
 
@@ -126,9 +128,9 @@ describe('editor-preview-manager', () => {
     });
     it('should should transition the editor to perminent on pin events.', async () => {
         // Fake creation call.
-        await onCreateListners.pop()!({factoryId: EditorPreviewWidgetFactory.ID, widget: mockPreviewWidget});
+        await onCreateListners.pop()!({ factoryId: EditorPreviewWidgetFactory.ID, widget: mockPreviewWidget });
         // Fake pinned call
-        onPinnedListeners.pop()!({preview: mockPreviewWidget, editorWidget: mockEditorWidget});
+        onPinnedListeners.pop()!({ preview: mockPreviewWidget, editorWidget: mockEditorWidget });
 
         expect(mockPreviewWidget.dispose.calledOnce).to.be.true;
         expect(mockEditorWidget.close.calledOnce).to.be.false;

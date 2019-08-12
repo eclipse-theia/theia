@@ -17,10 +17,11 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { MessageType } from '@theia/core/lib/common/message-service-protocol';
 import {
-    QuickOpenService, QuickOpenModel, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem,
-    QuickOpenMode, KeySequence, QuickOpenActionProvider, QuickOpenAction, ResolvedKeybinding,
+    QuickOpenService, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem,
+    QuickOpenMode, KeySequence, ResolvedKeybinding,
     KeyCode, Key, KeybindingRegistry
 } from '@theia/core/lib/browser';
+import { QuickOpenModel, QuickOpenActionProvider, QuickOpenAction } from '@theia/core/lib/common/quick-open-model';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { MonacoContextKeyService } from './monaco-context-key-service';
@@ -439,13 +440,13 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
     }
 
     run(mode: monaco.quickOpen.Mode): boolean {
-        if (mode === monaco.quickOpen.Mode.OPEN) {
+        if (mode === 1) {
             return this.item.run(QuickOpenMode.OPEN);
         }
-        if (mode === monaco.quickOpen.Mode.OPEN_IN_BACKGROUND) {
+        if (mode === 2) {
             return this.item.run(QuickOpenMode.OPEN_IN_BACKGROUND);
         }
-        if (mode === monaco.quickOpen.Mode.PREVIEW) {
+        if (mode === 0) {
             return this.item.run(QuickOpenMode.PREVIEW);
         }
         return false;
@@ -527,18 +528,17 @@ export class MonacoQuickOpenActionProvider implements monaco.quickOpen.IActionPr
     }
 
     // tslint:disable-next-line:no-any
-    async getActions(element: any, entry: QuickOpenEntry | QuickOpenEntryGroup): monaco.Promise<monaco.quickOpen.IAction[]> {
+    async getActions(element: any, entry: QuickOpenEntry | QuickOpenEntryGroup): Promise<monaco.quickOpen.IAction[]> {
         const actions = await this.provider.getActions(entry.item);
-        const monacoActions = actions.map(action => new MonacoQuickOpenAction(action));
-        return monaco.Promise.wrap(monacoActions);
+        return actions.map(action => new MonacoQuickOpenAction(action));
     }
 
     hasSecondaryActions(): boolean {
         return false;
     }
 
-    getSecondaryActions(): monaco.Promise<monaco.quickOpen.IAction[]> {
-        return monaco.Promise.wrap([]);
+    async getSecondaryActions(): Promise<monaco.quickOpen.IAction[]> {
+        return [];
     }
 
     getActionItem(): undefined {
@@ -555,62 +555,44 @@ interface TheiaKeybindingService {
 
 class TheiaResolvedKeybinding extends monaco.keybindings.ResolvedKeybinding {
 
-    protected readonly parts: { key: string | null, modifiers: monaco.keybindings.Modifiers }[];
+    protected readonly parts: monaco.keybindings.ResolvedKeybindingPart[];
 
     constructor(protected readonly keySequence: KeySequence, keybindingService: TheiaKeybindingService) {
         super();
-        this.parts = keySequence.map(keyCode => ({
+        this.parts = keySequence.map(keyCode => {
             // tslint:disable-next-line:no-null-keyword
-            key: keyCode.key ? keybindingService.acceleratorForKey(keyCode.key) : null,
-            modifiers: {
-                ctrlKey: keyCode.ctrl,
-                shiftKey: keyCode.shift,
-                altKey: keyCode.alt,
-                metaKey: keyCode.meta
-            }
-        }));
+            const keyLabel = keyCode.key ? keybindingService.acceleratorForKey(keyCode.key) : null;
+            const keyAriaLabel = keyLabel;
+            return new monaco.keybindings.ResolvedKeybindingPart(
+                keyCode.ctrl,
+                keyCode.shift,
+                keyCode.alt,
+                keyCode.meta,
+                keyLabel,
+                keyAriaLabel
+            );
+        });
     }
 
-    private getKeyAndModifiers(index: number): {
-        key: string | null;
-        modifiers: monaco.keybindings.Modifiers;
-    } | {
-        key: null;
-        modifiers: null;
-    } {
-        if (index >= this.parts.length) {
+    public getLabel(): string | null {
+        return monaco.keybindings.UILabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyLabel);
+    }
+
+    public getAriaLabel(): string | null {
+        return monaco.keybindings.UILabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyAriaLabel);
+    }
+
+    public getElectronAccelerator(): string | null {
+        if (this.isChord) {
+            // Electron cannot handle chords
             // tslint:disable-next-line:no-null-keyword
-            return { key: null, modifiers: null };
+            return null;
         }
-        return this.parts[index];
+        return monaco.keybindings.ElectronAcceleratorLabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyLabel);
     }
 
-    public getLabel(): string {
-        const firstPart = this.getKeyAndModifiers(0);
-        const chordPart = this.getKeyAndModifiers(1);
-        return monaco.keybindings.UILabelProvider.toLabel(firstPart.modifiers, firstPart.key,
-            chordPart.modifiers, chordPart.key, monaco.platform.OS);
-    }
-
-    public getAriaLabel(): string {
-        const firstPart = this.getKeyAndModifiers(0);
-        const chordPart = this.getKeyAndModifiers(1);
-        return monaco.keybindings.AriaLabelProvider.toLabel(firstPart.modifiers, firstPart.key,
-            chordPart.modifiers, chordPart.key, monaco.platform.OS);
-    }
-
-    public getElectronAccelerator(): string {
-        const firstPart = this.getKeyAndModifiers(0);
-        return monaco.keybindings.ElectronAcceleratorLabelProvider.toLabel(firstPart.modifiers, firstPart.key,
-            // tslint:disable-next-line:no-null-keyword
-            null, null, monaco.platform.OS);
-    }
-
-    public getUserSettingsLabel(): string {
-        const firstPart = this.getKeyAndModifiers(0);
-        const chordPart = this.getKeyAndModifiers(1);
-        return monaco.keybindings.UserSettingsLabelProvider.toLabel(firstPart.modifiers, firstPart.key,
-            chordPart.modifiers, chordPart.key, monaco.platform.OS);
+    public getUserSettingsLabel(): string | null {
+        return monaco.keybindings.UserSettingsLabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyLabel);
     }
 
     public isWYSIWYG(): boolean {
@@ -618,24 +600,14 @@ class TheiaResolvedKeybinding extends monaco.keybindings.ResolvedKeybinding {
     }
 
     public isChord(): boolean {
-        return this.parts.length >= 2;
+        return this.parts.length > 1;
     }
 
-    public getDispatchParts(): [string | null, string | null] {
-        const firstKeybinding = this.toKeybinding(0)!;
-        const firstPart = monaco.keybindings.USLayoutResolvedKeybinding.getDispatchStr(firstKeybinding);
-        const chordKeybinding = this.toKeybinding(1);
-        // tslint:disable-next-line:no-null-keyword
-        const chordPart = chordKeybinding ? monaco.keybindings.USLayoutResolvedKeybinding.getDispatchStr(chordKeybinding) : null;
-        return [firstPart, chordPart];
+    public getDispatchParts(): (string | null)[] {
+        return this.keySequence.map(keyCode => monaco.keybindings.USLayoutResolvedKeybinding.getDispatchStr(this.toKeybinding(keyCode)));
     }
 
-    private toKeybinding(index: number): monaco.keybindings.SimpleKeybinding | null {
-        if (index >= this.keySequence.length) {
-            // tslint:disable-next-line:no-null-keyword
-            return null;
-        }
-        const keyCode = this.keySequence[index];
+    private toKeybinding(keyCode: KeyCode): monaco.keybindings.SimpleKeybinding {
         return new monaco.keybindings.SimpleKeybinding(
             keyCode.ctrl,
             keyCode.shift,
@@ -645,27 +617,8 @@ class TheiaResolvedKeybinding extends monaco.keybindings.ResolvedKeybinding {
         );
     }
 
-    public getParts(): [monaco.keybindings.ResolvedKeybindingPart | null, monaco.keybindings.ResolvedKeybindingPart | null] {
-        return [
-            this.toResolvedKeybindingPart(0),
-            this.toResolvedKeybindingPart(1)
-        ];
-    }
-
-    private toResolvedKeybindingPart(index: number): monaco.keybindings.ResolvedKeybindingPart | null {
-        if (index >= this.parts.length) {
-            // tslint:disable-next-line:no-null-keyword
-            return null;
-        }
-        const part = this.parts[index];
-        return new monaco.keybindings.ResolvedKeybindingPart(
-            part.modifiers.ctrlKey,
-            part.modifiers.shiftKey,
-            part.modifiers.altKey,
-            part.modifiers.metaKey,
-            part.key!,
-            part.key!
-        );
+    public getParts(): monaco.keybindings.ResolvedKeybindingPart[] {
+        return this.parts;
     }
 
 }

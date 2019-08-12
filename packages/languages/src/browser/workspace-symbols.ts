@@ -94,7 +94,8 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
 
             const workspaceProviderPromises = [];
             for (const provider of this.languages.workspaceSymbolProviders) {
-                workspaceProviderPromises.push(provider.provideWorkspaceSymbols(param, newCancellationSource.token).then(symbols => {
+                workspaceProviderPromises.push((async () => {
+                    const symbols = await provider.provideWorkspaceSymbols(param, newCancellationSource.token);
                     if (symbols && !newCancellationSource.token.isCancellationRequested) {
                         for (const symbol of symbols) {
                             items.push(this.createItem(symbol, provider, newCancellationSource.token));
@@ -102,10 +103,10 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
                         acceptor(items);
                     }
                     return symbols;
-                }));
+                })());
             }
             Promise.all(workspaceProviderPromises.map(p => p.then(sym => sym, _ => undefined))).then(symbols => {
-                const filteredSymbols = symbols.filter(el => el !== undefined && el.length !== 0);
+                const filteredSymbols = symbols.filter(el => el && el.length !== 0);
                 if (filteredSymbols.length === 0) {
                     items.push(new QuickOpenItem({
                         label: lookFor.length === 0 ? 'Type to search for symbols' : 'No symbols matching',

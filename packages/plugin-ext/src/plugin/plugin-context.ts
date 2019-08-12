@@ -70,6 +70,7 @@ import {
     ParameterInformation,
     SignatureInformation,
     SignatureHelp,
+    SignatureHelpTriggerKind,
     Hover,
     DocumentHighlightKind,
     DocumentHighlight,
@@ -547,8 +548,20 @@ export function createAPIFactory(
             registerDefinitionProvider(selector: theia.DocumentSelector, provider: theia.DefinitionProvider): theia.Disposable {
                 return languagesExt.registerDefinitionProvider(selector, provider);
             },
-            registerSignatureHelpProvider(selector: theia.DocumentSelector, provider: theia.SignatureHelpProvider, ...triggerCharacters: string[]): theia.Disposable {
-                return languagesExt.registerSignatureHelpProvider(selector, provider, ...triggerCharacters);
+            registerSignatureHelpProvider(
+                selector: theia.DocumentSelector, provider: theia.SignatureHelpProvider, first?: string | theia.SignatureHelpProviderMetadata, ...remaining: string[]
+            ): theia.Disposable {
+                let metadata: theia.SignatureHelpProviderMetadata;
+                if (typeof first === 'object') {
+                    metadata = first;
+                } else {
+                    const triggerCharacters: string[] = [];
+                    metadata = { triggerCharacters, retriggerCharacters: [] };
+                    if (first) {
+                        triggerCharacters.push(first, ...remaining);
+                    }
+                }
+                return languagesExt.registerSignatureHelpProvider(selector, provider, metadata);
             },
             registerTypeDefinitionProvider(selector: theia.DocumentSelector, provider: theia.TypeDefinitionProvider): theia.Disposable {
                 return languagesExt.registerTypeDefinitionProvider(selector, provider);
@@ -793,6 +806,7 @@ export function createAPIFactory(
             ParameterInformation,
             SignatureInformation,
             SignatureHelp,
+            SignatureHelpTriggerKind,
             Hover,
             DocumentHighlightKind,
             DocumentHighlight,

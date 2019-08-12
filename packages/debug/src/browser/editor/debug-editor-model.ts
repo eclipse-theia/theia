@@ -79,7 +79,7 @@ export class DebugEditorModel implements Disposable {
 
     @postConstruct()
     protected init(): void {
-        this.uri = new URI(this.editor.getControl().getModel().uri.toString());
+        this.uri = new URI(this.editor.getControl().getModel()!.uri.toString());
         this.toDispose.pushAll([
             this.hover,
             this.breakpointWidget,
@@ -87,7 +87,7 @@ export class DebugEditorModel implements Disposable {
             this.editor.getControl().onMouseMove(event => this.handleMouseMove(event)),
             this.editor.getControl().onMouseLeave(event => this.handleMouseLeave(event)),
             this.editor.getControl().onKeyDown(() => this.hover.hide({ immediate: false })),
-            this.editor.getControl().getModel().onDidChangeDecorations(() => this.updateBreakpoints()),
+            this.editor.getControl().getModel()!.onDidChangeDecorations(() => this.updateBreakpoints()),
             this.sessions.onDidChange(() => this.renderFrames())
         ]);
         this.renderFrames();
@@ -176,7 +176,7 @@ export class DebugEditorModel implements Disposable {
     protected updateBreakpointRanges(): void {
         this.breakpointRanges.clear();
         for (const decoration of this.breakpointDecorations) {
-            const range = this.editor.getControl().getModel().getDecorationRange(decoration);
+            const range = this.editor.getControl().getModel()!.getDecorationRange(decoration)!;
             this.breakpointRanges.set(decoration, range);
         }
     }
@@ -214,7 +214,7 @@ export class DebugEditorModel implements Disposable {
             return false;
         }
         for (const decoration of this.breakpointDecorations) {
-            const range = this.editor.getControl().getModel().getDecorationRange(decoration);
+            const range = this.editor.getControl().getModel()!.getDecorationRange(decoration);
             const oldRange = this.breakpointRanges.get(decoration)!;
             if (!range || !range.equalsRange(oldRange)) {
                 return true;
@@ -227,7 +227,7 @@ export class DebugEditorModel implements Disposable {
         const lines = new Set<number>();
         const breakpoints: SourceBreakpoint[] = [];
         for (const decoration of this.breakpointDecorations) {
-            const range = this.editor.getControl().getModel().getDecorationRange(decoration);
+            const range = this.editor.getControl().getModel()!.getDecorationRange(decoration);
             if (range && !lines.has(range.startLineNumber)) {
                 const line = range.startLineNumber;
                 const oldRange = this.breakpointRanges.get(decoration);
@@ -242,7 +242,7 @@ export class DebugEditorModel implements Disposable {
 
     protected _position: monaco.Position | undefined;
     get position(): monaco.Position {
-        return this._position || this.editor.getControl().getPosition();
+        return this._position || this.editor.getControl().getPosition()!;
     }
     get breakpoint(): DebugBreakpoint | undefined {
         return this.getBreakpoint();
@@ -285,12 +285,12 @@ export class DebugEditorModel implements Disposable {
     protected handleMouseDown(event: monaco.editor.IEditorMouseEvent): void {
         if (event.target && event.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
             if (event.event.rightButton) {
-                this._position = event.target.position;
+                this._position = event.target.position!;
                 this.contextMenu.render(DebugEditorModel.CONTEXT_MENU, event.event.browserEvent, () =>
                     setTimeout(() => this._position = undefined)
                 );
             } else {
-                this.doToggleBreakpoint(event.target.position);
+                this.doToggleBreakpoint(event.target.position!);
             }
         }
         this.hintBreakpoint(event);
@@ -299,7 +299,7 @@ export class DebugEditorModel implements Disposable {
         this.showHover(event);
         this.hintBreakpoint(event);
     }
-    protected handleMouseLeave(event: monaco.editor.IEditorMouseEvent): void {
+    protected handleMouseLeave(event: monaco.editor.IPartialEditorMouseEvent): void {
         this.hideHover(event);
         this.deltaHintDecorations([]);
     }
@@ -313,7 +313,7 @@ export class DebugEditorModel implements Disposable {
         this.hintDecorations = this.deltaDecorations(this.hintDecorations, hintDecorations);
     }
     protected createHintDecorations(event: monaco.editor.IEditorMouseEvent): monaco.editor.IModelDeltaDecoration[] {
-        if (event.target && event.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
+        if (event.target && event.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN && event.target.position) {
             const lineNumber = event.target.position.lineNumber;
             if (!!this.sessions.getBreakpoint(this.uri, lineNumber)) {
                 return [];
@@ -337,14 +337,14 @@ export class DebugEditorModel implements Disposable {
         }
         if (targetType === monaco.editor.MouseTargetType.CONTENT_TEXT) {
             this.hover.show({
-                selection: mouseEvent.target.range,
+                selection: mouseEvent.target.range!,
                 immediate: false
             });
         } else {
             this.hover.hide({ immediate: false });
         }
     }
-    protected hideHover({ event }: monaco.editor.IEditorMouseEvent): void {
+    protected hideHover({ event }: monaco.editor.IPartialEditorMouseEvent): void {
         const rect = this.hover.getDomNode().getBoundingClientRect();
         if (event.posx < rect.left || event.posx > rect.right || event.posy < rect.top || event.posy > rect.bottom) {
             this.hover.hide({ immediate: false });
@@ -354,7 +354,7 @@ export class DebugEditorModel implements Disposable {
     protected deltaDecorations(oldDecorations: string[], newDecorations: monaco.editor.IModelDeltaDecoration[]): string[] {
         this.updatingDecorations = true;
         try {
-            return this.editor.getControl().getModel().deltaDecorations(oldDecorations, newDecorations);
+            return this.editor.getControl().getModel()!.deltaDecorations(oldDecorations, newDecorations);
         } finally {
             this.updatingDecorations = false;
         }

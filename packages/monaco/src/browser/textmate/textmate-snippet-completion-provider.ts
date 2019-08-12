@@ -33,9 +33,8 @@ export class TextmateSnippetCompletionProvider implements monaco.languages.Compl
                 documentation: {
                     value: '```' + this.mdLanguage + '\n' + this.replaceVariables(insertText) + '```'
                 },
-                insertText: {
-                    value: insertText
-                }
+                insertText: insertText,
+                range: undefined!
             });
         }
     }
@@ -46,9 +45,11 @@ export class TextmateSnippetCompletionProvider implements monaco.languages.Compl
 
     provideCompletionItems(document: monaco.editor.ITextModel,
         position: monaco.Position,
-        token: monaco.CancellationToken,
-        context: monaco.languages.CompletionContext): monaco.languages.CompletionItem[] {
-        return this.items;
+        context: monaco.languages.CompletionContext,
+        token: monaco.CancellationToken): monaco.languages.CompletionList {
+        return {
+            suggestions: this.items
+        };
     }
 }
 

@@ -62,7 +62,7 @@ export class DebugEditorService {
         if (!(editor instanceof MonacoEditor)) {
             return;
         }
-        const uri = editor.getControl().getModel().uri.toString();
+        const uri = editor.getControl().getModel()!.uri.toString();
         const debugModel = this.factory(editor);
         this.models.set(uri, debugModel);
         editor.getControl().onDidDispose(() => {
@@ -122,15 +122,15 @@ export class DebugEditorService {
     showHover(): void {
         const { model } = this;
         if (model) {
-            const selection = model.editor.getControl().getSelection();
+            const selection = model.editor.getControl().getSelection()!;
             model.hover.show({ selection, focus: true });
         }
     }
     canShowHover(): boolean {
         const { model } = this;
         if (model) {
-            const selection = model.editor.getControl().getSelection();
-            return !!model.editor.getControl().getModel().getWordAtPosition(selection.getStartPosition());
+            const selection = model.editor.getControl().getSelection()!;
+            return !!model.editor.getControl().getModel()!.getWordAtPosition(selection.getStartPosition());
         }
         return false;
     }

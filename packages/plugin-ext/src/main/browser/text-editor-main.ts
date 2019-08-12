@@ -270,7 +270,7 @@ export class TextEditorMain {
         if (!this.editor) {
             return;
         }
-        this.editor.getControl().setDecorations(key, ranges);
+        this.editor.getControl().setDecorations(key, ranges.map(option => Object.assign(option, { color: undefined })));
     }
 
     setDecorationsFast(key: string, _ranges: number[]): void {
@@ -349,7 +349,7 @@ export class TextEditorPropertiesMain {
     private static getSelectionsFromEditor(prevProperties: TextEditorPropertiesMain | undefined, editor: MonacoEditor): monaco.Selection[] {
         let result: monaco.Selection[] | undefined = undefined;
         if (editor) {
-            result = editor.getControl().getSelections();
+            result = editor.getControl().getSelections() || undefined;
         }
 
         if (!result && prevProperties) {

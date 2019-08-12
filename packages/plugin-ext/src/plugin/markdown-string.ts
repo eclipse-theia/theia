@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { MarkdownString as IMarkdownString } from '../common/plugin-api-rpc-model';
+
 export class MarkdownString {
 
     value: string;
@@ -45,7 +47,7 @@ export class MarkdownString {
 }
 
 // tslint:disable-next-line:no-any
-export function isMarkdownString(thing: any): thing is MarkdownString {
+export function isMarkdownString(thing: any): thing is IMarkdownString {
     if (thing instanceof MarkdownString) {
         return true;
     } else if (thing && typeof thing === 'object') {

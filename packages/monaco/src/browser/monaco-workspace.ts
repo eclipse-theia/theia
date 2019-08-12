@@ -268,7 +268,7 @@ export class MonacoWorkspace implements lang.Workspace {
         return true;
     }
 
-    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit, options?: EditorOpenerOptions): monaco.Promise<monaco.editor.IBulkEditResult> {
+    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit, options?: EditorOpenerOptions): Promise<monaco.editor.IBulkEditResult> {
         try {
             const unresolvedEditorEdits = this.groupEdits(workspaceEdit);
             const editorEdits = await this.openEditors(unresolvedEditorEdits, options);
@@ -278,7 +278,7 @@ export class MonacoWorkspace implements lang.Workspace {
             editorEdits.forEach(editorEdit => {
                 const editor = editorEdit.editor!;
                 const model = editor!.document.textEditorModel;
-                const currentSelections = editor!.getControl().getSelections();
+                const currentSelections = editor!.getControl().getSelections() || [];
                 const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = editorEdit.textEdits.map(edit => ({
                     identifier: undefined!,
                     forceMoveMarkers: false,

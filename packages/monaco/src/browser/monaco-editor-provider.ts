@@ -25,7 +25,7 @@ import { MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoDiffEditor } from './monaco-diff-editor';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
-import { MonacoEditor } from './monaco-editor';
+import { MonacoEditor, MonacoEditorServices } from './monaco-editor';
 import { MonacoEditorModel, WillSaveMonacoModelEvent } from './monaco-editor-model';
 import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
@@ -42,6 +42,9 @@ export class MonacoEditorProvider {
 
     @inject(MonacoBulkEditService)
     protected readonly bulkEditService: MonacoBulkEditService;
+
+    @inject(MonacoEditorServices)
+    protected readonly services: MonacoEditorServices;
 
     private isWindowsBackend = false;
     private hookedConfigService: any = undefined;
@@ -142,7 +145,7 @@ export class MonacoEditorProvider {
     protected async createMonacoEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {
         const model = await this.getModel(uri, toDispose);
         const options = this.createMonacoEditorOptions(model);
-        const editor = new MonacoEditor(uri, model, document.createElement('div'), this.m2p, this.p2m, options, override);
+        const editor = new MonacoEditor(uri, model, document.createElement('div'), this.services, options, override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => {
             if (event.affects(uri.toString(), model.languageId)) {
                 this.updateMonacoEditorOptions(editor, event);
@@ -202,7 +205,7 @@ export class MonacoEditorProvider {
             uri,
             document.createElement('div'),
             originalModel, modifiedModel,
-            this.m2p, this.p2m,
+            this.services,
             this.diffNavigatorFactory,
             options,
             override);
@@ -299,18 +302,22 @@ export class MonacoEditorProvider {
             referencesController._ignoreModelChangeEvent = true;
             const range = monaco.Range.lift(ref.range).collapseToStart();
 
+            // prerse the model that it does not get disposed if an editor preview replaces an editor
+            const model = referencesController._model;
+            referencesController._model = undefined;
+
             referencesController._editorService.openCodeEditor({
                 resource: ref.uri,
                 options: { selection: range }
-            }, control).done(openedEditor => {
+            }, control).then(openedEditor => {
+                referencesController._model = model;
                 referencesController._ignoreModelChangeEvent = false;
                 if (!openedEditor) {
                     referencesController.closeWidget();
                     return;
                 }
                 if (openedEditor !== control) {
-                    const model = referencesController._model;
-                    // to preserve the references model
+                    // preserve the model that it does not get disposed in `referencesController.closeWidget`
                     referencesController._model = undefined;
 
                     // to preserve the active editor
@@ -327,12 +334,14 @@ export class MonacoEditorProvider {
                     return;
                 }
 
-                referencesController._widget.show(range);
-                referencesController._widget.focus();
+                if (referencesController._widget) {
+                    referencesController._widget.show(range);
+                    referencesController._widget.focus();
+                }
 
             }, (e: any) => {
                 referencesController._ignoreModelChangeEvent = false;
-                throw e;
+                monaco.error.onUnexpectedError(e);
             });
         };
     }
@@ -360,8 +369,7 @@ export class MonacoEditorProvider {
                 uri,
                 document,
                 node,
-                this.m2p,
-                this.p2m,
+                this.services,
                 Object.assign({
                     model,
                     isSimpleWidget: true,

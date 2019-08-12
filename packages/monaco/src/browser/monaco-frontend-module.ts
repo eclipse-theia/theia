@@ -57,6 +57,7 @@ import { MonacoMimeService } from './monaco-mime-service';
 import { MimeService } from '@theia/core/lib/browser/mime-service';
 
 import debounce = require('lodash.debounce');
+import { MonacoEditorServices } from './monaco-editor';
 
 const deepmerge: (args: object[]) => object = require('deepmerge').default.all;
 
@@ -91,6 +92,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoEditorService).toSelf().inSingletonScope();
     bind(MonacoTextModelService).toSelf().inSingletonScope();
     bind(MonacoContextMenuService).toSelf().inSingletonScope();
+    bind(MonacoEditorServices).toSelf().inSingletonScope();
     bind(MonacoEditorProvider).toSelf().inSingletonScope();
     bind(MonacoCommandService).toSelf().inTransientScope();
     bind(MonacoCommandServiceFactory).toAutoFactory(MonacoCommandService);
@@ -152,7 +154,7 @@ export function createMonacoConfigurationService(container: interfaces.Container
 
     const initFromConfiguration = debounce(() => {
         const event = new monaco.services.ConfigurationChangeEvent();
-        event._source = monaco.services.ConfigurationTarget.DEFAULT;
+        event._source = 6 /* DEFAULT */;
         service._onDidChangeConfiguration.fire(event);
     });
     preferences.onPreferenceChanged(e => {
@@ -160,10 +162,12 @@ export function createMonacoConfigurationService(container: interfaces.Container
             initFromConfiguration();
         }
     });
-    preferences.onPreferencesChanged(changes => {
-        const event = new monaco.services.ConfigurationChangeEvent();
-        event.change(Object.keys(changes));
-        service._onDidChangeConfiguration.fire(event);
+    configurations.onDidChangeConfiguration(e => {
+        if (e.affectedSections) {
+            const event = new monaco.services.ConfigurationChangeEvent();
+            event.change(e.affectedSections);
+            service._onDidChangeConfiguration.fire(event);
+        }
     });
 
     return service;
