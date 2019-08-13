@@ -177,4 +177,32 @@ export class Path {
         }
         return -1;
     }
+
+    normalize(): Path {
+        const trailingSlash = this.raw.endsWith('/');
+        const pathArray = this.toString().split('/');
+        const resultArray: string[] = [];
+        pathArray.forEach((value, index) => {
+            if (!value || value === '.') {
+                return;
+            }
+            if (value === '..') {
+                if (resultArray.length && resultArray[resultArray.length - 1] !== '..') {
+                    resultArray.pop();
+                } else if (!this.isAbsolute) {
+                    resultArray.push('..');
+                }
+            } else {
+                resultArray.push(value);
+            }
+        });
+        if (resultArray.length === 0) {
+            if (this.isRoot) {
+                return new Path('/');
+            } else {
+                return new Path('.');
+            }
+        }
+        return new Path((this.isAbsolute ? '/' : '') + resultArray.join('/') + (trailingSlash ? '/' : ''));
+    }
 }
