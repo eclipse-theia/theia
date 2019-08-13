@@ -124,7 +124,6 @@ import { LanguagesExtImpl, score } from './languages';
 import { fromDocumentSelector } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
 import { NotificationExtImpl } from './notification';
-import { StatusBarExtImpl } from './statusBar';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
@@ -156,7 +155,6 @@ export function createAPIFactory(
     const dialogsExt = new DialogsExtImpl(rpc);
     const windowStateExt = rpc.set(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT, new WindowStateExtImpl());
     const notificationExt = rpc.set(MAIN_RPC_CONTEXT.NOTIFICATION_EXT, new NotificationExtImpl(rpc));
-    const statusBarExt = new StatusBarExtImpl(rpc);
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocumentsExt));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocumentsExt));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
@@ -367,13 +365,7 @@ export function createAPIFactory(
                 options: ProgressOptions,
                 task: (progress: Progress<{ message?: string; increment?: number }>, token: theia.CancellationToken) => PromiseLike<R>
             ): PromiseLike<R> {
-                switch (options.location) {
-                    case ProgressLocation.Notification: return notificationExt.withProgress(options, task);
-                    case ProgressLocation.Window: return statusBarExt.withProgress(options, task);
-                    case ProgressLocation.SourceControl: return new Promise(() => {
-                        console.error('Progress location \'SourceControl\' is not supported.');
-                    });
-                }
+                return notificationExt.withProgress(options, task);
             },
             registerDecorationProvider(provider: DecorationProvider): theia.Disposable {
                 return decorationsExt.registerDecorationProvider(provider);
