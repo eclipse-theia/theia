@@ -90,8 +90,21 @@
 
 .p-TabBar.theia-app-centers .p-TabBar-tabIcon,
 .p-TabBar.theia-app-centers .p-TabBar-tabLabel,
+.p-TabBar.theia-app-centers .p-TabBar-tabLabelDetails,
 .p-TabBar.theia-app-centers .p-TabBar-tabCloseIcon {
   display: inline-block;
+}
+
+.p-TabBar.theia-app-centers .p-TabBar-tabLabelDetails {
+  margin-left: 5px;
+  color: var(--theia-ui-font-color2);
+  flex: 1 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.p-TabBar.theia-app-centers .p-TabBar-tabLabelWrapper {
+  display: flex;
 }
 
 .p-TabBar-tab-secondary-label {
