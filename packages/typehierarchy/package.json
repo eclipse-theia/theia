@@ -2,10 +2,12 @@
   "name": "@theia/typehierarchy",
   "version": "0.9.0",
   "description": "Theia - Type Hierarchy Extension",
-  "dependencies": {
+  "peerDependencies": {
     "@theia/core": "^0.9.0",
     "@theia/editor": "^0.9.0",
-    "@theia/languages": "^0.9.0",
+    "@theia/languages": "^0.9.0"
+  },
+  "dependencies": {
     "@types/uuid": "^3.4.3",
     "uuid": "^3.2.1"
   },
@@ -41,7 +43,10 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.9.0"
+    "@theia/core": "*",
+    "@theia/editor": "*",
+    "@theia/ext-scripts": "*",
+    "@theia/languages": "*"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

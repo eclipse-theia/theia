@@ -33,7 +33,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.9.0"
+    "@theia/ext-scripts": "*"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

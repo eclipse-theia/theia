@@ -2,11 +2,13 @@
   "name": "@theia/preview",
   "version": "0.9.0",
   "description": "Theia - Preview Extension",
-  "dependencies": {
+  "peerDependencies": {
     "@theia/core": "^0.9.0",
     "@theia/editor": "^0.9.0",
     "@theia/languages": "^0.9.0",
-    "@theia/mini-browser": "^0.9.0",
+    "@theia/mini-browser": "^0.9.0"
+  },
+  "dependencies": {
     "@types/highlight.js": "^9.12.2",
     "@types/markdown-it": "^0.0.4",
     "@types/markdown-it-anchor": "^4.0.1",
@@ -46,7 +48,11 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.9.0"
+    "@theia/core": "*",
+    "@theia/editor": "*",
+    "@theia/ext-scripts": "*",
+    "@theia/languages": "*",
+    "@theia/mini-browser": "*"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

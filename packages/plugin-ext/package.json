@@ -4,7 +4,7 @@
   "description": "Theia - Plugin Extension",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
-  "dependencies": {
+  "peerDependencies": {
     "@theia/core": "^0.9.0",
     "@theia/debug": "^0.9.0",
     "@theia/editor": "^0.9.0",
@@ -23,7 +23,9 @@
     "@theia/search-in-workspace": "^0.9.0",
     "@theia/task": "^0.9.0",
     "@theia/terminal": "^0.9.0",
-    "@theia/workspace": "^0.9.0",
+    "@theia/workspace": "^0.9.0"
+  },
+  "dependencies": {
     "decompress": "^4.2.0",
     "escape-html": "^1.0.3",
     "getmac": "^1.4.6",
@@ -69,7 +71,26 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.9.0",
+    "@theia/core": "*",
+    "@theia/debug": "*",
+    "@theia/editor": "*",
+    "@theia/ext-scripts": "*",
+    "@theia/file-search": "*",
+    "@theia/filesystem": "*",
+    "@theia/languages": "*",
+    "@theia/markers": "*",
+    "@theia/messages": "*",
+    "@theia/mini-browser": "*",
+    "@theia/monaco": "*",
+    "@theia/navigator": "*",
+    "@theia/output": "*",
+    "@theia/plugin": "*",
+    "@theia/preferences": "*",
+    "@theia/scm": "*",
+    "@theia/search-in-workspace": "*",
+    "@theia/task": "*",
+    "@theia/terminal": "*",
+    "@theia/workspace": "*",
     "@types/decompress": "^4.2.2",
     "@types/escape-html": "^0.0.20",
     "@types/lodash.clonedeep": "^4.5.3",

@@ -2,7 +2,7 @@
   "name": "@theia/debug",
   "version": "0.9.0",
   "description": "Theia - Debug Extension",
-  "dependencies": {
+  "peerDependencies": {
     "@theia/application-package": "^0.9.0",
     "@theia/console": "^0.9.0",
     "@theia/core": "^0.9.0",
@@ -18,7 +18,9 @@
     "@theia/terminal": "^0.9.0",
     "@theia/userstorage": "^0.9.0",
     "@theia/variable-resolver": "^0.9.0",
-    "@theia/workspace": "^0.9.0",
+    "@theia/workspace": "^0.9.0"
+  },
+  "dependencies": {
     "@types/p-debounce": "^1.0.1",
     "jsonc-parser": "^2.0.2",
     "mkdirp": "^0.5.0",
@@ -66,7 +68,23 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.9.0"
+    "@theia/application-package": "*",
+    "@theia/console": "*",
+    "@theia/core": "*",
+    "@theia/editor": "*",
+    "@theia/ext-scripts": "*",
+    "@theia/filesystem": "*",
+    "@theia/json": "*",
+    "@theia/languages": "*",
+    "@theia/markers": "*",
+    "@theia/monaco": "*",
+    "@theia/output": "*",
+    "@theia/preferences": "*",
+    "@theia/process": "*",
+    "@theia/terminal": "*",
+    "@theia/userstorage": "*",
+    "@theia/variable-resolver": "*",
+    "@theia/workspace": "*"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

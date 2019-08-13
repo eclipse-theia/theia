@@ -2,10 +2,12 @@
   "name": "@theia/workspace",
   "version": "0.9.0",
   "description": "Theia - Workspace Extension",
-  "dependencies": {
+  "peerDependencies": {
     "@theia/core": "^0.9.0",
     "@theia/filesystem": "^0.9.0",
-    "@theia/variable-resolver": "^0.9.0",
+    "@theia/variable-resolver": "^0.9.0"
+  },
+  "dependencies": {
     "ajv": "^6.5.3",
     "jsonc-parser": "^2.0.2",
     "moment": "^2.21.0",
@@ -44,7 +46,10 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.9.0"
+    "@theia/core": "*",
+    "@theia/ext-scripts": "*",
+    "@theia/filesystem": "*",
+    "@theia/variable-resolver": "*"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

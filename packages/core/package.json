@@ -4,10 +4,12 @@
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
+  "peerDependencies": {
+    "@theia/application-package": "^0.9.0"
+  },
   "dependencies": {
     "@phosphor/widgets": "^1.5.0",
     "@primer/octicons-react": "^9.0.0",
-    "@theia/application-package": "^0.9.0",
     "@types/body-parser": "^1.16.4",
     "@types/bunyan": "^1.8.0",
     "@types/express": "^4.16.0",
@@ -91,7 +93,8 @@
     "generate-layout": "electron ./scripts/generate-layout"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.9.0",
+    "@theia/application-package": "*",
+    "@theia/ext-scripts": "*",
     "minimist": "^1.2.0"
   },
   "nyc": {

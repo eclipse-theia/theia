@@ -2,9 +2,11 @@
   "name": "@theia/console",
   "version": "0.9.0",
   "description": "Theia - Console Extension",
-  "dependencies": {
+  "peerDependencies": {
     "@theia/core": "^0.9.0",
-    "@theia/monaco": "^0.9.0",
+    "@theia/monaco": "^0.9.0"
+  },
+  "dependencies": {
     "anser": "^1.4.7"
   },
   "publishConfig": {
@@ -39,7 +41,9 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.9.0"
+    "@theia/core": "*",
+    "@theia/ext-scripts": "*",
+    "@theia/monaco": "*"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
