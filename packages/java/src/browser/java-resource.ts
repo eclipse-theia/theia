@@ -34,7 +34,7 @@ export class JavaResource implements Resource {
     readContents(options: { encoding?: string }): Promise<string> {
         const uri = this.uri.toString();
         return this.clientContribution.languageClient.then(languageClient =>
-            languageClient.sendRequest(ClassFileContentsRequest.type, { uri }).then(content =>
+            languageClient.sendRequest(ClassFileContentsRequest.type.method, { uri }).then((content: string) =>
                 content || ''
             )
         );

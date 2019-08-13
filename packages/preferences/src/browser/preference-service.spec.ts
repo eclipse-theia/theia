@@ -172,7 +172,7 @@ function testContainerSetup(): void {
 describe('Preference Service', () => {
     let prefService: PreferenceService;
     let prefSchema: PreferenceSchemaProvider;
-    const stubs: sinon.SinonStub[] = [];
+    const stubs: Array<{ restore(): void }> = [];
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -385,7 +385,14 @@ describe('Preference Service', () => {
         service.initialize();
         prefSchema = container.get(PreferenceSchemaProvider);
         await service.ready;
-        stubs.push(sinon.stub(PreferenceServiceImpl, <any>'doSetProvider').callsFake(() => { }));
+
+        const _doSetProvider = (PreferenceServiceImpl as any)['doSetProvider'];
+        (PreferenceServiceImpl as any)['doSetProvider'] = () => { };
+        stubs.push({
+            restore(): void {
+                (PreferenceServiceImpl as any)['doSetProvider'] = _doSetProvider;
+            }
+        });
         stubs.push(sinon.stub(prefSchema, 'isValidInScope').returns(true));
         expect(service.get('mypref')).to.equal(2);
     });

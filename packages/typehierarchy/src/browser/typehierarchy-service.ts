@@ -56,7 +56,7 @@ export class TypeHierarchyService {
      * Performs the `textDocument/typeHierarchy` LS method invocations.
      */
     async get(params: TypeHierarchyParams): Promise<TypeHierarchyItem | undefined> {
-        const item = await this.client.sendRequest(TypeHierarchyRequest.type, params);
+        const item: TypeHierarchyItem = await this.client.sendRequest(TypeHierarchyRequest.type.method, params);
         return item ? item : undefined;
     }
 
@@ -64,7 +64,7 @@ export class TypeHierarchyService {
      * Performs the `typeHierarchy/resolve` LS method call.
      */
     async resolve(params: ResolveTypeHierarchyItemParams): Promise<TypeHierarchyItem | undefined> {
-        const item = await this.client.sendRequest(ResolveTypeHierarchyRequest.type, params);
+        const item: TypeHierarchyItem = await this.client.sendRequest(ResolveTypeHierarchyRequest.type.method, params);
         return item ? item : undefined;
     }
 

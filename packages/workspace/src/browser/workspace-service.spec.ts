@@ -64,7 +64,6 @@ describe('WorkspaceService', () => {
     let updateTitleStub: sinon.SinonStub;
     // stub of window.location.reload
     let windowLocationReloadStub: sinon.SinonStub;
-    let onFilesChangedStub: sinon.SinonStub;
 
     let mockFileChangeEmitter: Emitter<FileChangeEvent>;
     let mockPreferenceValues: { [p: string]: any };
@@ -114,9 +113,9 @@ describe('WorkspaceService', () => {
         updateTitleStub = sinon.stub(WorkspaceService.prototype, <any>'updateTitle').callsFake(() => { });
         windowLocationReloadStub = sinon.stub(window.location, 'reload');
         mockFileChangeEmitter = new Emitter();
-        onFilesChangedStub = sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);
+        (mockFileSystemWatcher['onFilesChanged'] as any) = mockFileChangeEmitter.event;
         toDispose.push(mockFileChangeEmitter);
-        toRestore.push(...[updateTitleStub, windowLocationReloadStub, onFilesChangedStub]);
+        toRestore.push(...[updateTitleStub, windowLocationReloadStub]);
 
         wsService = testContainer.get<WorkspaceService>(WorkspaceService);
     });

@@ -31,7 +31,7 @@
     "@types/request": "^2.0.3",
     "@types/semver": "^5.4.0",
     "@types/write-json-file": "^2.2.1",
-    "changes-stream": "^2.2.0",
+    "changes-stream": "jcrugzz/changes-stream#cbfd7d6",
     "is-electron": "^2.1.0",
     "request": "^2.82.0",
     "semver": "^5.4.1",

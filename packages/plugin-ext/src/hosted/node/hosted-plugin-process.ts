@@ -115,7 +115,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         const cp = this.childProcess;
         this.childProcess = undefined;
 
-        const emitter = new Emitter();
+        const emitter = new Emitter<{}>();
         cp.on('message', message => {
             emitter.fire(JSON.parse(message));
         });

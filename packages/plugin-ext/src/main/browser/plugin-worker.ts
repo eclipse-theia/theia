@@ -23,7 +23,7 @@ export class PluginWorker {
     private worker: Worker;
     public readonly rpc: RPCProtocol;
     constructor() {
-        const emitter = new Emitter();
+        const emitter = new Emitter<{}>();
         this.worker = new (require('../../hosted/browser/worker/worker-main'));
         this.worker.onmessage = message => {
             emitter.fire(message.data);

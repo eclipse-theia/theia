@@ -180,8 +180,8 @@ describe('FileNavigatorModel', () => {
 
         sinon.stub(mockWorkspaceService, 'onWorkspaceChanged').value(mockWorkspaceServiceEmitter.event);
         sinon.stub(mockWorkspaceService, 'onWorkspaceLocationChanged').value(mockWorkspaceOnLocationChangeEmitter.event);
-        sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);
-        sinon.stub(mockFileSystemWatcher, 'onDidMove').value(mockFileMoveEmitter.event);
+        (mockFileSystemWatcher['onFilesChanged'] as any) = mockFileChangeEmitter.event;
+        (mockFileSystemWatcher['onDidMove'] as any) = mockFileMoveEmitter.event;
         sinon.stub(mockFileNavigatorTree, 'onChanged').value(mockTreeChangeEmitter.event);
         sinon.stub(mockTreeExpansionService, 'onExpansionChanged').value(mockExpansionChangeEmitter.event);
 

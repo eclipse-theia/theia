@@ -129,7 +129,7 @@ export class CppCommandContribution implements CommandContribution {
         }
         const docIdentifier = TextDocumentIdentifier.create(uri.toString());
         const languageClient = await this.clientContribution.languageClient;
-        const sourceUri: string | undefined = await languageClient.sendRequest(SwitchSourceHeaderRequest.type, docIdentifier);
+        const sourceUri: string | undefined = await languageClient.sendRequest(SwitchSourceHeaderRequest.type.method, docIdentifier);
         if (sourceUri !== undefined) {
             open(this.openerService, new URI(sourceUri.toString()));
         }

@@ -74,7 +74,7 @@ export class SemanticHighlightFeature extends TextDocumentFeature<TextDocumentRe
     }
 
     protected registerLanguageProvider(): Disposable {
-        this._client.onNotification(SemanticHighlight.type, this.consumeSemanticHighlighting.bind(this));
+        this._client.onNotification(SemanticHighlight.type.method, this.consumeSemanticHighlighting.bind(this));
         return Disposable.create(() => this.toDispose.dispose());
     }
 

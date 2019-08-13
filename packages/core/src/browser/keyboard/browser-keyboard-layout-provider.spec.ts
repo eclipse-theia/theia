@@ -25,12 +25,19 @@ import { MessageService } from '../../common/message-service';
 import { WindowService } from '../window/window-service';
 import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
 import { Key } from './keys';
+import { enableJSDOM } from '../test/jsdom';
 
 describe('browser keyboard layout provider', function (): void {
 
     let stubOSX: sinon.SinonStub;
     let stubWindows: sinon.SinonStub;
     let stubNavigator: sinon.SinonStub;
+
+    let disableJSDOM: () => void;
+
+    beforeEach(() => {
+        disableJSDOM = enableJSDOM();
+    });
 
     const setup = (system: 'mac' | 'win' | 'linux') => {
         switch (system) {
@@ -59,6 +66,7 @@ describe('browser keyboard layout provider', function (): void {
     };
 
     afterEach(() => {
+        disableJSDOM();
         stubOSX.restore();
         stubWindows.restore();
         stubNavigator.restore();

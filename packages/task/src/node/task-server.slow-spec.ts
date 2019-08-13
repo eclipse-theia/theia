@@ -412,8 +412,8 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
     };
 }
 
-function checkSuccessfullProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatcher): Promise<object> {
-    const p = new Promise((resolve, reject) => {
+function checkSuccessfullProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatcher): Promise<void> {
+    const p = new Promise<void>((resolve, reject) => {
         const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
             if (event.taskId === taskInfo.taskId && event.code === 0) {
                 toDispose.dispose();

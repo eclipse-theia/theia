@@ -204,10 +204,10 @@ export class MarkdownPreviewHandler implements PreviewHandler {
         return attribute ? Number.parseInt(attribute) : undefined;
     }
 
-    protected engine: markdownit.MarkdownIt | undefined;
-    protected getEngine(): markdownit.MarkdownIt {
+    protected engine: markdownit | undefined;
+    protected getEngine(): markdownit {
         if (!this.engine) {
-            const engine: markdownit.MarkdownIt = this.engine = markdownit({
+            const engine: markdownit = this.engine = markdownit({
                 html: true,
                 linkify: true,
                 highlight: (str, lang) => {

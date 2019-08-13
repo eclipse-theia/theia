@@ -23,7 +23,7 @@
     "ext:compile:clean": "rimraf lib",
     "ext:lint": "tslint -c ../../configs/build.tslint.json --project compile.tsconfig.json",
     "ext:watch": "tsc -w -p compile.tsconfig.json",
-    "ext:test": "nyc mocha --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",
+    "ext:test": "nyc mocha --exit --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",
     "ext:test:watch": "mocha -w --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",
     "ext:test:clean": "rimraf .nyc_output && rimraf coverage"
   }

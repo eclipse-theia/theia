@@ -280,7 +280,7 @@ export class DebugSessionConnection implements Disposable {
         return emitter;
     }
     protected newEmitter(): Emitter<DebugProtocol.Event | DebugExitEvent> {
-        const emitter = new Emitter();
+        const emitter = new Emitter<DebugProtocol.Event | DebugExitEvent>();
         this.checkDisposed();
         this.toDispose.push(emitter);
         return emitter;

@@ -37,24 +37,24 @@ export interface RPCProtocol {
     /**
      * Returns a proxy to an object addressable/named in the plugin process or in the main process.
      */
-    getProxy<T>(proxyId: ProxyIdentifier<T>): T;
+    getProxy<T extends object>(proxyId: ProxyIdentifier<T>): T;
 
     /**
      * Register manually created instance.
      */
-    set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R;
+    set<T extends object, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R;
 
 }
 
-export class ProxyIdentifier<T> {
+export class ProxyIdentifier<T extends object> {
     public readonly id: string;
     constructor(public readonly isMain: boolean, id: string | T) {
         // TODO this is nasty, rewrite this
-        this.id = id.toString();
+        this.id = typeof id === 'object' ? id.toString() : id;
     }
 }
 
-export function createProxyIdentifier<T>(identifier: string): ProxyIdentifier<T> {
+export function createProxyIdentifier<T extends object>(identifier: string): ProxyIdentifier<T> {
     return new ProxyIdentifier(false, identifier);
 }
 
@@ -82,14 +82,14 @@ export class RPCProtocolImpl implements RPCProtocol {
         this.pendingRPCReplies = {};
         this.multiplexor = new RPCMultiplexer(connection, msg => this.receiveOneMessage(msg), remoteHostID);
     }
-    getProxy<T>(proxyId: ProxyIdentifier<T>): T {
+    getProxy<T extends object>(proxyId: ProxyIdentifier<T>): T {
         if (!this.proxies[proxyId.id]) {
             this.proxies[proxyId.id] = this.createProxy(proxyId.id);
         }
         return this.proxies[proxyId.id];
     }
 
-    set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R {
+    set<T extends object, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R {
         this.locals[identifier.id] = instance;
         return instance;
     }

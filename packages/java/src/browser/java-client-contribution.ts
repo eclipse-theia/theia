@@ -78,9 +78,9 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
     }
 
     protected onReady(languageClient: ILanguageClient): void {
-        languageClient.onNotification(ActionableNotification.type, this.showActionableMessage.bind(this));
-        languageClient.onNotification(StatusNotification.type, this.showStatusMessage.bind(this));
-        languageClient.onRequest(ExecuteClientCommand.type, params => this.commandService.executeCommand(params.command, ...params.arguments));
+        languageClient.onNotification(ActionableNotification.type.method, this.showActionableMessage.bind(this));
+        languageClient.onNotification(StatusNotification.type.method, this.showStatusMessage.bind(this));
+        languageClient.onRequest(ExecuteClientCommand.type.method, params => this.commandService.executeCommand(params.command, ...params.arguments));
         super.onReady(languageClient);
     }
 

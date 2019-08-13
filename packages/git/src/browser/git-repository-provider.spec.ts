@@ -108,7 +108,7 @@ describe('GitRepositoryProvider', () => {
         testContainer.bind(LabelProvider).toConstantValue(<LabelProvider>{});
 
         sinon.stub(mockWorkspaceService, 'onWorkspaceChanged').value(mockRootChangeEmitter.event);
-        sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);
+        (mockFileSystemWatcher['onFilesChanged'] as any) = mockFileChangeEmitter.event;
     });
 
     it('should adds all existing git repo(s) on theia loads', async () => {

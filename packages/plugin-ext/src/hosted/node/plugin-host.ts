@@ -67,7 +67,7 @@ process.on('rejectionHandled', (promise: Promise<any>) => {
     }
 });
 
-const emitter = new Emitter();
+const emitter = new Emitter<{}>();
 const rpc = new RPCProtocolImpl({
     onMessage: emitter.event,
     send: (m: {}) => {

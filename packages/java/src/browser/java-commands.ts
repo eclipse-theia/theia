@@ -114,7 +114,7 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
         commands.registerCommand(JAVA_COMPILE_WORKSPACE, {
             execute: async (fullCompile: boolean) => {
                 const languageClient = await this.javaClientContribution.languageClient;
-                const result = await languageClient.sendRequest(CompileWorkspaceRequest.type, fullCompile);
+                const result = await languageClient.sendRequest(CompileWorkspaceRequest.type.method, fullCompile);
                 if (result === CompileWorkspaceStatus.SUCCEED) {
                     return;
                 }
