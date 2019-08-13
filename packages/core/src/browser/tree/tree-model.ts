@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2017-2019 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -345,9 +345,7 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
     }
 
     protected doOpenNode(node: TreeNode): void {
-        if (ExpandableTreeNode.is(node)) {
-            this.toggleNodeExpansion(node);
-        }
+        // do nothing (in particular do not expand the node)
     }
 
     selectParent(): void {
