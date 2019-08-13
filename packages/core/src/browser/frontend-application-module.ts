@@ -81,6 +81,8 @@ import { DialogOverlayService } from './dialogs';
 import { ProgressLocationService } from './progress-location-service';
 import { ProgressClient } from '../common/progress-service-protocol';
 import { ProgressService } from '../common/progress-service';
+import { DispatchingProgressClient } from './progress-client';
+import { ProgressStatusBarItem } from './progress-status-bar-item';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -261,8 +263,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(DialogOverlayService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(DialogOverlayService);
 
+    bind(DispatchingProgressClient).toSelf().inSingletonScope();
     bind(ProgressLocationService).toSelf().inSingletonScope();
-    bind(ProgressClient).toService(ProgressLocationService);
+    bind(ProgressStatusBarItem).toSelf().inSingletonScope();
+    bind(ProgressClient).toService(DispatchingProgressClient);
     bind(ProgressService).toSelf().inSingletonScope();
 });
 
