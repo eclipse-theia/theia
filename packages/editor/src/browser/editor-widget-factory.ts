@@ -50,7 +50,7 @@ export class EditorWidgetFactory implements WidgetFactory {
             newEditor.title.closable = true;
             newEditor.title.label = this.labelProvider.getName(uri);
             newEditor.title.iconClass = icon + ' file-icon';
-            newEditor.title.caption = this.labelProvider.getLongName(uri);
+            newEditor.title.caption = uri.path.toString();
             return newEditor;
         });
     }
