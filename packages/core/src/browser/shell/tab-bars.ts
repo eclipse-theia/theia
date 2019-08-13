@@ -79,10 +79,12 @@ export class TabBarRenderer extends TabBar.Renderer {
     }
 
     /**
-     * Render tabs with the default DOM structure, but additionally register a context
-     * menu listener.
+     * Render tabs with the default DOM structure, but additionally register a context menu listener.
+     * @param data {SideBarRenderData} data used to render the tab.
+     * @param isInSidePanel {boolean} an optional check which determines if the tab is in the side-panel.
+     * @returns {VirtualElement} The virtual element of the rendered tab.
      */
-    renderTab(data: SideBarRenderData): VirtualElement {
+    renderTab(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
         const title = data.title;
         const id = this.createTabId(data.title);
         const key = this.createTabKey(data);
@@ -96,7 +98,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                 ondblclick: this.handleDblClickEvent
             },
             this.renderIcon(data),
-            this.renderLabel(data),
+            this.renderLabel(data, isInSidePanel),
             this.renderCloseIcon(data)
         );
     }
@@ -131,8 +133,11 @@ export class TabBarRenderer extends TabBar.Renderer {
     /**
      * If size information is available for the label, set it as inline style. Tab padding
      * and icon size are also considered in the `top` position.
+     * @param data {SideBarRenderData} data used to render the tab.
+     * @param isInSidePanel {boolean} an optional check which determines if the tab is in the side-panel.
+     * @returns {VirtualElement} The virtual element of the rendered label.
      */
-    renderLabel(data: SideBarRenderData): VirtualElement {
+    renderLabel(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
         const labelSize = data.labelSize;
         const iconSize = data.iconSize;
         let width: string | undefined;
@@ -152,7 +157,104 @@ export class TabBarRenderer extends TabBar.Renderer {
             top = `${paddingTop + iconHeight}px`;
         }
         const style: ElementInlineStyle = { width, height, top };
+        // No need to check for duplicate labels if the tab is rendered in the side panel (title is not displayed)
+        // or if there are less than two files in the tab bar.
+        if (isInSidePanel || (this.tabBar && this.tabBar.titles.length < 2)) {
+            return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
+        }
+        const originalToDisplayedMap = this.findDuplicateLabels([...this.tabBar!.titles]);
+        const labelDetails: string | undefined = originalToDisplayedMap.get(data.title.caption);
+        if (labelDetails) {
+            return h.div({ className: 'p-TabBar-tabLabelWrapper' },
+                h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label),
+                h.div({ className: 'p-TabBar-tabLabelDetails', style }, labelDetails));
+        }
         return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
+    }
+
+    /**
+     * Find duplicate labels from the currently opened tabs in the tab bar.
+     * Return the approriate partial paths that can distinguish the identical labels.
+     *
+     * E.g., a/p/index.ts => a/..., b/p/index.ts => b/...
+     *
+     * To prevent excessively long path displayed, show at maximum three levels from the end by default.
+     * @param {Title<Widget>[]} titles - array of titles in the current tab bar.
+     * @returns {Map<string, string>} A map from each tab's original path to its displayed partial path.
+     */
+    findDuplicateLabels(titles: Title<Widget>[]): Map<string, string> {
+        // Filter from all tabs to group them by the distinct label (file name).
+        // E.g., 'foo.js' => {0 (index) => 'a/b/foo.js', '2 => a/c/foo.js' },
+        //       'bar.js' => {1 => 'a/d/bar.js', ...}
+        const labelGroups = new Map<string, Map<number, string>>();
+        titles.forEach((title, index) => {
+            if (!labelGroups.has(title.label)) {
+                labelGroups.set(title.label, new Map<number, string>());
+            }
+            labelGroups.get(title.label)!.set(index, title.caption);
+        });
+
+        const originalToDisplayedMap = new Map<string, string>();
+        // Parse each group of editors with the same label.
+        labelGroups.forEach(labelGroup => {
+            // Filter to get groups that have duplicates.
+            if (labelGroup.size > 1) {
+                const paths: string[][] = [];
+                let maxPathLength = 0;
+                labelGroup.forEach((pathStr, index) => {
+                    const steps = pathStr.split('/');
+                    maxPathLength = Math.max(maxPathLength, steps.length);
+                    paths[index] = (steps.slice(0, steps.length - 1));
+                    // By default, show at maximum three levels from the end.
+                    let defaultDisplayedPath = steps.slice(-4, -1).join('/');
+                    if (steps.length > 4) {
+                        defaultDisplayedPath = '.../' + defaultDisplayedPath;
+                    }
+                    originalToDisplayedMap.set(pathStr, defaultDisplayedPath);
+                });
+
+                // Iterate through the steps of the path from the left to find the step that can distinguish it.
+                // E.g., ['root', 'foo', 'c'], ['root', 'bar', 'd'] => 'foo', 'bar'
+                let i = 0;
+                while (i < maxPathLength - 1) {
+                    // Store indexes of all paths that have the identical element in each step.
+                    const stepOccurrences = new Map<string, number[]>();
+                    // Compare the current step of all paths
+                    paths.forEach((path, index) => {
+                        const step = path[i];
+                        if (path.length > 0) {
+                            if (i > path.length - 1) {
+                                paths[index] = [];
+                            } else if (!stepOccurrences.has(step)) {
+                                stepOccurrences.set(step, [index]);
+                            } else {
+                                stepOccurrences.get(step)!.push(index);
+                            }
+                        }
+                    });
+                    // Set the displayed path for each tab.
+                    stepOccurrences.forEach((indexArr, displayedPath) => {
+                        if (indexArr.length === 1) {
+                            const originalPath = labelGroup.get(indexArr[0]);
+                            if (originalPath) {
+                                const originalElements = originalPath.split('/');
+                                const displayedElements = displayedPath.split('/');
+                                if (originalElements.slice(-2)[0] !== displayedElements.slice(-1)[0]) {
+                                    displayedPath += '/...';
+                                }
+                                if (originalElements[0] !== displayedElements[0]) {
+                                    displayedPath = '.../' + displayedPath;
+                                }
+                                originalToDisplayedMap.set(originalPath, displayedPath);
+                                paths[indexArr[0]] = [];
+                            }
+                        }
+                    });
+                    i++;
+                }
+            }
+        });
+        return originalToDisplayedMap;
     }
 
     /**
@@ -550,7 +652,7 @@ export class SideTabBar extends ScrollableTabBar {
             } else {
                 rd = { title, current, zIndex };
             }
-            content[i] = renderer.renderTab(rd);
+            content[i] = renderer.renderTab(rd, true);
         }
         VirtualDOM.render(content, host);
     }
