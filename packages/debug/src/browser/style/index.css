@@ -147,7 +147,7 @@
 }
 
 .debug-toolbar .debug-action.theia-mod-disabled {
-    opacity: 0.5;
+    opacity: 0.5 !important;
     user-select: none;
     pointer-events: none;
 }
