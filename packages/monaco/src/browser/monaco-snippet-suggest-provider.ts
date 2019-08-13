@@ -24,17 +24,58 @@ export class MonacoSnippetSuggestProvider implements monaco.modes.ISuggestSuppor
     @inject(FileSystem)
     protected readonly filesystem: FileSystem;
 
-    protected readonly snippets = new Map<string, MonacoSnippetSuggestion[]>();
+    protected readonly snippets = new Map<string, Snippet[]>();
     protected readonly pendingSnippets = new Map<string, Promise<void>[]>();
 
-    async provideCompletionItems(model: monaco.editor.ITextModel): Promise<monaco.modes.ISuggestResult> {
+    async provideCompletionItems(model: monaco.editor.ITextModel, position: monaco.Position, context: monaco.modes.SuggestContext): Promise<monaco.modes.ISuggestResult> {
         const languageId = model.getModeId(); // TODO: look up a language id at the position
         await this.loadSnippets(languageId);
-        const suggestions = this.snippets.get(languageId) || [];
+        const snippetsForLanguage = this.snippets.get(languageId) || [];
+        const suggestions: MonacoSnippetSuggestion[] = [];
+        const lineContent = model.getLineContent(position.lineNumber);
+        const positionEndsInEmptyChar = lineContent.substr(0, position.column - 1).match(/\s$/);
+        const prefixWordArray: monaco.editor.IWordAtPosition[] = [];
+        const posCursor = { lineNumber: position.lineNumber, column: 1 };
+        while (posCursor.column <= position.column) {
+            const word = model.getWordAtPosition(posCursor);
+            if (word) {
+                prefixWordArray.push(word);
+                posCursor.column = word.endColumn + 1;
+                continue;
+            }
+            posCursor.column++;
+        }
+        const lastWordEndColumn = prefixWordArray ? prefixWordArray[prefixWordArray.length - 1].endColumn : position.column;
+        const snippetsNotAdded = [...snippetsForLanguage];
+        snippetsForLanguage.forEach(snippet => {
+            // longest match the prefix line content
+            prefixWordArray.forEach(word => {
+                const logestMatchedPrefixContent: string = lineContent.substr(word.startColumn - 1, lastWordEndColumn - word.startColumn);
+                if (snippetsNotAdded.indexOf(snippet) >= 0 && this.isPatternInText(logestMatchedPrefixContent, snippet.prefix, true)) {
+                    const overwriteBefore = position.column - word.startColumn;
+                    // only the word that cursor is located can be fully replaced
+                    const overwriteAfter = lastWordEndColumn > position.column ? lastWordEndColumn - position.column : 0;
+                    suggestions.push(new MonacoSnippetSuggestion(snippet,
+                        monaco.Range.fromPositions(new monaco.Position(position.lineNumber, word.startColumn), position),
+                        overwriteBefore, overwriteAfter));
+                    snippetsNotAdded.splice(snippetsNotAdded.indexOf(snippet), 1);
+                }
+            });
+        });
+
+        if (!prefixWordArray || positionEndsInEmptyChar) {
+            // only triggered by empty characters like whitespace, table; prevent adding suggestion when triggered by non-empty special characters like: ".","@"
+            snippetsNotAdded.forEach(snippetNotAdded => {
+                suggestions.push(new MonacoSnippetSuggestion(snippetNotAdded, monaco.Range.fromPositions(position), 0, 0));
+            });
+            snippetsNotAdded.length = 0;
+        }
+
+        suggestions.sort(MonacoSnippetSuggestion.compareByLabel);
         return { suggestions };
     }
 
-    resolveCompletionItem(_: monaco.editor.ITextModel, __: monaco.Position, item: monaco.modes.ISuggestion): monaco.modes.ISuggestion {
+    resolveCompletionItem(textModel: monaco.editor.ITextModel, position: monaco.Position, item: monaco.modes.ISuggestion): monaco.modes.ISuggestion {
         return item instanceof MonacoSnippetSuggestion ? item.resolve() : item;
     }
 
@@ -125,10 +166,20 @@ export class MonacoSnippetSuggestProvider implements monaco.modes.ISuggestSuppor
         for (const snippet of snippets) {
             for (const scope of snippet.scopes) {
                 const languageSnippets = this.snippets.get(scope) || [];
-                languageSnippets.push(new MonacoSnippetSuggestion(snippet));
+                languageSnippets.push(snippet);
                 this.snippets.set(scope, languageSnippets);
             }
         }
+    }
+
+    isPatternInText(pattern: string, text: string, ignoreCase: boolean): boolean {
+        pattern = ignoreCase ? pattern.toLowerCase() : pattern;
+        text = ignoreCase ? text.toLowerCase() : text;
+        let patternPos = 0;
+        for (let textPos = 0; textPos < text.length && patternPos < pattern.length; textPos++) {
+            patternPos += pattern[patternPos] === text[textPos] ? 1 : 0;
+        }
+        return patternPos === pattern.length;
     }
 
 }
@@ -170,15 +221,21 @@ export class MonacoSnippetSuggestion implements monaco.modes.ISuggestion {
     readonly noAutoAccept = true;
     readonly type: 'snippet' = 'snippet';
     readonly snippetType: 'textmate' = 'textmate';
+    readonly range: monaco.IRange;
+    readonly overwriteBefore?: number;
+    readonly overwriteAfter?: number;
 
     insertText: string;
     documentation?: monaco.IMarkdownString;
 
-    constructor(protected readonly snippet: Snippet) {
+    constructor(protected readonly snippet: Snippet, range: monaco.IRange, overwriteBefore: number, overwriteAfter: number) {
         this.label = snippet.prefix;
         this.detail = `${snippet.description || snippet.name} (${snippet.source})`;
         this.insertText = snippet.body;
         this.sortText = `z-${snippet.prefix}`;
+        this.range = range;
+        this.overwriteBefore = overwriteBefore;
+        this.overwriteAfter = overwriteAfter;
     }
 
     protected resolved = false;
@@ -189,6 +246,10 @@ export class MonacoSnippetSuggestion implements monaco.modes.ISuggestion {
             this.resolved = true;
         }
         return this;
+    }
+
+    static compareByLabel(a: MonacoSnippetSuggestion, b: MonacoSnippetSuggestion): number {
+        return a.label > b.label ? 1 : a.label < b.label ? -1 : 0;
     }
 
 }
