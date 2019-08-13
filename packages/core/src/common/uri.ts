@@ -164,6 +164,13 @@ export default class URI {
         return this.withFragment('');
     }
 
+    /**
+     * return a new URI replacing the current with its normalized path
+     */
+    normalizePath(): URI {
+        return this.withPath(this.path.normalize());
+    }
+
     get scheme(): string {
         return this.codeUri.scheme;
     }

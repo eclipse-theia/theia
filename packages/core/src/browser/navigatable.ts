@@ -87,7 +87,7 @@ export abstract class NavigatableWidgetOpenHandler<W extends NavigatableWidget> 
     }
 
     protected serializeUri(uri: URI): string {
-        return uri.withoutFragment().toString();
+        return uri.withoutFragment().normalizePath().toString();
     }
 
 }

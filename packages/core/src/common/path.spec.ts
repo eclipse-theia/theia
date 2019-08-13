@@ -153,4 +153,98 @@ describe('Path', () => {
         });
     }
 
+    assertNormalize({
+        from: '/',
+        expectation: '/'
+    });
+
+    assertNormalize({
+        from: '/c://',
+        expectation: '/c:/'
+    });
+
+    assertNormalize({
+        from: '/foo',
+        expectation: '/foo'
+    });
+
+    assertNormalize({
+        from: '/foo/',
+        expectation: '/foo/'
+    });
+
+    assertNormalize({
+        from: '/foo/bar',
+        expectation: '/foo/bar'
+    });
+
+    assertNormalize({
+        from: '/foo/../file.txt',
+        expectation: '/file.txt'
+    });
+
+    assertNormalize({
+        from: '/foo/bar/../file.txt',
+        expectation: '/foo/file.txt'
+    });
+
+    assertNormalize({
+        from: '/foo/../../file.txt',
+        expectation: '/file.txt'
+    });
+
+    assertNormalize({
+        from: '',
+        expectation: '.'
+    });
+
+    assertNormalize({
+        from: '.',
+        expectation: '.'
+    });
+
+    assertNormalize({
+        from: '..',
+        expectation: '..'
+    });
+
+    assertNormalize({
+        from: './foo',
+        expectation: 'foo'
+    });
+
+    assertNormalize({
+        from: './foo/./.',
+        expectation: 'foo'
+    });
+
+    assertNormalize({
+        from: './foo/',
+        expectation: 'foo/'
+    });
+
+    assertNormalize({
+        from: '../foo',
+        expectation: '../foo'
+    });
+
+    assertNormalize({
+        from: 'foo/..',
+        expectation: '.'
+    });
+
+    assertNormalize({
+        from: 'foo/bar/../../../',
+        expectation: '../'
+    });
+
+    function assertNormalize({ from, expectation }: {
+        from: string,
+        expectation: string
+    }): void {
+        it(`path ${from} should be normalized as ${expectation}`, () => {
+            assert.deepStrictEqual(new Path(from).normalize().toString(), expectation);
+        });
+    }
+
 });
