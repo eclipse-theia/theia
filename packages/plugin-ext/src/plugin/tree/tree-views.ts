@@ -242,9 +242,6 @@ class TreeViewExtImpl<T> extends Disposable {
                     }
                 }
 
-                if (treeItem.command) {
-                    treeItem.command.arguments = [id];
-                }
                 const treeViewItem = {
                     id,
                     label: label,
