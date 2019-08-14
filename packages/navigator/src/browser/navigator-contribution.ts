@@ -44,6 +44,12 @@ export namespace FileNavigatorCommands {
         id: 'navigator.toggle.hidden.files',
         label: 'Toggle Hidden Files'
     };
+    export const REFRESH_NAVIGATOR: Command = {
+        id: 'navigator.refresh',
+        category: 'File',
+        label: 'Refresh in Explorer',
+        iconClass: 'refresh'
+    };
     export const COLLAPSE_ALL: Command = {
         id: 'navigator.collapse.all',
         category: 'File',
@@ -158,6 +164,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerCommand(FileNavigatorCommands.COLLAPSE_ALL, {
             execute: widget => this.withWidget(widget, () => this.collapseFileNavigatorTree()),
+            isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
+            isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
+        });
+        registry.registerCommand(FileNavigatorCommands.REFRESH_NAVIGATOR, {
+            execute: widget => this.withWidget(widget, () => this.refreshWorkspace()),
             isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
             isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened)
         });
@@ -318,10 +329,16 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
         toolbarRegistry.registerItem({
+            id: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
+            command: FileNavigatorCommands.REFRESH_NAVIGATOR.id,
+            tooltip: 'Refresh Explorer',
+            priority: 0,
+        });
+        toolbarRegistry.registerItem({
             id: FileNavigatorCommands.COLLAPSE_ALL.id,
             command: FileNavigatorCommands.COLLAPSE_ALL.id,
             tooltip: 'Collapse All',
-            priority: 0,
+            priority: 1,
         });
     }
 
@@ -371,6 +388,14 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         if (SelectableTreeNode.is(firstChild)) {
             model.selectNode(firstChild);
         }
+    }
+
+    /**
+     * force refresh workspace in navigator
+     */
+    async refreshWorkspace(): Promise<void> {
+        const { model } = await this.widget;
+        await model.refresh();
     }
 
     private readonly toDisposeAddRemoveFolderActions = new DisposableCollection();
