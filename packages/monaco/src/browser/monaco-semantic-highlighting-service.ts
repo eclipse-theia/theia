@@ -22,6 +22,16 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { EditorDecoration, EditorDecorationOptions } from '@theia/editor/lib/browser/decorations';
 import { SemanticHighlightingService, SemanticHighlightingRange, Range } from '@theia/editor/lib/browser/semantic-highlight/semantic-highlighting-service';
 import { MonacoEditor } from './monaco-editor';
+import { MonacoEditorService } from './monaco-editor-service';
+
+/**
+ * A helper class for grouping information about a decoration type that has
+ * been registered with the editor service.
+ */
+class DecorationTypeInfo {
+    key: string;
+    options: monaco.editor.IModelDecorationOptions;
+}
 
 @injectable()
 export class MonacoSemanticHighlightingService extends SemanticHighlightingService {
@@ -32,8 +42,118 @@ export class MonacoSemanticHighlightingService extends SemanticHighlightingServi
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
+    @inject(MonacoEditorService)
+    protected readonly monacoEditorService: MonacoEditorService;
+
     protected readonly decorations = new Map<string, Set<string>>();
     protected readonly toDisposeOnEditorClose = new Map<string, Disposable>();
+    protected readonly toDisposeOnUnregister = new Map<string, Disposable>();
+
+    // laguage id -> (scope index -> decoration type)
+    protected readonly decorationTypes = new Map<string, Map<number, DecorationTypeInfo>>();
+
+    private lastDecorationTypeId: number = 0;
+
+    private nextDecorationTypeKey(): string {
+        return 'MonacoSemanticHighlighting' + (++this.lastDecorationTypeId);
+    }
+
+    protected registerDecorationTypesForLanguage(languageId: string): void {
+        const scopes = this.scopes.get(languageId);
+        if (scopes) {
+            const decorationTypes = new Map<number, DecorationTypeInfo>();
+            for (let index = 0; index < scopes.length; index++) {
+                const modelDecoration = this.toDecorationType(scopes[index]);
+                if (modelDecoration) {
+                    decorationTypes.set(index, modelDecoration);
+                }
+            }
+            this.decorationTypes.set(languageId, decorationTypes);
+        }
+    }
+
+    protected removeDecorationTypesForLanguage(languageId: string): void {
+        const decorationTypes = this.decorationTypes.get(languageId);
+        if (!decorationTypes) {
+            this.logger.warn(`No decoration types are registered for language: ${languageId}`);
+            return;
+        }
+        for (const [, decorationType] of decorationTypes) {
+            this.monacoEditorService.removeDecorationType(decorationType.key);
+        }
+    }
+
+    protected refreshDecorationTypesForLanguage(languageId: string): void {
+        const decorationTypes = this.decorationTypes.get(languageId);
+        const scopes = this.scopes.get(languageId);
+        if (!decorationTypes || !scopes) {
+            this.logger.warn(`No decoration types are registered for language: ${languageId}`);
+            return;
+        }
+        for (const [scope, decorationType] of decorationTypes) {
+            // Pass in the existing key to associate the new color with the same
+            // decoration type, thereby reusing it.
+            const newDecorationType = this.toDecorationType(scopes[scope], decorationType.key);
+            if (newDecorationType) {
+                decorationType.options = newDecorationType.options;
+            }
+        }
+    }
+
+    register(languageId: string, scopes: string[][] | undefined): Disposable {
+        const result = super.register(languageId, scopes);
+        this.registerDecorationTypesForLanguage(languageId);
+        const disposable = this.themeService().onThemeChange(() => {
+            // When the theme changes, refresh the decoration types to reflect
+            // the colors for the old theme.
+            // Note that we do not remove the old decoration types and add new ones.
+            // The new ones would have different class names, and we'd have to
+            // update all open editors to use the new class names.
+            this.refreshDecorationTypesForLanguage(languageId);
+        });
+        this.toDisposeOnUnregister.set(languageId, disposable);
+        return result;
+    }
+
+    protected unregister(languageId: string): void {
+        super.unregister(languageId);
+        this.removeDecorationTypesForLanguage(languageId);
+        const disposable = this.toDisposeOnUnregister.get(languageId);
+        if (disposable) {
+            disposable.dispose();
+        }
+        this.decorationTypes.delete(languageId);
+        this.toDisposeOnUnregister.delete(languageId);
+    }
+
+    protected toDecorationType(scopes: string[], reuseKey?: string): DecorationTypeInfo | undefined {
+        const key = reuseKey || this.nextDecorationTypeKey();
+        // TODO: why for-of? How to pick the right scope? Is it fine to get the first element (with the narrowest scope)?
+        for (const scope of scopes) {
+            const tokenTheme = this.tokenTheme();
+            const metadata = tokenTheme.match(undefined, scope);
+            // Don't use the inlineClassName from the TokenMetadata, because this
+            // will conflict with styles used for TM scopes
+            // (https://github.com/Microsoft/monaco-editor/issues/1070).
+            // Instead, get the token color, use registerDecorationType() to cause
+            // monaco to allocate a new inlineClassName for that color, and use
+            // resolveDecorationOptions() to get an IModelDecorationOptions
+            // containing that inlineClassName.
+            const colorIndex = monaco.modes.TokenMetadata.getForeground(metadata);
+            const color = tokenTheme.getColorMap()[colorIndex];
+            // If we wanted to support other decoration options such as font style,
+            // we could include them here.
+            const options: monaco.editor.IDecorationRenderOptions = {
+                color: color.toString(),
+            };
+            this.monacoEditorService.registerDecorationType(key, options);
+            return {
+                key,
+                options: this.monacoEditorService.resolveDecorationOptions(key, false)
+            };
+        }
+        return undefined;
+    }
 
     async decorate(languageId: string, uri: URI, ranges: SemanticHighlightingRange[]): Promise<void> {
         const editor = await this.editor(uri);
@@ -116,28 +236,33 @@ export class MonacoSemanticHighlightingService extends SemanticHighlightingServi
 
     protected toDecoration(languageId: string, range: SemanticHighlightingRange): EditorDecoration {
         const { start, end } = range;
-        const scopes = range.scope !== undefined ? this.scopesFor(languageId, range.scope) : [];
-        const options = this.toOptions(scopes);
+        const options = this.toOptions(languageId, range.scope);
         return {
             range: Range.create(start, end),
             options
         };
     }
 
-    protected toOptions(scopes: string[]): EditorDecorationOptions {
-        // TODO: why for-of? How to pick the right scope? Is it fine to get the first element (with the narrowest scope)?
-        for (const scope of scopes) {
-            const metadata = this.tokenTheme().match(undefined, scope);
-            const inlineClassName = monaco.modes.TokenMetadata.getClassNameFromMetadata(metadata);
-            return {
-                inlineClassName
-            };
+    protected toOptions(languageId: string, scope: number | undefined): EditorDecorationOptions {
+        if (scope !== undefined) {
+            const decorationTypes = this.decorationTypes.get(languageId);
+            if (decorationTypes) {
+                const decoration = decorationTypes.get(scope);
+                if (decoration) {
+                    return {
+                        inlineClassName: decoration.options.inlineClassName || undefined
+                    };
+                }
+            }
         }
         return {};
     }
 
-    protected tokenTheme(): monaco.services.TokenTheme {
-        return monaco.services.StaticServices.standaloneThemeService.get().getTheme().tokenTheme;
+    protected themeService(): monaco.services.IStandaloneThemeService {
+        return monaco.services.StaticServices.standaloneThemeService.get();
     }
 
+    protected tokenTheme(): monaco.services.TokenTheme {
+        return this.themeService().getTheme().tokenTheme;
+    }
 }
