@@ -846,8 +846,13 @@ export class ViewContainerPart extends BaseWidget {
         const title = document.createElement('span');
         title.classList.add('label', 'noselect');
         const updateTitle = () => title.innerText = this.wrapped.title.label;
+        const updateCaption = () => title.title = this.wrapped.title.caption || this.wrapped.title.label;
         updateTitle();
-        disposable.push(this.onTitleChanged(updateTitle));
+        updateCaption();
+        disposable.pushAll([
+            this.onTitleChanged(updateTitle),
+            this.onTitleChanged(updateCaption)
+        ]);
         header.appendChild(title);
         return {
             header,

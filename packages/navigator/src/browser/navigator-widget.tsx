@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CommonCommands, CorePreferences } from '@theia/core/lib/browser';
+import { CommonCommands, CorePreferences, LabelProvider } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeModel, TreeNode,
@@ -43,6 +43,8 @@ export const CLASS = 'theia-Files';
 export class FileNavigatorWidget extends FileTreeWidget {
 
     @inject(CorePreferences) protected readonly corePreferences: CorePreferences;
+
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
     @inject(NavigatorContextKeyService)
     protected readonly contextKeyService: NavigatorContextKeyService;
@@ -106,12 +108,15 @@ export class FileNavigatorWidget extends FileTreeWidget {
                 const rootNode = this.model.root.children[0];
                 if (WorkspaceRootNode.is(rootNode)) {
                     this.title.label = rootNode.name;
+                    this.title.caption = this.labelProvider.getLongName(rootNode.uri);
                 }
             } else {
                 this.title.label = this.model.root.name;
+                this.title.caption = this.title.label;
             }
+        } else {
+            this.title.caption = this.title.label;
         }
-        this.title.caption = this.title.label;
     }
 
     protected enableDndOnMainPanel(): void {
