@@ -18,11 +18,10 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import {
     Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
-    OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode
+    OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode, ShellTabBarContextMenu
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX, Command, DisposableCollection } from '@theia/core/lib/common';
-import { SHELL_TABBAR_CONTEXT_MENU } from '@theia/core/lib/browser';
 import { WorkspaceCommands, WorkspaceService, WorkspacePreferences } from '@theia/workspace/lib/browser';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget, EXPLORER_VIEW_CONTAINER_ID } from './navigator-widget';
 import { FileNavigatorPreferences } from './navigator-preferences';
@@ -76,8 +75,8 @@ export namespace NavigatorContextMenu {
 
     export const SEARCH = [...NAVIGATOR_CONTEXT_MENU, '4_search'];
     export const CLIPBOARD = [...NAVIGATOR_CONTEXT_MENU, '5_cutcopypaste'];
-
-    export const MODIFICATION = [...NAVIGATOR_CONTEXT_MENU, '7_modification'];
+    export const COPYPATH = [...NAVIGATOR_CONTEXT_MENU, '6_copypath'];
+    export const MODIFICATION = [...NAVIGATOR_CONTEXT_MENU, '8_modification'];
     /** @deprecated use MODIFICATION */
     export const MOVE = MODIFICATION;
     /** @deprecated use MODIFICATION */
@@ -103,7 +102,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(FileNavigatorFilter) protected readonly fileNavigatorFilter: FileNavigatorFilter,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(WorkspacePreferences) protected readonly workspacePreferences: WorkspacePreferences
+        @inject(WorkspacePreferences) protected readonly workspacePreferences: WorkspacePreferences,
     ) {
         super({
             viewContainerId: EXPLORER_VIEW_CONTAINER_ID,
@@ -200,10 +199,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     registerMenus(registry: MenuModelRegistry): void {
         super.registerMenus(registry);
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(ShellTabBarContextMenu.ACTIONS, {
             commandId: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
             label: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.label,
-            order: '5'
+            order: '2'
         });
 
         registry.registerMenuAction(NavigatorContextMenu.NAVIGATION, {
@@ -236,6 +235,15 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
             commandId: FileDownloadCommands.COPY_DOWNLOAD_LINK.id,
             order: 'z'
+        });
+
+        registry.registerMenuAction(NavigatorContextMenu.COPYPATH, {
+            commandId: WorkspaceCommands.COPY_PATH.id,
+            order: 'a',
+        });
+        registry.registerMenuAction(NavigatorContextMenu.COPYPATH, {
+            commandId: WorkspaceCommands.COPY_RELATIVE_PATH.id,
+            order: 'b'
         });
 
         registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {

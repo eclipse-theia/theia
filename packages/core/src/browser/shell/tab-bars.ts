@@ -32,6 +32,12 @@ const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
 /** Menu path for tab bars used throughout the application shell. */
 export const SHELL_TABBAR_CONTEXT_MENU: MenuPath = ['shell-tabbar-context-menu'];
 
+export namespace ShellTabBarContextMenu {
+    export const CLOSE = [...SHELL_TABBAR_CONTEXT_MENU, '1_close'];
+    export const COPY = [...SHELL_TABBAR_CONTEXT_MENU, '2_copy'];
+    export const ACTIONS = [...SHELL_TABBAR_CONTEXT_MENU, '3_toggle'];
+}
+
 export const TabBarRendererFactory = Symbol('TabBarRendererFactory');
 
 /**

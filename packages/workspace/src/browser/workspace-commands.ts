@@ -23,13 +23,16 @@ import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contributio
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { SingleTextInputDialog, ConfirmDialog } from '@theia/core/lib/browser/dialogs';
-import { OpenerService, OpenHandler, open, FrontendApplication } from '@theia/core/lib/browser';
+import { OpenerService, OpenHandler, open, FrontendApplication, ShellTabBarContextMenu } from '@theia/core/lib/browser';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { UriSelection } from '@theia/core/lib/common/selection';
+import { addClipboardListener } from '@theia/core/lib/browser/widgets';
 import { WorkspacePreferences } from './workspace-preferences';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
+import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 import { FileSystemUtils } from '@theia/filesystem/lib/common';
 import { WorkspaceCompareHandler } from './workspace-compare-handler';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
@@ -131,6 +134,14 @@ export namespace WorkspaceCommands {
         category: 'File',
         label: 'Save As...',
     };
+    export const COPY_PATH: Command = {
+        id: 'core.copy.path',
+        label: 'Copy Path'
+    };
+    export const COPY_RELATIVE_PATH: Command = {
+        id: 'core.copy.relative.path',
+        label: 'Copy Relative Path'
+    };
 }
 
 @injectable()
@@ -152,8 +163,17 @@ export class FileMenuContribution implements MenuContribution {
             commandId: FileDownloadCommands.DOWNLOAD.id,
             order: 'b'
         });
+        registry.registerMenuAction(ShellTabBarContextMenu.COPY, {
+            commandId: WorkspaceCommands.COPY_PATH.id,
+            label: 'Copy Path',
+            order: '0'
+        });
+        registry.registerMenuAction(ShellTabBarContextMenu.COPY, {
+            commandId: WorkspaceCommands.COPY_RELATIVE_PATH.id,
+            label: 'Copy Relative Path',
+            order: '1'
+        });
     }
-
 }
 
 @injectable()
@@ -182,6 +202,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     @inject(WorkspaceDeleteHandler) protected readonly deleteHandler: WorkspaceDeleteHandler;
     @inject(WorkspaceDuplicateHandler) protected readonly duplicateHandler: WorkspaceDuplicateHandler;
     @inject(WorkspaceCompareHandler) protected readonly compareHandler: WorkspaceCompareHandler;
+    @inject(WorkspaceVariableContribution) protected readonly workspaceVariables: WorkspaceVariableContribution;
 
     registerCommands(registry: CommandRegistry): void {
         this.openerService.getOpeners().then(openers => {
@@ -308,6 +329,24 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 isEnabled: () => this.workspaceService.isMultiRootWorkspaceEnabled,
                 isVisible: uris => this.areWorkspaceRoots(uris) && this.workspaceService.saved
             }));
+
+            registry.registerCommand(WorkspaceCommands.COPY_PATH, {
+                execute: (event?: Event) => {
+                    const fileUri: URI | undefined = UriSelection.getUri(this.selectionService.selection);
+                    if (fileUri) {
+                        this.handleCopy(fileUri.path.toString());
+                    }
+                }
+            });
+            registry.registerCommand(WorkspaceCommands.COPY_RELATIVE_PATH, {
+                execute: (event?: Event) => {
+                    const fileUri: URI | undefined = UriSelection.getUri(this.selectionService.selection);
+                    if (fileUri) {
+                        const relativePath = this.workspaceVariables.getWorkspaceRelativePath(fileUri);
+                        this.handleCopy(relativePath);
+                    }
+                }
+            });
         });
     }
 
@@ -321,6 +360,26 @@ export class WorkspaceCommandContribution implements CommandContribution {
 
     protected newWorkspaceRootUriAwareCommandHandler(handler: UriCommandHandler<URI>): WorkspaceRootUriAwareCommandHandler {
         return new WorkspaceRootUriAwareCommandHandler(this.workspaceService, this.selectionService, handler);
+    }
+
+    protected handleCopy(text: string | undefined): void {
+        if (!text) {
+            return;
+        }
+        if (document.documentElement) {
+            const toDispose = addClipboardListener(document.documentElement, 'copy', event => {
+                toDispose.dispose();
+                this.addToClipboard(event, text);
+            });
+            document.execCommand('copy');
+        }
+    }
+
+    protected addToClipboard(event: ClipboardEvent, text: string): void {
+        if (event.clipboardData && text) {
+            event.clipboardData.setData('text/plain', text);
+            event.preventDefault();
+        }
     }
 
     /**
