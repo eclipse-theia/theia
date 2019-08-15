@@ -234,7 +234,7 @@ export class DebugSessionManager {
         if (await session.restart()) {
             return session;
         }
-        await session.terminate(!!restart);
+        await session.terminate(true);
         const { options, configuration } = session;
         configuration.__restart = restart;
         return this.start(options);
