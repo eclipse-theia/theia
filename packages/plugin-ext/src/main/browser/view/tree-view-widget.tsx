@@ -127,7 +127,7 @@ export class PluginTree extends TreeImpl {
             contextValue: item.contextValue
         };
         const node = this.getNode(item.id);
-        if (item.collapsibleState !== TreeViewItemCollapsibleState.None) {
+        if (item.collapsibleState !== undefined && item.collapsibleState !== TreeViewItemCollapsibleState.None) {
             if (CompositeTreeViewNode.is(node)) {
                 return Object.assign(node, update);
             }
@@ -141,13 +141,14 @@ export class PluginTree extends TreeImpl {
             }, update);
         }
         if (TreeViewNode.is(node)) {
-            return Object.assign(node, update);
+            return Object.assign(node, update, { command: item.command });
         }
         return Object.assign({
             id: item.id,
             parent,
             visible: true,
-            selected: false
+            selected: false,
+            command: item.command
         }, update);
     }
 

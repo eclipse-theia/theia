@@ -13,15 +13,20 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 
 import * as theia from '@theia/plugin';
 import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable } from './types-impl';
 import { KnownCommands } from './type-converters';
+import { DisposableCollection } from '@theia/core';
 
 // tslint:disable-next-line:no-any
-export type Handler = <T>(...args: any[]) => T | PromiseLike<T>;
+export type Handler = <T>(...args: any[]) => T | PromiseLike<T | undefined>;
 
 export interface ArgumentProcessor {
     // tslint:disable-next-line:no-any
@@ -34,10 +39,16 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     private readonly commands = new Set<string>();
     private readonly handlers = new Map<string, Handler>();
     private readonly argumentProcessors: ArgumentProcessor[];
+    private readonly commandsConverter: CommandsConverter;
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.COMMAND_REGISTRY_MAIN);
         this.argumentProcessors = [];
+        this.commandsConverter = new CommandsConverter(this);
+    }
+
+    get converter(): CommandsConverter {
+        return this.commandsConverter;
     }
 
     // tslint:disable-next-line:no-any
@@ -78,7 +89,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     }
 
     // tslint:disable-next-line:no-any
-    $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T> {
+    $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
         if (this.handlers.has(id)) {
             return this.executeLocalCommand(id, ...args);
         } else {
@@ -102,7 +113,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     }
 
     // tslint:disable-next-line:no-any
-    private async executeLocalCommand<T>(id: string, ...args: any[]): Promise<T> {
+    private async executeLocalCommand<T>(id: string, ...args: any[]): Promise<T | undefined> {
         const handler = this.handlers.get(id);
         if (handler) {
             return handler<T>(...args.map(arg => this.argumentProcessors.reduce((r, p) => p.processArgument(r), arg)));
@@ -122,4 +133,53 @@ export class CommandRegistryImpl implements CommandRegistryExt {
     registerArgumentProcessor(processor: ArgumentProcessor): void {
         this.argumentProcessors.push(processor);
     }
+}
+
+// copied and modified from https://github.com/microsoft/vscode/blob/1.37.1/src/vs/workbench/api/common/extHostCommands.ts#L217-L259
+export class CommandsConverter {
+
+    private readonly safeCommandId: string;
+    private readonly commands: CommandRegistryImpl;
+    private readonly commandsMap = new Map<number, theia.Command>();
+    private handle = 0;
+    private isSafeCommandRegistered: boolean;
+
+    constructor(commands: CommandRegistryImpl) {
+        this.safeCommandId = `theia_safe_cmd_${Date.now().toString()}`;
+        this.commands = commands;
+        this.isSafeCommandRegistered = false;
+    }
+
+    /**
+     * Convert to a command that can be safely passed over JSON-RPC.
+     */
+    toSafeCommand(command: theia.Command, disposables: DisposableCollection): theia.Command {
+        if (!this.isSafeCommandRegistered) {
+            this.commands.registerCommand({ id: this.safeCommandId }, this.executeSafeCommand, this);
+            this.isSafeCommandRegistered = true;
+        }
+
+        const result: theia.Command = {};
+        Object.assign(result, command);
+
+        if (command.command && command.arguments && command.arguments.length > 0) {
+            const id = this.handle++;
+            this.commandsMap.set(id, command);
+            disposables.push(new Disposable(() => this.commandsMap.delete(id)));
+            result.command = this.safeCommandId;
+            result.arguments = [id];
+        }
+
+        return result;
+    }
+
+    // tslint:disable-next-line:no-any
+    private executeSafeCommand<R>(...args: any[]): PromiseLike<R | undefined> {
+        const command = this.commandsMap.get(args[0]);
+        if (!command || !command.command) {
+            return Promise.reject('command NOT FOUND');
+        }
+        return this.commands.executeCommand(command.command, ...(command.arguments || []));
+    }
+
 }
