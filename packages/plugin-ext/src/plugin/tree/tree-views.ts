@@ -23,9 +23,11 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, ThemeIcon } from '../types-impl';
 import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { CommandRegistryImpl } from '../command-registry';
+import { CommandRegistryImpl, CommandsConverter } from '../command-registry';
 import { TreeViewSelection } from '../../common';
 import { PluginPackage } from '../../common/plugin-protocol';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { toInternalCommand } from '../type-converters';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
 
@@ -33,7 +35,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
 
     private treeViews: Map<string, TreeViewExtImpl<any>> = new Map<string, TreeViewExtImpl<any>>();
 
-    constructor(rpc: RPCProtocol, commandRegistry: CommandRegistryImpl) {
+    constructor(rpc: RPCProtocol, readonly commandRegistry: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TREE_VIEWS_MAIN);
         commandRegistry.registerArgumentProcessor({
             processArgument: arg => {
@@ -61,7 +63,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             throw new Error('Options with treeDataProvider is mandatory');
         }
 
-        const treeView = new TreeViewExtImpl(plugin, treeViewId, options.treeDataProvider, this.proxy);
+        const treeView = new TreeViewExtImpl(plugin, treeViewId, options.treeDataProvider, this.proxy, this.commandRegistry.converter);
         this.treeViews.set(treeViewId, treeView);
 
         return {
@@ -120,6 +122,8 @@ class TreeViewExtImpl<T> extends Disposable {
     private onDidCollapseElementEmitter: Emitter<TreeViewExpansionEvent<T>> = new Emitter<TreeViewExpansionEvent<T>>();
     public readonly onDidCollapseElement = this.onDidCollapseElementEmitter.event;
 
+    private disposables = new DisposableCollection();
+
     private selection: T[] = [];
     get selectedElements(): T[] { return this.selection; }
 
@@ -129,7 +133,8 @@ class TreeViewExtImpl<T> extends Disposable {
         private plugin: Plugin,
         private treeViewId: string,
         private treeDataProvider: TreeDataProvider<T>,
-        private proxy: TreeViewsMain) {
+        private proxy: TreeViewsMain,
+        readonly commandsConverter: CommandsConverter) {
 
         super(() => {
             proxy.$unregisterTreeDataProvider(treeViewId);
@@ -169,6 +174,7 @@ class TreeViewExtImpl<T> extends Disposable {
             console.error(`No tree item with id '${parentId}' found.`);
             return [];
         }
+        this.disposables.dispose();
 
         // ask data provider for children for cached element
         const result = await this.treeDataProvider.getChildren(parent);
@@ -244,9 +250,6 @@ class TreeViewExtImpl<T> extends Disposable {
                     }
                 }
 
-                if (treeItem.command) {
-                    treeItem.command.arguments = [id];
-                }
                 const treeViewItem = {
                     id,
                     label,
@@ -257,7 +260,7 @@ class TreeViewExtImpl<T> extends Disposable {
                     tooltip: treeItem.tooltip,
                     collapsibleState: treeItem.collapsibleState,
                     contextValue: treeItem.contextValue,
-                    command: treeItem.command
+                    command: treeItem.command ? toInternalCommand(this.commandsConverter.toSafeCommand(treeItem.command, this.disposables)) : undefined
                 } as TreeViewItem;
 
                 treeItems.push(treeViewItem);

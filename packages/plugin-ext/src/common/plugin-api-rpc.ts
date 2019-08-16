@@ -184,7 +184,7 @@ export interface CommandRegistryMain {
 }
 
 export interface CommandRegistryExt {
-    $executeCommand<T>(id: string, ...ars: any[]): PromiseLike<T>;
+    $executeCommand<T>(id: string, ...ars: any[]): PromiseLike<T | undefined>;
     registerArgumentProcessor(processor: ArgumentProcessor): void;
 }
 
