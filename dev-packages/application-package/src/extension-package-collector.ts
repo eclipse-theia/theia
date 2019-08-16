@@ -36,13 +36,19 @@ export class ExtensionPackageCollector {
     }
 
     protected collectPackages(pck: NodePackage): void {
-        if (!pck.dependencies) {
-            return;
+        if (pck.peerDependencies) {
+            // tslint:disable-next-line:forin
+            for (const dependency in pck.peerDependencies) {
+                const versionRange = pck.peerDependencies[dependency]!;
+                this.collectPackage(dependency, versionRange);
+            }
         }
-        // tslint:disable-next-line:forin
-        for (const dependency in pck.dependencies) {
-            const versionRange = pck.dependencies[dependency]!;
-            this.collectPackage(dependency, versionRange);
+        if (pck.dependencies) {
+            // tslint:disable-next-line:forin
+            for (const dependency in pck.dependencies) {
+                const versionRange = pck.dependencies[dependency]!;
+                this.collectPackage(dependency, versionRange);
+            }
         }
     }
 
