@@ -46,7 +46,7 @@ import {
     ApplicationShell, ApplicationShellOptions, DockPanelRenderer, TabBarRenderer,
     TabBarRendererFactory, ShellLayoutRestorer,
     SidePanelHandler, SidePanelHandlerFactory,
-    SplitPositionHandler, DockPanelRendererFactory
+    SplitPositionHandler, DockPanelRendererFactory, ApplicationShellLayoutMigration, ApplicationShellLayoutMigrationError
 } from './shell';
 import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { LabelParser } from './label-parser';
@@ -127,6 +127,16 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(OpenerService).toService(DefaultOpenerService);
     bind(HttpOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(HttpOpenHandler);
+
+    bindContributionProvider(bind, ApplicationShellLayoutMigration);
+    bind<ApplicationShellLayoutMigration>(ApplicationShellLayoutMigration).toConstantValue({
+        layoutVersion: 2.0,
+        onWillInflateLayout({ layoutVersion }): void {
+            throw ApplicationShellLayoutMigrationError.create(
+                `It is not possible to migrate layout of version ${layoutVersion} to version ${this.layoutVersion}.`
+            );
+        }
+    });
 
     bindContributionProvider(bind, WidgetFactory);
     bind(WidgetManager).toSelf().inSingletonScope();

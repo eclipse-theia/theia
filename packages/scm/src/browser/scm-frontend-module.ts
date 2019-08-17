@@ -15,9 +15,13 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, ViewContainer, WidgetManager } from '@theia/core/lib/browser';
+import {
+    bindViewContribution, FrontendApplicationContribution,
+    WidgetFactory, ViewContainer,
+    WidgetManager, ApplicationShellLayoutMigration
+} from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
-import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID } from './scm-contribution';
+import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID, SCM_VIEW_CONTAINER_TITLE_OPTIONS } from './scm-contribution';
 
 import { ScmWidget } from './scm-widget';
 import '../../src/browser/style/index.css';
@@ -28,6 +32,7 @@ import { ScmNavigatorDecorator } from './decorations/scm-navigator-decorator';
 import { ScmDecorationsService } from './decorations/scm-decorations-service';
 import { ScmAvatarService } from './scm-avatar-service';
 import { ScmContextKeyService } from './scm-context-key-service';
+import { ScmLayoutVersion3Migration } from './scm-layout-migrations';
 
 export default new ContainerModule(bind => {
     bind(ScmContextKeyService).toSelf().inSingletonScope();
@@ -45,11 +50,7 @@ export default new ContainerModule(bind => {
                 id: SCM_VIEW_CONTAINER_ID,
                 progressLocationId: 'scm'
             });
-            viewContainer.setTitleOptions({
-                label: 'Source Control',
-                iconClass: 'scm-tab-icon',
-                closeable: true
-            });
+            viewContainer.setTitleOptions(SCM_VIEW_CONTAINER_TITLE_OPTIONS);
             const widget = await container.get(WidgetManager).getOrCreateWidget(SCM_WIDGET_FACTORY_ID);
             viewContainer.addWidget(widget, {
                 canHide: false,
@@ -58,6 +59,7 @@ export default new ContainerModule(bind => {
             return viewContainer;
         }
     })).inSingletonScope();
+    bind(ApplicationShellLayoutMigration).to(ScmLayoutVersion3Migration).inSingletonScope();
 
     bind(ScmQuickOpenService).toSelf().inSingletonScope();
     bindViewContribution(bind, ScmContribution);

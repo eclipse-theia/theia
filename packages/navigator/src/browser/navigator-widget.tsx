@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CommonCommands, CorePreferences, LabelProvider } from '@theia/core/lib/browser';
+import { CommonCommands, CorePreferences, LabelProvider, ViewContainerTitleOptions } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeModel, TreeNode,
@@ -36,6 +36,12 @@ import { NavigatorContextKeyService } from './navigator-context-key-service';
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
+export const EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
+    label: 'Explorer',
+    iconClass: 'navigator-tab-icon',
+    closeable: true
+};
+
 export const LABEL = 'No folder opened';
 export const CLASS = 'theia-Files';
 
