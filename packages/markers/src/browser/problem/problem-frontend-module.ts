@@ -14,18 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import '../../../src/browser/style/index.css';
+
 import { ContainerModule } from 'inversify';
 import { ProblemWidget, PROBLEMS_WIDGET_ID } from './problem-widget';
 import { ProblemContribution } from './problem-contribution';
 import { createProblemWidget } from './problem-container';
-import { FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, bindViewContribution, ApplicationShellLayoutMigration } from '@theia/core/lib/browser';
 import { ProblemManager } from './problem-manager';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser/navigator-decorator-service';
 import { ProblemDecorator } from './problem-decorator';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-
-import '../../../src/browser/style/index.css';
+import { ProblemLayoutVersion3Migration } from './problem-layout-migrations';
 
 export default new ContainerModule(bind => {
     bind(ProblemManager).toSelf().inSingletonScope();
@@ -37,6 +38,7 @@ export default new ContainerModule(bind => {
         id: PROBLEMS_WIDGET_ID,
         createWidget: () => context.container.get<ProblemWidget>(ProblemWidget)
     }));
+    bind(ApplicationShellLayoutMigration).to(ProblemLayoutVersion3Migration).inSingletonScope();
 
     bindViewContribution(bind, ProblemContribution);
     bind(FrontendApplicationContribution).toService(ProblemContribution);

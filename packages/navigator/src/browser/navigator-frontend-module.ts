@@ -17,8 +17,12 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from 'inversify';
-import { KeybindingContext, bindViewContribution, FrontendApplicationContribution, ViewContainer } from '@theia/core/lib/browser';
-import { FileNavigatorWidget, FILE_NAVIGATOR_ID, EXPLORER_VIEW_CONTAINER_ID } from './navigator-widget';
+import {
+    KeybindingContext, bindViewContribution,
+    FrontendApplicationContribution, ViewContainer,
+    ApplicationShellLayoutMigration
+} from '@theia/core/lib/browser';
+import { FileNavigatorWidget, FILE_NAVIGATOR_ID, EXPLORER_VIEW_CONTAINER_ID, EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS } from './navigator-widget';
 import { NavigatorActiveContext } from './navigator-keybinding-context';
 import { FileNavigatorContribution } from './navigator-contribution';
 import { createFileNavigatorWidget } from './navigator-container';
@@ -28,6 +32,7 @@ import { FileNavigatorFilter } from './navigator-filter';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NavigatorDiff } from './navigator-diff';
+import { NavigatorLayoutVersion3Migration } from './navigator-layout-migrations';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);
@@ -52,11 +57,7 @@ export default new ContainerModule(bind => {
         id: EXPLORER_VIEW_CONTAINER_ID,
         createWidget: async () => {
             const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({ id: EXPLORER_VIEW_CONTAINER_ID });
-            viewContainer.setTitleOptions({
-                label: 'Explorer',
-                iconClass: 'navigator-tab-icon',
-                closeable: true
-            });
+            viewContainer.setTitleOptions(EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS);
             const widget = await container.get(WidgetManager).getOrCreateWidget(FILE_NAVIGATOR_ID);
             viewContainer.addWidget(widget, {
                 canHide: false,
@@ -65,6 +66,7 @@ export default new ContainerModule(bind => {
             return viewContainer;
         }
     }));
+    bind(ApplicationShellLayoutMigration).to(NavigatorLayoutVersion3Migration).inSingletonScope();
 
     bind(NavigatorDiff).toSelf().inSingletonScope();
 });

@@ -45,7 +45,16 @@ const MAIN_AREA_CLASS = 'theia-app-main';
 /** The class name added to the bottom area panel. */
 const BOTTOM_AREA_CLASS = 'theia-app-bottom';
 
-const LAYOUT_DATA_VERSION = '3.0';
+export type ApplicationShellLayoutVersion =
+    /** layout versioning is introduced, unversiouned layout are not compatible */
+    2.0 |
+    /** view containers are introduced, backward compatible to 2.0 */
+    3.0;
+
+/**
+ * When a version is increased, make sure to introduce a migration (ApplicationShellLayoutMigration) to this version.
+ */
+export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 3.0;
 
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
@@ -516,7 +525,7 @@ export class ApplicationShell extends Widget {
      */
     getLayoutData(): ApplicationShell.LayoutData {
         return {
-            version: LAYOUT_DATA_VERSION,
+            version: applicationShellLayoutVersion,
             mainPanel: this.mainPanel.saveLayout(),
             bottomPanel: {
                 config: this.bottomPanel.saveLayout(),
@@ -561,7 +570,7 @@ export class ApplicationShell extends Widget {
      * Apply a shell layout that has been previously created with `getLayoutData`.
      */
     async setLayoutData(layoutData: ApplicationShell.LayoutData): Promise<void> {
-        const { mainPanel, bottomPanel, leftPanel, rightPanel, activeWidgetId } = this.getValidatedLayoutData(layoutData);
+        const { mainPanel, bottomPanel, leftPanel, rightPanel, activeWidgetId } = layoutData;
         if (leftPanel) {
             this.leftPanelHandler.setLayoutData(leftPanel);
             await this.registerWithFocusTracker(leftPanel);
@@ -596,13 +605,6 @@ export class ApplicationShell extends Widget {
         if (activeWidgetId) {
             this.activateWidget(activeWidgetId);
         }
-    }
-
-    protected getValidatedLayoutData(layoutData: ApplicationShell.LayoutData): ApplicationShell.LayoutData {
-        if (layoutData.version !== LAYOUT_DATA_VERSION) {
-            throw new Error(`Saved workbench layout (version ${layoutData.version || 'unknown'}) is incompatible with the current (${LAYOUT_DATA_VERSION})`);
-        }
-        return layoutData;
     }
 
     /**
@@ -1585,7 +1587,7 @@ export namespace ApplicationShell {
      * Data to save and load the application shell layout.
      */
     export interface LayoutData {
-        version?: string,
+        version?: string | ApplicationShellLayoutVersion,
         mainPanel?: DockPanel.ILayoutConfig;
         bottomPanel?: BottomPanelLayoutData;
         leftPanel?: SidePanel.LayoutData;

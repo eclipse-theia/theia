@@ -21,7 +21,8 @@ import {
     StatusBar,
     StatusBarAlignment,
     StatusBarEntry,
-    KeybindingRegistry
+    KeybindingRegistry,
+    ViewContainerTitleOptions
 } from '@theia/core/lib/browser';
 import { CommandRegistry, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
@@ -33,6 +34,11 @@ import { ScmRepository } from './scm-repository';
 
 export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
+export const SCM_VIEW_CONTAINER_TITLE_OPTIONS: ViewContainerTitleOptions = {
+    label: 'Source Control',
+    iconClass: 'scm-tab-icon',
+    closeable: true
+};
 
 export namespace SCM_COMMANDS {
     export const CHANGE_REPOSITORY = {

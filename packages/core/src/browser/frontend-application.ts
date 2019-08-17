@@ -20,7 +20,7 @@ import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
 import { ApplicationShell } from './shell/application-shell';
-import { ShellLayoutRestorer } from './shell/shell-layout-restorer';
+import { ShellLayoutRestorer, ApplicationShellLayoutMigrationError } from './shell/shell-layout-restorer';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { preventNavigation, parseCssTime } from './browser';
 import { CorePreferences } from './core-preferences';
@@ -229,7 +229,12 @@ export class FrontendApplication {
         try {
             return await this.layoutRestorer.restoreLayout(this);
         } catch (error) {
-            this.logger.error('Could not restore layout', error);
+            if (ApplicationShellLayoutMigrationError.is(error)) {
+                console.warn(error.message);
+                console.info('Initializing the defaut layout instead...');
+            } else {
+                console.error('Could not restore layout', error);
+            }
             return false;
         }
     }
