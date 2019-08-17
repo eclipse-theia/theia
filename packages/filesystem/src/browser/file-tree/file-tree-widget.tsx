@@ -19,7 +19,7 @@ import { injectable, inject } from 'inversify';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
-import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget, CompositeTreeNode } from '@theia/core/lib/browser';
 import { FileUploadService } from '../file-upload-service';
 import { DirNode, FileStatNode } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
@@ -157,7 +157,7 @@ export class FileTreeWidget extends TreeWidget {
             event.preventDefault();
             event.stopPropagation();
             event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
-            const containing = DirNode.getContainingDir(node);
+            const containing = this.getDropTargetDirNode(node);
             if (containing) {
                 const resources = this.getSelectedTreeNodesFromData(event.dataTransfer);
                 if (resources.length > 0) {
@@ -173,6 +173,18 @@ export class FileTreeWidget extends TreeWidget {
                 console.error(e);
             }
         }
+    }
+
+    protected getDropTargetDirNode(node: TreeNode | undefined): DirNode | undefined {
+        if (CompositeTreeNode.is(node) && node.id === 'WorkspaceNodeId') {
+            if (node.children.length === 1) {
+                return DirNode.getContainingDir(node.children[0]);
+            } else if (node.children.length > 1) {
+                // move file to the last root folder in multi-root scenario
+                return DirNode.getContainingDir(node.children[node.children.length - 1]);
+            }
+        }
+        return DirNode.getContainingDir(node);
     }
 
     protected setTreeNodeAsData(data: DataTransfer, node: TreeNode): void {
