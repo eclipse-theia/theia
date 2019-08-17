@@ -178,6 +178,9 @@ export class Path {
         return -1;
     }
 
+    /*
+     * return a normalized Path, resolving '..' and '.' segments
+     */
     normalize(): Path {
         const trailingSlash = this.raw.endsWith('/');
         const pathArray = this.toString().split('/');

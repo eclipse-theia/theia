@@ -165,7 +165,7 @@ export default class URI {
     }
 
     /**
-     * return a new URI replacing the current with its normalized path
+     * return a new URI replacing the current with its normalized path, resolving '..' and '.' segments
      */
     normalizePath(): URI {
         return this.withPath(this.path.normalize());
