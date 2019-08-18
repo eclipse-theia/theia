@@ -13,10 +13,17 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
 import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
+import { CompletionTriggerKind } from '@theia/languages/lib/browser';
 
 @injectable()
 export class MonacoSnippetSuggestProvider implements monaco.modes.ISuggestSupport {
@@ -27,13 +34,72 @@ export class MonacoSnippetSuggestProvider implements monaco.modes.ISuggestSuppor
     protected readonly snippets = new Map<string, MonacoSnippetSuggestion[]>();
     protected readonly pendingSnippets = new Map<string, Promise<void>[]>();
 
-    async provideCompletionItems(model: monaco.editor.ITextModel): Promise<monaco.modes.ISuggestResult> {
+    async provideCompletionItems(
+        model: monaco.editor.ITextModel,
+        position: monaco.Position,
+        context: monaco.modes.SuggestContext,
+    ): Promise<monaco.modes.ISuggestResult | undefined> {
+        if (context.triggerKind === CompletionTriggerKind.TriggerCharacter && context.triggerCharacter === ' ') {
+            // no snippets when suggestions have been triggered by space
+            return undefined;
+        }
         const languageId = model.getModeId(); // TODO: look up a language id at the position
         await this.loadSnippets(languageId);
-        const suggestions = this.snippets.get(languageId) || [];
+        const snippets = this.snippets.get(languageId) || [];
+        const suggestions: MonacoSnippetSuggestion[] = [];
+        const pos = { lineNumber: position.lineNumber, column: 1 };
+        const lineOffsets: number[] = [];
+        const linePrefixLow = model.getLineContent(position.lineNumber).substr(0, position.column - 1).toLowerCase(); // 当前之前的全部小写化
+        const endsInWhitespace = linePrefixLow.match(/\s$/);
+        while (pos.column < position.column) {
+            const word = model.getWordAtPosition(pos);
+            if (word) {
+                // at a word
+                lineOffsets.push(word.startColumn - 1);
+                pos.column = word.endColumn + 1;
+                if (word.endColumn - 1 < linePrefixLow.length && !/\s/.test(linePrefixLow[word.endColumn - 1])) {
+                    lineOffsets.push(word.endColumn - 1);
+                }
+            } else if (!/\s/.test(linePrefixLow[pos.column - 1])) {
+                // at a none-whitespace character
+                lineOffsets.push(pos.column - 1);
+                pos.column += 1;
+            } else {
+                // always advance!
+                pos.column += 1;
+            }
+        }
+        const availableSnippets = new Set<MonacoSnippetSuggestion>(snippets);
+        for (const start of lineOffsets) {
+            availableSnippets.forEach(snippet => {
+                if (this.matches(linePrefixLow, start, snippet.prefixLow, 0)) {
+                    snippet.overwriteBefore = position.column - start;
+                    suggestions.push(snippet);
+                    availableSnippets.delete(snippet);
+                }
+            });
+        }
+        if (endsInWhitespace || lineOffsets.length === 0) {
+            // add remaing snippets when the current prefix ends in whitespace or when no
+            // interesting positions have been found
+            availableSnippets.forEach(snippet => {
+                suggestions.push(snippet);
+            });
+        }
+
+        // dismbiguate suggestions with same labels
+        suggestions.sort(MonacoSnippetSuggestion.compareByLabel);
         return { suggestions };
     }
-
+    matches(pattern: string, patternStart: number, word: string, wordStart: number): boolean {
+        while (patternStart < pattern.length && wordStart < word.length) {
+            if (pattern[patternStart] === word[wordStart]) {
+                patternStart += 1;
+            }
+            wordStart += 1;
+        }
+        return patternStart === pattern.length;
+    }
     resolveCompletionItem(_: monaco.editor.ITextModel, __: monaco.Position, item: monaco.modes.ISuggestion): monaco.modes.ISuggestion {
         return item instanceof MonacoSnippetSuggestion ? item.resolve() : item;
     }
@@ -170,15 +236,18 @@ export class MonacoSnippetSuggestion implements monaco.modes.ISuggestion {
     readonly noAutoAccept = true;
     readonly type: 'snippet' = 'snippet';
     readonly snippetType: 'textmate' = 'textmate';
-
+    overwriteBefore?: number;
+    overwriteAfter?: number;
     insertText: string;
     documentation?: monaco.IMarkdownString;
+    readonly prefixLow: string;
 
     constructor(protected readonly snippet: Snippet) {
         this.label = snippet.prefix;
         this.detail = `${snippet.description || snippet.name} (${snippet.source})`;
         this.insertText = snippet.body;
         this.sortText = `z-${snippet.prefix}`;
+        this.prefixLow = snippet.prefix ? snippet.prefix.toLowerCase() : snippet.prefix;
     }
 
     protected resolved = false;
@@ -190,5 +259,7 @@ export class MonacoSnippetSuggestion implements monaco.modes.ISuggestion {
         }
         return this;
     }
-
+    static compareByLabel(a: MonacoSnippetSuggestion, b: MonacoSnippetSuggestion): number {
+        return a.label > b.label ? 1 : a.label < b.label ? -1 : 0;
+    }
 }
