@@ -17,7 +17,7 @@
 import { EnvExtImpl } from '../env';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { createHash } from 'crypto';
-import { getMac } from 'getmac';
+import { mac } from 'address';
 import { v4 } from 'uuid';
 
 /**
@@ -30,10 +30,13 @@ export class EnvNodeExtImpl extends EnvExtImpl {
 
     constructor(rpc: RPCProtocol) {
         super(rpc);
-        getMac((err, macAddress) => {
+        console.log('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Let generate unique macMachineId!');
+        mac((err: Error, macAddress: string) => {
             if (err) {
+                console.log('>>>>>>>>Unable to get address...');
                 this.macMachineId = v4();
             } else {
+                console.log('So address!!!!', macAddress);
                 this.macMachineId = createHash('sha256').update(macAddress, 'utf8').digest('hex');
             }
         });

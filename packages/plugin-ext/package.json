@@ -26,7 +26,7 @@
     "@theia/workspace": "^0.9.0",
     "decompress": "^4.2.0",
     "escape-html": "^1.0.3",
-    "getmac": "^1.4.6",
+    "address": "^1.1.0",
     "jsonc-parser": "^2.0.2",
     "lodash.clonedeep": "^4.5.0",
     "ps-tree": "^1.2.0",
