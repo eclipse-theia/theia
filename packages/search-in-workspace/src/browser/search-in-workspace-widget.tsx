@@ -367,6 +367,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             size={1}
             placeholder='Search'
             defaultValue={this.searchTerm}
+            autoComplete='off'
             onKeyUp={this.search}
             onFocus={this.handleFocusSearchInputBox}
             onBlur={this.handleBlurSearchInputBox}

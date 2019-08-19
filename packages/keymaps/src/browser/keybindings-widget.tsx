@@ -291,9 +291,14 @@ export class KeybindingWidget extends ReactWidget {
     protected renderSearch(): React.ReactNode {
         return <div>
             <div className='search-kb-container'>
-                <input id='search-kb'
+                <input
+                    id='search-kb'
                     className={(this.items.length > 0) ? '' : 'no-kb'}
-                    type='text' placeholder='Search keybindings' onKeyUp={this.searchKeybindings}></input >
+                    type='text'
+                    placeholder='Search keybindings'
+                    autoComplete='off'
+                    onKeyUp={this.searchKeybindings}
+                />
             </div>
         </div>;
     }
