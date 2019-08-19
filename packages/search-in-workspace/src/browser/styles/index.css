@@ -21,7 +21,7 @@
 
 .t-siw-search-container {
     color: var(--theia-ui-font-color1);
-    padding: 1px 5px;
+    padding: 5px ;
     display: flex;
     flex-direction: column;
     height: 100%;
