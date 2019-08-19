@@ -649,7 +649,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const replaceTerm = this._replaceTerm !== '' && this._showReplaceButtons ? <span className='replace-term'>{this._replaceTerm}</span> : '';
         const className = `match${this._showReplaceButtons ? ' strike-through' : ''}`;
         return <React.Fragment>
-            <span className={className}> {node.lineText.substr(node.character - 1, node.length)}</span>
+            <span className={className}>{node.lineText.substr(node.character - 1, node.length)}</span>
             {replaceTerm}
         </React.Fragment>;
     }

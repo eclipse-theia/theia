@@ -77,6 +77,7 @@ const getRootPathFromName = (name: string) => {
     const names: { [file: string]: string } = {
         carrots: rootDirA,
         potatoes: rootDirA,
+        pastas: rootDirA,
         regexes: rootDirA,
         small: `${rootDirA}/small`,
         'file:with:some:colons': rootDirA,
@@ -110,6 +111,8 @@ Carrot is a funny word.
 Potatoes, unlike carrots, are generally not orange.  But sweet potatoes are,
 it's very confusing.
 `);
+
+    createTestFile('pastas', 'pasta pasta');
 
     createTestFile('regexes', `\
 aaa hello. x h3lo y hell0h3lllo
@@ -230,6 +233,34 @@ function compareSearchResults(expected: SearchInWorkspaceResult[], actual: Searc
 
 describe('ripgrep-search-in-workspace-server', function (): void {
     this.timeout(10000);
+
+    it('should return 1 result when searching for " pasta", respecting the leading whitespace', done => {
+        const pattern = ' pasta';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { root: rootDirAUri, fileUri: 'pastas', line: 1, character: 6, length: pattern.length, lineText: '' },
+            ];
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, [rootDirAUri]);
+    });
+
+    it('should return 1 result when searching for "pasta", respecting the trailing whitespace', done => {
+        const pattern = 'pasta ';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { root: rootDirAUri, fileUri: 'pastas', line: 1, character: 1, length: pattern.length, lineText: '' },
+            ];
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, [rootDirAUri]);
+    });
 
     // Try some simple patterns with different case.
     it('should return 7 results when searching for "carrot"', done => {
