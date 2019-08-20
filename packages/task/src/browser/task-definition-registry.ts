@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
+import { Event, Emitter } from '@theia/core/lib/common';
 import { TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
 
 @injectable()
@@ -22,6 +23,11 @@ export class TaskDefinitionRegistry {
 
     // task type - array of task definitions
     private definitions: Map<string, TaskDefinition[]> = new Map();
+
+    protected readonly onDidRegisterTaskDefinitionEmitter = new Emitter<void>();
+    get onDidRegisterTaskDefinition(): Event<void> {
+        return this.onDidRegisterTaskDefinitionEmitter.event;
+    }
 
     /**
      * Finds the task definition(s) from the registry with the given `taskType`.
@@ -70,5 +76,6 @@ export class TaskDefinitionRegistry {
     register(definition: TaskDefinition): void {
         const taskType = definition.taskType;
         this.definitions.set(taskType, [...this.getDefinitions(taskType), definition]);
+        this.onDidRegisterTaskDefinitionEmitter.fire(undefined);
     }
 }

@@ -9,6 +9,7 @@
 - [task] fixed the problem where a detected task can be customized more than once [#5777](https://github.com/theia-ide/theia/pull/5777)
 - [task] displayed the customized tasks as "configured tasks" in the task quick open [#5777](https://github.com/theia-ide/theia/pull/5777)
 - [task] allowed users to override any task properties other than the ones used in the task definition [#5777](https://github.com/theia-ide/theia/pull/5777)
+- [task] notified clients of TaskDefinitionRegistry on change [#5915](https://github.com/theia-ide/theia/pull/5915)
 - [outline] added `OutlineViewTreeModel` for the outline view tree widget [#5687](https://github.com/theia-ide/theia/pull/5687)
 
 Breaking changes:
@@ -17,6 +18,7 @@ Breaking changes:
 - [plugin] files from 'plugin-ext/src/api' moved to 'plugin-ext/src/common', renamed 'model.ts' to 'plugin-api-rpc-model.ts', 'plugin-api.ts' to 'plugin-api-rpc.ts'
 - [task] ensure that plugin tasks are registered before accessing them [5869](https://github.com/theia-ide/theia/pull/5869)
   - `TaskProviderRegistry` and `TaskResolverRegistry` are promisified
+- [task] removed `filterDuplicates()` from `TaskConfigurations` class [#5915](https://github.com/theia-ide/theia/pull/5915)
 - [shell][plugin] integrated view containers and views [#5665](https://github.com/theia-ide/theia/pull/5665)
   - `Source Control` and `Explorer` are view containers now and previous layout data cannot be loaded for them. Because of it the layout is completely reset.
 - [vscode] complete support of variable substitution [#5835](https://github.com/theia-ide/theia/pull/5835)
