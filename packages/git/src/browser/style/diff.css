@@ -44,11 +44,26 @@
     flex-direction: row;
 }
 
+.theia-git .header-row.diff-header,
+.theia-git .header-row.diff-nav {
+    margin-bottom: 10px;
+}
+
 .theia-git .header-value {
     margin: 9px 0px 5px 5px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.theia-git .diff-header .header-value {
+    align-self: center;
+    margin: 0px;
+}
+
+.theia-git .diff-header .theia-header {
+    align-self: center;
+    padding-right: 5px;
 }
 
 .theia-git .gitItem.diff-file {

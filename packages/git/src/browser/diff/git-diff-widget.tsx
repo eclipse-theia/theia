@@ -153,6 +153,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
 
     protected renderPathHeader(): React.ReactNode {
         return this.renderHeaderRow({
+            classNames: ['diff-header'],
             name: 'path',
             value: this.renderPath()
         });
@@ -171,6 +172,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
 
     protected renderRevisionHeader(): React.ReactNode {
         return this.renderHeaderRow({
+            classNames: ['diff-header'],
             name: 'revision: ',
             value: this.renderRevision()
         });
@@ -193,7 +195,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
     protected doRenderToolbar(...children: React.ReactNode[]): React.ReactNode {
         return this.renderHeaderRow({
-            classNames: ['space-between'],
+            classNames: ['diff-nav', 'space-between'],
             name: 'Files changed',
             value: <div className='lrBtns'>{...children}</div>
         });
