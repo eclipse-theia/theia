@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { ContributedTaskConfiguration, TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -64,6 +64,12 @@ export class TaskConfigurations implements Disposable {
 
     protected client: TaskConfigurationClient | undefined = undefined;
 
+    /**
+     * Map of source (path of root folder that the task configs come from) and raw task configurations / customizations.
+     * This map is used to store the data from `tasks.json` files in workspace.
+     */
+    private rawTaskConfigurations = new Map<string, TaskCustomization[]>();
+
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
@@ -84,28 +90,40 @@ export class TaskConfigurations implements Disposable {
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
         this.toDispose.push(watcherServer);
-        this.watcherServer.onFilesChanged(async changes => {
-            try {
-                const watchedConfigFileChanges = changes.filter(change =>
-                    this.watchedConfigFileUris.some(fileUri => FileChangeEvent.isAffected([change], new URI(fileUri)))
-                ).map(relatedChange => (
-                    { uri: relatedChange.uri.toString(), type: relatedChange.type }
-                ));
-                if (watchedConfigFileChanges.length >= 0) {
-                    await this.onDidTaskFileChange(watchedConfigFileChanges);
-                    if (this.client) {
-                        this.client.taskConfigurationChanged(this.getTaskLabels());
+        this.toDispose.push(
+            this.watcherServer.onFilesChanged(async changes => {
+                try {
+                    const watchedConfigFileChanges = changes.filter(change =>
+                        this.watchedConfigFileUris.some(fileUri => FileChangeEvent.isAffected([change], new URI(fileUri)))
+                    ).map(relatedChange => (
+                        { uri: relatedChange.uri.toString(), type: relatedChange.type }
+                    ));
+                    if (watchedConfigFileChanges.length >= 0) {
+                        await this.onDidTaskFileChange(watchedConfigFileChanges);
+                        if (this.client) {
+                            this.client.taskConfigurationChanged(this.getTaskLabels());
+                        }
                     }
+                } catch (err) {
+                    console.error(err);
                 }
-            } catch (err) {
-                console.error(err);
-            }
-        });
-
+            })
+        );
         this.toDispose.push(Disposable.create(() => {
             this.tasksMap.clear();
+            this.taskCustomizationMap.clear();
+            this.watchersMap.clear();
+            this.rawTaskConfigurations.clear();
             this.client = undefined;
         }));
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.reorgnizeTasks();
+        this.toDispose.push(
+            this.taskDefinitionRegistry.onDidRegisterTaskDefinition(() => this.reorgnizeTasks())
+        );
     }
 
     setClient(client: TaskConfigurationClient): void {
@@ -198,6 +216,7 @@ export class TaskConfigurations implements Disposable {
     removeTasks(configFileUri: string): void {
         const source = this.getSourceFolderFromConfigUri(configFileUri);
         this.tasksMap.delete(source);
+        this.taskCustomizationMap.delete(source);
     }
 
     /**
@@ -278,36 +297,14 @@ export class TaskConfigurations implements Disposable {
     protected async refreshTasks(configFileUri: string): Promise<void> {
         const tasksArray = await this.readTasks(configFileUri);
         if (tasksArray) {
-            const configuredTasksArray: TaskConfiguration[] = [];
-            const customizations: TaskCustomization[] = [];
-
-            tasksArray.forEach(t => {
-                if (this.isDetectedTask(t)) {
-                    customizations.push(t);
-                } else {
-                    configuredTasksArray.push(t);
-                }
-            });
-
             // only clear tasks map when successful at parsing the config file
             // this way we avoid clearing and re-filling it multiple times if the
             // user is editing the file in the auto-save mode, having momentarily
             // non-parsing JSON.
             this.removeTasks(configFileUri);
             this.removeTaskCustomizations(configFileUri);
-            const rootFolderUri = this.getSourceFolderFromConfigUri(configFileUri);
 
-            if (configuredTasksArray.length > 0) {
-                const newTaskMap = new Map<string, TaskConfiguration>();
-                for (const task of configuredTasksArray) {
-                    newTaskMap.set(task.label, task);
-                }
-                this.tasksMap.set(rootFolderUri, newTaskMap);
-            }
-
-            if (customizations.length > 0) {
-                this.taskCustomizationMap.set(rootFolderUri, customizations);
-            }
+            this.reorgnizeTasks();
         }
     }
 
@@ -321,14 +318,22 @@ export class TaskConfigurations implements Disposable {
 
                 const strippedContent = jsoncparser.stripComments(response.content);
                 const errors: ParseError[] = [];
-                const tasks = jsoncparser.parse(strippedContent, errors);
+                const rawTasks = jsoncparser.parse(strippedContent, errors);
 
                 if (errors.length) {
                     for (const e of errors) {
                         console.error(`Error parsing ${uri}: error: ${e.error}, length:  ${e.length}, offset:  ${e.offset}`);
                     }
                 } else {
-                    return this.filterDuplicates(tasks['tasks']).map(t => Object.assign(t, { _source: t.source || this.getSourceFolderFromConfigUri(uri) }));
+                    const rootFolderUri = this.getSourceFolderFromConfigUri(uri);
+                    if (this.rawTaskConfigurations.has(rootFolderUri)) {
+                        this.rawTaskConfigurations.delete(rootFolderUri);
+                    }
+                    const tasks = rawTasks['tasks'].map((t: TaskCustomization | TaskConfiguration) =>
+                        Object.assign(t, { _source: t.source || this.getSourceFolderFromConfigUri(uri) })
+                    );
+                    this.rawTaskConfigurations.set(rootFolderUri, tasks);
+                    return tasks;
                 }
             } catch (err) {
                 console.error(`Error(s) reading config file: ${uri}`);
@@ -411,17 +416,42 @@ export class TaskConfigurations implements Disposable {
         }
     }
 
-    protected filterDuplicates(tasks: TaskConfiguration[]): TaskConfiguration[] {
-        const filteredTasks: TaskConfiguration[] = [];
-        for (const task of tasks) {
-            if (filteredTasks.some(t => !this.isDetectedTask(t) && t.label === task.label)) {
-                // TODO: create a problem marker so that this issue will be visible in the editor?
-                console.error(`Error parsing ${this.TASKFILE}: found duplicate entry for label: ${task.label}`);
+    /**
+     * This function is called after a change in TaskDefinitionRegistry happens.
+     * It checks all tasks that have been loaded, and re-organized them in `tasksMap` and `taskCustomizationMap`.
+     */
+    protected reorgnizeTasks(): void {
+        const newTaskMap = new Map<string, Map<string, TaskConfiguration>>();
+        const newTaskCustomizationMap = new Map<string, TaskCustomization[]>();
+        const addCustomization = (rootFolder: string, customization: TaskCustomization) => {
+            if (newTaskCustomizationMap.has(rootFolder)) {
+                newTaskCustomizationMap.get(rootFolder)!.push(customization);
             } else {
-                filteredTasks.push(task);
+                newTaskCustomizationMap.set(rootFolder, [customization]);
+            }
+        };
+        const addConfiguredTask = (rootFolder: string, label: string, configuredTask: TaskCustomization) => {
+            if (newTaskMap.has(rootFolder)) {
+                newTaskMap.get(rootFolder)!.set(label, configuredTask as TaskConfiguration);
+            } else {
+                const newConfigMap = new Map();
+                newConfigMap.set(label, configuredTask);
+                newTaskMap.set(rootFolder, newConfigMap);
+            }
+        };
+
+        for (const [rootFolder, taskConfigs] of this.rawTaskConfigurations.entries()) {
+            for (const taskConfig of taskConfigs) {
+                if (this.isDetectedTask(taskConfig)) {
+                    addCustomization(rootFolder, taskConfig);
+                } else {
+                    addConfiguredTask(rootFolder, taskConfig['label'] as string, taskConfig);
+                }
             }
         }
-        return filteredTasks;
+
+        this.taskCustomizationMap = newTaskCustomizationMap;
+        this.tasksMap = newTaskMap;
     }
 
     private getSourceFolderFromConfigUri(configFileUri: string): string {
@@ -429,13 +459,13 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** checks if the config is a detected / contributed task */
-    private isDetectedTask(task: TaskConfiguration): task is ContributedTaskConfiguration {
+    private isDetectedTask(task: TaskConfiguration | TaskCustomization): task is ContributedTaskConfiguration {
         const taskDefinition = this.getTaskDefinition(task);
         // it is considered as a customization if the task definition registry finds a def for the task configuration
         return !!taskDefinition;
     }
 
-    private getTaskDefinition(task: TaskConfiguration): TaskDefinition | undefined {
+    private getTaskDefinition(task: TaskConfiguration | TaskCustomization): TaskDefinition | undefined {
         return this.taskDefinitionRegistry.getDefinition({
             ...task,
             type: task.taskType || task.type
