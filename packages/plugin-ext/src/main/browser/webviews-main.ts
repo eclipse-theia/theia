@@ -101,8 +101,10 @@ export class WebviewsMainImpl implements WebviewsMain {
                     }
 
                     this.themeRulesService.setRules(styleElement, this.themeRulesService.getCurrentThemeRules());
+                    contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
                     toDispose.push(this.themeService.onThemeChange(() => {
                         this.themeRulesService.setRules(<HTMLElement>styleElement, this.themeRulesService.getCurrentThemeRules());
+                        contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
                     }));
                 }
             },
