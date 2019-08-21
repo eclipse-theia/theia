@@ -94,7 +94,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         this.toDisposeOnRefresh.dispose();
         this.toDispose.push(this.toDisposeOnRefresh);
         const repository = this.scmService.selectedRepository;
-        this.title.label = repository ? repository.provider.label : 'no repository opened';
+        this.title.label = repository ? repository.provider.label : 'no repository found';
         this.title.caption = this.title.label;
         this.update();
         if (repository) {
@@ -145,7 +145,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         if (!repository) {
             return <AlertMessage
                 type='WARNING'
-                header='Source control is not available at this time'
+                header='No repository found'
             />;
         }
         const input = repository.input;

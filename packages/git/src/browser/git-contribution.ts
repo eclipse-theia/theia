@@ -181,6 +181,12 @@ export namespace GIT_COMMANDS {
         iconClass: 'fa fa-refresh',
         category: 'Git'
     };
+    export const INIT_REPOSITORY = {
+        id: 'git-init',
+        label: 'Initialize Repository',
+        iconClass: 'fa fa-plus',
+        category: 'Git'
+    };
 }
 
 @injectable()
@@ -438,6 +444,11 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             execute: () => this.quickOpenService.dropStash(),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
+        registry.registerCommand(GIT_COMMANDS.INIT_REPOSITORY, {
+            execute: () => this.quickOpenService.initRepository(),
+            isEnabled: widget => (!widget || widget instanceof ScmWidget) && !this.repositoryProvider.selectedRepository,
+            isVisible: widget => (!widget || widget instanceof ScmWidget) && !this.repositoryProvider.selectedRepository
+        });
     }
 
     protected withProgress<T>(task: () => Promise<T>): Promise<T> {
@@ -455,6 +466,11 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             command: GIT_COMMANDS.OPEN_CHANGES.id,
             tooltip: GIT_COMMANDS.OPEN_CHANGES.label
         });
+        registry.registerItem({
+            id: GIT_COMMANDS.INIT_REPOSITORY.id,
+            command: GIT_COMMANDS.INIT_REPOSITORY.id,
+            tooltip: GIT_COMMANDS.INIT_REPOSITORY.label
+        });
 
         const registerItem = (item: Mutable<TabBarToolbarItem>) => {
             const commandId = item.command;
@@ -463,12 +479,14 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             this.commands.registerCommand({ id, iconClass: command && command.iconClass }, {
                 execute: (widget, ...args) => widget instanceof ScmWidget && this.commands.executeCommand(commandId, ...args),
                 isEnabled: (widget, ...args) => widget instanceof ScmWidget && this.commands.isEnabled(commandId, ...args),
-                isVisible: (widget, ...args) => widget instanceof ScmWidget && this.commands.isVisible(commandId, ...args),
+                isVisible: (widget, ...args) =>
+                    widget instanceof ScmWidget &&
+                    this.commands.isVisible(commandId, ...args) &&
+                    !!this.repositoryProvider.selectedRepository
             });
             item.command = id;
             registry.registerItem(item);
         };
-
         registerItem({
             id: GIT_COMMANDS.COMMIT.id,
             command: GIT_COMMANDS.COMMIT.id,

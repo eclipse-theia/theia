@@ -21,9 +21,11 @@ import { Git, Repository, Branch, BranchType, Tag, Remote, StashEntry } from '..
 import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { FileSystem } from '@theia/filesystem/lib/common';
+import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { GitErrorHandler } from './git-error-handler';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
+import URI from '@theia/core/lib/common/uri';
+import { LabelProvider } from '@theia/core/lib/browser';
 
 export enum GitAction {
     PULL,
@@ -40,6 +42,7 @@ export class GitQuickOpenService {
 
     @inject(GitErrorHandler) protected readonly gitErrorHandler: GitErrorHandler;
     @inject(ProgressService) protected readonly progressService: ProgressService;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -472,6 +475,33 @@ export class GitQuickOpenService {
                 this.gitErrorHandler.handleError(error);
             }
         });
+    }
+
+    async initRepository(): Promise<void> {
+        const wsRoots = await this.workspaceService.roots;
+        if (wsRoots && wsRoots.length > 1) {
+            const placeholder = 'Choose workspace root to initialize git repo in';
+            const items = wsRoots.map<GitQuickOpenItem<URI>>(root => this.toRepositoryPathQuickOpenItem(root));
+            this.open(items, placeholder);
+        } else {
+            const rootUri = new URI(wsRoots[0].uri);
+            this.doInitRepository(rootUri.toString());
+        }
+    }
+
+    private async doInitRepository(uri: string): Promise<void> {
+        this.withProgress(async () => this.git.exec({localUri: uri}, ['init']));
+    }
+
+    private toRepositoryPathQuickOpenItem(root: FileStat): GitQuickOpenItem<URI> {
+        const rootUri = new URI(root.uri);
+        const toLabel = (item: GitQuickOpenItem<URI>) => this.labelProvider.getName(item.ref);
+        const toDescription = (item: GitQuickOpenItem<URI>) => this.labelProvider.getLongName(item.ref.parent);
+        const execute = async (item: GitQuickOpenItem<URI>) => {
+            const wsRoot = item.ref.toString();
+            this.doInitRepository(wsRoot);
+        };
+        return new GitQuickOpenItem<URI>(rootUri, execute, toLabel, toDescription);
     }
 
     private open(items: QuickOpenItem | QuickOpenItem[], placeholder: string): void {
