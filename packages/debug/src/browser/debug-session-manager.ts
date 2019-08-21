@@ -17,7 +17,7 @@
 // tslint:disable:no-any
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Emitter, Event, DisposableCollection, MessageService, WaitUntilEvent } from '@theia/core';
+import { Emitter, Event, DisposableCollection, MessageService, WaitUntilEvent, ProgressService } from '@theia/core';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
@@ -121,6 +121,9 @@ export class DebugSessionManager {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(ProgressService)
+    protected readonly progressService: ProgressService;
+
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
@@ -140,10 +143,12 @@ export class DebugSessionManager {
 
     async start(options: DebugSessionOptions): Promise<DebugSession | undefined> {
         try {
-            await this.fireWillStartDebugSession();
-            const resolved = await this.resolveConfiguration(options);
-            const sessionId = await this.debug.createDebugSession(resolved.configuration);
-            return this.doStart(sessionId, resolved);
+            return this.progressService.withProgress('Start...', 'debug', async () => {
+                await this.fireWillStartDebugSession();
+                const resolved = await this.resolveConfiguration(options);
+                const sessionId = await this.debug.createDebugSession(resolved.configuration);
+                return this.doStart(sessionId, resolved);
+            });
         } catch (e) {
             if (DebugError.NotFound.is(e)) {
                 this.messageService.error(`The debug session type "${e.data.type}" is not supported.`);
