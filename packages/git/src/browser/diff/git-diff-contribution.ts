@@ -20,8 +20,8 @@ import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { injectable, inject } from 'inversify';
 import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
 import { open, OpenerService } from '@theia/core/lib/browser';
-import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
-import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
+import { NavigatorContextMenu, FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
+import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { GitQuickOpenService } from '../git-quick-open-service';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
@@ -29,6 +29,9 @@ import URI from '@theia/core/lib/common/uri';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import { Git } from '../../common';
 import { GitRepositoryProvider } from '../git-repository-provider';
+import { WorkspaceRootUriAwareCommandHandler } from '@theia/workspace/lib/browser/workspace-commands';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export namespace GitDiffCommands {
     export const OPEN_FILE_DIFF: Command = {
@@ -38,8 +41,21 @@ export namespace GitDiffCommands {
     };
 }
 
+export namespace ScmNavigatorMoreToolbarGroups {
+    export const SCM = '3_navigator_scm';
+}
+
 @injectable()
-export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget> {
+export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget> implements TabBarToolbarContribution {
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(FileNavigatorContribution)
+    protected readonly fileNavigatorContribution: FileNavigatorContribution;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     constructor(
         @inject(SelectionService) protected readonly selectionService: SelectionService,
@@ -68,7 +84,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(GitDiffCommands.OPEN_FILE_DIFF, this.newUriAwareCommandHandler({
+        commands.registerCommand(GitDiffCommands.OPEN_FILE_DIFF, this.newWorkspaceRootUriAwareCommandHandler({
             isVisible: uri => !!this.repositoryProvider.findRepository(uri),
             isEnabled: uri => !!this.repositoryProvider.findRepository(uri),
             execute: async fileUri => {
@@ -101,6 +117,15 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         }));
     }
 
+    registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        this.fileNavigatorContribution.registerMoreToolbarItem({
+            id: GitDiffCommands.OPEN_FILE_DIFF.id,
+            command: GitDiffCommands.OPEN_FILE_DIFF.id,
+            tooltip: GitDiffCommands.OPEN_FILE_DIFF.label,
+            group: ScmNavigatorMoreToolbarGroups.SCM,
+        });
+    }
+
     async showWidget(options: Git.Options.Diff): Promise<GitDiffWidget> {
         const widget = await this.widget;
         await widget.setContent(options);
@@ -109,8 +134,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         });
     }
 
-    protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
-        return new UriAwareCommandHandler(this.selectionService, handler);
+    protected newWorkspaceRootUriAwareCommandHandler(handler: UriCommandHandler<URI>): WorkspaceRootUriAwareCommandHandler {
+        return new WorkspaceRootUriAwareCommandHandler(this.workspaceService, this.selectionService, handler);
     }
-
 }

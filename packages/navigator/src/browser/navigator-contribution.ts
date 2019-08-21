@@ -21,7 +21,7 @@ import {
     OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
-import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX, Command, DisposableCollection } from '@theia/core/lib/common';
+import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX, Command, DisposableCollection, Mutable } from '@theia/core/lib/common';
 import { SHELL_TABBAR_CONTEXT_MENU } from '@theia/core/lib/browser';
 import { WorkspaceCommands, WorkspaceService, WorkspacePreferences } from '@theia/workspace/lib/browser';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget, EXPLORER_VIEW_CONTAINER_ID } from './navigator-widget';
@@ -30,7 +30,7 @@ import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
 import { FileNavigatorFilter } from './navigator-filter';
 import { WorkspaceNode } from './navigator-tree';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
-import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
 import { UriSelection } from '@theia/core/lib/common/selection';
@@ -59,6 +59,15 @@ export namespace FileNavigatorCommands {
     export const ADD_ROOT_FOLDER: Command = {
         id: 'navigator.addRootFolder'
     };
+}
+
+/**
+ * Navigator `More Actions...` toolbar item groups.
+ * Used in order to group items present in the toolbar.
+ */
+export namespace NavigatorMoreToolbarGroups {
+    export const NEW_OPEN = '1_navigator_new_open';
+    export const WORKSPACE = '2_navigator_workspace';
 }
 
 export const NAVIGATOR_CONTEXT_MENU: MenuPath = ['navigator-context-menu'];
@@ -94,6 +103,12 @@ export namespace NavigatorContextMenu {
 
 @injectable()
 export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(TabBarToolbarRegistry)
+    protected readonly tabbarToolbarRegistry: TabBarToolbarRegistry;
 
     @inject(NavigatorContextKeyService)
     protected readonly contextKeyService: NavigatorContextKeyService;
@@ -340,6 +355,45 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             tooltip: 'Collapse All',
             priority: 1,
         });
+        this.registerMoreToolbarItem({
+            id: WorkspaceCommands.NEW_FILE.id,
+            command: WorkspaceCommands.NEW_FILE.id,
+            tooltip: WorkspaceCommands.NEW_FILE.label,
+            group: NavigatorMoreToolbarGroups.NEW_OPEN,
+        });
+        this.registerMoreToolbarItem({
+            id: WorkspaceCommands.NEW_FOLDER.id,
+            command: WorkspaceCommands.NEW_FOLDER.id,
+            tooltip: WorkspaceCommands.NEW_FOLDER.label,
+            group: NavigatorMoreToolbarGroups.NEW_OPEN,
+        });
+        this.registerMoreToolbarItem({
+            id: WorkspaceCommands.ADD_FOLDER.id,
+            command: WorkspaceCommands.ADD_FOLDER.id,
+            tooltip: WorkspaceCommands.ADD_FOLDER.label,
+            group: NavigatorMoreToolbarGroups.WORKSPACE,
+        });
+    }
+
+    /**
+     * Register commands to the `More Actions...` navigator toolbar item.
+     */
+    public registerMoreToolbarItem = (item: Mutable<TabBarToolbarItem>) => {
+        const commandId = item.command;
+        const id = 'navigator.tabbar.toolbar.' + commandId;
+        const command = this.commandRegistry.getCommand(commandId);
+        this.commandRegistry.registerCommand({ id, iconClass: command && command.iconClass }, {
+            execute: (w, ...args) => w instanceof FileNavigatorWidget
+                && this.commandRegistry.executeCommand(commandId, ...args),
+            isEnabled: (w, ...args) => w instanceof FileNavigatorWidget
+                && this.commandRegistry.isEnabled(commandId, ...args),
+            isVisible: (w, ...args) => w instanceof FileNavigatorWidget
+                && this.commandRegistry.isVisible(commandId, ...args),
+            isToggled: (w, ...args) => w instanceof FileNavigatorWidget
+                && this.commandRegistry.isToggled(commandId, ...args),
+        });
+        item.command = id;
+        this.tabbarToolbarRegistry.registerItem(item);
     }
 
     /**
