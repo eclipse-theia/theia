@@ -50,8 +50,21 @@ export class HostedPluginReader implements BackendApplicationContribution {
 
             const localPath = this.pluginsIdsFiles.get(pluginId);
             if (localPath) {
-                res.sendFile(filePath, { root: localPath }, (error: Error) => {
-                    res.status(404).send(`No such file for plugin with id '${escape_html(pluginId)}'.`);
+                res.sendFile(filePath, { root: localPath }, e => {
+                    if (!e) {
+                        // the file was found and successfully transfered
+                        return;
+                    }
+                    console.error(`Could not transfer '${filePath}' file from '${pluginId}'`, e);
+                    if (res.headersSent) {
+                        // the request was already closed
+                        return;
+                    }
+                    if ('code' in e && e['code'] === 'ENOENT') {
+                        res.status(404).send(`No such file found in '${escape_html(pluginId)}' plugin.`);
+                    } else {
+                        res.status(500).send(`Failed to transfer a file from '${escape_html(pluginId)}' plugin.`);
+                    }
                 });
             } else {
                 res.status(404).send(`The plugin with id '${escape_html(pluginId)}' does not exist.`);
