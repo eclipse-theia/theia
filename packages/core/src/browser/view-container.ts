@@ -288,6 +288,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                     this.fireDidChangeTrackableWidgets();
                 }
             }),
+            this.registerDND(newPart),
             newPart.onVisibilityChanged(() => {
                 this.updateTitle();
                 this.updateCurrentPart();
@@ -296,7 +297,6 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 this.containerLayout.updateCollapsed(newPart, this.enableAnimation);
                 this.updateCurrentPart();
             }),
-            newPart.onMoveBefore(toMoveId => this.moveBefore(toMoveId, newPart.id)),
             newPart.onContextMenu(event => {
                 if (event.button === 2) {
                     event.preventDefault();
@@ -554,6 +554,61 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.lastVisibleState = undefined;
     }
 
+    protected draggingPart: ViewContainerPart | undefined;
+
+    protected registerDND(part: ViewContainerPart): Disposable {
+        part['header'].draggable = true;
+        const style = (event: DragEvent) => {
+            if (!this.draggingPart) {
+                return;
+            }
+            event.preventDefault();
+            const enclosingPartNode = ViewContainerPart.closestPart(event.target);
+            if (enclosingPartNode && enclosingPartNode !== this.draggingPart.node) {
+                enclosingPartNode.classList.add('drop-target');
+            }
+        };
+        const unstyle = (event: DragEvent) => {
+            if (!this.draggingPart) {
+                return;
+            }
+            event.preventDefault();
+            const enclosingPartNode = ViewContainerPart.closestPart(event.target);
+            if (enclosingPartNode) {
+                enclosingPartNode.classList.remove('drop-target');
+            }
+        };
+        return new DisposableCollection(
+            addEventListener(part['header'], 'dragstart', event => {
+                const { dataTransfer } = event;
+                if (dataTransfer) {
+                    this.draggingPart = part;
+                    dataTransfer.effectAllowed = 'move';
+                    dataTransfer.setData('view-container-dnd', part.id);
+                    const dragImage = document.createElement('div');
+                    dragImage.classList.add('theia-view-container-drag-image');
+                    dragImage.innerText = part.wrapped.title.label;
+                    document.body.appendChild(dragImage);
+                    dataTransfer.setDragImage(dragImage, -10, -10);
+                    setTimeout(() => document.body.removeChild(dragImage), 0);
+                }
+            }, false),
+            addEventListener(part.node, 'dragend', () => this.draggingPart = undefined, false),
+            addEventListener(part.node, 'dragover', style, false),
+            addEventListener(part.node, 'dragleave', unstyle, false),
+            addEventListener(part.node, 'drop', event => {
+                const { dataTransfer } = event;
+                if (dataTransfer) {
+                    const moveId = dataTransfer.getData('view-container-dnd');
+                    if (moveId && moveId !== part.id) {
+                        this.moveBefore(moveId, part.id);
+                    }
+                    unstyle(event);
+                }
+            }, false)
+        );
+    }
+
 }
 
 export namespace ViewContainer {
@@ -602,7 +657,6 @@ export class ViewContainerPart extends BaseWidget {
     protected readonly header: HTMLElement;
     protected readonly body: HTMLElement;
     protected readonly collapsedEmitter = new Emitter<boolean>();
-    protected readonly moveBeforeEmitter = new Emitter<string>();
     protected readonly contextMenuEmitter = new Emitter<MouseEvent>();
     protected readonly onVisibilityChangedEmitter = new Emitter<boolean>();
     readonly onVisibilityChanged = this.onVisibilityChangedEmitter.event;
@@ -612,12 +666,6 @@ export class ViewContainerPart extends BaseWidget {
     readonly onDidFocus = this.onDidFocusEmitter.event;
 
     protected _collapsed: boolean;
-    /**
-     * Self cannot be a drop target. When the drag event starts, we disable the current part as a possible drop target.
-     *
-     * This is a workaround for not being able to sniff into the `event.dataTransfer.getData` value when `dragover` due to security reasons.
-     */
-    private canBeDropTarget = true;
 
     uncollapsedSize: number | undefined;
     animatedSize: number | undefined;
@@ -650,11 +698,9 @@ export class ViewContainerPart extends BaseWidget {
         this.toDispose.pushAll([
             disposable,
             this.collapsedEmitter,
-            this.moveBeforeEmitter,
             this.contextMenuEmitter,
             this.onVisibilityChangedEmitter,
             this.onTitleChangedEmitter,
-            this.registerDND(),
             this.registerContextMenu(),
             this.onDidFocusEmitter,
             // focus event does not bubble, capture it
@@ -715,10 +761,6 @@ export class ViewContainerPart extends BaseWidget {
         return this.collapsedEmitter.event;
     }
 
-    get onMoveBefore(): Event<string> {
-        return this.moveBeforeEmitter.event;
-    }
-
     get onContextMenu(): Event<MouseEvent> {
         return this.contextMenuEmitter.event;
     }
@@ -764,55 +806,6 @@ export class ViewContainerPart extends BaseWidget {
             addEventListener(this.header, 'contextmenu', event => {
                 this.contextMenuEmitter.fire(event);
             })
-        );
-    }
-
-    protected registerDND(): Disposable {
-        this.header.draggable = true;
-        const style = (event: DragEvent) => {
-            event.preventDefault();
-            const part = ViewContainerPart.closestPart(event.target);
-            if (part instanceof HTMLElement) {
-                if (this.canBeDropTarget) {
-                    part.classList.add('drop-target');
-                }
-            }
-        };
-        const unstyle = (event: DragEvent) => {
-            event.preventDefault();
-            const part = ViewContainerPart.closestPart(event.target);
-            if (part instanceof HTMLElement) {
-                part.classList.remove('drop-target');
-            }
-        };
-        return new DisposableCollection(
-            addEventListener(this.header, 'dragstart', event => {
-                const { dataTransfer } = event;
-                if (dataTransfer) {
-                    this.canBeDropTarget = false;
-                    dataTransfer.effectAllowed = 'move';
-                    dataTransfer.setData('view-container-dnd', this.id);
-                    const dragImage = document.createElement('div');
-                    dragImage.classList.add('theia-view-container-drag-image');
-                    dragImage.innerText = this.wrapped.title.label;
-                    document.body.appendChild(dragImage);
-                    dataTransfer.setDragImage(dragImage, -10, -10);
-                    setTimeout(() => document.body.removeChild(dragImage), 0);
-                }
-            }, false),
-            addEventListener(this.node, 'dragend', () => this.canBeDropTarget = true, false),
-            addEventListener(this.node, 'dragover', style, false),
-            addEventListener(this.node, 'dragleave', unstyle, false),
-            addEventListener(this.node, 'drop', event => {
-                const { dataTransfer } = event;
-                if (dataTransfer) {
-                    const moveId = dataTransfer.getData('view-container-dnd');
-                    if (moveId && moveId !== this.id) {
-                        this.moveBeforeEmitter.fire(moveId);
-                    }
-                    unstyle(event);
-                }
-            }, false)
         );
     }
 

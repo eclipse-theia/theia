@@ -89,8 +89,8 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
             return;
         }
         this.refreshAffectedNodes([
-            move.sourceUri.parent,
-            move.targetUri.parent
+            move.sourceUri,
+            move.targetUri
         ]);
     }
 
