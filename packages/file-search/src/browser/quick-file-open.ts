@@ -329,7 +329,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
             label: this.labelProvider.getName(uri),
             iconClass: await this.labelProvider.getIcon(uri) + ' file-icon',
             description,
-            tooltip: uri.path.toString(),
+            tooltip: this.labelProvider.getLongName(uri),
             uri: uri,
             hidden: false,
             run: this.getRunFunction(uri)

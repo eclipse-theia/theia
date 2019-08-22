@@ -20,9 +20,10 @@ import { rgPath } from 'vscode-ripgrep';
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { CancellationTokenSource, CancellationToken, ILogger } from '@theia/core';
+import { CancellationTokenSource, CancellationToken, ILogger, isWindows } from '@theia/core';
 import { RawProcessFactory } from '@theia/process/lib/node';
 import { FileSearchService } from '../common/file-search-service';
+import * as path from 'path';
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
@@ -70,13 +71,21 @@ export class FileSearchServiceImpl implements FileSearchService {
 
         const exactMatches = new Set<string>();
         const fuzzyMatches = new Set<string>();
+
+        if (isWindows) {
+            // Allow users on Windows to search for paths using either forwards or backwards slash
+            searchPattern = searchPattern.replace(/\//g, '\\');
+        }
+
         const stringPattern = searchPattern.toLocaleLowerCase();
         await Promise.all(Object.keys(roots).map(async root => {
             try {
                 const rootUri = new URI(root);
+                const rootPath = FileUri.fsPath(rootUri);
                 const rootOptions = roots[root];
                 await this.doFind(rootUri, rootOptions, candidate => {
-                    const fileUri = rootUri.resolve(candidate).toString();
+                    // Convert OS-native candidate path to a file URI string
+                    const fileUri = FileUri.create(path.resolve(rootPath, candidate)).toString();
                     if (exactMatches.has(fileUri) || fuzzyMatches.has(fileUri)) {
                         return;
                     }

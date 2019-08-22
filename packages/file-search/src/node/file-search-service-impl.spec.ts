@@ -54,7 +54,7 @@ describe('search-service', function () {
         expect(testFile).to.be.not.undefined;
     });
 
-    it.skip('shall respect nested .gitignore', async () => {
+    it('shall respect nested .gitignore', async () => {
         const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources')).toString();
         const matches = await service.find('foo', { rootUris: [rootUri], fuzzyMatch: false });
 
