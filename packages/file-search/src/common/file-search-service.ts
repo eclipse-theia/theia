@@ -25,7 +25,7 @@ export interface FileSearchService {
 
     /**
      * finds files by a given search pattern.
-     * @return the matching paths, relative to the given `options.rootUri`.
+     * @return the matching file uris
      */
     find(searchPattern: string, options: FileSearchService.Options, cancellationToken?: CancellationToken): Promise<string[]>;
 
