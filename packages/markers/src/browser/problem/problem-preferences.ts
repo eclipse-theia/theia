@@ -20,7 +20,12 @@ import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceCo
 export const ProblemConfigSchema: PreferenceSchema = {
     'type': 'object',
     'properties': {
-        'problem.decorations.tabbar.enabled': {
+        'problems.decorations.enabled': {
+            'type': 'boolean',
+            'description': 'Show problem decorators (diagnostic markers) in tree widgets.',
+            'default': true,
+        },
+        'problems.decorations.tabbar.enabled': {
             'type': 'boolean',
             'description': 'Show problem decorators (diagnostic markers) in the tab bars.',
             'default': true
@@ -29,7 +34,8 @@ export const ProblemConfigSchema: PreferenceSchema = {
 };
 
 export interface ProblemConfiguration {
-    'problem.decorations.tabbar.enabled': boolean
+    'problems.decorations.enabled': boolean,
+    'problems.decorations.tabbar.enabled': boolean
 }
 
 export const ProblemPreferences = Symbol('ProblemPreferences');
