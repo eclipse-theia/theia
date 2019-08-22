@@ -30,7 +30,7 @@
 |----------------------------------------------------------------------------*/
 
 
-.p-MenuBar {
+.p-Widget.p-MenuBar {
   padding-left: 5px;
   background: var(--theia-menu-color0);
   color: var(--theia-ui-bar-font-color1);
