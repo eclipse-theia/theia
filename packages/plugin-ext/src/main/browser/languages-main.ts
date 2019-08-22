@@ -113,7 +113,7 @@ export class LanguagesMainImpl implements LanguagesMain {
                         suggestions: result.completions,
                         incomplete: result.incomplete,
                         // tslint:disable-next-line:no-any
-                        dispose: () => this.proxy.$releaseCompletionItems(handle, (<any>result)._id)
+                        dispose: () => this.proxy.$releaseCompletionItems(handle, result.id!)
                     };
                 }),
             resolveCompletionItem: supportsResolveDetails
