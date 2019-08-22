@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { notEmpty } from '@theia/core/lib/common/objects';
@@ -25,9 +25,14 @@ import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree
 import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
+import { ProblemPreferences, ProblemConfiguration } from './problem-preferences';
+import { PreferenceChangeEvent } from '@theia/core/lib/browser';
 
 @injectable()
 export class ProblemDecorator implements TreeDecorator {
+
+    @inject(ProblemPreferences)
+    protected problemPreferences: ProblemPreferences;
 
     readonly id = 'theia-problem-decorator';
 
@@ -36,6 +41,16 @@ export class ProblemDecorator implements TreeDecorator {
     constructor(@inject(ProblemManager) protected readonly problemManager: ProblemManager) {
         this.emitter = new Emitter();
         this.problemManager.onDidChangeMarkers(() => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree)));
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.problemPreferences.onPreferenceChanged((event: PreferenceChangeEvent<ProblemConfiguration>) => {
+            const { preferenceName } = event;
+            if (preferenceName === 'problems.decorations.enabled') {
+                this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
+            }
+        });
     }
 
     async decorations(tree: Tree): Promise<Map<string, TreeDecoration.Data>> {
@@ -51,8 +66,11 @@ export class ProblemDecorator implements TreeDecorator {
     }
 
     protected collectDecorators(tree: Tree): Map<string, TreeDecoration.Data> {
+
         const result = new Map();
-        if (tree.root === undefined) {
+
+        // If the tree root is undefined or the preference for the decorations is disabled, return an empty result map.
+        if (tree.root === undefined || !this.problemPreferences['problems.decorations.enabled']) {
             return result;
         }
         const markers = this.appendContainerMarkers(tree, this.collectMarkers(tree));

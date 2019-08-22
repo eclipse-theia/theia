@@ -68,7 +68,7 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
      */
     protected async handlePreferenceChange(event: PreferenceChangeEvent<ProblemConfiguration>): Promise<void> {
         const { preferenceName } = event;
-        if (preferenceName === 'problem.decorations.tabbar.enabled') {
+        if (preferenceName === 'problems.decorations.tabbar.enabled') {
             this.fireDidChangeDecorations();
         }
     }
@@ -79,7 +79,7 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
      */
     protected collectDecorators(titles: Title<Widget>[]): Map<string, WidgetDecoration.Data> {
         const result: Map<string, Marker<Diagnostic>> = new Map();
-        if (this.preferences['problem.decorations.tabbar.enabled']) {
+        if (this.preferences['problems.decorations.tabbar.enabled']) {
             const markers = this.groupMarkersByURI(this.collectMarkers());
             for (const title of titles) {
                 // Ensure `title.caption` does not contain illegal characters for URI.
