@@ -28,6 +28,7 @@ import { TaskService } from './task-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskConfiguration, TaskWatcher } from '../common';
+import { EditorManager } from '@theia/editor/lib/browser';
 
 export namespace TaskCommands {
     const TASK_CATEGORY = 'Task';
@@ -91,6 +92,9 @@ const TASKS_STORAGE_KEY = 'tasks';
 export class TaskFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution, FrontendApplicationContribution, QuickOpenContribution {
     @inject(QuickOpenTask)
     protected readonly quickOpenTask: QuickOpenTask;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
 
     @inject(FrontendApplication)
     protected readonly app: FrontendApplication;
@@ -222,7 +226,8 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         registry.registerCommand(
             TaskCommands.TASK_RUN_TEXT,
             {
-                isEnabled: () => true,
+                isVisible: () => !!this.editorManager.currentEditor,
+                isEnabled: () => !!this.editorManager.currentEditor,
                 execute: () => this.taskService.runSelectedText()
             }
         );
