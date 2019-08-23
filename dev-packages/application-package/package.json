@@ -28,10 +28,12 @@
     "test": "theiaext test"
   },
   "dependencies": {
+    "@types/fs-extra": "^4.0.2",
     "@types/request": "^2.0.3",
     "@types/semver": "^5.4.0",
     "@types/write-json-file": "^2.2.1",
     "changes-stream": "^2.2.0",
+    "fs-extra": "^4.0.2",
     "is-electron": "^2.1.0",
     "request": "^2.82.0",
     "semver": "^5.4.1",
