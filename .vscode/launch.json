@@ -151,6 +151,27 @@
       "outFiles": [
         "${workspaceFolder}/../.js"
       ]
+    },
+    {
+      "name": "Launch Theia Tests",
+      "type": "node",
+      "request": "launch",
+      "args": [
+        "${workspaceFolder}/examples/browser/src-gen/backend/main.js",
+        "${workspaceFolder}/packages/theia-tests/testWorkspace",
+        "--port",
+        "3030",
+        "--hostname",
+        "0.0.0.0"
+      ],
+      "env": {
+        "THEIA_DEFAULT_PLUGINS": "local-dir:${workspaceFolder}/plugins"
+      },
+      "stopOnEntry": false,
+      "sourceMaps": true,
+      "outFiles": [
+        "${workspaceFolder}/../.js"
+      ]
     }
   ]
 }

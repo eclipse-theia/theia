@@ -129,7 +129,10 @@
       ],
       "@theia/task/lib/*": [
         "packages/task/src/*"
-      ]
+      ],
+      "@theia/theia-tests/lib/*": [
+        "packages/theia-tests/src/*"
+      ],
     },
     "plugins": [
       {
