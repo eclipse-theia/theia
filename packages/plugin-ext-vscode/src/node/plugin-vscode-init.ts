@@ -31,8 +31,13 @@ let defaultApi: typeof theia;
 let isLoadOverride = false;
 let pluginApiFactory: PluginAPIFactory;
 
+export enum ExtensionKind {
+    UI = 1,
+    Workspace = 2
+}
+
 export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIFactory, plugin: Plugin) => {
-    const vscode = apiFactory(plugin);
+    const vscode = Object.assign(apiFactory(plugin), { ExtensionKind });
 
     // replace command API as it will send only the ID as a string parameter
     const registerCommand = vscode.commands.registerCommand;
@@ -78,10 +83,10 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
     // use Theia plugin api instead vscode extensions
     (<any>vscode).extensions = {
         get all(): any[] {
-            return vscode.plugins.all.map(p => withExtensionPath(p));
+            return vscode.plugins.all.map(p => asExtension(p));
         },
         getExtension(pluginId: string): any | undefined {
-            return withExtensionPath(vscode.plugins.getPlugin(pluginId));
+            return asExtension(vscode.plugins.getPlugin(pluginId));
         },
         get onDidChange(): theia.Event<void> {
             return vscode.plugins.onDidChange;
@@ -133,10 +138,14 @@ function findPlugin(filePath: string): Plugin | undefined {
     return plugins.find(plugin => filePath.startsWith(plugin.pluginFolder));
 }
 
-function withExtensionPath(plugin: any | undefined): any | undefined {
-    if (plugin && plugin.pluginPath) {
+function asExtension(plugin: any | undefined): any | undefined {
+    if (!plugin) {
+        return plugin;
+    }
+    if (plugin.pluginPath) {
         plugin.extensionPath = plugin.pluginPath;
     }
-
+    // stub as a local VS Code extension (not running on a remote workspace)
+    plugin.extensionKind = ExtensionKind.UI;
     return plugin;
 }
