@@ -108,23 +108,20 @@ export class PluginDeployerImpl implements PluginDeployer {
         await this.deployMultipleEntries([pluginEntry]);
     }
 
-    protected async deployMultipleEntries(pluginEntries: string[]): Promise<void> {
+    protected async deployMultipleEntries(pluginEntries: ReadonlyArray<string>): Promise<void> {
+        const visited = new Set<string>();
+        const pluginsToDeploy = new Map<string, PluginDeployerEntry>();
 
-        const deployedPlugins = new Set<string>();
-
-        /**
-         * Iterate over all the plugins, resolving them one at a time and adding
-         * in extension dependencies
-         */
-        const futurePlugins = [];
-        while (pluginEntries.length !== 0) {
-            const currentPlugin = pluginEntries.pop() as string;
-            if (deployedPlugins.has(currentPlugin)) {
+        const queue = [...pluginEntries];
+        while (queue.length) {
+            const current = queue.shift()!;
+            if (visited.has(current)) {
                 continue;
             }
+            visited.add(current);
 
             // resolve plugins
-            const pluginDeployerEntries = await this.resolvePlugin(currentPlugin);
+            const pluginDeployerEntries = await this.resolvePlugin(current);
 
             // now that we have plugins check if we have File Handler for them
             await this.applyFileHandlers(pluginDeployerEntries);
@@ -132,23 +129,18 @@ export class PluginDeployerImpl implements PluginDeployer {
             // ok now ask for directory handlers
             await this.applyDirectoryFileHandlers(pluginDeployerEntries);
 
-            // add current plugin deployer entries first because dependencies to be installed first
-            futurePlugins.unshift(...pluginDeployerEntries);
-
-            deployedPlugins.add(currentPlugin);
-
-            // gather all dependencies needed for current plugin
             for (const deployerEntry of pluginDeployerEntries) {
-                const deployDependencies = await this.pluginDeployerHandler.getPluginDependencies(deployerEntry);
-                pluginEntries.push(...deployDependencies);
+                const metadata = await this.pluginDeployerHandler.getPluginMetadata(deployerEntry);
+                if (metadata && !pluginsToDeploy.has(metadata.model.id)) {
+                    pluginsToDeploy.set(metadata.model.id, deployerEntry);
+                    if (metadata.model.extensionDependencies) {
+                        queue.push(...metadata.model.extensionDependencies);
+                    }
+                }
             }
-
         }
 
-        await this.deployPlugins(futurePlugins);
-
-        return Promise.resolve();
-
+        await this.deployPlugins([...pluginsToDeploy.values()]);
     }
 
     /**

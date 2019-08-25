@@ -611,7 +611,7 @@ export interface PluginDeployerHandler {
     deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
     deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
 
-    getPluginDependencies(pluginToBeInstalled: PluginDeployerEntry): Promise<string[]>
+    getPluginMetadata(pluginToBeInstalled: PluginDeployerEntry): Promise<PluginMetadata | undefined>
 }
 
 export const HostedPluginServer = Symbol('HostedPluginServer');
