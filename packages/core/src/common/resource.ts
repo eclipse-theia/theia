@@ -167,10 +167,11 @@ export class InMemoryResources implements ResourceResolver {
         return resource;
     }
 
-    resolve(uri: URI): MaybePromise<Resource> {
-        if (!this.resources.has(uri.toString())) {
-            throw new Error('Resource does not exist.');
+    resolve(uri: URI): Resource {
+        const uriString = uri.toString();
+        if (!this.resources.has(uriString)) {
+            throw new Error(`In memory '${uriString}' resource does not exist.`);
         }
-        return this.resources.get(uri.toString())!;
+        return this.resources.get(uriString)!;
     }
 }
