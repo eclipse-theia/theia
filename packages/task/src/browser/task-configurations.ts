@@ -329,11 +329,15 @@ export class TaskConfigurations implements Disposable {
                     if (this.rawTaskConfigurations.has(rootFolderUri)) {
                         this.rawTaskConfigurations.delete(rootFolderUri);
                     }
-                    const tasks = rawTasks['tasks'].map((t: TaskCustomization | TaskConfiguration) =>
-                        Object.assign(t, { _source: t.source || this.getSourceFolderFromConfigUri(uri) })
-                    );
-                    this.rawTaskConfigurations.set(rootFolderUri, tasks);
-                    return tasks;
+                    if (rawTasks && rawTasks['tasks']) {
+                        const tasks = rawTasks['tasks'].map((t: TaskCustomization | TaskConfiguration) =>
+                            Object.assign(t, { _source: t.source || this.getSourceFolderFromConfigUri(uri) })
+                        );
+                        this.rawTaskConfigurations.set(rootFolderUri, tasks);
+                        return tasks;
+                    } else {
+                        return [];
+                    }
                 }
             } catch (err) {
                 console.error(`Error(s) reading config file: ${uri}`);
