@@ -286,6 +286,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         return this.registry.has(pluginId);
     }
 
+    isActive(pluginId: string): boolean {
+        return this.activatedPlugins.has(pluginId);
+    }
+
     activatePlugin(pluginId: string): PromiseLike<void> {
         if (this.pluginActivationPromises.has(pluginId)) {
             return this.pluginActivationPromises.get(pluginId)!.promise;

@@ -117,6 +117,7 @@ export interface PluginManager {
     getPluginById(pluginId: string): Plugin | undefined;
     getPluginExport(pluginId: string): PluginAPI | undefined;
     isRunning(pluginId: string): boolean;
+    isActive(pluginId: string): boolean;
     activatePlugin(pluginId: string): PromiseLike<void>;
     onDidChange: theia.Event<void>;
 }
