@@ -831,7 +831,6 @@ export function createAPIFactory(
 class Plugin<T> implements theia.Plugin<T> {
     id: string;
     pluginPath: string;
-    isActive: boolean;
     // tslint:disable-next-line:no-any
     packageJSON: any;
     pluginType: theia.PluginType;
@@ -839,8 +838,11 @@ class Plugin<T> implements theia.Plugin<T> {
         this.id = plugin.model.id;
         this.pluginPath = plugin.pluginFolder;
         this.packageJSON = plugin.rawModel;
-        this.isActive = true;
         this.pluginType = plugin.model.entryPoint.frontend ? 'frontend' : 'backend';
+    }
+
+    get isActive(): boolean {
+        return this.pluginManager.isActive(this.id);
     }
 
     get exports(): T {
