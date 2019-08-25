@@ -115,12 +115,18 @@ export class TreeViewsMainImpl implements TreeViewsMain {
             }
             this.contextKeys.view.set(treeViewId);
 
+            this.proxy.$setSelection(treeViewId, event.map((node: TreeViewNode) => node.id));
+
             // execute TreeItem.command if present
             const treeNode = event[0] as TreeViewNode;
             if (treeNode && treeNode.command) {
                 this.commands.executeCommand(treeNode.command.id, ...(treeNode.command.arguments || []));
             }
         });
+
+        const updateVisible = () => this.proxy.$setVisible(treeViewId, treeViewWidget.isVisible);
+        updateVisible();
+        treeViewWidget.onDidChangeVisibility(() => updateVisible());
     }
 
 }

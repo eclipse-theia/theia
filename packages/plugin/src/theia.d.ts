@@ -3714,6 +3714,30 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * The event that is fired when there is a change in [tree view's selection](#TreeView.selection)
+     */
+    export interface TreeViewSelectionChangeEvent<T> {
+
+        /**
+         * Selected elements.
+         */
+        readonly selection: T[];
+
+    }
+
+    /**
+     * The event that is fired when there is a change in [tree view's visibility](#TreeView.visible)
+     */
+    export interface TreeViewVisibilityChangeEvent {
+
+        /**
+         * `true` if the [tree view](#TreeView) is visible otherwise `false`.
+         */
+        readonly visible: boolean;
+
+    }
+
+    /**
      * Represents a Tree view
      */
     export interface TreeView<T> extends Disposable {
@@ -3732,6 +3756,21 @@ declare module '@theia/plugin' {
          * Currently selected elements.
          */
         readonly selection: ReadonlyArray<T>;
+
+        /**
+         * Event that is fired when the [selection](#TreeView.selection) has changed
+         */
+        readonly onDidChangeSelection: Event<TreeViewSelectionChangeEvent<T>>;
+
+        /**
+         * `true` if the [tree view](#TreeView) is visible otherwise `false`.
+         */
+        readonly visible: boolean;
+
+        /**
+         * Event that is fired when [visibility](#TreeView.visible) has changed
+         */
+        readonly onDidChangeVisibility: Event<TreeViewVisibilityChangeEvent>;
 
         /**
          * Reveal an element. By default revealed element is selected.
@@ -4113,11 +4152,11 @@ declare module '@theia/plugin' {
     }
 
     /**
-	 * A type that filesystem providers should use to signal errors.
-	 *
-	 * This class has factory methods for common error-cases, like `EntryNotFound` when
-	 * a file or folder doesn't exist, use them like so: `throw vscode.FileSystemError.EntryNotFound(someUri);`
-	 */
+     * A type that filesystem providers should use to signal errors.
+     *
+     * This class has factory methods for common error-cases, like `EntryNotFound` when
+     * a file or folder doesn't exist, use them like so: `throw vscode.FileSystemError.EntryNotFound(someUri);`
+     */
     export class FileSystemError extends Error {
 
         /**
@@ -7374,9 +7413,9 @@ declare module '@theia/plugin' {
         resolveDebugConfiguration?(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration>;
     }
 
-	/**
-	 * A Debug Adapter Tracker is a means to track the communication between VS Code and a Debug Adapter.
-	 */
+    /**
+     * A Debug Adapter Tracker is a means to track the communication between VS Code and a Debug Adapter.
+     */
     export interface DebugAdapterTracker {
         /**
          * A session with the debug adapter is about to be started.
@@ -7448,9 +7487,9 @@ declare module '@theia/plugin' {
         readonly options?: DebugAdapterExecutableOptions;
     }
 
-	/**
-	 * Options for a debug adapter executable.
-	 */
+    /**
+     * Options for a debug adapter executable.
+     */
     export interface DebugAdapterExecutableOptions {
 
         /**
@@ -8327,20 +8366,20 @@ declare module '@theia/plugin' {
         Expanded = 1
     }
 
-	/**
-	 * Comment mode of a [comment](#Comment)
-	 */
-	export enum CommentMode {
-		/**
-		 * Displays the comment editor
-		 */
-		Editing = 0,
+    /**
+     * Comment mode of a [comment](#Comment)
+     */
+    export enum CommentMode {
+        /**
+         * Displays the comment editor
+         */
+        Editing = 0,
 
-		/**
-		 * Displays the preview of the comment
-		 */
-		Preview = 1
-	}
+        /**
+         * Displays the preview of the comment
+         */
+        Preview = 1
+    }
 
     /**
      * A collection of [comments](#Comment) representing a conversation at a particular range in a document.
@@ -8531,81 +8570,81 @@ declare module '@theia/plugin' {
         dispose(): void;
     }
 
-	/**
-	 * Author information of a [comment](#Comment)
-	 */
-	export interface CommentAuthorInformation {
-		/**
-		 * The display name of the author of the comment
-		 */
-		name: string;
+    /**
+     * Author information of a [comment](#Comment)
+     */
+    export interface CommentAuthorInformation {
+        /**
+         * The display name of the author of the comment
+         */
+        name: string;
 
-		/**
-		 * The optional icon path for the author
-		 */
-		iconPath?: Uri;
-	}
+        /**
+         * The optional icon path for the author
+         */
+        iconPath?: Uri;
+    }
 
-	/**
-	 * Reactions of a [comment](#Comment)
-	 */
-	export interface CommentReaction {
-		/**
-		 * The human-readable label for the reaction
-		 */
-		readonly label: string;
+    /**
+     * Reactions of a [comment](#Comment)
+     */
+    export interface CommentReaction {
+        /**
+         * The human-readable label for the reaction
+         */
+        readonly label: string;
 
-		/**
-		 * Icon for the reaction shown in UI.
-		 */
-		readonly iconPath: string | Uri;
+        /**
+         * Icon for the reaction shown in UI.
+         */
+        readonly iconPath: string | Uri;
 
-		/**
-		 * The number of users who have reacted to this reaction
-		 */
-		readonly count: number;
+        /**
+         * The number of users who have reacted to this reaction
+         */
+        readonly count: number;
 
-		/**
-		 * Whether the [author](CommentAuthorInformation) of the comment has reacted to this reaction
-		 */
-		readonly authorHasReacted: boolean;
-	}
+        /**
+         * Whether the [author](CommentAuthorInformation) of the comment has reacted to this reaction
+         */
+        readonly authorHasReacted: boolean;
+    }
 
     /**
      * A comment is displayed within the editor or the Comments Panel, depending on how it is provided.
      */
     export interface Comment {
-		/**
-		 * The human-readable comment body
-		 */
+        /**
+         * The human-readable comment body
+         */
         body: string | MarkdownString;
 
-		/**
-		 * [Comment mode](#CommentMode) of the comment
-		 */
+        /**
+         * [Comment mode](#CommentMode) of the comment
+         */
         mode: CommentMode;
 
-		/**
-		 * The [author information](#CommentAuthorInformation) of the comment
-		 */
+        /**
+         * The [author information](#CommentAuthorInformation) of the comment
+         */
         author: CommentAuthorInformation;
 
-		/**
-		 * Context value of the comment. This can be used to contribute comment specific actions.
-		 * For example, a comment is given a context value as `editable`. When contributing actions to `comments/comment/title`
-		 * using `menus` extension point, you can specify context value for key `comment` in `when` expression like `comment == editable`.
-		 */
+        /**
+         * Context value of the comment. This can be used to contribute comment specific actions.
+         * For example, a comment is given a context value as `editable`. When contributing actions to `comments/comment/title`
+         * using `menus` extension point, you can specify context value for key `comment` in `when` expression like `comment == editable`.
+         */
         contextValue?: string;
 
-		/**
-		 * Optional reactions of the [comment](#Comment)
-		 */
+        /**
+         * Optional reactions of the [comment](#Comment)
+         */
         reactions?: CommentReaction[];
 
-		/**
-		 * Optional label describing the [Comment](#Comment)
-		 * Label will be rendered next to authorName if exists.
-		 */
+        /**
+         * Optional label describing the [Comment](#Comment)
+         * Label will be rendered next to authorName if exists.
+         */
         label?: string;
     }
 

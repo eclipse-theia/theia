@@ -37,7 +37,9 @@ import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/com
 import * as React from 'react';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ViewContextKeyService } from './view-context-key-service';
+import { Widget } from '@theia/core/lib/browser/widgets/widget';
 import { CommandRegistry } from '@theia/core/lib/common/command';
+import { Emitter } from '@theia/core/lib/common/event';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { View } from '../../../common/plugin-protocol';
 
@@ -206,12 +208,16 @@ export class TreeViewWidget extends TreeWidget {
     @inject(PluginTreeModel)
     readonly model: PluginTreeModel;
 
+    protected readonly onDidChangeVisibilityEmitter = new Emitter<boolean>();
+    readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
+
     @postConstruct()
     protected init(): void {
         super.init();
         this.id = this.identifier.id;
         this.addClass('theia-tree-view');
         this.node.style.height = '100%';
+        this.toDispose.push(this.onDidChangeVisibilityEmitter);
     }
 
     protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
@@ -316,6 +322,20 @@ export class TreeViewWidget extends TreeWidget {
 
     protected toContextMenuArgs(node: SelectableTreeNode): [TreeViewSelection] {
         return [this.toTreeViewSelection(node)];
+    }
+
+    setFlag(flag: Widget.Flag): void {
+        super.setFlag(flag);
+        if (flag === Widget.Flag.IsVisible) {
+            this.onDidChangeVisibilityEmitter.fire(this.isVisible);
+        }
+    }
+
+    clearFlag(flag: Widget.Flag): void {
+        super.clearFlag(flag);
+        if (flag === Widget.Flag.IsVisible) {
+            this.onDidChangeVisibilityEmitter.fire(this.isVisible);
+        }
     }
 
 }
