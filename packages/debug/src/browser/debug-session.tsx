@@ -542,7 +542,12 @@ export class DebugSession implements CompositeTreeElement {
                     sourceModified,
                     breakpoints: enabled.map(({ origin }) => origin.raw)
                 });
-                response.body.breakpoints.map((raw, index) => enabled[index].update({ raw }));
+                response.body.breakpoints.map((raw, index) => {
+                    // node debug adapter returns more breakpoints sometimes
+                    if (enabled[index]) {
+                        enabled[index].update({ raw });
+                    }
+                });
             } catch (error) {
                 // could be error or promise rejection of DebugProtocol.SetBreakpointsResponse
                 if (error instanceof Error) {
