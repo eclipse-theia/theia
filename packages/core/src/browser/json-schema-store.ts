@@ -14,12 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import debounce = require('lodash.debounce');
+
 import { injectable, inject } from 'inversify';
 import { InMemoryResources } from '../common/resource';
-import { Disposable } from '../common/disposable';
+import { Disposable, DisposableCollection } from '../common/disposable';
 import { Emitter } from '../common/event';
-
-import debounce = require('lodash.debounce');
+import URI from '../common/uri';
 
 export interface JsonSchemaConfiguration {
     url: string
@@ -28,9 +29,11 @@ export interface JsonSchemaConfiguration {
 
 @injectable()
 export class JsonSchemaStore {
-    @inject(InMemoryResources) resources: InMemoryResources;
 
-    private _schemas: JsonSchemaConfiguration[] = [];
+    @inject(InMemoryResources)
+    protected readonly inMemoryResources: InMemoryResources;
+
+    private readonly schemas: JsonSchemaConfiguration[] = [];
 
     protected readonly onSchemasChangedEmitter = new Emitter<void>();
     readonly onSchemasChanged = this.onSchemasChangedEmitter.event;
@@ -40,19 +43,28 @@ export class JsonSchemaStore {
     }, 500);
 
     registerSchema(config: JsonSchemaConfiguration): Disposable {
-        this._schemas.push(config);
-        this.notifyChanged();
-        return Disposable.create(() => {
-            const idx = this._schemas.indexOf(config);
+        const toDispose = new DisposableCollection();
+        const uri = new URI(config.url);
+        if (uri.scheme === 'vscode') {
+            const resource = this.inMemoryResources.resolve(new URI(config.url));
+            if (resource && resource.onDidChangeContents) {
+                toDispose.push(resource.onDidChangeContents(() => this.notifyChanged()));
+            }
+        }
+        this.schemas.push(config);
+        toDispose.push(Disposable.create(() => {
+            const idx = this.schemas.indexOf(config);
             if (idx > -1) {
-                this._schemas.splice(idx, 1);
+                this.schemas.splice(idx, 1);
                 this.notifyChanged();
             }
-        });
+        }));
+        this.notifyChanged();
+        return toDispose;
     }
 
     getJsonSchemaConfigurations(): JsonSchemaConfiguration[] {
-        return [ ...this._schemas];
+        return [...this.schemas];
     }
 
 }
