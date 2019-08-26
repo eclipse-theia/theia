@@ -371,6 +371,7 @@ export function createAPIFactory(
                 return decorationsExt.registerDecorationProvider(provider);
             },
             registerUriHandler(handler: theia.UriHandler): theia.Disposable {
+                // TODO ?
                 return new Disposable(() => { });
             },
             createInputBox(): theia.InputBox {
