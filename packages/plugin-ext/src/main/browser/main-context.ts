@@ -61,7 +61,6 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, preferenceRegistryMain);
 
     /* tslint:disable */
-    new WindowStateMain(rpc);
     new EditorsAndDocumentsMain(rpc, container);
     /* tslint:enable */
 
@@ -111,4 +110,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const decorationsMain = new DecorationsMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.DECORATIONS_MAIN, decorationsMain);
+
+    const windowMain = new WindowStateMain(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.WINDOW_MAIN, windowMain);
 }
