@@ -14,15 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { WindowStateExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import URI from 'vscode-uri';
+import { interfaces } from 'inversify';
+import { WindowStateExt, MAIN_RPC_CONTEXT, WindowMain } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
+import { UriComponents } from '../../common/uri-components';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 
-export class WindowStateMain {
+export class WindowStateMain implements WindowMain {
 
-    private proxy: WindowStateExt;
+    private readonly proxy: WindowStateExt;
 
-    constructor(rpc: RPCProtocol) {
+    private readonly windowService: WindowService;
+
+    constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT);
+        this.windowService = container.get(WindowService);
 
         window.addEventListener('focus', () => this.onFocusChanged(true));
         window.addEventListener('blur', () => this.onFocusChanged(false));
@@ -30,6 +37,17 @@ export class WindowStateMain {
 
     private onFocusChanged(focused: boolean): void {
         this.proxy.$onWindowStateChanged(focused);
+    }
+
+    async $openUri(uriComponent: UriComponents): Promise<boolean> {
+        const uri = URI.revive(uriComponent);
+        const url = encodeURI(uri.toString(true));
+        try {
+            this.windowService.openNewWindow(url, { external: true });
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
 }

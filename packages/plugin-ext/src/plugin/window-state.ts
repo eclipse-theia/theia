@@ -14,9 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import URI from 'vscode-uri';
 import { WindowState } from '@theia/plugin';
-import { WindowStateExt } from '../common/plugin-api-rpc';
+import { WindowStateExt, WindowMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { Event, Emitter } from '@theia/core/lib/common/event';
+import { RPCProtocol } from '../common/rpc-protocol';
 
 export class WindowStateExtImpl implements WindowStateExt {
 
@@ -25,7 +27,10 @@ export class WindowStateExtImpl implements WindowStateExt {
     private windowStateChangedEmitter = new Emitter<WindowState>();
     public readonly onDidChangeWindowState: Event<WindowState> = this.windowStateChangedEmitter.event;
 
-    constructor() {
+    private readonly proxy: WindowMain;
+
+    constructor(rpc: RPCProtocol) {
+        this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.WINDOW_MAIN);
         this.windowStateCached = { focused: true }; // supposed tab is active on start
     }
 
@@ -41,6 +46,10 @@ export class WindowStateExtImpl implements WindowStateExt {
 
         this.windowStateCached = state;
         this.windowStateChangedEmitter.fire(state);
+    }
+
+    openUri(uri: URI): Promise<boolean> {
+        return this.proxy.$openUri(uri);
     }
 
 }

@@ -533,6 +533,10 @@ export enum TreeViewItemCollapsibleState {
     Expanded = 2
 }
 
+export interface WindowMain {
+    $openUri(uri: UriComponents): Promise<boolean>;
+}
+
 export interface WindowStateExt {
     $onWindowStateChanged(focus: boolean): void;
 }
@@ -1269,7 +1273,8 @@ export const PLUGIN_RPC_CONTEXT = {
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
     FILE_SYSTEM_MAIN: createProxyIdentifier<FileSystemMain>('FileSystemMain'),
     SCM_MAIN: createProxyIdentifier<ScmMain>('ScmMain'),
-    DECORATIONS_MAIN: createProxyIdentifier<DecorationsMain>('DecorationsMain')
+    DECORATIONS_MAIN: createProxyIdentifier<DecorationsMain>('DecorationsMain'),
+    WINDOW_MAIN: createProxyIdentifier<WindowMain>('WindowMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
