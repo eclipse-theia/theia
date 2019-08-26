@@ -120,6 +120,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     @postConstruct()
     protected init(): void {
         this.shell.currentChanged.connect(() => this.updateCurrentTerminal());
+        this.shell.currentChanged.disconnect(() => this.updateCurrentTerminal());
         this.widgetManager.onDidCreateWidget(({ widget }) => {
             if (widget instanceof TerminalWidget) {
                 this.updateCurrentTerminal();

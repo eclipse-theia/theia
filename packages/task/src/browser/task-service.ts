@@ -438,16 +438,17 @@ export class TaskService implements TaskConfigurationClient {
         const endLine = this.editorManager.currentEditor.editor.selection.end.line;
         const endCharacter = this.editorManager.currentEditor.editor.selection.end.character;
         let selectedRange: Range = Range.create(startLine, startCharacter, endLine, endCharacter);
-        // if no text is selected, default to selecting entire line
+        // If no text is currently selected, default to selecting the entire line.
         if (startLine === endLine && startCharacter === endCharacter) {
             selectedRange = Range.create(startLine, 0, endLine + 1, 0);
         }
         const selectedText: string = this.editorManager.currentEditor.editor.document.getText(selectedRange).trimRight() + '\n';
+        // Get the current terminal if it exists, else create a new one.
         let terminal = this.terminalService.currentTerminal;
         if (!terminal) {
             terminal = <TerminalWidget>await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{ created: new Date().toString() });
             await terminal.start();
-            this.terminalService.activateTerminal(terminal);
+            this.terminalService.open(terminal);
         }
         terminal.sendText(selectedText);
     }
