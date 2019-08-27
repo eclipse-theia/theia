@@ -16,6 +16,7 @@
 
 // tslint:disable:no-any
 
+import CodeUri from 'vscode-uri';
 import { injectable, inject } from 'inversify';
 import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
@@ -35,6 +36,19 @@ import { PluginScmProvider, PluginScmResourceGroup, PluginScmResource } from '..
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
 import { PluginViewWidget } from '../view/plugin-view-widget';
 import { ViewContextKeyService } from '../view/view-context-key-service';
+import { WebviewWidget } from '../webview/webview';
+import { Navigatable } from '@theia/core/lib/browser/navigatable';
+
+type CodeEditorWidget = EditorWidget | WebviewWidget;
+export namespace CodeEditorWidget {
+    export function is(arg: any): arg is CodeEditorWidget {
+        return arg instanceof EditorWidget || arg instanceof WebviewWidget;
+    }
+    export function getResourceUri(editor: CodeEditorWidget): CodeUri | undefined {
+        const resourceUri = Navigatable.is(editor) && editor.getResourceUri();
+        return resourceUri ? resourceUri['codeUri'] : undefined;
+    }
+}
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -80,14 +94,10 @@ export class MenusContributionPointHandler {
                 }
             } else if (location === 'editor/title') {
                 for (const action of allMenus[location]) {
-                    const selectedResource = (widget: EditorWidget) => {
-                        const resourceUri = widget.getResourceUri();
-                        return resourceUri && resourceUri['codeUri'];
-                    };
                     this.registerTitleAction(location, action, {
-                        execute: widget => widget instanceof EditorWidget && this.commands.executeCommand(action.command, selectedResource(widget)),
-                        isEnabled: widget => widget instanceof EditorWidget && this.commands.isEnabled(action.command, selectedResource(widget)),
-                        isVisible: widget => widget instanceof EditorWidget && this.commands.isVisible(action.command, selectedResource(widget))
+                        execute: widget => CodeEditorWidget.is(widget) && this.commands.executeCommand(action.command, CodeEditorWidget.getResourceUri(widget)),
+                        isEnabled: widget => CodeEditorWidget.is(widget) && this.commands.isEnabled(action.command, CodeEditorWidget.getResourceUri(widget)),
+                        isVisible: widget => CodeEditorWidget.is(widget) && this.commands.isVisible(action.command, CodeEditorWidget.getResourceUri(widget))
                     });
                 }
             } else if (location === 'view/title') {
@@ -180,8 +190,16 @@ export class MenusContributionPointHandler {
         const command: Command = { id };
         this.commands.registerCommand(command, handler);
 
-        const { group, when } = action;
-        const item: Mutable<TabBarToolbarItem> = { id, command: id, group: group || '', when };
+        const { when } = action;
+        // handle group and priority
+        // if group is empty or white space is will be set to navigation
+        // ' ' => ['navigation', 0]
+        // 'navigation@1' => ['navigation', 1]
+        // '1_rest-client@2' => ['1_rest-client', 2]
+        // if priority is not a number it will be set to 0
+        // navigation@test => ['navigation', 0]
+        const [group, sort] = (action.group || 'navigation').split('@');
+        const item: Mutable<TabBarToolbarItem> = { id, command: id, group: group.trim() || 'navigation', priority: ~~sort || undefined, when };
         this.tabBarToolbar.registerItem(item);
 
         this.onDidRegisterCommand(action.command, pluginCommand => {

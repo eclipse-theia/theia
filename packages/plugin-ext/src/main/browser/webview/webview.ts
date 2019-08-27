@@ -16,7 +16,7 @@
 import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
 import { IdGenerator } from '../../../common/id-generator';
 import { Disposable } from '@theia/core';
-import { MiniBrowserContent } from '@theia/mini-browser/lib/browser/mini-browser-content';
+import { MiniBrowserContentStyle } from '@theia/mini-browser/lib/browser/mini-browser-content-style';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
 // tslint:disable:no-any
@@ -55,7 +55,7 @@ export class WebviewWidget extends BaseWidget {
         this.scrollY = 0;
 
         this.transparentOverlay = document.createElement('div');
-        this.transparentOverlay.classList.add(MiniBrowserContent.Styles.TRANSPARENT_OVERLAY);
+        this.transparentOverlay.classList.add(MiniBrowserContentStyle.TRANSPARENT_OVERLAY);
         this.transparentOverlay.style.display = 'none';
         this.node.appendChild(this.transparentOverlay);
 
