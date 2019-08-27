@@ -25,9 +25,9 @@ export class MonacoContextKeyService extends ContextKeyService {
 
     @postConstruct()
     protected init(): void {
-        this.contextKeyService.onDidChangeContext(e =>
+        this.contextKeyService.onDidChangeContext(() =>
             this.fireDidChange({
-                affects: keys => e.affectsSome(keys)
+                affects: keys => Array.from(keys).every(key => this.match(key))
             })
         );
     }
