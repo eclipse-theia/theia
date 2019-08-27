@@ -260,4 +260,7 @@ is not optimized for dense, information rich UIs.
   --theia-ansi-cyan-background-color: #218D8D;
   --theia-ansi-white-background-color: #707070;
 
+  /* Output */
+  --theia-output-font-color: var(--theia-ui-font-color1);
+
 }
