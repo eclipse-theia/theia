@@ -377,6 +377,10 @@ export interface PluginModel {
         backend?: string;
     };
     contributes?: PluginContribution;
+    /**
+     * The deployable form of extensionDependencies from package.json,
+     * i.e. not `publisher.name`, but `vscode:extension/publisher.name`.
+     */
     extensionDependencies?: string[];
 }
 

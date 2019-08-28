@@ -114,27 +114,40 @@ export class PluginDeployerImpl implements PluginDeployer {
 
         const queue = [...pluginEntries];
         while (queue.length) {
-            const current = queue.shift()!;
-            if (visited.has(current)) {
-                continue;
+            const chunk = [];
+            while (queue.length) {
+                const current = queue.shift()!;
+                if (visited.has(current)) {
+                    continue;
+                }
+                visited.add(current);
+                try {
+                    const pluginDeployerEntries = await this.resolvePlugin(current);
+                    await this.applyFileHandlers(pluginDeployerEntries);
+                    await this.applyDirectoryFileHandlers(pluginDeployerEntries);
+                    for (const deployerEntry of pluginDeployerEntries) {
+                        const metadata = await this.pluginDeployerHandler.getPluginMetadata(deployerEntry);
+                        if (metadata && !pluginsToDeploy.has(metadata.model.id)) {
+                            pluginsToDeploy.set(metadata.model.id, deployerEntry);
+                            chunk.push(metadata);
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Failed to resolve plugins from '${current}'`, e);
+                }
             }
-            visited.add(current);
-
-            // resolve plugins
-            const pluginDeployerEntries = await this.resolvePlugin(current);
-
-            // now that we have plugins check if we have File Handler for them
-            await this.applyFileHandlers(pluginDeployerEntries);
-
-            // ok now ask for directory handlers
-            await this.applyDirectoryFileHandlers(pluginDeployerEntries);
-
-            for (const deployerEntry of pluginDeployerEntries) {
-                const metadata = await this.pluginDeployerHandler.getPluginMetadata(deployerEntry);
-                if (metadata && !pluginsToDeploy.has(metadata.model.id)) {
-                    pluginsToDeploy.set(metadata.model.id, deployerEntry);
-                    if (metadata.model.extensionDependencies) {
-                        queue.push(...metadata.model.extensionDependencies);
+            for (const metadata of chunk) {
+                const extensionDependencies = metadata.source.extensionDependencies;
+                const deployableExtensionDependencies = metadata.model.extensionDependencies;
+                if (extensionDependencies && deployableExtensionDependencies) {
+                    for (let dependencyIndex = 0; dependencyIndex < extensionDependencies.length; dependencyIndex++) {
+                        const dependencyId = extensionDependencies[dependencyIndex].toLowerCase();
+                        if (!pluginsToDeploy.has(dependencyId)) {
+                            const deployableDependency = deployableExtensionDependencies[dependencyIndex];
+                            if (deployableDependency) {
+                                queue.push(deployableDependency);
+                            }
+                        }
                     }
                 }
             }
