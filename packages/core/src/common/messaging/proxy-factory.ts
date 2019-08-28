@@ -124,6 +124,26 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     }
 
     /**
+     * In ECMAScript 6, `Object.keys()` does not automatically parse the
+     * prototype chain when looking for properties. This method must implement
+     * the algorithm of choice for looking up such functions from a given object.
+     */
+    protected collectFunctionNames(object: any): Iterable<string> {
+        const functions = new Set<string>();
+        let prototype = Object.getPrototypeOf(object);
+        while (prototype) {
+            for (const property of Object.getOwnPropertyNames(prototype)) {
+                const descriptor = Object.getOwnPropertyDescriptor(prototype, property);
+                if (descriptor && typeof descriptor.value === 'function' && property !== 'constructor') {
+                    functions.add(property);
+                }
+            }
+            prototype = Object.getPrototypeOf(prototype);
+        }
+        return functions;
+    }
+
+    /**
      * Connect a MessageConnection to the factory.
      *
      * This connection will be used to send/receive JSON-RPC requests and
@@ -131,11 +151,9 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      */
     listen(connection: MessageConnection): void {
         if (this.target) {
-            for (const prop in this.target) {
-                if (typeof this.target[prop] === 'function') {
-                    connection.onRequest(prop, (...args) => this.onRequest(prop, ...args));
-                    connection.onNotification(prop, (...args) => this.onNotification(prop, ...args));
-                }
+            for (const prop of this.collectFunctionNames(this.target)) {
+                connection.onRequest(prop, (...args) => this.onRequest(prop, ...args));
+                connection.onNotification(prop, (...args) => this.onNotification(prop, ...args));
             }
         }
         connection.onDispose(() => this.waitForConnection());

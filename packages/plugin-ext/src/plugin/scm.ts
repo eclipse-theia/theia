@@ -319,7 +319,7 @@ class SourceControlResourceGroupImpl implements theia.SourceControlResourceGroup
         if (state && state.command) {
             const command = state.command;
             if (command.command) {
-                await this.commands.$executeCommand(command.command, ...command.arguments);
+                await this.commands.$executeCommand(command.command, ...command.arguments || []);
             }
         }
     }

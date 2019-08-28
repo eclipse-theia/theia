@@ -192,7 +192,7 @@ export class TabBarRenderer extends TabBar.Renderer {
         if (this.tabBar && this.decoratorService) {
             const allDecorations = this.decoratorService.getDecorations([...this.tabBar.titles]);
             if (allDecorations.has(tab)) {
-                tabDecorations.push(...allDecorations.get(tab));
+                tabDecorations.push(...allDecorations.get(tab)!);
             }
         }
         return tabDecorations;

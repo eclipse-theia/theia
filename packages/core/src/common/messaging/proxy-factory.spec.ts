@@ -30,19 +30,23 @@ class NoTransform extends stream.Transform {
     }
 }
 
-class TestServer {
+class BaseTestServer1 {
+    fails(arg: string, otherArg: string): Promise<string> {
+        throw new Error('fails failed');
+    }
+}
+
+class BaseTestServer2 extends BaseTestServer1 {
+    fails2(arg: string, otherArg: string): Promise<string> {
+        return Promise.reject(new Error('fails2 failed'));
+    }
+}
+
+class TestServer extends BaseTestServer2 {
     requests: string[] = [];
     doStuff(arg: string): Promise<string> {
         this.requests.push(arg);
         return Promise.resolve(`done: ${arg}`);
-    }
-
-    fails(arg: string, otherArg: string): Promise<string> {
-        throw new Error('fails failed');
-    }
-
-    fails2(arg: string, otherArg: string): Promise<string> {
-        return Promise.reject(new Error('fails2 failed'));
     }
 }
 
@@ -74,18 +78,18 @@ describe('Proxy-Factory', () => {
     });
     it('Rejected Promise should result in rejected Promise.', done => {
         const it = getSetup();
-        const handle = setTimeout(() => done('timeout'), 500);
-        it.serverProxy.fails('a', 'b').catch(err => {
-            expect(<Error>err.message).to.contain('fails failed');
+        const handle = setTimeout(() => done(new Error('timeout')), 500);
+        it.serverProxy.fails('a', 'b').catch((err: Error) => {
+            expect(err.message).to.contain('fails failed');
             clearTimeout(handle);
             done();
         });
     });
     it('Remote Exceptions should result in rejected Promise.', done => {
         const { serverProxy } = getSetup();
-        const handle = setTimeout(() => done('timeout'), 500);
-        serverProxy.fails2('a', 'b').catch(err => {
-            expect(<Error>err.message).to.contain('fails2 failed');
+        const handle = setTimeout(() => done(new Error('timeout')), 500);
+        serverProxy.fails2('a', 'b').catch((err: Error) => {
+            expect(err.message).to.contain('fails2 failed');
             clearTimeout(handle);
             done();
         });

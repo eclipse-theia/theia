@@ -268,7 +268,7 @@ export class MonacoWorkspace implements lang.Workspace {
         return true;
     }
 
-    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit, options?: EditorOpenerOptions): monaco.Promise<monaco.editor.IBulkEditResult> {
+    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit, options?: EditorOpenerOptions): Promise<monaco.editor.IBulkEditResult> {
         try {
             const unresolvedEditorEdits = this.groupEdits(workspaceEdit);
             const editorEdits = await this.openEditors(unresolvedEditorEdits, options);

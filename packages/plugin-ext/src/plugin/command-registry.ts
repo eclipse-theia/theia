@@ -103,7 +103,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
             return this.executeLocalCommand(id, ...args);
         } else {
             return KnownCommands.map(id, args, (mappedId: string, mappedArgs: any[] | undefined) =>
-                this.proxy.$executeCommand(mappedId, ...mappedArgs));
+                this.proxy.$executeCommand(mappedId, ...mappedArgs || []));
         }
     }
     // tslint:enable:no-any

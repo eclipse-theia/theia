@@ -527,10 +527,10 @@ export class MonacoQuickOpenActionProvider implements monaco.quickOpen.IActionPr
     }
 
     // tslint:disable-next-line:no-any
-    async getActions(element: any, entry: QuickOpenEntry | QuickOpenEntryGroup): monaco.Promise<monaco.quickOpen.IAction[]> {
-        const actions = await this.provider.getActions(entry.item);
-        const monacoActions = actions.map(action => new MonacoQuickOpenAction(action));
-        return monaco.Promise.wrap(monacoActions);
+    getActions(element: any, entry: QuickOpenEntry | QuickOpenEntryGroup): monaco.Promise<monaco.quickOpen.IAction[]> {
+        return monaco.Promise.wrap(
+            this.provider.getActions(entry.item)
+                .then(actions => actions.map(action => new MonacoQuickOpenAction(action))));
     }
 
     hasSecondaryActions(): boolean {
