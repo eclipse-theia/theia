@@ -19,6 +19,7 @@ import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { TaskResolver } from '../task-contribution';
 import { TaskConfiguration } from '../../common/task-protocol';
 import { ProcessTaskConfiguration } from '../../common/process/task-protocol';
+import { TaskDefinitionRegistry } from '../task-definition-registry';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
@@ -26,6 +27,9 @@ export class ProcessTaskResolver implements TaskResolver {
 
     @inject(VariableResolverService)
     protected readonly variableResolverService: VariableResolverService;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
     /**
      * Perform some adjustments to the task launch configuration, before sending
@@ -37,8 +41,8 @@ export class ProcessTaskResolver implements TaskResolver {
         if (taskConfig.type !== 'process' && taskConfig.type !== 'shell') {
             throw new Error('Unsupported task configuration type.');
         }
-
-        const variableResolverOptions = { context: new URI(taskConfig._source).withScheme('file') };
+        const context = new URI(this.taskDefinitionRegistry.getDefinition(taskConfig) ? taskConfig.scope : taskConfig._source).withScheme('file');
+        const variableResolverOptions = { context };
         const processTaskConfig = taskConfig as ProcessTaskConfiguration;
         const result: ProcessTaskConfiguration = {
             ...processTaskConfig,

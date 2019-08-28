@@ -27,7 +27,6 @@ import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manag
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import {
-    ContributedTaskConfiguration,
     ProblemMatcher,
     ProblemMatchData,
     TaskCustomization,
@@ -206,7 +205,7 @@ export class TaskService implements TaskConfigurationClient {
         const configuredTasks = await this.getConfiguredTasks();
         const providedTasks = await this.getProvidedTasks();
         const notCustomizedProvidedTasks = providedTasks.filter(provided =>
-            !configuredTasks.some(configured => ContributedTaskConfiguration.equals(configured, provided))
+            !configuredTasks.some(configured => this.taskDefinitionRegistry.compareTasks(configured, provided))
         );
         return [...configuredTasks, ...notCustomizedProvidedTasks];
     }
@@ -225,7 +224,7 @@ export class TaskService implements TaskConfigurationClient {
         if (Array.isArray(tasks)) {
             tasks.forEach(task => this.addRecentTasks(task));
         } else {
-            const ind = this.cachedRecentTasks.findIndex(recent => TaskConfiguration.equals(recent, tasks));
+            const ind = this.cachedRecentTasks.findIndex(recent => this.taskDefinitionRegistry.compareTasks(recent, tasks));
             if (ind >= 0) {
                 this.cachedRecentTasks.splice(ind, 1);
             }

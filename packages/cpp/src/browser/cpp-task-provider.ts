@@ -145,6 +145,7 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
     private registerTaskDefinition(): void {
         this.taskDefinitionRegistry.register({
             taskType: CPP_BUILD_TASK_TYPE_KEY,
+            source: 'cpp',
             properties: {
                 required: ['label'],
                 all: ['label']

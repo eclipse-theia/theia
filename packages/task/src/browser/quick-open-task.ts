@@ -16,7 +16,7 @@
 
 import { inject, injectable } from 'inversify';
 import { TaskService } from './task-service';
-import { ContributedTaskConfiguration, TaskInfo, TaskConfiguration } from '../common/task-protocol';
+import { TaskInfo, TaskConfiguration } from '../common/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import URI from '@theia/core/lib/common/uri';
 import { TaskActionProvider } from './task-action-provider';
@@ -207,7 +207,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
         const filteredRecentTasks: TaskConfiguration[] = [];
         recentTasks.forEach(recent => {
-            const exist = [...configuredTasks, ...providedTasks].some(t => TaskConfiguration.equals(recent, t));
+            const exist = [...configuredTasks, ...providedTasks].some(t => this.taskDefinitionRegistry.compareTasks(recent, t));
             if (exist) {
                 filteredRecentTasks.push(recent);
             }
@@ -215,7 +215,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
         const filteredProvidedTasks: TaskConfiguration[] = [];
         providedTasks.forEach(provided => {
-            const exist = [...filteredRecentTasks, ...configuredTasks].some(t => ContributedTaskConfiguration.equals(provided, t));
+            const exist = [...filteredRecentTasks, ...configuredTasks].some(t => this.taskDefinitionRegistry.compareTasks(provided, t));
             if (!exist) {
                 filteredProvidedTasks.push(provided);
             }
@@ -223,7 +223,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
         const filteredConfiguredTasks: TaskConfiguration[] = [];
         configuredTasks.forEach(configured => {
-            const exist = filteredRecentTasks.some(t => TaskConfiguration.equals(configured, t));
+            const exist = filteredRecentTasks.some(t => this.taskDefinitionRegistry.compareTasks(configured, t));
             if (!exist) {
                 filteredConfiguredTasks.push(configured);
             }
@@ -254,7 +254,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
 
     getLabel(): string {
         if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
-            return `${this.task._source}: ${this.task.label}`;
+            return `${this.task.source}: ${this.task.label}`;
         }
         return `${this.task.type}: ${this.task.label}`;
     }
@@ -283,7 +283,11 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
             return false;
         }
 
-        this.taskService.run(this.task._source, this.task.label);
+        if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
+            this.taskService.run(this.task.source, this.task.label);
+        } else {
+            this.taskService.run(this.task._source, this.task.label);
+        }
         return true;
     }
 }
@@ -330,7 +334,7 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
 
     getLabel(): string {
         if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
-            return `${this.task._source}: ${this.task.label}`;
+            return `${this.task.source}: ${this.task.label}`;
         }
         return `${this.task.type}: ${this.task.label}`;
     }
