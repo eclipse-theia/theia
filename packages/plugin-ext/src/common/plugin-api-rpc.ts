@@ -132,6 +132,7 @@ export const emptyPlugin: Plugin = {
     },
     model: {
         id: 'emptyPlugin',
+        uniqueId: 'emptyPlugin',
         name: 'emptyPlugin',
         publisher: 'Theia',
         version: 'empty',

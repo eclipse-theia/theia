@@ -115,7 +115,7 @@ export class PluginDeployerImpl implements PluginDeployer {
         const queue = [...pluginEntries];
         while (queue.length) {
             const current = queue.shift()!;
-            if (visited.has(current)) {
+            if (visited.has(current) || pluginsToDeploy.has(current)) {
                 continue;
             }
             visited.add(current);
@@ -131,8 +131,8 @@ export class PluginDeployerImpl implements PluginDeployer {
 
             for (const deployerEntry of pluginDeployerEntries) {
                 const metadata = await this.pluginDeployerHandler.getPluginMetadata(deployerEntry);
-                if (metadata && !pluginsToDeploy.has(metadata.model.id)) {
-                    pluginsToDeploy.set(metadata.model.id, deployerEntry);
+                if (metadata && !pluginsToDeploy.has(metadata.model.uniqueId)) {
+                    pluginsToDeploy.set(metadata.model.uniqueId, deployerEntry);
                     if (metadata.model.extensionDependencies) {
                         queue.push(...metadata.model.extensionDependencies);
                     }

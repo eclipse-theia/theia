@@ -363,6 +363,7 @@ export interface PluginDeployerDirectoryHandlerContext {
  */
 export interface PluginModel {
     id: string;
+    uniqueId: string;
     name: string;
     publisher: string;
     version: string;

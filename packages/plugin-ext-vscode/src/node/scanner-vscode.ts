@@ -31,6 +31,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
         const result: PluginModel = {
             // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
             id: `${plugin.publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
+            uniqueId: `${this.VSCODE_PREFIX}${plugin.publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
             name: plugin.name,
             publisher: plugin.publisher,
             version: plugin.version,
@@ -63,6 +64,6 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
      * to an array of deployable extension dependencies
      */
     private getDeployableDependencies(dependencies: string[]): string[] {
-        return dependencies.map(dep => this.VSCODE_PREFIX + dep);
+        return dependencies.map(dep => this.VSCODE_PREFIX + dep.toLowerCase());
     }
 }
