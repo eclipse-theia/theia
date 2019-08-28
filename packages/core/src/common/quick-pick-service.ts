@@ -77,6 +77,12 @@ export interface QuickPickOptions {
      * The prefill value.
      */
     value?: string;
+
+    /**
+     * Determines if the quick pick with a single item should
+     * execute the item instead of displaying. The default is `true`.
+     */
+    runIfSingle?: boolean;
 }
 
 export const quickPickServicePath = '/services/quickPick';
