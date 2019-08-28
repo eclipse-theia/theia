@@ -63,6 +63,6 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
      * to an array of deployable extension dependencies
      */
     private getDeployableDependencies(dependencies: string[]): string[] {
-        return dependencies.map(dep => this.VSCODE_PREFIX + dep);
+        return dependencies.map(dep => this.VSCODE_PREFIX + dep.toLowerCase());
     }
 }
