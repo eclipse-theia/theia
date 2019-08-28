@@ -38,7 +38,9 @@ export class QuickPickServiceImpl implements QuickPickService {
     async show(elements: (string | QuickPickItem<Object>)[], options?: QuickPickOptions): Promise<Object | undefined> {
         return new Promise<Object | undefined>(resolve => {
             this.items = this.toItems(elements, resolve);
-            if (this.items.length === 1) {
+            // Set `runIfSingle` to the value passed through options, else defaults to true.
+            const runIfSingle: boolean = (options && options.runIfSingle !== undefined) ? options.runIfSingle : true;
+            if (runIfSingle && this.items.length === 1) {
                 this.items[0].run(QuickOpenMode.OPEN);
                 return;
             }

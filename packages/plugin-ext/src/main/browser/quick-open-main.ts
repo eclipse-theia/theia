@@ -292,7 +292,8 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
             title: options.title,
             totalSteps: options.totalSteps,
             ignoreFocusOut: options.ignoreFocusOut,
-            value: options.value
+            value: options.value,
+            runIfSingle: false,
         });
 
         const disposableListeners = new DisposableCollection();
