@@ -189,7 +189,7 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         if (rawPlugin.contributes!.taskDefinitions) {
-            contributions.taskDefinitions = rawPlugin.contributes!.taskDefinitions!.map(definitionContribution => this.readTaskDefinition(definitionContribution));
+            contributions.taskDefinitions = rawPlugin.contributes!.taskDefinitions!.map(definitionContribution => this.readTaskDefinition(rawPlugin.name, definitionContribution));
         }
 
         if (rawPlugin.contributes!.problemMatchers) {
@@ -372,9 +372,10 @@ export class TheiaPluginScanner implements PluginScanner {
         return result;
     }
 
-    private readTaskDefinition(definitionContribution: PluginTaskDefinitionContribution): TaskDefinition {
+    private readTaskDefinition(pluginName: string, definitionContribution: PluginTaskDefinitionContribution): TaskDefinition {
         return {
             taskType: definitionContribution.type,
+            source: pluginName,
             properties: {
                 required: definitionContribution.required,
                 all: Object.keys(definitionContribution.properties)

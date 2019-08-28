@@ -17,6 +17,7 @@
 import { injectable } from 'inversify';
 import { Event, Emitter } from '@theia/core/lib/common';
 import { TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class TaskDefinitionRegistry {
@@ -77,5 +78,20 @@ export class TaskDefinitionRegistry {
         const taskType = definition.taskType;
         this.definitions.set(taskType, [...this.getDefinitions(taskType), definition]);
         this.onDidRegisterTaskDefinitionEmitter.fire(undefined);
+    }
+
+    compareTasks(one: TaskConfiguration, other: TaskConfiguration): boolean {
+        const oneType = one.taskType || one.type;
+        const otherType = other.taskType || other.type;
+        if (oneType !== otherType) {
+            return false;
+        }
+        const def = this.getDefinition(one);
+        if (def) {
+            const oneScope = new URI(one._scope).path.toString();
+            const otherScope = new URI(other._scope).path.toString();
+            return def.properties.all.every(p => p === 'type' || one[p] === other[p]) && oneScope === otherScope;
+        }
+        return one.label === other.label && one._source === other._source;
     }
 }
