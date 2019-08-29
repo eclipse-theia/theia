@@ -1,6 +1,6 @@
 {
   "name": "@theia/cli",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Theia CLI.",
   "publishConfig": {
     "access": "public"
@@ -30,7 +30,7 @@
     "test": "echo 'skip'"
   },
   "dependencies": {
-    "@theia/application-manager": "^0.9.0",
-    "@theia/application-package": "^0.9.0"
+    "@theia/application-manager": "^0.10.0",
+    "@theia/application-package": "^0.10.0"
   }
 }
