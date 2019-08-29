@@ -71,7 +71,7 @@ export class SidePanelHandler {
      * The widget container is a dock panel in `single-document` mode, which means that the panel
      * cannot be split.
      */
-    dockPanel: DockPanel;
+    dockPanel: TheiaDockPanel;
     /**
      * The panel that contains the tab bar and the dock panel. This one is hidden whenever the dock
      * panel is empty.
