@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
-    StatefulWidget, CommonMenus
+    StatefulWidget, CommonMenus, BaseWidget
 } from '@theia/core/lib/browser';
 import { ViewContainer, View } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
@@ -34,6 +34,12 @@ import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { QuickViewService } from '@theia/core/lib/browser/quick-view-service';
 import { Emitter } from '@theia/core/lib/common/event';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { SearchInWorkspaceWidget } from '@theia/search-in-workspace/lib/browser/search-in-workspace-widget';
+import { ViewContextKeyService } from './view-context-key-service';
+import { PROBLEMS_WIDGET_ID } from '@theia/markers/lib/browser/problem/problem-widget';
+import { OUTPUT_WIDGET_KIND } from '@theia/output/lib/browser/output-widget';
+import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug-console-contribution';
+import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -74,6 +80,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    @inject(ViewContextKeyService)
+    protected readonly viewContextKeys: ViewContextKeyService;
+
     protected readonly onDidExpandViewEmitter = new Emitter<string>();
     readonly onDidExpandView = this.onDidExpandViewEmitter.event;
 
@@ -86,6 +95,24 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     @postConstruct()
     protected init(): void {
+        // VS Code Viewlets
+        this.trackVisibleWidget(EXPLORER_VIEW_CONTAINER_ID, { viewletId: 'workbench.view.explorer' });
+        this.trackVisibleWidget(SearchInWorkspaceWidget.ID, { viewletId: 'workbench.view.search', sideArea: true });
+        this.trackVisibleWidget(SCM_VIEW_CONTAINER_ID, { viewletId: 'workbench.view.scm' });
+        this.trackVisibleWidget(DebugWidget.ID, { viewletId: 'workbench.view.debug' });
+        // TODO workbench.view.extensions - Theia does not have a proper extension view yet
+
+        // VS Code Panels
+        this.trackVisibleWidget(PROBLEMS_WIDGET_ID, { panelId: 'workbench.panel.markers' });
+        this.trackVisibleWidget(OUTPUT_WIDGET_KIND, { panelId: 'workbench.panel.output' });
+        this.trackVisibleWidget(DebugConsoleContribution.options.id, { panelId: 'workbench.panel.repl' });
+        this.trackVisibleWidget(TERMINAL_WIDGET_FACTORY_ID, { panelId: 'workbench.panel.terminal' });
+        // TODO workbench.panel.comments - Theia does not have a proper comments view yet
+        this.trackVisibleWidget(SearchInWorkspaceWidget.ID, { panelId: 'workbench.view.search', sideArea: false });
+
+        this.updateFocusedView();
+        this.shell.onDidChangeActiveWidget(() => this.updateFocusedView());
+
         this.widgetManager.onDidCreateWidget(({ factoryId, widget }) => {
             if (factoryId === EXPLORER_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
                 this.prepareViewContainer('explorer', widget);
@@ -308,7 +335,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             const part = containerWidget.getPartFor(widget);
             if (part) {
                 // if a view is explicilty hidden then suppress updating visibility based on `when` closure
-                part.onVisibilityChanged(() => widget.suppressUpdateViewVisibility = part.isHidden);
+                part.onDidChangeVisibility(() => widget.suppressUpdateViewVisibility = part.isHidden);
 
                 const tryFireOnDidExpandView = () => {
                     if (!part.collapsed && part.isVisible) {
@@ -318,7 +345,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 const toFire = new DisposableCollection(
                     Disposable.create(() => this.onDidExpandViewEmitter.fire(viewId)),
                     part.onCollapsed(tryFireOnDidExpandView),
-                    part.onVisibilityChanged(tryFireOnDidExpandView)
+                    part.onDidChangeVisibility(tryFireOnDidExpandView)
                 );
                 tryFireOnDidExpandView();
             }
@@ -478,4 +505,81 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return widget;
     }
 
+    protected trackVisibleWidget(factoryId: string, view: PluginViewRegistry.VisibleView): void {
+        this.doTrackVisibleWidget(this.widgetManager.tryGetWidget(factoryId), view);
+        this.widgetManager.onDidCreateWidget(event => {
+            if (factoryId === event.factoryId) {
+                const { widget } = event;
+                this.doTrackVisibleWidget(widget, view);
+            }
+        });
+    }
+
+    protected doTrackVisibleWidget(widget: Widget | undefined, view: PluginViewRegistry.VisibleView): void {
+        if (widget instanceof BaseWidget) {
+            widget.onDidChangeVisibility(() => this.updateVisibleWidget(widget, view));
+            const toDispose = new DisposableCollection(
+                Disposable.create(() => this.updateVisibleWidget(widget, view)),
+                this.shell.onDidChangeActiveWidget(() => {
+                    if (this.shell.activeWidget === widget) {
+                        this.updateVisibleWidget(widget, view);
+                    }
+                })
+            );
+            if (view.sideArea !== undefined) {
+                toDispose.pushAll([
+                    this.shell.onDidAddWidget(w => {
+                        if (w === widget) {
+                            this.updateVisibleWidget(widget, view);
+                        }
+                    })
+                ]);
+            }
+            widget.disposed.connect(() => toDispose.dispose());
+        }
+    }
+
+    protected readonly visiblePanels = new Set<string>();
+    protected readonly visibleViewlets = new Set<string>();
+
+    protected updateVisibleWidget(widget: BaseWidget, view: PluginViewRegistry.VisibleView): void {
+        const visibleViews = 'viewletId' in view ? this.visibleViewlets : this.visiblePanels;
+        const viewId = 'viewletId' in view ? view.viewletId : view.panelId;
+        const visibleView = 'viewletId' in view ? this.viewContextKeys.activeViewlet : this.viewContextKeys.activePanel;
+        visibleViews.delete(viewId);
+        if (this.isVisibleWidget(widget, view)) {
+            visibleView.set(viewId);
+            visibleViews.add(viewId);
+        } else {
+            const lastVisibleView = [...visibleViews.values()][visibleViews.size - 1];
+            visibleView.set(lastVisibleView);
+        }
+    }
+
+    protected isVisibleWidget(widget: BaseWidget, view: PluginViewRegistry.VisibleView): boolean {
+        if (widget.isDisposed || !widget.isVisible) {
+            return false;
+        }
+        if (view.sideArea === undefined) {
+            return true;
+        }
+        const area = this.shell.getAreaFor(widget);
+        return view.sideArea === (area === 'left' || area === 'right');
+    }
+
+    protected updateFocusedView(): void {
+        const widget = this.shell.activeWidget;
+        if (widget instanceof PluginViewWidget) {
+            this.viewContextKeys.focusedView.set(widget.options.viewId);
+        } else {
+            this.viewContextKeys.focusedView.reset();
+        }
+    }
+
+}
+export namespace PluginViewRegistry {
+    export type VisibleView = ({ viewletId: string } | { panelId: string }) & {
+        /** `undefined` means any area */
+        sideArea?: boolean
+    };
 }

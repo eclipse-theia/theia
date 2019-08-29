@@ -43,10 +43,13 @@ export class BaseWidget extends Widget {
     readonly onScrollYReachEnd: Event<void> = this.onScrollYReachEndEmitter.event;
     protected readonly onScrollUpEmitter = new Emitter<void>();
     readonly onScrollUp: Event<void> = this.onScrollUpEmitter.event;
+    protected readonly onDidChangeVisibilityEmitter = new Emitter<boolean>();
+    readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
 
     protected readonly toDispose = new DisposableCollection(
         this.onScrollYReachEndEmitter,
-        this.onScrollUpEmitter
+        this.onScrollUpEmitter,
+        this.onDidChangeVisibilityEmitter
     );
     protected readonly toDisposeOnDetach = new DisposableCollection();
     protected scrollBar?: PerfectScrollbar;
@@ -148,6 +151,20 @@ export class BaseWidget extends Widget {
 
     protected addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>): void {
         this.toDisposeOnDetach.push(addClipboardListener(element, type, listener));
+    }
+
+    setFlag(flag: Widget.Flag): void {
+        super.setFlag(flag);
+        if (flag === Widget.Flag.IsVisible) {
+            this.onDidChangeVisibilityEmitter.fire(this.isVisible);
+        }
+    }
+
+    clearFlag(flag: Widget.Flag): void {
+        super.clearFlag(flag);
+        if (flag === Widget.Flag.IsVisible) {
+            this.onDidChangeVisibilityEmitter.fire(this.isVisible);
+        }
     }
 }
 

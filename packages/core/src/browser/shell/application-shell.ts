@@ -33,6 +33,7 @@ import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
+import { Emitter } from '../../common/event';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -171,6 +172,24 @@ export class ApplicationShell extends Widget {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    protected readonly onDidAddWidgetEmitter = new Emitter<Widget>();
+    readonly onDidAddWidget = this.onDidAddWidgetEmitter.event;
+    protected fireDidAddWidget(widget: Widget): void {
+        this.onDidAddWidgetEmitter.fire(widget);
+    }
+
+    protected readonly onDidRemoveWidgetEmitter = new Emitter<Widget>();
+    readonly onDidRemoveWidget = this.onDidRemoveWidgetEmitter.event;
+    protected fireDidRemoveWidget(widget: Widget): void {
+        this.onDidRemoveWidgetEmitter.fire(widget);
+    }
+
+    protected readonly onDidChangeActiveWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
+    readonly onDidChangeActiveWidget = this.onDidChangeActiveWidgetEmitter.event;
+
+    protected readonly onDidChangeCurrentWidgetEmitter = new Emitter<FocusTracker.IChangedArgs<Widget>>();
+    readonly onDidChangeCurrentWidget = this.onDidChangeCurrentWidgetEmitter.event;
+
     /**
      * Construct a new application shell.
      */
@@ -205,10 +224,17 @@ export class ApplicationShell extends Widget {
         this.mainPanel = this.createMainPanel();
         this.topPanel = this.createTopPanel();
         this.bottomPanel = this.createBottomPanel();
+
         this.leftPanelHandler = sidePanelHandlerFactory();
         this.leftPanelHandler.create('left', this.options.leftPanel);
+        this.leftPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
+        this.leftPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+
         this.rightPanelHandler = sidePanelHandlerFactory();
         this.rightPanelHandler.create('right', this.options.rightPanel);
+        this.rightPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
+        this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
+
         this.layout = this.createLayout();
 
         this.tracker.currentChanged.connect(this.onCurrentChanged, this);
@@ -417,6 +443,8 @@ export class ApplicationShell extends Widget {
             spacing: 0
         });
         dockPanel.id = MAIN_AREA_ID;
+        dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
+        dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
         return dockPanel;
     }
 
@@ -447,6 +475,8 @@ export class ApplicationShell extends Widget {
             this.mainPanel.overlay.hide(0);
         });
         dockPanel.hide();
+        dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
+        dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
         return dockPanel;
     }
 
@@ -796,6 +826,8 @@ export class ApplicationShell extends Widget {
 
     /**
      * A signal emitted whenever the `currentWidget` property is changed.
+     *
+     * @deprecated since 0.11.0, use `onDidChangeActiveWidget` instead
      */
     readonly currentChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
 
@@ -804,10 +836,13 @@ export class ApplicationShell extends Widget {
      */
     private onCurrentChanged(sender: FocusTracker<Widget>, args: FocusTracker.IChangedArgs<Widget>): void {
         this.currentChanged.emit(args);
+        this.onDidChangeCurrentWidgetEmitter.fire(args);
     }
 
     /**
      * A signal emitted whenever the `activeWidget` property is changed.
+     *
+     * @deprecated since 0.11.0, use `onDidChangeActiveWidget` instead
      */
     readonly activeChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
 
@@ -850,6 +885,7 @@ export class ApplicationShell extends Widget {
             this.setZIndex(newValue.node, '1');
         }
         this.activeChanged.emit(args);
+        this.onDidChangeActiveWidgetEmitter.fire(args);
     }
 
     /**
@@ -1627,4 +1663,5 @@ export namespace ApplicationShell {
             return !!widget && 'getTrackableWidgets' in widget;
         }
     }
+
 }

@@ -146,7 +146,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         ]);
         if (this.options.progressLocationId) {
             const onProgress = this.progressLocationService.onProgress(this.options.progressLocationId);
-            this.toDispose.push(new ProgressBar({ container: this.node, insertMode: 'prepend'}, onProgress));
+            this.toDispose.push(new ProgressBar({ container: this.node, insertMode: 'prepend' }, onProgress));
         }
     }
 
@@ -658,8 +658,10 @@ export class ViewContainerPart extends BaseWidget {
     protected readonly body: HTMLElement;
     protected readonly collapsedEmitter = new Emitter<boolean>();
     protected readonly contextMenuEmitter = new Emitter<MouseEvent>();
-    protected readonly onVisibilityChangedEmitter = new Emitter<boolean>();
-    readonly onVisibilityChanged = this.onVisibilityChangedEmitter.event;
+    /**
+     * @deprecated since 0.11.0, use `onDidChangeVisibility` instead
+     */
+    readonly onVisibilityChanged = this.onDidChangeVisibility;
     protected readonly onTitleChangedEmitter = new Emitter<void>();
     readonly onTitleChanged = this.onTitleChangedEmitter.event;
     protected readonly onDidFocusEmitter = new Emitter<this>();
@@ -699,7 +701,6 @@ export class ViewContainerPart extends BaseWidget {
             disposable,
             this.collapsedEmitter,
             this.contextMenuEmitter,
-            this.onVisibilityChangedEmitter,
             this.onTitleChangedEmitter,
             this.registerContextMenu(),
             this.onDidFocusEmitter,
@@ -979,20 +980,6 @@ export class ViewContainerPart extends BaseWidget {
             this.header.focus();
         } else {
             this.wrapped.activate();
-        }
-    }
-
-    setFlag(flag: Widget.Flag): void {
-        super.setFlag(flag);
-        if (flag === Widget.Flag.IsVisible) {
-            this.onVisibilityChangedEmitter.fire(this.isVisible);
-        }
-    }
-
-    clearFlag(flag: Widget.Flag): void {
-        super.clearFlag(flag);
-        if (flag === Widget.Flag.IsVisible) {
-            this.onVisibilityChangedEmitter.fire(this.isVisible);
         }
     }
 

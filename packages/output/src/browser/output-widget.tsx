@@ -38,6 +38,7 @@ export class OutputWidget extends ReactWidget {
         this.title.iconClass = 'fa output-tab-icon';
         this.title.closable = true;
         this.addClass('theia-output');
+        this.node.tabIndex = 0;
     }
 
     @postConstruct()
