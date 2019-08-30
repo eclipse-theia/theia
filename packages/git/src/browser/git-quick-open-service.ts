@@ -97,7 +97,8 @@ export class GitQuickOpenService {
         });
     }
 
-    private async buildDefaultProjectPath(folderPath: string, gitURI: string): Promise<string> {
+    private buildDefaultProjectPath = this.doBuildDefaultProjectPath.bind(this);
+    private async doBuildDefaultProjectPath(folderPath: string, gitURI: string): Promise<string> {
         if (!(await this.fileSystem.exists(folderPath))) {
             // user specifies its own project path, doesn't want us to guess it
             return folderPath;
@@ -274,7 +275,7 @@ export class GitQuickOpenService {
             };
             const items: QuickOpenItem[] = branches.map(branch => new GitQuickOpenItem(branch, this.wrapWithProgress(switchBranch), toLabel, toDescription));
             const createBranchItem = async (item: QuickOpenItem) => {
-                const { git, gitErrorHandler, doWrapWithProgress } = this;
+                const { git, gitErrorHandler, wrapWithProgress } = this;
                 const createBranchModel: QuickOpenModel = {
                     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
                         const dynamicItems: QuickOpenItem[] = [];
@@ -284,7 +285,7 @@ export class GitQuickOpenService {
                         } else {
                             dynamicItems.push(new SingleStringInputOpenItem(
                                 `Create a new local branch with name: ${lookFor}. ${suffix}`,
-                                doWrapWithProgress(async () => {
+                                wrapWithProgress(async () => {
                                     try {
                                         await git.branch(repository, { toCreate: lookFor });
                                         await git.checkout(repository, { branch: lookFor });
@@ -590,8 +591,8 @@ export class GitQuickOpenService {
         return this.progressService.withProgress('', 'scm', fn);
     }
 
-    protected readonly doWrapWithProgress = (fn: (...args: []) => Promise<void>) => this.wrapWithProgress(fn);
-    protected wrapWithProgress<In, Out>(fn: (...args: In[]) => Promise<Out>): (...args: In[]) => Promise<Out> {
+    protected readonly wrapWithProgress = <In, Out>(fn: (...args: In[]) => Promise<Out>) => this.doWrapWithProgress(fn);
+    protected doWrapWithProgress<In, Out>(fn: (...args: In[]) => Promise<Out>): (...args: In[]) => Promise<Out> {
         return (...args: In[]) => this.withProgress(() => fn(...args));
     }
 
