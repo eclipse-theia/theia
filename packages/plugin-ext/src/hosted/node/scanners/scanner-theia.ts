@@ -115,15 +115,25 @@ export class TheiaPluginScanner implements PluginScanner {
         };
     }
 
+    private mergeConfigArray(configs: RecursivePartial<PreferenceSchema>[]): RecursivePartial<PreferenceSchema> {
+        const mergedConfig = deepClone(configs[0]);
+        let index = 0;
+        while (++index < configs.length) {
+            const config = configs[index];
+            mergedConfig.properties = { ...mergedConfig.properties, ...deepClone(config.properties) };
+        }
+        return mergedConfig;
+    }
+
     protected readContributions(rawPlugin: PluginPackage): PluginContribution | undefined {
         if (!rawPlugin.contributes) {
             return undefined;
         }
 
         const contributions: PluginContribution = {};
-        if (rawPlugin.contributes.configuration) {
-            const config = this.readConfiguration(rawPlugin.contributes.configuration, rawPlugin.packagePath);
-            contributions.configuration = config;
+        const config = rawPlugin.contributes.configuration;
+        if (config) {
+            contributions.configuration = this.readConfiguration(Array.isArray(config) ? this.mergeConfigArray(config) : config, rawPlugin.packagePath);
         }
         const configurationDefaults = rawPlugin.contributes.configurationDefaults;
         contributions.configurationDefaults = PreferenceSchemaProperties.is(configurationDefaults) ? configurationDefaults : undefined;
