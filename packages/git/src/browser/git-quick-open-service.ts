@@ -274,7 +274,7 @@ export class GitQuickOpenService {
             };
             const items: QuickOpenItem[] = branches.map(branch => new GitQuickOpenItem(branch, this.wrapWithProgress(switchBranch), toLabel, toDescription));
             const createBranchItem = async (item: QuickOpenItem) => {
-                const { git, gitErrorHandler, wrapWithProgress } = this;
+                const { git, gitErrorHandler, doWrapWithProgress } = this;
                 const createBranchModel: QuickOpenModel = {
                     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
                         const dynamicItems: QuickOpenItem[] = [];
@@ -284,7 +284,7 @@ export class GitQuickOpenService {
                         } else {
                             dynamicItems.push(new SingleStringInputOpenItem(
                                 `Create a new local branch with name: ${lookFor}. ${suffix}`,
-                                wrapWithProgress(async () => {
+                                doWrapWithProgress(async () => {
                                     try {
                                         await git.branch(repository, { toCreate: lookFor });
                                         await git.checkout(repository, { branch: lookFor });
@@ -590,6 +590,7 @@ export class GitQuickOpenService {
         return this.progressService.withProgress('', 'scm', fn);
     }
 
+    protected readonly doWrapWithProgress = (fn: (...args: []) => Promise<void>) => this.wrapWithProgress(fn);
     protected wrapWithProgress<In, Out>(fn: (...args: In[]) => Promise<Out>): (...args: In[]) => Promise<Out> {
         return (...args: In[]) => this.withProgress(() => fn(...args));
     }
