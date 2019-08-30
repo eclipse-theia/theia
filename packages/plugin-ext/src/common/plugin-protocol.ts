@@ -100,6 +100,7 @@ export interface PluginPackageCommand {
 
 export interface PluginPackageMenu {
     command: string;
+    alt?: string;
     group?: string;
     when?: string;
 }
@@ -518,6 +519,7 @@ export type IconUrl = string | { light: string; dark: string; };
  */
 export interface Menu {
     command: string;
+    alt?: string;
     group?: string;
     when?: string;
 }

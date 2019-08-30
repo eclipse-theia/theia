@@ -84,6 +84,7 @@ import { ProgressService } from '../common/progress-service';
 import { DispatchingProgressClient } from './progress-client';
 import { ProgressStatusBarItem } from './progress-status-bar-item';
 import { TabBarDecoratorService, TabBarDecorator } from './shell/tab-bar-decorator';
+import { ContextMenuContext } from './menu/context-menu-context';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -283,6 +284,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ProgressStatusBarItem).toSelf().inSingletonScope();
     bind(ProgressClient).toService(DispatchingProgressClient);
     bind(ProgressService).toSelf().inSingletonScope();
+
+    bind(ContextMenuContext).toSelf().inSingletonScope();
 });
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {

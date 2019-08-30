@@ -137,11 +137,11 @@ export class MenusContributionPointHandler {
             } else if (location === 'debug/callstack/context') {
                 for (const menu of allMenus[location]) {
                     for (const menuPath of [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU]) {
-                        this.registerMenuAction(menuPath, menu, {
-                            execute: (...args) => this.commands.executeCommand(menu.command, args[0]),
-                            isEnabled: (...args) => this.commands.isEnabled(menu.command, args[0]),
-                            isVisible: (...args) => this.commands.isVisible(menu.command, args[0])
-                        });
+                        this.registerMenuAction(menuPath, menu, command => ({
+                            execute: (...args) => this.commands.executeCommand(command, args[0]),
+                            isEnabled: (...args) => this.commands.isEnabled(command, args[0]),
+                            isVisible: (...args) => this.commands.isVisible(command, args[0])
+                        }));
                     }
                 }
             } else if (allMenus.hasOwnProperty(location)) {
@@ -169,11 +169,11 @@ export class MenusContributionPointHandler {
     }
 
     protected registerTreeMenuAction(menuPath: MenuPath, menu: Menu): void {
-        this.registerMenuAction(menuPath, menu, {
-            execute: (...args) => this.commands.executeCommand(menu.command, ...this.toTreeArgs(...args)),
-            isEnabled: (...args) => this.commands.isEnabled(menu.command, ...this.toTreeArgs(...args)),
-            isVisible: (...args) => this.commands.isVisible(menu.command, ...this.toTreeArgs(...args))
-        });
+        this.registerMenuAction(menuPath, menu, command => ({
+            execute: (...args) => this.commands.executeCommand(command, ...this.toTreeArgs(...args)),
+            isEnabled: (...args) => this.commands.isEnabled(command, ...this.toTreeArgs(...args)),
+            isVisible: (...args) => this.commands.isVisible(command, ...this.toTreeArgs(...args))
+        }));
     }
     protected toTreeArgs(...args: any[]): any[] {
         const treeArgs: any[] = [];
@@ -186,7 +186,7 @@ export class MenusContributionPointHandler {
     }
 
     protected registerTitleAction(location: string, action: Menu, handler: CommandHandler): void {
-        const id = this.createSyntheticCommandId(action, { prefix: `__plugin.${location.replace('/', '.')}.action.` });
+        const id = this.createSyntheticCommandId(action.command, { prefix: `__plugin.${location.replace('/', '.')}.action.` });
         const command: Command = { id };
         this.commands.registerCommand(command, handler);
 
@@ -220,11 +220,11 @@ export class MenusContributionPointHandler {
         });
     }
     protected registerScmMenuAction(menuPath: MenuPath, menu: Menu): void {
-        this.registerMenuAction(menuPath, menu, {
-            execute: (...args) => this.commands.executeCommand(menu.command, ...this.toScmArgs(...args)),
-            isEnabled: (...args) => this.commands.isEnabled(menu.command, ...this.toScmArgs(...args)),
-            isVisible: (...args) => this.commands.isVisible(menu.command, ...this.toScmArgs(...args))
-        });
+        this.registerMenuAction(menuPath, menu, command => ({
+            execute: (...args) => this.commands.executeCommand(command, ...this.toScmArgs(...args)),
+            isEnabled: (...args) => this.commands.isEnabled(command, ...this.toScmArgs(...args)),
+            isVisible: (...args) => this.commands.isVisible(command, ...this.toScmArgs(...args))
+        }));
     }
     protected toScmArgs(...args: any[]): any[] {
         const scmArgs: any[] = [];
@@ -266,36 +266,51 @@ export class MenusContributionPointHandler {
             const uri = this.resourceContextKey.get();
             return uri ? uri['codeUri'] : undefined;
         };
-        this.registerMenuAction(menuPath, menu, {
-            execute: () => this.commands.executeCommand(menu.command, selectedResource()),
-            isEnabled: () => this.commands.isEnabled(menu.command, selectedResource()),
-            isVisible: () => this.commands.isVisible(menu.command, selectedResource())
-        });
+        this.registerMenuAction(menuPath, menu, command => ({
+            execute: () => this.commands.executeCommand(command, selectedResource()),
+            isEnabled: () => this.commands.isEnabled(command, selectedResource()),
+            isVisible: () => this.commands.isVisible(command, selectedResource())
+        }));
     }
 
-    protected registerMenuAction(menuPath: MenuPath, menu: Menu, handler: CommandHandler): void {
-        const commandId = this.createSyntheticCommandId(menu, { prefix: '__plugin.menu.action.' });
+    protected registerMenuAction(menuPath: MenuPath, menu: Menu, handler: (command: string) => CommandHandler): void {
+        const commandId = this.createSyntheticCommandId(menu.command, { prefix: '__plugin.menu.action.' });
         const command: Command = { id: commandId };
-        this.commands.registerCommand(command, handler);
+        this.commands.registerCommand(command, handler(menu.command));
+        this.quickCommandService.pushCommandContext(commandId, 'false');
+
+        let altId: string | undefined;
+        if (menu.alt) {
+            altId = this.createSyntheticCommandId(menu.alt, { prefix: '__plugin.menu.action.' });
+            const alt: Command = { id: altId };
+            this.commands.registerCommand(alt, handler(menu.alt));
+            this.quickCommandService.pushCommandContext(altId, 'false');
+            this.onDidRegisterCommand(menu.alt, pluginCommand => {
+                alt.category = pluginCommand.category;
+                alt.label = pluginCommand.label;
+                if (inline) {
+                    alt.iconClass = pluginCommand.iconClass;
+                }
+            });
+        }
 
         const { when } = menu;
         const [group = '', order = undefined] = (menu.group || '').split('@');
-        const action: MenuAction = { commandId, order, when };
+        const action: MenuAction = { commandId, alt: altId, order, when };
         const inline = /^inline/.test(group);
         menuPath = inline ? menuPath : [...menuPath, group];
         this.menuRegistry.registerMenuAction(menuPath, action);
 
         this.onDidRegisterCommand(menu.command, pluginCommand => {
             command.category = pluginCommand.category;
-            action.label = pluginCommand.label;
+            command.label = pluginCommand.label;
             if (inline) {
-                action.icon = pluginCommand.iconClass;
+                command.iconClass = pluginCommand.iconClass;
             }
         });
     }
 
-    protected createSyntheticCommandId(menu: Menu, { prefix }: { prefix: string }): string {
-        const command = menu.command;
+    protected createSyntheticCommandId(command: string, { prefix }: { prefix: string }): string {
         let id = prefix + command;
         let index = 0;
         while (this.commands.getCommand(id)) {

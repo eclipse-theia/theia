@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.11.0
+
+Breaking changes:
+
+- [core][plugin] support alternative commands in context menus [6069](https://github.com/theia-ide/theia/pull/6069)
+
 ## v0.10.0
 
 - [vscode] added env variable substitution support [#5811](https://github.com/theia-ide/theia/pull/5811)
