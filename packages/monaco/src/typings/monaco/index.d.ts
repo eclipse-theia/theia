@@ -1119,6 +1119,7 @@ declare module monaco.contextKeyService {
 
 declare module monaco.contextkey {
     export class ContextKeyExpr {
+        keys(): string[];
         static deserialize(when: string): ContextKeyExpr;
     }
 }

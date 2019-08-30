@@ -22,6 +22,7 @@ export interface ContextKey<T> {
     reset(): void;
     get(): T | undefined;
 }
+
 export namespace ContextKey {
     // tslint:disable-next-line:no-any
     export const None: ContextKey<any> = Object.freeze({
@@ -52,6 +53,13 @@ export class ContextKeyService {
      */
     match(expression: string, context?: HTMLElement): boolean {
         return true;
+    }
+
+    /**
+     * It should be implemented by an extension, e.g. by the monaco extension.
+     */
+    parseKeys(expression: string): Set<string> {
+        return new Set<string>();
     }
 
 }

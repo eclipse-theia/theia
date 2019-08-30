@@ -89,6 +89,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     private readonly views = new Map<string, [string, View]>();
     private readonly viewContainers = new Map<string, [string, ViewContainerTitleOptions]>();
     private readonly containerViews = new Map<string, string[]>();
+    private readonly viewClauseContexts = new Map<string, Set<string>>();
 
     private readonly viewDataProviders = new Map<string, ViewDataProvider>();
     private readonly viewDataState = new Map<string, object>();
@@ -138,10 +139,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         });
         this.contextKeyService.onDidChange(e => {
             for (const [, view] of this.views.values()) {
-                if (view.when === undefined) {
-                    continue;
-                }
-                if (e.affects(new Set([view.when]))) {
+                const clauseContext = this.viewClauseContexts.get(view.id);
+                if (clauseContext && e.affects(clauseContext)) {
                     this.updateViewVisibility(view.id);
                 }
             }
@@ -231,6 +230,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const containerViews = this.containerViews.get(viewContainerId) || [];
         containerViews.push(view.id);
         this.containerViews.set(viewContainerId, containerViews);
+        if (view.when) {
+            this.viewClauseContexts.set(view.id, this.contextKeyService.parseKeys(view.when));
+        }
         this.quickView.registerItem({
             label: view.name,
             open: async () => {

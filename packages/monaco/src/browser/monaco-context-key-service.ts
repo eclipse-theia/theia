@@ -58,4 +58,8 @@ export class MonacoContextKeyService extends ContextKeyService {
         return expression;
     }
 
+    parseKeys(expression: string): Set<string> {
+        return new Set<string>(monaco.contextkey.ContextKeyExpr.deserialize(expression).keys());
+    }
+
 }
