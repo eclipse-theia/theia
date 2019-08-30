@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.11.0
+
+Breaking changes:
+
+- [core][plugin] support alternative commands in context menus [6069](https://github.com/theia-ide/theia/pull/6069)
+
 ## v0.10.0
 
 - [core] added ability to execute tasks via keybindings [#5913](https://github.com/theia-ide/theia/pull/5913)

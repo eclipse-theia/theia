@@ -21,6 +21,11 @@ import { ContributionProvider } from './contribution-provider';
 
 export interface MenuAction {
     commandId: string
+    /**
+     * In addition to the mandatory command property, an alternative command can be defined.
+     * It will be shown and invoked when pressing Alt while opening a menu.
+     */
+    alt?: string;
     label?: string
     icon?: string
     order?: string
@@ -228,10 +233,17 @@ export class CompositeMenuNode implements MenuNode {
 }
 
 export class ActionMenuNode implements MenuNode {
+
+    readonly altNode: ActionMenuNode | undefined;
+
     constructor(
         public readonly action: MenuAction,
         protected readonly commands: CommandRegistry
-    ) { }
+    ) {
+        if (action.alt) {
+            this.altNode = new ActionMenuNode({ commandId: action.alt }, commands);
+        }
+    }
 
     get id(): string {
         return this.action.commandId;

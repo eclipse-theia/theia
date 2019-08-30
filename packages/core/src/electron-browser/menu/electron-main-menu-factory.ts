@@ -25,6 +25,7 @@ import {
 import { PreferenceService, KeybindingRegistry, Keybinding } from '../../browser';
 import { ContextKeyService } from '../../browser/context-key-service';
 import debounce = require('lodash.debounce');
+import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 
 @injectable()
 export class ElectronMainMenuFactory {
@@ -34,6 +35,9 @@ export class ElectronMainMenuFactory {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ContextMenuContext)
+    protected readonly context: ContextMenuContext;
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -119,7 +123,8 @@ export class ElectronMainMenuFactory {
                     }
                 }
             } else if (menu instanceof ActionMenuNode) {
-                const commandId = menu.action.commandId;
+                const node = menu.altNode && this.context.altPressed ? menu.altNode : menu;
+                const commandId = node.action.commandId;
 
                 // That is only a sanity check at application startup.
                 if (!this.commandRegistry.getCommand(commandId)) {
@@ -127,7 +132,7 @@ export class ElectronMainMenuFactory {
                 }
 
                 if (!this.commandRegistry.isVisible(commandId, ...args)
-                    || (!!menu.action.when && !this.contextKeyService.match(menu.action.when))) {
+                    || (!!node.action.when && !this.contextKeyService.match(node.action.when))) {
                     continue;
                 }
 
@@ -142,8 +147,8 @@ export class ElectronMainMenuFactory {
                 }
 
                 items.push({
-                    id: menu.id,
-                    label: menu.label,
+                    id: node.id,
+                    label: node.label,
                     type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
                     checked: this.commandRegistry.isToggled(commandId, ...args),
                     enabled: true, // https://github.com/theia-ide/theia/issues/446

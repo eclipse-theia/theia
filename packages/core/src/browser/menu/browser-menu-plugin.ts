@@ -26,6 +26,7 @@ import {
 import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 import { ContextKeyService } from '../context-key-service';
+import { ContextMenuContext } from './context-menu-context';
 
 @injectable()
 export class BrowserMainMenuFactory {
@@ -35,6 +36,9 @@ export class BrowserMainMenuFactory {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(ContextMenuContext)
+    protected readonly context: ContextMenuContext;
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -62,7 +66,7 @@ export class BrowserMainMenuFactory {
 
         for (const menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
-                const menuWidget = new DynamicMenuWidget(menu, { commands: phosphorCommands }, this.contextKeyService);
+                const menuWidget = new DynamicMenuWidget(menu, { commands: phosphorCommands }, this.contextKeyService, this.context);
                 menuBar.addMenu(menuWidget);
             }
         }
@@ -72,7 +76,7 @@ export class BrowserMainMenuFactory {
         const menuModel = this.menuProvider.getMenu(path);
         const phosphorCommands = this.createPhosphorCommands(menuModel, args);
 
-        const contextMenu = new DynamicMenuWidget(menuModel, { commands: phosphorCommands }, this.contextKeyService);
+        const contextMenu = new DynamicMenuWidget(menuModel, { commands: phosphorCommands }, this.contextKeyService, this.context);
         return contextMenu;
     }
 
@@ -86,6 +90,9 @@ export class BrowserMainMenuFactory {
         for (const child of menu.children) {
             if (child instanceof ActionMenuNode) {
                 this.addPhosphorCommand(commands, child, args);
+                if (child.altNode) {
+                    this.addPhosphorCommand(commands, child.altNode, args);
+                }
             } else if (child instanceof CompositeMenuNode) {
                 this.addPhosphorCommands(commands, child, args);
             }
@@ -147,7 +154,8 @@ class DynamicMenuWidget extends MenuWidget {
     constructor(
         protected menu: CompositeMenuNode,
         protected options: MenuWidget.IOptions,
-        protected contextKeyService: ContextKeyService
+        protected readonly contextKeyService: ContextKeyService,
+        protected readonly context: ContextMenuContext
     ) {
         super(options);
         if (menu.label) {
@@ -194,8 +202,7 @@ class DynamicMenuWidget extends MenuWidget {
                     // do not render empty nodes
 
                     if (item.isSubmenu) { // submenu node
-
-                        const submenu = new DynamicMenuWidget(item, this.options, this.contextKeyService);
+                        const submenu = new DynamicMenuWidget(item, this.options, this.contextKeyService, this.context);
                         if (submenu.items.length === 0) {
                             continue;
                         }
@@ -224,21 +231,22 @@ class DynamicMenuWidget extends MenuWidget {
                         items.push(...submenu);
                     }
                 }
-
             } else if (item instanceof ActionMenuNode) {
-                const { when } = item.action;
-                if (!(commands.isVisible(item.action.commandId) && (!when || this.contextKeyService.match(when)))) {
+                const node = item.altNode && this.context.altPressed ? item.altNode : item;
+                const { when } = node.action;
+                if (!(commands.isVisible(node.action.commandId) && (!when || this.contextKeyService.match(when)))) {
                     continue;
                 }
 
                 items.push({
-                    command: item.action.commandId,
+                    command: node.action.commandId,
                     type: 'command'
                 });
             }
         }
         return items;
     }
+
 }
 
 @injectable()
