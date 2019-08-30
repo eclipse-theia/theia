@@ -23,7 +23,7 @@ import * as escape_html from 'escape-html';
 import { ILogger } from '@theia/core';
 import { inject, injectable, optional, multiInject } from 'inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { PluginMetadata, getPluginId, MetadataProcessor } from '../../common/plugin-protocol';
+import { PluginMetadata, getPluginId, MetadataProcessor, PluginResourcesProvider } from '../../common/plugin-protocol';
 import { MetadataScanner } from './metadata-scanner';
 
 @injectable()
@@ -36,7 +36,12 @@ export class HostedPluginReader implements BackendApplicationContribution {
     private readonly scanner: MetadataScanner;
 
     @optional()
-    @multiInject(MetadataProcessor) private readonly metadataProcessors: MetadataProcessor[];
+    @multiInject(MetadataProcessor)
+    private readonly metadataProcessors: MetadataProcessor[];
+
+    @optional()
+    @multiInject(PluginResourcesProvider)
+    private readonly resourcesProvider: PluginResourcesProvider[];
 
     /**
      * Map between a plugin's id and the local storage
@@ -44,7 +49,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
     private pluginsIdsFiles: Map<string, string> = new Map();
 
     configure(app: express.Application): void {
-        app.get('/hostedPlugin/:pluginId/:path(*)', (req, res) => {
+        app.get('/hostedPlugin/:pluginId/:path(*)', async (req, res) => {
             const pluginId = req.params.pluginId;
             const filePath = req.params.path;
 
@@ -54,6 +59,18 @@ export class HostedPluginReader implements BackendApplicationContribution {
                     res.status(404).send(`No such file for plugin with id '${escape_html(pluginId)}'.`);
                 });
             } else {
+                // Requested resource is not local. Check providers if any.
+                for (const provider of this.resourcesProvider) {
+                    if (provider.hasResources(pluginId)) {
+                        const resource = await provider.getResource(pluginId, filePath);
+                        if (resource) {
+                            res.type(path.extname(filePath));
+                            res.send(resource);
+                            return;
+                        }
+                    }
+                }
+
                 res.status(404).send(`The plugin with id '${escape_html(pluginId)}' does not exist.`);
             }
         });

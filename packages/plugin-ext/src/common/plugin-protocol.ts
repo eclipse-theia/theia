@@ -585,6 +585,25 @@ export interface MetadataProcessor {
     process(pluginMetadata: PluginMetadata): void;
 }
 
+/**
+ * Designed to retreive plugins resources from non default or remote location.
+ */
+export const PluginResourcesProvider = Symbol.for('ResourcesProvider');
+export interface PluginResourcesProvider {
+    /**
+     * Checks if this provider has resources for the given plugin.
+     * @param pluginId id of plugin to check presence of resources for
+     */
+    hasResources(pluginId: string): boolean;
+
+    /**
+     * Returns resource by given path or undefined if no resource exists.
+     * @param pluginId id of plugin that requests resource is for.
+     * @param resourcePath path to requested resource. Might be relative to plugin location
+     */
+    getResource(pluginId: string, resourcePath: string): Promise<Buffer | undefined>;
+}
+
 export function getPluginId(plugin: PluginPackage | PluginModel): string {
     return `${plugin.publisher}_${plugin.name}`.replace(/\W/g, '_');
 }
