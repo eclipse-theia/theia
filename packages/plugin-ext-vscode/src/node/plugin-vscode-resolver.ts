@@ -89,10 +89,12 @@ export class VsCodePluginDeployerResolver implements PluginDeployerResolver {
             request(options, (error, response, body) => {
                 if (error) {
                     reject(error);
+                    return;
                 } else if (response.statusCode === 200) {
                     const extension = body.results[0].extensions[0];
                     if (!extension) {
                         reject(new Error('No extension'));
+                        return;
                     }
                     let asset;
                     if (wantedExtensionVersion !== undefined) {
