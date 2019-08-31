@@ -122,8 +122,18 @@ export class TheiaPluginScanner implements PluginScanner {
 
         const contributions: PluginContribution = {};
         if (rawPlugin.contributes.configuration) {
-            const config = this.readConfiguration(rawPlugin.contributes.configuration, rawPlugin.packagePath);
-            contributions.configuration = config;
+            if (Array.isArray(rawPlugin.contributes.configuration)) {
+                contributions.configuration = [];
+                for (const c of rawPlugin.contributes.configuration) {
+                    const config = this.readConfiguration(c, rawPlugin.packagePath);
+                    if (config) {
+                        contributions.configuration.push(config);
+                    }
+                }
+            } else {
+                const config = this.readConfiguration(rawPlugin.contributes.configuration, rawPlugin.packagePath);
+                contributions.configuration = config;
+            }
         }
         const configurationDefaults = rawPlugin.contributes.configurationDefaults;
         contributions.configurationDefaults = PreferenceSchemaProperties.is(configurationDefaults) ? configurationDefaults : undefined;

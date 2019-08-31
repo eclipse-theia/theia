@@ -83,7 +83,13 @@ export class PluginContributionHandler {
 
     handleContributions(contributions: PluginContribution): void {
         if (contributions.configuration) {
-            this.updateConfigurationSchema(contributions.configuration);
+            if (Array.isArray(contributions.configuration)) {
+                for (const config of contributions.configuration) {
+                    this.updateConfigurationSchema(config);
+                }
+            } else {
+                this.updateConfigurationSchema(contributions.configuration);
+            }
         }
         if (contributions.configurationDefaults) {
             this.updateDefaultOverridesSchema(contributions.configurationDefaults);

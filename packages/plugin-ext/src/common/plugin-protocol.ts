@@ -63,7 +63,7 @@ export namespace PluginPackage {
  * This interface describes a package.json contribution section object.
  */
 export interface PluginPackageContribution {
-    configuration?: RecursivePartial<PreferenceSchema>;
+    configuration?: RecursivePartial<PreferenceSchema> | RecursivePartial<PreferenceSchema>[];
     configurationDefaults?: RecursivePartial<PreferenceSchemaProperties>;
     languages?: PluginPackageLanguageContribution[];
     grammars?: PluginPackageGrammarsContribution[];
@@ -388,7 +388,7 @@ export interface PluginModel {
  * This interface describes some static plugin contributions.
  */
 export interface PluginContribution {
-    configuration?: PreferenceSchema;
+    configuration?: PreferenceSchema | PreferenceSchema[];
     configurationDefaults?: PreferenceSchemaProperties;
     languages?: LanguageContribution[];
     grammars?: GrammarsContribution[];
