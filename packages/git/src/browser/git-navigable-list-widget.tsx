@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { SELECTED_CLASS, Key } from '@theia/core/lib/browser';
+import { SELECTED_CLASS, Key, Widget } from '@theia/core/lib/browser';
 import { GitFileStatus, Repository, GitFileChange } from '../common';
 import URI from '@theia/core/lib/common/uri';
 import { GitRepositoryProvider } from './git-repository-provider';
@@ -61,9 +61,17 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         (async () => {
             const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
             if (selected) {
-                ElementExt.scrollIntoViewIfNeeded(this.node, selected);
+                const container = document.getElementById(this.scrollContainer);
+                if (container) {
+                    ElementExt.scrollIntoViewIfNeeded(container, selected);
+                }
             }
         })();
+    }
+
+    protected onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
+        this.update();
     }
 
     protected getStatusCaption(status: GitFileStatus, staged?: boolean): string {
