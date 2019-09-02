@@ -181,7 +181,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     registerViewContainer(location: string, viewContainer: ViewContainer): void {
         if (this.viewContainers.has(viewContainer.id)) {
-            console.warn('view container such id alredy registered: ', JSON.stringify(viewContainer));
+            console.warn('view container such id already registered: ', JSON.stringify(viewContainer));
             return;
         }
         const iconClass = 'plugin-view-container-icon-' + viewContainer.id;
@@ -223,7 +223,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     registerView(viewContainerId: string, view: View): void {
         if (this.views.has(view.id)) {
-            console.warn('view with such id alredy registered: ', JSON.stringify(view));
+            console.warn('view with such id already registered: ', JSON.stringify(view));
             return;
         }
         this.views.set(view.id, [viewContainerId, view]);
@@ -285,7 +285,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     async openViewContainer(containerId: string): Promise<ViewContainerWidget | undefined> {
-        if (containerId === 'exporer') {
+        if (containerId === 'explorer') {
             const widget = await this.explorer.openView();
             if (widget.parent instanceof ViewContainerWidget) {
                 return widget.parent;
@@ -336,7 +336,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
             const part = containerWidget.getPartFor(widget);
             if (part) {
-                // if a view is explicilty hidden then suppress updating visibility based on `when` closure
+                // if a view is explicitly hidden then suppress updating visibility based on `when` closure
                 part.onDidChangeVisibility(() => widget.suppressUpdateViewVisibility = part.isHidden);
 
                 const tryFireOnDidExpandView = () => {
@@ -460,7 +460,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     registerViewDataProvider(viewId: string, provider: ViewDataProvider): Disposable {
         if (this.viewDataProviders.has(viewId)) {
-            console.error(`data provider for '${viewId}' view is already registrered`);
+            console.error(`data provider for '${viewId}' view is already registered`);
             return Disposable.NULL;
         }
         this.getView(viewId).then(async view => {
