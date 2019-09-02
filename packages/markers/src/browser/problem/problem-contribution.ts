@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import debounce = require('lodash.debounce');
 import { injectable, inject } from 'inversify';
 import { FrontendApplication, FrontendApplicationContribution, CompositeTreeNode, SelectableTreeNode, Widget } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
@@ -70,16 +71,15 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     }
 
     onStart(app: FrontendApplication): void {
-        this.setStatusBarElement(this.problemManager.getProblemStat());
-        this.problemManager.onDidChangeMarkers(() => {
-            this.setStatusBarElement(this.problemManager.getProblemStat());
-        });
+        this.updateStatusBarElement();
+        this.problemManager.onDidChangeMarkers(this.updateStatusBarElement);
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {
         await this.openView();
     }
 
+    protected updateStatusBarElement = debounce(() => this.setStatusBarElement(this.problemManager.getProblemStat()), 10);
     protected setStatusBarElement(problemStat: ProblemStat): void {
         this.statusBar.setElement('problem-marker-status', {
             text: problemStat.infos <= 0
