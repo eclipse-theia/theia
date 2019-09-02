@@ -15,24 +15,22 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
-import URI from '@theia/core/lib/common/uri';
-import { notEmpty } from '@theia/core/lib/common/objects';
+import { Diagnostic } from 'vscode-languageserver-types';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Title, Widget } from '@phosphor/widgets';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ProblemPreferences, ProblemConfiguration } from './problem-preferences';
-import { PreferenceChangeEvent } from '@theia/core/lib/browser';
+import { PreferenceChangeEvent, Navigatable } from '@theia/core/lib/browser';
+
 @injectable()
 export class ProblemTabBarDecorator implements TabBarDecorator {
 
     readonly id = 'theia-problem-tabbar-decorator';
 
-    protected emitter: Emitter<void>;
+    protected readonly emitter = new Emitter<void>();
 
     @inject(ProblemPreferences)
     protected readonly preferences: ProblemPreferences;
@@ -40,18 +38,23 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
     @inject(ProblemManager)
     protected readonly problemManager: ProblemManager;
 
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
-
     @postConstruct()
     protected init(): void {
-        this.emitter = new Emitter();
         this.problemManager.onDidChangeMarkers(() => this.fireDidChangeDecorations());
         this.preferences.onPreferenceChanged(event => this.handlePreferenceChange(event));
     }
 
-    decorate(titles: Title<Widget>[]): Map<string, WidgetDecoration.Data> {
-        return this.collectDecorators(titles);
+    decorate(title: Title<Widget>): WidgetDecoration.Data[] {
+        const widget = title.owner;
+        if (Navigatable.is(widget)) {
+            const resourceUri = widget.getResourceUri();
+            if (resourceUri) {
+                return this.problemManager.findMarkers({
+                    uri: resourceUri
+                }).map(marker => this.toDecorator(marker));
+            }
+        }
+        return [];
     }
 
     get onDidChangeDecorations(): Event<void> {
@@ -71,58 +74,6 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
         if (preferenceName === 'problems.decorations.tabbar.enabled') {
             this.fireDidChangeDecorations();
         }
-    }
-
-    /**
-     * Collect decorators for the tabs.
-     * @returns {Map<string, TabBarDecoration.Data>} A map from the tab URI to the tab decoration data.
-     */
-    protected collectDecorators(titles: Title<Widget>[]): Map<string, WidgetDecoration.Data> {
-        const result: Map<string, Marker<Diagnostic>> = new Map();
-        if (this.preferences['problems.decorations.tabbar.enabled']) {
-            const markers = this.groupMarkersByURI(this.collectMarkers());
-            for (const title of titles) {
-                // Ensure `title.caption` does not contain illegal characters for URI.
-                try {
-                    const fileUri: URI = new URI(title.caption);
-                    const marker = markers.get(fileUri.withScheme('file').toString());
-                    if (marker) {
-                        result.set(title.caption, marker);
-                    }
-                } catch (e) {
-                }
-            }
-        }
-        const urlDecoratorMap = new Map(Array.from(result.entries())
-            .map(entry => [entry[0], this.toDecorator(entry[1])] as [string, WidgetDecoration.Data]));
-        return urlDecoratorMap;
-    }
-
-    /**
-     * Group markers by the URI of the editor they decorate.
-     * @param {Marker<Diagnostic>[]} markers All the diagnostic markers collected.
-     * @returns {Map<string, Marker<Diagnostic>>} A map from URI of the editor to its diagnostic markers.
-     */
-    protected groupMarkersByURI(markers: Marker<Diagnostic>[]): Map<string, Marker<Diagnostic>> {
-        const result: Map<string, Marker<Diagnostic>> = new Map();
-        for (const [uri, marker] of new Map(markers.map(m => [new URI(m.uri), m] as [URI, Marker<Diagnostic>])).entries()) {
-            const uriString = uri.toString();
-            result.set(uriString, marker);
-        }
-        return result;
-    }
-
-    /**
-     * Collect all diagnostic markers from the problem manager.
-     * @returns {Marker<Diagnostic>[]} An array of diagnostic markers.
-     */
-    protected collectMarkers(): Marker<Diagnostic>[] {
-        return Array.from(this.problemManager.getUris())
-            .map(str => new URI(str))
-            .map(uri => this.problemManager.findMarkers({ uri }))
-            .map(markers => markers.sort(this.compare.bind(this)).shift())
-            .filter(notEmpty)
-            .filter(this.filterMarker.bind(this));
     }
 
     /**
@@ -177,25 +128,4 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
         }
     }
 
-    /**
-     * Filter the diagnostic marker by its severity.
-     * @param {Marker<Diagnostic>} marker A diagnostic marker.
-     * @returns {boolean} Whether the diagnostic marker is of `Error`, `Warning`, or `Information` severity.
-     */
-    protected filterMarker(marker: Marker<Diagnostic>): boolean {
-        const { severity } = marker.data;
-        return severity === DiagnosticSeverity.Error
-            || severity === DiagnosticSeverity.Warning
-            || severity === DiagnosticSeverity.Information;
-    }
-
-    /**
-     * Compare the severity of two diagnostic markers.
-     * @param {Marker<Diagnostic>} left A diagnostic marker to be compared.
-     * @param {Marker<Diagnostic>} right A diagnostic marker to be compared.
-     * @returns {number} Number indicating which marker takes priority (`left` if negative, `right` if positive).
-     */
-    protected compare(left: Marker<Diagnostic>, right: Marker<Diagnostic>): number {
-        return (left.data.severity || Number.MAX_SAFE_INTEGER) - (right.data.severity || Number.MAX_SAFE_INTEGER);
-    }
 }

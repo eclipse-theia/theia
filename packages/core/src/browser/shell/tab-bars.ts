@@ -17,9 +17,9 @@
 import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
-import { DisposableCollection, MenuPath, notEmpty } from '../../common';
+import { Disposable, DisposableCollection, MenuPath, notEmpty } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
-import { Signal } from '@phosphor/signaling';
+import { Signal, Slot } from '@phosphor/signaling';
 import { Message } from '@phosphor/messaging';
 import { ArrayExt } from '@phosphor/algorithm';
 import { ElementExt } from '@phosphor/domutils';
@@ -64,11 +64,6 @@ export interface SideBarRenderData extends TabBar.IRenderData<Widget> {
 export class TabBarRenderer extends TabBar.Renderer {
 
     /**
-     * A reference to the tab bar is required in order to activate it when a context menu
-     * is requested.
-     */
-    tabBar?: TabBar<Widget>;
-    /**
      * The menu path used to render the context menu.
      */
     contextMenuPath?: MenuPath;
@@ -84,9 +79,34 @@ export class TabBarRenderer extends TabBar.Renderer {
     ) {
         super();
         if (this.decoratorService) {
+            this.toDispose.push(Disposable.create(() => this.resetDecorations()));
             this.toDispose.push(this.decoratorService);
-            this.toDispose.push(this.decoratorService.onDidChangeDecorations(() => this.tabBar && this.tabBar.update()));
+            this.toDispose.push(this.decoratorService.onDidChangeDecorations(() => this.resetDecorations()));
         }
+    }
+
+    protected _tabBar?: TabBar<Widget>;
+    protected readonly toDisposeOnTabBar = new DisposableCollection();
+    /**
+     * A reference to the tab bar is required in order to activate it when a context menu
+     * is requested.
+     */
+    set tabBar(tabBar: TabBar<Widget> | undefined) {
+        if (this._tabBar === tabBar) {
+            return;
+        }
+        this.toDisposeOnTabBar.dispose();
+        this.toDispose.push(this.toDisposeOnTabBar);
+        this._tabBar = tabBar;
+        if (tabBar) {
+            const listener: Slot<Widget, TabBar.ITabCloseRequestedArgs<Widget>> = (_, { title }) => this.resetDecorations(title);
+            tabBar.tabCloseRequested.connect(listener);
+            this.toDisposeOnTabBar.push(Disposable.create(() => tabBar.tabCloseRequested.disconnect(listener)));
+        }
+        this.resetDecorations();
+    }
+    get tabBar(): TabBar<Widget> | undefined {
+        return this._tabBar;
     }
 
     /**
@@ -183,28 +203,39 @@ export class TabBarRenderer extends TabBar.Renderer {
         return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
     }
 
+    protected readonly decorations = new Map<Title<Widget>, WidgetDecoration.Data[]>();
+
+    protected resetDecorations(title?: Title<Widget>): void {
+        if (title) {
+            this.decorations.delete(title);
+        } else {
+            this.decorations.clear();
+        }
+        if (this.tabBar) {
+            this.tabBar.update();
+        }
+    }
+
     /**
      * Get all available decorations of a given tab.
-     * @param {string} tab The URI of the tab.
+     * @param {string} title The widget title.
      */
-    protected getDecorations(tab: string): WidgetDecoration.Data[] {
-        const tabDecorations = [];
+    protected getDecorations(title: Title<Widget>): WidgetDecoration.Data[] {
         if (this.tabBar && this.decoratorService) {
-            const allDecorations = this.decoratorService.getDecorations([...this.tabBar.titles]);
-            if (allDecorations.has(tab)) {
-                tabDecorations.push(...allDecorations.get(tab));
-            }
+            const decorations = this.decorations.get(title) || this.decoratorService.getDecorations(title);
+            this.decorations.set(title, decorations);
+            return decorations;
         }
-        return tabDecorations;
+        return [];
     }
 
     /**
      * Get the decoration data given the tab URI and the decoration data type.
-     * @param {string} tab The URI of the tab.
+     * @param {string} title The title.
      * @param {K} key The type of the decoration data.
      */
-    protected getDecorationData<K extends keyof WidgetDecoration.Data>(tab: string, key: K): WidgetDecoration.Data[K][] {
-        return this.getDecorations(tab).filter(data => data[key] !== undefined).map(data => data[key]);
+    protected getDecorationData<K extends keyof WidgetDecoration.Data>(title: Title<Widget>, key: K): WidgetDecoration.Data[K][] {
+        return this.getDecorations(title).filter(data => data[key] !== undefined).map(data => data[key]);
 
     }
 
@@ -318,7 +349,7 @@ export class TabBarRenderer extends TabBar.Renderer {
         const baseClassName = this.createIconClass(data);
 
         const overlayIcons: VirtualElement[] = [];
-        const decorationData = this.getDecorationData(data.title.caption, 'iconOverlay');
+        const decorationData = this.getDecorationData(data.title, 'iconOverlay');
 
         // Check if the tab has decoration markers to be rendered on top.
         if (decorationData.length > 0) {

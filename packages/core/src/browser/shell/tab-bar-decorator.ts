@@ -14,9 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import debounce = require('lodash.debounce');
+import { Title, Widget } from '@phosphor/widgets';
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { Event, Emitter, Disposable, DisposableCollection, ContributionProvider } from '../../common';
-import { Title, Widget } from '@phosphor/widgets';
 import { WidgetDecoration } from '../widget-decoration';
 
 export const TabBarDecorator = Symbol('TabBarDecorator');
@@ -34,11 +35,11 @@ export interface TabBarDecorator {
     readonly onDidChangeDecorations: Event<void>;
 
     /**
-     * Decorate tabs by the underlying URI.
-     * @param {Title<Widget>[]} titles An array of the titles of the tabs.
-     * @returns A map from the URI of the tab to its decoration data.
+     * Decorate title.
+     * @param {Title<Widget>} title the title
+     * @returns decoration data.
      */
-    decorate(titles: Title<Widget>[]): Map<string, WidgetDecoration.Data>;
+    decorate(title: Title<Widget>): WidgetDecoration.Data[];
 }
 
 @injectable()
@@ -57,33 +58,28 @@ export class TabBarDecoratorService implements Disposable {
     protected init(): void {
         const decorators = this.contributions.getContributions();
         this.toDispose.pushAll(decorators.map(decorator =>
-            decorator.onDidChangeDecorations(data =>
-                this.onDidChangeDecorationsEmitter.fire(undefined)
-            ))
-        );
+            decorator.onDidChangeDecorations(this.fireDidChangeDecorations)
+        ));
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
+    protected fireDidChangeDecorations = debounce(() => this.onDidChangeDecorationsEmitter.fire(undefined), 150);
+
     /**
      * Assign tabs the decorators provided by all the contributions.
-     * @param {Title<Widget>[]} titles An array of the titles of the tabs.
-     * @returns A map from the URI of the tab to an array of its decoration data.
+     * @param {Title<Widget>} title the title
+     * @returns an array of its decoration data.
      */
-    getDecorations(titles: Title<Widget>[]): Map<string, WidgetDecoration.Data[]> {
+    getDecorations(title: Title<Widget>): WidgetDecoration.Data[] {
         const decorators = this.contributions.getContributions();
-        const changes: Map<string, WidgetDecoration.Data[]> = new Map();
+        let all: WidgetDecoration.Data[] = [];
         for (const decorator of decorators) {
-            for (const [id, data] of (decorator.decorate(titles)).entries()) {
-                if (changes.has(id)) {
-                    changes.get(id)!.push(data);
-                } else {
-                    changes.set(id, [data]);
-                }
-            }
+            const decorations = decorator.decorate(title);
+            all = all.concat(decorations);
         }
-        return changes;
+        return all;
     }
 }
