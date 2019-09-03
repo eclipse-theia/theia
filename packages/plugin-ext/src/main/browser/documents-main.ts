@@ -153,7 +153,7 @@ export class DocumentsMainImpl implements DocumentsMain {
                         text: c.text,
                         range: c.range,
                         rangeLength: c.rangeLength,
-                        rangeOffset: 0
+                        rangeOffset: c.rangeOffset
                     }))
             }, model.dirty);
         }));
