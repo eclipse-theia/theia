@@ -20,6 +20,8 @@ import { DocumentsExtImpl } from '../documents';
 import { CodeLensSymbol } from '../../common/plugin-api-rpc-model';
 import * as Converter from '../type-converters';
 import { ObjectIdentifier } from '../../common/object-identifier';
+import { CommandRegistryImpl } from '../command-registry';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 /** Adapts the calls from main to extension thread for providing/resolving the code lenses. */
 export class CodeLensAdapter {
@@ -27,11 +29,13 @@ export class CodeLensAdapter {
     private static readonly BAD_CMD: theia.Command = { command: 'missing', title: '<<MISSING COMMAND>>' };
 
     private cacheId = 0;
-    private cache = new Map<number, theia.CodeLens>();
+    private readonly cache = new Map<number, theia.CodeLens>();
+    private readonly disposables = new Map<number, DisposableCollection>();
 
     constructor(
         private readonly provider: theia.CodeLensProvider,
         private readonly documents: DocumentsExtImpl,
+        private readonly commands: CommandRegistryImpl
     ) { }
 
     provideCodeLenses(resource: URI, token: theia.CancellationToken): Promise<CodeLensSymbol[] | undefined> {
@@ -45,12 +49,15 @@ export class CodeLensAdapter {
         return Promise.resolve(this.provider.provideCodeLenses(doc, token)).then(lenses => {
             if (Array.isArray(lenses)) {
                 return lenses.map(lens => {
-                    const id = this.cacheId++;
+                    const cacheId = this.cacheId++;
+                    const toDispose = new DisposableCollection();
                     const lensSymbol = ObjectIdentifier.mixin({
                         range: Converter.fromRange(lens.range)!,
-                        command: lens.command ? Converter.toInternalCommand(lens.command) : undefined
-                    }, id);
-                    this.cache.set(id, lens);
+                        command: this.commands.converter.toSafeCommand(lens.command, toDispose)
+                    }, cacheId);
+                    // TODO: invalidate caches and dispose command handlers
+                    this.cache.set(cacheId, lens);
+                    this.disposables.set(cacheId, toDispose);
                     return lensSymbol;
                 });
             }
@@ -58,23 +65,28 @@ export class CodeLensAdapter {
         });
     }
 
-    resolveCodeLens(resource: URI, symbol: CodeLensSymbol, token: theia.CancellationToken): Promise<CodeLensSymbol | undefined> {
-        const lens = this.cache.get(ObjectIdentifier.of(symbol));
+    async resolveCodeLens(resource: URI, symbol: CodeLensSymbol, token: theia.CancellationToken): Promise<CodeLensSymbol | undefined> {
+        const cacheId = ObjectIdentifier.of(symbol);
+        const lens = this.cache.get(cacheId);
         if (!lens) {
-            return Promise.resolve(undefined);
+            return undefined;
         }
 
-        let resolve: Promise<theia.CodeLens | undefined>;
-        if (typeof this.provider.resolveCodeLens !== 'function' || lens.isResolved) {
-            resolve = Promise.resolve(lens);
-        } else {
-            resolve = Promise.resolve(this.provider.resolveCodeLens(lens, token));
+        let newLens: theia.CodeLens | undefined;
+        if (typeof this.provider.resolveCodeLens === 'function' && !lens.isResolved) {
+            newLens = await this.provider.resolveCodeLens(lens, token);
+            if (token.isCancellationRequested) {
+                return undefined;
+            }
         }
+        newLens = newLens || lens;
 
-        return resolve.then(newLens => {
-            newLens = newLens || lens;
-            symbol.command = Converter.toInternalCommand(newLens.command ? newLens.command : CodeLensAdapter.BAD_CMD);
-            return symbol;
-        });
+        const disposables = this.disposables.get(cacheId);
+        if (!disposables) {
+            // already been disposed of
+            return undefined;
+        }
+        symbol.command = this.commands.converter.toSafeCommand(newLens.command ? newLens.command : CodeLensAdapter.BAD_CMD, disposables);
+        return symbol;
     }
 }

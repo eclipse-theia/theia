@@ -22,15 +22,19 @@ import * as Converter from '../type-converters';
 import { mixin } from '../../common/types';
 import { Position } from '../../common/plugin-api-rpc';
 import { CompletionContext, CompletionResultDto, Completion, CompletionDto } from '../../common/plugin-api-rpc-model';
+import { CommandRegistryImpl } from '../command-registry';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export class CompletionAdapter {
     private cacheId = 0;
-    private cache = new Map<number, theia.CompletionItem[]>();
+    private readonly cache = new Map<number, theia.CompletionItem[]>();
+    private readonly disposables = new Map<number, DisposableCollection>();
 
-    constructor(private readonly delegate: theia.CompletionItemProvider,
-        private readonly documents: DocumentsExtImpl) {
-
-    }
+    constructor(
+        private readonly delegate: theia.CompletionItemProvider,
+        private readonly documents: DocumentsExtImpl,
+        private readonly commands: CommandRegistryImpl
+    ) { }
 
     provideCompletionItems(resource: URI, position: Position, context: CompletionContext, token: theia.CancellationToken): Promise<CompletionResultDto | undefined> {
         const document = this.documents.getDocumentData(resource);
@@ -43,6 +47,10 @@ export class CompletionAdapter {
         const pos = Converter.toPosition(position);
         return Promise.resolve(this.delegate.provideCompletionItems(doc, pos, token, context)).then(value => {
             const id = this.cacheId++;
+
+            const toDispose = new DisposableCollection();
+            this.disposables.set(id, toDispose);
+
             const result: CompletionResultDto = {
                 id,
                 completions: [],
@@ -102,15 +110,24 @@ export class CompletionAdapter {
         });
     }
 
-    releaseCompletionItems(id: number): Promise<void> {
+    async releaseCompletionItems(id: number): Promise<void> {
         this.cache.delete(id);
-        return Promise.resolve();
+        const toDispose = this.disposables.get(id);
+        if (toDispose) {
+            toDispose.dispose();
+            this.disposables.delete(id);
+        }
     }
 
     private convertCompletionItem(item: theia.CompletionItem, position: theia.Position, defaultRange: theia.Range, id: number, parentId: number): CompletionDto | undefined {
         if (typeof item.label !== 'string' || item.label.length === 0) {
             console.warn('Invalid Completion Item -> must have at least a label');
             return undefined;
+        }
+
+        const toDispose = this.disposables.get(parentId);
+        if (!toDispose) {
+            throw Error('DisposableCollection is missing...');
         }
 
         const result: CompletionDto = {
@@ -125,7 +142,7 @@ export class CompletionAdapter {
             preselect: item.preselect,
             insertText: '',
             additionalTextEdits: item.additionalTextEdits && item.additionalTextEdits.map(Converter.fromTextEdit),
-            command: undefined,   // TODO: implement this: this.commands.toInternal(item.command),
+            command: this.commands.converter.toSafeCommand(item.command, toDispose),
             commitCharacters: item.commitCharacters
         };
 

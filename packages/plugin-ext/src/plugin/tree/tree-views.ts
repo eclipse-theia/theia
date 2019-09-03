@@ -32,7 +32,6 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { CommandRegistryImpl, CommandsConverter } from '../command-registry';
 import { TreeViewSelection } from '../../common';
 import { PluginPackage } from '../../common/plugin-protocol';
-import { toInternalCommand } from '../type-converters';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
 
@@ -319,7 +318,7 @@ class TreeViewExtImpl<T> implements Disposable {
                     tooltip: treeItem.tooltip,
                     collapsibleState: treeItem.collapsibleState,
                     contextValue: treeItem.contextValue,
-                    command: treeItem.command ? toInternalCommand(this.commandsConverter.toSafeCommand(treeItem.command, toDisposeElement)) : undefined
+                    command: this.commandsConverter.toSafeCommand(treeItem.command, toDisposeElement)
                 } as TreeViewItem;
 
                 treeItems.push(treeViewItem);

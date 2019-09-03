@@ -442,19 +442,6 @@ export function fromDocumentHighlight(documentHighlight: theia.DocumentHighlight
     };
 }
 
-export function toInternalCommand(external: theia.Command): model.Command {
-    // we're deprecating Command.id, so it has to be optional.
-    // Existing code will have compiled against a non - optional version of the field, so asserting it to exist is ok
-    // tslint:disable-next-line: no-any
-    return KnownCommands.map((external.command || external.id)!, external.arguments, (mappedId: string, mappedArgs: any[]) =>
-        ({
-            id: mappedId,
-            title: external.title || external.label || ' ',
-            tooltip: external.tooltip,
-            arguments: mappedArgs
-        }));
-}
-
 export namespace KnownCommands {
     // tslint:disable: no-any
     const mappings: { [id: string]: [string, (args: any[] | undefined) => any[] | undefined] } = {};
@@ -462,6 +449,10 @@ export namespace KnownCommands {
         (uri: URI) => uri.toString(),
         fromPositionToP,
         toArrayConversion(fromLocationToL))];
+
+    export function mapped(id: string): boolean {
+        return !!mappings[id];
+    }
 
     export function map<T>(id: string, args: any[] | undefined, toDo: (mappedId: string, mappedArgs: any[] | undefined) => T): T {
         if (mappings[id]) {

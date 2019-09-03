@@ -22,6 +22,8 @@ import * as Converter from '../type-converters';
 import { DocumentsExtImpl } from '../documents';
 import { Diagnostics } from './diagnostics';
 import { CodeActionKind } from '../types-impl';
+import { CommandRegistryImpl } from '../command-registry';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export class CodeActionAdapter {
 
@@ -29,7 +31,8 @@ export class CodeActionAdapter {
         private readonly provider: theia.CodeActionProvider,
         private readonly document: DocumentsExtImpl,
         private readonly diagnostics: Diagnostics,
-        private readonly pluginId: string
+        private readonly pluginId: string,
+        private readonly commands: CommandRegistryImpl
     ) { }
 
     provideCodeAction(resource: URI, rangeOrSelection: Range | Selection,
@@ -60,6 +63,8 @@ export class CodeActionAdapter {
             if (!Array.isArray(commandsOrActions) || commandsOrActions.length === 0) {
                 return undefined!;
             }
+            // TODO cache toDispose and dispose it
+            const toDispose = new DisposableCollection();
             const result: monaco.languages.CodeAction[] = [];
             for (const candidate of commandsOrActions) {
                 if (!candidate) {
@@ -68,7 +73,7 @@ export class CodeActionAdapter {
                 if (CodeActionAdapter._isCommand(candidate)) {
                     result.push({
                         title: candidate.title || '',
-                        command: Converter.toInternalCommand(candidate)
+                        command: this.commands.converter.toSafeCommand(candidate, toDispose)
                     });
                 } else {
                     if (codeActionContext.only) {
@@ -83,7 +88,7 @@ export class CodeActionAdapter {
 
                     result.push({
                         title: candidate.title,
-                        command: candidate.command && Converter.toInternalCommand(candidate.command),
+                        command: this.commands.converter.toSafeCommand(candidate.command, toDispose),
                         diagnostics: candidate.diagnostics && candidate.diagnostics.map(Converter.convertDiagnosticToMarkerData) as monaco.editor.IMarker[],
                         edit: candidate.edit && Converter.fromWorkspaceEdit(candidate.edit) as monaco.languages.WorkspaceEdit,
                         kind: candidate.kind && candidate.kind.value

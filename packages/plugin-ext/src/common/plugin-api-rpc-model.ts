@@ -322,7 +322,6 @@ export interface DocumentLinkProvider {
 
 export interface CodeLensSymbol {
     range: Range;
-    id?: string;
     command?: Command;
 }
 

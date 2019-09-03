@@ -19,6 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as theia from '@theia/plugin';
+import * as model from '../common/plugin-api-rpc-model';
 import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable } from './types-impl';
@@ -153,24 +154,45 @@ export class CommandsConverter {
     /**
      * Convert to a command that can be safely passed over JSON-RPC.
      */
-    toSafeCommand(command: theia.Command, disposables: DisposableCollection): theia.Command {
+    toSafeCommand(command: undefined, disposables: DisposableCollection): undefined;
+    toSafeCommand(command: theia.Command, disposables: DisposableCollection): model.Command;
+    toSafeCommand(command: theia.Command | undefined, disposables: DisposableCollection): model.Command | undefined;
+    toSafeCommand(command: theia.Command | undefined, disposables: DisposableCollection): model.Command | undefined {
+        if (!command) {
+            return undefined;
+        }
+        const result = this.toInternalCommand(command);
+        if (KnownCommands.mapped(result.id)) {
+            return result;
+        }
+
         if (!this.isSafeCommandRegistered) {
             this.commands.registerCommand({ id: this.safeCommandId }, this.executeSafeCommand, this);
             this.isSafeCommandRegistered = true;
         }
 
-        const result: theia.Command = {};
-        Object.assign(result, command);
-
         if (command.command && command.arguments && command.arguments.length > 0) {
             const id = this.handle++;
             this.commandsMap.set(id, command);
             disposables.push(new Disposable(() => this.commandsMap.delete(id)));
-            result.command = this.safeCommandId;
+            result.id = this.safeCommandId;
             result.arguments = [id];
         }
 
         return result;
+    }
+
+    protected toInternalCommand(external: theia.Command): model.Command {
+        // we're deprecating Command.id, so it has to be optional.
+        // Existing code will have compiled against a non - optional version of the field, so asserting it to exist is ok
+        // tslint:disable-next-line: no-any
+        return KnownCommands.map((external.command || external.id)!, external.arguments, (mappedId: string, mappedArgs: any[]) =>
+            ({
+                id: mappedId,
+                title: external.title || external.label || ' ',
+                tooltip: external.tooltip,
+                arguments: mappedArgs
+            }));
     }
 
     // tslint:disable-next-line:no-any
