@@ -16,12 +16,23 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
+import { PreferenceServiceImpl, PreferenceChange } from '@theia/core/lib/browser';
 
 @injectable()
 export class MonacoContextKeyService extends ContextKeyService {
 
+    // Prefix for context keys based on preference values
+    protected static readonly CONFIG_KEY_PREFIX = 'config.';
+
     @inject(monaco.contextKeyService.ContextKeyService)
     protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService;
+
+    @inject(PreferenceServiceImpl)
+    protected readonly preferenceService: PreferenceServiceImpl;
+
+    // Storage of preferences added as context key to the context service to be able to update them later
+    // tslint:disable-next-line:no-any
+    protected readonly configValues = new Map<string, ContextKey<any>>();
 
     @postConstruct()
     protected init(): void {
@@ -30,6 +41,9 @@ export class MonacoContextKeyService extends ContextKeyService {
                 affects: keys => e.affectsSome(keys)
             })
         );
+
+        // Watch for newly added preferences and add them as context key to the context service
+        this.preferenceService.onPreferenceChanged(preference => this.onPreferencesChanged(preference));
     }
 
     createKey<T>(key: string, defaultValue: T | undefined): ContextKey<T> {
@@ -60,6 +74,26 @@ export class MonacoContextKeyService extends ContextKeyService {
 
     parseKeys(expression: string): Set<string> {
         return new Set<string>(monaco.contextkey.ContextKeyExpr.deserialize(expression).keys());
+    }
+
+    protected async onPreferencesChanged(preference: PreferenceChange): Promise<void> {
+        this.addOrUpdateConfigContextKey(preference.preferenceName, preference.newValue);
+    }
+
+    // tslint:disable-next-line:no-any
+    protected addOrUpdateConfigContextKey(key: string, value: any): ContextKey<any> {
+        if (!key.startsWith(MonacoContextKeyService.CONFIG_KEY_PREFIX)) {
+            key = MonacoContextKeyService.CONFIG_KEY_PREFIX + key;
+        }
+
+        let contextKey = this.configValues.get(key);
+        if (contextKey !== undefined) {
+            contextKey.set(value);
+        } else {
+            contextKey = this.contextKeyService.createKey<string>(key, value);
+            this.configValues.set(key, contextKey);
+        }
+        return contextKey;
     }
 
 }
