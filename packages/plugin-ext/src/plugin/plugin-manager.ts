@@ -17,6 +17,8 @@
 import {
     PLUGIN_RPC_CONTEXT,
     MAIN_RPC_CONTEXT,
+    MainMessageType,
+    MessageRegistryMain,
     PluginManagerExt,
     PluginInitData,
     PluginManager,
@@ -73,13 +75,15 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
     private readonly registry = new Map<string, Plugin>();
     private readonly activations = new Map<string, (() => Promise<void>)[] | undefined>();
-    private readonly loadedPlugins = new Map<string, Promise<void>>();
+    /** promises to whether loading each plugin has been successful */
+    private readonly loadedPlugins = new Map<string, Promise<boolean>>();
     private readonly activatedPlugins = new Map<string, ActivatedPlugin>();
     private pluginActivationPromises = new Map<string, Deferred<void>>();
     private pluginContextsMap: Map<string, theia.PluginContext> = new Map();
     private storageProxy: KeyValueStorageProxy;
 
     private onDidChangeEmitter = new Emitter<void>();
+    private messageRegistryProxy: MessageRegistryMain;
     protected fireOnDidChange(): void {
         this.onDidChangeEmitter.fire(undefined);
     }
@@ -89,7 +93,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         private readonly envExt: EnvExtImpl,
         private readonly preferencesManager: PreferenceRegistryExtImpl,
         private readonly rpc: RPCProtocol
-    ) { }
+    ) {
+        this.messageRegistryProxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN);
+    }
 
     $stopPlugin(contextPath: string): PromiseLike<void> {
         this.activatedPlugins.forEach(plugin => {
@@ -157,7 +163,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     protected registerPlugin(plugin: Plugin, configStorage: ConfigStorage): void {
         this.registry.set(plugin.model.id, plugin);
         if (plugin.pluginPath && Array.isArray(plugin.rawModel.activationEvents)) {
-            const activation = () => this.loadPlugin(plugin, configStorage);
+            const activation = async () => {
+                await this.loadPlugin(plugin, configStorage);
+            };
             // an internal activation event is a subject to change
             this.setActivation(`onPlugin:${plugin.model.id}`, activation);
             const unsupportedActivationEvents = plugin.rawModel.activationEvents.filter(e => !PluginManagerExtImpl.SUPPORTED_ACTIVATION_EVENTS.has(e.split(':')[0]));
@@ -181,10 +189,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.activations.set(activationEvent, activations);
     }
 
-    protected async loadPlugin(plugin: Plugin, configStorage: ConfigStorage, visited = new Set<string>()): Promise<void> {
+    protected async loadPlugin(plugin: Plugin, configStorage: ConfigStorage, visited = new Set<string>()): Promise<boolean> {
         // in order to break cycles
         if (visited.has(plugin.model.id)) {
-            return;
+            return true;
         }
         visited.add(plugin.model.id);
 
@@ -194,21 +202,28 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
                 if (plugin.rawModel.extensionDependencies) {
                     for (const dependencyId of plugin.rawModel.extensionDependencies) {
                         const dependency = this.registry.get(dependencyId.toLowerCase());
+                        const id = plugin.model.displayName || plugin.model.id;
                         if (dependency) {
-                            await this.loadPlugin(dependency, configStorage, visited);
+                            const depId = dependency.model.displayName || dependency.model.id;
+                            const loadedSuccessfully = await this.loadPlugin(dependency, configStorage, visited);
+                            if (!loadedSuccessfully) {
+                                const message = `Cannot activate extension '${id}' because it depends on extension '${depId}', which failed to activate.`;
+                                this.messageRegistryProxy.$showMessage(MainMessageType.Error, message, {}, []);
+                                return false;
+                            }
                         } else {
-                            console.warn(`cannot find a dependency to '${dependencyId}' for '${plugin.model.id}' plugin`);
+                            const message = `Cannot activate the '${id}' extension because it depends on the '${dependencyId}' extension, which is not installed.`;
+                            this.messageRegistryProxy.$showMessage(MainMessageType.Error, message, {}, []);
+                            console.warn(message);
+                            return false;
                         }
                     }
                 }
 
-                const pluginMain = this.host.loadPlugin(plugin);
-                // able to load the plug-in ?
-                if (pluginMain !== undefined) {
-                    await this.startPlugin(plugin, configStorage, pluginMain);
-                } else {
-                    console.error(`Unable to load a plugin from "${plugin.pluginPath}"`);
-                }
+                let pluginMain = this.host.loadPlugin(plugin);
+                // see https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/workbench/api/common/extHostExtensionService.ts#L372-L376
+                pluginMain = pluginMain || {};
+                return this.startPlugin(plugin, configStorage, pluginMain);
             })();
         }
         this.loadedPlugins.set(plugin.model.id, loading);
@@ -234,7 +249,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     // tslint:disable-next-line:no-any
-    private async startPlugin(plugin: Plugin, configStorage: ConfigStorage, pluginMain: any): Promise<void> {
+    private async startPlugin(plugin: Plugin, configStorage: ConfigStorage, pluginMain: any): Promise<boolean> {
         const subscriptions: theia.Disposable[] = [];
         const asAbsolutePath = (relativePath: string): string => join(plugin.pluginFolder, relativePath);
         const logPath = join(configStorage.hostLogPath, plugin.model.id); // todo check format
@@ -254,18 +269,31 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         if (typeof pluginMain[plugin.lifecycle.stopMethod] === 'function') {
             stopFn = pluginMain[plugin.lifecycle.stopMethod];
         }
+        const id = plugin.model.displayName || plugin.model.id;
         if (typeof pluginMain[plugin.lifecycle.startMethod] === 'function') {
-            const pluginExport = await pluginMain[plugin.lifecycle.startMethod].apply(getGlobal(), [pluginContext]);
-            this.activatedPlugins.set(plugin.model.id, new ActivatedPlugin(pluginContext, pluginExport, stopFn));
+            try {
+                const pluginExport = await pluginMain[plugin.lifecycle.startMethod].apply(getGlobal(), [pluginContext]);
+                this.activatedPlugins.set(plugin.model.id, new ActivatedPlugin(pluginContext, pluginExport, stopFn));
 
-            // resolve activation promise
-            if (this.pluginActivationPromises.has(plugin.model.id)) {
-                this.pluginActivationPromises.get(plugin.model.id)!.resolve();
-                this.pluginActivationPromises.delete(plugin.model.id);
+                // resolve activation promise
+                if (this.pluginActivationPromises.has(plugin.model.id)) {
+                    this.pluginActivationPromises.get(plugin.model.id)!.resolve();
+                    this.pluginActivationPromises.delete(plugin.model.id);
+                }
+            } catch (err) {
+                if (this.pluginActivationPromises.has(plugin.model.id)) {
+                    this.pluginActivationPromises.get(plugin.model.id)!.reject(err);
+                }
+                this.messageRegistryProxy.$showMessage(MainMessageType.Error, `Activating extension ${id} failed: ${err.message}.`, {}, []);
+                console.error(`Error on activation of ${plugin.model.name} - ${err}`);
+                return false;
             }
         } else {
-            console.log(`There is no ${plugin.lifecycle.startMethod} method on plugin`);
+            // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/workbench/api/common/extHostExtensionService.ts#L400-L401
+            console.log(`plugin ${id}, ${plugin.lifecycle.startMethod} method is undefined so the module is the extension's exports`);
+            this.activatedPlugins.set(plugin.model.id, new ActivatedPlugin(pluginContext, pluginMain));
         }
+        return true;
     }
 
     getAllPlugins(): Plugin[] {
