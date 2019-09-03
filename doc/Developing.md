@@ -34,6 +34,11 @@ For Windows instructions [click here](#building-on-windows).
      - [Debug the Electron example's backend](#debug-the-electron-examples-backend)
      - [Debug the Electron example's frontend](#debug-the-electron-examples-frontend)
      - [Debug IPC servers](#debug-ipc-servers)
+ - [**Profiling**](#profiling)
+     - [Profile the frontend process](#profile-the-frontend-process)
+     - [Profile the backend process](#profile-the-backend-process)
+     - [Profile IPC servers](#profile-ipc-servers)
+     - [Profile the plugin host](#profile-the-plugin-host)
  - [**Testing**](#testing)
  - [**Code coverage**](#code-coverage)
  - [**Building on Windows**](#building-on-windows)
@@ -250,6 +255,40 @@ Let assume you have to work for instance in the `@theia/navigator` extension. Bu
 
 In order to look up `server-name` run the backend server with `--log-level=debug` flag to enable logging of IPC servers instantiation.
 You should be able to see message of `[${server-name}: ${server-PID}]: IPC started` format, like `[nsfw-watcher: 37557] IPC started`.
+
+## Profiling
+
+ - Use Chrome devtools to profile both the frontend and backend (Node.js).
+   - For Node.js: open chrome://inspect, click the configure button and ensure target host and port are listed.
+ - Learn how to get and understand CPU measurements: https://developers.google.com/web/tools/chrome-devtools/evaluate-performance/
+ - Learn how to get and understand Memory measurements: https://developers.google.com/web/tools/chrome-devtools/memory-problems/
+ - Before taking the memory snapshot always collect garbage.
+ - Make sure that Chrome extensions don't distort measurements by disabling them.
+   - For frontend: React extension is leaking components.
+ - Make maesurements before and after improvements to provide them as evidence on a pull request.
+   - Also document how to reproduce improved measurements in `How to test` section of a pull request description.
+ - If objects don't have a proper class, i.e. plain JSON, then find one of them in the first snapshot
+ and check that it is garbage collected in the diff between snapshots.
+
+### Profile the frontend process
+
+  - In Browser: open the devtools.
+  - In Electron: Help -> Toggle Electron Developer Tools.
+
+### Profile the backend process
+
+  - Pass `--inspect` arg to the backend server: https://nodejs.org/en/docs/inspector/#command-line-options.
+
+### Profile IPC servers
+
+  - Pass `--${server-name}-inspect` arg to the backend server.
+    - For example `--nfsw-watcher-inspect=0` to inspect nfsw watcher processes with dynamic port allocation.
+    - All variations of `--inspect` flag are supported: https://nodejs.org/en/docs/inspector/#command-line-options.
+
+### Profile the plugin host
+
+ - Pass `--hosted-plugin-inspect` arg to the backend server.
+   - All variations of `--inspect` flag are supported: https://nodejs.org/en/docs/inspector/#command-line-options.
 
 ## Testing
 
