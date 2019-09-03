@@ -65,6 +65,8 @@ export interface ScmCommand {
     title: string;
     tooltip?: string;
     command?: string;
+    // tslint:disable-next-line:no-any
+    arguments?: any[];
 }
 
 export interface ScmCommit {

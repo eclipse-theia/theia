@@ -78,6 +78,7 @@ import { FoldingProviderAdapter } from './languages/folding';
 import { ColorProviderAdapter } from './languages/color';
 import { RenameAdapter } from './languages/rename';
 import { Event } from '@theia/core/lib/common/event';
+import { CommandRegistryImpl } from './command-registry';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -109,7 +110,10 @@ export class LanguagesExtImpl implements LanguagesExt {
     private callId = 0;
     private adaptersMap = new Map<number, Adapter>();
 
-    constructor(rpc: RPCProtocol, private readonly documents: DocumentsExtImpl) {
+    constructor(
+        rpc: RPCProtocol,
+        private readonly documents: DocumentsExtImpl,
+        private readonly commands: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.LANGUAGES_MAIN);
         this.diagnostics = new Diagnostics(rpc);
     }
@@ -225,7 +229,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, triggerCharacters: string[]): theia.Disposable {
-        const callId = this.addNewAdapter(new CompletionAdapter(provider, this.documents));
+        const callId = this.addNewAdapter(new CompletionAdapter(provider, this.documents, this.commands));
         this.proxy.$registerCompletionSupport(callId, this.transformDocumentSelector(selector), triggerCharacters, CompletionAdapter.hasResolveSupport(provider));
         return this.createDisposable(callId);
     }
@@ -395,7 +399,7 @@ export class LanguagesExtImpl implements LanguagesExt {
         pluginModel: PluginModel,
         metadata?: theia.CodeActionProviderMetadata
     ): theia.Disposable {
-        const callId = this.addNewAdapter(new CodeActionAdapter(provider, this.documents, this.diagnostics, pluginModel ? pluginModel.id : ''));
+        const callId = this.addNewAdapter(new CodeActionAdapter(provider, this.documents, this.diagnostics, pluginModel ? pluginModel.id : '', this.commands));
         this.proxy.$registerQuickFixProvider(
             callId,
             this.transformDocumentSelector(selector),
@@ -416,7 +420,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     // ### Code Lens Provider begin
     registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider): theia.Disposable {
-        const callId = this.addNewAdapter(new CodeLensAdapter(provider, this.documents));
+        const callId = this.addNewAdapter(new CodeLensAdapter(provider, this.documents, this.commands));
         const eventHandle = typeof provider.onDidChangeCodeLenses === 'function' ? this.nextCallId() : undefined;
         this.proxy.$registerCodeLensSupport(callId, this.transformDocumentSelector(selector), eventHandle);
         let result = this.createDisposable(callId);
