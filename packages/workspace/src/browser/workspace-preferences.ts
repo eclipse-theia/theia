@@ -27,14 +27,14 @@ export const workspacePreferenceSchema: PreferenceSchema = {
     type: 'object',
     properties: {
         'workspace.preserveWindow': {
-            description: 'Enable opening workspaces in current window',
+            description: 'Enable opening workspaces in current window.',
             type: 'boolean',
             default: false
         },
         'workspace.supportMultiRootWorkspace': {
-            description: 'Enable the multi-root workspace support to test this feature internally',
+            description: 'Controls whether multi-root workspace support is enabled.',
             type: 'boolean',
-            default: false
+            default: true
         }
     }
 };
