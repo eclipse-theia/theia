@@ -278,6 +278,10 @@
     cursor: pointer;
 }
 
+.p-TabBar-toolbar .item.enabled.active {
+    transform: scale(1.272019649);
+}
+
 .p-TabBar-toolbar .item > div {
     height: 18px;
     width: 18px;

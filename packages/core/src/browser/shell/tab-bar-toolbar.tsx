@@ -128,7 +128,8 @@ export class TabBarToolbar extends ReactWidget {
         if (iconClass) {
             classNames.push(iconClass);
         }
-        return <div key={item.id} className={`${TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM}${command && this.commandIsEnabled(command.id) ? ' enabled' : ''}`} >
+        return <div key={item.id} className={`${TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM}${command && this.commandIsEnabled(command.id) ? ' enabled' : ''}`}
+            onMouseDown={this.onMouseDownEvent} onMouseUp={this.onMouseUpEvent} onMouseOut={this.onMouseUpEvent} >
             <div id={item.id} className={classNames.join(' ')} onClick={this.executeCommand} title={item.tooltip}>{innerText}</div>
         </div>;
     }
@@ -176,6 +177,16 @@ export class TabBarToolbar extends ReactWidget {
         if (TabBarToolbarItem.is(item)) {
             this.commands.executeCommand(item.command, this.current);
         }
+    }
+
+    protected onMouseDownEvent = (e: React.MouseEvent<HTMLElement>) => {
+        if (e.button === 0) {
+            e.currentTarget.classList.add('active');
+        }
+    }
+
+    protected onMouseUpEvent = (e: React.MouseEvent<HTMLElement>) => {
+        e.currentTarget.classList.remove('active');
     }
 
 }
