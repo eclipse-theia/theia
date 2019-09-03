@@ -34,6 +34,7 @@ For Windows instructions [click here](#building-on-windows).
      - [Debug the Electron example's backend](#debug-the-electron-examples-backend)
      - [Debug the Electron example's frontend](#debug-the-electron-examples-frontend)
      - [Debug IPC servers](#debug-ipc-servers)
+     - [Debug the plugin host](#debug-the-plugin-host)
  - [**Profiling**](#profiling)
      - [Profile the frontend process](#profile-the-frontend-process)
      - [Profile the backend process](#profile-the-backend-process)
@@ -255,6 +256,15 @@ Let assume you have to work for instance in the `@theia/navigator` extension. Bu
 
 In order to look up `server-name` run the backend server with `--log-level=debug` flag to enable logging of IPC servers instantiation.
 You should be able to see message of `[${server-name}: ${server-PID}]: IPC started` format, like `[nsfw-watcher: 37557] IPC started`.
+
+### Debug the plugin host
+
+  - Pass `--hosted-plugin-inspect=9339` arg to the backend server from the command line.
+    - Instead you can run `Launch Backend` launch configuration which is already preconfigured.
+  - Open the debug view and run the `Attach to Plugin Host` launch configuration.
+    - It connects to the plugin host if at least one extension is detected, otherwise it timeouts after 60s.
+    - If you want to debug the activation then enable `stopOnEntry` flag.
+  - Open the browser page.
 
 ## Profiling
 
