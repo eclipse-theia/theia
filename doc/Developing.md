@@ -225,22 +225,22 @@ Let assume you have to work for instance in the `@theia/navigator` extension. Bu
 
 ### Debug the browser example's backend
 
- - In VS Code: start the debug tab and run the `Launch Backend` configuration.
+ - Open the debug view and run the `Launch Backend` configuration.
 
 ### Debug the browser example's frontend
 
  - Start the backend by using `yarn run start`.
  - In a browser: Open http://localhost:3000/ and use the dev tools for debugging.
- - In VS Code: start the debug tab and run the `Launch Frontend` configuration.
+ - Open the debug view and run the `Launch Frontend` configuration.
 
 ### Debug the browser example's frontend and backend at the same time
 
- - In VS Code: Start the debug tab and run the `Launch Backend` configuration.
+ - Open the debug view and run the `Launch Backend` configuration.
  - Then run the `Launch Frontend` configuration.
 
 ### Debug the Electron example's backend
 
- - In VS Code: Start the debug tab and run the `Launch Electron Backend` configuration.
+ - Open the debug view and run the `Launch Electron Backend` configuration.
 
 ### Debug the Electron example's frontend
 
@@ -275,7 +275,7 @@ You should be able to see message of `[${server-name}: ${server-PID}]: IPC start
  - Before taking the memory snapshot always collect garbage.
  - Make sure that Chrome extensions don't distort measurements by disabling them.
    - For frontend: React extension is leaking components.
- - Make maesurements before and after improvements to provide them as evidence on a pull request.
+ - Make measurements before and after improvements to provide them as evidence on a pull request.
    - Also document how to reproduce improved measurements in `How to test` section of a pull request description.
  - If objects don't have a proper class, i.e. plain JSON, then find one of them in the first snapshot
  and check that it is garbage collected in the diff between snapshots.
