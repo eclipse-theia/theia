@@ -147,14 +147,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         if (typeof jsonData !== 'object') {
             return preferences;
         }
-        const uri = this.getUri();
         // tslint:disable-next-line:forin
         for (const preferenceName in jsonData) {
             const preferenceValue = jsonData[preferenceName];
-            if (!this.validate(preferenceName, preferenceValue)) {
-                console.warn(`Preference ${preferenceName} in ${uri} is invalid.`);
-                continue;
-            }
             if (this.schemaProvider.testOverrideValue(preferenceName, preferenceValue)) {
                 // tslint:disable-next-line:forin
                 for (const overriddenPreferenceName in preferenceValue) {
@@ -166,14 +161,6 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             }
         }
         return preferences;
-    }
-
-    protected validate(preferenceName: string, preferenceValue: any): boolean {
-        // in case if preferences are loaded from .vscode folder we should load even invalid
-        if (this.configurations.getPath(this.getUri()) !== this.configurations.getPaths()[0]) {
-            return true;
-        }
-        return preferenceValue === undefined || this.schemaProvider.validate(preferenceName, preferenceValue);
     }
 
     protected parse(content: string): any {
