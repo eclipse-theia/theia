@@ -252,10 +252,6 @@
     align-items: center;
 }
 
-.theia-scm-inline-action:hover {
-    background: var(--theia-content-font-color3);
-}
-
 .theia-scm-inline-action .open-file {
     height: 16px;
     width: 12px;
