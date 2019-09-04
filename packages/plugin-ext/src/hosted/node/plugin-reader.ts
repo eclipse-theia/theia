@@ -39,12 +39,12 @@ export class HostedPluginReader implements BackendApplicationContribution {
     @multiInject(MetadataProcessor) private readonly metadataProcessors: MetadataProcessor[];
 
     /**
-     * Map between a plugin's id and the local storage
+     * Map between a plugin id and its local storage
      */
-    private pluginsIdsFiles: Map<string, string> = new Map();
+    protected pluginsIdsFiles: Map<string, string> = new Map();
 
     configure(app: express.Application): void {
-        app.get('/hostedPlugin/:pluginId/:path(*)', (req, res) => {
+        app.get('/hostedPlugin/:pluginId/:path(*)', async (req, res) => {
             const pluginId = req.params.pluginId;
             const filePath = req.params.path;
 
@@ -67,9 +67,14 @@ export class HostedPluginReader implements BackendApplicationContribution {
                     }
                 });
             } else {
-                res.status(404).send(`The plugin with id '${escape_html(pluginId)}' does not exist.`);
+                await this.handleMissingResource(req, res);
             }
         });
+    }
+
+    protected async handleMissingResource(req: express.Request, res: express.Response): Promise<void> {
+        const pluginId = req.params.pluginId;
+        res.status(404).send(`The plugin with id '${escape_html(pluginId)}' does not exist.`);
     }
 
     async getPluginMetadata(pluginPath: string): Promise<PluginMetadata | undefined> {
