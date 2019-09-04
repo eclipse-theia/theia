@@ -22,16 +22,16 @@ import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceCo
 export const FileNavigatorConfigSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
-        'navigator.autoReveal': {
+        'explorer.autoReveal': {
             type: 'boolean',
-            description: 'Selects file under editing in the navigator.',
+            description: 'Selects file under editing in the explorer.',
             default: true
         }
     }
 };
 
 export interface FileNavigatorConfiguration {
-    'navigator.autoReveal': boolean;
+    'explorer.autoReveal': boolean;
 }
 
 export const FileNavigatorPreferences = Symbol('NavigatorPreferences');

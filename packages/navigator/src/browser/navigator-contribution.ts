@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import {
     Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
-    OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode
+    OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode, PreferenceScope
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX, Command, DisposableCollection, Mutable } from '@theia/core/lib/common';
@@ -34,6 +34,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } f
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
 import { UriSelection } from '@theia/core/lib/common/selection';
+import { PreferenceService } from '@theia/core/lib/browser';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
@@ -43,6 +44,11 @@ export namespace FileNavigatorCommands {
     export const TOGGLE_HIDDEN_FILES: Command = {
         id: 'navigator.toggle.hidden.files',
         label: 'Toggle Hidden Files'
+    };
+    export const TOGGLE_AUTO_REVEAL: Command = {
+        id: 'navigator.toggle.autoReveal',
+        category: 'File',
+        label: 'Auto Reveal'
     };
     export const REFRESH_NAVIGATOR: Command = {
         id: 'navigator.refresh',
@@ -67,7 +73,8 @@ export namespace FileNavigatorCommands {
  */
 export namespace NavigatorMoreToolbarGroups {
     export const NEW_OPEN = '1_navigator_new_open';
-    export const WORKSPACE = '2_navigator_workspace';
+    export const TOOLS = '2_navigator_tools';
+    export const WORKSPACE = '3_navigator_workspace';
 }
 
 export const NAVIGATOR_CONTEXT_MENU: MenuPath = ['navigator-context-menu'];
@@ -118,6 +125,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     @inject(NavigatorDiff)
     protected readonly navigatorDiff: NavigatorDiff;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
@@ -176,6 +186,16 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             },
             isEnabled: () => true,
             isVisible: () => true
+        });
+        registry.registerCommand(FileNavigatorCommands.TOGGLE_AUTO_REVEAL, {
+            execute: () => {
+                const autoReveal = !this.fileNavigatorPreferences['explorer.autoReveal'];
+                this.preferenceService.set('explorer.autoReveal', autoReveal, PreferenceScope.User);
+                if (autoReveal) {
+                    this.selectWidgetFileNode(this.shell.currentWidget);
+                }
+            },
+            isToggled: () => this.fileNavigatorPreferences['explorer.autoReveal']
         });
         registry.registerCommand(FileNavigatorCommands.COLLAPSE_ALL, {
             execute: widget => this.withWidget(widget, () => this.collapseFileNavigatorTree()),
@@ -368,6 +388,12 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             group: NavigatorMoreToolbarGroups.NEW_OPEN,
         });
         this.registerMoreToolbarItem({
+            id: FileNavigatorCommands.TOGGLE_AUTO_REVEAL.id,
+            command: FileNavigatorCommands.TOGGLE_AUTO_REVEAL.id,
+            tooltip: FileNavigatorCommands.TOGGLE_AUTO_REVEAL.label,
+            group: NavigatorMoreToolbarGroups.TOOLS,
+        });
+        this.registerMoreToolbarItem({
             id: WorkspaceCommands.ADD_FOLDER.id,
             command: WorkspaceCommands.ADD_FOLDER.id,
             tooltip: WorkspaceCommands.ADD_FOLDER.label,
@@ -416,7 +442,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     }
 
     protected onCurrentWidgetChangedHandler(): void {
-        if (this.fileNavigatorPreferences['navigator.autoReveal']) {
+        if (this.fileNavigatorPreferences['explorer.autoReveal']) {
             this.selectWidgetFileNode(this.shell.currentWidget);
         }
     }
