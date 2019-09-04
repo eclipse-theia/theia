@@ -124,7 +124,7 @@ export class TabBarToolbar extends ReactWidget {
             }
         }
         const command = this.commands.getCommand(item.command);
-        const iconClass = item.icon || (command && command.iconClass);
+        const iconClass = (typeof item.icon === 'function' && item.icon()) || item.icon || (command && command.iconClass);
         if (iconClass) {
             classNames.push(iconClass);
         }
@@ -266,7 +266,7 @@ export interface TabBarToolbarItem {
     /**
      * Optional icon for the item.
      */
-    readonly icon?: string;
+    readonly icon?: string | (() => string);
 
     /**
      * https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
