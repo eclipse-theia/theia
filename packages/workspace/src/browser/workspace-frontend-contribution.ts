@@ -106,22 +106,32 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             }));
         commands.registerCommand(WorkspaceCommands.UPLOAD, new FileSelection.CommandHandler(this.selectionService, {
             multi: false,
-            isEnabled: selection => this.canUpload(selection),
-            isVisible: selection => this.canUpload(selection),
+            isEnabled: selection => this.isEnabled(selection),
+            isVisible: selection => this.isVisible(selection),
             execute: selection => this.upload(selection)
         }));
     }
 
-    protected canUpload({ fileStat }: FileSelection): boolean {
-        return !environment.electron.is() && fileStat.isDirectory;
+    protected isEnabled(selection: FileSelection | undefined): boolean {
+        return !environment.electron.is();
+    }
+
+    protected isVisible(selection: FileSelection | undefined): boolean {
+        return !environment.electron.is() && (selection === undefined || selection.fileStat.isDirectory);
     }
 
     protected async upload(selection: FileSelection): Promise<void> {
         try {
-            const source = TreeWidgetSelection.getSource(this.selectionService.selection);
-            await this.uploadService.upload(selection.fileStat.uri);
-            if (ExpandableTreeNode.is(selection) && source) {
-                await source.model.expandNode(selection);
+            if (selection === undefined) {
+                await this.uploadService.upload(this.workspaceService.tryGetRoots()[0].uri);
+            } else if (!selection.fileStat.isDirectory) {
+                await this.uploadService.upload((new URI(selection.fileStat.uri)).parent);
+            } else {
+                const source = TreeWidgetSelection.getSource(this.selectionService.selection);
+                await this.uploadService.upload(selection.fileStat.uri);
+                if (ExpandableTreeNode.is(selection) && source) {
+                    await source.model.expandNode(selection);
+                }
             }
         } catch (e) {
             if (!isCancelled(e)) {
