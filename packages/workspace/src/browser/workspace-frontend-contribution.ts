@@ -15,13 +15,16 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService } from '@theia/core/lib/common';
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService, isCancelled } from '@theia/core/lib/common';
 import { isOSX, environment, OS } from '@theia/core';
 import {
     open, OpenerService, CommonMenus, StorageService, LabelProvider,
-    ConfirmDialog, KeybindingRegistry, KeybindingContribution, CommonCommands
+    ConfirmDialog, KeybindingRegistry, KeybindingContribution, CommonCommands,
+    ExpandableTreeNode
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
+import { FileSelection } from '@theia/filesystem/lib/browser/file-selection';
+import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-service';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { WorkspaceService } from './workspace-service';
@@ -31,6 +34,7 @@ import { QuickOpenWorkspace } from './quick-open-workspace';
 import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
+import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
 
 @injectable()
 export class WorkspaceFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
@@ -48,6 +52,9 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    @inject(FileUploadService)
+    protected readonly uploadService: FileUploadService;
 
     @postConstruct()
     protected init(): void {
@@ -97,6 +104,30 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             new UriAwareCommandHandler(this.selectionService, {
                 execute: (uri: URI) => this.saveAs(uri),
             }));
+        commands.registerCommand(WorkspaceCommands.UPLOAD, new FileSelection.CommandHandler(this.selectionService, {
+            multi: false,
+            isEnabled: selection => this.canUpload(selection),
+            isVisible: selection => this.canUpload(selection),
+            execute: selection => this.upload(selection)
+        }));
+    }
+
+    protected canUpload({ fileStat }: FileSelection): boolean {
+        return !environment.electron.is() && fileStat.isDirectory;
+    }
+
+    protected async upload(selection: FileSelection): Promise<void> {
+        try {
+            const source = TreeWidgetSelection.getSource(this.selectionService.selection);
+            await this.uploadService.upload(selection.fileStat.uri);
+            if (ExpandableTreeNode.is(selection) && source) {
+                await source.model.expandNode(selection);
+            }
+        } catch (e) {
+            if (!isCancelled(e)) {
+                console.error(e);
+            }
+        }
     }
 
     registerMenus(menus: MenuModelRegistry): void {
