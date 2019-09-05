@@ -154,8 +154,10 @@ export class HostedPluginManagerClient {
             this.messageService.info('Starting hosted instance server ...');
 
             if (debugConfig) {
+                this.isDebug = true;
                 this.pluginInstanceURL = await this.hostedPluginServer.runDebugHostedPluginInstance(this.pluginLocation.toString(), debugConfig);
             } else {
+                this.isDebug = false;
                 this.pluginInstanceURL = await this.hostedPluginServer.runHostedPluginInstance(this.pluginLocation.toString());
             }
             await this.openPluginWindow();
@@ -170,9 +172,11 @@ export class HostedPluginManagerClient {
     }
 
     async debug(): Promise<void> {
-        this.isDebug = true;
-
         await this.start({ debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
+        await this.startDebugSessionManager();
+    }
+
+    async startDebugSessionManager(): Promise<void> {
         let outFiles: string[] | undefined = undefined;
         if (this.pluginLocation) {
             const fsPath = await this.fileSystem.getFsPath(this.pluginLocation.toString());
@@ -194,11 +198,10 @@ export class HostedPluginManagerClient {
     }
 
     async stop(checkRunning: boolean = true): Promise<void> {
-        if (checkRunning && ! await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
+        if (checkRunning && !await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
             this.messageService.warn('Hosted instance is not running.');
             return;
         }
-
         try {
             this.stateChanged.fire({ state: HostedInstanceState.STOPPING, pluginLocation: this.pluginLocation! });
             await this.hostedPluginServer.terminateHostedPluginInstance();
@@ -221,10 +224,20 @@ export class HostedPluginManagerClient {
             let lastError;
             for (let tries = 0; tries < 15; tries++) {
                 try {
-                    this.pluginInstanceURL = await this.hostedPluginServer.runHostedPluginInstance(this.pluginLocation!.toString());
+                    if (this.isDebug) {
+                        this.pluginInstanceURL = await this.hostedPluginServer.runDebugHostedPluginInstance(this.pluginLocation!.toString(), {
+                            debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode']
+                        });
+                        await this.startDebugSessionManager();
+                    } else {
+                        this.pluginInstanceURL = await this.hostedPluginServer.runHostedPluginInstance(this.pluginLocation!.toString());
+                    }
                     await this.openPluginWindow();
                     this.messageService.info('Hosted instance is running at: ' + this.pluginInstanceURL);
-                    this.stateChanged.fire({ state: HostedInstanceState.RUNNING, pluginLocation: this.pluginLocation! });
+                    this.stateChanged.fire({
+                        state: HostedInstanceState.RUNNING,
+                        pluginLocation: this.pluginLocation!
+                    });
                     return;
                 } catch (error) {
                     lastError = error;
