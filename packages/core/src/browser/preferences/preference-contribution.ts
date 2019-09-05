@@ -135,6 +135,13 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
     }
 
     protected doSetSchema(schema: PreferenceSchema): PreferenceProviderDataChange[] {
+        const ajv = new Ajv();
+        const valid = ajv.validateSchema(schema);
+        if (!valid) {
+            const errors = !!ajv.errors ? ajv.errorsText(ajv.errors) : 'unknown validation error';
+            console.error('An invalid preference schema was rejected: ' + errors);
+            return [];
+        }
         const scope = PreferenceScope.Default;
         const domain = this.getDomain();
         const changes: PreferenceProviderDataChange[] = [];
