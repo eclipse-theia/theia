@@ -100,7 +100,8 @@
     box-sizing: border-box;
     height: 26px;
     min-height: 26px;
-    padding: 4px 4px 4px 4px;
+    padding: 4px;
+    border: none;
 }
 
 .theia-scm-input-message-container textarea:placeholder-shown {
@@ -110,8 +111,7 @@
 }
 
 .theia-scm-input-message-container textarea:not(:focus) {
-    border-style: solid;
-    border-width: 1px;
+    border: none;
 }
 
 .theia-scm-input-message {
