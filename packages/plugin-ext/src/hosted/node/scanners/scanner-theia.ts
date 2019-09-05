@@ -384,12 +384,13 @@ export class TheiaPluginScanner implements PluginScanner {
     }
 
     private readTaskDefinition(pluginName: string, definitionContribution: PluginTaskDefinitionContribution): TaskDefinition {
+        const propertyKeys = definitionContribution.properties ? Object.keys(definitionContribution.properties) : [];
         return {
             taskType: definitionContribution.type,
             source: pluginName,
             properties: {
                 required: definitionContribution.required,
-                all: Object.keys(definitionContribution.properties)
+                all: propertyKeys
             }
         };
     }
