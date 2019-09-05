@@ -291,7 +291,7 @@ export class TaskService implements TaskConfigurationClient {
     /**
      * Run the last executed task.
      */
-    async runLastTask(): Promise<void> {
+    async runLastTask(): Promise<TaskInfo | undefined> {
         if (!this.lastTask) {
             return;
         }
@@ -303,7 +303,7 @@ export class TaskService implements TaskConfigurationClient {
      * Runs a task, by the source and label of the task configuration.
      * It looks for configured and detected tasks.
      */
-    async run(source: string, taskLabel: string): Promise<void> {
+    async run(source: string, taskLabel: string): Promise<TaskInfo | undefined> {
         let task = await this.getProvidedTask(source, taskLabel);
         const customizationObject: TaskCustomization = { type: '' };
         if (!task) { // if a detected task cannot be found, search from tasks.json
@@ -345,12 +345,12 @@ export class TaskService implements TaskConfigurationClient {
                 resolvedMatchers.push(resolvedMatcher);
             }
         }
-        this.runTask(task, {
+        return this.runTask(task, {
             customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
         });
     }
 
-    async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<void> {
+    async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
         const source = task._source;
         const taskLabel = task.label;
         if (option && option.customization) {
@@ -400,6 +400,8 @@ export class TaskService implements TaskConfigurationClient {
         if (typeof taskInfo.terminalId === 'number') {
             this.attach(taskInfo.terminalId, taskInfo.taskId);
         }
+
+        return taskInfo;
     }
 
     async runTaskByLabel(taskLabel: string): Promise<boolean> {
