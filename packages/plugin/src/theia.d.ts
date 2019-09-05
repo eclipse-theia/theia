@@ -8253,6 +8253,19 @@ declare module '@theia/plugin' {
         exitCode: number;
     }
 
+    export interface TaskFilter {
+		/**
+		 * The task version as used in the tasks.json file.
+		 * The string support the package.json semver notation.
+		 */
+        version?: string;
+
+        /**
+         * The type of tasks to return.
+         */
+        type?: string;
+    }
+
     export namespace tasks {
 
         /**
@@ -8263,6 +8276,23 @@ declare module '@theia/plugin' {
          * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
          */
         export function registerTaskProvider(type: string, provider: TaskProvider): Disposable;
+
+        /**
+         * Fetches all tasks available in the systems. This includes tasks
+         * from `tasks.json` files as well as tasks from task providers
+         * contributed through extensions and plugins.
+         *
+         * @param filter a filter to filter the return tasks.
+         */
+        export function fetchTasks(filter?: TaskFilter): PromiseLike<Task[]>;
+
+        /**
+		 * Executes a task that is managed by VS Code. The returned
+		 * task execution can be used to terminate the task.
+		 *
+		 * @param task the task to execute
+		 */
+        export function executeTask(task: Task): PromiseLike<TaskExecution>;
 
         /**
          * The currently active task executions or an empty array.

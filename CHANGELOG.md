@@ -2,6 +2,8 @@
 
 ## v0.11.0
 
+- [task] added `tasks.fetchTasks()` and `tasks.executeTask()` to plugins API [#6058](https://github.com/theia-ide/theia/pull/6058)
+
 Breaking changes:
 
 - [core][plugin] support alternative commands in context menus [6069](https://github.com/theia-ide/theia/pull/6069)
@@ -72,8 +74,8 @@ Breaking changes:
 - [task] fixed the problem where a detected task can be customized more than once [#5777](https://github.com/theia-ide/theia/pull/5777)
 - [task] notified clients of TaskDefinitionRegistry on change [#5915](https://github.com/theia-ide/theia/pull/5915)
 - [task] updated `isVisible` and `isEnabled` handling for `Run Selected Text` [#6018](https://github.com/theia-ide/theia/pull/6018)
-- [tasks] added support for removing all data from tasks.json [#6033](https://github.com/theia-ide/theia/pull/6033)
-- [tasks] updated compare task to use task definitions [#5975](https://github.com/theia-ide/theia/pull/5975)
+- [task] added support for removing all data from tasks.json [#6033](https://github.com/theia-ide/theia/pull/6033)
+- [task] updated compare task to use task definitions [#5975](https://github.com/theia-ide/theia/pull/5975)
 - [terminal] added a preference `terminal.integrated.scrollback` to control the terminal scrollback [#5783](https://github.com/theia-ide/theia/pull/5783)
 - [vscode] added support for `command` variable substitution [#5835](https://github.com/theia-ide/theia/pull/5835)
 - [vscode] added support for `config` variable substitution [#5835](https://github.com/theia-ide/theia/pull/5835)
