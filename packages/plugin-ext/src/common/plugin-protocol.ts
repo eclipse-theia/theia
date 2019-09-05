@@ -185,7 +185,7 @@ export interface PluginPackageLanguageContributionConfiguration {
 export interface PluginTaskDefinitionContribution {
     type: string;
     required: string[];
-    properties: {
+    properties?: {
         [name: string]: {
             type: string;
             description?: string;
