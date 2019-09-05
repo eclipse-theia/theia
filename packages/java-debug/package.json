@@ -50,6 +50,6 @@
     "extends": "../../configs/nyc.json"
   },
   "adapters": {
-    "java-debug": "https://ms-vscode.gallery.vsassets.io/_apis/public/gallery/publisher/vscjava/extension/vscode-java-debug/0.15.0/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
+    "java-debug": "https://github.com/microsoft/vscode-java-debug/releases/download/0.15.0/vscode-java-debug-0.15.0.vsix"
   }
 }
