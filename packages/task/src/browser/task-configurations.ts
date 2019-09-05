@@ -324,27 +324,26 @@ export class TaskConfigurations implements Disposable {
                     for (const e of errors) {
                         console.error(`Error parsing ${uri}: error: ${e.error}, length:  ${e.length}, offset:  ${e.offset}`);
                     }
+                }
+                const rootFolderUri = this.getSourceFolderFromConfigUri(uri);
+                if (this.rawTaskConfigurations.has(rootFolderUri)) {
+                    this.rawTaskConfigurations.delete(rootFolderUri);
+                }
+                if (rawTasks && rawTasks['tasks']) {
+                    const tasks = rawTasks['tasks'].map((t: TaskCustomization | TaskConfiguration) => {
+                        if (this.isDetectedTask(t)) {
+                            const def = this.getTaskDefinition(t);
+                            return Object.assign(t, {
+                                _source: def!.source,
+                                _scope: this.getSourceFolderFromConfigUri(uri)
+                            });
+                        }
+                        return Object.assign(t, { _source: this.getSourceFolderFromConfigUri(uri) });
+                    });
+                    this.rawTaskConfigurations.set(rootFolderUri, tasks);
+                    return tasks;
                 } else {
-                    const rootFolderUri = this.getSourceFolderFromConfigUri(uri);
-                    if (this.rawTaskConfigurations.has(rootFolderUri)) {
-                        this.rawTaskConfigurations.delete(rootFolderUri);
-                    }
-                    if (rawTasks && rawTasks['tasks']) {
-                        const tasks = rawTasks['tasks'].map((t: TaskCustomization | TaskConfiguration) => {
-                            if (this.isDetectedTask(t)) {
-                                const def = this.getTaskDefinition(t);
-                                return Object.assign(t, {
-                                    _source: def!.source,
-                                    _scope: this.getSourceFolderFromConfigUri(uri)
-                                });
-                            }
-                            return Object.assign(t, { _source: this.getSourceFolderFromConfigUri(uri) });
-                        });
-                        this.rawTaskConfigurations.set(rootFolderUri, tasks);
-                        return tasks;
-                    } else {
-                        return [];
-                    }
+                    return [];
                 }
             } catch (err) {
                 console.error(`Error(s) reading config file: ${uri}`);
@@ -359,13 +358,7 @@ export class TaskConfigurations implements Disposable {
             return;
         }
 
-        const isDetectedTask = this.isDetectedTask(task);
-        let sourceFolderUri: string | undefined;
-        if (isDetectedTask) {
-            sourceFolderUri = task._scope;
-        } else {
-            sourceFolderUri = task._source;
-        }
+        const sourceFolderUri: string | undefined = this.getSourceFolderUriFromTask(task);
         if (!sourceFolderUri) {
             console.error('Global task cannot be customized');
             return;
@@ -396,9 +389,25 @@ export class TaskConfigurations implements Disposable {
                 customization[p] = task[p];
             }
         });
+        const problemMatcher: string[] = [];
+        if (task.problemMatcher) {
+            if (Array.isArray(task.problemMatcher)) {
+                problemMatcher.push(...task.problemMatcher.map(t => {
+                    if (typeof t === 'string') {
+                        return t;
+                    } else {
+                        return t.name!;
+                    }
+                }));
+            } else if (typeof task.problemMatcher === 'string') {
+                problemMatcher.push(task.problemMatcher);
+            } else {
+                problemMatcher.push(task.problemMatcher.name!);
+            }
+        }
         return {
             ...customization,
-            problemMatcher: []
+            problemMatcher: problemMatcher.map(name => name.startsWith('$') ? name : `$${name}`)
         };
     }
 
@@ -465,6 +474,59 @@ export class TaskConfigurations implements Disposable {
         this.tasksMap = newTaskMap;
     }
 
+    /**
+     * saves the names of the problem matchers to be used to parse the output of the given task to `tasks.json`
+     * @param task task that the problem matcher(s) are applied to
+     * @param problemMatchers name(s) of the problem matcher(s)
+     */
+    async saveProblemMatcherForTask(task: TaskConfiguration, problemMatchers: string[]): Promise<void> {
+        const sourceFolderUri: string | undefined = this.getSourceFolderUriFromTask(task);
+        if (!sourceFolderUri) {
+            console.error('Global task cannot be customized');
+            return;
+        }
+        const configFileUri = this.getConfigFileUri(sourceFolderUri);
+        const configuredAndCustomizedTasks = await this.getTasks();
+        if (configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) { // task is already in `tasks.json`
+            try {
+                const content = (await this.fileSystem.resolveContent(configFileUri)).content;
+                const errors: ParseError[] = [];
+                const jsonTasks = jsoncparser.parse(content, errors).tasks;
+                if (errors.length > 0) {
+                    for (const e of errors) {
+                        console.error(`Error parsing ${configFileUri}: error: ${e.error}, length:  ${e.length}, offset:  ${e.offset}`);
+                    }
+                }
+                if (jsonTasks) {
+                    const ind = jsonTasks.findIndex((t: TaskConfiguration) => {
+                        if (t.type !== (task.taskType || task.type)) {
+                            return false;
+                        }
+                        const def = this.taskDefinitionRegistry.getDefinition(t);
+                        if (def) {
+                            return def.properties.all.every(p => t[p] === task[p]);
+                        }
+                        return t.label === task.label;
+                    });
+                    const newTask = Object.assign(jsonTasks[ind], { problemMatcher: problemMatchers.map(name => name.startsWith('$') ? name : `$${name}`) });
+                    jsonTasks[ind] = newTask;
+                }
+                const updatedTasks = JSON.stringify({ tasks: jsonTasks });
+                const formattingOptions = { tabSize: 4, insertSpaces: true, eol: '' };
+                const edits = jsoncparser.format(updatedTasks, undefined, formattingOptions);
+                const updatedContent = jsoncparser.applyEdits(updatedTasks, edits);
+                const resource = await this.resourceProvider(new URI(configFileUri));
+                Resource.save(resource, { content: updatedContent });
+            } catch (e) {
+                console.error(`Failed to save task configuration for ${task.label} task. ${e.toString()}`);
+                return;
+            }
+        } else { // task is not in `tasks.json`
+            task.problemMatcher = problemMatchers;
+            this.saveTask(configFileUri, task);
+        }
+    }
+
     private getSourceFolderFromConfigUri(configFileUri: string): string {
         return new URI(configFileUri).parent.parent.path.toString();
     }
@@ -481,5 +543,16 @@ export class TaskConfigurations implements Disposable {
             ...task,
             type: task.taskType || task.type
         });
+    }
+
+    private getSourceFolderUriFromTask(task: TaskConfiguration): string | undefined {
+        const isDetectedTask = this.isDetectedTask(task);
+        let sourceFolderUri: string | undefined;
+        if (isDetectedTask) {
+            sourceFolderUri = task._scope;
+        } else {
+            sourceFolderUri = task._source;
+        }
+        return sourceFolderUri;
     }
 }

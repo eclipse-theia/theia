@@ -18,23 +18,26 @@ import { inject, injectable, named, postConstruct } from 'inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ILogger } from '@theia/core/lib/common';
 import { ApplicationShell, FrontendApplication, WidgetManager } from '@theia/core/lib/browser';
+import { QuickPickService, QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
 import { TaskResolverRegistry, TaskProviderRegistry } from './task-contribution';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import {
+    NamedProblemMatcher,
     ProblemMatcher,
     ProblemMatchData,
+    TaskConfiguration,
     TaskCustomization,
-    TaskServer,
     TaskExitedEvent,
     TaskInfo,
-    TaskConfiguration,
     TaskOutputProcessedEvent,
+    TaskServer,
     RunTaskOption
 } from '../common';
 import { TaskWatcher } from '../common/task-watcher';
@@ -44,6 +47,11 @@ import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { Range } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
+
+export interface QuickPickProblemMatcherItem {
+    problemMatchers: NamedProblemMatcher[] | undefined;
+    learnMore?: boolean;
+}
 
 @injectable()
 export class TaskService implements TaskConfigurationClient {
@@ -109,6 +117,12 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(ProblemMatcherRegistry)
     protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+
+    @inject(QuickPickService)
+    protected readonly quickPick: QuickPickService;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     /**
      * @deprecated To be removed in 0.5.0
@@ -311,7 +325,7 @@ export class TaskService implements TaskConfigurationClient {
             if (!task) {
                 this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
                 return;
-            } else if (task.problemMatcher) {
+            } else {
                 Object.assign(customizationObject, {
                     type: task.type,
                     problemMatcher: task.problemMatcher
@@ -323,36 +337,67 @@ export class TaskService implements TaskConfigurationClient {
                 Object.assign(customizationObject, customizationFound);
             }
         }
-        await this.problemMatcherRegistry.onReady();
-        const notResolvedMatchers = customizationObject.problemMatcher ?
-            (Array.isArray(customizationObject.problemMatcher) ? customizationObject.problemMatcher : [customizationObject.problemMatcher]) : [];
-        const resolvedMatchers: ProblemMatcher[] = [];
-        // resolve matchers before passing them to the server
-        for (const matcher of notResolvedMatchers) {
-            let resolvedMatcher: ProblemMatcher | undefined;
-            if (typeof matcher === 'string') {
-                resolvedMatcher = this.problemMatcherRegistry.get(matcher);
-            } else {
-                resolvedMatcher = await this.problemMatcherRegistry.getProblemMatcherFromContribution(matcher);
-            }
-            if (resolvedMatcher) {
-                const scope = task._scope || task._source;
-                if (resolvedMatcher.filePrefix && scope) {
-                    const options = { context: new URI(scope).withScheme('file') };
-                    const resolvedPrefix = await this.variableResolverService.resolve(resolvedMatcher.filePrefix, options);
-                    Object.assign(resolvedMatcher, { filePrefix: resolvedPrefix });
+
+        if (!customizationObject.problemMatcher) {
+            // ask the user what s/he wants to use to parse the task output
+            const items = this.getCustomizeProblemMatcherItems();
+            const selected = await this.quickPick.show(items, {
+                placeholder: 'Select for which kind of errors and warnings to scan the task output'
+            });
+            if (selected) {
+                if (selected.problemMatchers) {
+                    let matcherNames: string[] = [];
+                    if (selected.problemMatchers && selected.problemMatchers.length === 0) { // never parse output for this task
+                        matcherNames = [];
+                    } else if (selected.problemMatchers && selected.problemMatchers.length > 0) { // continue with user-selected parser
+                        matcherNames = selected.problemMatchers.map(matcher => matcher.name);
+                    }
+                    customizationObject.problemMatcher = matcherNames;
+
+                    // write the selected matcher (or the decision of "never parse") into the `tasks.json`
+                    this.taskConfigurations.saveProblemMatcherForTask(task, matcherNames);
+                } else if (selected.learnMore) { // user wants to learn more about parsing task output
+                    open(this.openerService, new URI('https://code.visualstudio.com/docs/editor/tasks#_processing-task-output-with-problem-matchers'));
                 }
-                resolvedMatchers.push(resolvedMatcher);
+                // else, continue the task with no parser
+            } else { // do not start the task in case that the user did not select any item from the list
+                return;
             }
         }
+
+        const notResolvedMatchers = customizationObject.problemMatcher ?
+            (Array.isArray(customizationObject.problemMatcher) ? customizationObject.problemMatcher : [customizationObject.problemMatcher]) : undefined;
+        let resolvedMatchers: ProblemMatcher[] | undefined = [];
+        if (notResolvedMatchers) {
+            // resolve matchers before passing them to the server
+            for (const matcher of notResolvedMatchers) {
+                let resolvedMatcher: ProblemMatcher | undefined;
+                await this.problemMatcherRegistry.onReady();
+                if (typeof matcher === 'string') {
+                    resolvedMatcher = this.problemMatcherRegistry.get(matcher);
+                } else {
+                    resolvedMatcher = await this.problemMatcherRegistry.getProblemMatcherFromContribution(matcher);
+                }
+                if (resolvedMatcher) {
+                    const scope = task._scope || task._source;
+                    if (resolvedMatcher.filePrefix && scope) {
+                        const options = { context: new URI(scope).withScheme('file') };
+                        const resolvedPrefix = await this.variableResolverService.resolve(resolvedMatcher.filePrefix, options);
+                        Object.assign(resolvedMatcher, { filePrefix: resolvedPrefix });
+                    }
+                    resolvedMatchers.push(resolvedMatcher);
+                }
+            }
+        } else {
+            resolvedMatchers = undefined;
+        }
+
         return this.runTask(task, {
             customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
         });
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
-        const source = task._source;
-        const taskLabel = task.label;
         if (option && option.customization) {
             const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
             if (taskDefinition) { // use the customization object to override the task config
@@ -365,43 +410,12 @@ export class TaskService implements TaskConfigurationClient {
             }
         }
 
-        const resolver = await this.taskResolverRegistry.getResolver(task.type);
-        let resolvedTask: TaskConfiguration;
-        try {
-            resolvedTask = resolver ? await resolver.resolveTask(task) : task;
-            this.addRecentTasks(task);
-        } catch (error) {
-            this.logger.error(`Error resolving task '${taskLabel}': ${error}`);
-            this.messageService.error(`Error resolving task '${taskLabel}': ${error}`);
-            return;
+        const resolvedTask = await this.getResolvedTask(task);
+        if (resolvedTask) {
+            // remove problem markers from the same source before running the task
+            await this.removeProblemMarks(option);
+            return this.runResolvedTask(resolvedTask, option);
         }
-
-        await this.removeProblemMarks(option);
-
-        let taskInfo: TaskInfo;
-        try {
-            taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
-            this.lastTask = { source, taskLabel };
-        } catch (error) {
-            const errorStr = `Error launching task '${taskLabel}': ${error.message}`;
-            this.logger.error(errorStr);
-            this.messageService.error(errorStr);
-            return;
-        }
-
-        this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
-
-        /**
-         * open terminal widget if the task is based on a terminal process (type: 'shell' or 'process')
-         *
-         * @todo Use a different mechanism to determine if the task should be attached?
-         *       Reason: Maybe a new task type wants to also be displayed in a terminal.
-         */
-        if (typeof taskInfo.terminalId === 'number') {
-            this.attach(taskInfo.terminalId, taskInfo.taskId);
-        }
-
-        return taskInfo;
     }
 
     async runTaskByLabel(taskLabel: string): Promise<boolean> {
@@ -427,6 +441,76 @@ export class TaskService implements TaskConfigurationClient {
                 }
             }
         }
+    }
+
+    private async getResolvedTask(task: TaskConfiguration): Promise<TaskConfiguration | undefined> {
+        const resolver = await this.taskResolverRegistry.getResolver(task.type);
+        try {
+            const resolvedTask = resolver ? await resolver.resolveTask(task) : task;
+            this.addRecentTasks(task);
+            return resolvedTask;
+        } catch (error) {
+            const errMessage = `Error resolving task '${task.label}': ${error}`;
+            this.logger.error(errMessage);
+            this.messageService.error(errMessage);
+        }
+    }
+
+    /**
+     * Runs the resolved task and opens terminal widget if the task is based on a terminal process
+     * @param resolvedTask the resolved task
+     * @param option options to run the resolved task
+     */
+    private async runResolvedTask(resolvedTask: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        const source = resolvedTask._source;
+        const taskLabel = resolvedTask.label;
+        try {
+            const taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
+            this.lastTask = { source, taskLabel };
+            this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
+
+            /**
+             * open terminal widget if the task is based on a terminal process (type: 'shell' or 'process')
+             *
+             * @todo Use a different mechanism to determine if the task should be attached?
+             *       Reason: Maybe a new task type wants to also be displayed in a terminal.
+             */
+            if (typeof taskInfo.terminalId === 'number') {
+                this.attach(taskInfo.terminalId, taskInfo.taskId);
+            }
+            return taskInfo;
+        } catch (error) {
+            const errorStr = `Error launching task '${taskLabel}': ${error.message}`;
+            this.logger.error(errorStr);
+            this.messageService.error(errorStr);
+        }
+    }
+
+    private getCustomizeProblemMatcherItems(): QuickPickItem<QuickPickProblemMatcherItem>[] {
+        const items: QuickPickItem<QuickPickProblemMatcherItem>[] = [];
+        items.push({
+            label: 'Continue without scanning the task output',
+            value: { problemMatchers: undefined }
+        });
+        items.push({
+            label: 'Never scan the task output',
+            value: { problemMatchers: [] }
+        });
+        items.push({
+            label: 'Learn more about scanning the task output',
+            value: { problemMatchers: undefined, learnMore: true }
+        });
+        items.push({ type: 'separator', label: 'registered parsers' });
+
+        const registeredProblemMatchers = this.problemMatcherRegistry.getAll();
+        items.push(...registeredProblemMatchers.map(matcher =>
+            ({
+                label: matcher.label,
+                value: { problemMatchers: [matcher] },
+                description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
+            })
+        ));
+        return items;
     }
 
     /**

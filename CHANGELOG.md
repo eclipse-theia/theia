@@ -3,6 +3,7 @@
 ## v0.11.0
 
 - [task] added `tasks.fetchTasks()` and `tasks.executeTask()` to plugins API [#6058](https://github.com/theia-ide/theia/pull/6058)
+- [task] prompt user to choose parser to parse task output [#5877](https://github.com/theia-ide/theia/pull/5877)
 
 Breaking changes:
 
