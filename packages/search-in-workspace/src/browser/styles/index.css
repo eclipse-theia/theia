@@ -39,6 +39,7 @@
     font-size: var(--theia-ui-font-size1);
     padding-left: 8px;
     color: var(--theia-ui-font-color1);
+    padding: 3px 0 3px 4px;
 }
 
 .t-siw-search-container input[type="text"]:focus {
@@ -78,13 +79,13 @@
 
 .t-siw-search-container .searchHeader .search-field-container {
     background: var(--theia-layout-color2);
+    border-style: solid;
+    border-width: var(--theia-border-width);
+    border-color: var(--theia-border-color1);
 }
 
 .t-siw-search-container .searchHeader .search-field-container.focused {
-    border-style: solid;
-    border-width: var(--theia-border-width);
     border-color: var(--theia-accent-color3);
-    margin: -1px;
 }
 
 .t-siw-search-container .searchHeader .search-field {
@@ -332,7 +333,7 @@
     width: 15px;
     min-width: 15px;
     justify-content: center;
-    margin-right: 2px;
+    margin-right: 1px;
     box-sizing: border-box;
 }
 
