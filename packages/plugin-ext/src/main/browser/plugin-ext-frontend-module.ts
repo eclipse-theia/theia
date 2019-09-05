@@ -60,8 +60,25 @@ import { ViewColumnService } from './view-column-service';
 import { ViewContextKeyService } from './view/view-context-key-service';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './view/plugin-view-widget';
 import { TreeViewWidgetIdentifier, VIEW_ITEM_CONTEXT_MENU, PluginTree, TreeViewWidget, PluginTreeModel } from './view/tree-view-widget';
+import { RPCProtocol } from '../../common/rpc-protocol';
+import { LanguagesMainFactory, OutputChannelRegistryFactory } from '../../common';
+import { LanguagesMainImpl } from './languages-main';
+import { OutputChannelRegistryMainImpl } from './output-channel-registry-main';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
+
+    bind(LanguagesMainImpl).toSelf().inTransientScope();
+    bind(LanguagesMainFactory).toFactory(context => (rpc: RPCProtocol) => {
+        const child = context.container.createChild();
+        child.bind(RPCProtocol).toConstantValue(rpc);
+        return child.get(LanguagesMainImpl);
+    });
+
+    bind(OutputChannelRegistryMainImpl).toSelf().inTransientScope();
+    bind(OutputChannelRegistryFactory).toFactory(context => () => {
+        const child = context.container.createChild();
+        return child.get(OutputChannelRegistryMainImpl);
+    });
 
     bind(ModalNotification).toSelf().inSingletonScope();
 

@@ -33,6 +33,7 @@ export interface MessageConnection {
     onMessage: Event<{}>;
 }
 
+export const RPCProtocol = Symbol('RPCProtocol');
 export interface RPCProtocol {
     /**
      * Returns a proxy to an object addressable/named in the plugin process or in the main process.
