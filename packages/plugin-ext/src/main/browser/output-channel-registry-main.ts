@@ -14,23 +14,24 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { OutputWidget } from '@theia/output/lib/browser/output-widget';
 import { OutputContribution } from '@theia/output/lib/browser/output-contribution';
 import { OutputChannel, OutputChannelManager } from '@theia/output/lib/common/output-channel';
 import { OutputChannelRegistryMain } from '../../common/plugin-api-rpc';
 
+@injectable()
 export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain {
+
+    @inject(OutputChannelManager)
     private outputChannelManager: OutputChannelManager;
+
+    @inject(OutputContribution)
     private outputContribution: OutputContribution;
+
     private commonOutputWidget: OutputWidget | undefined;
 
     private channels: Map<string, OutputChannel> = new Map();
-
-    constructor(container: interfaces.Container) {
-        this.outputChannelManager = container.get(OutputChannelManager);
-        this.outputContribution = container.get(OutputContribution);
-    }
 
     $append(channelName: string, value: string): PromiseLike<void> {
         const outputChannel = this.getChannel(channelName);
