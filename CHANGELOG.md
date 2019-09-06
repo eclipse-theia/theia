@@ -8,6 +8,7 @@ Breaking changes:
 
 - [core][plugin] support alternative commands in context menus [6069](https://github.com/theia-ide/theia/pull/6069)
 - [workspace] switched `workspace.supportMultiRootWorkspace` to enabled by default [#6089](https://github.com/theia-ide/theia/pull/6089)
+- Removed the `@theia/debug-nodejs` and `@theia/java-debug` extensions(https://github.com/theia-ide/theia/pull/6113)
 
 ## v0.10.0
 

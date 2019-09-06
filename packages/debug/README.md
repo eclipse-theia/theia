@@ -16,12 +16,10 @@ In most cases the default behavior of the `DebugSession` is enough. But it is po
 ### Server side
 At the back-end we start a debug adapter using `DebugAdapterFactory` and then a `DebugAdapterSession` is instantiated which works as a proxy between client and debug adapter. If a default implementation of the debug adapter session does not fit needs, it is possible to provide its own implementation using `DebugAdapterSessionFactory`. If so, it is recommended to extend the default implementation of the `DebugAdapterSession`. Documented model objects are located [here](https://github.com/theia-ide/theia/tree/master/packages/debug/src/node/debug-model.ts)
 
-`DebugSessionState` accumulates debug adapter events and is used to restore debug session on the client side when page is refreshed. 
+`DebugSessionState` accumulates debug adapter events and is used to restore debug session on the client side when page is refreshed.
 
 ## How to contribute a new debugger
 `DebugAdapterContribution` is a contribution point for all debug adapters to provide and resolve debug configuration.
-
-Here is an example of [debug adapter contribution for node](https://github.com/theia-ide/theia/tree/master/packages/debug-nodejs/src/node/debug-nodejs.ts)
 
 ## References
 * [Debug Adapter Protocol](https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts)

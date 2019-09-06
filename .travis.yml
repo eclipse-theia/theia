@@ -21,7 +21,6 @@ cache:
   - packages/console/node_modules
   - packages/core/node_modules
   - packages/cpp/node_modules
-  - packages/debug-nodejs/node_modules
   - packages/debug/node_modules
   - packages/editor-preview/node_modules
   - packages/editor/node_modules
@@ -31,7 +30,6 @@ cache:
   - packages/filesystem/node_modules
   - packages/getting-started/node_modules
   - packages/git/node_modules
-  - packages/java-debug/node_modules
   - packages/java/node_modules
   - packages/json/node_modules
   - packages/keymaps/node_modules
