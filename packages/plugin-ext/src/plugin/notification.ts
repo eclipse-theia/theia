@@ -19,6 +19,7 @@ import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { ProgressLocation } from './types-impl';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export class NotificationExtImpl implements NotificationExt {
     private readonly proxy: NotificationMain;
@@ -31,15 +32,18 @@ export class NotificationExtImpl implements NotificationExt {
         options: ProgressOptions,
         task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => PromiseLike<R>
     ): Promise<R> {
+        const id = new Deferred<string>();
+        const tokenSource = new CancellationTokenSource();
+        const progress = task({ report: async item => this.proxy.$updateProgress(await id.promise, item)}, tokenSource.token);
         const title = options.title ? options.title : '';
         const location = this.mapLocation(options.location);
-        const id = await this.proxy.$startProgress({ title, location });
-        const tokenSource = new CancellationTokenSource();
-        const stop = () => {
-            this.proxy.$stopProgress(id);
-        };
-        const progress = task({ report: item =>  this.proxy.$updateProgress(id, item)}, tokenSource.token);
-        progress.then(stop, stop);
+        id.resolve(await this.proxy.$startProgress({ title, location }));
+        const stop = async () => this.proxy.$stopProgress(await id.promise);
+        const promise = Promise.all([
+            progress,
+            new Promise(resolve => setTimeout(resolve, 250)) // try to show even if it's done immediately
+        ]);
+        promise.then(stop, stop);
         return progress;
     }
 
