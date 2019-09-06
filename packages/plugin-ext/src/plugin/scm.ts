@@ -23,6 +23,7 @@ import { UriComponents } from '../common/uri-components';
 import URI from '@theia/core/lib/common/uri';
 import { CommandRegistryImpl } from './command-registry';
 import { ScmCommand } from '@theia/scm/lib/browser/scm-provider';
+import { Emitter } from '@theia/core/lib/common/event';
 
 export class ScmExtImpl implements ScmExt {
     private handle: number = 0;
@@ -97,6 +98,13 @@ export class ScmExtImpl implements ScmExt {
             sourceControl.inputBox.$updateValue(value);
         }
     }
+
+    async $setSourceControlSelection(sourceControlHandle: number, selected: boolean): Promise<void> {
+        const sourceControl = this.sourceControlMap.get(sourceControlHandle);
+        if (sourceControl) {
+            sourceControl.selected = selected;
+        }
+    }
 }
 
 class InputBoxImpl implements theia.SourceControlInputBox {
@@ -142,8 +150,12 @@ class SourceControlImpl implements theia.SourceControl {
     private _commitTemplate: string | undefined;
     private _acceptInputCommand: theia.Command | undefined;
     private _statusBarCommands: theia.Command[] | undefined;
+    private _selected: boolean = false;
 
     private readonly toDispose = new DisposableCollection();
+
+    private readonly onDidChangeSelectionEmitter = new Emitter<boolean>();
+    readonly onDidChangeSelection: theia.Event<boolean> = this.onDidChangeSelectionEmitter.event;
 
     constructor(
         private proxy: ScmMain,
@@ -253,6 +265,15 @@ class SourceControlImpl implements theia.SourceControl {
 
     getResourceGroup(handle: number): SourceControlResourceGroupImpl | undefined {
         return this.resourceGroupsMap.get(handle);
+    }
+
+    get selected(): boolean {
+        return this._selected;
+    }
+
+    set selected(selected: boolean) {
+        this._selected = selected;
+        this.onDidChangeSelectionEmitter.fire(selected);
     }
 }
 
