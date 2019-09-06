@@ -55,4 +55,7 @@ export class MockPreferenceService implements PreferenceService {
     overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined {
         return undefined;
     }
+
+    // tslint:disable-next-line:no-any
+    validate(name: string, value: any): boolean { return true; }
 }

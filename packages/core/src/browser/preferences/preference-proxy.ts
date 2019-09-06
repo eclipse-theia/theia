@@ -68,15 +68,29 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
         throw new Error('Unsupported operation');
     };
     const getValue: PreferenceRetrieval<any>['get'] = (arg, defaultValue, resourceUri) => {
-        const preferenceName = typeof arg === 'object' && arg.overrideIdentifier ?
+        const isArgOverridePreferenceName = typeof arg === 'object' && arg.overrideIdentifier;
+        const preferenceName = isArgOverridePreferenceName ?
             preferences.overridePreferenceName(<OverridePreferenceName>arg) :
             <string>arg;
-        return preferences.get(preferenceName, defaultValue, resourceUri);
+        const value = preferences.get(preferenceName, defaultValue, resourceUri);
+        if (preferences.validate(isArgOverridePreferenceName ? (<OverridePreferenceName>arg).preferenceName : preferenceName, value)) {
+            return value;
+        }
+        if (defaultValue !== undefined) {
+            return defaultValue;
+        }
+        const values = preferences.inspect(preferenceName, resourceUri);
+        return values && values.defaultValue;
     };
     return new Proxy({}, {
         get: (_, property: string) => {
             if (schema.properties[property]) {
-                return preferences.get(property);
+                const value = preferences.get(property);
+                if (preferences.validate(property, value)) {
+                    return value;
+                }
+                const values = preferences.inspect(property);
+                return values && values.defaultValue;
             }
             if (property === 'onPreferenceChanged') {
                 return onPreferenceChangedEmitter.event;
