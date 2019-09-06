@@ -35,6 +35,7 @@ export interface GrammarDefinitionProvider {
 export interface GrammarDefinition {
     format: 'json' | 'plist';
     content: object | string;
+    location?: string;
 }
 
 @injectable()
@@ -45,8 +46,13 @@ export class TextmateRegistry {
     readonly languageIdToScope = new Map<string, string>();
 
     registerTextmateGrammarScope(scope: string, description: GrammarDefinitionProvider): void {
-        if (this.scopeToProvider.has(scope)) {
-            console.warn(new Error(`a registered grammar provider for '${scope}' scope is overridden`));
+        const existingProvider = this.scopeToProvider.get(scope);
+        if (existingProvider) {
+            Promise.all([existingProvider.getGrammarDefinition(), description.getGrammarDefinition()]).then(([a, b]) => {
+                if (a.location !== b.location || !a.location && !b.location) {
+                    console.warn(new Error(`a registered grammar provider for '${scope}' scope is overridden`));
+                }
+            });
         }
         this.scopeToProvider.set(scope, description);
     }

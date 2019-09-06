@@ -416,6 +416,7 @@ export interface GrammarsContribution {
     language?: string;
     scope: string;
     grammar?: string | object;
+    grammarLocation?: string;
     embeddedLanguages?: ScopeMap;
     tokenTypes?: ScopeMap;
     injectTo?: string[];
