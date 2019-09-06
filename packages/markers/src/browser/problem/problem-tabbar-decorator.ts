@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Diagnostic } from 'vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Title, Widget } from '@phosphor/widgets';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
@@ -49,9 +49,27 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
         if (Navigatable.is(widget)) {
             const resourceUri = widget.getResourceUri();
             if (resourceUri) {
-                return this.problemManager.findMarkers({
-                    uri: resourceUri
-                }).map(marker => this.toDecorator(marker));
+                // Get the list of problem markers for the given resource URI.
+                const markers: Marker<Diagnostic>[] = this.problemManager.findMarkers({ uri: resourceUri });
+                // If no markers are available, return early.
+                if (markers.length === 0) {
+                    return [];
+                }
+                // Store the marker with the highest severity.
+                let maxSeverity: Marker<Diagnostic> | undefined;
+                // Iterate over available markers to determine that which has the highest severity.
+                // Only display a decoration if an error or warning marker is available.
+                for (const marker of markers) {
+                    // Break early if an error marker is present, since it represents the highest severity.
+                    if (marker.data.severity === DiagnosticSeverity.Error) {
+                        maxSeverity = marker;
+                        break;
+                    } else if (marker.data.severity === DiagnosticSeverity.Warning) {
+                        maxSeverity = marker;
+                    }
+                }
+                // Decorate the tabbar with the highest marker severity if available.
+                return maxSeverity ? [this.toDecorator(maxSeverity)] : [];
             }
         }
         return [];
