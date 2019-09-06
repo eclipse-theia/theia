@@ -89,6 +89,7 @@ export interface PreferenceService extends Disposable {
     overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined;
 
     resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T>;
+    validate(name: string, value: any): boolean;
 }
 
 /**
@@ -412,4 +413,7 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
         };
     }
 
+    validate(name: string, value: any): boolean {
+        return this.schema.validate(name, value);
+    }
 }
