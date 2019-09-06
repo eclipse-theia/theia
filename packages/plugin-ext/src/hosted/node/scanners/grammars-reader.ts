@@ -46,6 +46,7 @@ export class GrammarsReader {
             scope: rawGrammar.scopeName,
             format: rawGrammar.path.endsWith('json') ? 'json' : 'plist',
             grammar: grammar,
+            grammarLocation: rawGrammar.path,
             injectTo: rawGrammar.injectTo,
             embeddedLanguages: rawGrammar.embeddedLanguages,
             tokenTypes: rawGrammar.tokenTypes

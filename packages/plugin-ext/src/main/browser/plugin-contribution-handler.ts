@@ -138,6 +138,7 @@ export class PluginContributionHandler {
                         return {
                             format: grammar.format,
                             content: grammar.grammar || '',
+                            location: grammar.grammarLocation
                         };
                     },
                     getInjections: (scopeName: string) =>
