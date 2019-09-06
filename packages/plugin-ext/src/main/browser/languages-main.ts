@@ -99,6 +99,9 @@ export class LanguagesMainImpl implements LanguagesMain {
     }
 
     $registerCompletionSupport(handle: number, selector: SerializedDocumentFilter[], triggerCharacters: string[], supportsResolveDetails: boolean): void {
+        if (this.disposables.has(handle)) {
+            return;
+        }
         this.disposables.set(handle, monaco.modes.SuggestRegistry.register(fromLanguageSelector(selector)!, {
             triggerCharacters,
             provideCompletionItems: (model: monaco.editor.ITextModel,

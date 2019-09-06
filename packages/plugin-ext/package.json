@@ -33,7 +33,8 @@
     "request": "^2.82.0",
     "uuid": "^3.2.1",
     "vscode-debugprotocol": "^1.32.0",
-    "vscode-textmate": "^4.0.1"
+    "vscode-textmate": "^4.0.1",
+    "ts-md5": "^1.2.2"
   },
   "publishConfig": {
     "access": "public"

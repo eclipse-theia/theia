@@ -79,6 +79,7 @@ import { ColorProviderAdapter } from './languages/color';
 import { RenameAdapter } from './languages/rename';
 import { Event } from '@theia/core/lib/common/event';
 import { CommandRegistryImpl } from './command-registry';
+import { Md5 } from 'ts-md5/dist/md5';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -171,8 +172,25 @@ export class LanguagesExtImpl implements LanguagesExt {
         });
     }
 
-    private addNewAdapter(adapter: Adapter): number {
-        const callId = this.nextCallId();
+    private hashCode(str: string): number {
+        let hash: number = 5381;
+        let length: number = str.length;
+        while (length) {
+            hash = (hash * 33) ^ str.charCodeAt(--length);
+        }
+        return hash >>> 0;
+    }
+
+    private nextNewCallId(selector?: theia.DocumentSelector, triggerCharacters?: string[]): number {
+        let strBuffer: string = JSON.stringify(selector);
+        if (triggerCharacters) {
+            triggerCharacters.forEach((triggerCharacter: string) => strBuffer += triggerCharacter);
+        }
+        return this.hashCode(Md5.hashStr(strBuffer) as string);
+    }
+
+    private addNewAdapter(adapter: Adapter, selector?: theia.DocumentSelector, triggerCharacters?: string[]): number {
+        const callId = selector ? this.nextNewCallId(selector, triggerCharacters) : this.nextCallId();
         this.adaptersMap.set(callId, adapter);
         return callId;
     }
@@ -229,7 +247,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, triggerCharacters: string[]): theia.Disposable {
-        const callId = this.addNewAdapter(new CompletionAdapter(provider, this.documents, this.commands));
+        const callId = this.addNewAdapter(new CompletionAdapter(provider, this.documents, this.commands), selector, triggerCharacters);
         this.proxy.$registerCompletionSupport(callId, this.transformDocumentSelector(selector), triggerCharacters, CompletionAdapter.hasResolveSupport(provider));
         return this.createDisposable(callId);
     }
