@@ -131,12 +131,6 @@ declare module '@theia/plugin' {
         value: string;
     }
 
-    export interface SourceControlResourceDecorations {
-        source?: string;
-        letter?: string;
-        color?: ThemeColor;
-    }
-
     /**
      * Enumeration of the supported operating systems.
      */
@@ -170,6 +164,19 @@ declare module '@theia/plugin' {
         priority?: number;
         bubble?: boolean;
         source?: string;
+    }
+
+    export interface SourceControl {
+
+        /**
+         * Whether the source control is selected.
+         */
+        readonly selected: boolean;
+
+        /**
+         * An event signaling when the selection state changes.
+         */
+        readonly onDidChangeSelection: Event<boolean>;
     }
 
     export interface SourceControlResourceDecorations {

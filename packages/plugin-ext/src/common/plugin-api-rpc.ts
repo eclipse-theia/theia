@@ -565,6 +565,7 @@ export interface ScmExt {
     $updateInputBox(sourceControlHandle: number, message: string): Promise<void>;
     $executeResourceCommand(sourceControlHandle: number, groupHandle: number, resourceHandle: number): Promise<void>;
     $provideOriginalResource(sourceControlHandle: number, uri: string, token: CancellationToken): Promise<UriComponents | undefined>;
+    $setSourceControlSelection(sourceControlHandle: number, selected: boolean): Promise<void>;
 }
 
 export interface DecorationsExt {

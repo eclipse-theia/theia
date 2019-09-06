@@ -37,12 +37,32 @@ export class ScmMainImpl implements ScmMain {
     private readonly scmService: ScmService;
     private readonly scmRepositoryMap: Map<number, ScmRepository>;
     private readonly labelProvider: LabelProvider;
+    private lastSelectedSourceControlHandle: number | undefined;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.SCM_EXT);
         this.scmService = container.get(ScmService);
         this.scmRepositoryMap = new Map();
         this.labelProvider = container.get(LabelProvider);
+        this.scmService.onDidChangeSelectedRepository(repository => this.updateSelectedRepository(repository));
+    }
+
+    protected updateSelectedRepository(repository: ScmRepository | undefined): void {
+        const sourceControlHandle = repository ? this.getSourceControlHandle(repository) : undefined;
+        if (sourceControlHandle !== undefined) {
+            this.proxy.$setSourceControlSelection(sourceControlHandle, true);
+        }
+        if (this.lastSelectedSourceControlHandle !== undefined && this.lastSelectedSourceControlHandle !== sourceControlHandle) {
+            this.proxy.$setSourceControlSelection(this.lastSelectedSourceControlHandle, false);
+        }
+        this.lastSelectedSourceControlHandle = sourceControlHandle;
+    }
+
+    protected getSourceControlHandle(repository: ScmRepository): number | undefined {
+        return Array.from(this.scmRepositoryMap.keys()).find(key => {
+            const scmRepository = this.scmRepositoryMap.get(key);
+            return scmRepository !== undefined && scmRepository.provider.rootUri === repository.provider.rootUri;
+        });
     }
 
     async $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri: string): Promise<void> {
@@ -52,6 +72,9 @@ export class ScmMainImpl implements ScmMain {
             this.proxy.$updateInputBox(sourceControlHandle, repository.input.value)
         );
         this.scmRepositoryMap.set(sourceControlHandle, repository);
+        if (this.scmService.repositories.length === 1) {
+            this.updateSelectedRepository(repository);
+        }
     }
 
     async $updateSourceControl(sourceControlHandle: number, features: SourceControlProviderFeatures): Promise<void> {
