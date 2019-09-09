@@ -1139,3 +1139,29 @@ declare module monaco.mime {
 
     export function clearTextMimes(onlyUserConfigured?: boolean): void;
 }
+
+/**
+ * overloading languages register functions to accept LanguageSelector,
+ * check that all register functions passing a selector to registries:
+ * https://github.com/TypeFox/vscode/blob/c1dd5c86b7e1e55223831b1beb73f017bb19af94/src/vs/editor/standalone/browser/standaloneLanguages.ts#L325
+ */
+declare module monaco.languages {
+    export function registerReferenceProvider(selector: monaco.modes.LanguageSelector, provider: ReferenceProvider): IDisposable;
+    export function registerRenameProvider(selector: monaco.modes.LanguageSelector, provider: RenameProvider): IDisposable;
+    export function registerSignatureHelpProvider(selector: monaco.modes.LanguageSelector, provider: SignatureHelpProvider): IDisposable;
+    export function registerHoverProvider(selector: monaco.modes.LanguageSelector, provider: HoverProvider): IDisposable;
+    export function registerDocumentSymbolProvider(selector: monaco.modes.LanguageSelector, provider: DocumentSymbolProvider): IDisposable;
+    export function registerDocumentHighlightProvider(selector: monaco.modes.LanguageSelector, provider: DocumentHighlightProvider): IDisposable;
+    export function registerDefinitionProvider(selector: monaco.modes.LanguageSelector, provider: DefinitionProvider): IDisposable;
+    export function registerImplementationProvider(selector: monaco.modes.LanguageSelector, provider: ImplementationProvider): IDisposable;
+    export function registerTypeDefinitionProvider(selector: monaco.modes.LanguageSelector, provider: TypeDefinitionProvider): IDisposable;
+    export function registerCodeLensProvider(selector: monaco.modes.LanguageSelector, provider: CodeLensProvider): IDisposable;
+    export function registerCodeActionProvider(selector: monaco.modes.LanguageSelector, provider: CodeActionProvider): IDisposable;
+    export function registerDocumentFormattingEditProvider(selector: monaco.modes.LanguageSelector, provider: DocumentFormattingEditProvider): IDisposable;
+    export function registerDocumentRangeFormattingEditProvider(selector: monaco.modes.LanguageSelector, provider: DocumentRangeFormattingEditProvider): IDisposable;
+    export function registerOnTypeFormattingEditProvider(selector: monaco.modes.LanguageSelector, provider: OnTypeFormattingEditProvider): IDisposable;
+    export function registerLinkProvider(selector: monaco.modes.LanguageSelector, provider: LinkProvider): IDisposable;
+    export function registerCompletionItemProvider(selector: monaco.modes.LanguageSelector, provider: CompletionItemProvider): IDisposable;
+    export function registerColorProvider(selector: monaco.modes.LanguageSelector, provider: DocumentColorProvider): IDisposable;
+    export function registerFoldingRangeProvider(selector: monaco.modes.LanguageSelector, provider: FoldingRangeProvider): IDisposable;
+}
