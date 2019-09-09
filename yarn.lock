@@ -6587,9 +6587,10 @@ monaco-html@^2.0.2:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-2.2.0.tgz#435f2f4ce6e5c7f707fb57e7c8a05b41e5cd1aa0"
 
-monaco-languageclient@^0.9.0:
-  version "0.9.0"
-  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.9.0.tgz#4b65684e277edab07625e76eb3d3d93e8f2130fa"
+monaco-languageclient@^0.9.1:
+  version "0.9.1"
+  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.9.1.tgz#dccd26ae0be4d1014395b406e924baae9f8eb9b5"
+  integrity sha512-mDwbYk67UVPf41RnhfMLRME08NsK2/JeqCkkhPL+wef6rZQNHRb/U2bMMuW/MVVM/yT2DYFy5f7cLNm63FYGMw==
   dependencies:
     glob-to-regexp "^0.3.0"
     vscode-base-languageclient "4.4.0"

@@ -315,7 +315,9 @@ export function fromTextEdit(edit: theia.TextEdit): model.SingleEditOperation {
     };
 }
 
-export function fromLanguageSelector(selector: theia.DocumentSelector): LanguageSelector | undefined {
+export function fromLanguageSelector(selector: undefined): undefined;
+export function fromLanguageSelector(selector: theia.DocumentSelector): LanguageSelector;
+export function fromLanguageSelector(selector: undefined | theia.DocumentSelector): undefined | LanguageSelector {
     if (!selector) {
         return undefined;
     } else if (Array.isArray(selector)) {
