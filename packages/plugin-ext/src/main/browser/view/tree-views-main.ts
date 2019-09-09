@@ -66,7 +66,6 @@ export class TreeViewsMainImpl implements TreeViewsMain {
             this.handleTreeEvents(widget.id, widget);
             return widget;
         }));
-        await this.viewRegistry.openView(treeViewId);
     }
 
     async $unregisterTreeDataProvider(treeViewId: string): Promise<void> {

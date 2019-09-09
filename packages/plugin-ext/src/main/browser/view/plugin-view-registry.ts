@@ -148,6 +148,13 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     protected async updateViewVisibility(viewId: string): Promise<void> {
+        const widget = await this.getView(viewId);
+        if (!widget) {
+            if (this.isViewVisible(viewId)) {
+                await this.openView(viewId);
+            }
+            return;
+        }
         const viewInfo = this.views.get(viewId);
         if (!viewInfo) {
             return;
@@ -155,10 +162,6 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const [viewContainerId] = viewInfo;
         const viewContainer = await this.getPluginViewContainer(viewContainerId);
         if (!viewContainer) {
-            return;
-        }
-        const widget = await this.getView(viewId);
-        if (!widget) {
             return;
         }
         const part = viewContainer.getPartFor(widget);
@@ -378,8 +381,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 let viewContainer = await this.getPluginViewContainer(id);
                 if (!viewContainer) {
                     viewContainer = await this.openViewContainer(id);
-                    if (viewContainer && !viewContainer.getTrackableWidgets().length) {
-                        // close empty view containers
+                    if (viewContainer && !viewContainer.getParts().filter(part => !part.isHidden).length) {
+                        // close view containers without any visible view parts
                         viewContainer.dispose();
                     }
                 } else {
