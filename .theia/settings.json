@@ -10,5 +10,6 @@
   "[jsonc]": {
     "editor.tabSize": 2
   },
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "clang-format.language.typescript.enable": false    
 }
