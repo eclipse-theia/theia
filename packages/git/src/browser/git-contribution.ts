@@ -455,9 +455,9 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             const id = '__git.tabbar.toolbar.' + commandId;
             const command = this.commands.getCommand(commandId);
             this.commands.registerCommand({ id, iconClass: command && command.iconClass }, {
-                execute: (widget, ...args) => widget instanceof ScmWidget && this.commands.executeCommand(commandId, ...args),
-                isEnabled: (widget, ...args) => widget instanceof ScmWidget && this.commands.isEnabled(commandId, ...args),
-                isVisible: (widget, ...args) => widget instanceof ScmWidget && this.commands.isVisible(commandId, ...args),
+                execute: (widget, ...args) => widget instanceof ScmWidget && !!this.repositoryProvider.selectedScmRepository && this.commands.executeCommand(commandId, ...args),
+                isEnabled: (widget, ...args) => widget instanceof ScmWidget && !!this.repositoryProvider.selectedScmRepository && this.commands.isEnabled(commandId, ...args),
+                isVisible: (widget, ...args) => widget instanceof ScmWidget && !!this.repositoryProvider.selectedScmRepository && this.commands.isVisible(commandId, ...args),
             });
             item.command = id;
             registry.registerItem(item);
