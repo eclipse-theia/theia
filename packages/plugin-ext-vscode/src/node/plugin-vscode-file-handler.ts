@@ -37,10 +37,9 @@ export class PluginVsCodeFileHandler implements PluginDeployerFileHandler {
     }
 
     async handle(context: PluginDeployerFileHandlerContext): Promise<void> {
-        // need to unzip
-        console.log('unzipping the plugin', context.pluginEntry());
-
         const unpackedPath = path.resolve(this.unpackedFolder, path.basename(context.pluginEntry().path()));
+        console.log(`unzipping the VS Code extension '${path.basename(context.pluginEntry().path())}' to directory: ${unpackedPath}`);
+
         await context.unzip(context.pluginEntry().path(), unpackedPath);
         if (context.pluginEntry().path().endsWith('.tgz')) {
             const extensionPath = path.join(unpackedPath, 'package');

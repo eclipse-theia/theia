@@ -32,10 +32,9 @@ export class PluginTheiaFileHandler implements PluginDeployerFileHandler {
     }
 
     async handle(context: PluginDeployerFileHandlerContext): Promise<void> {
-        // need to unzip
-        console.log('unzipping the plugin', context.pluginEntry());
-
         const unpackedPath = path.resolve(this.unpackedFolder, path.basename(context.pluginEntry().path()));
+        console.log(`unzipping the plug-in '${path.basename(context.pluginEntry().path())}' to directory: ${unpackedPath}`);
+
         await context.unzip(context.pluginEntry().path(), unpackedPath);
 
         context.pluginEntry().updatePath(unpackedPath);
