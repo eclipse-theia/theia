@@ -63,7 +63,6 @@ html, body {
     border: none;
     color: var(--theia-accent-color1);
     font-weight: 500;
-    outline: 0;
     text-decoration: none;
 }
 
