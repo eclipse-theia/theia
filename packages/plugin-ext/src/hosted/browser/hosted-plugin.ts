@@ -23,19 +23,22 @@
 
 import { injectable, inject, interfaces, named, postConstruct } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
-import { HostedPluginServer, PluginMetadata, getPluginId } from '../../common/plugin-protocol';
+import { PluginMetadata, getPluginId, HostedPluginServer } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { MAIN_RPC_CONTEXT, PluginManagerExt } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
-import { ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent, CancellationTokenSource } from '@theia/core';
+import {
+    Disposable, DisposableCollection,
+    ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
+    CancellationTokenSource, JsonRpcProxy, ProgressService
+} from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
 import { getQueryParameters } from '../../main/browser/env-main';
 import { ExtPluginApi, MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
-import { StoragePathService } from '../../main/browser/storage-path-service';
 import { getPreferences } from '../../main/browser/preference-registry-main';
 import { PluginServer } from '../../common/plugin-protocol';
 import { KeysToKeysToAnyValue } from '../../common/types';
@@ -46,13 +49,15 @@ import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-mana
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { WaitUntilEvent } from '@theia/core/lib/common/event';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
-import { isCancelled } from '@theia/core';
+import { Emitter, isCancelled } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
 import { TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
+
+export const PluginProgressLocation = 'plugin';
 
 @injectable()
 export class HostedPluginSupport {
@@ -62,7 +67,7 @@ export class HostedPluginSupport {
     protected readonly logger: ILogger;
 
     @inject(HostedPluginServer)
-    private readonly server: HostedPluginServer;
+    private readonly server: JsonRpcProxy<HostedPluginServer>;
 
     @inject(HostedPluginWatcher)
     private readonly watcher: HostedPluginWatcher;
@@ -85,9 +90,6 @@ export class HostedPluginSupport {
 
     @inject(PluginPathsService)
     private readonly pluginPathsService: PluginPathsService;
-
-    @inject(StoragePathService)
-    private readonly storagePathService: StoragePathService;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -119,19 +121,24 @@ export class HostedPluginSupport {
     @inject(TaskResolverRegistry)
     protected readonly taskResolverRegistry: TaskResolverRegistry;
 
+    @inject(ProgressService)
+    protected readonly progressService: ProgressService;
+
     private theiaReadyPromise: Promise<any>;
 
-    protected readonly managers: PluginManagerExt[] = [];
+    protected readonly managers = new Map<string, PluginManagerExt>();
 
-    // loaded plugins per #id
-    private readonly loadedPlugins = new Set<string>();
+    private readonly contributions = new Map<string, PluginContributions>();
 
     protected readonly activationEvents = new Set<string>();
+
+    protected readonly onDidChangePluginsEmitter = new Emitter<void>();
+    readonly onDidChangePlugins = this.onDidChangePluginsEmitter.event;
 
     @postConstruct()
     protected init(): void {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
-        this.storagePathService.onStoragePathChanged(path => this.updateStoragePath(path));
+        this.workspaceService.onWorkspaceChanged(() => this.updateStoragePath());
 
         for (const id of this.monacoTextmateService.activatedLanguages) {
             this.activateByLanguage(id);
@@ -146,64 +153,160 @@ export class HostedPluginSupport {
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
     }
 
-    checkAndLoadPlugin(container: interfaces.Container): void {
+    get plugins(): PluginMetadata[] {
+        const plugins: PluginMetadata[] = [];
+        this.contributions.forEach(contributions => plugins.push(contributions.plugin));
+        return plugins;
+    }
+
+    /** do not call it, except from the plugin frontend contribution */
+    onStart(container: interfaces.Container): void {
         this.container = container;
-        this.initPlugins();
+        this.load();
+        this.watcher.onDidDeploy(() => this.load());
+        this.server.onDidOpenConnection(() => this.load());
     }
 
-    public initPlugins(): void {
-        Promise.all([
-            this.server.getDeployedMetadata(),
-            this.pluginPathsService.provideHostLogPath(),
-            this.storagePathService.provideHostStoragePath(),
-            this.server.getExtPluginAPI(),
-            this.pluginServer.keyValueStorageGetAll(true),
-            this.pluginServer.keyValueStorageGetAll(false),
-            this.workspaceService.roots,
-        ]).then(metadata => {
-            const pluginsInitData: PluginsInitializationData = {
-                plugins: metadata['0'],
-                logPath: metadata['1'],
-                storagePath: metadata['2'],
-                pluginAPIs: metadata['3'],
-                globalStates: metadata['4'],
-                workspaceStates: metadata['5'],
-                roots: metadata['6']
-            };
-            this.loadPlugins(pluginsInitData, this.container);
-        }).catch(e => console.error(e));
+    async load(): Promise<void> {
+        try {
+            await this.progressService.withProgress('', PluginProgressLocation, async () => {
+                const roots = this.workspaceService.tryGetRoots();
+                const [plugins, logPath, storagePath, pluginAPIs, globalStates, workspaceStates] = await Promise.all([
+                    this.server.getDeployedMetadata(),
+                    this.pluginPathsService.getHostLogPath(),
+                    this.getStoragePath(),
+                    this.server.getExtPluginAPI(),
+                    this.pluginServer.getAllStorageValues(undefined),
+                    this.pluginServer.getAllStorageValues({ workspace: this.workspaceService.workspace, roots })
+                ]);
+                await this.doLoad({ plugins, logPath, storagePath, pluginAPIs, globalStates, workspaceStates, roots }, this.container);
+            });
+        } catch (e) {
+            console.error('Failed to load plugins:', e);
+        }
     }
 
-    async loadPlugins(initData: PluginsInitializationData, container: interfaces.Container): Promise<void> {
-        // don't load plugins twice
-        initData.plugins = initData.plugins.filter(value => !this.loadedPlugins.has(value.model.id));
+    protected async doLoad(initData: PluginsInitializationData, container: interfaces.Container): Promise<void> {
+        const toDisconnect = new DisposableCollection(Disposable.create(() => { /* mark as connected */ }));
+        this.server.onDidCloseConnection(() => toDisconnect.dispose());
 
         // make sure that the previous state, including plugin widgets, is restored
         // and core layout is initialized, i.e. explorer, scm, debug views are already added to the shell
         // but shell is not yet revealed
         await this.appState.reachedState('initialized_layout');
-        const hostToPlugins = new Map<PluginHost, PluginMetadata[]>();
-        for (const plugin of initData.plugins) {
-            const host = plugin.model.entryPoint.frontend ? 'frontend' : plugin.host;
-            const plugins = hostToPlugins.get(plugin.host) || [];
-            plugins.push(plugin);
-            hostToPlugins.set(host, plugins);
-            if (plugin.model.contributes) {
-                this.contributionHandler.handleContributions(plugin.model.contributes);
-            }
+        if (toDisconnect.disposed) {
+            // if disconnected then don't try to load plugin contributions
+            return;
         }
+        const contributionsByHost = this.loadContributions(initData.plugins, toDisconnect);
+
         await this.viewRegistry.initWidgets();
         // remove restored plugin widgets which were not registered by contributions
         this.viewRegistry.removeStaleWidgets();
         await this.theiaReadyPromise;
-        for (const [host, plugins] of hostToPlugins) {
-            const pluginId = getPluginId(plugins[0].model);
-            const rpc = this.initRpc(host, pluginId, container);
-            this.initPluginHostManager(rpc, { ...initData, plugins });
-        }
 
-        // update list with loaded plugins
-        initData.plugins.forEach(value => this.loadedPlugins.add(value.model.id));
+        if (toDisconnect.disposed) {
+            // if disconnected then don't try to init plugin code and dynamic contributions
+            return;
+        }
+        toDisconnect.push(this.startPlugins(contributionsByHost, initData, container));
+    }
+
+    /**
+     * Always synchronous in order to simplify handling disconnections.
+     * @throws never
+     */
+    protected loadContributions(plugins: PluginMetadata[], toDisconnect: DisposableCollection): Map<PluginHost, PluginContributions[]> {
+        const hostContributions = new Map<PluginHost, PluginContributions[]>();
+        const toUnload = new Set(this.contributions.keys());
+        let loaded = false;
+        for (const plugin of plugins) {
+            const pluginId = plugin.model.id;
+            toUnload.delete(pluginId);
+
+            let contributions = this.contributions.get(pluginId);
+            if (!contributions) {
+                contributions = new PluginContributions(plugin);
+                this.contributions.set(pluginId, contributions);
+                contributions.push(Disposable.create(() => this.contributions.delete(pluginId)));
+                loaded = true;
+            }
+
+            if (contributions.state === PluginContributions.State.INITIALIZING) {
+                contributions.state = PluginContributions.State.LOADING;
+                contributions.push(Disposable.create(() => console.log(`[${plugin.model.id}]: Unloaded plugin.`)));
+                contributions.push(this.contributionHandler.handleContributions(plugin));
+                contributions.state = PluginContributions.State.LOADED;
+                console.log(`[${plugin.model.id}]: Loaded contributions.`);
+            }
+
+            if (contributions.state === PluginContributions.State.LOADED) {
+                contributions.state = PluginContributions.State.STARTING;
+                const host = plugin.model.entryPoint.frontend ? 'frontend' : plugin.host;
+                const dynamicContributions = hostContributions.get(plugin.host) || [];
+                dynamicContributions.push(contributions);
+                hostContributions.set(host, dynamicContributions);
+                toDisconnect.push(Disposable.create(() => {
+                    contributions!.state = PluginContributions.State.LOADED;
+                    console.log(`[${plugin.model.id}]: Disconnected.`);
+                }));
+            }
+        }
+        for (const pluginId of toUnload) {
+            const contribution = this.contributions.get(pluginId);
+            if (contribution) {
+                contribution.dispose();
+            }
+        }
+        if (loaded || toUnload.size) {
+            this.onDidChangePluginsEmitter.fire(undefined);
+        }
+        return hostContributions;
+    }
+
+    protected startPlugins(
+        contributionsByHost: Map<PluginHost, PluginContributions[]>,
+        initData: PluginsInitializationData,
+        container: interfaces.Container
+    ): Disposable {
+        const toDisconnect = new DisposableCollection();
+        for (const [host, hostContributions] of contributionsByHost) {
+            const manager = this.obtainManager(host, hostContributions, container, toDisconnect);
+            this.initPlugins(manager, {
+                ...initData,
+                plugins: hostContributions.map(contributions => contributions.plugin)
+            }).then(() => {
+                if (toDisconnect.disposed) {
+                    return;
+                }
+                for (const contributions of hostContributions) {
+                    const plugin = contributions.plugin;
+                    const id = plugin.model.id;
+                    contributions.state = PluginContributions.State.STARTED;
+                    console.log(`[${id}]: Started plugin.`);
+                    toDisconnect.push(contributions.push(Disposable.create(() => {
+                        console.log(`[${id}]: Stopped plugin.`);
+                        manager.$stop(id);
+                    })));
+
+                    this.activateByWorkspaceContains(manager, plugin);
+                }
+            });
+        }
+        return toDisconnect;
+    }
+
+    protected obtainManager(host: string, hostContributions: PluginContributions[], container: interfaces.Container, toDispose: DisposableCollection): PluginManagerExt {
+        let manager = this.managers.get(host);
+        if (!manager) {
+            const pluginId = getPluginId(hostContributions[0].plugin.model);
+            const rpc = this.initRpc(host, pluginId, container);
+            toDispose.push(rpc);
+            manager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
+            this.managers.set(host, manager);
+            toDispose.push(Disposable.create(() => this.managers.delete(host)));
+        }
+        return manager;
     }
 
     protected initRpc(host: PluginHost, pluginId: string, container: interfaces.Container): RPCProtocol {
@@ -213,10 +316,7 @@ export class HostedPluginSupport {
         return rpc;
     }
 
-    protected async initPluginHostManager(rpc: RPCProtocol, data: PluginsInitializationData): Promise<void> {
-        const manager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-        this.managers.push(manager);
-
+    protected async initPlugins(manager: PluginManagerExt, data: PluginsInitializationData): Promise<void> {
         await manager.$init({
             plugins: data.plugins,
             preferences: getPreferences(this.preferenceProviderProvider, data.roots),
@@ -229,10 +329,6 @@ export class HostedPluginSupport {
                 hostLogPath: data.logPath,
                 hostStoragePath: data.storagePath || ''
             });
-
-        for (const plugin of data.plugins) {
-            this.activateByWorkspaceContains(manager, plugin);
-        }
     }
 
     private createServerRpc(pluginID: string, hostID: string): RPCProtocol {
@@ -247,10 +343,15 @@ export class HostedPluginSupport {
         }, hostID);
     }
 
-    private updateStoragePath(path: string | undefined): void {
-        for (const manager of this.managers) {
+    private async updateStoragePath(): Promise<void> {
+        const path = await this.getStoragePath();
+        for (const manager of this.managers.values()) {
             manager.$updateStoragePath(path);
         }
+    }
+
+    protected getStoragePath(): Promise<string | undefined> {
+        return this.pluginPathsService.getHostStoragePath(this.workspaceService.workspace, this.workspaceService.tryGetRoots());
     }
 
     async activateByEvent(activationEvent: string): Promise<void> {
@@ -259,7 +360,7 @@ export class HostedPluginSupport {
         }
         this.activationEvents.add(activationEvent);
         const activation: Promise<void>[] = [];
-        for (const manager of this.managers) {
+        for (const manager of this.managers.values()) {
             activation.push(manager.$activateByEvent(activationEvent));
         }
         await Promise.all(activation);
@@ -380,4 +481,22 @@ interface PluginsInitializationData {
     globalStates: KeysToKeysToAnyValue,
     workspaceStates: KeysToKeysToAnyValue,
     roots: FileStat[],
+}
+
+export class PluginContributions extends DisposableCollection {
+    constructor(
+        readonly plugin: PluginMetadata
+    ) {
+        super();
+    }
+    state: PluginContributions.State = PluginContributions.State.INITIALIZING;
+}
+export namespace PluginContributions {
+    export enum State {
+        INITIALIZING = 0,
+        LOADING = 1,
+        LOADED = 2,
+        STARTING = 3,
+        STARTED = 4
+    }
 }

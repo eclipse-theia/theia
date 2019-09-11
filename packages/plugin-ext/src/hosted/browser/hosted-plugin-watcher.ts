@@ -30,13 +30,7 @@ export class HostedPluginWatcher {
     getHostedPluginClient(): HostedPluginClient {
         const messageEmitter = this.onPostMessage;
         const logEmitter = this.onLogMessage;
-        let clientId = 0;
         return {
-            getClientId: () => Promise.resolve(clientId),
-            setClientId: (id: number) => {
-                clientId = id;
-                return Promise.resolve();
-            },
             postMessage(message: string): Promise<void> {
                 messageEmitter.fire(JSON.parse(message));
                 return Promise.resolve();

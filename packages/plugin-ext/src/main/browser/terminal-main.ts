@@ -21,26 +21,33 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
 /**
  * Plugin api service allows working with terminal emulator.
  */
-export class TerminalServiceMainImpl implements TerminalServiceMain {
+export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable {
 
     private readonly terminals: TerminalService;
     private readonly shell: ApplicationShell;
     private readonly extProxy: TerminalServiceExt;
 
+    private readonly toDispose = new DisposableCollection();
+
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.terminals = container.get(TerminalService);
         this.shell = container.get(ApplicationShell);
         this.extProxy = rpc.getProxy(MAIN_RPC_CONTEXT.TERMINAL_EXT);
-        this.terminals.onDidCreateTerminal(terminal => this.trackTerminal(terminal));
+        this.toDispose.push(this.terminals.onDidCreateTerminal(terminal => this.trackTerminal(terminal)));
         for (const terminal of this.terminals.all) {
             this.trackTerminal(terminal);
         }
-        this.terminals.onDidChangeCurrentTerminal(() => this.updateCurrentTerminal());
+        this.toDispose.push(this.terminals.onDidChangeCurrentTerminal(() => this.updateCurrentTerminal()));
         this.updateCurrentTerminal();
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     protected updateCurrentTerminal(): void {
@@ -51,19 +58,22 @@ export class TerminalServiceMainImpl implements TerminalServiceMain {
     protected async trackTerminal(terminal: TerminalWidget): Promise<void> {
         let name = terminal.title.label;
         this.extProxy.$terminalCreated(terminal.id, name);
-        terminal.title.changed.connect(() => {
+        const updateTitle = () => {
             if (name !== terminal.title.label) {
                 name = terminal.title.label;
                 this.extProxy.$terminalNameChanged(terminal.id, name);
             }
-        });
+        };
+        terminal.title.changed.connect(updateTitle);
+        this.toDispose.push(Disposable.create(() => terminal.title.changed.disconnect(updateTitle)));
+
         const updateProcessId = () => terminal.processId.then(
             processId => this.extProxy.$terminalOpened(terminal.id, processId),
             () => {/*no-op*/ }
         );
         updateProcessId();
-        terminal.onDidOpen(() => updateProcessId());
-        terminal.onTerminalDidClose(() => this.extProxy.$terminalClosed(terminal.id));
+        this.toDispose.push(terminal.onDidOpen(() => updateProcessId()));
+        this.toDispose.push(terminal.onTerminalDidClose(() => this.extProxy.$terminalClosed(terminal.id)));
     }
 
     async $createTerminal(id: string, options: TerminalOptions): Promise<string> {

@@ -182,27 +182,31 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return view.when === undefined || this.contextKeyService.match(view.when);
     }
 
-    registerViewContainer(location: string, viewContainer: ViewContainer): void {
+    registerViewContainer(location: string, viewContainer: ViewContainer): Disposable {
         if (this.viewContainers.has(viewContainer.id)) {
             console.warn('view container such id already registered: ', JSON.stringify(viewContainer));
-            return;
+            return Disposable.NULL;
         }
+        const toDispose = new DisposableCollection();
         const iconClass = 'plugin-view-container-icon-' + viewContainer.id;
-        this.style.insertRule('.' + iconClass, () => `
+        toDispose.push(this.style.insertRule('.' + iconClass, () => `
                 mask: url('${viewContainer.iconUrl}') no-repeat 50% 50%;
                 -webkit-mask: url('${viewContainer.iconUrl}') no-repeat 50% 50%;
-            `);
-        this.doRegisterViewContainer(viewContainer.id, location, {
+            `));
+        toDispose.push(this.doRegisterViewContainer(viewContainer.id, location, {
             label: viewContainer.title,
             iconClass,
             closeable: true
-        });
+        }));
+        return toDispose;
     }
 
-    protected doRegisterViewContainer(id: string, location: string, options: ViewContainerTitleOptions): void {
+    protected doRegisterViewContainer(id: string, location: string, options: ViewContainerTitleOptions): Disposable {
+        const toDispose = new DisposableCollection();
         this.viewContainers.set(id, [location, options]);
+        toDispose.push(Disposable.create(() => this.viewContainers.delete(id)));
         const toggleCommandId = `plugin.view-container.${id}.toggle`;
-        this.commands.registerCommand({
+        toDispose.push(this.commands.registerCommand({
             id: toggleCommandId,
             label: 'Toggle ' + options.label + ' View'
         }, {
@@ -217,26 +221,45 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                         }
                     }
                 }
-            });
-        this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
+            }));
+        toDispose.push(this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
             commandId: toggleCommandId,
             label: options.label
-        });
+        }));
+        toDispose.push(Disposable.create(async () => {
+            const widget = await this.getPluginViewContainer(id);
+            if (widget) {
+                widget.dispose();
+            }
+        }));
+        return toDispose;
     }
 
-    registerView(viewContainerId: string, view: View): void {
+    registerView(viewContainerId: string, view: View): Disposable {
         if (this.views.has(view.id)) {
             console.warn('view with such id already registered: ', JSON.stringify(view));
-            return;
+            return Disposable.NULL;
         }
+        const toDispose = new DisposableCollection();
+
         this.views.set(view.id, [viewContainerId, view]);
+        toDispose.push(Disposable.create(() => this.views.delete(view.id)));
+
         const containerViews = this.containerViews.get(viewContainerId) || [];
         containerViews.push(view.id);
         this.containerViews.set(viewContainerId, containerViews);
+        toDispose.push(Disposable.create(() => {
+            const index = containerViews.indexOf(view.id);
+            if (index !== -1) {
+                containerViews.splice(index, 1);
+            }
+        }));
+
         if (view.when) {
             this.viewClauseContexts.set(view.id, this.contextKeyService.parseKeys(view.when));
+            toDispose.push(Disposable.create(() => this.viewClauseContexts.delete(view.id)));
         }
-        this.quickView.registerItem({
+        toDispose.push(this.quickView.registerItem({
             label: view.name,
             open: async () => {
                 const widget = await this.openView(view.id);
@@ -244,7 +267,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                     this.shell.activateWidget(widget.id);
                 }
             }
-        });
+        }));
+        return toDispose;
     }
 
     async getView(viewId: string): Promise<PluginViewWidget | undefined> {
@@ -466,27 +490,33 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             console.error(`data provider for '${viewId}' view is already registered`);
             return Disposable.NULL;
         }
+        this.viewDataProviders.set(viewId, provider);
+        const toDispose = new DisposableCollection(Disposable.create(() => {
+            this.viewDataProviders.delete(viewId);
+            this.viewDataState.delete(viewId);
+        }));
         this.getView(viewId).then(async view => {
+            if (toDispose.disposed) {
+                return;
+            }
             if (view) {
                 if (view.isVisible) {
                     await this.prepareView(view);
                 } else {
-                    const toDispose = new DisposableCollection(this.onDidExpandView(async id => {
+                    const toDisposeOnDidExpandView = new DisposableCollection(this.onDidExpandView(async id => {
                         if (id === viewId) {
+                            unsubscribe();
                             await this.prepareView(view);
                         }
                     }));
-                    const unsubscribe = () => toDispose.dispose();
+                    const unsubscribe = () => toDisposeOnDidExpandView.dispose();
                     view.disposed.connect(unsubscribe);
-                    toDispose.push(Disposable.create(() => view.disposed.disconnect(unsubscribe)));
+                    toDisposeOnDidExpandView.push(Disposable.create(() => view.disposed.disconnect(unsubscribe)));
+                    toDispose.push(toDisposeOnDidExpandView);
                 }
             }
         });
-        this.viewDataProviders.set(viewId, provider);
-        return Disposable.create(() => {
-            this.viewDataProviders.delete(viewId);
-            this.viewDataState.delete(viewId);
-        });
+        return toDispose;
     }
 
     protected async createViewDataWidget(viewId: string): Promise<Widget | undefined> {
@@ -499,15 +529,19 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const state = this.viewDataState.get(viewId);
         const widget = await provider({ state, viewInfo });
         if (StatefulWidget.is(widget)) {
-            const dispose = widget.dispose.bind(widget);
-            widget.dispose = () => {
-                this.viewDataState.set(viewId, widget.storeState());
-                dispose();
-            };
+            this.storeViewDataStateOnDispose(viewId, widget);
         } else {
             this.viewDataState.delete(viewId);
         }
         return widget;
+    }
+
+    protected storeViewDataStateOnDispose(viewId: string, widget: Widget & StatefulWidget): void {
+        const dispose = widget.dispose.bind(widget);
+        widget.dispose = () => {
+            this.viewDataState.set(viewId, widget.storeState());
+            dispose();
+        };
     }
 
     protected trackVisibleWidget(factoryId: string, view: PluginViewRegistry.VisibleView): void {

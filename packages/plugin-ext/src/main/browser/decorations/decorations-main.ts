@@ -22,31 +22,42 @@ import {
 } from '../../../common/plugin-api-rpc';
 
 import { interfaces } from 'inversify';
-import { Emitter } from '@theia/core';
+import { Emitter } from '@theia/core/lib/common/event';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Tree, TreeDecoration } from '@theia/core/lib/browser';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { ScmDecorationsService } from '@theia/scm/lib/browser/decorations/scm-decorations-service';
 
-export class DecorationsMainImpl implements DecorationsMain {
+export class DecorationsMainImpl implements DecorationsMain, Disposable {
 
     private readonly proxy: DecorationsExt;
+    // TODO: why it is SCM specific? VS Code apis about any decorations for the explorer
     private readonly scmDecorationsService: ScmDecorationsService;
 
     protected readonly emitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
+
+    protected readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DECORATIONS_EXT);
         this.scmDecorationsService = container.get(ScmDecorationsService);
     }
 
-    readonly providersMap: Map<number, DecorationProvider> = new Map();
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    // TODO: why it is never used?
+    protected readonly providers = new Map<number, DecorationProvider>();
 
     async $dispose(id: number): Promise<void> {
-        this.providersMap.delete(id);
+        // TODO: What about removing decorations when a provider is gone?
+        this.providers.delete(id);
     }
 
     async $registerDecorationProvider(id: number, provider: DecorationProvider): Promise<number> {
-        this.providersMap.set(id, provider);
+        this.providers.set(id, provider);
+        this.toDispose.push(Disposable.create(() => this.$dispose(id)));
         return id;
     }
 
@@ -61,6 +72,7 @@ export class DecorationsMainImpl implements DecorationsMain {
             }
             this.scmDecorationsService.fireNavigatorDecorationsChanged(result);
         } else if (arg) {
+            // TODO: why to make a remote call instead of sending decoration to `$fireDidChangeDecorations` in first place?
             this.proxy.$provideDecoration(id, arg);
         }
     }

@@ -73,7 +73,7 @@ export interface PreferenceItem {
     enum?: string[];
     items?: PreferenceItem;
     properties?: { [name: string]: PreferenceItem };
-    additionalProperties?: object;
+    additionalProperties?: object | boolean;
     [name: string]: any;
     overridable?: boolean;
 }

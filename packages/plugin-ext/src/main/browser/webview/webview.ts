@@ -15,7 +15,7 @@
  ********************************************************************************/
 import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
 import { IdGenerator } from '../../../common/id-generator';
-import { Disposable } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MiniBrowserContentStyle } from '@theia/mini-browser/lib/browser/mini-browser-content-style';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
@@ -100,31 +100,42 @@ export class WebviewWidget extends BaseWidget {
         this.title.iconClass = iconClass;
     }
 
+    protected readonly toDisposeOnHTML = new DisposableCollection();
+
     setHTML(html: string): void {
         const newDocument = new DOMParser().parseFromString(html, 'text/html');
         if (!newDocument || !newDocument.body) {
             return;
         }
+
+        this.toDisposeOnHTML.dispose();
+        this.toDispose.push(this.toDisposeOnHTML);
+
         (<any>newDocument.querySelectorAll('a')).forEach((a: any) => {
             if (!a.title) {
                 a.title = a.href;
             }
         });
+
         (window as any)[`postMessageExt${this.id}`] = (e: any) => {
             this.handleMessage(e);
         };
+        this.toDisposeOnHTML.push(Disposable.create(() =>
+            delete (window as any)[`postMessageExt${this.id}`]
+        ));
         this.updateApiScript(newDocument);
-        const previousPendingFrame = this.iframe;
-        if (previousPendingFrame) {
-            previousPendingFrame.setAttribute('id', '');
-            this.node.removeChild(previousPendingFrame);
-        }
+
         const newFrame = document.createElement('iframe');
         newFrame.setAttribute('id', 'pending-frame');
         newFrame.setAttribute('frameborder', '0');
         newFrame.style.cssText = 'display: block; margin: 0; overflow: hidden; position: absolute; width: 100%; height: 100%; visibility: hidden';
         this.node.appendChild(newFrame);
         this.iframe = newFrame;
+        this.toDisposeOnHTML.push(Disposable.create(() => {
+            newFrame.setAttribute('id', '');
+            this.node.removeChild(newFrame);
+        }));
+
         newFrame.contentDocument!.open('text/html', 'replace');
 
         const onLoad = (contentDocument: any, contentWindow: any) => {
@@ -146,13 +157,17 @@ export class WebviewWidget extends BaseWidget {
             }
         };
 
-        clearTimeout(this.loadTimeout);
-        this.loadTimeout = undefined;
         this.loadTimeout = window.setTimeout(() => {
             clearTimeout(this.loadTimeout);
             this.loadTimeout = undefined;
             onLoad(newFrame.contentDocument, newFrame.contentWindow);
         }, 200);
+        this.toDisposeOnHTML.push(Disposable.create(() => {
+            if (typeof this.loadTimeout === 'number') {
+                clearTimeout(this.loadTimeout);
+                this.loadTimeout = undefined;
+            }
+        }));
 
         newFrame.contentWindow!.addEventListener('load', e => {
             if (this.loadTimeout) {

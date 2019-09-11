@@ -15,24 +15,20 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { Emitter, Event } from '@theia/core';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { toArray } from '@phosphor/algorithm';
 
 @injectable()
 export class ViewColumnService {
-    private mainPanel: TheiaDockPanel;
-    private columnValues = new Map<string, number>();
-    private viewColumnIds = new Map<number, string[]>();
+    private readonly columnValues = new Map<string, number>();
+    private readonly viewColumnIds = new Map<number, string[]>();
 
     protected readonly onViewColumnChangedEmitter = new Emitter<{ id: string, viewColumn: number }>();
 
     constructor(
         @inject(ApplicationShell) private readonly shell: ApplicationShell,
     ) {
-        this.mainPanel = this.shell.mainPanel;
-
         let oldColumnValues = new Map<string, number>();
         const update = async () => {
             await new Promise((resolve => setTimeout(() => resolve())));
@@ -46,8 +42,8 @@ export class ViewColumnService {
             });
             oldColumnValues = new Map(this.columnValues.entries());
         };
-        this.mainPanel.widgetAdded.connect(() => update());
-        this.mainPanel.widgetRemoved.connect(() => update());
+        this.shell.mainPanel.widgetAdded.connect(() => update());
+        this.shell.mainPanel.widgetRemoved.connect(() => update());
     }
 
     get onViewColumnChanged(): Event<{ id: string, viewColumn: number }> {
@@ -56,7 +52,7 @@ export class ViewColumnService {
 
     updateViewColumns(): void {
         const positionIds = new Map<number, string[]>();
-        toArray(this.mainPanel.tabBars()).forEach(tabBar => {
+        toArray(this.shell.mainPanel.tabBars()).forEach(tabBar => {
             if (!tabBar.node.style.left) {
                 return;
             }

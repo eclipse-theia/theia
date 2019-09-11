@@ -39,6 +39,14 @@ import { FileSystemMainImpl } from './file-system-main';
 import { ScmMainImpl } from './scm-main';
 import { DecorationsMainImpl } from './decorations/decorations-main';
 import { ClipboardMainImpl } from './clipboard-main';
+import { DocumentsMainImpl } from './documents-main';
+import { TextEditorsMainImpl } from './text-editors-main';
+import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorModelService } from './text-editor-model-service';
+import { OpenerService } from '@theia/core/lib/browser/opener-service';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
+import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -59,9 +67,18 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const preferenceRegistryMain = new PreferenceRegistryMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, preferenceRegistryMain);
 
-    /* tslint:disable */
-    new EditorsAndDocumentsMain(rpc, container);
-    /* tslint:enable */
+    const editorsAndDocuments = new EditorsAndDocumentsMain(rpc, container);
+    const modelService = container.get(EditorModelService);
+    const editorManager = container.get(EditorManager);
+    const openerService = container.get<OpenerService>(OpenerService);
+    const shell = container.get(ApplicationShell);
+    const documentsMain = new DocumentsMainImpl(editorsAndDocuments, modelService, rpc, editorManager, openerService, shell);
+    rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
+
+    const bulkEditService = container.get(MonacoBulkEditService);
+    const monacoEditorService = container.get(MonacoEditorService);
+    const editorsMain = new TextEditorsMainImpl(editorsAndDocuments, rpc, bulkEditService, monacoEditorService);
+    rpc.set(PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN, editorsMain);
 
     const statusBarMessageRegistryMain = new StatusBarMessageRegistryMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_MAIN, statusBarMessageRegistryMain);

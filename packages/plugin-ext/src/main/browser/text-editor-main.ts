@@ -13,6 +13,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import {
     TextEditorConfiguration,
@@ -26,30 +28,36 @@ import {
     DecorationOptions
 } from '../../common/plugin-api-rpc';
 import { Range } from '../../common/plugin-api-rpc-model';
-import { DisposableCollection, Emitter, Event } from '@theia/core';
+import { Emitter, Event } from '@theia/core';
 import { TextEditorCursorStyle, cursorStyleToString } from '../../common/editor-options';
 import { TextEditorLineNumbersStyle, EndOfLine } from '../../plugin/types-impl';
 
-export class TextEditorMain {
+export class TextEditorMain implements Disposable {
 
     private properties: TextEditorPropertiesMain | undefined;
-    private modelListeners: DisposableCollection = new DisposableCollection();
     private editor: MonacoEditor | undefined;
-    private editorListeners = new DisposableCollection();
 
     private readonly onPropertiesChangedEmitter = new Emitter<EditorChangedPropertiesData>();
+
+    private readonly toDispose = new DisposableCollection(
+        Disposable.create(() => this.properties = undefined),
+        this.onPropertiesChangedEmitter
+    );
 
     constructor(
         private id: string,
         private model: monaco.editor.IModel,
         editor: MonacoEditor
     ) {
-        this.properties = undefined;
-        this.modelListeners.push(this.model.onDidChangeOptions(e => {
-            this.updateProperties(undefined);
-        }));
+        this.toDispose.push(this.model.onDidChangeOptions(() =>
+            this.updateProperties(undefined)
+        ));
         this.setEditor(editor);
         this.updateProperties(undefined);
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     private updateProperties(source?: string): void {
@@ -64,47 +72,41 @@ export class TextEditorMain {
         }
     }
 
+    protected readonly toDisposeOnEditor = new DisposableCollection();
+
     private setEditor(editor?: MonacoEditor): void {
         if (this.editor === editor) {
             return;
         }
-
-        this.editorListeners.dispose();
-        this.editorListeners = new DisposableCollection();
+        this.toDisposeOnEditor.dispose();
+        this.toDispose.push(this.toDisposeOnEditor);
         this.editor = editor;
+        this.toDisposeOnEditor.push(Disposable.create(() => this.editor = undefined));
 
         if (this.editor) {
             const monaco = this.editor.getControl();
-            this.editorListeners.push(this.editor.onSelectionChanged(_ => {
+            this.toDisposeOnEditor.push(this.editor.onSelectionChanged(_ => {
                 this.updateProperties();
             }));
-            this.editorListeners.push(monaco.onDidChangeModel(() => {
+            this.toDisposeOnEditor.push(monaco.onDidChangeModel(() => {
                 this.setEditor(undefined);
             }));
-            this.editorListeners.push(monaco.onDidChangeCursorSelection(e => {
+            this.toDisposeOnEditor.push(monaco.onDidChangeCursorSelection(e => {
                 this.updateProperties(e.source);
             }));
-            this.editorListeners.push(monaco.onDidChangeConfiguration(() => {
+            this.toDisposeOnEditor.push(monaco.onDidChangeConfiguration(() => {
                 this.updateProperties();
             }));
-            this.editorListeners.push(monaco.onDidLayoutChange(() => {
+            this.toDisposeOnEditor.push(monaco.onDidLayoutChange(() => {
                 this.updateProperties();
             }));
-            this.editorListeners.push(monaco.onDidScrollChange(() => {
+            this.toDisposeOnEditor.push(monaco.onDidScrollChange(() => {
                 this.updateProperties();
             }));
 
             this.updateProperties();
 
         }
-    }
-
-    dispose(): void {
-        this.modelListeners.dispose();
-        delete this.model;
-
-        this.editorListeners.dispose();
-        delete this.editor;
     }
 
     getId(): string {

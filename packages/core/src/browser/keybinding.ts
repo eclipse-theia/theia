@@ -18,6 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { isOSX } from '../common/os';
 import { Emitter, Event } from '../common/event';
 import { CommandRegistry } from '../common/command';
+import { Disposable, DisposableCollection } from '../common/disposable';
 import { KeyCode, KeySequence, Key } from './keyboard/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { ContributionProvider } from '../common/contribution-provider';
@@ -184,8 +185,8 @@ export class KeybindingRegistry {
      *
      * @param binding
      */
-    registerKeybinding(binding: Keybinding): void {
-        this.doRegisterKeybinding(binding, KeybindingScope.DEFAULT);
+    registerKeybinding(binding: Keybinding): Disposable {
+        return this.doRegisterKeybinding(binding, KeybindingScope.DEFAULT);
     }
 
     /**
@@ -193,8 +194,8 @@ export class KeybindingRegistry {
      *
      * @param bindings
      */
-    registerKeybindings(...bindings: Keybinding[]): void {
-        this.doRegisterKeybindings(bindings, KeybindingScope.DEFAULT);
+    registerKeybindings(...bindings: Keybinding[]): Disposable {
+        return this.doRegisterKeybindings(bindings, KeybindingScope.DEFAULT);
     }
 
     /**
@@ -222,21 +223,30 @@ export class KeybindingRegistry {
         });
     }
 
-    protected doRegisterKeybindings(bindings: Keybinding[], scope: KeybindingScope = KeybindingScope.DEFAULT): void {
+    protected doRegisterKeybindings(bindings: Keybinding[], scope: KeybindingScope = KeybindingScope.DEFAULT): Disposable {
+        const toDispose = new DisposableCollection();
         for (const binding of bindings) {
-            this.doRegisterKeybinding(binding, scope);
+            toDispose.push(this.doRegisterKeybinding(binding, scope));
         }
+        return toDispose;
     }
 
-    protected doRegisterKeybinding(binding: Keybinding, scope: KeybindingScope = KeybindingScope.DEFAULT): void {
+    protected doRegisterKeybinding(binding: Keybinding, scope: KeybindingScope = KeybindingScope.DEFAULT): Disposable {
         try {
             this.resolveKeybinding(binding);
             if (this.containsKeybinding(this.keymaps[scope], binding)) {
                 throw new Error(`"${binding.keybinding}" is in collision with something else [scope:${scope}]`);
             }
             this.keymaps[scope].push(binding);
+            return Disposable.create(() => {
+                const index = this.keymaps[scope].indexOf(binding);
+                if (index !== -1) {
+                    this.keymaps[scope].splice(index, 1);
+                }
+            });
         } catch (error) {
             this.logger.warn(`Could not register keybinding:\n  ${Keybinding.stringify(binding)}\n${error}`);
+            return Disposable.NULL;
         }
     }
 
@@ -641,16 +651,21 @@ export class KeybindingRegistry {
 
     setKeymap(scope: KeybindingScope, bindings: Keybinding[]): void {
         this.resetKeybindingsForScope(scope);
-        this.doRegisterKeybindings(bindings, scope);
+        this.toResetKeymap.set(scope, this.doRegisterKeybindings(bindings, scope));
         this.keybindingsChanged.fire(undefined);
     }
+
+    protected readonly toResetKeymap = new Map<KeybindingScope, Disposable>();
 
     /**
      * Reset keybindings for a specific scope
      * @param scope scope to reset the keybindings for
      */
     resetKeybindingsForScope(scope: KeybindingScope): void {
-        this.keymaps[scope] = [];
+        const toReset = this.toResetKeymap.get(scope);
+        if (toReset) {
+            toReset.dispose();
+        }
     }
 
     /**

@@ -18,6 +18,16 @@ import { injectable } from 'inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ThemeService, Theme, BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 import { IconUrl } from '../../common/plugin-protocol';
+import { Reference, SyncReferenceCollection } from '@theia/core/lib/common/reference';
+
+export interface PluginIconKey {
+    url: IconUrl
+    size: number
+}
+
+export interface PluginIcon extends Disposable {
+    readonly iconClass: string
+}
 
 @injectable()
 export class PluginSharedStyle {
@@ -83,26 +93,31 @@ export class PluginSharedStyle {
         }
     }
 
+    private readonly icons = new SyncReferenceCollection<PluginIconKey, PluginIcon>(key => this.createPluginIcon(key));
+    toIconClass(url: IconUrl, { size }: { size: number } = { size: 16 }): Reference<PluginIcon> {
+        return this.icons.acquire({ url, size });
+    }
+
     private iconSequence = 0;
-    private readonly icons = new Map<string, string>();
-    toIconClass(iconUrl: IconUrl, { size }: { size?: number } = { size: 16 }): string {
+    protected createPluginIcon(key: PluginIconKey): PluginIcon {
+        const iconUrl = key.url;
+        const size = key.size;
         const darkIconUrl = typeof iconUrl === 'object' ? iconUrl.dark : iconUrl;
         const lightIconUrl = typeof iconUrl === 'object' ? iconUrl.light : iconUrl;
-        const key = JSON.stringify({ lightIconUrl, darkIconUrl });
-        let iconClass = this.icons.get(key);
-        if (typeof iconClass !== 'string') {
-            iconClass = 'plugin-icon-' + this.iconSequence++;
-            this.insertRule('.' + iconClass, theme => `
-                    display: inline-block;
-                    background-position: 2px;
-                    width: ${size}px;
-                    height: ${size}px;
-                    background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
-                    background-size: ${size}px;
-                `);
-            this.icons.set(key, iconClass);
-        }
-        return iconClass;
+        const iconClass = 'plugin-icon-' + this.iconSequence++;
+        const toDispose = new DisposableCollection();
+        toDispose.push(this.insertRule('.' + iconClass, theme => `
+                display: inline-block;
+                background-position: 2px;
+                width: ${size}px;
+                height: ${size}px;
+                background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
+                background-size: ${size}px;
+            `));
+        return {
+            iconClass,
+            dispose: () => toDispose.dispose()
+        };
     }
 
 }

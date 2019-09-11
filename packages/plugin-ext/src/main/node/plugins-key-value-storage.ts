@@ -14,47 +14,48 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import * as fs from 'fs';
+import { injectable, inject, postConstruct } from 'inversify';
+import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { PluginPaths } from './paths/const';
 import { PluginPathsService } from '../common/plugin-paths-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
+import { PluginStorageKind } from '../../common';
 
 @injectable()
 export class PluginsKeyValueStorage {
-    private theiaDirPath: string | undefined;
-    private globalDataPath: string | undefined;
 
-    private deferredTheiaDirPath = new Deferred<string>();
+    private readonly deferredGlobalDataPath = new Deferred<string | undefined>();
 
-    constructor(
-        @inject(PluginPathsService) private readonly pluginPathsService: PluginPathsService,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem
-    ) {
-        this.setupDirectories();
+    @inject(PluginPathsService)
+    private readonly pluginPathsService: PluginPathsService;
+
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
+    @postConstruct()
+    protected async init(): Promise<void> {
+        try {
+            const theiaDirPath = await this.pluginPathsService.getTheiaDirPath();
+            await this.fileSystem.createFolder(theiaDirPath);
+            const globalDataPath = path.join(theiaDirPath, PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR, 'global-state.json');
+            await this.fileSystem.createFolder(path.dirname(globalDataPath));
+            this.deferredGlobalDataPath.resolve(globalDataPath);
+        } catch (e) {
+            console.error('Faild to initialize global state path: ', e);
+            this.deferredGlobalDataPath.resolve(undefined);
+        }
     }
 
-    private async setupDirectories(): Promise<void> {
-        const theiaDirPath = await this.pluginPathsService.getTheiaDirPath();
-        await this.fileSystem.createFolder(theiaDirPath);
-        this.theiaDirPath = theiaDirPath;
-
-        this.globalDataPath = path.join(this.theiaDirPath, PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR, 'global-state.json');
-        await this.fileSystem.createFolder(path.dirname(this.globalDataPath));
-
-        this.deferredTheiaDirPath.resolve(this.theiaDirPath);
-    }
-
-    async set(key: string, value: KeysToAnyValues, isGlobal: boolean): Promise<boolean> {
-        const dataPath = await this.getDataPath(isGlobal);
+    async set(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
+        const dataPath = await this.getDataPath(kind);
         if (!dataPath) {
             throw new Error('Cannot save data: no opened workspace');
         }
 
-        const data = this.readFromFile(dataPath);
+        const data = await this.readFromFile(dataPath);
 
         if (value === undefined || value === {}) {
             delete data[key];
@@ -62,65 +63,50 @@ export class PluginsKeyValueStorage {
             data[key] = value;
         }
 
-        this.writeToFile(dataPath, data);
+        await this.writeToFile(dataPath, data);
         return true;
     }
 
-    async get(key: string, isGlobal: boolean): Promise<KeysToAnyValues> {
-        const dataPath = await this.getDataPath(isGlobal);
+    async get(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues> {
+        const dataPath = await this.getDataPath(kind);
         if (!dataPath) {
             return {};
         }
-
-        const data = this.readFromFile(dataPath);
+        const data = await this.readFromFile(dataPath);
         return data[key];
     }
 
-    async getAll(isGlobal: boolean): Promise<KeysToKeysToAnyValue> {
-        const dataPath = await this.getDataPath(isGlobal);
+    async getAll(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue> {
+        const dataPath = await this.getDataPath(kind);
         if (!dataPath) {
             return {};
         }
-
-        const data = this.readFromFile(dataPath);
-        return data;
+        return this.readFromFile(dataPath);
     }
 
-    private async getDataPath(isGlobal: boolean): Promise<string | undefined> {
-        if (this.theiaDirPath === undefined) {
-            // wait for Theia data directory path if it hasn't been initialized yet
-            await this.deferredTheiaDirPath.promise;
+    private async getDataPath(kind: PluginStorageKind): Promise<string | undefined> {
+        if (!kind) {
+            return this.deferredGlobalDataPath.promise;
         }
-
-        if (isGlobal) {
-            return this.globalDataPath!;
-        } else {
-            const storagePath = await this.pluginPathsService.getLastStoragePath();
-            return storagePath ? path.join(storagePath, 'workspace-state.json') : undefined;
-        }
+        const storagePath = await this.pluginPathsService.getHostStoragePath(kind.workspace, kind.roots);
+        return storagePath ? path.join(storagePath, 'workspace-state.json') : undefined;
     }
 
-    private readFromFile(pathToFile: string): KeysToKeysToAnyValue {
-        if (!fs.existsSync(pathToFile)) {
+    private async readFromFile(pathToFile: string): Promise<KeysToKeysToAnyValue> {
+        if (!await fs.pathExists(pathToFile)) {
             return {};
         }
-
-        const rawData = fs.readFileSync(pathToFile, 'utf8');
         try {
-            return JSON.parse(rawData);
+            return await fs.readJSON(pathToFile);
         } catch (error) {
             console.error('Failed to parse data from "', pathToFile, '". Reason:', error);
             return {};
         }
     }
 
-    private writeToFile(pathToFile: string, data: KeysToKeysToAnyValue): void {
-        if (!fs.existsSync(path.dirname(pathToFile))) {
-            fs.mkdirSync(path.dirname(pathToFile));
-        }
-
-        const rawData = JSON.stringify(data);
-        fs.writeFileSync(pathToFile, rawData, 'utf8');
+    private async writeToFile(pathToFile: string, data: KeysToKeysToAnyValue): Promise<void> {
+        await fs.ensureDir(path.dirname(pathToFile));
+        await fs.writeJSON(pathToFile, data);
     }
 
 }

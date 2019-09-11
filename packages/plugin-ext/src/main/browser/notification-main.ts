@@ -18,23 +18,38 @@ import { NotificationMain } from '../../common/plugin-api-rpc';
 import { ProgressService, Progress, ProgressMessage } from '@theia/core/lib/common';
 import { interfaces } from 'inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
-export class NotificationMainImpl implements NotificationMain {
+export class NotificationMainImpl implements NotificationMain, Disposable {
 
     private readonly progressService: ProgressService;
     private readonly progressMap = new Map<string, Progress>();
     private readonly progress2Work = new Map<string, number>();
 
+    protected readonly toDispose = new DisposableCollection(
+        Disposable.create(() => { /* mark as not disposed */ })
+    );
+
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.progressService = container.get(ProgressService);
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     async $startProgress(options: string | NotificationMain.StartProgressOptions): Promise<string> {
         const progressMessage = this.mapOptions(options);
         const progress = await this.progressService.showProgress(progressMessage);
-        this.progressMap.set(progress.id, progress);
-        this.progress2Work.set(progress.id, 0);
-        return progress.id;
+        const id = progress.id;
+        this.progressMap.set(id, progress);
+        this.progress2Work.set(id, 0);
+        if (this.toDispose.disposed) {
+            this.$stopProgress(id);
+        } else {
+            this.toDispose.push(Disposable.create(() => this.$stopProgress(id)));
+        }
+        return id;
     }
     protected mapOptions(options: string | NotificationMain.StartProgressOptions): ProgressMessage {
         const text = typeof options === 'string' ? options : options.title;

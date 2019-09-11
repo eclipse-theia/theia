@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { Command, CommandRegistry } from '../../common';
+import { Command, CommandRegistry, Disposable } from '../../common';
 import { Keybinding, KeybindingRegistry } from '../keybinding';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenGroupItem, QuickOpenGroupItemOptions } from './quick-open-model';
 import { QuickOpenOptions } from './quick-open-service';
@@ -51,10 +51,16 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
     protected readonly corePreferences: CorePreferences;
 
     protected readonly contexts = new Map<string, string[]>();
-    pushCommandContext(commandId: string, when: string): void {
+    pushCommandContext(commandId: string, when: string): Disposable {
         const contexts = this.contexts.get(commandId) || [];
         contexts.push(when);
         this.contexts.set(commandId, contexts);
+        return Disposable.create(() => {
+            const index = contexts.indexOf(when);
+            if (index !== -1) {
+                contexts.splice(index, 1);
+            }
+        });
     }
 
     /** Initialize this quick open model with the commands. */

@@ -17,6 +17,7 @@
 import { injectable } from 'inversify';
 import { IGrammarConfiguration } from 'vscode-textmate';
 import { TokenizerOption } from './textmate-tokenizer';
+import { Disposable } from '@theia/core/lib/common/disposable';
 
 export interface TextmateGrammarConfiguration extends IGrammarConfiguration {
 
@@ -41,55 +42,83 @@ export interface GrammarDefinition {
 @injectable()
 export class TextmateRegistry {
 
-    readonly scopeToProvider = new Map<string, GrammarDefinitionProvider>();
-    readonly languageToConfig = new Map<string, TextmateGrammarConfiguration>();
-    readonly languageIdToScope = new Map<string, string>();
+    protected readonly scopeToProvider = new Map<string, GrammarDefinitionProvider[]>();
+    protected readonly languageToConfig = new Map<string, TextmateGrammarConfiguration[]>();
+    protected readonly languageIdToScope = new Map<string, string[]>();
 
-    registerTextmateGrammarScope(scope: string, description: GrammarDefinitionProvider): void {
-        const existingProvider = this.scopeToProvider.get(scope);
+    registerTextmateGrammarScope(scope: string, provider: GrammarDefinitionProvider): Disposable {
+        const providers = this.scopeToProvider.get(scope) || [];
+        const existingProvider = providers[0];
         if (existingProvider) {
-            Promise.all([existingProvider.getGrammarDefinition(), description.getGrammarDefinition()]).then(([a, b]) => {
+            Promise.all([existingProvider.getGrammarDefinition(), provider.getGrammarDefinition()]).then(([a, b]) => {
                 if (a.location !== b.location || !a.location && !b.location) {
                     console.warn(new Error(`a registered grammar provider for '${scope}' scope is overridden`));
                 }
             });
         }
-        this.scopeToProvider.set(scope, description);
+        providers.unshift(provider);
+        this.scopeToProvider.set(scope, providers);
+        return Disposable.create(() => {
+            const index = providers.indexOf(provider);
+            if (index !== -1) {
+                providers.splice(index, 1);
+            }
+        });
     }
 
     getProvider(scope: string): GrammarDefinitionProvider | undefined {
-        return this.scopeToProvider.get(scope);
+        const providers = this.scopeToProvider.get(scope);
+        return providers && providers[0];
     }
 
-    mapLanguageIdToTextmateGrammar(languageId: string, scope: string): void {
-        const existingScope = this.getScope(languageId);
+    mapLanguageIdToTextmateGrammar(languageId: string, scope: string): Disposable {
+        const scopes = this.languageIdToScope.get(languageId) || [];
+        const existingScope = scopes[0];
         if (typeof existingScope === 'string') {
             console.warn(new Error(`'${languageId}' language is remapped from '${existingScope}' to '${scope}' scope`));
         }
-        this.languageIdToScope.set(languageId, scope);
+        scopes.unshift(scope);
+        this.languageIdToScope.set(languageId, scopes);
+        return Disposable.create(() => {
+            const index = scopes.indexOf(scope);
+            if (index !== -1) {
+                scopes.splice(index, 1);
+            }
+        });
     }
 
     getScope(languageId: string): string | undefined {
-        return this.languageIdToScope.get(languageId);
+        const scopes = this.languageIdToScope.get(languageId);
+        return scopes && scopes[0];
     }
 
     getLanguageId(scope: string): string | undefined {
-        for (const key of this.languageIdToScope.keys()) {
-            if (this.languageIdToScope.get(key) === scope) {
-                return key;
+        for (const languageId of this.languageIdToScope.keys()) {
+            if (this.getScope(languageId) === scope) {
+                return languageId;
             }
         }
         return undefined;
     }
 
-    registerGrammarConfiguration(languageId: string, config: TextmateGrammarConfiguration): void {
-        if (this.languageToConfig.has(languageId)) {
+    registerGrammarConfiguration(languageId: string, config: TextmateGrammarConfiguration): Disposable {
+        const configs = this.languageToConfig.get(languageId) || [];
+        const existingConfig = configs[0];
+        if (existingConfig) {
             console.warn(new Error(`a registered grammar configuration for '${languageId}' language is overridden`));
         }
-        this.languageToConfig.set(languageId, config);
+        configs.unshift(config);
+        this.languageToConfig.set(languageId, configs);
+        return Disposable.create(() => {
+            const index = configs.indexOf(config);
+            if (index !== -1) {
+                configs.splice(index, 1);
+            }
+        });
     }
 
     getGrammarConfiguration(languageId: string): TextmateGrammarConfiguration {
-        return this.languageToConfig.get(languageId) || {};
+        const configs = this.languageToConfig.get(languageId);
+        return configs && configs[0] || {};
     }
 }

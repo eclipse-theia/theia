@@ -19,20 +19,32 @@ import { interfaces } from 'inversify';
 import { WindowStateExt, MAIN_RPC_CONTEXT, WindowMain } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 
-export class WindowStateMain implements WindowMain {
+export class WindowStateMain implements WindowMain, Disposable {
 
     private readonly proxy: WindowStateExt;
 
     private readonly windowService: WindowService;
 
+    private readonly toDispose = new DisposableCollection();
+
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT);
         this.windowService = container.get(WindowService);
 
-        window.addEventListener('focus', () => this.onFocusChanged(true));
-        window.addEventListener('blur', () => this.onFocusChanged(false));
+        const fireDidFocus = () => this.onFocusChanged(true);
+        window.addEventListener('focus', fireDidFocus);
+        this.toDispose.push(Disposable.create(() => window.removeEventListener('focus', fireDidFocus)));
+
+        const fireDidBlur = () => this.onFocusChanged(false);
+        window.addEventListener('blur', fireDidBlur);
+        this.toDispose.push(Disposable.create(() => window.removeEventListener('blur', fireDidBlur)));
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     private onFocusChanged(focused: boolean): void {

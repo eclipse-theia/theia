@@ -27,14 +27,14 @@ import { FileSearchService } from '@theia/file-search/lib/common/file-search-ser
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { Resource } from '@theia/core/lib/common/resource';
-import { Emitter, Event, Disposable, ResourceResolver } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Emitter, Event, ResourceResolver } from '@theia/core';
 import { FileWatcherSubscriberOptions } from '../../common/plugin-api-rpc-model';
 import { InPluginFileSystemWatcherManager } from './in-plugin-filesystem-watcher-manager';
-import { StoragePathService } from './storage-path-service';
 import { PluginServer } from '../../common/plugin-protocol';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 
-export class WorkspaceMainImpl implements WorkspaceMain {
+export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     private readonly proxy: WorkspaceExt;
 
@@ -54,9 +54,9 @@ export class WorkspaceMainImpl implements WorkspaceMain {
 
     private workspaceService: WorkspaceService;
 
-    private storagePathService: StoragePathService;
-
     private fsPreferences: FileSystemPreferences;
+
+    protected readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WORKSPACE_EXT);
@@ -66,27 +66,30 @@ export class WorkspaceMainImpl implements WorkspaceMain {
         this.resourceResolver = container.get(TextContentResourceResolver);
         this.pluginServer = container.get(PluginServer);
         this.workspaceService = container.get(WorkspaceService);
-        this.storagePathService = container.get(StoragePathService);
         this.fsPreferences = container.get(FileSystemPreferences);
-
-        this.inPluginFileSystemWatcherManager = new InPluginFileSystemWatcherManager(this.proxy, container);
+        this.inPluginFileSystemWatcherManager = container.get(InPluginFileSystemWatcherManager);
 
         this.processWorkspaceFoldersChanged(this.workspaceService.tryGetRoots());
-        this.workspaceService.onWorkspaceChanged(roots => {
+        this.toDispose.push(this.workspaceService.onWorkspaceChanged(roots => {
             this.processWorkspaceFoldersChanged(roots);
-        });
+        }));
     }
 
-    async processWorkspaceFoldersChanged(roots: FileStat[]): Promise<void> {
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    protected async processWorkspaceFoldersChanged(roots: FileStat[]): Promise<void> {
         if (this.isAnyRootChanged(roots) === false) {
             return;
         }
         this.roots = roots;
         this.proxy.$onWorkspaceFoldersChanged({ roots });
 
-        await this.storagePathService.updateStoragePath(roots);
-
-        const keyValueStorageWorkspacesData = await this.pluginServer.keyValueStorageGetAll(false);
+        const keyValueStorageWorkspacesData = await this.pluginServer.getAllStorageValues({
+            workspace: this.workspaceService.workspace,
+            roots: this.workspaceService.tryGetRoots()
+        });
         this.storageProxy.$updatePluginsWorkspaceData(keyValueStorageWorkspacesData);
 
     }
@@ -192,8 +195,10 @@ export class WorkspaceMainImpl implements WorkspaceMain {
         return uriStrs.map(uriStr => Uri.parse(uriStr));
     }
 
-    $registerFileSystemWatcher(options: FileWatcherSubscriberOptions): Promise<string> {
-        return Promise.resolve(this.inPluginFileSystemWatcherManager.registerFileWatchSubscription(options));
+    async $registerFileSystemWatcher(options: FileWatcherSubscriberOptions): Promise<string> {
+        const handle = this.inPluginFileSystemWatcherManager.registerFileWatchSubscription(options, this.proxy);
+        this.toDispose.push(Disposable.create(() => this.inPluginFileSystemWatcherManager.unregisterFileWatchSubscription(handle)));
+        return handle;
     }
 
     $unregisterFileSystemWatcher(watcherId: string): Promise<void> {
@@ -202,7 +207,8 @@ export class WorkspaceMainImpl implements WorkspaceMain {
     }
 
     async $registerTextDocumentContentProvider(scheme: string): Promise<void> {
-        return this.resourceResolver.registerContentProvider(scheme, this.proxy);
+        this.resourceResolver.registerContentProvider(scheme, this.proxy);
+        this.toDispose.push(Disposable.create(() => this.resourceResolver.unregisterContentProvider(scheme)));
     }
 
     $unregisterTextDocumentContentProvider(scheme: string): void {
@@ -249,7 +255,7 @@ export class TextContentResourceResolver implements ResourceResolver {
         throw new Error(`Unable to find Text Content Resource Provider for scheme '${uri.scheme}'`);
     }
 
-    async registerContentProvider(scheme: string, proxy: WorkspaceExt): Promise<void> {
+    registerContentProvider(scheme: string, proxy: WorkspaceExt): void {
         if (this.providers.has(scheme)) {
             throw new Error(`Text Content Resource Provider for scheme '${scheme}' is already registered`);
         }

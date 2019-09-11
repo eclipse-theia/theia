@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MAIN_RPC_CONTEXT, ConnectionMain, ConnectionExt } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { PluginConnection } from '../../common/connection';
@@ -24,12 +25,17 @@ import { PluginMessageWriter } from '../../common/plugin-message-writer';
  * Implementation of connection system of the plugin API.
  * Creates holds the connections to the plugins. Allows to send a message to the plugin by getting already created connection via id.
  */
-export class ConnectionMainImpl implements ConnectionMain {
+export class ConnectionMainImpl implements ConnectionMain, Disposable {
 
-    private proxy: ConnectionExt;
-    private connections = new Map<string, PluginConnection>();
+    private readonly proxy: ConnectionExt;
+    private readonly connections = new Map<string, PluginConnection>();
+    private readonly toDispose = new DisposableCollection();
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.CONNECTION_EXT);
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     /**
@@ -85,12 +91,17 @@ export class ConnectionMainImpl implements ConnectionMain {
     protected async doCreateConnection(id: string): Promise<PluginConnection> {
         const reader = new PluginMessageReader();
         const writer = new PluginMessageWriter(id, this.proxy);
-        return new PluginConnection(
+        const connection = new PluginConnection(
             reader,
             writer,
             () => {
                 this.connections.delete(id);
-                this.proxy.$deleteConnection(id);
+                if (!toClose.disposed) {
+                    this.proxy.$deleteConnection(id);
+                }
             });
+        const toClose = new DisposableCollection(Disposable.create(() => reader.fireClose()));
+        this.toDispose.push(toClose);
+        return connection;
     }
 }

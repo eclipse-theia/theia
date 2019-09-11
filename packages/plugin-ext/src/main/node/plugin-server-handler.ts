@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { PluginDeployerImpl } from './plugin-deployer-impl';
 import { PluginsKeyValueStorage } from './plugins-key-value-storage';
-import { PluginServer, PluginDeployer } from '../../common/plugin-protocol';
+import { PluginServer, PluginDeployer, PluginStorageKind } from '../../common/plugin-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 
 @injectable()
@@ -33,16 +33,16 @@ export class PluginServerHandler implements PluginServer {
         return this.pluginDeployer.deploy(pluginEntry);
     }
 
-    keyValueStorageSet(key: string, value: KeysToAnyValues, isGlobal: boolean): Promise<boolean> {
-        return this.pluginsKeyValueStorage.set(key, value, isGlobal);
+    setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
+        return this.pluginsKeyValueStorage.set(key, value, kind);
     }
 
-    keyValueStorageGet(key: string, isGlobal: boolean): Promise<KeysToAnyValues> {
-        return this.pluginsKeyValueStorage.get(key, isGlobal);
+    getStorageValue(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues> {
+        return this.pluginsKeyValueStorage.get(key, kind);
     }
 
-    keyValueStorageGetAll(isGlobal: boolean = false): Promise<KeysToKeysToAnyValue> {
-        return this.pluginsKeyValueStorage.getAll(isGlobal);
+    getAllStorageValues(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue> {
+        return this.pluginsKeyValueStorage.getAll(kind);
     }
 
 }

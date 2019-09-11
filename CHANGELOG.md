@@ -9,6 +9,9 @@ Breaking changes:
 
 - [core][plugin] support alternative commands in context menus [6069](https://github.com/eclipse-theia/theia/pull/6069)
 - [workspace] switched `workspace.supportMultiRootWorkspace` to enabled by default [#6089](https://github.com/eclipse-theia/theia/pull/6089)
+- [core][monaco][plugin] reload plugins on reconnection [6159](https://github.com/eclipse-theia/theia/pull/6159)
+  - Extenders should implement `Disposable` for plugin main services to handle reconnection properly.
+  - Many APIs are refactored to return `Disposable`.
 
 Misc:
 

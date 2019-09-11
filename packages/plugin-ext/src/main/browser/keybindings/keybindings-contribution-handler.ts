@@ -16,39 +16,30 @@
 
 import { injectable, inject } from 'inversify';
 import { PluginContribution, Keybinding as PluginKeybinding } from '../../../common';
-import { Keybinding, KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser/keybinding';
-import { ILogger } from '@theia/core/lib/common/logger';
+import { Keybinding } from '@theia/core/lib/common/keybinding';
+import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { OS } from '@theia/core/lib/common/os';
+import { Disposable } from '@theia/core/lib/common/disposable';
+import { DisposableCollection } from '@theia/core';
 
 @injectable()
 export class KeybindingsContributionPointHandler {
 
-    @inject(ILogger)
-    protected readonly logger: ILogger;
-
     @inject(KeybindingRegistry)
     private readonly keybindingRegistry: KeybindingRegistry;
 
-    handle(contributions: PluginContribution): void {
+    handle(contributions: PluginContribution): Disposable {
         if (!contributions || !contributions.keybindings) {
-            return;
+            return Disposable.NULL;
         }
-        const keybindings: Keybinding[] = [];
+        const toDispose = new DisposableCollection();
         for (const raw of contributions.keybindings) {
             const keybinding = this.toKeybinding(raw);
             if (keybinding) {
-                try {
-                    const bindingKeySequence = this.keybindingRegistry.resolveKeybinding(keybinding);
-                    const keybindingResult = this.keybindingRegistry.getKeybindingsForKeySequence(bindingKeySequence);
-                    this.handleShadingKeybindings(keybinding, keybindingResult.shadow);
-                    this.handlePartialKeybindings(keybinding, keybindingResult.partial);
-                    keybindings.push(keybinding);
-                } catch (e) {
-                    this.logger.error(e.message || e);
-                }
+                toDispose.push(this.keybindingRegistry.registerKeybinding(keybinding));
             }
         }
-        this.keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
+        return toDispose;
     }
 
     protected toKeybinding(pluginKeybinding: PluginKeybinding): Keybinding | undefined {
@@ -71,23 +62,5 @@ export class KeybindingsContributionPointHandler {
             keybinding = pluginKeybinding.linux;
         }
         return keybinding || pluginKeybinding.keybinding;
-    }
-
-    private handlePartialKeybindings(keybinding: Keybinding, partialKeybindings: Keybinding[]): void {
-        partialKeybindings.forEach(partial => {
-            if (keybinding.context === undefined || keybinding.context === partial.context) {
-                this.logger.warn(`Partial keybinding is ignored; ${Keybinding.stringify(keybinding)} shadows ${Keybinding.stringify(partial)}`);
-            }
-        });
-    }
-
-    private handleShadingKeybindings(keybinding: Keybinding, shadingKeybindings: Keybinding[]): void {
-        shadingKeybindings.forEach(shadow => {
-            if (shadow.context === undefined || shadow.context === keybinding.context) {
-                this.keybindingRegistry.unregisterKeybinding(shadow);
-
-                this.logger.warn(`Shadowing keybinding is ignored; ${Keybinding.stringify(shadow)}, shadows ${Keybinding.stringify(keybinding)}`);
-            }
-        });
     }
 }

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange, FileMoveEvent, FileWillMoveEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceExt } from '../../common/plugin-api-rpc';
 import { FileWatcherSubscriberOptions } from '../../common/plugin-api-rpc-model';
@@ -28,45 +28,44 @@ import { theiaUritoUriComponents } from '../../common/uri-components';
  * and process all file system events in all workspace roots whether they matches to any subscription.
  * Only if event matches it will be sent into plugin side to specific subscriber.
  */
+@injectable()
 export class InPluginFileSystemWatcherManager {
 
-    private proxy: WorkspaceExt;
-    private subscribers: Map<string, FileWatcherSubscriber>;
-    private nextSubscriberId: number;
+    private readonly subscribers = new Map<string, FileWatcherSubscriber>();
+    private nextSubscriberId = 0;
 
-    constructor(proxy: WorkspaceExt, container: interfaces.Container) {
-        this.proxy = proxy;
-        this.subscribers = new Map<string, FileWatcherSubscriber>();
-        this.nextSubscriberId = 0;
+    @inject(FileSystemWatcher)
+    private readonly fileSystemWatcher: FileSystemWatcher;
 
-        const fileSystemWatcher = container.get(FileSystemWatcher);
-        fileSystemWatcher.onFilesChanged(event => this.onFilesChangedEventHandler(event));
-        fileSystemWatcher.onDidMove(event => this.onDidMoveEventHandler(event));
-        fileSystemWatcher.onWillMove(event => this.onWillMoveEventHandler(event));
+    @postConstruct()
+    protected init(): void {
+        this.fileSystemWatcher.onFilesChanged(event => this.onFilesChangedEventHandler(event));
+        this.fileSystemWatcher.onDidMove(event => this.onDidMoveEventHandler(event));
+        this.fileSystemWatcher.onWillMove(event => this.onWillMoveEventHandler(event));
     }
 
     // Filter file system changes according to subscribers settings here to avoid unneeded traffic.
-    onFilesChangedEventHandler(changes: FileChangeEvent): void {
+    protected onFilesChangedEventHandler(changes: FileChangeEvent): void {
         for (const change of changes) {
             switch (change.type) {
                 case FileChangeType.UPDATED:
                     for (const [id, subscriber] of this.subscribers) {
                         if (!subscriber.ignoreChangeEvents && this.uriMatches(subscriber, change)) {
-                            this.proxy.$fileChanged({ subscriberId: id, uri: theiaUritoUriComponents(change.uri), type: 'updated' });
+                            subscriber.proxy.$fileChanged({ subscriberId: id, uri: theiaUritoUriComponents(change.uri), type: 'updated' });
                         }
                     }
                     break;
                 case FileChangeType.ADDED:
                     for (const [id, subscriber] of this.subscribers) {
                         if (!subscriber.ignoreCreateEvents && this.uriMatches(subscriber, change)) {
-                            this.proxy.$fileChanged({ subscriberId: id, uri: theiaUritoUriComponents(change.uri), type: 'created' });
+                            subscriber.proxy.$fileChanged({ subscriberId: id, uri: theiaUritoUriComponents(change.uri), type: 'created' });
                         }
                     }
                     break;
                 case FileChangeType.DELETED:
                     for (const [id, subscriber] of this.subscribers) {
                         if (!subscriber.ignoreDeleteEvents && this.uriMatches(subscriber, change)) {
-                            this.proxy.$fileChanged({ subscriberId: id, uri: theiaUritoUriComponents(change.uri), type: 'deleted' });
+                            subscriber.proxy.$fileChanged({ subscriberId: id, uri: theiaUritoUriComponents(change.uri), type: 'deleted' });
                         }
                     }
                     break;
@@ -75,9 +74,9 @@ export class InPluginFileSystemWatcherManager {
     }
 
     // Filter file system changes according to subscribers settings here to avoid unneeded traffic.
-    onDidMoveEventHandler(change: FileMoveEvent): void {
-        for (const [id] of this.subscribers) {
-            this.proxy.$onFileRename({
+    protected onDidMoveEventHandler(change: FileMoveEvent): void {
+        for (const [id, subscriber] of this.subscribers) {
+            subscriber.proxy.$onFileRename({
                 subscriberId: id,
                 oldUri: theiaUritoUriComponents(change.sourceUri),
                 newUri: theiaUritoUriComponents(change.targetUri)
@@ -86,9 +85,9 @@ export class InPluginFileSystemWatcherManager {
     }
 
     // Filter file system changes according to subscribers settings here to avoid unneeded traffic.
-    onWillMoveEventHandler(change: FileWillMoveEvent): void {
-        for (const [id] of this.subscribers) {
-            this.proxy.$onWillRename({
+    protected onWillMoveEventHandler(change: FileWillMoveEvent): void {
+        for (const [id, subscriber] of this.subscribers) {
+            subscriber.proxy.$onWillRename({
                 subscriberId: id,
                 oldUri: theiaUritoUriComponents(change.sourceUri),
                 newUri: theiaUritoUriComponents(change.targetUri)
@@ -106,7 +105,7 @@ export class InPluginFileSystemWatcherManager {
      * @param options subscription options
      * @returns generated subscriber id
      */
-    registerFileWatchSubscription(options: FileWatcherSubscriberOptions): string {
+    registerFileWatchSubscription(options: FileWatcherSubscriberOptions, proxy: WorkspaceExt): string {
         const subscriberId = this.getNextId();
 
         let globPatternMatcher: ParsedPattern;
@@ -122,7 +121,8 @@ export class InPluginFileSystemWatcherManager {
             mather: globPatternMatcher,
             ignoreCreateEvents: options.ignoreCreateEvents === true,
             ignoreChangeEvents: options.ignoreChangeEvents === true,
-            ignoreDeleteEvents: options.ignoreDeleteEvents === true
+            ignoreDeleteEvents: options.ignoreDeleteEvents === true,
+            proxy
         };
         this.subscribers.set(subscriberId, subscriber);
 
@@ -145,4 +145,5 @@ interface FileWatcherSubscriber {
     ignoreCreateEvents: boolean;
     ignoreChangeEvents: boolean;
     ignoreDeleteEvents: boolean;
+    proxy: WorkspaceExt
 }

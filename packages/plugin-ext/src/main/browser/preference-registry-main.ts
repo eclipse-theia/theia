@@ -32,6 +32,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/filesystem';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export function getPreferences(preferenceProviderProvider: PreferenceProviderProvider, rootFolders: FileStat[]): PreferenceData {
     const folders = rootFolders.map(root => root.uri.toString());
@@ -51,30 +52,35 @@ export function getPreferences(preferenceProviderProvider: PreferenceProviderPro
     }, {} as PreferenceData);
 }
 
-export class PreferenceRegistryMainImpl implements PreferenceRegistryMain {
-    private proxy: PreferenceRegistryExt;
-    private preferenceService: PreferenceService;
-    private readonly preferenceProviderProvider: PreferenceProviderProvider;
+export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Disposable {
+    private readonly proxy: PreferenceRegistryExt;
+    private readonly preferenceService: PreferenceService;
+
+    protected readonly toDispose = new DisposableCollection();
 
     constructor(prc: RPCProtocol, container: interfaces.Container) {
         this.proxy = prc.getProxy(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT);
         this.preferenceService = container.get(PreferenceService);
-        this.preferenceProviderProvider = container.get(PreferenceProviderProvider);
+        const preferenceProviderProvider = container.get<PreferenceProviderProvider>(PreferenceProviderProvider);
         const preferenceServiceImpl = container.get(PreferenceServiceImpl);
         const workspaceService = container.get(WorkspaceService);
 
-        preferenceServiceImpl.onPreferencesChanged(changes => {
+        this.toDispose.push(preferenceServiceImpl.onPreferencesChanged(changes => {
             // it HAS to be synchronous to propagate changes before update/remove response
 
             const roots = workspaceService.tryGetRoots();
-            const data = getPreferences(this.preferenceProviderProvider, roots);
+            const data = getPreferences(preferenceProviderProvider, roots);
             const eventData: PreferenceChangeExt[] = [];
             for (const preferenceName of Object.keys(changes)) {
                 const { newValue } = changes[preferenceName];
                 eventData.push({ preferenceName, newValue });
             }
             this.proxy.$acceptConfigurationChanged(data, eventData);
-        });
+        }));
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     // tslint:disable-next-line:no-any

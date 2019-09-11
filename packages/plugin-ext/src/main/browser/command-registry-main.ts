@@ -17,19 +17,21 @@
 import { interfaces } from 'inversify';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import * as theia from '@theia/plugin';
-import { Disposable } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandRegistryMain, CommandRegistryExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { KeybindingRegistry } from '@theia/core/lib/browser';
 import { PluginContributionHandler } from './plugin-contribution-handler';
 
-export class CommandRegistryMainImpl implements CommandRegistryMain {
-    private proxy: CommandRegistryExt;
+export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable {
+    private readonly proxy: CommandRegistryExt;
     private readonly commands = new Map<string, Disposable>();
     private readonly handlers = new Map<string, Disposable>();
     private readonly delegate: CommandRegistry;
     private readonly keyBinding: KeybindingRegistry;
     private readonly contributions: PluginContributionHandler;
+
+    protected readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT);
@@ -38,8 +40,14 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
         this.contributions = container.get(PluginContributionHandler);
     }
 
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
     $registerCommand(command: theia.CommandDescription): void {
-        this.commands.set(command.id, this.contributions.registerCommand(command));
+        const id = command.id;
+        this.commands.set(id, this.contributions.registerCommand(command));
+        this.toDispose.push(Disposable.create(() => this.$unregisterCommand(id)));
     }
     $unregisterCommand(id: string): void {
         const command = this.commands.get(id);
@@ -53,6 +61,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
         this.handlers.set(id, this.contributions.registerCommandHandler(id, (...args) =>
             this.proxy.$executeCommand(id, ...args)
         ));
+        this.toDispose.push(Disposable.create(() => this.$unregisterHandler(id)));
     }
     $unregisterHandler(id: string): void {
         const handler = this.handlers.get(id);

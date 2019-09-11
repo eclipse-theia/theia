@@ -78,8 +78,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     /** promises to whether loading each plugin has been successful */
     private readonly loadedPlugins = new Map<string, Promise<boolean>>();
     private readonly activatedPlugins = new Map<string, ActivatedPlugin>();
-    private pluginActivationPromises = new Map<string, Deferred<void>>();
-    private pluginContextsMap: Map<string, theia.PluginContext> = new Map();
+    private readonly pluginActivationPromises = new Map<string, Deferred<void>>();
+    private readonly pluginContextsMap = new Map<string, theia.PluginContext>();
     private storageProxy: KeyValueStorageProxy;
 
     private onDidChangeEmitter = new Emitter<void>();
@@ -97,25 +97,43 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.messageRegistryProxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN);
     }
 
-    $stopPlugin(contextPath: string): PromiseLike<void> {
-        this.activatedPlugins.forEach(plugin => {
-            if (plugin.stopFn) {
-                plugin.stopFn();
-            }
+    async $stop(pluginId?: string): Promise<void> {
+        if (!pluginId) {
+            this.stopAll();
+            return;
+        }
+        this.registry.delete(pluginId);
+        this.pluginActivationPromises.delete(pluginId);
+        this.pluginContextsMap.delete(pluginId);
+        this.loadedPlugins.delete(pluginId);
+        const plugin = this.activatedPlugins.get(pluginId);
+        if (!plugin) {
+            return;
+        }
+        this.activatedPlugins.delete(pluginId);
+        this.stopPlugin(plugin);
+    }
 
-            // dispose any objects
-            const pluginContext = plugin.pluginContext;
-            if (pluginContext) {
-                dispose(pluginContext.subscriptions);
-            }
-        });
+    protected stopAll(): void {
+        this.activatedPlugins.forEach(plugin => this.stopPlugin(plugin));
 
-        // clean map
+        this.registry.clear();
+        this.loadedPlugins.clear();
         this.activatedPlugins.clear();
         this.pluginActivationPromises.clear();
         this.pluginContextsMap.clear();
+    }
 
-        return Promise.resolve();
+    protected stopPlugin(plugin: ActivatedPlugin): void {
+        if (plugin.stopFn) {
+            plugin.stopFn();
+        }
+
+        // dispose any objects
+        const pluginContext = plugin.pluginContext;
+        if (pluginContext) {
+            dispose(pluginContext.subscriptions);
+        }
     }
 
     async $init(pluginInit: PluginInitData, configStorage: ConfigStorage): Promise<void> {
@@ -285,7 +303,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
                     this.pluginActivationPromises.get(plugin.model.id)!.reject(err);
                 }
                 this.messageRegistryProxy.$showMessage(MainMessageType.Error, `Activating extension ${id} failed: ${err.message}.`, {}, []);
-                console.error(`Error on activation of ${plugin.model.name} - ${err}`);
+                console.error(`Error on activation of ${plugin.model.name}`, err);
                 return false;
             }
         } else {

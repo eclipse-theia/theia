@@ -163,7 +163,7 @@ export const emptyPlugin: Plugin = {
 };
 
 export interface PluginManagerExt {
-    $stopPlugin(contextPath: string): PromiseLike<void>;
+    $stop(pluginId?: string): PromiseLike<void>;
 
     $init(pluginInit: PluginInitData, configStorage: ConfigStorage): PromiseLike<void>;
 

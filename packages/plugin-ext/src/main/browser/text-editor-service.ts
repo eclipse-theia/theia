@@ -13,30 +13,18 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { Emitter, Event } from '@theia/core';
+import { Emitter } from '@theia/core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { inject, injectable } from 'inversify';
 
-export const TextEditorService = Symbol('TextEditorService');
-/**
- * Stores TextEditor and handles lifecycle
- */
-export interface TextEditorService {
-    onTextEditorAdd: Event<MonacoEditor>;
-    onTextEditorRemove: Event<MonacoEditor>;
-    listTextEditors(): MonacoEditor[];
-
-    getActiveEditor(): EditorWidget | undefined;
-}
-
 @injectable()
-export class TextEditorServiceImpl implements TextEditorService {
-    private onTextEditorAddEmitter = new Emitter<MonacoEditor>();
-    private onTextEditorRemoveEmitter = new Emitter<MonacoEditor>();
+export class TextEditorService {
+    private readonly onTextEditorAddEmitter = new Emitter<MonacoEditor>();
+    readonly onTextEditorAdd = this.onTextEditorAddEmitter.event;
 
-    onTextEditorAdd: Event<MonacoEditor> = this.onTextEditorAddEmitter.event;
-    onTextEditorRemove: Event<MonacoEditor> = this.onTextEditorRemoveEmitter.event;
+    private readonly onTextEditorRemoveEmitter = new Emitter<MonacoEditor>();
+    readonly onTextEditorRemove = this.onTextEditorRemoveEmitter.event;
 
     constructor(@inject(EditorManager) private editorManager: EditorManager) {
         editorManager.onCreated(w => this.onEditorCreated(w));
