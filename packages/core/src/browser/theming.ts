@@ -23,6 +23,8 @@ import { FrontendApplicationConfigProvider } from './frontend-application-config
 import { MenuContribution, MenuModelRegistry } from '../common/';
 import { CommonMenus } from './common-frontend-contribution';
 
+require('../../src/browser/style/materialcolors.css').use();
+
 export const ThemeServiceSymbol = Symbol('ThemeService');
 
 export interface Theme {

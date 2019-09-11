@@ -78,11 +78,11 @@ module.exports = {
             },
             {
                 test: /\\.css$/,
-                exclude: /\\.useable\\.css$/,
+                exclude: /materialcolors\\.css$|\\.useable\\.css$/,
                 loader: 'style-loader!css-loader'
             },
             {
-                test: /\\.useable\\.css$/,
+                test: /materialcolors\\.css$|\\.useable\\.css$/,
                 use: [
                   {
                     loader: 'style-loader/useable',
