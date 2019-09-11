@@ -178,6 +178,9 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     }
 
     restart(): void {
+        if (!this.running) {
+            return;
+        }
         this.deactivate();
         this.activate();
     }
