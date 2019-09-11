@@ -23,6 +23,8 @@ interface IconPath {
     dark: string
 }
 
+const DEFAULT_RULE = 'body { font-size: var(--theia-ui-font-size1); color: var(--theia-ui-font-color1); }';
+
 export class ThemeRulesService {
     private styleElement?: HTMLStyleElement;
     private icons = new Map<string, IconPath | string>();
@@ -78,6 +80,10 @@ export class ThemeRulesService {
             if (ruleList[index] && ruleList[index].cssText) {
                 cssText.push(ruleList[index].cssText.toString());
             }
+        }
+
+        if (cssText.length) {
+            cssText.push(DEFAULT_RULE);
         }
 
         return cssText;
