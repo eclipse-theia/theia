@@ -23,6 +23,7 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
 import { RecursivePartial } from '@theia/core/lib/common/types';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -602,10 +603,6 @@ export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): st
 
 export const HostedPluginClient = Symbol('HostedPluginClient');
 export interface HostedPluginClient {
-    setClientId(clientId: number): Promise<void>;
-
-    getClientId(): Promise<number>;
-
     postMessage(message: string): Promise<void>;
 
     log(logPart: LogPart): void;
@@ -634,6 +631,13 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
 }
 
+export interface WorkspaceStorageKind {
+    workspace?: FileStat | undefined;
+    roots: FileStat[];
+}
+export type GlobalStorageKind = undefined;
+export type PluginStorageKind = GlobalStorageKind | WorkspaceStorageKind;
+
 /**
  * The JSON-RPC workspace interface.
  */
@@ -646,9 +650,9 @@ export interface PluginServer {
      */
     deploy(pluginEntry: string): Promise<void>;
 
-    keyValueStorageSet(key: string, value: KeysToAnyValues, isGlobal: boolean): Promise<boolean>;
-    keyValueStorageGet(key: string, isGlobal: boolean): Promise<KeysToAnyValues>;
-    keyValueStorageGetAll(isGlobal: boolean): Promise<KeysToKeysToAnyValue>;
+    setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean>;
+    getStorageValue(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues>;
+    getAllStorageValues(kind: PluginStorageKind): Promise<KeysToKeysToAnyValue>;
 }
 
 export const ServerPluginRunner = Symbol('ServerPluginRunner');

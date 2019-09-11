@@ -19,7 +19,6 @@ import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import URI from '@theia/core/lib/common/uri';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { isWindows } from '@theia/core';
 import { PluginPaths } from './const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
@@ -29,22 +28,12 @@ import { THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '@theia/work
 @injectable()
 export class PluginPathsServiceImpl implements PluginPathsService {
 
-    private windowsDataFolders = [PluginPaths.WINDOWS_APP_DATA_DIR, PluginPaths.WINDOWS_ROAMING_DIR];
-    // storage path is undefined when no workspace is opened
-    private cachedStoragePath: string | undefined;
-    // is returned when storage path requested before initialization
-    private deferredStoragePath: Deferred<string | undefined>;
-    // shows if storage path is initialized
-    private storagePathInitialized: boolean;
+    private readonly windowsDataFolders = [PluginPaths.WINDOWS_APP_DATA_DIR, PluginPaths.WINDOWS_ROAMING_DIR];
 
-    constructor(
-        @inject(FileSystem) readonly fileSystem: FileSystem,
-    ) {
-        this.deferredStoragePath = new Deferred<string>();
-        this.storagePathInitialized = false;
-    }
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
 
-    async provideHostLogPath(): Promise<string> {
+    async getHostLogPath(): Promise<string> {
         const parentLogsDir = await this.getLogsDirPath();
 
         if (!parentLogsDir) {
@@ -57,7 +46,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         return new URI(pluginDirPath).path.toString();
     }
 
-    async provideHostStoragePath(workspace: FileStat | undefined, roots: FileStat[]): Promise<string | undefined> {
+    async getHostStoragePath(workspace: FileStat | undefined, roots: FileStat[]): Promise<string | undefined> {
         const parentStorageDir = await this.getWorkspaceStorageDirPath();
 
         if (!parentStorageDir) {
@@ -65,11 +54,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         }
 
         if (!workspace) {
-            if (!this.storagePathInitialized) {
-                this.deferredStoragePath.resolve(undefined);
-                this.storagePathInitialized = true;
-            }
-            return this.cachedStoragePath = undefined;
+            return undefined;
         }
 
         if (!await this.fileSystem.exists(parentStorageDir)) {
@@ -82,24 +67,10 @@ export class PluginPathsServiceImpl implements PluginPathsService {
             await this.fileSystem.createFolder(storageDirPath);
         }
 
-        const storagePathString = new URI(storageDirPath).path.toString();
-        if (!this.storagePathInitialized) {
-            this.deferredStoragePath.resolve(storagePathString);
-            this.storagePathInitialized = true;
-        }
-
-        return this.cachedStoragePath = storagePathString;
+        return new URI(storageDirPath).path.toString();
     }
 
-    async getLastStoragePath(): Promise<string | undefined> {
-        if (this.storagePathInitialized) {
-            return this.cachedStoragePath;
-        } else {
-            return this.deferredStoragePath.promise;
-        }
-    }
-
-    async buildWorkspaceId(workspace: FileStat, roots: FileStat[]): Promise<string> {
+    protected async buildWorkspaceId(workspace: FileStat, roots: FileStat[]): Promise<string> {
         const homeDir = await this.getUserHomeDir();
         const untitledWorkspace = getTemporaryWorkspaceFileUri(new URI(homeDir));
 

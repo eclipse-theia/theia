@@ -80,16 +80,6 @@ export class PluginHostRPC {
         }
     }
 
-    /*
-     * Stop the given context by calling the plug-in manager.
-     * note: stopPlugin can also be invoked through RPC proxy.
-     */
-    stopContext(): PromiseLike<void> {
-        const promise = this.pluginManager.$stopPlugin('');
-        promise.then(() => delete this.apiFactory);
-        return promise;
-    }
-
     // tslint:disable-next-line:no-any
     createPluginManager(envExt: EnvExtImpl, preferencesManager: PreferenceRegistryExtImpl, rpc: any): PluginManagerExtImpl {
         const { extensionTestsPath } = process.env;

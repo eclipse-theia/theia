@@ -24,24 +24,31 @@ import { Workspace, Languages, MessageReader, MessageWriter } from '@theia/langu
 import { LanguageClientFactory, BaseLanguageClientContribution } from '@theia/languages/lib/browser';
 import { MessageService, CommandRegistry } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { DisposableCollection, Disposable } from '@theia/core';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { createMessageConnection, MessageConnection } from 'vscode-jsonrpc';
 import { ConnectionMainImpl } from './connection-main';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { LanguageClientContributionProvider } from './language-provider/language-client-contribution-provider';
 
 /**
  * Implementation of languages contribution system of the plugin API.
  * Uses for registering new language server which was described in the plug-in.
  */
-export class LanguagesContributionMainImpl implements LanguagesContributionMain {
+export class LanguagesContributionMainImpl implements LanguagesContributionMain, Disposable {
+
     private readonly languageClientContributionProvider: LanguageClientContributionProvider;
+    private readonly toDispose = new DisposableCollection();
+
     constructor(protected readonly rpc: RPCProtocol,
         protected readonly container: interfaces.Container,
         protected readonly connectionMain: ConnectionMainImpl) {
 
         this.languageClientContributionProvider = container.get(LanguageClientContributionProvider);
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     /**
@@ -68,6 +75,7 @@ export class LanguagesContributionMainImpl implements LanguagesContributionMain 
         newLanguageContribution.patterns = languageServerInfo.globPatterns;
 
         this.languageClientContributionProvider.registerLanguageClientContribution(newLanguageContribution);
+        this.toDispose.push(Disposable.create(() => this.$stop(languageServerInfo.id)));
     }
 
     /**

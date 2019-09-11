@@ -222,6 +222,13 @@ export class TabBarRenderer extends TabBar.Renderer {
      */
     protected getDecorations(title: Title<Widget>): WidgetDecoration.Data[] {
         if (this.tabBar && this.decoratorService) {
+            // tslint:disable-next-line:no-any
+            const owner: { resetTabBarDecorations?: () => void; } & Widget = title.owner;
+            if (!owner.resetTabBarDecorations) {
+                owner.resetTabBarDecorations = () => this.decorations.delete(title);
+                title.owner.disposed.connect(owner.resetTabBarDecorations);
+            }
+
             const decorations = this.decorations.get(title) || this.decoratorService.getDecorations(title);
             this.decorations.set(title, decorations);
             return decorations;

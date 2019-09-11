@@ -20,10 +20,10 @@ import { RPCProtocol } from '../../../common/rpc-protocol';
 import { PluginViewRegistry, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
 import { SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode, WidgetManager } from '@theia/core/lib/browser';
 import { ViewContextKeyService } from './view-context-key-service';
-import { CommandRegistry, Disposable } from '@theia/core';
+import { CommandRegistry, Disposable, DisposableCollection } from '@theia/core';
 import { TreeViewWidget, TreeViewNode } from './tree-view-widget';
 
-export class TreeViewsMainImpl implements TreeViewsMain {
+export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
 
     private readonly proxy: TreeViewsExt;
     private readonly viewRegistry: PluginViewRegistry;
@@ -32,6 +32,10 @@ export class TreeViewsMainImpl implements TreeViewsMain {
     private readonly widgetManager: WidgetManager;
 
     private readonly treeViewProviders = new Map<string, Disposable>();
+
+    private readonly toDispose = new DisposableCollection(
+        Disposable.create(() => { /* mark as not disposed */ })
+    );
 
     constructor(rpc: RPCProtocol, private container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT);
@@ -42,6 +46,10 @@ export class TreeViewsMainImpl implements TreeViewsMain {
         this.widgetManager = this.container.get(WidgetManager);
     }
 
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
     async $registerTreeDataProvider(treeViewId: string): Promise<void> {
         this.treeViewProviders.set(treeViewId, this.viewRegistry.registerViewDataProvider(treeViewId, async ({ state, viewInfo }) => {
             const widget = await this.widgetManager.getOrCreateWidget<TreeViewWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, { id: treeViewId });
@@ -50,7 +58,7 @@ export class TreeViewsMainImpl implements TreeViewsMain {
                 widget.restoreState(state);
                 // ensure that state is completely restored
                 await widget.model.refresh();
-            } else {
+            } else if (!widget.model.root) {
                 const root: CompositeTreeNode & ExpandableTreeNode = {
                     id: '',
                     parent: undefined,
@@ -61,11 +69,17 @@ export class TreeViewsMainImpl implements TreeViewsMain {
                 };
                 widget.model.root = root;
             }
-            widget.model.proxy = this.proxy;
+            if (this.toDispose.disposed) {
+                widget.model.proxy = undefined;
+            } else {
+                widget.model.proxy = this.proxy;
+                this.toDispose.push(Disposable.create(() => widget.model.proxy = undefined));
+                this.handleTreeEvents(widget.id, widget);
+            }
             await widget.model.refresh();
-            this.handleTreeEvents(widget.id, widget);
             return widget;
         }));
+        this.toDispose.push(Disposable.create(() => this.$unregisterTreeDataProvider(treeViewId)));
     }
 
     async $unregisterTreeDataProvider(treeViewId: string): Promise<void> {
@@ -73,10 +87,6 @@ export class TreeViewsMainImpl implements TreeViewsMain {
         if (treeDataProvider) {
             this.treeViewProviders.delete(treeViewId);
             treeDataProvider.dispose();
-        }
-        const treeViewWidget = await this.widgetManager.getWidget<TreeViewWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, { id: treeViewId });
-        if (treeViewWidget) {
-            treeViewWidget.dispose();
         }
     }
 
@@ -101,11 +111,11 @@ export class TreeViewsMainImpl implements TreeViewsMain {
     }
 
     protected handleTreeEvents(treeViewId: string, treeViewWidget: TreeViewWidget): void {
-        treeViewWidget.model.onExpansionChanged(event => {
+        this.toDispose.push(treeViewWidget.model.onExpansionChanged(event => {
             this.proxy.$setExpanded(treeViewId, event.id, event.expanded);
-        });
+        }));
 
-        treeViewWidget.model.onSelectionChanged(event => {
+        this.toDispose.push(treeViewWidget.model.onSelectionChanged(event => {
             if (event.length === 1) {
                 const { contextValue } = event[0] as TreeViewNode;
                 this.contextKeys.viewItem.set(contextValue);
@@ -121,11 +131,11 @@ export class TreeViewsMainImpl implements TreeViewsMain {
             if (treeNode && treeNode.command) {
                 this.commands.executeCommand(treeNode.command.id, ...(treeNode.command.arguments || []));
             }
-        });
+        }));
 
         const updateVisible = () => this.proxy.$setVisible(treeViewId, treeViewWidget.isVisible);
         updateVisible();
-        treeViewWidget.onDidChangeVisibility(() => updateVisible());
+        this.toDispose.push(treeViewWidget.onDidChangeVisibility(() => updateVisible()));
     }
 
 }

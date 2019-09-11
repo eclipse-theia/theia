@@ -195,6 +195,10 @@ export class PreferenceServiceImpl implements PreferenceService {
                             acceptChange(change);
                         }
                     }
+                } else if (change.newValue === undefined && change.scope === PreferenceScope.Default) {
+                    // preference is removed
+                    acceptChange(change);
+                    break;
                 }
             }
         }

@@ -23,6 +23,7 @@
 /* tslint:disable:no-any */
 
 import { Event } from '@theia/core/lib/common/event';
+import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import VSCodeURI from 'vscode-uri';
 import URI from '@theia/core/lib/common/uri';
@@ -34,7 +35,7 @@ export interface MessageConnection {
 }
 
 export const RPCProtocol = Symbol('RPCProtocol');
-export interface RPCProtocol {
+export interface RPCProtocol extends Disposable {
     /**
      * Returns a proxy to an object addressable/named in the plugin process or in the main process.
      */
@@ -61,37 +62,60 @@ export function createProxyIdentifier<T>(identifier: string): ProxyIdentifier<T>
 
 export class RPCProtocolImpl implements RPCProtocol {
 
-    private isDisposed: boolean;
-    private readonly locals: { [id: string]: any; };
-    private readonly proxies: { [id: string]: any; };
-    private lastMessageId: number;
-    private readonly invokedHandlers: { [req: string]: Promise<any>; };
-    private readonly cancellationTokenSources: { [req: string]: CancellationTokenSource } = {};
-    private readonly pendingRPCReplies: { [msgId: string]: Deferred<any>; };
+    private readonly locals = new Map<string, any>();
+    private readonly proxies = new Map<string, any>();
+    private lastMessageId = 0;
+    private readonly cancellationTokenSources = new Map<string, CancellationTokenSource>();
+    private readonly pendingRPCReplies = new Map<string, Deferred<any>>();
     private readonly multiplexor: RPCMultiplexer;
     private messageToSendHostId: string | undefined;
 
+    private readonly toDispose = new DisposableCollection(
+        Disposable.create(() => { /* mark as no disposed */ })
+    );
+
     constructor(connection: MessageConnection, readonly remoteHostID?: string) {
-        this.isDisposed = false;
-        // tslint:disable-next-line:no-null-keyword
-        this.locals = Object.create(null);
-        // tslint:disable-next-line:no-null-keyword
-        this.proxies = Object.create(null);
-        this.lastMessageId = 0;
-        // tslint:disable-next-line:no-null-keyword
-        this.invokedHandlers = Object.create(null);
-        this.pendingRPCReplies = {};
-        this.multiplexor = new RPCMultiplexer(connection, msg => this.receiveOneMessage(msg), remoteHostID);
+        this.toDispose.push(
+            this.multiplexor = new RPCMultiplexer(connection, msg => this.receiveOneMessage(msg), remoteHostID)
+        );
+        this.toDispose.push(Disposable.create(() => {
+            this.proxies.clear();
+            for (const reply of this.pendingRPCReplies.values()) {
+                reply.reject(new Error('connection is closed'));
+            }
+            this.pendingRPCReplies.clear();
+        }));
     }
+
+    private get isDisposed(): boolean {
+        return this.toDispose.disposed;
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
     getProxy<T>(proxyId: ProxyIdentifier<T>): T {
-        if (!this.proxies[proxyId.id]) {
-            this.proxies[proxyId.id] = this.createProxy(proxyId.id);
+        if (this.isDisposed) {
+            throw new Error('connection is closed');
         }
-        return this.proxies[proxyId.id];
+        let proxy = this.proxies.get(proxyId.id);
+        if (!proxy) {
+            proxy = this.createProxy(proxyId.id);
+            this.proxies.set(proxyId.id, proxy);
+        }
+        return proxy;
     }
 
     set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R {
-        this.locals[identifier.id] = instance;
+        if (this.isDisposed) {
+            throw new Error('connection is closed');
+        }
+        this.locals.set(identifier.id, instance);
+        if (Disposable.is(instance)) {
+            this.toDispose.push(instance);
+        }
+        this.toDispose.push(Disposable.create(() => this.locals.delete(identifier.id)));
         return instance;
     }
 
@@ -111,7 +135,7 @@ export class RPCProtocolImpl implements RPCProtocol {
 
     private remoteCall(proxyId: string, methodName: string, args: any[]): Promise<any> {
         if (this.isDisposed) {
-            return Promise.reject(canceled());
+            return Promise.reject(new Error('connection is closed'));
         }
         const cancellationToken: CancellationToken | undefined = args.length && CancellationToken.is(args[args.length - 1]) ? args.pop() : undefined;
         if (cancellationToken && cancellationToken.isCancellationRequested) {
@@ -128,7 +152,7 @@ export class RPCProtocolImpl implements RPCProtocol {
             );
         }
 
-        this.pendingRPCReplies[callId] = result;
+        this.pendingRPCReplies.set(callId, result);
         this.multiplexor.send(MessageFactory.request(callId, proxyId, methodName, args, this.messageToSendHostId));
         return result.promise;
     }
@@ -168,7 +192,7 @@ export class RPCProtocolImpl implements RPCProtocol {
     }
 
     private receiveCancel(msg: CancelMessage): void {
-        const cancellationTokenSource = this.cancellationTokenSources[msg.id];
+        const cancellationTokenSource = this.cancellationTokenSources.get(msg.id);
         if (cancellationTokenSource) {
             cancellationTokenSource.cancel();
         }
@@ -183,42 +207,37 @@ export class RPCProtocolImpl implements RPCProtocol {
         const addToken = args.length && args[args.length - 1] === 'add.cancellation.token' ? args.pop() : false;
         if (addToken) {
             const tokenSource = new CancellationTokenSource();
-            this.cancellationTokenSources[callId] = tokenSource;
+            this.cancellationTokenSources.set(callId, tokenSource);
             args.push(tokenSource.token);
         }
-        this.invokedHandlers[callId] = this.invokeHandler(proxyId, msg.method, args);
+        const invocation = this.invokeHandler(proxyId, msg.method, args);
 
-        this.invokedHandlers[callId].then(r => {
-            delete this.invokedHandlers[callId];
-            delete this.cancellationTokenSources[callId];
-            this.multiplexor.send(MessageFactory.replyOK(callId, r, this.messageToSendHostId));
-        }, err => {
-            delete this.invokedHandlers[callId];
-            delete this.cancellationTokenSources[callId];
-            this.multiplexor.send(MessageFactory.replyErr(callId, err, this.messageToSendHostId));
+        invocation.then(result => {
+            this.cancellationTokenSources.delete(callId);
+            this.multiplexor.send(MessageFactory.replyOK(callId, result, this.messageToSendHostId));
+        }, error => {
+            this.cancellationTokenSources.delete(callId);
+            this.multiplexor.send(MessageFactory.replyErr(callId, error, this.messageToSendHostId));
         });
     }
 
     private receiveReply(msg: ReplyMessage): void {
         const callId = msg.id;
-        if (!this.pendingRPCReplies.hasOwnProperty(callId)) {
+        const pendingReply = this.pendingRPCReplies.get(callId);
+        if (!pendingReply) {
             return;
         }
-
-        const pendingReply = this.pendingRPCReplies[callId];
-        delete this.pendingRPCReplies[callId];
-
+        this.pendingRPCReplies.delete(callId);
         pendingReply.resolve(msg.res);
     }
 
     private receiveReplyErr(msg: ReplyErrMessage): void {
         const callId = msg.id;
-        if (!this.pendingRPCReplies.hasOwnProperty(callId)) {
+        const pendingReply = this.pendingRPCReplies.get(callId);
+        if (!pendingReply) {
             return;
         }
-
-        const pendingReply = this.pendingRPCReplies[callId];
-        delete this.pendingRPCReplies[callId];
+        this.pendingRPCReplies.delete(callId);
 
         let err: Error | undefined = undefined;
         if (msg.err && msg.err.$isError) {
@@ -239,10 +258,10 @@ export class RPCProtocolImpl implements RPCProtocol {
     }
 
     private doInvokeHandler(proxyId: string, methodName: string, args: any[]): any {
-        if (!this.locals[proxyId]) {
+        const actor = this.locals.get(proxyId);
+        if (!actor) {
             throw new Error('Unknown actor ' + proxyId);
         }
-        const actor = this.locals[proxyId];
         const method = actor[methodName];
         if (typeof method !== 'function') {
             throw new Error('Unknown method ' + methodName + ' on actor ' + proxyId);
@@ -262,28 +281,35 @@ function canceled(): Error {
  *  - multiple messages to be sent from one stack get sent in bulk at `process.nextTick`.
  *  - each incoming message is handled in a separate `process.nextTick`.
  */
-class RPCMultiplexer {
+class RPCMultiplexer implements Disposable {
 
     private readonly connection: MessageConnection;
     private readonly sendAccumulatedBound: () => void;
 
     private messagesToSend: string[];
 
+    private readonly toDispose = new DisposableCollection();
+
     constructor(connection: MessageConnection, onMessage: (msg: string) => void, remoteHostId?: string) {
         this.connection = connection;
         this.sendAccumulatedBound = this.sendAccumulated.bind(this);
+
+        this.toDispose.push(Disposable.create(() => this.messagesToSend = []));
+        this.toDispose.push(this.connection.onMessage((data: string[]) => {
+            const len = data.length;
+            for (let i = 0; i < len; i++) {
+                onMessage(data[i]);
+            }
+        }));
 
         this.messagesToSend = [];
         if (remoteHostId) {
             this.send(`{"setHostID":"${remoteHostId}"}`);
         }
+    }
 
-        this.connection.onMessage((data: string[]) => {
-            const len = data.length;
-            for (let i = 0; i < len; i++) {
-                onMessage(data[i]);
-            }
-        });
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     private sendAccumulated(): void {
@@ -293,6 +319,9 @@ class RPCMultiplexer {
     }
 
     public send(msg: string): void {
+        if (this.toDispose.disposed) {
+            throw new Error('connection is closed');
+        }
         if (this.messagesToSend.length === 0) {
             if (typeof setImmediate !== 'undefined') {
                 setImmediate(this.sendAccumulatedBound);

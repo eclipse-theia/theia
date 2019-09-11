@@ -31,41 +31,45 @@ import {
 import { Range } from '../../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { DisposableCollection } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { TextEditorMain } from './text-editor-main';
 import { disposed } from '../../common/errors';
 import { reviveWorkspaceEditDto } from './languages-main';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 
-export class TextEditorsMainImpl implements TextEditorsMain {
+export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
-    private toDispose = new DisposableCollection();
-    private proxy: TextEditorsExt;
-    private editorsToDispose = new Map<string, DisposableCollection>();
+    private readonly proxy: TextEditorsExt;
+    private readonly toDispose = new DisposableCollection();
+    private readonly editorsToDispose = new Map<string, DisposableCollection>();
 
-    constructor(private readonly editorsAndDocuments: EditorsAndDocumentsMain,
+    constructor(
+        private readonly editorsAndDocuments: EditorsAndDocumentsMain,
         rpc: RPCProtocol,
         private readonly bulkEditService: MonacoBulkEditService,
-        private readonly monacoEditorService: MonacoEditorService) {
+        private readonly monacoEditorService: MonacoEditorService
+    ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT);
+        this.toDispose.push(editorsAndDocuments);
         this.toDispose.push(editorsAndDocuments.onTextEditorAdd(editors => editors.forEach(this.onTextEditorAdd, this)));
         this.toDispose.push(editorsAndDocuments.onTextEditorRemove(editors => editors.forEach(this.onTextEditorRemove, this)));
     }
 
     dispose(): void {
-        this.editorsToDispose.forEach(val => val.dispose());
-        this.editorsToDispose = new Map();
         this.toDispose.dispose();
     }
 
     private onTextEditorAdd(editor: TextEditorMain): void {
         const id = editor.getId();
-        const toDispose = new DisposableCollection();
-        toDispose.push(editor.onPropertiesChangedEvent(e => {
-            this.proxy.$acceptEditorPropertiesChanged(id, e);
-        }));
+        const toDispose = new DisposableCollection(
+            editor.onPropertiesChangedEvent(e => {
+                this.proxy.$acceptEditorPropertiesChanged(id, e);
+            }),
+            Disposable.create(() => this.editorsToDispose.delete(id))
+        );
         this.editorsToDispose.set(id, toDispose);
+        this.toDispose.push(toDispose);
     }
 
     private onTextEditorRemove(id: string): void {
@@ -73,7 +77,6 @@ export class TextEditorsMainImpl implements TextEditorsMain {
         if (disposables) {
             disposables.dispose();
         }
-        this.editorsToDispose.delete(id);
     }
 
     $trySetOptions(id: string, options: TextEditorConfigurationUpdate): Promise<void> {
@@ -125,6 +128,7 @@ export class TextEditorsMainImpl implements TextEditorsMain {
 
     $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void {
         this.monacoEditorService.registerDecorationType(key, options);
+        this.toDispose.push(Disposable.create(() => this.$removeTextEditorDecorationType(key)));
     }
 
     $removeTextEditorDecorationType(key: string): void {

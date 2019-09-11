@@ -18,6 +18,7 @@ import { injectable } from 'inversify';
 import { Event, Emitter } from '@theia/core/lib/common';
 import { TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
 import URI from '@theia/core/lib/common/uri';
+import { Disposable } from '@theia/core/lib/common/disposable';
 
 @injectable()
 export class TaskDefinitionRegistry {
@@ -28,6 +29,11 @@ export class TaskDefinitionRegistry {
     protected readonly onDidRegisterTaskDefinitionEmitter = new Emitter<void>();
     get onDidRegisterTaskDefinition(): Event<void> {
         return this.onDidRegisterTaskDefinitionEmitter.event;
+    }
+
+    protected readonly onDidUnregisterTaskDefinitionEmitter = new Emitter<void>();
+    get onDidUnregisterTaskDefinition(): Event<void> {
+        return this.onDidUnregisterTaskDefinitionEmitter.event;
     }
 
     /**
@@ -74,10 +80,19 @@ export class TaskDefinitionRegistry {
      *
      * @param definition the task definition to be added.
      */
-    register(definition: TaskDefinition): void {
+    register(definition: TaskDefinition): Disposable {
         const taskType = definition.taskType;
-        this.definitions.set(taskType, [...this.getDefinitions(taskType), definition]);
+        const definitions = this.definitions.get(taskType) || [];
+        definitions.push(definition);
+        this.definitions.set(taskType, definitions);
         this.onDidRegisterTaskDefinitionEmitter.fire(undefined);
+        return Disposable.create(() => {
+            const index = definitions.indexOf(definition);
+            if (index !== -1) {
+                definitions.splice(index, 1);
+            }
+            this.onDidUnregisterTaskDefinitionEmitter.fire(undefined);
+        });
     }
 
     compareTasks(one: TaskConfiguration, other: TaskConfiguration): boolean {

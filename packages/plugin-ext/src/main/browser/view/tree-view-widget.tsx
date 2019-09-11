@@ -90,7 +90,7 @@ export class PluginTree extends TreeImpl {
     private _proxy: TreeViewsExt | undefined;
     private _viewInfo: View | undefined;
 
-    set proxy(proxy: TreeViewsExt) {
+    set proxy(proxy: TreeViewsExt | undefined) {
         this._proxy = proxy;
     }
 
@@ -159,7 +159,9 @@ export class PluginTree extends TreeImpl {
             return 'fa ' + item.icon;
         }
         if (item.iconUrl) {
-            return this.sharedStyle.toIconClass(item.iconUrl);
+            const reference = this.sharedStyle.toIconClass(item.iconUrl);
+            this.toDispose.push(reference);
+            return reference.object.iconClass;
         }
         if (item.themeIconId) {
             return item.themeIconId === 'folder' ? FOLDER_ICON : FILE_ICON;
@@ -178,7 +180,7 @@ export class PluginTreeModel extends TreeModelImpl {
     @inject(PluginTree)
     protected readonly tree: PluginTree;
 
-    set proxy(proxy: TreeViewsExt) {
+    set proxy(proxy: TreeViewsExt | undefined) {
         this.tree.proxy = proxy;
     }
 

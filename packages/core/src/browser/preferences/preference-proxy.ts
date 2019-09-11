@@ -83,12 +83,11 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
     };
 
     const getValue: PreferenceRetrieval<any>['get'] = (arg, defaultValue, resourceUri) => {
-        const isArgOverridePreferenceName = typeof arg === 'object' && arg.overrideIdentifier;
-        const preferenceName = isArgOverridePreferenceName ?
-            preferences.overridePreferenceName(<OverridePreferenceName>arg) :
+        const preferenceName = OverridePreferenceName.is(arg) ?
+            preferences.overridePreferenceName(arg) :
             <string>arg;
         const value = preferences.get(preferenceName, defaultValue, resourceUri || opts.resourceUri);
-        if (preferences.validate(isArgOverridePreferenceName ? (<OverridePreferenceName>arg).preferenceName : preferenceName, value)) {
+        if (preferences.validate(preferenceName, value)) {
             return value;
         }
         if (defaultValue !== undefined) {

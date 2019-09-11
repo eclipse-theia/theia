@@ -26,28 +26,34 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
 
     private readonly proxy: FileSystemExt;
     private readonly resourceResolver: FSResourceResolver;
-    private readonly disposables = new Map<number, Disposable>();
+    private readonly providers = new Map<number, Disposable>();
+    private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT);
         this.resourceResolver = container.get(FSResourceResolver);
     }
 
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
     async $registerFileSystemProvider(handle: number, scheme: string): Promise<void> {
-        this.disposables.set(handle, await this.resourceResolver.registerResourceProvider(handle, scheme, this.proxy));
+        const toDispose = new DisposableCollection(
+            this.resourceResolver.registerResourceProvider(handle, scheme, this.proxy),
+            Disposable.create(() => this.providers.delete(handle))
+        );
+        this.providers.set(handle, toDispose);
+        this.toDispose.push(toDispose);
     }
 
     $unregisterProvider(handle: number): void {
-        const disposable = this.disposables.get(handle);
+        const disposable = this.providers.get(handle);
         if (disposable) {
             disposable.dispose();
-            this.disposables.delete(handle);
         }
     }
 
-    dispose(): void {
-        this.disposables.forEach(d => d.dispose());
-    }
 }
 
 @injectable()

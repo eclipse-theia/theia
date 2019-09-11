@@ -24,7 +24,6 @@ import { HostedPluginClient, ServerPluginRunner, PluginMetadata, PluginHostEnvir
 import { RPCProtocolImpl } from '../../common/rpc-protocol';
 import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
-import { HostedPluginProcessesCache } from './hosted-plugin-processes-cache';
 import * as psTree from 'ps-tree';
 
 export interface IPCConnectionOptions {
@@ -43,9 +42,6 @@ export class HostedPluginProcess implements ServerPluginRunner {
     @inject(HostedPluginCliContribution)
     protected readonly cli: HostedPluginCliContribution;
 
-    @inject(HostedPluginProcessesCache)
-    protected readonly pluginProcessCache: HostedPluginProcessesCache;
-
     @inject(ContributionProvider)
     @named(PluginHostEnvironmentVariable)
     protected readonly pluginHostEnvironmentVariables: ContributionProvider<PluginHostEnvironmentVariable>;
@@ -54,14 +50,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
     protected readonly messageService: MessageService;
 
     private childProcess: cp.ChildProcess | undefined;
-
     private client: HostedPluginClient;
 
     private terminatingPluginServer = false;
-
-    private async getClientId(): Promise<number> {
-        return await this.pluginProcessCache.getLazyClientId(this.client);
-    }
 
     public setClient(client: HostedPluginClient): void {
         if (this.client) {
@@ -70,13 +61,6 @@ export class HostedPluginProcess implements ServerPluginRunner {
             }
         }
         this.client = client;
-        this.getClientId().then(clientId => {
-            const childProcess = this.pluginProcessCache.retrieveClientChildProcess(clientId);
-            if (!this.childProcess && childProcess) {
-                this.childProcess = childProcess;
-                this.linkClientWithChildProcess(this.childProcess);
-            }
-        });
     }
 
     public clientClosed(): void {
@@ -96,12 +80,6 @@ export class HostedPluginProcess implements ServerPluginRunner {
     public onMessage(jsonMessage: any): void {
         if (this.childProcess) {
             this.childProcess.send(JSON.stringify(jsonMessage));
-        }
-    }
-
-    public markPluginServerTerminated(): void {
-        if (this.childProcess) {
-            this.pluginProcessCache.scheduleChildProcessTermination(this, this.childProcess);
         }
     }
 
@@ -128,7 +106,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
             }
         });
         const hostedPluginManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-        hostedPluginManager.$stopPlugin('').then(() => {
+        hostedPluginManager.$stop().then(() => {
             emitter.dispose();
             this.killProcessTree(cp.pid);
         });
@@ -153,18 +131,10 @@ export class HostedPluginProcess implements ServerPluginRunner {
             logger: this.logger,
             args: []
         });
-        this.linkClientWithChildProcess(this.childProcess);
-
-    }
-
-    private linkClientWithChildProcess(childProcess: cp.ChildProcess): void {
-        childProcess.on('message', message => {
+        this.childProcess.on('message', message => {
             if (this.client) {
                 this.client.postMessage(message);
             }
-        });
-        this.getClientId().then(clientId => {
-            this.pluginProcessCache.linkLiveClientAndProcess(clientId, childProcess);
         });
     }
 

@@ -21,16 +21,15 @@
 
 import { injectable, postConstruct } from 'inversify';
 import { NamedProblemPattern, ProblemLocationKind, ProblemPattern, ProblemPatternContribution } from '../common';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
 @injectable()
 export class ProblemPatternRegistry {
-    private patterns: { [name: string]: NamedProblemPattern | NamedProblemPattern[] };
+    private readonly patterns = new Map<string, NamedProblemPattern | NamedProblemPattern[]>();
     private readyPromise: Promise<void>;
 
     @postConstruct()
     protected init(): void {
-        // tslint:disable-next-line:no-null-keyword
-        this.patterns = Object.create(null);
         this.fillDefaults();
         this.readyPromise = new Promise<void>((res, rej) => res(undefined));
     }
@@ -44,17 +43,18 @@ export class ProblemPatternRegistry {
      *
      * @param definition the problem pattern to be added.
      */
-    register(value: ProblemPatternContribution | ProblemPatternContribution[]): void {
+    register(value: ProblemPatternContribution | ProblemPatternContribution[]): Disposable {
         if (Array.isArray(value)) {
-            value.forEach(problemPatternContribution => this.register(problemPatternContribution));
-        } else {
-            if (!value.name) {
-                console.error('Only named Problem Patterns can be registered.');
-                return;
-            }
-            const problemPattern = ProblemPattern.fromProblemPatternContribution(value);
-            this.add(problemPattern.name!, problemPattern);
+            const toDispose = new DisposableCollection();
+            value.forEach(problemPatternContribution => toDispose.push(this.register(problemPatternContribution)));
+            return toDispose;
         }
+        if (!value.name) {
+            console.error('Only named Problem Patterns can be registered.');
+            return Disposable.NULL;
+        }
+        const problemPattern = ProblemPattern.fromProblemPatternContribution(value);
+        return this.add(problemPattern.name!, problemPattern);
     }
 
     /**
@@ -64,17 +64,18 @@ export class ProblemPatternRegistry {
      * @return a problem pattern or an array of the problem patterns associated with the name. If no problem patterns are found, `undefined` is returned.
      */
     get(key: string): undefined | NamedProblemPattern | NamedProblemPattern[] {
-        return this.patterns[key];
+        return this.patterns.get(key);
     }
 
-    private add(key: string, value: ProblemPattern | ProblemPattern[]): void {
+    private add(key: string, value: ProblemPattern | ProblemPattern[]): Disposable {
         let toAdd: NamedProblemPattern | NamedProblemPattern[];
         if (Array.isArray(value)) {
             toAdd = value.map(v => Object.assign(v, { name: key }));
         } else {
             toAdd = Object.assign(value, { name: key });
         }
-        this.patterns[key] = toAdd;
+        this.patterns.set(key, toAdd);
+        return Disposable.create(() => this.patterns.delete(key));
     }
 
     // copied from https://github.com/Microsoft/vscode/blob/1.33.1/src/vs/workbench/contrib/tasks/common/problemMatcher.ts

@@ -17,28 +17,24 @@
 import * as React from 'react';
 import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
-import { DisposableCollection } from '@theia/core';
-import { OpenerService } from '@theia/core/lib/browser';
-import { HostedPluginServer, PluginMetadata } from '../../common/plugin-protocol';
+import { PluginMetadata } from '../../common/plugin-protocol';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
+import { HostedPluginSupport, PluginProgressLocation } from '../../hosted/browser/hosted-plugin';
+import { ProgressLocationService } from '@theia/core/lib/browser/progress-location-service';
+import { ProgressBar } from '@theia/core/lib/browser/progress-bar';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 @injectable()
 export class PluginWidget extends ReactWidget {
 
-    protected plugins: PluginMetadata[] = [];
-    protected readonly toDisposeOnFetch = new DisposableCollection();
-    protected readonly toDisposeOnSearch = new DisposableCollection();
-    protected ready = false;
+    @inject(HostedPluginSupport)
+    protected readonly pluginService: HostedPluginSupport;
 
-    @inject(HostedPluginWatcher)
-    protected readonly watcher: HostedPluginWatcher;
+    @inject(ProgressLocationService)
+    protected readonly progressLocationService: ProgressLocationService;
 
-    constructor(
-        @inject(HostedPluginServer) protected readonly hostedPluginServer: HostedPluginServer,
-        @inject(OpenerService) protected readonly openerService: OpenerService
-    ) {
+    constructor() {
         super();
         this.id = 'plugins';
         this.title.label = 'Plugins';
@@ -49,12 +45,11 @@ export class PluginWidget extends ReactWidget {
         this.addClass('theia-plugins');
 
         this.update();
-        this.fetchPlugins();
     }
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.watcher.onDidDeploy(() => this.fetchPlugins()));
+        this.toDispose.push(this.pluginService.onDidChangePlugins(() => this.update()));
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -62,39 +57,30 @@ export class PluginWidget extends ReactWidget {
         this.node.focus();
     }
 
-    protected fetchPlugins(): Promise<PluginMetadata[]> {
-        const promise = this.hostedPluginServer.getDeployedMetadata();
-
-        promise.then(pluginMetadatas => {
-            this.plugins = pluginMetadatas;
-            this.ready = true;
-            this.update();
-        });
-        return promise;
-    }
+    protected readonly toDisposeProgress = new DisposableCollection();
 
     protected render(): React.ReactNode {
-        if (this.ready) {
-            if (!this.plugins.length) {
-                return <AlertMessage type='INFO' header='No plugins currently available.' />;
+        return <div ref={ref => {
+            this.toDisposeProgress.dispose();
+            this.toDispose.push(this.toDisposeProgress);
+            if (ref) {
+                const onProgress = this.progressLocationService.onProgress(PluginProgressLocation);
+                this.toDisposeProgress.push(new ProgressBar({ container: ref, insertMode: 'prepend' }, onProgress));
             }
-            return <React.Fragment>{this.renderPluginList()}</React.Fragment>;
-        } else {
-            return <div className='spinnerContainer'>
-                <div className='fa fa-spinner fa-pulse fa-3x fa-fw'></div>
-            </div>;
-        }
+        }}>{this.doRender()}</div>;
     }
 
-    protected renderPluginList(): React.ReactNode {
-        const theList: React.ReactNode[] = [];
-        this.plugins.forEach(plugin => {
-            const container = this.renderPlugin(plugin);
-            theList.push(container);
-        });
+    protected doRender(): React.ReactNode {
+        const plugins = this.pluginService.plugins;
+        if (!plugins.length) {
+            return <AlertMessage type='INFO' header='No plugins currently available.' />;
+        }
+        return <React.Fragment>{this.renderPlugins(plugins)}</React.Fragment>;
+    }
 
+    protected renderPlugins(plugins: PluginMetadata[]): React.ReactNode {
         return <div id='pluginListContainer'>
-            {theList}
+            {plugins.map(plugin => this.renderPlugin(plugin))}
         </div>;
     }
 

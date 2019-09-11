@@ -18,7 +18,7 @@
 
 import CodeUri from 'vscode-uri';
 import { injectable, inject } from 'inversify';
-import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler } from '@theia/core';
+import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler, Disposable, DisposableCollection } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -80,29 +80,30 @@ export class MenusContributionPointHandler {
     @inject(ViewContextKeyService)
     protected readonly viewContextKeys: ViewContextKeyService;
 
-    handle(contributions: PluginContribution): void {
+    handle(contributions: PluginContribution): Disposable {
         const allMenus = contributions.menus;
         if (!allMenus) {
-            return;
+            return Disposable.NULL;
         }
+        const toDispose = new DisposableCollection();
         for (const location in allMenus) {
             if (location === 'commandPalette') {
                 for (const menu of allMenus[location]) {
                     if (menu.when) {
-                        this.quickCommandService.pushCommandContext(menu.command, menu.when);
+                        toDispose.push(this.quickCommandService.pushCommandContext(menu.command, menu.when));
                     }
                 }
             } else if (location === 'editor/title') {
                 for (const action of allMenus[location]) {
-                    this.registerTitleAction(location, action, {
+                    toDispose.push(this.registerTitleAction(location, action, {
                         execute: widget => CodeEditorWidget.is(widget) && this.commands.executeCommand(action.command, CodeEditorWidget.getResourceUri(widget)),
                         isEnabled: widget => CodeEditorWidget.is(widget) && this.commands.isEnabled(action.command, CodeEditorWidget.getResourceUri(widget)),
                         isVisible: widget => CodeEditorWidget.is(widget) && this.commands.isVisible(action.command, CodeEditorWidget.getResourceUri(widget))
-                    });
+                    }));
                 }
             } else if (location === 'view/title') {
                 for (const action of allMenus[location]) {
-                    this.registerTitleAction(location, { ...action, when: undefined }, {
+                    toDispose.push(this.registerTitleAction(location, { ...action, when: undefined }, {
                         execute: widget => widget instanceof PluginViewWidget && this.commands.executeCommand(action.command),
                         isEnabled: widget => widget instanceof PluginViewWidget &&
                             this.viewContextKeys.with({ view: widget.options.viewId }, () =>
@@ -110,38 +111,38 @@ export class MenusContributionPointHandler {
                         isVisible: widget => widget instanceof PluginViewWidget &&
                             this.viewContextKeys.with({ view: widget.options.viewId }, () =>
                                 this.commands.isVisible(action.command) && this.viewContextKeys.match(action.when))
-                    });
+                    }));
                 }
             } else if (location === 'view/item/context') {
                 for (const menu of allMenus[location]) {
                     const inline = menu.group && /^inline/.test(menu.group) || false;
                     const menuPath = inline ? VIEW_ITEM_INLINE_MNUE : VIEW_ITEM_CONTEXT_MENU;
-                    this.registerTreeMenuAction(menuPath, menu);
+                    toDispose.push(this.registerTreeMenuAction(menuPath, menu));
                 }
             } else if (location === 'scm/title') {
                 for (const action of allMenus[location]) {
-                    this.registerScmTitleAction(location, action);
+                    toDispose.push(this.registerScmTitleAction(location, action));
                 }
             } else if (location === 'scm/resourceGroup/context') {
                 for (const menu of allMenus[location]) {
                     const inline = menu.group && /^inline/.test(menu.group) || false;
                     const menuPath = inline ? ScmWidget.RESOURCE_GROUP_INLINE_MENU : ScmWidget.RESOURCE_GROUP_CONTEXT_MENU;
-                    this.registerScmMenuAction(menuPath, menu);
+                    toDispose.push(this.registerScmMenuAction(menuPath, menu));
                 }
             } else if (location === 'scm/resourceState/context') {
                 for (const menu of allMenus[location]) {
                     const inline = menu.group && /^inline/.test(menu.group) || false;
                     const menuPath = inline ? ScmWidget.RESOURCE_INLINE_MENU : ScmWidget.RESOURCE_CONTEXT_MENU;
-                    this.registerScmMenuAction(menuPath, menu);
+                    toDispose.push(this.registerScmMenuAction(menuPath, menu));
                 }
             } else if (location === 'debug/callstack/context') {
                 for (const menu of allMenus[location]) {
                     for (const menuPath of [DebugStackFramesWidget.CONTEXT_MENU, DebugThreadsWidget.CONTEXT_MENU]) {
-                        this.registerMenuAction(menuPath, menu, command => ({
+                        toDispose.push(this.registerMenuAction(menuPath, menu, command => ({
                             execute: (...args) => this.commands.executeCommand(command, args[0]),
                             isEnabled: (...args) => this.commands.isEnabled(command, args[0]),
                             isVisible: (...args) => this.commands.isVisible(command, args[0])
-                        }));
+                        })));
                     }
                 }
             } else if (allMenus.hasOwnProperty(location)) {
@@ -153,11 +154,12 @@ export class MenusContributionPointHandler {
                 const menus = allMenus[location];
                 menus.forEach(menu => {
                     for (const menuPath of menuPaths) {
-                        this.registerGlobalMenuAction(menuPath, menu);
+                        toDispose.push(this.registerGlobalMenuAction(menuPath, menu));
                     }
                 });
             }
         }
+        return toDispose;
     }
 
     protected static parseMenuPaths(value: string): MenuPath[] {
@@ -168,8 +170,8 @@ export class MenusContributionPointHandler {
         return [];
     }
 
-    protected registerTreeMenuAction(menuPath: MenuPath, menu: Menu): void {
-        this.registerMenuAction(menuPath, menu, command => ({
+    protected registerTreeMenuAction(menuPath: MenuPath, menu: Menu): Disposable {
+        return this.registerMenuAction(menuPath, menu, command => ({
             execute: (...args) => this.commands.executeCommand(command, ...this.toTreeArgs(...args)),
             isEnabled: (...args) => this.commands.isEnabled(command, ...this.toTreeArgs(...args)),
             isVisible: (...args) => this.commands.isVisible(command, ...this.toTreeArgs(...args))
@@ -185,10 +187,11 @@ export class MenusContributionPointHandler {
         return treeArgs;
     }
 
-    protected registerTitleAction(location: string, action: Menu, handler: CommandHandler): void {
+    protected registerTitleAction(location: string, action: Menu, handler: CommandHandler): Disposable {
+        const toDispose = new DisposableCollection();
         const id = this.createSyntheticCommandId(action.command, { prefix: `__plugin.${location.replace('/', '.')}.action.` });
         const command: Command = { id };
-        this.commands.registerCommand(command, handler);
+        toDispose.push(this.commands.registerCommand(command, handler));
 
         const { when } = action;
         // handle group and priority
@@ -200,27 +203,28 @@ export class MenusContributionPointHandler {
         // navigation@test => ['navigation', 0]
         const [group, sort] = (action.group || 'navigation').split('@');
         const item: Mutable<TabBarToolbarItem> = { id, command: id, group: group.trim() || 'navigation', priority: ~~sort || undefined, when };
-        this.tabBarToolbar.registerItem(item);
+        toDispose.push(this.tabBarToolbar.registerItem(item));
 
-        this.onDidRegisterCommand(action.command, pluginCommand => {
+        toDispose.push(this.onDidRegisterCommand(action.command, pluginCommand => {
             command.category = pluginCommand.category;
             item.tooltip = pluginCommand.label;
             if (group === 'navigation') {
                 command.iconClass = pluginCommand.iconClass;
             }
-        });
+        }));
+        return toDispose;
     }
 
-    protected registerScmTitleAction(location: string, action: Menu): void {
+    protected registerScmTitleAction(location: string, action: Menu): Disposable {
         const selectedRepository = () => this.toScmArgs(this.scmService.selectedRepository);
-        this.registerTitleAction(location, action, {
+        return this.registerTitleAction(location, action, {
             execute: widget => widget instanceof ScmWidget && this.commands.executeCommand(action.command, selectedRepository()),
             isEnabled: widget => widget instanceof ScmWidget && this.commands.isEnabled(action.command, selectedRepository()),
             isVisible: widget => widget instanceof ScmWidget && this.commands.isVisible(action.command, selectedRepository())
         });
     }
-    protected registerScmMenuAction(menuPath: MenuPath, menu: Menu): void {
-        this.registerMenuAction(menuPath, menu, command => ({
+    protected registerScmMenuAction(menuPath: MenuPath, menu: Menu): Disposable {
+        return this.registerMenuAction(menuPath, menu, command => ({
             execute: (...args) => this.commands.executeCommand(command, ...this.toScmArgs(...args)),
             isEnabled: (...args) => this.commands.isEnabled(command, ...this.toScmArgs(...args)),
             isVisible: (...args) => this.commands.isVisible(command, ...this.toScmArgs(...args))
@@ -257,7 +261,7 @@ export class MenusContributionPointHandler {
         }
     }
 
-    protected registerGlobalMenuAction(menuPath: MenuPath, menu: Menu): void {
+    protected registerGlobalMenuAction(menuPath: MenuPath, menu: Menu): Disposable {
         const selectedResource = () => {
             const selection = this.selectionService.selection;
             if (TreeWidgetSelection.is(selection) && selection.source instanceof TreeViewWidget && selection[0]) {
@@ -266,32 +270,33 @@ export class MenusContributionPointHandler {
             const uri = this.resourceContextKey.get();
             return uri ? uri['codeUri'] : undefined;
         };
-        this.registerMenuAction(menuPath, menu, command => ({
+        return this.registerMenuAction(menuPath, menu, command => ({
             execute: () => this.commands.executeCommand(command, selectedResource()),
             isEnabled: () => this.commands.isEnabled(command, selectedResource()),
             isVisible: () => this.commands.isVisible(command, selectedResource())
         }));
     }
 
-    protected registerMenuAction(menuPath: MenuPath, menu: Menu, handler: (command: string) => CommandHandler): void {
+    protected registerMenuAction(menuPath: MenuPath, menu: Menu, handler: (command: string) => CommandHandler): Disposable {
+        const toDispose = new DisposableCollection();
         const commandId = this.createSyntheticCommandId(menu.command, { prefix: '__plugin.menu.action.' });
         const command: Command = { id: commandId };
-        this.commands.registerCommand(command, handler(menu.command));
-        this.quickCommandService.pushCommandContext(commandId, 'false');
+        toDispose.push(this.commands.registerCommand(command, handler(menu.command)));
+        toDispose.push(this.quickCommandService.pushCommandContext(commandId, 'false'));
 
         let altId: string | undefined;
         if (menu.alt) {
             altId = this.createSyntheticCommandId(menu.alt, { prefix: '__plugin.menu.action.' });
             const alt: Command = { id: altId };
-            this.commands.registerCommand(alt, handler(menu.alt));
-            this.quickCommandService.pushCommandContext(altId, 'false');
-            this.onDidRegisterCommand(menu.alt, pluginCommand => {
+            toDispose.push(this.commands.registerCommand(alt, handler(menu.alt)));
+            toDispose.push(this.quickCommandService.pushCommandContext(altId, 'false'));
+            toDispose.push(this.onDidRegisterCommand(menu.alt, pluginCommand => {
                 alt.category = pluginCommand.category;
                 alt.label = pluginCommand.label;
                 if (inline) {
                     alt.iconClass = pluginCommand.iconClass;
                 }
-            });
+            }));
         }
 
         const { when } = menu;
@@ -299,15 +304,16 @@ export class MenusContributionPointHandler {
         const action: MenuAction = { commandId, alt: altId, order, when };
         const inline = /^inline/.test(group);
         menuPath = inline ? menuPath : [...menuPath, group];
-        this.menuRegistry.registerMenuAction(menuPath, action);
+        toDispose.push(this.menuRegistry.registerMenuAction(menuPath, action));
 
-        this.onDidRegisterCommand(menu.command, pluginCommand => {
+        toDispose.push(this.onDidRegisterCommand(menu.command, pluginCommand => {
             command.category = pluginCommand.category;
             command.label = pluginCommand.label;
             if (inline) {
                 command.iconClass = pluginCommand.iconClass;
             }
-        });
+        }));
+        return toDispose;
     }
 
     protected createSyntheticCommandId(command: string, { prefix }: { prefix: string }): string {
@@ -320,17 +326,20 @@ export class MenusContributionPointHandler {
         return id;
     }
 
-    protected onDidRegisterCommand(id: string, cb: (command: Command) => void): void {
+    protected onDidRegisterCommand(id: string, cb: (command: Command) => void): Disposable {
         const command = this.commands.getCommand(id);
         if (command) {
             cb(command);
-        } else {
-            // Registering a menu action requires the related command to be already registered.
-            // But Theia plugin registers the commands dynamically via the Commands API.
-            // Let's wait for ~2 sec. It should be enough to finish registering all the contributed commands.
-            // FIXME: remove this workaround (timer) once the https://github.com/eclipse-theia/theia/issues/3344 is fixed
-            setTimeout(() => this.onDidRegisterCommand(id, cb), 2000);
+            return Disposable.NULL;
         }
+        const toDispose = new DisposableCollection();
+        // Registering a menu action requires the related command to be already registered.
+        // But Theia plugin registers the commands dynamically via the Commands API.
+        // Let's wait for ~2 sec. It should be enough to finish registering all the contributed commands.
+        // FIXME: remove this workaround (timer) once the https://github.com/theia-ide/theia/issues/3344 is fixed
+        const handle = setTimeout(() => toDispose.push(this.onDidRegisterCommand(id, cb)), 2000);
+        toDispose.push(Disposable.create(() => clearTimeout(handle)));
+        return toDispose;
     }
 
 }

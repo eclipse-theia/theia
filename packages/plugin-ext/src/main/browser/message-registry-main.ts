@@ -20,7 +20,7 @@ import { MessageRegistryMain, MainMessageType, MainMessageOptions } from '../../
 import { ModalNotification, MessageType } from './dialogs/modal-notification';
 
 export class MessageRegistryMainImpl implements MessageRegistryMain {
-    private messageService: MessageService;
+    private readonly messageService: MessageService;
 
     constructor(container: interfaces.Container) {
         this.messageService = container.get(MessageService);

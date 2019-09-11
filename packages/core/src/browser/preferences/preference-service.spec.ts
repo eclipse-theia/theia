@@ -183,6 +183,68 @@ describe('Preference Service', () => {
         expect(prefService.get('test.number')).equals(0);
     });
 
+    it('should unset preference schema', () => {
+        const events: PreferenceChange[] = [];
+        prefService.onPreferenceChanged(event => events.push(event));
+
+        prefSchema.registerOverrideIdentifier('go');
+
+        const toUnset = prefSchema.setSchema({
+            properties: {
+                'editor.insertSpaces': {
+                    type: 'boolean',
+                    default: true,
+                    overridable: true
+                },
+                '[go]': {
+                    type: 'object',
+                    default: {
+                        'editor.insertSpaces': false
+                    }
+                }
+            }
+        });
+
+        assert.deepStrictEqual([{
+            preferenceName: 'editor.insertSpaces',
+            newValue: true,
+            oldValue: undefined
+        }, {
+            preferenceName: '[go].editor.insertSpaces',
+            newValue: false,
+            oldValue: undefined
+        }], events.map(e => ({
+            preferenceName: e.preferenceName,
+            newValue: e.newValue,
+            oldValue: e.oldValue
+        })), 'events before');
+        assert.strictEqual(prefService.get('editor.insertSpaces'), true, 'get before');
+        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), false, 'get before overridden');
+        assert.strictEqual(prefSchema.validate('editor.insertSpaces', false), true, 'validate before');
+        assert.strictEqual(prefSchema.validate('[go].editor.insertSpaces', true), true, 'validate before overridden');
+
+        events.length = 0;
+        toUnset.dispose();
+
+        assert.deepStrictEqual([{
+            preferenceName: 'editor.insertSpaces',
+            newValue: undefined,
+            oldValue: true
+        }, {
+            preferenceName: '[go].editor.insertSpaces',
+            newValue: undefined,
+            oldValue: false
+        }], events.map(e => ({
+            preferenceName: e.preferenceName,
+            newValue: e.newValue,
+            oldValue: e.oldValue
+        })), 'events after');
+        assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after');
+        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), undefined, 'get after overridden');
+        assert.strictEqual(prefSchema.validate('editor.insertSpaces', true), false, 'validate after');
+        assert.strictEqual(prefSchema.validate('[go].editor.insertSpaces', true), false, 'validate after overridden');
+    });
+
     describe('overridden preferences', () => {
 
         it('get #0', () => {

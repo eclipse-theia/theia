@@ -24,13 +24,13 @@ import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WebviewWidget } from './webview/webview';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ThemeRulesService } from './webview/theme-rules-service';
-import { DisposableCollection } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ViewColumnService } from './view-column-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
 import debounce = require('lodash.debounce');
 
-export class WebviewsMainImpl implements WebviewsMain {
+export class WebviewsMainImpl implements WebviewsMain, Disposable {
     private readonly revivers = new Set<string>();
     private readonly proxy: WebviewsExt;
     protected readonly shell: ApplicationShell;
@@ -51,6 +51,8 @@ export class WebviewsMainImpl implements WebviewsMain {
 
     protected readonly mouseTracker: ApplicationShellMouseTracker;
 
+    private readonly toDispose = new DisposableCollection();
+
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEWS_EXT);
         this.shell = container.get(ApplicationShell);
@@ -62,9 +64,13 @@ export class WebviewsMainImpl implements WebviewsMain {
                 this.checkViewOptions(key);
             }
         }, 100);
-        this.shell.activeChanged.connect(() => this.updateViewOptions());
-        this.shell.currentChanged.connect(() => this.updateViewOptions());
-        this.viewColumnService.onViewColumnChanged(() => this.updateViewOptions());
+        this.toDispose.push(this.shell.onDidChangeActiveWidget(() => this.updateViewOptions()));
+        this.toDispose.push(this.shell.onDidChangeCurrentWidget(() => this.updateViewOptions()));
+        this.toDispose.push(this.viewColumnService.onViewColumnChanged(() => this.updateViewOptions()));
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     $createWebviewPanel(
@@ -75,7 +81,8 @@ export class WebviewsMainImpl implements WebviewsMain {
         options: (WebviewPanelOptions & WebviewOptions) | undefined,
         extensionLocation: UriComponents
     ): void {
-        const toDispose = new DisposableCollection();
+        const toDisposeOnClose = new DisposableCollection();
+        const toDisposeOnLoad = new DisposableCollection();
         const view = new WebviewWidget(title, {
             allowScripts: options ? options.enableScripts : false
         }, {
@@ -88,11 +95,12 @@ export class WebviewsMainImpl implements WebviewsMain {
                 onLoad: contentDocument => {
                     const styleId = 'webview-widget-theme';
                     let styleElement: HTMLStyleElement | null | undefined;
-                    if (!toDispose.disposed) {
+                    if (!toDisposeOnLoad.disposed) {
                         // if reload the frame
-                        toDispose.dispose();
+                        toDisposeOnLoad.dispose();
                         styleElement = <HTMLStyleElement>contentDocument.getElementById(styleId);
                     }
+                    toDisposeOnClose.push(toDisposeOnLoad);
                     if (!styleElement) {
                         const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
                         styleElement = this.themeRulesService.createStyleSheet(parent);
@@ -102,7 +110,7 @@ export class WebviewsMainImpl implements WebviewsMain {
 
                     this.themeRulesService.setRules(styleElement, this.themeRulesService.getCurrentThemeRules());
                     contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
-                    toDispose.push(this.themeService.onThemeChange(() => {
+                    toDisposeOnLoad.push(this.themeService.onThemeChange(() => {
                         this.themeRulesService.setRules(<HTMLElement>styleElement, this.themeRulesService.getCurrentThemeRules());
                         contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
                     }));
@@ -110,12 +118,20 @@ export class WebviewsMainImpl implements WebviewsMain {
             },
             this.mouseTracker);
         view.disposed.connect(() => {
-            toDispose.dispose();
-            this.onCloseView(panelId);
+            toDisposeOnClose.dispose();
+            this.proxy.$onDidDisposeWebviewPanel(viewId);
         });
+        this.toDispose.push(view);
+
+        const viewId = view.id;
+        toDisposeOnClose.push(Disposable.create(() => this.themeRulesService.setIconPath(viewId, undefined)));
 
         this.views.set(panelId, view);
-        this.viewsOptions.set(view.id, { panelOptions: showOptions, options: options, panelId, visible: false, active: false });
+        toDisposeOnClose.push(Disposable.create(() => this.views.delete(panelId)));
+
+        this.viewsOptions.set(viewId, { panelOptions: showOptions, options: options, panelId, visible: false, active: false });
+        toDisposeOnClose.push(Disposable.create(() => this.viewsOptions.delete(viewId)));
+
         this.addOrReattachWidget(panelId, showOptions);
     }
     private addOrReattachWidget(handler: string, showOptions: WebviewPanelShowOptions): void {
@@ -234,6 +250,7 @@ export class WebviewsMainImpl implements WebviewsMain {
     }
     $registerSerializer(viewType: string): void {
         this.revivers.add(viewType);
+        this.toDispose.push(Disposable.create(() => this.$unregisterSerializer(viewType)));
     }
     $unregisterSerializer(viewType: string): void {
         this.revivers.delete(viewType);
@@ -271,15 +288,4 @@ export class WebviewsMainImpl implements WebviewsMain {
         return webview;
     }
 
-    private onCloseView(viewId: string): void {
-        const view = this.views.get(viewId);
-        if (view) {
-            this.themeRulesService.setIconPath(view.id, undefined);
-        }
-        const cleanUp = () => {
-            this.views.delete(viewId);
-            this.viewsOptions.delete(viewId);
-        };
-        this.proxy.$onDidDisposeWebviewPanel(viewId).then(cleanUp, cleanUp);
-    }
 }

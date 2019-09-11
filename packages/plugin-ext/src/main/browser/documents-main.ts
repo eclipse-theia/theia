@@ -78,32 +78,30 @@ export class ModelReferenceCollection {
     }
 }
 
-export class DocumentsMainImpl implements DocumentsMain {
+export class DocumentsMainImpl implements DocumentsMain, Disposable {
 
-    private proxy: DocumentsExt;
-    private toDispose = new DisposableCollection();
-    private modelToDispose = new Map<string, Disposable>();
-    private modelIsSynced = new Map<string, boolean>();
-    private modelService: EditorModelService;
-    private modelReferenceCache = new ModelReferenceCollection();
+    private readonly proxy: DocumentsExt;
+    private readonly syncedModels = new Map<string, Disposable>();
+    private readonly modelReferenceCache = new ModelReferenceCollection();
 
     protected saveTimeout = 1750;
 
+    private readonly toDispose = new DisposableCollection(this.modelReferenceCache);
+
     constructor(
         editorsAndDocuments: EditorsAndDocumentsMain,
-        modelService: EditorModelService,
+        private readonly modelService: EditorModelService,
         rpc: RPCProtocol,
         private editorManager: EditorManager,
         private openerService: OpenerService,
         private shell: ApplicationShell
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
-        this.modelService = modelService;
 
+        this.toDispose.push(editorsAndDocuments);
         this.toDispose.push(editorsAndDocuments.onDocumentAdd(documents => documents.forEach(this.onModelAdded, this)));
         this.toDispose.push(editorsAndDocuments.onDocumentRemove(documents => documents.forEach(this.onModelRemoved, this)));
         this.toDispose.push(modelService.onModelModeChanged(this.onModelChanged, this));
-        this.toDispose.push(this.modelReferenceCache);
 
         this.toDispose.push(modelService.onModelSaved(m => {
             this.proxy.$acceptModelSaved(m.textEditorModel.uri);
@@ -127,48 +125,45 @@ export class DocumentsMainImpl implements DocumentsMain {
     }
 
     dispose(): void {
-        this.modelToDispose.forEach(val => val.dispose());
-        this.modelToDispose = new Map();
         this.toDispose.dispose();
     }
 
     private onModelChanged(event: { model: MonacoEditorModel, oldModeId: string }): void {
         const modelUrl = event.model.textEditorModel.uri;
-        if (!this.modelIsSynced.get(modelUrl.toString())) {
-            return;
+        if (this.syncedModels.has(modelUrl.toString())) {
+            this.proxy.$acceptModelModeChanged(modelUrl, event.oldModeId, event.model.languageId);
         }
-
-        this.proxy.$acceptModelModeChanged(modelUrl, event.oldModeId, event.model.languageId);
     }
 
     private onModelAdded(model: MonacoEditorModel): void {
-        const modelUrl = model.textEditorModel.uri;
-        this.modelIsSynced.set(modelUrl.toString(), true);
-        this.modelToDispose.set(modelUrl.toString(), model.textEditorModel.onDidChangeContent(e => {
-            this.proxy.$acceptModelChanged(modelUrl, {
-                eol: e.eol,
-                versionId: e.versionId,
-                changes: e.changes.map(c =>
-                    ({
-                        text: c.text,
-                        range: c.range,
-                        rangeLength: c.rangeLength,
-                        rangeOffset: c.rangeOffset
-                    }))
-            }, model.dirty);
-        }));
+        const modelUri = model.textEditorModel.uri;
+        const key = modelUri.toString();
 
+        const toDispose = new DisposableCollection(
+            model.textEditorModel.onDidChangeContent(e =>
+                this.proxy.$acceptModelChanged(modelUri, {
+                    eol: e.eol,
+                    versionId: e.versionId,
+                    changes: e.changes.map(c =>
+                        ({
+                            text: c.text,
+                            range: c.range,
+                            rangeLength: c.rangeLength,
+                            rangeOffset: c.rangeOffset
+                        }))
+                }, model.dirty)
+            ),
+            Disposable.create(() => this.syncedModels.delete(key))
+        );
+        this.syncedModels.set(key, toDispose);
+        this.toDispose.push(toDispose);
     }
 
     private onModelRemoved(url: monaco.Uri): void {
-        const modelUrl = url.toString();
-        if (!this.modelIsSynced.get(modelUrl)) {
-            return;
+        const model = this.syncedModels.get(url.toString());
+        if (model) {
+            model.dispose();
         }
-
-        this.modelIsSynced.delete(modelUrl);
-        this.modelToDispose.get(modelUrl)!.dispose();
-        this.modelToDispose.delete(modelUrl);
     }
 
     async $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {

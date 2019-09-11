@@ -22,7 +22,7 @@ export interface Reference<T> extends Disposable {
     readonly object: T
 }
 
-export class ReferenceCollection<K, V extends Disposable> implements Disposable {
+export abstract class AbstractReferenceCollection<K, V extends Disposable> implements Disposable {
 
     protected readonly _keys = new Map<string, K>();
     protected readonly _values = new Map<string, V>();
@@ -36,7 +36,7 @@ export class ReferenceCollection<K, V extends Disposable> implements Disposable 
 
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(protected readonly factory: (key: K) => MaybePromise<V>) {
+    constructor() {
         this.toDispose.push(this.onDidCreateEmitter);
         this.toDispose.push(this.onWillDisposeEmitter);
         this.toDispose.push(Disposable.create(() => this.clear()));
@@ -74,9 +74,9 @@ export class ReferenceCollection<K, V extends Disposable> implements Disposable 
         return this._values.get(key);
     }
 
-    async acquire(args: K): Promise<Reference<V>> {
-        const key = this.toKey(args);
-        const object = await this.getOrCreateValue(key, args);
+    abstract acquire(args: K): MaybePromise<Reference<V>>;
+
+    protected doAcquire(key: string, object: V): Reference<V> {
         const references = this.references.get(key) || this.createReferences(key, object);
         const reference: Reference<V> = {
             object,
@@ -84,28 +84,6 @@ export class ReferenceCollection<K, V extends Disposable> implements Disposable 
         };
         references.push(reference);
         return reference;
-    }
-
-    protected readonly pendingValues = new Map<string, MaybePromise<V>>();
-    protected async getOrCreateValue(key: string, args: K): Promise<V> {
-        const existing = this._values.get(key) || this.pendingValues.get(key);
-        if (existing) {
-            return existing;
-        }
-        const pending = this.factory(args);
-        this._keys.set(key, args);
-        this.pendingValues.set(key, pending);
-        try {
-            const value = await pending;
-            this._values.set(key, value);
-            this.onDidCreateEmitter.fire(value);
-            return value;
-        } catch (e) {
-            this._keys.delete(key);
-            throw e;
-        } finally {
-            this.pendingValues.delete(key);
-        }
     }
 
     protected toKey(args: K): string {
@@ -126,6 +104,68 @@ export class ReferenceCollection<K, V extends Disposable> implements Disposable 
         };
         this.references.set(key, references);
         return references;
+    }
+
+}
+
+export class ReferenceCollection<K, V extends Disposable> extends AbstractReferenceCollection<K, V> {
+
+    constructor(protected readonly factory: (key: K) => MaybePromise<V>) {
+        super();
+    }
+
+    async acquire(args: K): Promise<Reference<V>> {
+        const key = this.toKey(args);
+        const object = await this.getOrCreateValue(key, args);
+        return this.doAcquire(key, object);
+    }
+
+    protected readonly pendingValues = new Map<string, MaybePromise<V>>();
+    protected async getOrCreateValue(key: string, args: K): Promise<V> {
+        const existing = this._values.get(key) || this.pendingValues.get(key);
+        if (existing) {
+            return existing;
+        }
+        const pending = this.factory(args);
+        this._keys.set(key, args);
+        this.pendingValues.set(key, pending);
+        try {
+            const value = await pending;
+            this._values.set(key, value);
+            this.onDidCreateEmitter.fire(value);
+            return value;
+        } catch (e) {
+            this._keys.delete(key);
+            throw e;
+        } finally {
+            this.pendingValues.delete(key);
+        }
+    }
+
+}
+
+export class SyncReferenceCollection<K, V extends Disposable> extends AbstractReferenceCollection<K, V> {
+
+    constructor(protected readonly factory: (key: K) => V) {
+        super();
+    }
+
+    acquire(args: K): Reference<V> {
+        const key = this.toKey(args);
+        const object = this.getOrCreateValue(key, args);
+        return this.doAcquire(key, object);
+    }
+
+    protected getOrCreateValue(key: string, args: K): V {
+        const existing = this._values.get(key);
+        if (existing) {
+            return existing;
+        }
+        const value = this.factory(args);
+        this._keys.set(key, args);
+        this._values.set(key, value);
+        this.onDidCreateEmitter.fire(value);
+        return value;
     }
 
 }

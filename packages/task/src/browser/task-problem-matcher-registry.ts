@@ -20,6 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { inject, injectable, postConstruct } from 'inversify';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
     ApplyToKind, FileLocationKind, NamedProblemMatcher, Severity,
     ProblemPattern, ProblemMatcher, ProblemMatcherContribution, WatchingMatcher
@@ -29,7 +30,7 @@ import { ProblemPatternRegistry } from './task-problem-pattern-registry';
 @injectable()
 export class ProblemMatcherRegistry {
 
-    private matchers: { [name: string]: NamedProblemMatcher };
+    private readonly matchers = new Map<string, NamedProblemMatcher>();
     private readyPromise: Promise<void>;
 
     @inject(ProblemPatternRegistry)
@@ -37,8 +38,6 @@ export class ProblemMatcherRegistry {
 
     @postConstruct()
     protected init(): void {
-        // tslint:disable-next-line:no-null-keyword
-        this.matchers = Object.create(null);
         this.problemPatternRegistry.onReady().then(() => {
             this.fillDefaults();
             this.readyPromise = new Promise<void>((res, rej) => res(undefined));
@@ -54,13 +53,21 @@ export class ProblemMatcherRegistry {
      *
      * @param definition the problem matcher to be added.
      */
-    async register(matcher: ProblemMatcherContribution): Promise<void> {
+    register(matcher: ProblemMatcherContribution): Disposable {
         if (!matcher.name) {
             console.error('Only named Problem Matchers can be registered.');
+            return Disposable.NULL;
+        }
+        const toDispose = new DisposableCollection(Disposable.create(() => {/* mark as not disposed */ }));
+        this.doRegister(matcher, toDispose);
+        return toDispose;
+    }
+    protected async doRegister(matcher: ProblemMatcherContribution, toDispose: DisposableCollection): Promise<void> {
+        const problemMatcher = await this.getProblemMatcherFromContribution(matcher);
+        if (toDispose.disposed) {
             return;
         }
-        const problemMatcher = await this.getProblemMatcherFromContribution(matcher);
-        this.add(problemMatcher as NamedProblemMatcher);
+        toDispose.push(this.add(problemMatcher as NamedProblemMatcher));
     }
 
     /**
@@ -71,9 +78,9 @@ export class ProblemMatcherRegistry {
      */
     get(name: string): NamedProblemMatcher | undefined {
         if (name.startsWith('$')) {
-            return this.matchers[name.slice(1)];
+            return this.matchers.get(name.slice(1));
         }
-        return this.matchers[name];
+        return this.matchers.get(name);
     }
 
     /**
@@ -127,8 +134,9 @@ export class ProblemMatcherRegistry {
         return problemMatcher;
     }
 
-    private add(matcher: NamedProblemMatcher): void {
-        this.matchers[matcher.name] = matcher;
+    private add(matcher: NamedProblemMatcher): Disposable {
+        this.matchers.set(matcher.name, matcher);
+        return Disposable.create(() => this.matchers.delete(matcher.name));
     }
 
     private getFileLocationKindAndPrefix(matcher: ProblemMatcherContribution): { fileLocation: FileLocationKind, filePrefix: string } {
