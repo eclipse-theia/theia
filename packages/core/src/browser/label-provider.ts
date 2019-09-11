@@ -20,6 +20,7 @@ import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Prioritizeable, MaybePromise } from '../common/types';
 import { Event, Emitter, Disposable, DisposableCollection } from '../common';
+import { FrontendApplicationContribution } from './frontend-application';
 
 export const FOLDER_ICON = 'fa fa-folder';
 export const FILE_ICON = 'fa fa-file';
@@ -92,7 +93,7 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
 }
 
 @injectable()
-export class LabelProvider implements Disposable {
+export class LabelProvider implements Disposable, FrontendApplicationContribution {
 
     private readonly toDispose: DisposableCollection = new DisposableCollection();
 
@@ -103,7 +104,9 @@ export class LabelProvider implements Disposable {
         protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>
     ) {
         this.toDispose.push(this.onElementUpdatedEmitter);
+    }
 
+    public initialize(): void {
         const contributions = this.contributionProvider.getContributions();
         for (const contribution of contributions) {
             if (contribution.onElementUpdated) {
