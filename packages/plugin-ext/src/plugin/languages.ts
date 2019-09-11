@@ -26,6 +26,7 @@ import {
     Selection,
     RawColorInfo,
     WorkspaceEditDto,
+    PluginInfo
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
@@ -231,9 +232,10 @@ export class LanguagesExtImpl implements LanguagesExt {
         this.withAdapter(handle, CompletionAdapter, async adapter => adapter.releaseCompletionItems(id));
     }
 
-    registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, triggerCharacters: string[]): theia.Disposable {
+    registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, triggerCharacters: string[],
+        pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new CompletionAdapter(provider, this.documents, this.commands));
-        this.proxy.$registerCompletionSupport(callId, this.transformDocumentSelector(selector), triggerCharacters, CompletionAdapter.hasResolveSupport(provider));
+        this.proxy.$registerCompletionSupport(callId, pluginInfo, this.transformDocumentSelector(selector), triggerCharacters, CompletionAdapter.hasResolveSupport(provider));
         return this.createDisposable(callId);
     }
     // ### Completion end
@@ -243,9 +245,9 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, DefinitionAdapter, adapter => adapter.provideDefinition(URI.revive(resource), position, token));
     }
 
-    registerDefinitionProvider(selector: theia.DocumentSelector, provider: theia.DefinitionProvider): theia.Disposable {
+    registerDefinitionProvider(selector: theia.DocumentSelector, provider: theia.DefinitionProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new DefinitionAdapter(provider, this.documents));
-        this.proxy.$registerDefinitionProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerDefinitionProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
     // ### Definition provider end
@@ -255,9 +257,9 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, DeclarationAdapter, adapter => adapter.provideDeclaration(URI.revive(resource), position, token));
     }
 
-    registerDeclarationProvider(selector: theia.DocumentSelector, provider: theia.DeclarationProvider): theia.Disposable {
+    registerDeclarationProvider(selector: theia.DocumentSelector, provider: theia.DeclarationProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new DeclarationAdapter(provider, this.documents));
-        this.proxy.$registerDeclarationProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerDeclarationProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
     // ### Declaration provider end
@@ -273,9 +275,10 @@ export class LanguagesExtImpl implements LanguagesExt {
         this.withAdapter(handle, SignatureHelpAdapter, async adapter => adapter.releaseSignatureHelp(id));
     }
 
-    registerSignatureHelpProvider(selector: theia.DocumentSelector, provider: theia.SignatureHelpProvider, metadata: theia.SignatureHelpProviderMetadata): theia.Disposable {
+    registerSignatureHelpProvider(selector: theia.DocumentSelector, provider: theia.SignatureHelpProvider, metadata: theia.SignatureHelpProviderMetadata,
+        pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new SignatureHelpAdapter(provider, this.documents));
-        this.proxy.$registerSignatureHelpProvider(callId, this.transformDocumentSelector(selector), metadata);
+        this.proxy.$registerSignatureHelpProvider(callId, pluginInfo, this.transformDocumentSelector(selector), metadata);
         return this.createDisposable(callId);
     }
     // ### Signature help end
@@ -295,9 +298,9 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, ImplementationAdapter, adapter => adapter.provideImplementation(URI.revive(resource), position, token));
     }
 
-    registerImplementationProvider(selector: theia.DocumentSelector, provider: theia.ImplementationProvider): theia.Disposable {
+    registerImplementationProvider(selector: theia.DocumentSelector, provider: theia.ImplementationProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new ImplementationAdapter(provider, this.documents));
-        this.proxy.$registerImplementationProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerImplementationProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
     // ### Implementation provider end
@@ -307,17 +310,17 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, TypeDefinitionAdapter, adapter => adapter.provideTypeDefinition(URI.revive(resource), position, token));
     }
 
-    registerTypeDefinitionProvider(selector: theia.DocumentSelector, provider: theia.TypeDefinitionProvider): theia.Disposable {
+    registerTypeDefinitionProvider(selector: theia.DocumentSelector, provider: theia.TypeDefinitionProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new TypeDefinitionAdapter(provider, this.documents));
-        this.proxy.$registerTypeDefinitionProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerTypeDefinitionProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
     // ### Type Definition provider end
 
     // ### Hover Provider begin
-    registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider): theia.Disposable {
+    registerHoverProvider(selector: theia.DocumentSelector, provider: theia.HoverProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new HoverAdapter(provider, this.documents));
-        this.proxy.$registerHoverProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerHoverProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
 
@@ -327,9 +330,9 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Hover Provider end
 
     // ### Document Highlight Provider begin
-    registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider): theia.Disposable {
+    registerDocumentHighlightProvider(selector: theia.DocumentSelector, provider: theia.DocumentHighlightProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new DocumentHighlightAdapter(provider, this.documents));
-        this.proxy.$registerDocumentHighlightProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerDocumentHighlightProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
 
@@ -339,9 +342,9 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Document Highlight Provider end
 
     // ### WorkspaceSymbol Provider begin
-    registerWorkspaceSymbolProvider(provider: theia.WorkspaceSymbolProvider): theia.Disposable {
+    registerWorkspaceSymbolProvider(provider: theia.WorkspaceSymbolProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new WorkspaceSymbolAdapter(provider));
-        this.proxy.$registerWorkspaceSymbolProvider(callId);
+        this.proxy.$registerWorkspaceSymbolProvider(callId, pluginInfo);
         return this.createDisposable(callId);
     }
 
@@ -355,9 +358,9 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### WorkspaceSymbol Provider end
 
     // ### Document Formatting Edit begin
-    registerDocumentFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentFormattingEditProvider): theia.Disposable {
+    registerDocumentFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentFormattingEditProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new DocumentFormattingAdapter(provider, this.documents));
-        this.proxy.$registerDocumentFormattingSupport(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerDocumentFormattingSupport(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
 
@@ -368,9 +371,10 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Document Formatting Edit end
 
     // ### Document Range Formatting Edit begin
-    registerDocumentRangeFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentRangeFormattingEditProvider): theia.Disposable {
+    registerDocumentRangeFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentRangeFormattingEditProvider,
+        pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new RangeFormattingAdapter(provider, this.documents));
-        this.proxy.$registerRangeFormattingProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerRangeFormattingProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
 
@@ -384,10 +388,11 @@ export class LanguagesExtImpl implements LanguagesExt {
     registerOnTypeFormattingEditProvider(
         selector: theia.DocumentSelector,
         provider: theia.OnTypeFormattingEditProvider,
-        triggerCharacters: string[]
+        triggerCharacters: string[],
+        pluginInfo: PluginInfo
     ): theia.Disposable {
         const callId = this.addNewAdapter(new OnTypeFormattingAdapter(provider, this.documents));
-        this.proxy.$registerOnTypeFormattingProvider(callId, this.transformDocumentSelector(selector), triggerCharacters);
+        this.proxy.$registerOnTypeFormattingProvider(callId, pluginInfo, this.transformDocumentSelector(selector), triggerCharacters);
         return this.createDisposable(callId);
     }
 
@@ -406,9 +411,9 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, LinkProviderAdapter, adapter => adapter.resolveLink(link, token));
     }
 
-    registerLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider): theia.Disposable {
+    registerLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new LinkProviderAdapter(provider, this.documents));
-        this.proxy.$registerDocumentLinkProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerDocumentLinkProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
     // ### Document Link Provider end
@@ -418,11 +423,13 @@ export class LanguagesExtImpl implements LanguagesExt {
         selector: theia.DocumentSelector,
         provider: theia.CodeActionProvider,
         pluginModel: PluginModel,
+        pluginInfo: PluginInfo,
         metadata?: theia.CodeActionProviderMetadata
     ): theia.Disposable {
         const callId = this.addNewAdapter(new CodeActionAdapter(provider, this.documents, this.diagnostics, pluginModel ? pluginModel.id : '', this.commands));
         this.proxy.$registerQuickFixProvider(
             callId,
+            pluginInfo,
             this.transformDocumentSelector(selector),
             metadata && metadata.providedCodeActionKinds ? metadata.providedCodeActionKinds.map(kind => kind.value!) : undefined
         );
@@ -440,10 +447,10 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Code Actions Provider end
 
     // ### Code Lens Provider begin
-    registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider): theia.Disposable {
+    registerCodeLensProvider(selector: theia.DocumentSelector, provider: theia.CodeLensProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new CodeLensAdapter(provider, this.documents, this.commands));
         const eventHandle = typeof provider.onDidChangeCodeLenses === 'function' ? this.nextCallId() : undefined;
-        this.proxy.$registerCodeLensSupport(callId, this.transformDocumentSelector(selector), eventHandle);
+        this.proxy.$registerCodeLensSupport(callId, pluginInfo, this.transformDocumentSelector(selector), eventHandle);
         let result = this.createDisposable(callId);
 
         if (eventHandle !== undefined && provider.onDidChangeCodeLenses) {
@@ -468,17 +475,17 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, ReferenceAdapter, adapter => adapter.provideReferences(URI.revive(resource), position, context, token));
     }
 
-    registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider): theia.Disposable {
+    registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new ReferenceAdapter(provider, this.documents));
-        this.proxy.$registerReferenceProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerReferenceProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
     // ### Code Reference Provider end
 
     // ### Document Symbol Provider begin
-    registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider): theia.Disposable {
+    registerDocumentSymbolProvider(selector: theia.DocumentSelector, provider: theia.DocumentSymbolProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new OutlineAdapter(this.documents, provider));
-        this.proxy.$registerOutlineSupport(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerOutlineSupport(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
 
@@ -488,9 +495,9 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Document Symbol Provider end
 
     // ### Color Provider begin
-    registerColorProvider(selector: theia.DocumentSelector, provider: theia.DocumentColorProvider): theia.Disposable {
+    registerColorProvider(selector: theia.DocumentSelector, provider: theia.DocumentColorProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new ColorProviderAdapter(this.documents, provider));
-        this.proxy.$registerDocumentColorProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerDocumentColorProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
 
@@ -504,9 +511,9 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Color Provider end
 
     // ### Folding Range Provider begin
-    registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider): theia.Disposable {
+    registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new FoldingProviderAdapter(provider, this.documents));
-        this.proxy.$registerFoldingRangeProvider(callId, this.transformDocumentSelector(selector));
+        this.proxy.$registerFoldingRangeProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
 
@@ -521,9 +528,9 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Folging Range Provider end
 
     // ### Rename Provider begin
-    registerRenameProvider(selector: theia.DocumentSelector, provider: theia.RenameProvider): theia.Disposable {
+    registerRenameProvider(selector: theia.DocumentSelector, provider: theia.RenameProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new RenameAdapter(provider, this.documents));
-        this.proxy.$registerRenameProvider(callId, this.transformDocumentSelector(selector), RenameAdapter.supportsResolving(provider));
+        this.proxy.$registerRenameProvider(callId, pluginInfo, this.transformDocumentSelector(selector), RenameAdapter.supportsResolving(provider));
         return this.createDisposable(callId);
     }
 

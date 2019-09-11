@@ -24,7 +24,8 @@ import {
     ResourceFileEditDto,
     TaskDto,
     ProcessTaskDto,
-    PickOpenItem
+    PickOpenItem,
+    Plugin
 } from '../common/plugin-api-rpc';
 import * as rpc from '../common/plugin-api-rpc';
 import * as model from '../common/plugin-api-rpc-model';
@@ -1076,4 +1077,11 @@ export function pathOrURIToURI(value: string | URI): URI {
     } else {
         return value;
     }
+}
+
+export function pluginToPluginInfo(plugin: Plugin): rpc.PluginInfo {
+    return {
+        id: plugin.model.id,
+        name: plugin.model.name
+    };
 }
