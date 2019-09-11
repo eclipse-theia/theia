@@ -1,4 +1,5 @@
 <br/>
+
 <div id="theia-logo" align="center">
     <br />
     <img src="https://raw.githubusercontent.com/theia-ide/theia/master/logo/theia-logo.svg?sanitize=true" alt="Theia Logo" width="300"/>
@@ -107,6 +108,6 @@ Read below how to engage with Theia community:
 
 
 ## Trademark
-"Theia" is a trademark of the Eclipse Foundation 
+"Theia" is a trademark of the Eclipse Foundation
 https://www.eclipse.org/theia
 
