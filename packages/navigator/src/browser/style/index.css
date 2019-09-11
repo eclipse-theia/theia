@@ -38,18 +38,9 @@
 }
 
 .p-Widget .open-workspace-button {
-    border: 1px solid var(--theia-border-color1);
-    color: var(--theia-ui-font-color1);
-    font-size: var(--theia-ui-font-size1);
-    border-radius: 0;
-    background-color: var(--theia-accent-color3);
-    outline: none;
-    cursor: pointer;
-    padding-left: 12px;
-    padding-right: 12px;
-    padding-top: 4px;
-    padding-bottom: 4px;
+    padding: 4px 12px;
     width: calc(100% - var(--theia-ui-padding)*4);
+    margin-left: 0;
 }
 
 .navigator-tab-icon {
