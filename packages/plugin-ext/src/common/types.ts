@@ -63,3 +63,15 @@ export interface LogPart {
 // tslint:disable-next-line:no-any
 export interface KeysToAnyValues { [key: string]: any }
 export interface KeysToKeysToAnyValue { [key: string]: KeysToAnyValues }
+
+// tslint:disable:no-any
+/** copied from https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/workbench/api/common/extHostTypes.ts#L18-L27 */
+export function es5ClassCompat<T extends Function>(target: T): T {
+    /// @ts-ignore
+    function _(): any { return Reflect.construct(target, arguments, this.constructor); }
+    Object.defineProperty(_, 'name', Object.getOwnPropertyDescriptor(target, 'name')!);
+    Object.setPrototypeOf(_, target);
+    Object.setPrototypeOf(_.prototype, target.prototype);
+    return _ as unknown as T;
+}
+// tslint:enable:no-any
