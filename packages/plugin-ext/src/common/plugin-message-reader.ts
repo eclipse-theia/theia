@@ -14,12 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { es5ClassCompat } from './types';
 import { AbstractMessageReader, DataCallback } from 'vscode-jsonrpc/lib/messageReader';
 
 /**
  * Support for reading string message through RPC protocol.
  */
-export class PluginMessageReader extends AbstractMessageReader {
+export class PluginMessageReader extends es5ClassCompat(AbstractMessageReader) {
     protected state: 'initial' | 'listening' | 'closed' = 'initial';
     protected callback: DataCallback | undefined;
     // tslint:disable-next-line:no-any

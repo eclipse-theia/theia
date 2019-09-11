@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { es5ClassCompat } from './types';
 import { AbstractMessageWriter, MessageWriter } from 'vscode-jsonrpc/lib/messageWriter';
 import { ConnectionMain, ConnectionExt } from './plugin-api-rpc';
 import { Message } from 'vscode-jsonrpc';
@@ -21,7 +22,7 @@ import { Message } from 'vscode-jsonrpc';
 /**
  * Support for writing string message through RPC protocol.
  */
-export class PluginMessageWriter extends AbstractMessageWriter implements MessageWriter {
+export class PluginMessageWriter extends es5ClassCompat(AbstractMessageWriter) implements MessageWriter {
     constructor(
         protected readonly id: string,
         protected readonly proxy: ConnectionMain | ConnectionExt) {
