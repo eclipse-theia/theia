@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { DisposableCollection, Disposable } from '@theia/core';
 import { Repository } from '../common';
 import { GitWatcherServer, GitWatcherClient } from '../common/git-watcher';
@@ -32,6 +32,11 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
     constructor(
         @inject(GitRepositoryManager) protected readonly manager: GitRepositoryManager
     ) { }
+
+    @postConstruct()
+    protected init(): void {
+        console.log('DugiteGitWatcherServer created');
+    }
 
     dispose(): void {
         for (const watcher of this.watchers.values()) {
