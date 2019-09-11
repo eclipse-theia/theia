@@ -188,6 +188,8 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             isVisible: () => true
         });
         registry.registerCommand(FileNavigatorCommands.TOGGLE_AUTO_REVEAL, {
+            isEnabled: widget => this.withWidget(widget, () => this.workspaceService.opened),
+            isVisible: widget => this.withWidget(widget, () => this.workspaceService.opened),
             execute: () => {
                 const autoReveal = !this.fileNavigatorPreferences['explorer.autoReveal'];
                 this.preferenceService.set('explorer.autoReveal', autoReveal, PreferenceScope.User);

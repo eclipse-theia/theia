@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CommonCommands, CorePreferences, LabelProvider, ViewContainerTitleOptions } from '@theia/core/lib/browser';
+import { CommonCommands, CorePreferences, LabelProvider, ViewContainerTitleOptions, Key } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeModel, TreeNode,
@@ -215,6 +215,11 @@ export class FileNavigatorWidget extends FileTreeWidget {
         this.commandService.executeCommand(WorkspaceCommands.OPEN_FOLDER.id);
     }
 
+    protected readonly keyUpHandler = (e: React.KeyboardEvent) => {
+        if (Key.ENTER.keyCode === e.keyCode) {
+            (e.target as HTMLElement).click();
+        }
+    }
     /**
      * Instead of rendering the file resources from the workspace, we render a placeholder
      * button when the workspace root is not yet set.
@@ -223,11 +228,13 @@ export class FileNavigatorWidget extends FileTreeWidget {
         let openButton;
 
         if (this.canOpenWorkspaceFileAndFolder) {
-            openButton = <button className='open-workspace-button' title='Select a folder or a workspace-file to open as your workspace' onClick={this.openWorkspace}>
+            openButton = <button className='theia-button open-workspace-button' title='Select a folder or a workspace-file to open as your workspace'
+                onClick={this.openWorkspace} onKeyUp={this.keyUpHandler}>
                 Open Workspace
             </button>;
         } else {
-            openButton = <button className='open-workspace-button' title='Select a folder as your workspace root' onClick={this.openFolder}>
+            openButton = <button className='theia-button open-workspace-button' title='Select a folder as your workspace root' onClick={this.openFolder}
+                onKeyUp={this.keyUpHandler}>
                 Open Folder
             </button>;
         }
