@@ -1,6 +1,6 @@
 # Theia - Console Extension
 
-See [here](https://github.com/theia-ide/theia) for a detailed documentation.
+See [here](https://github.com/eclipse-theia/theia) for a detailed documentation.
 
 ## License
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)

@@ -204,7 +204,7 @@ export class HtmlHandler implements MiniBrowserEndpointHandler {
 
     priority(): number {
         // Prefer Code Editor over Mini Browser
-        // https://github.com/theia-ide/theia/issues/2051
+        // https://github.com/eclipse-theia/theia/issues/2051
         return 1;
     }
 

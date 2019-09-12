@@ -328,7 +328,7 @@ export class MenusContributionPointHandler {
             // Registering a menu action requires the related command to be already registered.
             // But Theia plugin registers the commands dynamically via the Commands API.
             // Let's wait for ~2 sec. It should be enough to finish registering all the contributed commands.
-            // FIXME: remove this workaround (timer) once the https://github.com/theia-ide/theia/issues/3344 is fixed
+            // FIXME: remove this workaround (timer) once the https://github.com/eclipse-theia/theia/issues/3344 is fixed
             setTimeout(() => this.onDidRegisterCommand(id, cb), 2000);
         }
     }

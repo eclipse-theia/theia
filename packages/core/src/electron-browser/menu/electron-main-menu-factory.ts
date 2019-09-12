@@ -151,7 +151,7 @@ export class ElectronMainMenuFactory {
                     label: node.label,
                     type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
                     checked: this.commandRegistry.isToggled(commandId, ...args),
-                    enabled: true, // https://github.com/theia-ide/theia/issues/446
+                    enabled: true, // https://github.com/eclipse-theia/theia/issues/446
                     visible: true,
                     click: () => this.execute(commandId, args),
                     accelerator
@@ -173,7 +173,7 @@ export class ElectronMainMenuFactory {
         // Key Sequences can't be represented properly in the electron menu.
         //
         // We can do what VS Code does, and append the chords as a suffix to the menu label.
-        // https://github.com/theia-ide/theia/issues/1199#issuecomment-430909480
+        // https://github.com/eclipse-theia/theia/issues/1199#issuecomment-430909480
         if (bindingKeySequence.length > 1) {
             return '';
         }
@@ -184,7 +184,7 @@ export class ElectronMainMenuFactory {
 
     protected async execute(command: string, args: any[]): Promise<void> {
         try {
-            // This is workaround for https://github.com/theia-ide/theia/issues/446.
+            // This is workaround for https://github.com/eclipse-theia/theia/issues/446.
             // Electron menus do not update based on the `isEnabled`, `isVisible` property of the command.
             // We need to check if we can execute it.
             if (this.commandRegistry.isEnabled(command, ...args)) {

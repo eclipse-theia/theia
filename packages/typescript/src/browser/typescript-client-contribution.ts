@@ -107,7 +107,7 @@ export class TypeScriptClientContribution extends BaseLanguageClientContribution
     }
 
     protected get workspaceContains(): string[] {
-        // FIXME requires https://github.com/theia-ide/theia/issues/2359
+        // FIXME requires https://github.com/eclipse-theia/theia/issues/2359
         // return [
         //     "**/tsconfig.json",
         //     "**/jsconfig.json",

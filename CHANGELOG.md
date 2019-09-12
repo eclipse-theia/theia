@@ -2,13 +2,17 @@
 
 ## v0.11.0
 
-- [task] added `tasks.fetchTasks()` and `tasks.executeTask()` to plugins API [#6058](https://github.com/theia-ide/theia/pull/6058)
-- [task] prompt user to choose parser to parse task output [#5877](https://github.com/theia-ide/theia/pull/5877)
+- [task] added `tasks.fetchTasks()` and `tasks.executeTask()` to plugins API [#6058](https://github.com/eclipse-theia/theia/pull/6058)
+- [task] prompt user to choose parser to parse task output [#5877](https://github.com/eclipse-theia/theia/pull/5877)
 
 Breaking changes:
 
-- [core][plugin] support alternative commands in context menus [6069](https://github.com/theia-ide/theia/pull/6069)
-- [workspace] switched `workspace.supportMultiRootWorkspace` to enabled by default [#6089](https://github.com/theia-ide/theia/pull/6089)
+- [core][plugin] support alternative commands in context menus [6069](https://github.com/eclipse-theia/theia/pull/6069)
+- [workspace] switched `workspace.supportMultiRootWorkspace` to enabled by default [#6089](https://github.com/eclipse-theia/theia/pull/6089)
+
+Misc:
+
+This repo was moved to the `eclipse-theia` organization. Though GitHub automatically redirects from the old repo to the new one, we'll use the new one from now on in this file.
 
 ## v0.10.0
 

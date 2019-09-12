@@ -43,12 +43,12 @@ that you are willing to do so and how you would approach it. The team will be
 happy to guide you and give feedback.
 
 We follow the contributing and reviewing pull request guidelines described
-[here](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md).
+[here](https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md).
 
 ## Coding Guidelines
 
 We follow the coding guidelines described
-[here](https://github.com/theia-ide/theia/wiki/Coding-Guidelines).
+[here](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines).
 
 ## Eclipse Contributor Agreement
 

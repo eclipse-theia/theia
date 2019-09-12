@@ -36,7 +36,7 @@ import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key
 
 disableJSDOM();
 
-// TODO: enable tests once the https://github.com/theia-ide/theia/issues/3344 is fixed
+// TODO: enable tests once the https://github.com/eclipse-theia/theia/issues/3344 is fixed
 describe.skip('MenusContributionHandler', () => {
 
     let testContainer: Container;

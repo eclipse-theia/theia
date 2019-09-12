@@ -475,7 +475,7 @@ export function createAPIFactory(
             registerTaskProvider(type: string, provider: theia.TaskProvider): theia.Disposable {
                 return tasks.registerTaskProvider(type, provider);
             },
-            // Experimental API https://github.com/theia-ide/theia/issues/4167
+            // Experimental API https://github.com/eclipse-theia/theia/issues/4167
             onDidRenameFile(listener, thisArg?, disposables?): theia.Disposable {
                 return workspaceExt.onDidRenameFile(listener, thisArg, disposables);
             },

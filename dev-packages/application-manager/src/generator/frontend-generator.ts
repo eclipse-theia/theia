@@ -110,7 +110,7 @@ module.exports = Promise.resolve()${this.compileFrontendModuleImports(frontendMo
 // Useful for Electron/NW.js apps as GUI apps on macOS doesn't inherit the \`$PATH\` define
 // in your dotfiles (.bashrc/.bash_profile/.zshrc/etc).
 // https://github.com/electron/electron/issues/550#issuecomment-162037357
-// https://github.com/theia-ide/theia/pull/3534#issuecomment-439689082
+// https://github.com/eclipse-theia/theia/pull/3534#issuecomment-439689082
 require('fix-path')();
 
 // Workaround for https://github.com/electron/electron/issues/9225. Chrome has an issue where
@@ -293,10 +293,10 @@ app.on('ready', () => {
 
     // We cannot use the \`process.cwd()\` as the application project path (the location of the \`package.json\` in other words)
     // in a bundled electron application because it depends on the way we start it. For instance, on OS X, these are a differences:
-    // https://github.com/theia-ide/theia/issues/3297#issuecomment-439172274
+    // https://github.com/eclipse-theia/theia/issues/3297#issuecomment-439172274
     process.env.THEIA_APP_PROJECT_PATH = resolve(__dirname, '..', '..');
 
-    // Set the electron version for both the dev and the production mode. (https://github.com/theia-ide/theia/issues/3254)
+    // Set the electron version for both the dev and the production mode. (https://github.com/eclipse-theia/theia/issues/3254)
     // Otherwise, the forked backend processes will not know that they're serving the electron frontend.
     const { versions } = process;
     // @ts-ignore
@@ -326,7 +326,7 @@ app.on('ready', () => {
         });
         app.on('quit', () => {
             // If we forked the process for the clusters, we need to manually terminate it.
-            // See: https://github.com/theia-ide/theia/issues/835
+            // See: https://github.com/eclipse-theia/theia/issues/835
             process.kill(cp.pid);
         });
     }

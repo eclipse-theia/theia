@@ -54,7 +54,7 @@ For Windows instructions [click here](#building-on-windows).
  - Node.js `>= 10.2.0` **AND** `< 12.x`.
    - Preferably, **use** version `10.15.3`, it has the [active LTS](https://github.com/nodejs/Release).
    - Node.js `11.x` is untested.
-   - Node.js `12.x` is [unsupported](https://github.com/theia-ide/theia/issues/5117).
+   - Node.js `12.x` is [unsupported](https://github.com/eclipse-theia/theia/issues/5117).
  - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.7.0
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 
@@ -79,7 +79,7 @@ Some additional tools and libraries are needed depending on your platform:
 
 To build and run the browser example:
 
-    git clone https://github.com/theia-ide/theia \
+    git clone https://github.com/eclipse-theia/theia \
     && cd theia \
     && yarn \
     && cd examples/browser \
@@ -89,7 +89,7 @@ Start your browser on http://localhost:3000.
 
 To build and run the Electron example:
 
-    git clone https://github.com/theia-ide/theia \
+    git clone https://github.com/eclipse-theia/theia \
     && cd theia \
     && yarn \
     && yarn run rebuild:electron \
@@ -100,7 +100,7 @@ To build and run the Electron example:
 
 To run the browser example using SSL use:
 
-    git clone https://github.com/theia-ide/theia \
+    git clone https://github.com/eclipse-theia/theia \
     && cd theia \
     && yarn \
     && cd examples/browser \
@@ -112,7 +112,7 @@ Start your browser on https://localhost:3000.
 
 [Gitpod](http://gitpod.io/) is a Theia-based IDE for GitHub.
 You can start by prefixing any GitHub URL in the Theia repository with `gitpod.io/#`:
-- Open http://gitpod.io/#https://github.com/theia-ide/theia to start development with the master branch.
+- Open http://gitpod.io/#https://github.com/eclipse-theia/theia to start development with the master branch.
 - Gitpod will start a properly configured for Theia development workspace, clone and build the Theia repository.
 - After the build is finished, run from the terminal in Gitpod:
 
@@ -121,7 +121,7 @@ You can start by prefixing any GitHub URL in the Theia repository with `gitpod.i
 
 ## Clone the repository
 
-    git clone https://github.com/theia-ide/theia
+    git clone https://github.com/eclipse-theia/theia
 
 The directory containing the Theia repository will now be referred to as
 `$THEIA`, so if you want to copy-paste the examples, you can set the `THEIA`
@@ -340,7 +340,7 @@ Run PowerShell as an administrator and copy-paste the below command:
 Clone, build and run Theia.
 Using Git Bash as administrator:
 
-    git clone https://github.com/theia-ide/theia.git && cd theia && yarn && cd examples/browser && yarn run start
+    git clone https://github.com/eclipse-theia/theia.git && cd theia && yarn && cd examples/browser && yarn run start
 
 ## Troubleshooting
 
@@ -383,7 +383,7 @@ If you have accidentally installed the wrong `yarn` version, you have to remove 
  - Run: choco install yarn --version 1.7.0 -y
 
 [all-in-one packages]: https://github.com/felixrieseberg/windows-build-tools
-[bug]: https://github.com/theia-ide/theia/issues
+[bug]: https://github.com/eclipse-theia/theia/issues
 
 ### macOS
 

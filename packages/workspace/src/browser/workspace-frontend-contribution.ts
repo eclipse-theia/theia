@@ -251,7 +251,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
      * if it was successful. Otherwise, resolves to `undefined`.
      *
      * **Caveat**: this behaves differently on different platforms, the `workspace.supportMultiRootWorkspace` preference value **does** matter,
-     * and `electron`/`browser` version has impact too. See [here](https://github.com/theia-ide/theia/pull/3202#issuecomment-430884195) for more details.
+     * and `electron`/`browser` version has impact too. See [here](https://github.com/eclipse-theia/theia/pull/3202#issuecomment-430884195) for more details.
      *
      * Legend:
      *  - `workspace.supportMultiRootWorkspace` is `false`: => `N`

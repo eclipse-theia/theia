@@ -96,7 +96,7 @@ export class LocalStorageService implements StorageService {
         your browser's local storage or choose to clear all.`;
         this.messageService.warn(ERROR_MESSAGE, READ_INSTRUCTIONS_ACTION, CLEAR_STORAGE_ACTION).then(async selected => {
             if (READ_INSTRUCTIONS_ACTION === selected) {
-                this.windowService.openNewWindow('https://github.com/theia-ide/theia/wiki/Cleaning-Local-Storage', { external: true });
+                this.windowService.openNewWindow('https://github.com/eclipse-theia/theia/wiki/Cleaning-Local-Storage', { external: true });
             } else if (CLEAR_STORAGE_ACTION === selected) {
                 this.clearStorage();
             }

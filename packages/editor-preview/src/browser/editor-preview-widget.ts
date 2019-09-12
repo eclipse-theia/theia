@@ -182,7 +182,7 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
     protected onResize(msg: Widget.ResizeMessage): void {
         if (this.editorWidget_) {
             // Currently autosizing does not work with the Monaco Editor Widget
-            // https://github.com/theia-ide/theia/blob/c86a33b9ee0e5bb1dc49c66def123ffb2cadbfe4/packages/monaco/src/browser/monaco-editor.ts#L461
+            // https://github.com/eclipse-theia/theia/blob/c86a33b9ee0e5bb1dc49c66def123ffb2cadbfe4/packages/monaco/src/browser/monaco-editor.ts#L461
             // After this is supported we can rely on the underlying widget to resize and remove
             // the following if statement. (Without it, the editor will be initialized to its
             // minimum size)

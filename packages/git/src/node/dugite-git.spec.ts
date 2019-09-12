@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 // tslint:disable-next-line:no-implicit-dependencies
- import * as upath from 'upath';
+import * as upath from 'upath';
 
 import * as path from 'path';
 import * as temp from 'temp';
@@ -767,7 +767,7 @@ describe('git', async function (): Promise<void> {
 
 describe('log', function (): void {
 
-    // See https://github.com/theia-ide/theia/issues/2143
+    // See https://github.com/eclipse-theia/theia/issues/2143
     it('should not fail when executed from the repository root', async () => {
         const root = await createTestRepository(track.mkdirSync('log-test'));
         const localUri = FileUri.create(root).toString();
