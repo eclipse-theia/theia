@@ -13,10 +13,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { Event, Emitter } from '@theia/core';
+import { Emitter, Event } from '@theia/core';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { injectable, inject } from 'inversify';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { inject, injectable } from 'inversify';
 
 export const TextEditorService = Symbol('TextEditorService');
 /**
@@ -38,23 +38,17 @@ export class TextEditorServiceImpl implements TextEditorService {
     onTextEditorAdd: Event<MonacoEditor> = this.onTextEditorAddEmitter.event;
     onTextEditorRemove: Event<MonacoEditor> = this.onTextEditorRemoveEmitter.event;
 
-    private editors = new Map<string, MonacoEditor>();
-
     constructor(@inject(EditorManager) private editorManager: EditorManager) {
-        editorManager.onCurrentEditorChanged(this.onEditorChanged);
         editorManager.onCreated(w => this.onEditorCreated(w));
+        editorManager.all.forEach(w => this.onEditorCreated(w));
     }
 
     listTextEditors(): MonacoEditor[] {
-        return Array.from(this.editors.values());
+        return this.editorManager.all.map(w => MonacoEditor.get(w)!).filter(editor => editor !== undefined);
     }
 
     getActiveEditor(): EditorWidget | undefined {
         return this.editorManager.activeEditor;
-    }
-
-    private onEditorChanged(editor: EditorWidget | undefined): void {
-        // console.log(`Current Editor Changed: ${editor}`);
     }
 
     private onEditorCreated(editor: EditorWidget): void {
@@ -66,16 +60,10 @@ export class TextEditorServiceImpl implements TextEditorService {
     }
 
     private onEditorAdded(editor: MonacoEditor): void {
-        if (!this.editors.has(editor.getControl().getId())) {
-            this.editors.set(editor.getControl().getId(), editor);
-            this.onTextEditorAddEmitter.fire(editor);
-        }
-    }
-    private onEditorRemoved(editor: MonacoEditor): void {
-        if (this.editors.has(editor.getControl().getId())) {
-            this.editors.delete(editor.getControl().getId());
-            this.onTextEditorRemoveEmitter.fire(editor);
-        }
+        this.onTextEditorAddEmitter.fire(editor);
     }
 
+    private onEditorRemoved(editor: MonacoEditor): void {
+        this.onTextEditorRemoveEmitter.fire(editor);
+    }
 }
