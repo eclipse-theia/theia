@@ -1095,6 +1095,7 @@ export interface LanguagesExt {
     $provideImplementation(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
     $provideTypeDefinition(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
     $provideDefinition(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
+    $provideDeclaration(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | DefinitionLink[] | undefined>;
     $provideReferences(handle: number, resource: UriComponents, position: Position, context: ReferenceContext, token: CancellationToken): Promise<Location[] | undefined>;
     $provideSignatureHelp(
         handle: number, resource: UriComponents, position: Position, context: SignatureHelpContext, token: CancellationToken
@@ -1149,6 +1150,7 @@ export interface LanguagesMain {
     $registerImplementationProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerTypeDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerDefinitionProvider(handle: number, selector: SerializedDocumentFilter[]): void;
+    $registerDeclarationProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerReferenceProvider(handle: number, selector: SerializedDocumentFilter[]): void;
     $registerSignatureHelpProvider(handle: number, selector: SerializedDocumentFilter[], metadata: theia.SignatureHelpProviderMetadata): void;
     $registerHoverProvider(handle: number, selector: SerializedDocumentFilter[]): void;

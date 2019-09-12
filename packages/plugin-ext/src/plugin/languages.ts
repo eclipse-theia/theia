@@ -80,6 +80,7 @@ import { ColorProviderAdapter } from './languages/color';
 import { RenameAdapter } from './languages/rename';
 import { Event } from '@theia/core/lib/common/event';
 import { CommandRegistryImpl } from './command-registry';
+import { DeclarationAdapter } from './languages/declaration';
 
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
@@ -89,6 +90,7 @@ type Adapter = CompletionAdapter |
     RangeFormattingAdapter |
     OnTypeFormattingAdapter |
     DefinitionAdapter |
+    DeclarationAdapter |
     ImplementationAdapter |
     TypeDefinitionAdapter |
     LinkProviderAdapter |
@@ -247,6 +249,18 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.createDisposable(callId);
     }
     // ### Definition provider end
+
+    // ### Declaration provider begin
+    $provideDeclaration(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | DefinitionLink[] | undefined> {
+        return this.withAdapter(handle, DeclarationAdapter, adapter => adapter.provideDeclaration(URI.revive(resource), position, token));
+    }
+
+    registerDeclarationProvider(selector: theia.DocumentSelector, provider: theia.DeclarationProvider): theia.Disposable {
+        const callId = this.addNewAdapter(new DeclarationAdapter(provider, this.documents));
+        this.proxy.$registerDeclarationProvider(callId, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+    // ### Declaration provider end
 
     // ### Signature help begin
     $provideSignatureHelp(
