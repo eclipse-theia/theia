@@ -20,7 +20,6 @@ import { EditorKeybindingContexts } from '@theia/editor/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
-import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
 import { isOSX } from '@theia/core';
 
 function monaco2BrowserKeyCode(keyCode: monaco.KeyCode): number {
@@ -39,7 +38,11 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
     protected readonly commands: MonacoCommandRegistry;
 
     registerKeybindings(registry: KeybindingRegistry): void {
-        for (const item of KeybindingsRegistry.getDefaultKeybindings()) {
+        const defaultKeybindings = monaco.keybindings.KeybindingsRegistry.getDefaultKeybindings();
+        // register in reverse order to align with Monaco dispatch logic:
+        // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/platform/keybinding/common/keybindingResolver.ts#L302
+        for (let i = defaultKeybindings.length - 1; i >= 0; i--) {
+            const item = defaultKeybindings[i];
             const command = this.commands.validate(item.command);
             if (command) {
                 const raw = item.keybinding;
