@@ -500,7 +500,6 @@ declare module monaco.services {
         readonly languageIdentifier: LanguageIdentifier;
     }
 
-
     export interface ServiceCollection {
         set<T>(id: any, instanceOrDescriptor: T): T;
     }
@@ -958,6 +957,6 @@ declare module monaco.languages {
     export function registerCompletionItemProvider(selector: monaco.modes.LanguageSelector, provider: CompletionItemProvider): IDisposable;
     export function registerColorProvider(selector: monaco.modes.LanguageSelector, provider: DocumentColorProvider): IDisposable;
     export function registerFoldingRangeProvider(selector: monaco.modes.LanguageSelector, provider: FoldingRangeProvider): IDisposable;
-    export function registerDeclarationProvider(selector: monaco.modes.LanguageSelector, provider: FoldingRangeProvider): IDisposable;
+    export function registerDeclarationProvider(selector: monaco.modes.LanguageSelector, provider: DeclarationProvider): IDisposable;
     export function registerSelectionRangeProvider(selector: monaco.modes.LanguageSelector, provider: SelectionRangeProvider): IDisposable;
 }

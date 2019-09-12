@@ -125,6 +125,14 @@ export class LanguagesMainImpl implements LanguagesMain {
         this.disposables.set(handle, disposable);
     }
 
+    $registerDeclarationProvider(handle: number, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const declarationProvider = this.createDeclarationProvider(handle);
+        const disposable = new DisposableCollection();
+        disposable.push(monaco.languages.registerDeclarationProvider(languageSelector, declarationProvider));
+        this.disposables.set(handle, disposable);
+    }
+
     $registerReferenceProvider(handle: number, selector: SerializedDocumentFilter[]): void {
         const languageSelector = fromLanguageSelector(selector);
         const referenceProvider = this.createReferenceProvider(handle);
@@ -403,6 +411,32 @@ export class LanguagesMainImpl implements LanguagesMain {
         return {
             provideDefinition: (model, position, token) =>
                 this.proxy.$provideDefinition(handle, model.uri, position, token).then(result => {
+                    if (!result) {
+                        return undefined;
+                    }
+
+                    if (Array.isArray(result)) {
+                        // using DefinitionLink because Location is mandatory part of DefinitionLink
+                        const definitionLinks: monaco.languages.LocationLink[] = [];
+                        for (const item of result) {
+                            definitionLinks.push({ ...item, uri: monaco.Uri.revive(item.uri) });
+                        }
+                        return definitionLinks;
+                    } else {
+                        // single Location
+                        return <monaco.languages.Location>{
+                            uri: monaco.Uri.revive(result.uri),
+                            range: result.range
+                        };
+                    }
+                })
+        };
+    }
+
+    protected createDeclarationProvider(handle: number): monaco.languages.DeclarationProvider {
+        return {
+            provideDeclaration: (model, position, token) =>
+                this.proxy.$provideDeclaration(handle, model.uri, position, token).then(result => {
                     if (!result) {
                         return undefined;
                     }

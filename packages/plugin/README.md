@@ -539,6 +539,27 @@ function provideDefinitionHandler(document: theia.TextDocument, position: theia.
 The handler will be invoked each time when a user executes `Go To Definition` command.
 It is possible to return a few sources, but for most cases only one is enough. Return `undefined` to provide nothing.
 
+#### Declaration provider
+
+It is possible to provide a declaration for a symbol from within a plugin.
+To do this one may register corresponding provider. For example:
+
+```typescript
+const documentsSelector: theia.DocumentSelector = { scheme: 'file', language: 'typescript' };
+const handler: theia.DeclarationProvider = { provideDeclaration: provideDeclarationHandler };
+
+const disposable = theia.languages.registerDeclarationProvider(documentsSelector, handler);
+
+...
+
+function provideDeclarationHandler(document: theia.TextDocument, position: theia.Position): theia.ProviderResult<theia.Definition | theia.DefinitionLink[]> {
+    // code here
+}
+```
+
+The handler will be invoked each time when a user executes `Go To Declaration` command.
+It is possible to return a few sources, but for most cases only one is enough. Return `undefined` to provide nothing.
+
 #### Implementation provider
 
 It is possible to provide implementation source for a symbol from within plugin.
