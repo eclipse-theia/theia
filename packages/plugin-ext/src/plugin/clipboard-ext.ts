@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2019 RedHat and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,16 +14,24 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
-import { WindowService } from '../../browser/window/window-service';
-import { DefaultWindowService } from '../../browser/window/default-window-service';
-import { FrontendApplicationContribution } from '../frontend-application';
-import { ClipboardService } from '../clipboard-service';
-import { BrowserClipboardService } from '../browser-clipboard-service';
+import * as theia from '@theia/plugin';
+import { RPCProtocol } from '../common/rpc-protocol';
+import { PLUGIN_RPC_CONTEXT, ClipboardMain } from '../common';
 
-export default new ContainerModule(bind => {
-    bind(DefaultWindowService).toSelf().inSingletonScope();
-    bind(WindowService).toService(DefaultWindowService);
-    bind(FrontendApplicationContribution).toService(DefaultWindowService);
-    bind(ClipboardService).to(BrowserClipboardService).inSingletonScope();
-});
+export class ClipboardExt implements theia.Clipboard {
+
+    protected readonly proxy: ClipboardMain;
+
+    constructor(rpc: RPCProtocol) {
+        this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.CLIPBOARD_MAIN);
+    }
+
+    readText(): Promise<string> {
+        return this.proxy.$readText();
+    }
+
+    writeText(value: string): Promise<void> {
+        return this.proxy.$writeText(value);
+    }
+
+}

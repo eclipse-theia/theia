@@ -2952,6 +2952,24 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * The clipboard provides read and write access to the system's clipboard.
+     */
+    export interface Clipboard {
+
+        /**
+         * Read the current clipboard contents as text.
+         * @returns A thenable that resolves to a string.
+         */
+        readText(): PromiseLike<string>;
+
+        /**
+         * Writes text into the clipboard.
+         * @returns A thenable that resolves when writing happened.
+         */
+        writeText(value: string): PromiseLike<void>;
+    }
+
+    /**
      * A uri handler is responsible for handling system-wide [uris](#Uri).
      *
      * @see [window.registerUriHandler](#window.registerUriHandler).
@@ -4732,6 +4750,11 @@ declare module '@theia/plugin' {
          * Represents the preferred user-language, like `de-CH`, `fr`, or `en-US`.
          */
         export const language: string;
+
+        /**
+         * The system clipboard.
+         */
+        export const clipboard: Clipboard;
 
         /**
          * A unique identifier for the computer.
