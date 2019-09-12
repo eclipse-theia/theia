@@ -66,9 +66,9 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
      * Instead of going to the backend with each file URI to ask whether it can handle the current file or not,
      * we have this map of extension and priority pairs that we populate at application startup.
      * The real advantage of this approach is the following: [Phosphor cannot run async code when invoking `isEnabled`/`isVisible`
-     * for the command handlers](https://github.com/theia-ide/theia/issues/1958#issuecomment-392829371)
+     * for the command handlers](https://github.com/eclipse-theia/theia/issues/1958#issuecomment-392829371)
      * so the menu item would be always visible for the user even if the file type cannot be handled eventually.
-     * Hopefully, we could get rid of this hack once we have migrated the existing Phosphor code to [React](https://github.com/theia-ide/theia/issues/1915).
+     * Hopefully, we could get rid of this hack once we have migrated the existing Phosphor code to [React](https://github.com/eclipse-theia/theia/issues/1915).
      */
     protected readonly supportedExtensions: Map<string, number> = new Map();
 

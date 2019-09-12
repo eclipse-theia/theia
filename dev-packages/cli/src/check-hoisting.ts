@@ -19,8 +19,8 @@ import * as path from 'path';
 
 /**
  * This script makes sure all the dependencies are hoisted into the root `node_modules` after running `yarn`.
- *  - https://github.com/theia-ide/theia/pull/2994#issuecomment-425447650
- *  - https://github.com/theia-ide/theia/pull/2994#issuecomment-425649817
+ *  - https://github.com/eclipse-theia/theia/pull/2994#issuecomment-425447650
+ *  - https://github.com/eclipse-theia/theia/pull/2994#issuecomment-425649817
  *
  * If you do not want to bail the execution: `theia check:hoisted -s`
  */

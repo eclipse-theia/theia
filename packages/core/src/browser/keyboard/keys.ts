@@ -336,7 +336,7 @@ export namespace KeyCode {
         const code = event.code;
         if (code) {
             if (isOSX) {
-                // https://github.com/theia-ide/theia/issues/4986
+                // https://github.com/eclipse-theia/theia/issues/4986
                 const char = event.key;
                 if (code === 'IntlBackslash' && (char === '`' || char === '~')) {
                     return Key.BACKQUOTE;

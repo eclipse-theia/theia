@@ -27,7 +27,7 @@ export class JsonContribution extends BaseLanguageServerContribution {
     readonly name = JSON_LANGUAGE_NAME;
 
     async start(clientConnection: IConnection): Promise<void> {
-        // Same as https://github.com/theia-ide/theia/commit/de45794a90fc1a1a590578026f8ad527127afa0a
+        // Same as https://github.com/eclipse-theia/theia/commit/de45794a90fc1a1a590578026f8ad527127afa0a
         const command = process.execPath;
         const args: string[] = [
             path.resolve(__dirname, './json-starter'),

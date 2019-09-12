@@ -81,7 +81,7 @@ export class LanguageClientFactory {
     }
 
     /**
-     * see https://github.com/theia-ide/theia/issues/4085
+     * see https://github.com/eclipse-theia/theia/issues/4085
      * remove when monaco-languageclient is upgraded to latest vscode-languageclient
      */
     protected patch4085(client: MonacoLanguageClient): MonacoLanguageClient {

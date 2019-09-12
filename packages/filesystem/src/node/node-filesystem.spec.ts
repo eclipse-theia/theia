@@ -368,7 +368,7 @@ describe('NodeFileSystem', function (): void {
 
         it('Moving a non-empty directory to an empty directory. Source folder and its content should be moved to the target location.', async function (): Promise<void> {
             if (isWindows) {
-                // https://github.com/theia-ide/theia/issues/2088
+                // https://github.com/eclipse-theia/theia/issues/2088
                 this.skip();
                 return;
             }

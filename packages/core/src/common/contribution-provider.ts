@@ -60,7 +60,7 @@ export type Bindable = interfaces.Bind | interfaces.Container;
 export namespace Bindable {
     export function isContainer(arg: Bindable): arg is interfaces.Container {
         return typeof arg !== 'function'
-            // https://github.com/theia-ide/theia/issues/3204#issue-371029654
+            // https://github.com/eclipse-theia/theia/issues/3204#issue-371029654
             // In InversifyJS `4.14.0` containers no longer have a property `guid`.
             && ('guid' in arg || 'parent' in arg);
     }

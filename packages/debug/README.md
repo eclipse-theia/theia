@@ -1,7 +1,7 @@
 ## Architecture
 `DebugService` is used to initialize a new `DebugSession`. This service provides functionality to configure and to start a new debug session. The workflow is the following. If user wants to debug an application and there is no debug configuration associated with the application then the list of available debuggers is requested to create a suitable debug configuration. When configuration is chosen it is possible to alter the configuration by filling in missing values or by adding/changing/removing attributes.
 
-In most cases the default behavior of the `DebugSession` is enough. But it is possible to provide its own implementation. The `DebugSessionFactory` is used for this purpose via `DebugSessionContribution`. Documented model objects are located [here](https://github.com/theia-ide/theia/tree/master/packages/debug/src/browser/debug-model.ts)
+In most cases the default behavior of the `DebugSession` is enough. But it is possible to provide its own implementation. The `DebugSessionFactory` is used for this purpose via `DebugSessionContribution`. Documented model objects are located [here](https://github.com/eclipse-theia/theia/tree/master/packages/debug/src/browser/debug-model.ts)
 
 ### Debug Session life-cycle API
 `DebugSession` life-cycle is controlled and can be tracked as follows:
@@ -14,14 +14,14 @@ In most cases the default behavior of the `DebugSession` is enough. But it is po
 `ExtDebugProtocol.AggregatedBreakpoint` is used to handle breakpoints on the client side. It covers all three breakpoint types: `DebugProtocol.SourceBreakpoint`, `DebugProtocol.FunctionBreakpoint` and `ExtDebugProtocol.ExceptionBreakpoint`. It is possible to identify a breakpoint type with help of `DebugUtils`. Notification about added, removed, or changed breakpoints is received via `onDidChangeBreakpoints`.
 
 ### Server side
-At the back-end we start a debug adapter using `DebugAdapterFactory` and then a `DebugAdapterSession` is instantiated which works as a proxy between client and debug adapter. If a default implementation of the debug adapter session does not fit needs, it is possible to provide its own implementation using `DebugAdapterSessionFactory`. If so, it is recommended to extend the default implementation of the `DebugAdapterSession`. Documented model objects are located [here](https://github.com/theia-ide/theia/tree/master/packages/debug/src/node/debug-model.ts)
+At the back-end we start a debug adapter using `DebugAdapterFactory` and then a `DebugAdapterSession` is instantiated which works as a proxy between client and debug adapter. If a default implementation of the debug adapter session does not fit needs, it is possible to provide its own implementation using `DebugAdapterSessionFactory`. If so, it is recommended to extend the default implementation of the `DebugAdapterSession`. Documented model objects are located [here](https://github.com/eclipse-theia/theia/tree/master/packages/debug/src/node/debug-model.ts)
 
 `DebugSessionState` accumulates debug adapter events and is used to restore debug session on the client side when page is refreshed. 
 
 ## How to contribute a new debugger
 `DebugAdapterContribution` is a contribution point for all debug adapters to provide and resolve debug configuration.
 
-Here is an example of [debug adapter contribution for node](https://github.com/theia-ide/theia/tree/master/packages/debug-nodejs/src/node/debug-nodejs.ts)
+Here is an example of [debug adapter contribution for node](https://github.com/eclipse-theia/theia/tree/master/packages/debug-nodejs/src/node/debug-nodejs.ts)
 
 ## References
 * [Debug Adapter Protocol](https://github.com/Microsoft/vscode-debugadapter-node/blob/master/protocol/src/debugProtocol.ts)

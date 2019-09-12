@@ -69,7 +69,7 @@ export class LocationListRenderer extends ReactRenderer {
                 } else {
                     // This is necessary for Windows to be able to show `/e:/` as a drive and `c:` as "non-drive" in the same way.
                     // `URI.path.toString()` Vs. `URI.displayName` behaves a bit differently on Windows.
-                    // https://github.com/theia-ide/theia/pull/3038#issuecomment-425944189
+                    // https://github.com/eclipse-theia/theia/pull/3038#issuecomment-425944189
                     locations[index].isDrive = true;
                 }
             });

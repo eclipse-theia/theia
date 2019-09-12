@@ -344,7 +344,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return true;
     }
 
-    // Experimental API https://github.com/theia-ide/theia/issues/4167
+    // Experimental API https://github.com/eclipse-theia/theia/issues/4167
     private workspaceWillRenameFileEmitter = new Emitter<theia.FileWillRenameEvent>();
     private workspaceDidRenameFileEmitter = new Emitter<theia.FileRenameEvent>();
 

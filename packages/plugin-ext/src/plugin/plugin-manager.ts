@@ -170,7 +170,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             this.setActivation(`onPlugin:${plugin.model.id}`, activation);
             const unsupportedActivationEvents = plugin.rawModel.activationEvents.filter(e => !PluginManagerExtImpl.SUPPORTED_ACTIVATION_EVENTS.has(e.split(':')[0]));
             if (unsupportedActivationEvents.length) {
-                console.warn(`Unsupported activation events: ${unsupportedActivationEvents.join(', ')}, please open an issue: https://github.com/theia-ide/theia/issues/new`);
+                console.warn(`Unsupported activation events: ${unsupportedActivationEvents.join(', ')}, please open an issue: https://github.com/eclipse-theia/theia/issues/new`);
                 console.warn(`${plugin.model.id} extension will be activated eagerly.`);
                 this.setActivation('*', activation);
             } else {

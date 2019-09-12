@@ -146,7 +146,7 @@ In .theia/tasks.json, add the following:
    }
 ```
 
-If you want a description for each task field, see [theia/packages/task/src/browser/task-schema-updater.ts]( https://github.com/theia-ide/theia/blob/531aa3bde8dea7f022ea41beaee3aace65ce54de/packages/task/src/browser/task-schema-updater.ts#L62 )
+If you want a description for each task field, see [theia/packages/task/src/browser/task-schema-updater.ts]( https://github.com/eclipse-theia/theia/blob/531aa3bde8dea7f022ea41beaee3aace65ce54de/packages/task/src/browser/task-schema-updater.ts#L62 )
 
 ```bash
 When there is no compilation database, clang-tidy could run but you may need to be more specific which files to select. One way is to replace the "args" from the "*" to

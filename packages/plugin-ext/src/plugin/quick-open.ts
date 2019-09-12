@@ -376,7 +376,7 @@ export class QuickInputExt implements QuickInput {
 
 /**
  * Base implementation of {@link InputBox} that uses {@link QuickOpenExt}.
- * Missing functionality is going to be implemented in the scope of https://github.com/theia-ide/theia/issues/5109
+ * Missing functionality is going to be implemented in the scope of https://github.com/eclipse-theia/theia/issues/5109
  */
 export class InputBoxExt extends QuickInputExt implements InputBox {
 
@@ -490,7 +490,7 @@ export class InputBoxExt extends QuickInputExt implements InputBox {
 
 /**
  * Base implementation of {@link QuickPick} that uses {@link QuickOpenExt}.
- * Missing functionality is going to be implemented in the scope of https://github.com/theia-ide/theia/issues/5059
+ * Missing functionality is going to be implemented in the scope of https://github.com/eclipse-theia/theia/issues/5059
  */
 export class QuickPickExt<T extends QuickPickItem> extends QuickInputExt implements QuickPick<T> {
 

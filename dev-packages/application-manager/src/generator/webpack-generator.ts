@@ -106,7 +106,7 @@ module.exports = {
                 }
             },
             {
-                // see https://github.com/theia-ide/theia/issues/556
+                // see https://github.com/eclipse-theia/theia/issues/556
                 test: /source-map-support/,
                 loader: 'ignore-loader'
             },

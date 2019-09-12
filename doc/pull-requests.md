@@ -2,7 +2,7 @@
 
 This document clarifies rules and expectations of contributing and reviewing pull requests.
 It is structured as a list of rules which can be referenced on a PR to moderate and drive discussions.
-If a rule causes distress during discussions itself, it has to be reviewed on [the dev meeting](https://github.com/theia-ide/theia/wiki/Dev-Meetings) and updated.
+If a rule causes distress during discussions itself, it has to be reviewed on [the dev meeting](https://github.com/eclipse-theia/theia/wiki/Dev-Meetings) and updated.
 
  - [**Opening a Pull Request**](#opening-a-pull-request)
  - [**Requesting a Review**](#requesting-a-review)
@@ -21,7 +21,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 Thank you for your Pull Request. Please provide a description and review
 the requirements below.
 
-Contributors guide: https://github.com/theia-ide/theia/blob/master/CONTRIBUTING.md
+Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md
 -->
 
 #### What it does
@@ -32,11 +32,11 @@ Contributors guide: https://github.com/theia-ide/theia/blob/master/CONTRIBUTING.
 
 #### Review checklist
 
-- [ ] as an author, I have thoroughly tested my changes and carefully followed [the review guidelines](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md#requesting-a-review)
+- [ ] as an author, I have thoroughly tested my changes and carefully followed [the review guidelines](https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#requesting-a-review)
 
 #### Reminder for reviewers
 
-- as a reviewer, I agree to review in accordance with [the review guidelines](https://github.com/theia-ide/theia/blob/master/doc/pull-requests.md#reviewing)
+- as a reviewer, I agree to review in accordance with [the review guidelines](https://github.com/eclipse-theia/theia/blob/master/doc/pull-requests.md#reviewing)
 
 ```
 
@@ -63,19 +63,19 @@ Contributors guide: https://github.com/theia-ide/theia/blob/master/CONTRIBUTING.
 <a name="checklist-build-and-test"></a>
 - [1.](#checklist-build-and-test) The new code is built and tested according to the `How to test` section of a PR description.
 <a name="checklist-project-org"></a>
-- [2.](#checklist-project-org) The new code is aligned with the [project organization](https://github.com/theia-ide/theia/wiki/Code-Organization) and [coding conventions](https://github.com/theia-ide/theia/wiki/Coding-Guidelines).
+- [2.](#checklist-project-org) The new code is aligned with the [project organization](https://github.com/eclipse-theia/theia/wiki/Code-Organization) and [coding conventions](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines).
 <a name="checklist-changelog"></a>
-- [3.](#checklist-changelog) [Changelog](https://github.com/theia-ide/theia/blob/master/CHANGELOG.md) is updated.
+- [3.](#checklist-changelog) [Changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md) is updated.
 <a name="checklist-breaking-changes"></a>
-- [4.](#checklist-breaking-changes) Breaking changes are justified and recorded in the [changelog](https://github.com/theia-ide/theia/blob/master/CHANGELOG.md).
+- [4.](#checklist-breaking-changes) Breaking changes are justified and recorded in the [changelog](https://github.com/eclipse-theia/theia/blob/master/CHANGELOG.md).
 <a name="checklist-dependencies"></a>
-- [5.](#checklist-dependencies) New dependencies are justified and [verified](https://github.com/theia-ide/theia/wiki/Registering-CQs#wip---new-ecd-theia-intellectual-property-clearance-approach-experimental).
+- [5.](#checklist-dependencies) New dependencies are justified and [verified](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#wip---new-ecd-theia-intellectual-property-clearance-approach-experimental).
 <a name="checklist-copied-code"></a>
-- [6.](#checklist-copied-code) Copied code is justified and [approved via a CQ](https://github.com/theia-ide/theia/wiki/Registering-CQs#case-3rd-party-project-code-copiedforked-from-another-project-into-eclipse-theia-maintained-by-us).
+- [6.](#checklist-copied-code) Copied code is justified and [approved via a CQ](https://github.com/eclipse-theia/theia/wiki/Registering-CQs#case-3rd-party-project-code-copiedforked-from-another-project-into-eclipse-theia-maintained-by-us).
 <a name="checklist-copyright"></a>
 - [7.](#checklist-copyright) Each new file has proper copyright with the current year and the name of contributing entity (individual or company).
 <a name="checklist-sign-off"></a>
-- [8.](#checklist-sign-off) Commits are signed-off: https://github.com/theia-ide/theia/blob/master/CONTRIBUTING.md#sign-your-work.
+- [8.](#checklist-sign-off) Commits are signed-off: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work.
 <a name="checklist-meaningful-commity"></a>
 - [9.](#checklist-meaningful-commit) Each commit has meaningful title and a body that explains what it does. One can take inspiration from the `What it does` section from the PR.
 <a name="checklist-commit-history"></a>
@@ -104,8 +104,8 @@ Contributors guide: https://github.com/theia-ide/theia/blob/master/CONTRIBUTING.
 - [3.](#changes-no-out-of-scope) Changes cannot be requested if they address issues out of the scope of a PR.
   - Such change requests should be dismissed and an issue should be filed to address them separately.
 <a name="changes-style-agreement"></a>
-- [4.](#changes-style-agreement) Styles and coding preferences should not be discussed on the PR, but raised in [the dev meeting](https://github.com/theia-ide/theia/wiki/Dev-Meetings),
-  agreed by the team, applied to [the coding guidelines](https://github.com/theia-ide/theia/wiki/Coding-Guidelines) and after that followed by all contributors.
+- [4.](#changes-style-agreement) Styles and coding preferences should not be discussed on the PR, but raised in [the dev meeting](https://github.com/eclipse-theia/theia/wiki/Dev-Meetings),
+  agreed by the team, applied to [the coding guidelines](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines) and after that followed by all contributors.
 
 ### Approving
 
@@ -122,7 +122,7 @@ then a reviewer should be encouraged to open an alternative PR or collaborate on
 <a name="completing-pr"></a>
 - [2.](#completing-pr) If a PR is important, but an author cannot or does not want to address outstanding issues,
 then maintainers can complete the PR with additional commits
-given that author commits are preserved, [signed-off](https://github.com/theia-ide/theia/blob/master/CONTRIBUTING.md#sign-your-work) and an author accepted the [ECA](https://github.com/theia-ide/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement).
+given that author commits are preserved, [signed-off](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work) and an author accepted the [ECA](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement).
 <a name="suggesting-help-on-pr"></a>
 - [3.](#suggesting-help-on-pr) Reviewers have to suggest his help via a comment to avoid intervening in an author work.
 <a name="landing-stale-pr"></a>
@@ -133,7 +133,7 @@ given that author commits are preserved, [signed-off](https://github.com/theia-i
 <a name="landing-pr"></a>
 - [1.](#landing-pr) A PR can be landed when:
   - CI build has succeeded.
-  - The author has accepted the [Eclipse Contributor Agreement](https://github.com/theia-ide/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement).
+  - The author has accepted the [Eclipse Contributor Agreement](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement).
   - All checks from [the review checklist](#pull-request-review-checklist) are approved by at least one reviewer.
   - There are no unresolved review comments.
 
@@ -154,4 +154,4 @@ then an author and maintainers have 2 days to resolve them after that a PR has t
   Such changes have to be done by an experienced maintainer to avoid regressions and long reviews.
   - It should be a 3rd party component, e.g. Theia is not a logging framework or a proxy server.
   - It changes development infrastructure, e.g. testing frameworks, packaging and so on.
-Such changes have to be done by active maintainers after agreement in [the dev meeting](https://github.com/theia-ide/theia/wiki/Dev-Meetings).
+Such changes have to be done by active maintainers after agreement in [the dev meeting](https://github.com/eclipse-theia/theia/wiki/Dev-Meetings).
