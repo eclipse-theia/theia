@@ -42,7 +42,7 @@ export interface Event<T> {
 
 export namespace Event {
     const _disposable = { dispose(): void { } };
-    export const None: Event<any> = Object.assign(function ():  { dispose(): void } { return _disposable; }, {
+    export const None: Event<any> = Object.assign(function (): { dispose(): void } { return _disposable; }, {
         get maxListeners(): number { return 0; },
         set maxListeners(maxListeners: number) { }
     });
@@ -195,8 +195,8 @@ export class Emitter<T> {
 
                 return result;
             }, {
-                    maxListeners: 30
-                }
+                maxListeners: 30
+            }
             );
         }
         return this._event;
@@ -208,7 +208,7 @@ export class Emitter<T> {
         }
         const count = this._callbacks.length;
         if (count > maxListeners) {
-            console.warn(new Error(`Possible Emitter memory leak detected. ${maxListeners} exit listeners added. Use event.maxListeners to increase limit`));
+            console.warn(new Error(`Possible Emitter memory leak detected. ${count} listeners added. Use event.maxListeners to increase the limit (${maxListeners})`));
         }
     }
 
