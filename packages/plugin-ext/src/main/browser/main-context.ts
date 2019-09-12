@@ -40,6 +40,7 @@ import { DebugMainImpl } from './debug/debug-main';
 import { FileSystemMainImpl } from './file-system-main';
 import { ScmMainImpl } from './scm-main';
 import { DecorationsMainImpl } from './decorations/decorations-main';
+import { ClipboardMainImpl } from './clipboard-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -113,4 +114,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const windowMain = new WindowStateMain(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.WINDOW_MAIN, windowMain);
+
+    const clipboardMain = new ClipboardMainImpl(container);
+    rpc.set(PLUGIN_RPC_CONTEXT.CLIPBOARD_MAIN, clipboardMain);
 }
