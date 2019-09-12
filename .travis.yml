@@ -123,11 +123,19 @@ jobs:
   fast_finish: true
   allow_failures:
     - os: osx
+    - os: windows
   include:
   - stage: test
     os: linux
   - os: osx
     env: CXX=c++
+    before_script: skip
+    script:
+      - travis_retry yarn test:theia
+  - os: windows
+    env: 
+    - CXX=c++
+    - YARN_GPG=no
     before_script: skip
     script:
       - travis_retry yarn test:theia
