@@ -11,7 +11,6 @@
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/help%20wanted)
   [![Spectrum](https://img.shields.io/badge/Chat-on%20Spectrum-blue.svg)](https://spectrum.chat/theia)
   [![Build Status](https://travis-ci.org/eclipse-theia/theia.svg?branch=master)](https://travis-ci.org/eclipse-theia/theia)
-  [![Build status](https://ci.appveyor.com/api/projects/status/02s4d40orokl3njl/branch/master?svg=true)](https://ci.appveyor.com/project/kittaakos/theia/branch/master)
   [![Open questions](https://img.shields.io/badge/Open-questions-blue.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/question)
   [![Open bugs](https://img.shields.io/badge/Open-bugs-red.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/bug)
 
@@ -107,6 +106,6 @@ Read below how to engage with Theia community:
 
 
 ## Trademark
-"Theia" is a trademark of the Eclipse Foundation 
+"Theia" is a trademark of the Eclipse Foundation
 https://www.eclipse.org/theia
 
