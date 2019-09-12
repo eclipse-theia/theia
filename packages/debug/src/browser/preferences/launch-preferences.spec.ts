@@ -27,7 +27,7 @@ import { Container } from 'inversify';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { PreferenceService, PreferenceServiceImpl, PreferenceScope } from '@theia/core/lib/browser/preferences/preference-service';
-import { bindPreferenceService, bindMessageService, bindResourceProvider } from '@theia/core/lib/browser/frontend-application-module';
+import { bindPreferenceService, bindMessageService, bindResourceProvider } from '@theia/core/lib/browser/frontend-application-bindings';
 import { bindFileSystem } from '@theia/filesystem/lib/node/filesystem-backend-module';
 import { bindFileResource } from '@theia/filesystem/lib/browser/filesystem-frontend-module';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';

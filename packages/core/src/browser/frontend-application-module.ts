@@ -15,17 +15,17 @@
  ********************************************************************************/
 
 import '../../src/browser/style/index.css';
+require('../../src/browser/style/materialcolors.css').use();
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
 
-import { ContainerModule, interfaces } from 'inversify';
+import { ContainerModule } from 'inversify';
 import {
     bindContributionProvider,
     SelectionService,
-    ResourceProvider, ResourceResolver, DefaultResourceProvider,
+    ResourceResolver,
     CommandContribution, CommandRegistry, CommandService, commandServicePath,
     MenuModelRegistry, MenuContribution,
-    MessageService,
     MessageClient,
     InMemoryResources,
     messageServicePath
@@ -51,10 +51,7 @@ import {
 import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
-import {
-    PreferenceProviderProvider, PreferenceProvider, PreferenceScope, PreferenceService,
-    PreferenceServiceImpl, bindPreferenceSchemaProvider, PreferenceSchemaProvider
-} from './preferences';
+import { PreferenceService } from './preferences';
 import { ContextMenuRenderer } from './context-menu-renderer';
 import { ThemingCommandContribution, ThemeService, BuiltinThemeProvider } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
@@ -85,6 +82,9 @@ import { DispatchingProgressClient } from './progress-client';
 import { ProgressStatusBarItem } from './progress-status-bar-item';
 import { TabBarDecoratorService, TabBarDecorator } from './shell/tab-bar-decorator';
 import { ContextMenuContext } from './menu/context-menu-context';
+import { bindResourceProvider, bindMessageService, bindPreferenceService } from './frontend-application-bindings';
+
+export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
@@ -287,29 +287,3 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(ContextMenuContext).toSelf().inSingletonScope();
 });
-
-export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
-    bind(MessageClient).toSelf().inSingletonScope();
-    return bind(MessageService).toSelf().inSingletonScope();
-}
-
-export function bindPreferenceService(bind: interfaces.Bind): void {
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.User);
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
-    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
-        if (scope === PreferenceScope.Default) {
-            return ctx.container.get(PreferenceSchemaProvider);
-        }
-        return ctx.container.getNamed(PreferenceProvider, scope);
-    });
-    bind(PreferenceServiceImpl).toSelf().inSingletonScope();
-    bind(PreferenceService).toService(PreferenceServiceImpl);
-    bindPreferenceSchemaProvider(bind);
-}
-
-export function bindResourceProvider(bind: interfaces.Bind): void {
-    bind(DefaultResourceProvider).toSelf().inSingletonScope();
-    bind(ResourceProvider).toProvider(context => uri => context.container.get(DefaultResourceProvider).get(uri));
-    bindContributionProvider(bind, ResourceResolver);
-}
