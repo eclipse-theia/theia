@@ -70,7 +70,7 @@ export interface FrontendApplicationContribution {
     initializeLayout?(app: FrontendApplication): MaybePromise<void>;
 
     /**
-     * An event is emmited when a layout is initialized, but before the shell is attached.
+     * An event is emitted when a layout is initialized, but before the shell is attached.
      */
     onDidInitializeLayout?(app: FrontendApplication): MaybePromise<void>;
 }
@@ -173,6 +173,14 @@ export class FrontendApplication {
         if (isOSX) {
             document.body.addEventListener('wheel', preventNavigation, { passive: false });
         }
+        // Prevent the default browser behavior when dragging and dropping files into the window.
+        window.addEventListener('dragover', event => {
+            event.preventDefault();
+        }, false);
+        window.addEventListener('drop', event => {
+            event.preventDefault();
+        }, false);
+
     }
 
     /**
@@ -231,7 +239,7 @@ export class FrontendApplication {
         } catch (error) {
             if (ApplicationShellLayoutMigrationError.is(error)) {
                 console.warn(error.message);
-                console.info('Initializing the defaut layout instead...');
+                console.info('Initializing the default layout instead...');
             } else {
                 console.error('Could not restore layout', error);
             }
