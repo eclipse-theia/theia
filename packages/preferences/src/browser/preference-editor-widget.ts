@@ -56,6 +56,7 @@ export class PreferenceEditorTabHeaderRenderer extends TabBar.Renderer {
 
     renderTab(data: TabBar.IRenderData<PreferencesEditorWidget>): VirtualElement {
         const title = data.title;
+        title.closable = false;
         const key = this.createTabKey(data);
         const style = this.createTabStyle(data);
         const className = this.createTabClass(data);
