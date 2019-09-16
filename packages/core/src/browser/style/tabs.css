@@ -75,6 +75,10 @@
 | Tabs in the center area (main and bottom)
 |----------------------------------------------------------------------------*/
 
+#theia-main-content-panel .p-Widget.p-DockPanel-widget {
+  background-color: var(--theia-layout-color0);
+}
+
 /* This is a current tab of a tab bar: each tab bar has 1. */
 .p-TabBar .p-TabBar-tab.p-mod-current {
   min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));

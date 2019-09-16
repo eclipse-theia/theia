@@ -37,6 +37,11 @@
   border-left: var(--theia-border-width) solid var(--theia-border-color1);
 }
 
+.p-DockPanel-handle[data-orientation='horizontal']:after {
+  background-color: var(--theia-layout-color0);
+  border-left: var(--theia-border-width) solid var(--theia-border-color1);
+}
+
 .p-DockPanel-overlay {
   background: rgba(33, 150, 243, 0.1);
   border: var(--theia-border-width) dashed var(--theia-brand-color1);
