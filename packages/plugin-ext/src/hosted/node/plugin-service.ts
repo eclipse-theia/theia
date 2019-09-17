@@ -16,7 +16,7 @@
 import { injectable, inject, named, postConstruct } from 'inversify';
 import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployer } from '../../common/plugin-protocol';
 import { HostedPluginSupport } from './hosted-plugin';
-import { ILogger } from '@theia/core';
+import { ILogger, Disposable } from '@theia/core';
 import { ContributionProvider } from '@theia/core';
 import { ExtPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
@@ -39,13 +39,15 @@ export class HostedPluginServerImpl implements HostedPluginServer {
 
     protected client: HostedPluginClient | undefined;
 
+    protected deployedListener: Disposable;
+
     constructor(
         @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport) {
     }
 
     @postConstruct()
     protected init(): void {
-        this.pluginDeployer.onDidDeploy(() => {
+        this.deployedListener = this.pluginDeployer.onDidDeploy(() => {
             if (this.client) {
                 this.client.onDidDeploy();
             }
@@ -54,6 +56,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
 
     dispose(): void {
         this.hostedPlugin.clientClosed();
+        this.deployedListener.dispose();
     }
     setClient(client: HostedPluginClient): void {
         this.client = client;
