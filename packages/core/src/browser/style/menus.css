@@ -68,7 +68,7 @@
 
 
 .p-MenuBar-item.p-mod-disabled {
-  opacity: 0.4;
+  opacity: var(--theia-mod-disabled-opacity);;
 }
 
 
@@ -123,7 +123,7 @@
 
 
 .p-Menu-item.p-mod-disabled {
-  opacity: 0.4;
+  opacity: var(--theia-mod-disabled-opacity);;
 }
 
 

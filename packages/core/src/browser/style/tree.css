@@ -124,7 +124,7 @@
 .theia-tree-source-node-placeholder {
     text-align: center;
     font-style: italic;
-    opacity: 0.4;
+    opacity: var(--theia-mod-disabled-opacity);;
 }
 
 .theia-tree-element-node {

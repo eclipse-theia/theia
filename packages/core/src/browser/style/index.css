@@ -78,7 +78,7 @@ body {
 }
 
 .theia-mod-disabled {
-  opacity: 0.4;
+  opacity: var(--theia-mod-disabled-opacity);
 }
 
 .theia-header {

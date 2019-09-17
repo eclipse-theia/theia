@@ -383,7 +383,8 @@
 }
 
 .replace-all-button.disabled {
-    opacity: 0.5;
+    opacity: var(--theia-mod-disabled-opacity);;
+    cursor: default;
 }
 
 .search-in-workspace-tab-icon {
