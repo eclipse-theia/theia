@@ -160,11 +160,9 @@
 }
 
 .t-siw-search-container .searchHeader .button-container {
-    text-align: right;
-    padding-right: 5px;
-    padding-top: 5px;
+    text-align: center;
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
 }
 
 .t-siw-search-container .searchHeader .search-field .option,
@@ -187,8 +185,16 @@
     justify-content: center;
 }
 
+.t-siw-search-container .searchHeader .search-details {
+    position: relative;
+    padding-top: 5px;
+}
+
 .t-siw-search-container .searchHeader .search-details .button-container {
-    height: 5px;
+    position: absolute;
+    width: 25px;
+    top:0;
+    right:0;
 }
 
 .t-siw-search-container .searchHeader .search-details .button-container .btn{
@@ -201,7 +207,7 @@
 
 .t-siw-search-container .searchHeader .glob-field-container .glob-field {
     margin-bottom: 8px;
-    margin-left: 17px;
+    margin-left: 14px;
     display: flex;
     flex-direction: column;
 }
@@ -373,6 +379,7 @@
     height: 100%;
     display: inline-block;
     background: var(--theia-icon-replace-all) no-repeat center;
+    cursor: pointer;
 }
 
 .result-node-buttons .replace-result {
