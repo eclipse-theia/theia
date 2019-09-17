@@ -51,7 +51,7 @@
     background-repeat: no-repeat;
     display: inline-block;
     width: 21px;
-    opacity: 0.25;
+    opacity: var(--theia-mod-disabled-opacity);;
 }
 
 #outputView #outputClear.enabled {

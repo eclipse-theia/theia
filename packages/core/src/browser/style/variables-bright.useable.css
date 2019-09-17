@@ -263,4 +263,6 @@ is not optimized for dense, information rich UIs.
   /* Output */
   --theia-output-font-color: var(--theia-ui-font-color1);
   
+  /* Opacity for disabled mod  */
+  --theia-mod-disabled-opacity: 0.4;
 }
