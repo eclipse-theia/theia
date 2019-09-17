@@ -54,6 +54,7 @@
 .p-MenuBar-item.p-mod-active {
   background: var(--theia-menu-color2);
   color: var(--theia-ui-bar-font-color0);
+  opacity: 1;
 }
 
 
@@ -67,7 +68,7 @@
 
 
 .p-MenuBar-item.p-mod-disabled {
-  color: var(--theia-ui-font-color2);
+  opacity: 0.4;
 }
 
 
@@ -117,11 +118,12 @@
 .p-Menu-item.p-mod-active {
   background: var(--theia-menu-color2);
   color: var(--theia-ui-bar-font-color0);
+  opacity: 1;
 }
 
 
 .p-Menu-item.p-mod-disabled {
-  color: var(--theia-ui-font-color2);
+  opacity: 0.4;
 }
 
 
