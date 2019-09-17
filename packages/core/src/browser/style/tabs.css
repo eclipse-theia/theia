@@ -132,16 +132,14 @@
 }
 
 .p-TabBar.theia-app-centers .p-TabBar-tabIcon {
-    height: 15px;
+    height: 14px;
     background-size: 13px;
     background-position-y: 3px;
     background-color: var(--theia-tab-icon-color);
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: 13px;
-    -webkit-mask-position-y: 1px;
     mask-repeat: no-repeat;
     mask-size: 13px;
-    mask-position: 0 1px;
     padding-right: 2px;
 }
 
