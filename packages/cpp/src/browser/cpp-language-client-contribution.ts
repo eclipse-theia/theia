@@ -82,11 +82,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
     @postConstruct()
     protected init(): void {
         this.cppBuildConfigurations.onActiveConfigChange2(() => this.onActiveBuildConfigChanged());
-        this.cppPreferences.onPreferenceChanged(e => {
-            if (this.running) {
-                this.restart();
-            }
-        });
+        this.cppPreferences.onPreferenceChanged(() => this.restart());
     }
 
     protected onReady(languageClient: ILanguageClient): void {
@@ -147,9 +143,7 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
     }
 
     protected onActiveBuildConfigChanged(): void {
-        if (this.running) {
-            this.restart();
-        }
+        this.restart();
     }
 
     protected get documentSelector(): string[] {
