@@ -159,7 +159,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
                             } catch { /* no-op */ }
                         }
                     })()));
-                    toStop.push(messageConnection.onClose(() => this.restart()));
+                    toStop.push(messageConnection.onClose(() => this.forceRestart()));
                     this.onWillStart(this._languageClient!);
                     this._languageClient!.start();
                 }
@@ -167,7 +167,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         } catch (e) {
             console.error(e);
             if (!toStop.disposed) {
-                this.restart();
+                this.forceRestart();
             }
         }
     }
@@ -181,6 +181,10 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         if (!this.running) {
             return;
         }
+        this.forceRestart();
+    }
+
+    protected forceRestart(): void {
         this.deactivate();
         this.activate();
     }
