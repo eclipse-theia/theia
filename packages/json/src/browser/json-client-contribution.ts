@@ -24,7 +24,7 @@ import {
     DocumentSelector
 } from '@theia/languages/lib/browser';
 import { JSON_LANGUAGE_ID, JSON_LANGUAGE_NAME, JSONC_LANGUAGE_ID } from '../common';
-import { ResourceProvider } from '@theia/core';
+import { ResourceProvider, DisposableCollection } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { JsonPreferences } from './json-preferences';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
@@ -46,18 +46,9 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
     ) {
         super(workspace, languages, languageClientFactory);
         this.initializeJsonSchemaAssociations();
-        preferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'json.schemas') {
-                this.updateSchemas();
-            }
-        });
-        jsonSchemaStore.onSchemasChanged(() => {
-            this.updateSchemas();
-        });
-        this.updateSchemas();
     }
 
-    protected async updateSchemas(): Promise<void> {
+    protected updateSchemas(client: ILanguageClient): void {
         const allConfigs = [...this.jsonSchemaStore.getJsonSchemaConfigurations()];
         const config = this.preferences['json.schemas'];
         if (config instanceof Array) {
@@ -74,8 +65,6 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
                 }
             }
         }
-        const client = await this.languageClient;
-        await client.onReady();
         client.sendNotification('json/schemaAssociations', registry);
     }
 
@@ -94,7 +83,8 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         return [this.id];
     }
 
-    protected onReady(languageClient: ILanguageClient): void {
+    protected onReady(languageClient: ILanguageClient, toStop: DisposableCollection): void {
+        super.onReady(languageClient, toStop);
         // handle content request
         languageClient.onRequest('vscode/content', async (uriPath: string) => {
             const uri = new URI(uriPath);
@@ -102,8 +92,13 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
             const text = await resource.readContents();
             return text;
         });
-        super.onReady(languageClient);
-        setTimeout(() => this.initializeJsonSchemaAssociations());
+        toStop.push(this.preferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'json.schemas') {
+                this.updateSchemas(languageClient);
+            }
+        }));
+        toStop.push(this.jsonSchemaStore.onSchemasChanged(() => this.updateSchemas(languageClient)));
+        this.updateSchemas(languageClient);
     }
 
     protected async initializeJsonSchemaAssociations(): Promise<void> {
