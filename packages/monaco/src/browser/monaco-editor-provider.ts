@@ -16,7 +16,7 @@
 
 // tslint:disable:no-any
 import URI from '@theia/core/lib/common/uri';
-import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator, EndOfLinePreference } from '@theia/editor/lib/browser';
+import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable } from 'inversify';
 import { DisposableCollection } from '@theia/core/lib/common';
@@ -46,8 +46,7 @@ export class MonacoEditorProvider {
     @inject(MonacoEditorServices)
     protected readonly services: MonacoEditorServices;
 
-    private isWindowsBackend = false;
-    private hookedConfigService: any = undefined;
+    private isWindowsBackend: boolean = false;
 
     constructor(
         @inject(MonacoEditorService) protected readonly codeEditorService: MonacoEditorService,
@@ -63,39 +62,30 @@ export class MonacoEditorProvider {
         @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer,
         @inject(monaco.contextKeyService.ContextKeyService) protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService
     ) {
-        const init = monaco.services.StaticServices.init.bind(monaco.services.StaticServices);
+        const staticServices = monaco.services.StaticServices;
+        const init = staticServices.init.bind(monaco.services.StaticServices);
         this.applicationServer.getBackendOS().then(os => {
             this.isWindowsBackend = os === OS.Type.Windows;
         });
+
+        if (staticServices.resourcePropertiesService) {
+            // tslint:disable-next-line:no-any
+            const original = staticServices.resourcePropertiesService.get() as any;
+            original.getEOL = () => {
+                const eol = this.editorPreferences['files.eol'];
+                if (eol) {
+                    if (eol !== 'auto') {
+                        return eol;
+                    }
+                }
+                return this.isWindowsBackend ? '\r\n' : '\n';
+            };
+        }
         monaco.services.StaticServices.init = o => {
             const result = init(o);
             result[0].set(monaco.services.ICodeEditorService, codeEditorService);
-            if (!this.hookedConfigService) {
-                this.hookedConfigService = result[0].get(monaco.services.IConfigurationService);
-                const originalGetValue = this.hookedConfigService.getValue.bind(this.hookedConfigService);
-                this.hookedConfigService.getValue = (arg1: any, arg2: any) => {
-                    const creationOptions = originalGetValue(arg1, arg2);
-                    if (typeof creationOptions === 'object') {
-                        const eol = this.getEOL();
-                        creationOptions.files = {
-                            eol
-                        };
-                    }
-                    return creationOptions;
-                };
-            }
             return result;
         };
-    }
-
-    protected getEOL(): EndOfLinePreference {
-        const eol = this.editorPreferences['files.eol'];
-        if (eol) {
-            if (eol !== 'auto') {
-                return eol;
-            }
-        }
-        return this.isWindowsBackend ? '\r\n' : '\n';
     }
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {

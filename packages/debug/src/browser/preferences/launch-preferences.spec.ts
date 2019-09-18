@@ -469,7 +469,6 @@ describe('Launch Preferences', () => {
                 toTearDown.push(container.get(FileSystemWatcher));
 
                 const impl = container.get(PreferenceServiceImpl);
-                impl.initialize();
                 toTearDown.push(impl);
 
                 preferences = impl;
