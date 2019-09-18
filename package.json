@@ -67,7 +67,9 @@
     "publish:latest": "lerna publish && yarn publish:check",
     "publish:next": "yarn next:publish && yarn next:publish --skip-npm && yarn publish:check",
     "next:publish": "lerna publish --exact --canary=next --npm-tag=next --yes",
-    "publish:check": "node scripts/check-publish.js"
+    "publish:check": "node scripts/check-publish.js",
+    "start:browser": "yarn rebuild:browser && run start \"@theia/example-browser\"",
+    "start:electron": "yarn rebuild:electron && run start \"@theia/example-electron\""
   },
   "workspaces": [
     "dev-packages/*",
