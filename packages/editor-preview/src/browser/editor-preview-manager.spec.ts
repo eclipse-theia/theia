@@ -53,7 +53,7 @@ mockWidgetManager.onDidCreateWidget = sinon.stub().callsFake((fn: Function) => o
 const mockShell = sinon.createStubInstance(ApplicationShell) as ApplicationShell;
 
 const mockPreference = sinon.createStubInstance(PreferenceServiceImpl);
-mockPreference.onPreferenceChanged = sinon.stub().returns({ dispose: () => { } });
+mockPreference.onPreferencesChanged = sinon.stub().returns({ dispose: () => { } });
 
 let testContainer: Container;
 

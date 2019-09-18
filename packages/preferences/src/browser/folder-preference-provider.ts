@@ -28,8 +28,8 @@ export interface FolderPreferenceProviderFactory {
 
 export const FolderPreferenceProviderOptions = Symbol('FolderPreferenceProviderOptions');
 export interface FolderPreferenceProviderOptions {
-    folder: FileStat;
-    configUri: URI;
+    readonly folder: FileStat;
+    readonly configUri: URI;
 }
 
 @injectable()
@@ -38,8 +38,13 @@ export class FolderPreferenceProvider extends AbstractResourcePreferenceProvider
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FolderPreferenceProviderOptions) protected readonly options: FolderPreferenceProviderOptions;
 
+    private _folderUri: URI;
+
     get folderUri(): URI {
-        return new URI(this.options.folder.uri);
+        if (!this._folderUri) {
+            this._folderUri = new URI(this.options.folder.uri);
+        }
+        return this._folderUri;
     }
 
     protected getUri(): URI {

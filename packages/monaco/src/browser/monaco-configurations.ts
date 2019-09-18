@@ -17,10 +17,10 @@
 // tslint:disable:no-any
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { JSONExt, JSONObject, JSONValue } from '@phosphor/coreutils';
+import { JSONValue } from '@phosphor/coreutils';
 import { Configurations, ConfigurationChangeEvent, WorkspaceConfiguration } from 'monaco-languageclient';
 import { Event, Emitter } from '@theia/core/lib/common';
-import { PreferenceServiceImpl, PreferenceChanges } from '@theia/core/lib/browser';
+import { PreferenceService, PreferenceChanges, PreferenceSchemaProvider, createPreferenceProxy } from '@theia/core/lib/browser';
 
 export interface MonacoConfigurationChangeEvent extends ConfigurationChangeEvent {
     affectedSections?: string[]
@@ -32,10 +32,11 @@ export class MonacoConfigurations implements Configurations {
     protected readonly onDidChangeConfigurationEmitter = new Emitter<MonacoConfigurationChangeEvent>();
     readonly onDidChangeConfiguration: Event<MonacoConfigurationChangeEvent> = this.onDidChangeConfigurationEmitter.event;
 
-    @inject(PreferenceServiceImpl)
-    protected readonly preferences: PreferenceServiceImpl;
+    @inject(PreferenceService)
+    protected readonly preferences: PreferenceService;
 
-    protected tree: JSONObject = {};
+    @inject(PreferenceSchemaProvider)
+    protected readonly preferenceSchemaProvider: PreferenceSchemaProvider;
 
     @postConstruct()
     protected init(): void {
@@ -44,12 +45,12 @@ export class MonacoConfigurations implements Configurations {
     }
 
     protected reconcileData(changes?: PreferenceChanges): void {
-        this.tree = MonacoConfigurations.parse(this.preferences.getPreferences());
         this.onDidChangeConfigurationEmitter.fire({
             affectedSections: MonacoConfigurations.parseSections(changes),
             affectsConfiguration: section => this.affectsConfiguration(section, changes)
         });
     }
+
     protected affectsConfiguration(section: string, changes?: PreferenceChanges): boolean {
         if (!changes) {
             return true;
@@ -63,12 +64,11 @@ export class MonacoConfigurations implements Configurations {
     }
 
     getConfiguration(section?: string, resource?: string): WorkspaceConfiguration {
-        const tree = section ? MonacoConfigurations.lookUp(this.tree, section) : this.tree;
-        // TODO take resource into the account when the multi-root is supported by preferences
-        return new MonacoWorkspaceConfiguration(tree);
+        return new MonacoWorkspaceConfiguration(this.preferences, this.preferenceSchemaProvider, section, resource);
     }
 
 }
+
 export namespace MonacoConfigurations {
     export function parseSections(changes?: PreferenceChanges): string[] | undefined {
         if (!changes) {
@@ -76,75 +76,56 @@ export namespace MonacoConfigurations {
         }
         const sections = [];
         for (let key of Object.keys(changes)) {
+            const hasOverride = key.startsWith('[');
             while (key) {
                 sections.push(key);
+                if (hasOverride && key.indexOf('.') !== -1) {
+                    sections.push(key.substr(key.indexOf('.')));
+                }
                 const index = key.lastIndexOf('.');
                 key = key.substring(0, index);
             }
         }
         return sections;
     }
-    export function parse(raw: { [section: string]: Object | undefined }): JSONObject {
-        const tree = {};
-        for (const section of Object.keys(raw)) {
-            const value = raw[section];
-            if (value !== undefined) {
-                assign(tree, section, <JSONValue>value);
-            }
-        }
-        return tree;
-    }
-    export function assign(data: JSONObject, section: string, value: JSONValue): void {
-        let node: JSONValue = data;
-        const parts = section.split('.');
-        while (JSONExt.isObject(node) && parts.length > 1) {
-            const part = parts.shift()!;
-            node = node[part] || (node[part] = {});
-        }
-        if (JSONExt.isObject(node) && parts.length === 1) {
-            node[parts[0]] = value;
-        }
-    }
-    export function lookUp(tree: JSONValue | undefined, section: string | undefined): JSONValue | undefined {
-        if (!section) {
-            return undefined;
-        }
-        let node: JSONValue | undefined = tree;
-        const parts = section.split('.');
-        while (node && JSONExt.isObject(node) && parts.length > 0) {
-            node = node[parts.shift()!];
-        }
-        return !parts.length ? node : undefined;
-    }
 }
 
 export class MonacoWorkspaceConfiguration implements WorkspaceConfiguration {
 
     constructor(
-        protected readonly tree: JSONValue | undefined
+        protected readonly preferences: PreferenceService,
+        protected readonly preferenceSchemaProvider: PreferenceSchemaProvider,
+        protected readonly section?: string,
+        protected readonly resource?: string
     ) {
-        if (tree && JSONExt.isObject(tree)) {
-            Object.assign(this, tree);
-        }
     }
 
     readonly [key: string]: any;
 
+    protected getSection(section: string): string {
+        if (this.section) {
+            return this.section + '.' + section;
+        }
+        return section;
+    }
+
     has(section: string): boolean {
-        return typeof MonacoConfigurations.lookUp(this.tree, section) !== 'undefined';
+        return this.preferences.inspect(this.getSection(section), this.resource) !== undefined;
     }
 
     get<T>(section: string, defaultValue?: T): T | undefined {
-        const value = MonacoConfigurations.lookUp(this.tree, section);
-        if (typeof value === 'undefined') {
-            return defaultValue;
-        }
-        const result = JSONExt.isObject(value) ? JSONExt.deepCopy(value) : value;
-        return result as any;
+        return this.preferences.get(this.getSection(section), defaultValue, this.resource);
     }
 
     toJSON(): JSONValue | undefined {
-        return this.tree && JSONExt.isObject(this.tree) ? JSONExt.deepCopy(this.tree) : this.tree;
+        const proxy = createPreferenceProxy<{ [key: string]: any }>(this.preferences, this.preferenceSchemaProvider.getCombinedSchema(), {
+            resourceUri: this.resource,
+            style: 'deep'
+        });
+        if (this.section) {
+            return proxy[this.section];
+        }
+        return proxy;
     }
 
 }

@@ -43,8 +43,8 @@ export interface PreferenceResolveResult<T> {
 @injectable()
 export abstract class PreferenceProvider implements Disposable {
 
-    protected readonly onDidPreferencesChangedEmitter = new Emitter<PreferenceProviderDataChanges | undefined>();
-    readonly onDidPreferencesChanged: Event<PreferenceProviderDataChanges | undefined> = this.onDidPreferencesChangedEmitter.event;
+    protected readonly onDidPreferencesChangedEmitter = new Emitter<PreferenceProviderDataChanges>();
+    readonly onDidPreferencesChanged: Event<PreferenceProviderDataChanges> = this.onDidPreferencesChangedEmitter.event;
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -72,14 +72,6 @@ export abstract class PreferenceProvider implements Disposable {
         } else {
             this.onDidPreferencesChangedEmitter.fire(changes);
         }
-    }
-
-    /**
-     * Informs the listeners that one or more preferences of this provider are changed.
-     * @deprecated Use emitPreferencesChangedEvent instead.
-     */
-    protected fireOnDidPreferencesChanged(): void {
-        this.onDidPreferencesChangedEmitter.fire(undefined);
     }
 
     get<T>(preferenceName: string, resourceUri?: string): T | undefined {

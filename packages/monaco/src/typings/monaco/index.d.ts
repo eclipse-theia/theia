@@ -442,6 +442,9 @@ declare module monaco.services {
         _configuration: Configuration;
     }
 
+    export interface ITextResourcePropertiesService {
+    }
+
     export abstract class CodeEditorServiceImpl implements monaco.editor.ICodeEditorService {
         constructor(themeService: IStandaloneThemeService);
         abstract getActiveCodeEditor(): monaco.editor.ICodeEditor | undefined;
@@ -510,6 +513,7 @@ declare module monaco.services {
         export const modeService: LazyStaticService<IModeService>;
         export const codeEditorService: LazyStaticService<monaco.editor.ICodeEditorService>;
         export const configurationService: LazyStaticService<IConfigurationService>;
+        export const resourcePropertiesService: LazyStaticService<ITextResourcePropertiesService>;
     }
 }
 

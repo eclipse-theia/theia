@@ -21,7 +21,10 @@ import '../../src/browser/style/symbol-icons.css';
 import { ContainerModule, decorate, injectable, interfaces } from 'inversify';
 import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
-import { QuickOpenService, FrontendApplicationContribution, KeybindingContribution, PreferenceServiceImpl } from '@theia/core/lib/browser';
+import {
+    QuickOpenService, FrontendApplicationContribution, KeybindingContribution,
+    PreferenceService, PreferenceSchemaProvider, createPreferenceProxy
+} from '@theia/core/lib/browser';
 import { Languages, Workspace } from '@theia/languages/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
@@ -58,8 +61,6 @@ import { MimeService } from '@theia/core/lib/browser/mime-service';
 
 import debounce = require('lodash.debounce');
 import { MonacoEditorServices } from './monaco-editor';
-
-const deepmerge: (args: object[]) => object = require('deepmerge').default.all;
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -134,22 +135,22 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');
 export function createMonacoConfigurationService(container: interfaces.Container): monaco.services.IConfigurationService {
     const configurations = container.get(MonacoConfigurations);
-    const preferences = container.get(PreferenceServiceImpl);
+    const preferences = container.get<PreferenceService>(PreferenceService);
+    const preferenceSchemaProvider = container.get<PreferenceSchemaProvider>(PreferenceSchemaProvider);
     const service = monaco.services.StaticServices.configurationService.get();
     const _configuration = service._configuration;
 
-    const getValue = _configuration.getValue.bind(_configuration);
     _configuration.getValue = (section, overrides, workspace) => {
-        const preferenceConfig = configurations.getConfiguration();
+        const overrideIdentifier = overrides && 'overrideIdentifier' in overrides && overrides['overrideIdentifier'] as string || undefined;
+        const resourceUri = overrides && 'resource' in overrides && overrides['resource'].toString();
+        // tslint:disable-next-line:no-any
+        const proxy = createPreferenceProxy<{ [key: string]: any }>(preferences, preferenceSchemaProvider.getCombinedSchema(), {
+            resourceUri, overrideIdentifier, style: 'both'
+        });
         if (section) {
-            const value = preferenceConfig.get(section);
-            return value !== undefined ? value : getValue(section, overrides, workspace);
+            return proxy[section];
         }
-        const simpleConfig = getValue(section, overrides, workspace);
-        if (typeof simpleConfig === 'object') {
-            return deepmerge([{}, simpleConfig, preferenceConfig.toJSON()]);
-        }
-        return preferenceConfig.toJSON();
+        return proxy;
     };
 
     const initFromConfiguration = debounce(() => {
