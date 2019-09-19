@@ -704,20 +704,28 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         if (!scmRepository) {
             return;
         }
-        const repository = scmRepository.provider.repository;
-        const [username, email] = (await Promise.all([
-            this.git.exec(repository, ['config', 'user.name']),
-            this.git.exec(repository, ['config', 'user.email'])
-        ])).map(result => result.stdout.trim());
+        try {
+            const repository = scmRepository.provider.repository;
+            const [username, email] = (await Promise.all([
+                this.git.exec(repository, ['config', 'user.name']),
+                this.git.exec(repository, ['config', 'user.email'])
+            ])).map(result => result.stdout.trim());
 
-        const signOff = `\n\nSigned-off-by: ${username} <${email}>`;
-        const value = scmRepository.input.value;
-        if (value.endsWith(signOff)) {
-            scmRepository.input.value = value.substr(0, value.length - signOff.length);
-        } else {
-            scmRepository.input.value = `${value}${signOff}`;
+            const signOff = `\n\nSigned-off-by: ${username} <${email}>`;
+            const value = scmRepository.input.value;
+            if (value.endsWith(signOff)) {
+                scmRepository.input.value = value.substr(0, value.length - signOff.length);
+            } else {
+                scmRepository.input.value = `${value}${signOff}`;
+            }
+            scmRepository.input.focus();
+        } catch (e) {
+            scmRepository.input.issue = {
+                type: 'warning',
+                message: 'Make sure you configure your \'user.name\' and \'user.email\' in git.'
+            };
         }
-        scmRepository.input.focus();
+
     }
 }
 export interface GitOpenFileOptions {
