@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable } from 'inversify';
-import { DisposableCollection } from '@theia/core/lib/common';
+import { DisposableCollection, deepClone } from '@theia/core/lib/common';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter, TextDocumentSaveReason } from 'monaco-languageclient';
 import { MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
@@ -232,7 +232,7 @@ export class MonacoEditorProvider {
     protected createOptions(prefixes: string[], uri: string, overrideIdentifier?: string): { [name: string]: any } {
         return Object.keys(this.editorPreferences).reduce((options, preferenceName) => {
             const value = (<any>this.editorPreferences).get({ preferenceName, overrideIdentifier }, undefined, uri);
-            return this.setOption(preferenceName, value, prefixes, options);
+            return this.setOption(preferenceName, deepClone(value), prefixes, options);
         }, {});
     }
 
