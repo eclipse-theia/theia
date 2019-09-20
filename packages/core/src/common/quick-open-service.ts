@@ -31,7 +31,8 @@ export namespace QuickOpenOptions {
     export interface Resolved {
         readonly enabled: boolean;
 
-        readonly trim: boolean;
+        /** `true` means that input of quick open widget will be trimmed by default. */
+        readonly trimInput: boolean;
         readonly prefix: string;
         readonly placeholder: string;
         readonly ignoreFocusOut: boolean;
@@ -63,7 +64,7 @@ export namespace QuickOpenOptions {
     export const defaultOptions: Resolved = Object.freeze({
         enabled: true,
 
-        trim: true,
+        trimInput: true,
         prefix: '',
         placeholder: '',
         ignoreFocusOut: false,
