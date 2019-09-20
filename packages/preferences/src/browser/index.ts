@@ -20,3 +20,5 @@ export * from './user-preference-provider';
 export * from './workspace-preference-provider';
 export * from './folders-preferences-provider';
 export * from './folder-preference-provider';
+export { PreferencesWidgetFactory } from './preference-frontend-module';
+export { PREFERENCE_IDS } from './preferences-tree-widget';

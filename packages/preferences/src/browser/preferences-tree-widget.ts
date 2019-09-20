@@ -608,3 +608,9 @@ export class PreferencesTreeWidget extends TreeWidget {
         return a.localeCompare(b, undefined, { ignorePunctuation: true });
     }
 }
+
+export const PREFERENCE_IDS = {
+    TREE_WIDGET: PreferencesTreeWidget.ID,
+    CONTAINER: PreferencesContainer.ID,
+    EDITORS_CONTAINER: PreferencesEditorsContainer.ID
+};
