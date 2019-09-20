@@ -346,6 +346,9 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
         if (this.options.skipPrefix) {
             lookFor = lookFor.substr(this.options.skipPrefix);
         }
+        if (this.options.trim) {
+            lookFor = lookFor.trim();
+        }
         const { fuzzyMatchLabel, fuzzyMatchDescription, fuzzyMatchDetail } = this.options;
         const labelHighlights = fuzzyMatchLabel ? this.matchesFuzzy(lookFor, item.getLabel(), fuzzyMatchLabel) : item.getLabelHighlights();
         const descriptionHighlights = fuzzyMatchDescription ? this.matchesFuzzy(lookFor, item.getDescription(), fuzzyMatchDescription) : item.getDescriptionHighlights();
