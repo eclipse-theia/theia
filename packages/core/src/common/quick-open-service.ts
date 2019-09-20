@@ -31,6 +31,7 @@ export namespace QuickOpenOptions {
     export interface Resolved {
         readonly enabled: boolean;
 
+        readonly trim: boolean;
         readonly prefix: string;
         readonly placeholder: string;
         readonly ignoreFocusOut: boolean;
@@ -62,6 +63,7 @@ export namespace QuickOpenOptions {
     export const defaultOptions: Resolved = Object.freeze({
         enabled: true,
 
+        trim: true,
         prefix: '',
         placeholder: '',
         ignoreFocusOut: false,
