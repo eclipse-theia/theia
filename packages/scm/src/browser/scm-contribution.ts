@@ -169,6 +169,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             text: value.title,
             tooltip: label + (value.tooltip ? ` - ${value.tooltip}` : ''),
             command: value.command,
+            arguments: value.arguments,
             alignment: StatusBarAlignment.LEFT,
             priority: 100
         }));

@@ -189,11 +189,23 @@ export class PluginScmProvider implements ScmProvider {
     }
 
     get acceptInputCommand(): ScmCommand | undefined {
-        return this.features.acceptInputCommand;
+        const command = this.features.acceptInputCommand;
+        if (command) {
+            const scmCommand: ScmCommand = command;
+            scmCommand.command = command.id;
+            return command;
+        }
     }
 
     get statusBarCommands(): ScmCommand[] | undefined {
-        return this.features.statusBarCommands;
+        const commands = this.features.statusBarCommands;
+        if (commands) {
+            return commands.map(command => {
+                const scmCommand: ScmCommand = command;
+                scmCommand.command = command.id;
+                return scmCommand;
+            });
+        }
     }
 
     get count(): number | undefined {

@@ -22,8 +22,8 @@ import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposa
 import { UriComponents } from '../common/uri-components';
 import URI from '@theia/core/lib/common/uri';
 import { CommandRegistryImpl } from './command-registry';
-import { ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 import { Emitter } from '@theia/core/lib/common/event';
+import { Command } from '../common/plugin-api-rpc-model';
 
 export class ScmExtImpl implements ScmExt {
     private handle: number = 0;
@@ -254,7 +254,7 @@ class SourceControlImpl implements theia.SourceControl {
 
         this._statusBarCommands = statusBarCommands;
 
-        let safeStatusBarCommands: ScmCommand[] | undefined;
+        let safeStatusBarCommands: Command[] | undefined;
         if (statusBarCommands) {
             safeStatusBarCommands = statusBarCommands.map(statusBarCommand => this.commands.converter.toSafeCommand(statusBarCommand, this.toDisposeOnStatusBarCommands));
         }
