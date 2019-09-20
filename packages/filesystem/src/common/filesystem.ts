@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
+import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import { JsonRpcServer, ApplicationError } from '@theia/core/lib/common';
 import { injectable } from 'inversify';
 export const fileSystemPath = '/services/filesystem';

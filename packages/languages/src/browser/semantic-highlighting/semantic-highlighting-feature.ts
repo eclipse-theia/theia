@@ -24,13 +24,13 @@ import {
     ServerCapabilities,
     Disposable,
     DocumentSelector
-} from '../';
+} from '../language-client-services';
 import { SemanticHighlight, SemanticHighlightingParams } from './semantic-highlighting-protocol';
 
 // NOTE: This module can be removed, or at least can be simplified once the semantic highlighting will become the part of the LSP.
 // https://github.com/Microsoft/vscode-languageserver-node/issues/368
 
-export class SemanticHighlightFeature extends TextDocumentFeature<TextDocumentRegistrationOptions> {
+export class SemanticHighlightFeature extends TextDocumentFeature<{}, TextDocumentRegistrationOptions> {
 
     protected readonly languageId: string;
     protected readonly toDispose: DisposableCollection;

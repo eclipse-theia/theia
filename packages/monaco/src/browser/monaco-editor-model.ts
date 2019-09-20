@@ -14,7 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { TextDocumentSaveReason, Position, TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
+import { Position } from 'vscode-languageserver-types';
+import { TextDocumentSaveReason, TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import { TextEditorDocument } from '@theia/editor/lib/browser';
 import { DisposableCollection, Disposable, Emitter, Event, Resource, CancellationTokenSource, CancellationToken, ResourceError } from '@theia/core';

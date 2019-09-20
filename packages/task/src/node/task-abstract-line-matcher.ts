@@ -111,7 +111,7 @@ export abstract class AbstractLineMatcher {
             if (trim) {
                 value = value.trim();
             }
-            data[property] += endOfLine + value;
+            (data[property] as string) += endOfLine + value;
         }
     }
 
@@ -123,7 +123,7 @@ export abstract class AbstractLineMatcher {
                 if (trim) {
                     value = value.trim();
                 }
-                data[property] = value;
+                (data[property] as string) = value;
             }
         }
     }

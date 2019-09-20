@@ -16,8 +16,8 @@
 
 import * as React from 'react';
 import { ConsoleItem } from './console-session';
-import { ansiToHtml } from 'anser';
 import { Severity } from '@theia/core/lib/common/severity';
+import Anser from 'anser';
 
 export class AnsiConsoleItem implements ConsoleItem {
 
@@ -27,7 +27,7 @@ export class AnsiConsoleItem implements ConsoleItem {
         public readonly content: string,
         public readonly severity?: Severity
     ) {
-        this.htmlContent = ansiToHtml(this.content, {
+        this.htmlContent = Anser.ansiToHtml(this.content, {
             use_classes: true,
             remove_empty: true
         });

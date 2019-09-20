@@ -53,7 +53,7 @@ export class ProxyIdentifier<T> {
     public readonly id: string;
     constructor(public readonly isMain: boolean, id: string | T) {
         // TODO this is nasty, rewrite this
-        this.id = id.toString();
+        this.id = (id as any).toString();
     }
 }
 

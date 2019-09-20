@@ -307,7 +307,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             const widget = await this.widgetManager.getOrCreateWidget(desc.constructionOptions.factoryId, desc.constructionOptions.options);
             if (StatefulWidget.is(widget) && desc.innerWidgetState !== undefined) {
                 try {
-                    let oldState;
+                    let oldState: object;
                     if (typeof desc.innerWidgetState === 'string') {
                         const parseContext = new ShellLayoutRestorer.ParseContext();
                         oldState = this.parse(desc.innerWidgetState, parseContext);
