@@ -23,8 +23,10 @@ import * as os from 'os';
 import * as touch from 'touch';
 import * as drivelist from 'drivelist';
 import { injectable, inject, optional } from 'inversify';
-import { TextDocumentContentChangeEvent, TextDocument } from 'vscode-languageserver-types';
+import { TextDocument } from 'vscode-languageserver-types';
+import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
+import { TextDocumentContentChangeDelta } from '@theia/core/lib/common/lsp-types';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileStat, FileSystem, FileSystemClient, FileSystemError, FileMoveOptions, FileDeleteOptions, FileAccess } from '../common/filesystem';
 import * as iconv from 'iconv-lite';
@@ -138,11 +140,13 @@ export class FileSystemNode implements FileSystem {
     protected applyContentChanges(content: string, contentChanges: TextDocumentContentChangeEvent[]): string {
         let document = TextDocument.create('', '', 1, content);
         for (const change of contentChanges) {
-            let newContent = change.text;
-            if (change.range) {
+            let newContent: string;
+            if (TextDocumentContentChangeDelta.is(change)) {
                 const start = document.offsetAt(change.range.start);
                 const end = document.offsetAt(change.range.end);
                 newContent = document.getText().substr(0, start) + change.text + document.getText().substr(end);
+            } else {
+                newContent = change.text;
             }
             document = TextDocument.create(document.uri, document.languageId, document.version, newContent);
         }

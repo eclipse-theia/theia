@@ -17,7 +17,7 @@
 import { Position, Range, Location } from 'vscode-languageserver-types';
 import * as lsp from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
-import { Event, Disposable } from '@theia/core/lib/common';
+import { Event, Disposable, TextDocumentContentChangeDelta } from '@theia/core/lib/common';
 import { Saveable, Navigatable } from '@theia/core/lib/browser';
 import { EditorDecoration } from './decorations';
 
@@ -33,19 +33,8 @@ export interface TextEditorDocument extends lsp.TextDocument, Saveable, Disposab
     getLineMaxColumn(lineNumber: number): number;
 }
 
-export interface TextDocumentContentChangeDelta extends lsp.TextDocumentContentChangeEvent {
-    readonly range: Range;
-    readonly rangeLength: number;
-}
-
-export namespace TextDocumentContentChangeDelta {
-
-    // tslint:disable-next-line:no-any
-    export function is(arg: any): arg is TextDocumentContentChangeDelta {
-        return !!arg && typeof arg['text'] === 'string' && typeof arg['rangeLength'] === 'number' && Range.is(arg['range']);
-    }
-
-}
+// Refactoring
+export { TextDocumentContentChangeDelta };
 
 export interface TextDocumentChangeEvent {
     readonly document: TextEditorDocument;

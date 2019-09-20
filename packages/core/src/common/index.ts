@@ -36,6 +36,7 @@ export * from './progress-service-protocol';
 export * from './selection';
 export * from './strings';
 export * from './application-error';
+export * from './lsp-types';
 
 import { environment } from '@theia/application-package/lib/environment';
 export { environment };

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2019 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,22 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { NotificationType } from '../';
-import { VersionedTextDocumentIdentifier } from '..';
+import { Range } from 'vscode-languageserver-protocol';
 
-// NOTE: This module can be removed, once the semantic highlighting will become the part of the LSP.
-// https://github.com/Microsoft/vscode-languageserver-node/issues/368
-
-export interface SemanticHighlightingParams {
-    readonly textDocument: VersionedTextDocumentIdentifier;
-    readonly lines: SemanticHighlightingInformation[];
+export interface TextDocumentContentChangeDelta {
+    readonly range: Range;
+    readonly rangeLength?: number;
+    readonly text: string;
 }
+export namespace TextDocumentContentChangeDelta {
 
-export interface SemanticHighlightingInformation {
-    readonly line: number;
-    readonly tokens?: string;
-}
+    // tslint:disable-next-line:no-any
+    export function is(arg: any): arg is TextDocumentContentChangeDelta {
+        return !!arg && typeof arg['text'] === 'string' && (typeof arg['rangeLength'] === 'number' || typeof arg['rangeLength'] === 'undefined') && Range.is(arg['range']);
+    }
 
-export namespace SemanticHighlight {
-    export const type = new NotificationType<SemanticHighlightingParams, void>('textDocument/semanticHighlighting');
 }
