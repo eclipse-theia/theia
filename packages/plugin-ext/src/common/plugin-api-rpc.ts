@@ -70,7 +70,6 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { SymbolInformation } from 'vscode-languageserver-types';
-import { ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 import { ArgumentProcessor } from '../plugin/command-registry';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { QuickOpenItem, QuickOpenItemOptions } from '@theia/core/lib/common/quick-open-model';
@@ -607,8 +606,8 @@ export interface SourceControlProviderFeatures {
     hasQuickDiffProvider?: boolean;
     count?: number;
     commitTemplate?: string;
-    acceptInputCommand?: ScmCommand;
-    statusBarCommands?: ScmCommand[];
+    acceptInputCommand?: Command;
+    statusBarCommands?: Command[];
 }
 
 export interface SourceControlGroupFeatures {
