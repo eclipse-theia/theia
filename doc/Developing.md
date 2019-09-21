@@ -33,6 +33,7 @@ For Windows instructions [click here](#building-on-windows).
      - [Debug the browser example's frontend and backend at the same time](#debug-the-browser-examples-frontend-and-backend-at-the-same-time)
      - [Debug the Electron example's backend](#debug-the-electron-examples-backend)
      - [Debug the Electron example's frontend](#debug-the-electron-examples-frontend)
+     - [Debug the Electron example's frontend and backend at the same time](#debug-the-electron-examples-frontend-and-backend-at-the-same-time)
      - [Debug IPC servers](#debug-ipc-servers)
      - [Debug the plugin host](#debug-the-plugin-host)
  - [**Profiling**](#profiling)
@@ -225,18 +226,18 @@ Let assume you have to work for instance in the `@theia/navigator` extension. Bu
 
 ### Debug the browser example's backend
 
- - Open the debug view and run the `Launch Backend` configuration.
+ - Open the debug view and run the `Launch Browser Backend` configuration.
 
 ### Debug the browser example's frontend
 
  - Start the backend by using `yarn run start`.
  - In a browser: Open http://localhost:3000/ and use the dev tools for debugging.
- - Open the debug view and run the `Launch Frontend` configuration.
+ - Open the debug view and run the `Launch Broowser Frontend` configuration.
 
 ### Debug the browser example's frontend and backend at the same time
 
- - Open the debug view and run the `Launch Backend` configuration.
- - Then run the `Launch Frontend` configuration.
+ - Open the debug view and run the `Launch Browser Backend` configuration.
+ - Then run the `Launch Browser Frontend` configuration.
 
 ### Debug the Electron example's backend
 
@@ -244,8 +245,16 @@ Let assume you have to work for instance in the `@theia/navigator` extension. Bu
 
 ### Debug the Electron example's frontend
 
- - Start the backend by using `yarn run start`.
- - In Electron: Help -> Toggle Electron Developer Tools.
+ - Start the Electron backend
+   - Either open the debug view and run the `Launch Electron Backend` configuration
+   - Or use `yarn run start`.
+ - Attach to the Electron Frontend
+   - Either open the debug view and run the `Attach to Electron Frontend` configuration
+   - Or in Electron: Help -> Toggle Electron Developer Tools.
+
+### Debug the Electron example's frontend and backend at the same time
+
+ - Open the debug view and run the `Launch Electron Backend & Frontend` configuration.
 
 ### Debug IPC servers
 
@@ -260,7 +269,7 @@ You should be able to see message of `[${server-name}: ${server-PID}]: IPC start
 ### Debug the plugin host
 
   - Pass `--hosted-plugin-inspect=9339` arg to the backend server from the command line.
-    - Instead you can run `Launch Backend` launch configuration which is already preconfigured.
+    - Instead you can run `Launch Browser Backend` launch configuration which is already preconfigured.
   - Open the debug view and run the `Attach to Plugin Host` launch configuration.
     - It connects to the plugin host if at least one extension is detected, otherwise it timeouts after 60s.
     - If you want to debug the activation then enable `stopOnEntry` flag.
