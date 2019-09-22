@@ -21,7 +21,7 @@ import { JsonRpcProxyFactory, ConnectionHandler, JsonRpcConnectionHandler, JsonR
 
 export type BindFrontendService = <T extends object>(path: string, serviceIdentifier: interfaces.ServiceIdentifier<T>) => interfaces.BindingWhenOnSyntax<T>;
 export type BindBackendService = <T extends object, C extends object = object>(
-    path: string, serviceIdentifier: interfaces.ServiceIdentifier<T>, onActivation?: (service: T, proxy: JsonRpcProxy<C>) => T
+    path: string, serviceIdentifier: interfaces.ServiceIdentifier<T>, onActivation?: (service: T, proxy: JsonRpcProxy<C>, context: interfaces.Context) => T
 ) => void;
 export type ConnectionContainerModuleCallBack = (registry: {
     bind: interfaces.Bind
@@ -86,7 +86,7 @@ export const ConnectionContainerModule: symbol & { create(callback: ConnectionCo
                 bind(ConnectionHandler).toDynamicValue(context =>
                     new JsonRpcConnectionHandler<any>(path, proxy => {
                         const service = context.container.get(serviceIdentifier);
-                        return onActivation ? onActivation(service, proxy) : service;
+                        return onActivation ? onActivation(service, proxy, context) : service;
                     })
                 ).inSingletonScope();
             };

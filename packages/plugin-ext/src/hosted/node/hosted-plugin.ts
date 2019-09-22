@@ -72,10 +72,9 @@ export class HostedPluginSupport {
         }
     }
 
-    onMessage(message: string): void {
+    // tslint:disable-next-line:no-any
+    onMessage(jsonMessage: any): void {
         // need to perform routing
-        // tslint:disable-next-line:no-any
-        const jsonMessage: any = JSON.parse(message);
         if (this.pluginRunners.length > 0) {
             this.pluginRunners.forEach(runner => {
                 if (runner.acceptMessage(jsonMessage)) {

@@ -24,6 +24,8 @@
     "@theia/task": "^0.10.0",
     "@theia/terminal": "^0.10.0",
     "@theia/workspace": "^0.10.0",
+    "@types/compression": "^1.0.1",
+    "compression": "^1.7.4",
     "decompress": "^4.2.0",
     "escape-html": "^1.0.3",
     "getmac": "^1.4.6",

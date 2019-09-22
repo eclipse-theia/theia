@@ -76,16 +76,6 @@ import { MaybePromise } from '@theia/core/lib/common/types';
 import { QuickOpenItem, QuickOpenItemOptions } from '@theia/core/lib/common/quick-open-model';
 import { QuickTitleButton } from '@theia/core/lib/common/quick-open-model';
 
-export interface PluginInitData {
-    plugins: PluginMetadata[];
-    preferences: PreferenceData;
-    globalState: KeysToKeysToAnyValue;
-    workspaceState: KeysToKeysToAnyValue;
-    env: EnvInit;
-    extApi?: ExtPluginApi[];
-    activationEvents: string[]
-}
-
 export interface PreferenceData {
     [scope: number]: any;
 }
@@ -100,7 +90,7 @@ export interface Plugin {
 
 export interface ConfigStorage {
     hostLogPath: string;
-    hostStoragePath: string,
+    hostStoragePath?: string,
 }
 
 export interface EnvInit {
@@ -162,12 +152,35 @@ export const emptyPlugin: Plugin = {
     }
 };
 
+export interface PluginManagerInitializeParams {
+    preferences: PreferenceData
+    globalState: KeysToKeysToAnyValue
+    workspaceState: KeysToKeysToAnyValue
+    env: EnvInit
+    extApi?: ExtPluginApi[]
+}
+
+export interface PluginManagerStartParams {
+    plugins: PluginMetadata[]
+    configStorage: ConfigStorage
+    activationEvents: string[]
+}
+
 export interface PluginManagerExt {
-    $stop(pluginId?: string): PromiseLike<void>;
 
-    $init(pluginInit: PluginInitData, configStorage: ConfigStorage): PromiseLike<void>;
+    /** initialize the manager, should be called only once */
+    $initiliaze(params: PluginManagerInitializeParams): Promise<void>;
 
-    $updateStoragePath(path: string | undefined): PromiseLike<void>;
+    /** load and activate plugins */
+    $start(params: PluginManagerStartParams): Promise<void>;
+
+    /** deactivate the plugin */
+    $stop(pluginId: string): Promise<void>;
+
+    /** deactivate all plugins */
+    $stop(): Promise<void>;
+
+    $updateStoragePath(path: string | undefined): Promise<void>;
 
     $activateByEvent(event: string): Promise<void>;
 }

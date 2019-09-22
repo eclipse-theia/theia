@@ -581,6 +581,20 @@ export interface ExtensionContext {
     subscriptions: Disposable[];
 }
 
+/**
+ * PluginMetadataHandle should be sent instead of PluginMetadata from the frontend to the backend.
+ * The plugin server will expand it to PluginMetadata if a plugin for such handle is deployed.
+ */
+export interface PluginMetadataHandle {
+    pluginHandle: string
+}
+export namespace PluginMetadataHandle {
+    // tslint:disable-next-line:no-any
+    export function is(arg: any): arg is PluginMetadataHandle {
+        return !!arg && typeof arg === 'object' && 'pluginHandle' in arg;
+    }
+}
+
 export interface PluginMetadata {
     host: string;
     source: PluginPackage;
@@ -601,13 +615,21 @@ export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): st
     return `${plugin.publisher}_${plugin.name}`.replace(/\W/g, '_');
 }
 
+export interface InitializePluginClientResult {
+    clientId: string
+}
+
 export const HostedPluginClient = Symbol('HostedPluginClient');
 export interface HostedPluginClient {
+
+    initialize(): Promise<InitializePluginClientResult>;
+
     postMessage(message: string): Promise<void>;
 
     log(logPart: LogPart): void;
 
     onDidDeploy(): void;
+
 }
 
 export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
@@ -619,11 +641,13 @@ export interface PluginDeployerHandler {
 }
 
 export const HostedPluginServer = Symbol('HostedPluginServer');
+/**
+ * Don't expose plugin metadata via JSON-RPC. It is expensive to load and blocks the underlying connection.
+ * Instead use `/plugins` http endpoint, it serves compressed metadata for the give set of plugins.
+ */
 export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
-    getDeployedMetadata(): Promise<PluginMetadata[]>;
-    getDeployedFrontendMetadata(): Promise<PluginMetadata[]>;
-    getDeployedBackendMetadata(): Promise<PluginMetadata[]>;
+    getDeployedPlugins(): Promise<string[]>;
 
     getExtPluginAPI(): Promise<ExtPluginApi[]>;
 

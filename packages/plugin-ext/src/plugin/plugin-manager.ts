@@ -20,11 +20,12 @@ import {
     MainMessageType,
     MessageRegistryMain,
     PluginManagerExt,
-    PluginInitData,
     PluginManager,
     Plugin,
     PluginAPI,
-    ConfigStorage
+    ConfigStorage,
+    PluginManagerInitializeParams,
+    PluginManagerStartParams
 } from '../common/plugin-api-rpc';
 import { PluginMetadata } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
@@ -136,46 +137,46 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         }
     }
 
-    async $init(pluginInit: PluginInitData, configStorage: ConfigStorage): Promise<void> {
+    async $initiliaze(params: PluginManagerInitializeParams): Promise<void> {
         this.storageProxy = this.rpc.set(
             MAIN_RPC_CONTEXT.STORAGE_EXT,
             new KeyValueStorageProxy(this.rpc.getProxy(PLUGIN_RPC_CONTEXT.STORAGE_MAIN),
-                pluginInit.globalState,
-                pluginInit.workspaceState)
+                params.globalState,
+                params.workspaceState)
         );
 
-        // init query parameters
-        this.envExt.setQueryParameters(pluginInit.env.queryParams);
-        this.envExt.setLanguage(pluginInit.env.language);
+        this.envExt.setQueryParameters(params.env.queryParams);
+        this.envExt.setLanguage(params.env.language);
 
-        this.preferencesManager.init(pluginInit.preferences);
+        this.preferencesManager.init(params.preferences);
 
-        if (pluginInit.extApi) {
-            this.host.initExtApi(pluginInit.extApi);
+        if (params.extApi) {
+            this.host.initExtApi(params.extApi);
         }
+    }
 
-        const [plugins, foreignPlugins] = this.host.init(pluginInit.plugins);
+    async $start(params: PluginManagerStartParams): Promise<void> {
+        const [plugins, foreignPlugins] = this.host.init(params.plugins);
         // add foreign plugins
         for (const plugin of foreignPlugins) {
-            this.registerPlugin(plugin, configStorage);
+            this.registerPlugin(plugin, params.configStorage);
         }
         // add own plugins, before initialization
         for (const plugin of plugins) {
-            this.registerPlugin(plugin, configStorage);
+            this.registerPlugin(plugin, params.configStorage);
         }
 
         // run eager plugins
         await this.$activateByEvent('*');
-        for (const activationEvent of pluginInit.activationEvents) {
+        for (const activationEvent of params.activationEvents) {
             await this.$activateByEvent(activationEvent);
         }
 
         if (this.host.loadTests) {
             return this.host.loadTests();
         }
-        this.fireOnDidChange();
 
-        return Promise.resolve();
+        this.fireOnDidChange();
     }
 
     protected registerPlugin(plugin: Plugin, configStorage: ConfigStorage): void {
@@ -248,11 +249,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         return loading;
     }
 
-    $updateStoragePath(path: string | undefined): PromiseLike<void> {
+    async $updateStoragePath(path: string | undefined): Promise<void> {
         this.pluginContextsMap.forEach((pluginContext: theia.PluginContext, pluginId: string) => {
             pluginContext.storagePath = path ? join(path, pluginId) : undefined;
         });
-        return Promise.resolve();
     }
 
     async $activateByEvent(activationEvent: string): Promise<void> {
@@ -271,7 +271,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const subscriptions: theia.Disposable[] = [];
         const asAbsolutePath = (relativePath: string): string => join(plugin.pluginFolder, relativePath);
         const logPath = join(configStorage.hostLogPath, plugin.model.id); // todo check format
-        const storagePath = join(configStorage.hostStoragePath, plugin.model.id);
+        const storagePath = join(configStorage.hostStoragePath || '', plugin.model.id);
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
             globalState: new Memento(plugin.model.id, true, this.storageProxy),

@@ -30,6 +30,7 @@ import { HostedPluginProcess } from './hosted-plugin-process';
 import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
+import { PluginServerManager } from './plugin-server-manager';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginProcess).toSelf().inSingletonScope();
@@ -40,11 +41,9 @@ const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, b
 
     bind(HostedPluginServerImpl).toSelf().inSingletonScope();
     bind(HostedPluginServer).toService(HostedPluginServerImpl);
-    bindBackendService<HostedPluginServer, HostedPluginClient>(hostedServicePath, HostedPluginServer, (server, client) => {
-        server.setClient(client);
-        client.onDidCloseConnection(() => server.dispose());
-        return server;
-    });
+    bindBackendService<HostedPluginServer, HostedPluginClient>(hostedServicePath, HostedPluginServer, (server, client, context) =>
+        context.container.get(PluginServerManager).initialize(server, client)
+    );
 });
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {
@@ -60,6 +59,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
 
     bind(GrammarsReader).toSelf().inSingletonScope();
 
+    bind(PluginServerManager).toSelf().inSingletonScope();
     bind(ConnectionContainerModule).toConstantValue(commonHostedConnectionModule);
 }
 

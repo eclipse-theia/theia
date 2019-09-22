@@ -29,11 +29,15 @@ import { CommandRegistry, Command, CommandHandler } from '@theia/core/lib/common
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
 import { TaskDefinitionRegistry, ProblemMatcherRegistry, ProblemPatternRegistry } from '@theia/task/lib/browser';
+import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
 
 @injectable()
 export class PluginContributionHandler {
 
     private injections = new Map<string, string[]>();
+
+    @inject(HostedPluginWatcher)
+    private readonly watcher: HostedPluginWatcher;
 
     @inject(TextmateRegistry)
     private readonly grammarsRegistry: TextmateRegistry;
@@ -91,7 +95,7 @@ export class PluginContributionHandler {
             try {
                 toDispose.push(contribute());
             } catch (e) {
-                console.error(`[${plugin.model.id}]: Failed to load '${id}' contribution.`, e);
+                console.error(`[${this.watcher.clientId}][${plugin.model.id}]: Failed to load '${id}' contribution.`, e);
             }
         };
 

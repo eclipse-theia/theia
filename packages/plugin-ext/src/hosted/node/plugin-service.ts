@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject, named, postConstruct } from 'inversify';
-import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployer } from '../../common/plugin-protocol';
+import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployer, PluginMetadataHandle } from '../../common/plugin-protocol';
 import { HostedPluginSupport } from './hosted-plugin';
 import { ILogger, Disposable } from '@theia/core';
 import { ContributionProvider } from '@theia/core';
@@ -63,33 +63,51 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         this.hostedPlugin.setClient(client);
     }
 
-    getDeployedFrontendMetadata(): Promise<PluginMetadata[]> {
-        return this.deployerHandler.getDeployedFrontendMetadata();
-    }
+    private readonly extraPluginMetadata = new Map<string, PluginMetadata>();
 
-    async getDeployedMetadata(): Promise<PluginMetadata[]> {
+    async getDeployedPlugins(): Promise<string[]> {
         const backendMetadata = await this.deployerHandler.getDeployedBackendMetadata();
         if (backendMetadata.length > 0) {
             this.hostedPlugin.runPluginServer();
         }
-        const allMetadata: PluginMetadata[] = [];
-        allMetadata.push(...await this.deployerHandler.getDeployedFrontendMetadata());
-        allMetadata.push(...backendMetadata);
-
-        // ask remote as well
-        const extraBackendPluginsMetadata = await this.hostedPlugin.getExtraPluginMetadata();
-        allMetadata.push(...extraBackendPluginsMetadata);
-
-        return allMetadata;
+        const plugins = new Set<string>();
+        for (const plugin of await this.deployerHandler.getDeployedFrontendMetadata()) {
+            plugins.add(plugin.model.id);
+        }
+        for (const plugin of backendMetadata) {
+            plugins.add(plugin.model.id);
+        }
+        const extraPluginMetadata = await this.hostedPlugin.getExtraPluginMetadata();
+        this.extraPluginMetadata.clear();
+        for (const plugin of extraPluginMetadata) {
+            plugins.add(plugin.model.id);
+            this.extraPluginMetadata.set(plugin.model.id, plugin);
+        }
+        return [...plugins.values()];
     }
 
-    getDeployedBackendMetadata(): Promise<PluginMetadata[]> {
-        return Promise.resolve(this.deployerHandler.getDeployedBackendMetadata());
+    getDeployedPlugin(pluginId: string): PluginMetadata | undefined {
+        return this.deployerHandler.getDeployedPluginMetadata(pluginId) ||
+            this.extraPluginMetadata.get(pluginId);
     }
 
-    onMessage(message: string): Promise<void> {
-        this.hostedPlugin.onMessage(message);
-        return Promise.resolve();
+    async onMessage(message: string): Promise<void> {
+        const json = JSON.parse(message);
+        // a hack to avoid sending plugin metadata over remote JSON-RPC,
+        // don't abuse parsing and serializing data back otherwise
+        if (message.indexOf('pluginHandle') !== -1 && Array.isArray(json.content)) {
+            json.content = json.content.map((content: string) => JSON.stringify(JSON.parse(content, (key, value) => {
+                if (PluginMetadataHandle.is(value)) {
+                    return this.getDeployedPlugin(value.pluginHandle);
+                }
+                if (key === 'plugins' && Array.isArray(value)) {
+                    // filter out undeployed plugins
+                    return value.filter(plugin => !!plugin);
+                }
+                return value;
+            })));
+        }
+        this.hostedPlugin.onMessage(json);
     }
 
     getExtPluginAPI(): Promise<ExtPluginApi[]> {

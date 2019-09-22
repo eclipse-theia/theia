@@ -14,10 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { UUID } from '@phosphor/coreutils';
 import { injectable } from 'inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { HostedPluginClient } from '../../common/plugin-protocol';
 import { LogPart } from '../../common/types';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 @injectable()
 export class HostedPluginWatcher {
@@ -27,10 +29,25 @@ export class HostedPluginWatcher {
     private readonly onDidDeployEmitter = new Emitter<void>();
     readonly onDidDeploy = this.onDidDeployEmitter.event;
 
+    readonly clientId = UUID.uuid4();
+
+    protected _initialized = new Deferred<void>();
+    get initialized(): Promise<void> {
+        return this._initialized.promise;
+    }
+
+    reset(): void {
+        this._initialized = new Deferred<void>();
+    }
+
     getHostedPluginClient(): HostedPluginClient {
         const messageEmitter = this.onPostMessage;
         const logEmitter = this.onLogMessage;
         return {
+            initialize: async () => {
+                this._initialized.resolve();
+                return { clientId: this.clientId };
+            },
             postMessage(message: string): Promise<void> {
                 messageEmitter.fire(JSON.parse(message));
                 return Promise.resolve();
