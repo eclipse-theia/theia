@@ -121,96 +121,146 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         const contributions: PluginContribution = {};
-        if (rawPlugin.contributes.configuration) {
-            if (Array.isArray(rawPlugin.contributes.configuration)) {
+
+        try {
+            if (rawPlugin.contributes.configuration) {
+                const configurations = Array.isArray(rawPlugin.contributes.configuration) ? rawPlugin.contributes.configuration : [rawPlugin.contributes.configuration];
                 contributions.configuration = [];
-                for (const c of rawPlugin.contributes.configuration) {
+                for (const c of configurations) {
                     const config = this.readConfiguration(c, rawPlugin.packagePath);
                     if (config) {
                         contributions.configuration.push(config);
                     }
                 }
-            } else {
-                const config = this.readConfiguration(rawPlugin.contributes.configuration, rawPlugin.packagePath);
-                contributions.configuration = config;
             }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'configuration'.`, rawPlugin.contributes.configuration, err);
         }
+
         const configurationDefaults = rawPlugin.contributes.configurationDefaults;
         contributions.configurationDefaults = PreferenceSchemaProperties.is(configurationDefaults) ? configurationDefaults : undefined;
 
-        if (rawPlugin.contributes!.languages) {
-            const languages = this.readLanguages(rawPlugin.contributes.languages!, rawPlugin.packagePath);
-            contributions.languages = languages;
+        try {
+            if (rawPlugin.contributes!.languages) {
+                const languages = this.readLanguages(rawPlugin.contributes.languages!, rawPlugin.packagePath);
+                contributions.languages = languages;
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'languages'.`, rawPlugin.contributes!.languages, err);
         }
 
-        if (rawPlugin.contributes!.grammars) {
-            const grammars = this.grammarsReader.readGrammars(rawPlugin.contributes.grammars!, rawPlugin.packagePath);
-            contributions.grammars = grammars;
+        try {
+            if (rawPlugin.contributes!.grammars) {
+                const grammars = this.grammarsReader.readGrammars(rawPlugin.contributes.grammars!, rawPlugin.packagePath);
+                contributions.grammars = grammars;
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'grammars'.`, rawPlugin.contributes!.grammars, err);
         }
 
-        if (rawPlugin.contributes!.viewsContainers) {
-            contributions.viewsContainers = {};
+        try {
+            if (rawPlugin.contributes && rawPlugin.contributes.viewsContainers) {
+                const viewsContainers = rawPlugin.contributes.viewsContainers;
+                contributions.viewsContainers = {};
 
-            Object.keys(rawPlugin.contributes.viewsContainers!).forEach(location => {
-                const containers = this.readViewsContainers(rawPlugin.contributes!.viewsContainers![location], rawPlugin);
-                if (location === 'activitybar') {
-                    location = 'left';
+                for (const location of Object.keys(viewsContainers)) {
+                    const containers = this.readViewsContainers(viewsContainers[location], rawPlugin);
+                    const loc = location === 'activitybar' ? 'left' : location;
+                    if (contributions.viewsContainers[loc]) {
+                        contributions.viewsContainers[loc] = contributions.viewsContainers[loc].concat(containers);
+                    } else {
+                        contributions.viewsContainers[loc] = containers;
+                    }
                 }
-
-                if (contributions.viewsContainers![location]) {
-                    contributions.viewsContainers![location] = contributions.viewsContainers![location].concat(containers);
-                } else {
-                    contributions.viewsContainers![location] = containers;
-                }
-            });
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'viewsContainers'.`, rawPlugin.contributes!.viewsContainers, err);
         }
 
-        if (rawPlugin.contributes!.views) {
-            contributions.views = {};
+        try {
+            if (rawPlugin.contributes!.views) {
+                contributions.views = {};
 
-            Object.keys(rawPlugin.contributes.views!).forEach(location => {
-                const views = this.readViews(rawPlugin.contributes!.views![location]);
-                contributions.views![location] = views;
-            });
+                Object.keys(rawPlugin.contributes.views!).forEach(location => {
+                    const views = this.readViews(rawPlugin.contributes!.views![location]);
+                    contributions.views![location] = views;
+                });
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'views'.`, rawPlugin.contributes!.views, err);
         }
 
-        const pluginCommands = rawPlugin.contributes.commands;
-        if (pluginCommands) {
-            const commands = Array.isArray(pluginCommands) ? pluginCommands : [pluginCommands];
-            contributions.commands = commands.map(command => this.readCommand(command, rawPlugin));
+        try {
+            const pluginCommands = rawPlugin.contributes.commands;
+            if (pluginCommands) {
+                const commands = Array.isArray(pluginCommands) ? pluginCommands : [pluginCommands];
+                contributions.commands = commands.map(command => this.readCommand(command, rawPlugin));
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'commands'.`, rawPlugin.contributes!.commands, err);
         }
 
-        if (rawPlugin.contributes!.menus) {
-            contributions.menus = {};
+        try {
+            if (rawPlugin.contributes!.menus) {
+                contributions.menus = {};
 
-            Object.keys(rawPlugin.contributes.menus!).forEach(location => {
-                const menus = this.readMenus(rawPlugin.contributes!.menus![location]);
-                contributions.menus![location] = menus;
-            });
+                Object.keys(rawPlugin.contributes.menus!).forEach(location => {
+                    const menus = this.readMenus(rawPlugin.contributes!.menus![location]);
+                    contributions.menus![location] = menus;
+                });
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'menus'.`, rawPlugin.contributes!.menus, err);
         }
 
-        if (rawPlugin.contributes && rawPlugin.contributes.keybindings) {
-            contributions.keybindings = rawPlugin.contributes.keybindings.map(rawKeybinding => this.readKeybinding(rawKeybinding));
+        try {
+            if (rawPlugin.contributes! && rawPlugin.contributes.keybindings) {
+                const rawKeybindings = Array.isArray(rawPlugin.contributes.keybindings) ? rawPlugin.contributes.keybindings : [rawPlugin.contributes.keybindings];
+                contributions.keybindings = rawKeybindings.map(rawKeybinding => this.readKeybinding(rawKeybinding));
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'keybindings'.`, rawPlugin.contributes!.keybindings, err);
         }
 
-        if (rawPlugin.contributes!.debuggers) {
-            const debuggers = this.readDebuggers(rawPlugin.contributes.debuggers!);
-            contributions.debuggers = debuggers;
+        try {
+            if (rawPlugin.contributes!.debuggers) {
+                const debuggers = this.readDebuggers(rawPlugin.contributes.debuggers!);
+                contributions.debuggers = debuggers;
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'debuggers'.`, rawPlugin.contributes!.debuggers, err);
         }
 
-        if (rawPlugin.contributes!.taskDefinitions) {
-            contributions.taskDefinitions = rawPlugin.contributes!.taskDefinitions!.map(definitionContribution => this.readTaskDefinition(rawPlugin.name, definitionContribution));
+        try {
+            if (rawPlugin.contributes!.taskDefinitions) {
+                const definitions = rawPlugin.contributes!.taskDefinitions!;
+                contributions.taskDefinitions = definitions.map(definitionContribution => this.readTaskDefinition(rawPlugin.name, definitionContribution));
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'taskDefinitions'.`, rawPlugin.contributes!.taskDefinitions, err);
         }
 
-        if (rawPlugin.contributes!.problemMatchers) {
-            contributions.problemMatchers = rawPlugin.contributes!.problemMatchers as ProblemMatcherContribution[];
+        try {
+            if (rawPlugin.contributes!.problemMatchers) {
+                contributions.problemMatchers = rawPlugin.contributes!.problemMatchers as ProblemMatcherContribution[];
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'problemMatchers'.`, rawPlugin.contributes!.problemMatchers, err);
         }
 
-        if (rawPlugin.contributes!.problemPatterns) {
-            contributions.problemPatterns = rawPlugin.contributes!.problemPatterns as ProblemPatternContribution[];
+        try {
+            if (rawPlugin.contributes!.problemPatterns) {
+                contributions.problemPatterns = rawPlugin.contributes!.problemPatterns as ProblemPatternContribution[];
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'problemPatterns'.`, rawPlugin.contributes!.problemPatterns, err);
         }
 
-        contributions.snippets = this.readSnippets(rawPlugin);
+        try {
+            contributions.snippets = this.readSnippets(rawPlugin);
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'snippets'.`, rawPlugin.contributes!.snippets, err);
+        }
         return contributions;
     }
 

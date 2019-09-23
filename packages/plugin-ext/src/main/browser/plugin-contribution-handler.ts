@@ -97,12 +97,8 @@ export class PluginContributionHandler {
 
         const configuration = contributions.configuration;
         if (configuration) {
-            if (Array.isArray(configuration)) {
-                for (const config of configuration) {
-                    pushContribution('configuration', () => this.updateConfigurationSchema(config));
-                }
-            } else {
-                pushContribution('configuration', () => this.updateConfigurationSchema(configuration));
+            for (const config of configuration) {
+                pushContribution('configuration', () => this.updateConfigurationSchema(config));
             }
         }
 
