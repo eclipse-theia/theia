@@ -350,8 +350,9 @@ export class HostedPluginSupport {
         }
     }
 
-    protected getStoragePath(): Promise<string | undefined> {
-        return this.pluginPathsService.getHostStoragePath(this.workspaceService.workspace, this.workspaceService.tryGetRoots());
+    protected async getStoragePath(): Promise<string | undefined> {
+        const roots = await this.workspaceService.roots;
+        return this.pluginPathsService.getHostStoragePath(this.workspaceService.workspace, roots);
     }
 
     async activateByEvent(activationEvent: string): Promise<void> {
