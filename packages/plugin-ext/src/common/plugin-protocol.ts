@@ -72,7 +72,7 @@ export interface PluginPackageContribution {
     views?: { [location: string]: PluginPackageView[] };
     commands?: PluginPackageCommand | PluginPackageCommand[];
     menus?: { [location: string]: PluginPackageMenu[] };
-    keybindings?: PluginPackageKeybinding[];
+    keybindings?: PluginPackageKeybinding | PluginPackageKeybinding[];
     debuggers?: PluginPackageDebuggersContribution[];
     snippets: PluginPackageSnippetsContribution[];
     taskDefinitions?: PluginTaskDefinitionContribution[];
@@ -390,7 +390,7 @@ export interface PluginModel {
  * This interface describes some static plugin contributions.
  */
 export interface PluginContribution {
-    configuration?: PreferenceSchema | PreferenceSchema[];
+    configuration?: PreferenceSchema[];
     configurationDefaults?: PreferenceSchemaProperties;
     languages?: LanguageContribution[];
     grammars?: GrammarsContribution[];
