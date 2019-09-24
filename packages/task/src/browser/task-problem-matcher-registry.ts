@@ -88,7 +88,7 @@ export class ProblemMatcherRegistry {
      */
     getAll(): NamedProblemMatcher[] {
         const all: NamedProblemMatcher[] = [];
-        for (const matcherName of Object.keys(this.matchers)) {
+        for (const matcherName of this.matchers.keys()) {
             all.push(this.get(matcherName)!);
         }
         all.sort((one, other) => one.name.localeCompare(other.name));
