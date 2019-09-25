@@ -49,6 +49,7 @@ export class PreferencesDecorator implements TreeDecorator {
             const preferenceName = Object.keys(m)[0];
             const preferenceValue = m[preferenceName];
             const storedValue = this.preferencesService.get(preferenceName, undefined, this.activeFolderUri);
+            const description = this.getDescription(preferenceValue);
             return [preferenceName, {
                 tooltip: this.buildTooltip(preferenceValue),
                 captionSuffixes: [
@@ -56,7 +57,7 @@ export class PreferencesDecorator implements TreeDecorator {
                         data: `: ${this.getPreferenceDisplayValue(storedValue, preferenceValue.defaultValue)}`
                     },
                     {
-                        data: ' ' + preferenceValue.description,
+                        data: ' ' + description,
                         fontData: { color: 'var(--theia-ui-font-color2)' }
                     }]
             }] as [string, TreeDecoration.Data];
@@ -101,5 +102,35 @@ export class PreferencesDecorator implements TreeDecorator {
             tooltips += `\nAccepted Values: ${data.enum.join(', ')}`;
         }
         return tooltips;
+    }
+
+    /**
+     * Get the description for the preference for display purposes.
+     * @param value {PreferenceDataProperty} the preference data property.
+     * @returns the description if available.
+     */
+    private getDescription(value: PreferenceDataProperty): string {
+
+        /**
+         * Format the string for consistency and display purposes.
+         * Formatting includes:
+         * - capitalizing the string.
+         * - ensuring it ends in punctuation (`.`).
+         * @param str {string} the string to format.
+         * @returns the formatted string.
+         */
+        function format(str: string): string {
+            if (str.endsWith('.')) {
+                return str.charAt(0).toUpperCase() + str.slice(1);
+            }
+            return `${str.charAt(0).toUpperCase() + str.slice(1)}.`;
+        }
+
+        if (value.description) {
+            return format(value.description);
+        } else if (value.markdownDescription) {
+            return format(value.markdownDescription);
+        }
+        return '';
     }
 }
