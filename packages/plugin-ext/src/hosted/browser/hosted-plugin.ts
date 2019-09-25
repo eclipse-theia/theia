@@ -216,6 +216,8 @@ export class HostedPluginSupport {
      */
     protected async syncPlugins(): Promise<void> {
         let initialized = 0;
+        const syncPluginsMeasurement = this.createMeasurement('syncPlugins');
+
         const toUnload = new Set(this.contributions.keys());
         try {
             const pluginIds: string[] = [];
@@ -248,6 +250,7 @@ export class HostedPluginSupport {
             }
         }
 
+        this.logMeasurement('Sync', initialized, syncPluginsMeasurement);
     }
 
     /**
@@ -255,6 +258,9 @@ export class HostedPluginSupport {
      * @throws never
      */
     protected loadContributions(toDisconnect: DisposableCollection): Map<PluginHost, PluginContributions[]> {
+        let loaded = 0;
+        const loadPluginsMeasurement = this.createMeasurement('loadPlugins');
+
         const hostContributions = new Map<PluginHost, PluginContributions[]>();
         for (const contributions of this.contributions.values()) {
             const plugin = contributions.plugin;
@@ -266,6 +272,7 @@ export class HostedPluginSupport {
                 contributions.push(this.contributionHandler.handleContributions(this.clientId, plugin));
                 contributions.state = PluginContributions.State.LOADED;
                 console.log(`[${this.clientId}][${pluginId}]: Loaded contributions.`);
+                loaded++;
             }
 
             if (contributions.state === PluginContributions.State.LOADED) {
@@ -280,10 +287,16 @@ export class HostedPluginSupport {
                 }));
             }
         }
+
+        this.logMeasurement('Load contributions', loaded, loadPluginsMeasurement);
+
         return hostContributions;
     }
 
     protected async startPlugins(contributionsByHost: Map<PluginHost, PluginContributions[]>, toDisconnect: DisposableCollection): Promise<void> {
+        let started = 0;
+        const startPluginsMeasurement = this.createMeasurement('startPlugins');
+
         const [hostLogPath, hostStoragePath] = await Promise.all([
             this.pluginPathsService.getHostLogPath(),
             this.getStoragePath()
@@ -307,6 +320,7 @@ export class HostedPluginSupport {
                         return;
                     }
                     for (const contributions of hostContributions) {
+                        started++;
                         const plugin = contributions.plugin;
                         const id = plugin.model.id;
                         contributions.state = PluginContributions.State.STARTED;
@@ -324,6 +338,10 @@ export class HostedPluginSupport {
             })());
         }
         await Promise.all(thenable);
+        if (toDisconnect.disposed) {
+            return;
+        }
+        this.logMeasurement('Start', started, startPluginsMeasurement);
     }
 
     protected async obtainManager(host: string, hostContributions: PluginContributions[], toDisconnect: DisposableCollection): Promise<PluginManagerExt | undefined> {
@@ -509,6 +527,30 @@ export class HostedPluginSupport {
         if (promises.length && await Promise.all(promises).then(exists => exists.some(v => v))) {
             await activatePlugin();
         }
+    }
+
+    protected createMeasurement(name: string): () => number {
+        const startMarker = `${name}-start`;
+        const endMarker = `${name}-end`;
+        performance.clearMeasures(name);
+        performance.clearMarks(startMarker);
+        performance.clearMarks(endMarker);
+
+        performance.mark(startMarker);
+        return () => {
+            performance.mark(endMarker);
+            performance.measure(name, startMarker, endMarker);
+            const duration = performance.getEntriesByName(name)[0].duration;
+            performance.clearMeasures(name);
+            performance.clearMarks(startMarker);
+            performance.clearMarks(endMarker);
+            return duration;
+        };
+    }
+
+    protected logMeasurement(prefix: string, count: number, measurement: () => number): void {
+        const pluginCount = `${count} plugin${count === 1 ? '' : 's'}`;
+        console.log(`[${this.clientId}] ${prefix} of ${pluginCount} took: ${measurement()} ms`);
     }
 
 }
