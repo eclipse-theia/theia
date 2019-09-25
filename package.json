@@ -6,7 +6,7 @@
     "yarn": "1.0.x || >=1.2.1",
     "node": ">=10.2.0 <12"
   },
-  "resolution": {
+  "resolutions": {
     "**/@types/node": "~10.3.6"
   },
   "devDependencies": {
@@ -27,7 +27,7 @@
     "istanbul": "^0.4.5",
     "istanbul-instrumenter-loader": "^3.0.1",
     "jsdom": "^11.5.1",
-    "lerna": "^2.2.0",
+    "lerna": "^3.16.4",
     "mocha": "^3.4.2",
     "nyc": "^11.0.3",
     "remap-istanbul": "^0.9.5",

@@ -8,11 +8,11 @@
     "@theia/languages": "^0.10.0",
     "@theia/monaco": "^0.10.0",
     "@types/glob": "^5.0.30",
-    "@types/tar": "4.0.0",
+    "@types/tar": "^4.0.3",
     "glob": "^7.1.2",
     "mkdirp": "^0.5.0",
     "sha1": "^1.1.1",
-    "tar": "^4.0.0"
+    "tar": "^4.4.13"
   },
   "devDependencies": {
     "@theia/ext-scripts": "^0.10.0"
