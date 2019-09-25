@@ -29,6 +29,8 @@ import { CommandRegistry, Command, CommandHandler } from '@theia/core/lib/common
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
 import { TaskDefinitionRegistry, ProblemMatcherRegistry, ProblemPatternRegistry } from '@theia/task/lib/browser';
+import { PluginDebugService } from './debug/plugin-debug-service';
+import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-updater';
 
 @injectable()
 export class PluginContributionHandler {
@@ -70,6 +72,12 @@ export class PluginContributionHandler {
 
     @inject(ProblemPatternRegistry)
     protected readonly problemPatternRegistry: ProblemPatternRegistry;
+
+    @inject(PluginDebugService)
+    protected readonly debugService: PluginDebugService;
+
+    @inject(DebugSchemaUpdater)
+    protected readonly debugSchema: DebugSchemaUpdater;
 
     protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
 
@@ -237,6 +245,16 @@ export class PluginContributionHandler {
                     () => this.problemMatcherRegistry.register(problemMatcher)
                 );
             }
+        }
+
+        if (contributions.debuggers && contributions.debuggers.length) {
+            toDispose.push(Disposable.create(() => this.debugSchema.update()));
+            for (const contribution of contributions.debuggers) {
+                pushContribution(`debuggers.${contribution.type}`,
+                    () => this.debugService.registerDebugger(contribution)
+                );
+            }
+            this.debugSchema.update();
         }
 
         return toDispose;

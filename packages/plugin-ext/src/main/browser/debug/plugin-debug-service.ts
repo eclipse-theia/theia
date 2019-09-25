@@ -22,6 +22,7 @@ import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribut
 import { injectable, inject, postConstruct } from 'inversify';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { DebuggerContribution } from '../../../common/plugin-protocol';
 
 /**
  * Debug adapter contribution registrator.
@@ -45,6 +46,8 @@ export interface PluginDebugAdapterContributionRegistrator {
  */
 @injectable()
 export class PluginDebugService implements DebugService, PluginDebugAdapterContributionRegistrator {
+
+    protected readonly debuggers: DebuggerContribution[] = [];
     protected readonly contributors = new Map<string, PluginDebugAdapterContribution>();
     protected readonly toDispose = new DisposableCollection();
 
@@ -88,8 +91,14 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
     }
 
     async debugTypes(): Promise<string[]> {
-        const debugTypes = await this.delegated.debugTypes();
-        return debugTypes.concat(Array.from(this.contributors.keys()));
+        const debugTypes = new Set(await this.delegated.debugTypes());
+        for (const contribution of this.debuggers) {
+            debugTypes.add(contribution.type);
+        }
+        for (const debugType of this.contributors.keys()) {
+            debugTypes.add(debugType);
+        }
+        return [...debugTypes];
     }
 
     async provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]> {
@@ -123,14 +132,24 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
         return this.delegated.resolveDebugConfiguration(resolved, workspaceFolderUri);
     }
 
+    registerDebugger(contribution: DebuggerContribution): Disposable {
+        this.debuggers.push(contribution);
+        return Disposable.create(() => {
+            const index = this.debuggers.indexOf(contribution);
+            if (index !== -1) {
+                this.debuggers.splice(index, 1);
+            }
+        });
+    }
+
     async getDebuggersForLanguage(language: string): Promise<DebuggerDescription[]> {
         const debuggers = await this.delegated.getDebuggersForLanguage(language);
 
-        for (const contributor of this.contributors.values()) {
-            const languages = await contributor.languages;
+        for (const contributor of this.debuggers) {
+            const languages = contributor.languages;
             if (languages && languages.indexOf(language) !== -1) {
-                const { type } = contributor;
-                debuggers.push({ type, label: await contributor.label || type });
+                const { label, type } = contributor;
+                debuggers.push({ type, label: label || type });
             }
         }
 
@@ -138,20 +157,22 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
     }
 
     async getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
-        const contributor = this.contributors.get(debugType);
-        if (contributor) {
-            return contributor.getSchemaAttributes && contributor.getSchemaAttributes() || [];
-        } else {
-            return this.delegated.getSchemaAttributes(debugType);
+        let schemas = await this.delegated.getSchemaAttributes(debugType);
+        for (const contribution of this.debuggers) {
+            if (contribution.configurationAttributes &&
+                (contribution.type === debugType || contribution.type === '*' || debugType === '*')) {
+                schemas = schemas.concat(contribution.configurationAttributes);
+            }
         }
+        return schemas;
     }
 
     async getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]> {
         let snippets = await this.delegated.getConfigurationSnippets();
 
-        for (const contributor of this.contributors.values()) {
-            if (contributor.getConfigurationSnippets) {
-                snippets = snippets.concat(await contributor.getConfigurationSnippets());
+        for (const contribution of this.debuggers) {
+            if (contribution.configurationSnippets) {
+                snippets = snippets.concat(contribution.configurationSnippets);
             }
         }
 
