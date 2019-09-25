@@ -66,7 +66,6 @@ import {
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
 import { CancellationToken, Progress, ProgressOptions } from '@theia/plugin';
-import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { SymbolInformation } from 'vscode-languageserver-types';
@@ -1241,9 +1240,6 @@ export interface DebugExt {
     $sessionDidChange(sessionId: string | undefined): void;
     $provideDebugConfigurations(debugType: string, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration[]>;
     $resolveDebugConfigurations(debugConfiguration: theia.DebugConfiguration, workspaceFolder: string | undefined): Promise<theia.DebugConfiguration | undefined>;
-    $getSupportedLanguages(debugType: string): Promise<string[]>;
-    $getSchemaAttributes(debugType: string): Promise<IJSONSchema[]>;
-    $getConfigurationSnippets(debugType: string): Promise<IJSONSchemaSnippet[]>;
     $createDebugSession(debugConfiguration: theia.DebugConfiguration): Promise<string>;
     $terminateDebugSession(sessionId: string): Promise<void>;
     $getTerminalCreationOptions(debugType: string): Promise<TerminalOptionsExt | undefined>;

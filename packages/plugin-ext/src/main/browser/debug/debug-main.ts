@@ -47,7 +47,6 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { PluginDebugSessionFactory } from './plugin-debug-session-factory';
 import { PluginWebSocketChannel } from '../../../common/connection';
 import { PluginDebugAdapterContributionRegistrator, PluginDebugService } from './plugin-debug-service';
-import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-updater';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 
@@ -66,7 +65,6 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugPreferences: DebugPreferences;
     private readonly sessionContributionRegistrator: PluginDebugSessionContributionRegistrator;
     private readonly adapterContributionRegistrator: PluginDebugAdapterContributionRegistrator;
-    private readonly debugSchemaUpdater: DebugSchemaUpdater;
     private readonly fileSystem: FileSystem;
     private readonly pluginService: HostedPluginSupport;
 
@@ -87,7 +85,6 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.debugPreferences = container.get(DebugPreferences);
         this.adapterContributionRegistrator = container.get(PluginDebugService);
         this.sessionContributionRegistrator = container.get(PluginDebugSessionContributionRegistry);
-        this.debugSchemaUpdater = container.get(DebugSchemaUpdater);
         this.fileSystem = container.get(FileSystem);
         this.pluginService = container.get(HostedPluginSupport);
 
@@ -146,7 +143,6 @@ export class DebugMainImpl implements DebugMain, Disposable {
         );
 
         const toDispose = new DisposableCollection(
-            Disposable.create(() => this.debugSchemaUpdater.update()),
             Disposable.create(() => this.debuggerContributions.delete(debugType))
         );
         this.debuggerContributions.set(debugType, toDispose);
@@ -160,8 +156,6 @@ export class DebugMainImpl implements DebugMain, Disposable {
             })
         ]);
         this.toDispose.push(Disposable.create(() => this.$unregisterDebuggerConfiguration(debugType)));
-
-        this.debugSchemaUpdater.update();
     }
 
     async $unregisterDebuggerConfiguration(debugType: string): Promise<void> {

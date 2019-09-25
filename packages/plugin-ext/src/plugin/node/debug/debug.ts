@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { Emitter } from '@theia/core/lib/common/event';
-import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { Path } from '@theia/core/lib/common/path';
 import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
 import * as theia from '@theia/plugin';
@@ -227,21 +226,6 @@ export class DebugExtImpl implements DebugExt {
             await debugAdapterSession.stop();
             this.sessions.delete(sessionId);
         }
-    }
-
-    async $getSupportedLanguages(debugType: string): Promise<string[]> {
-        const contribution = this.debuggersContributions.get(debugType);
-        return contribution && contribution.languages || [];
-    }
-
-    async $getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
-        const contribution = this.debuggersContributions.get(debugType);
-        return contribution && contribution.configurationAttributes || [];
-    }
-
-    async $getConfigurationSnippets(debugType: string): Promise<IJSONSchemaSnippet[]> {
-        const contribution = this.debuggersContributions.get(debugType);
-        return contribution && contribution.configurationSnippets || [];
     }
 
     async $getTerminalCreationOptions(debugType: string): Promise<TerminalOptionsExt | undefined> {

@@ -16,7 +16,6 @@
 
 import { DebugExt, } from '../../../common/plugin-api-rpc';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
-import { IJSONSchemaSnippet, IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
@@ -36,18 +35,6 @@ export class PluginDebugAdapterContribution {
 
     get label(): MaybePromise<string | undefined> {
         return this.description.label;
-    }
-
-    get languages(): MaybePromise<string[] | undefined> {
-        return this.debugExt.$getSupportedLanguages(this.type);
-    }
-
-    async getSchemaAttributes(): Promise<IJSONSchema[]> {
-        return this.debugExt.$getSchemaAttributes(this.type);
-    }
-
-    async getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]> {
-        return this.debugExt.$getConfigurationSnippets(this.type);
     }
 
     async provideDebugConfigurations(workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]> {
