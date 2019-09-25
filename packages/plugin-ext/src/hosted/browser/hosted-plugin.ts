@@ -21,6 +21,7 @@
 
 // tslint:disable:no-any
 
+import debounce = require('lodash.debounce');
 import { injectable, inject, interfaces, named, postConstruct } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { PluginMetadata, getPluginId, HostedPluginServer } from '../../common/plugin-protocol';
@@ -166,20 +167,21 @@ export class HostedPluginSupport {
         this.server.onDidOpenConnection(() => this.load());
     }
 
-    async load(): Promise<void> {
+    protected loadQueue: Promise<void> = Promise.resolve(undefined);
+    load = debounce(() => this.loadQueue = this.loadQueue.then(async () => {
         try {
             await this.progressService.withProgress('', PluginProgressLocation, () => this.doLoad());
         } catch (e) {
             console.error('Failed to load plugins:', e);
         }
-    }
+    }), 50, { leading: true });
 
     protected async doLoad(): Promise<void> {
         const toDisconnect = new DisposableCollection(Disposable.create(() => { /* mark as connected */ }));
         this.server.onDidCloseConnection(() => toDisconnect.dispose());
 
         // process empty plugins as well in order to properly remove stale plugin widgets
-        const plugins = await this.server.getDeployedMetadata();
+        await this.syncPlugins();
 
         // make sure that the previous state, including plugin widgets, is restored
         // and core layout is initialized, i.e. explorer, scm, debug views are already added to the shell
@@ -190,7 +192,7 @@ export class HostedPluginSupport {
             // if disconnected then don't try to load plugin contributions
             return;
         }
-        const contributionsByHost = this.loadContributions(plugins, toDisconnect);
+        const contributionsByHost = this.loadContributions(toDisconnect);
 
         await this.viewRegistry.initWidgets();
         // remove restored plugin widgets which were not registered by contributions
@@ -205,31 +207,62 @@ export class HostedPluginSupport {
     }
 
     /**
+     * Sync loaded and deployed plugins:
+     * - undeployed plugins are unloaded
+     * - newly deployed plugins are initialized
+     */
+    protected async syncPlugins(): Promise<void> {
+        let initialized = 0;
+        const toUnload = new Set(this.contributions.keys());
+        try {
+            const pluginIds: string[] = [];
+            const deployedPluginIds = await this.server.getDeployedPluginIds();
+            for (const pluginId of deployedPluginIds) {
+                toUnload.delete(pluginId);
+                if (!this.contributions.has(pluginId)) {
+                    pluginIds.push(pluginId);
+                }
+            }
+            for (const pluginId of toUnload) {
+                const contribution = this.contributions.get(pluginId);
+                if (contribution) {
+                    contribution.dispose();
+                }
+            }
+            if (pluginIds.length) {
+                const plugins = await this.server.getDeployedPlugins({ pluginIds });
+                for (const plugin of plugins) {
+                    const pluginId = plugin.model.id;
+                    const contributions = new PluginContributions(plugin);
+                    this.contributions.set(pluginId, contributions);
+                    contributions.push(Disposable.create(() => this.contributions.delete(pluginId)));
+                    initialized++;
+                }
+            }
+        } finally {
+            if (initialized || toUnload.size) {
+                this.onDidChangePluginsEmitter.fire(undefined);
+            }
+        }
+
+    }
+
+    /**
      * Always synchronous in order to simplify handling disconnections.
      * @throws never
      */
-    protected loadContributions(plugins: PluginMetadata[], toDisconnect: DisposableCollection): Map<PluginHost, PluginContributions[]> {
+    protected loadContributions(toDisconnect: DisposableCollection): Map<PluginHost, PluginContributions[]> {
         const hostContributions = new Map<PluginHost, PluginContributions[]>();
-        const toUnload = new Set(this.contributions.keys());
-        let loaded = false;
-        for (const plugin of plugins) {
+        for (const contributions of this.contributions.values()) {
+            const plugin = contributions.plugin;
             const pluginId = plugin.model.id;
-            toUnload.delete(pluginId);
-
-            let contributions = this.contributions.get(pluginId);
-            if (!contributions) {
-                contributions = new PluginContributions(plugin);
-                this.contributions.set(pluginId, contributions);
-                contributions.push(Disposable.create(() => this.contributions.delete(pluginId)));
-                loaded = true;
-            }
 
             if (contributions.state === PluginContributions.State.INITIALIZING) {
                 contributions.state = PluginContributions.State.LOADING;
-                contributions.push(Disposable.create(() => console.log(`[${plugin.model.id}]: Unloaded plugin.`)));
+                contributions.push(Disposable.create(() => console.log(`[${pluginId}]: Unloaded plugin.`)));
                 contributions.push(this.contributionHandler.handleContributions(plugin));
                 contributions.state = PluginContributions.State.LOADED;
-                console.log(`[${plugin.model.id}]: Loaded contributions.`);
+                console.log(`[${pluginId}]: Loaded contributions.`);
             }
 
             if (contributions.state === PluginContributions.State.LOADED) {
@@ -243,15 +276,6 @@ export class HostedPluginSupport {
                     console.log(`[${plugin.model.id}]: Disconnected.`);
                 }));
             }
-        }
-        for (const pluginId of toUnload) {
-            const contribution = this.contributions.get(pluginId);
-            if (contribution) {
-                contribution.dispose();
-            }
-        }
-        if (loaded || toUnload.size) {
-            this.onDidChangePluginsEmitter.fire(undefined);
         }
         return hostContributions;
     }
