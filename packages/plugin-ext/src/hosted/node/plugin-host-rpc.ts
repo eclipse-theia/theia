@@ -27,6 +27,7 @@ import { WorkspaceExtImpl } from '../../plugin/workspace';
 import { MessageRegistryExt } from '../../plugin/message-registry';
 import { EnvNodeExtImpl } from '../../plugin/node/env-node-ext';
 import { ClipboardExt } from '../../plugin/clipboard-ext';
+import { loadManifest } from './plugin-manifest-loader';
 
 /**
  * Handle the RPC calls.
@@ -128,40 +129,46 @@ export class PluginHostRPC {
                     console.error(e);
                 }
             },
-            init(raw: PluginMetadata[]): [Plugin[], Plugin[]] {
+            async init(raw: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/init()');
                 const result: Plugin[] = [];
                 const foreign: Plugin[] = [];
                 for (const plg of raw) {
-                    const pluginModel = plg.model;
-                    const pluginLifecycle = plg.lifecycle;
+                    try {
+                        const pluginModel = plg.model;
+                        const pluginLifecycle = plg.lifecycle;
 
-                    if (pluginModel.entryPoint!.frontend) {
-                        foreign.push({
-                            pluginPath: pluginModel.entryPoint.frontend!,
-                            pluginFolder: plg.source.packagePath,
-                            model: pluginModel,
-                            lifecycle: pluginLifecycle,
-                            rawModel: plg.source
-                        });
-                    } else {
-                        let backendInitPath = pluginLifecycle.backendInitPath;
-                        // if no init path, try to init as regular Theia plugin
-                        if (!backendInitPath) {
-                            backendInitPath = __dirname + '/scanners/backend-init-theia.js';
+                        const rawModel = await loadManifest(pluginModel.packagePath);
+                        rawModel.packagePath = pluginModel.packagePath;
+                        if (pluginModel.entryPoint!.frontend) {
+                            foreign.push({
+                                pluginPath: pluginModel.entryPoint.frontend!,
+                                pluginFolder: pluginModel.packagePath,
+                                model: pluginModel,
+                                lifecycle: pluginLifecycle,
+                                rawModel
+                            });
+                        } else {
+                            let backendInitPath = pluginLifecycle.backendInitPath;
+                            // if no init path, try to init as regular Theia plugin
+                            if (!backendInitPath) {
+                                backendInitPath = __dirname + '/scanners/backend-init-theia.js';
+                            }
+
+                            const plugin: Plugin = {
+                                pluginPath: pluginModel.entryPoint.backend!,
+                                pluginFolder: pluginModel.packagePath,
+                                model: pluginModel,
+                                lifecycle: pluginLifecycle,
+                                rawModel
+                            };
+
+                            self.initContext(backendInitPath, plugin);
+
+                            result.push(plugin);
                         }
-
-                        const plugin: Plugin = {
-                            pluginPath: pluginModel.entryPoint.backend!,
-                            pluginFolder: plg.source.packagePath,
-                            model: pluginModel,
-                            lifecycle: pluginLifecycle,
-                            rawModel: plg.source
-                        };
-
-                        self.initContext(backendInitPath, plugin);
-
-                        result.push(plugin);
+                    } catch (e) {
+                        console.error(`Failed to initialize ${plg.model.id} plugin.`, e);
                     }
                 }
                 return [result, foreign];

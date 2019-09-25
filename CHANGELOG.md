@@ -1,5 +1,14 @@
 # Change Log
 
+## v0.12.0
+
+Breaking changes:
+
+- [plugin] don't block web socket with many plugins [6252](https://github.com/eclipse-theia/theia/pull/6252)
+  - frontend plugins don't have access to raw package.json model anymore
+  - backend plugins don't have access to `PluginModel.contributes` anymore, read them from raw package.json model instead
+  - `PluginManagerExt.$init` does not start plugins anymore, but only initialize the manager RPC services, call `$start` to start plugins
+
 ## v0.11.0
 
 - [core] added <kbd>ENTER</kbd> event handler to the open button in explorer [#6158](https://github.com/eclipse-theia/theia/pull/6158)

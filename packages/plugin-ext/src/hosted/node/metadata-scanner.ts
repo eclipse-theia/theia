@@ -33,7 +33,6 @@ export class MetadataScanner {
         const scanner = this.getScanner(plugin);
         return {
             host: 'main',
-            source: plugin,
             model: scanner.getModel(plugin),
             lifecycle: scanner.getLifecycle(plugin)
         };

@@ -34,6 +34,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
             plugin.name = plugin.name.substr(built_prefix.length);
         }
         const result: PluginModel = {
+            packagePath: plugin.packagePath,
             // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
             id: `${plugin.publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
             name: plugin.name,
