@@ -25,6 +25,8 @@ import { bindPreferenceProviders } from './preference-bindings';
 
 import './preferences-monaco-contribution';
 
+export const PreferencesWidgetFactory = Symbol('PreferencesWidgetFactory');
+
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     bindPreferenceProviders(bind, unbind);
 
@@ -36,10 +38,11 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
         createWidget: () => container.get(PreferencesContainer)
     }));
 
-    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+    bind(PreferencesWidgetFactory).toDynamicValue(({ container }) => ({
         id: PreferencesTreeWidget.ID,
         createWidget: () => createPreferencesTreeWidget(container)
     })).inSingletonScope();
+    bind(WidgetFactory).toService(PreferencesWidgetFactory);
 
     bind(PreferencesEditorsContainer).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
