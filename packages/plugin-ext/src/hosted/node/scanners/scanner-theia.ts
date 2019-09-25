@@ -98,10 +98,8 @@ export class TheiaPluginScanner implements PluginScanner {
             entryPoint: {
                 frontend: plugin.theiaPlugin!.frontend,
                 backend: plugin.theiaPlugin!.backend
-            },
-            extensionDependencies: plugin.extensionDependencies || []
+            }
         };
-        result.contributes = this.readContributions(plugin);
         return result;
     }
 
@@ -115,12 +113,23 @@ export class TheiaPluginScanner implements PluginScanner {
         };
     }
 
-    protected readContributions(rawPlugin: PluginPackage): PluginContribution | undefined {
-        if (!rawPlugin.contributes) {
+    getDependencies(rawPlugin: PluginPackage): Map<string, string> | undefined {
+        // skip it since there is no way to load transitive dependencies for Theia plugins yet
+        return undefined;
+    }
+
+    getContribution(rawPlugin: PluginPackage): PluginContribution | undefined {
+        if (!rawPlugin.contributes && !rawPlugin.activationEvents) {
             return undefined;
         }
 
-        const contributions: PluginContribution = {};
+        const contributions: PluginContribution = {
+            activationEvents: rawPlugin.activationEvents
+        };
+
+        if (!rawPlugin.contributes) {
+            return contributions;
+        }
 
         try {
             if (rawPlugin.contributes.configuration) {

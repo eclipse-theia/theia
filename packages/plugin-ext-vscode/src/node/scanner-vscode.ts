@@ -47,11 +47,24 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
             },
             entryPoint: {
                 backend: plugin.main
-            },
-            extensionDependencies: this.getDeployableDependencies(plugin.extensionDependencies || [])
+            }
         };
-        result.contributes = this.readContributions(plugin);
         return result;
+    }
+
+    /**
+     * Maps extension dependencies to deployable extension dependencies.
+     */
+    getDependencies(plugin: PluginPackage): Map<string, string> | undefined {
+        if (!plugin.extensionDependencies || !plugin.extensionDependencies.length) {
+            return undefined;
+        }
+        const dependencies = new Map<string, string>();
+        for (const dependency of plugin.extensionDependencies) {
+            const dependencyId = dependency.toLowerCase();
+            dependencies.set(dependencyId, this.VSCODE_PREFIX + dependencyId);
+        }
+        return dependencies;
     }
 
     getLifecycle(plugin: PluginPackage): PluginLifecycle {
@@ -63,11 +76,4 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
         };
     }
 
-    /**
-     * Converts an array of extension dependencies
-     * to an array of deployable extension dependencies
-     */
-    private getDeployableDependencies(dependencies: string[]): string[] {
-        return dependencies.map(dep => this.VSCODE_PREFIX + dep.toLowerCase());
-    }
 }

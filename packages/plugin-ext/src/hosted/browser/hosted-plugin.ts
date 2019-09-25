@@ -25,7 +25,7 @@ import debounce = require('lodash.debounce');
 import { UUID } from '@phosphor/coreutils';
 import { injectable, inject, interfaces, named, postConstruct } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
-import { PluginMetadata, getPluginId, HostedPluginServer } from '../../common/plugin-protocol';
+import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { MAIN_RPC_CONTEXT, PluginManagerExt } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
@@ -158,7 +158,7 @@ export class HostedPluginSupport {
 
     get plugins(): PluginMetadata[] {
         const plugins: PluginMetadata[] = [];
-        this.contributions.forEach(contributions => plugins.push(contributions.plugin));
+        this.contributions.forEach(contributions => plugins.push(contributions.plugin.metadata));
         return plugins;
     }
 
@@ -237,7 +237,7 @@ export class HostedPluginSupport {
             if (pluginIds.length) {
                 const plugins = await this.server.getDeployedPlugins({ pluginIds });
                 for (const plugin of plugins) {
-                    const pluginId = plugin.model.id;
+                    const pluginId = plugin.metadata.model.id;
                     const contributions = new PluginContributions(plugin);
                     this.contributions.set(pluginId, contributions);
                     contributions.push(Disposable.create(() => this.contributions.delete(pluginId)));
@@ -263,13 +263,13 @@ export class HostedPluginSupport {
 
         const hostContributions = new Map<PluginHost, PluginContributions[]>();
         for (const contributions of this.contributions.values()) {
-            const plugin = contributions.plugin;
+            const plugin = contributions.plugin.metadata;
             const pluginId = plugin.model.id;
 
             if (contributions.state === PluginContributions.State.INITIALIZING) {
                 contributions.state = PluginContributions.State.LOADING;
                 contributions.push(Disposable.create(() => console.log(`[${pluginId}]: Unloaded plugin.`)));
-                contributions.push(this.contributionHandler.handleContributions(this.clientId, plugin));
+                contributions.push(this.contributionHandler.handleContributions(this.clientId, contributions.plugin));
                 contributions.state = PluginContributions.State.LOADED;
                 console.log(`[${this.clientId}][${pluginId}]: Loaded contributions.`);
                 loaded++;
@@ -311,7 +311,7 @@ export class HostedPluginSupport {
             if (!manager) {
                 return;
             }
-            const plugins = hostContributions.map(contributions => contributions.plugin);
+            const plugins = hostContributions.map(contributions => contributions.plugin.metadata);
             thenable.push((async () => {
                 try {
                     const activationEvents = [...this.activationEvents];
@@ -322,7 +322,7 @@ export class HostedPluginSupport {
                     for (const contributions of hostContributions) {
                         started++;
                         const plugin = contributions.plugin;
-                        const id = plugin.model.id;
+                        const id = plugin.metadata.model.id;
                         contributions.state = PluginContributions.State.STARTED;
                         console.log(`[${this.clientId}][${id}]: Started plugin.`);
                         toDisconnect.push(contributions.push(Disposable.create(() => {
@@ -347,7 +347,7 @@ export class HostedPluginSupport {
     protected async obtainManager(host: string, hostContributions: PluginContributions[], toDisconnect: DisposableCollection): Promise<PluginManagerExt | undefined> {
         let manager = this.managers.get(host);
         if (!manager) {
-            const pluginId = getPluginId(hostContributions[0].plugin.model);
+            const pluginId = getPluginId(hostContributions[0].plugin.metadata.model);
             const rpc = this.initRpc(host, pluginId);
             toDisconnect.push(rpc);
 
@@ -477,14 +477,15 @@ export class HostedPluginSupport {
         await Promise.all(promises);
     }
 
-    protected async activateByWorkspaceContains(manager: PluginManagerExt, plugin: PluginMetadata): Promise<void> {
-        if (!plugin.source.activationEvents) {
+    protected async activateByWorkspaceContains(manager: PluginManagerExt, plugin: DeployedPlugin): Promise<void> {
+        const activationEvents = plugin.contributes && plugin.contributes.activationEvents;
+        if (!activationEvents) {
             return;
         }
         const paths: string[] = [];
         const includePatterns: string[] = [];
         // should be aligned with https://github.com/microsoft/vscode/blob/da5fb7d5b865aa522abc7e82c10b746834b98639/src/vs/workbench/api/node/extHostExtensionService.ts#L460-L469
-        for (const activationEvent of plugin.source.activationEvents) {
+        for (const activationEvent of activationEvents) {
             if (/^workspaceContains:/.test(activationEvent)) {
                 const fileNameOrGlob = activationEvent.substr('workspaceContains:'.length);
                 if (fileNameOrGlob.indexOf('*') >= 0 || fileNameOrGlob.indexOf('?') >= 0) {
@@ -494,7 +495,7 @@ export class HostedPluginSupport {
                 }
             }
         }
-        const activatePlugin = () => manager.$activateByEvent(`onPlugin:${plugin.model.id}`);
+        const activatePlugin = () => manager.$activateByEvent(`onPlugin:${plugin.metadata.model.id}`);
         const promises: Promise<boolean>[] = [];
         if (paths.length) {
             promises.push(this.workspaceService.containsSome(paths));
@@ -557,7 +558,7 @@ export class HostedPluginSupport {
 
 export class PluginContributions extends DisposableCollection {
     constructor(
-        readonly plugin: PluginMetadata
+        readonly plugin: DeployedPlugin
     ) {
         super();
     }

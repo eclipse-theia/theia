@@ -641,7 +641,7 @@ export function createAPIFactory(
             }
         };
 
-        const debuggersContributions = plugin.model.contributes && plugin.model.contributes.debuggers || [];
+        const debuggersContributions = plugin.rawModel.contributes && plugin.rawModel.contributes.debuggers || [];
         debugExt.assistedInject(connectionExt, commandRegistry);
         debugExt.registerDebuggersContributions(plugin.pluginFolder, debuggersContributions);
         const debug: typeof theia.debug = {
