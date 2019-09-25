@@ -22,6 +22,7 @@
 // tslint:disable:no-any
 
 import debounce = require('lodash.debounce');
+import { UUID } from '@phosphor/coreutils';
 import { injectable, inject, interfaces, named, postConstruct } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { PluginMetadata, getPluginId, HostedPluginServer } from '../../common/plugin-protocol';
@@ -60,6 +61,8 @@ export const PluginProgressLocation = 'plugin';
 
 @injectable()
 export class HostedPluginSupport {
+
+    protected readonly clientId = UUID.uuid4();
 
     protected container: interfaces.Container;
 
@@ -260,9 +263,9 @@ export class HostedPluginSupport {
             if (contributions.state === PluginContributions.State.INITIALIZING) {
                 contributions.state = PluginContributions.State.LOADING;
                 contributions.push(Disposable.create(() => console.log(`[${pluginId}]: Unloaded plugin.`)));
-                contributions.push(this.contributionHandler.handleContributions(plugin));
+                contributions.push(this.contributionHandler.handleContributions(this.clientId, plugin));
                 contributions.state = PluginContributions.State.LOADED;
-                console.log(`[${pluginId}]: Loaded contributions.`);
+                console.log(`[${this.clientId}][${pluginId}]: Loaded contributions.`);
             }
 
             if (contributions.state === PluginContributions.State.LOADED) {
@@ -273,7 +276,7 @@ export class HostedPluginSupport {
                 hostContributions.set(host, dynamicContributions);
                 toDisconnect.push(Disposable.create(() => {
                     contributions!.state = PluginContributions.State.LOADED;
-                    console.log(`[${plugin.model.id}]: Disconnected.`);
+                    console.log(`[${this.clientId}][${pluginId}]: Disconnected.`);
                 }));
             }
         }
@@ -307,9 +310,9 @@ export class HostedPluginSupport {
                         const plugin = contributions.plugin;
                         const id = plugin.model.id;
                         contributions.state = PluginContributions.State.STARTED;
-                        console.log(`[${id}]: Started plugin.`);
+                        console.log(`[${this.clientId}][${id}]: Started plugin.`);
                         toDisconnect.push(contributions.push(Disposable.create(() => {
-                            console.log(`[${id}]: Stopped plugin.`);
+                            console.log(`[${this.clientId}][${id}]: Stopped plugin.`);
                             manager.$stop(id);
                         })));
 
