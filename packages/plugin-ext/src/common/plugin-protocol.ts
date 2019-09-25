@@ -383,6 +383,7 @@ export interface PluginModel {
         version: string;
     };
     entryPoint: PluginEntryPoint;
+    packagePath: string;
 }
 
 export interface PluginEntryPoint {
@@ -588,7 +589,6 @@ export interface ExtensionContext {
 
 export interface PluginMetadata {
     host: string;
-    source: PluginPackage;
     model: PluginModel;
     lifecycle: PluginLifecycle;
 }

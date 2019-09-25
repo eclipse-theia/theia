@@ -19,7 +19,7 @@ import { RPCProtocolImpl } from '../../../common/rpc-protocol';
 import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin } from '../../../common/plugin-api-rpc';
 import { createAPIFactory } from '../../../plugin/plugin-context';
-import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
+import { getPluginId, PluginMetadata, PluginPackage } from '../../../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
@@ -90,10 +90,12 @@ const pluginManager = new PluginManagerExtImpl({
                 }
                 const plugin: Plugin = {
                     pluginPath: pluginModel.entryPoint.frontend!,
-                    pluginFolder: plg.source.packagePath,
+                    pluginFolder: pluginModel.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
-                    rawModel: plg.source
+                    get rawModel(): PluginPackage {
+                        throw new Error('not supported');
+                    }
                 };
                 result.push(plugin);
                 const apiImpl = apiFactory(plugin);
@@ -102,10 +104,12 @@ const pluginManager = new PluginManagerExtImpl({
             } else {
                 foreign.push({
                     pluginPath: pluginModel.entryPoint.backend!,
-                    pluginFolder: plg.source.packagePath,
+                    pluginFolder: pluginModel.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
-                    rawModel: plg.source
+                    get rawModel(): PluginPackage {
+                        throw new Error('not supported');
+                    }
                 });
             }
         }

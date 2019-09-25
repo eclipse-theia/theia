@@ -44,7 +44,7 @@ export interface PluginHost {
     // tslint:disable-next-line:no-any
     loadPlugin(plugin: Plugin): any;
 
-    init(data: PluginMetadata[]): [Plugin[], Plugin[]];
+    init(data: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> | [Plugin[], Plugin[]];
 
     initExtApi(extApi: ExtPluginApi[]): void;
 
@@ -153,10 +153,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         if (params.extApi) {
             this.host.initExtApi(params.extApi);
         }
-        }
+    }
 
     async $start(params: PluginManagerStartParams): Promise<void> {
-        const [plugins, foreignPlugins] = this.host.init(params.plugins);
+        const [plugins, foreignPlugins] = await this.host.init(params.plugins);
         // add foreign plugins
         for (const plugin of foreignPlugins) {
             this.registerPlugin(plugin, params.configStorage);
