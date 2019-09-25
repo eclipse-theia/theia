@@ -84,7 +84,10 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     onStart(server: http.Server | https.Server): void {
         const wss = new ws.Server({
             server,
-            perMessageDeflate: false
+            perMessageDeflate: {
+                // don't compress if a message is less than 256kb
+                threshold: 256 * 1024
+            }
         });
         interface CheckAliveWS extends ws {
             alive: boolean;

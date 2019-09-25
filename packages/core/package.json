@@ -43,7 +43,7 @@
     "vscode-languageserver-types": "^3.15.0-next",
     "vscode-uri": "^1.0.8",
     "vscode-ws-jsonrpc": "^0.1.1",
-    "ws": "^5.2.2",
+    "ws": "^7.1.2",
     "yargs": "^11.1.0"
   },
   "publishConfig": {
