@@ -80,11 +80,13 @@ export interface PreferenceItem {
 
 export interface PreferenceSchemaProperty extends PreferenceItem {
     description?: string;
+    markdownDescription?: string;
     scope?: 'application' | 'window' | 'resource' | PreferenceScope;
 }
 
 export interface PreferenceDataProperty extends PreferenceItem {
     description?: string;
+    markdownDescription?: string;
     scope?: PreferenceScope;
 }
 export namespace PreferenceDataProperty {

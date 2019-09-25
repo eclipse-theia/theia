@@ -205,7 +205,7 @@ export const EDITOR_DEFAULTS = {
         codeActionsOnSaveTimeout: 750
     },
 };
-// tslint:eanble:no-null-keyword
+// tslint:enable:no-null-keyword
 
 // tslint:disable:max-line-length
 // should be in sync with https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/editor/common/config/commonEditorConfig.ts#L232
