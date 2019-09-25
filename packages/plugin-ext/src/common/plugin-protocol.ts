@@ -618,12 +618,16 @@ export interface PluginDeployerHandler {
     getPluginMetadata(pluginToBeInstalled: PluginDeployerEntry): Promise<PluginMetadata | undefined>
 }
 
+export interface GetDeployedPluginsParams {
+    pluginIds: string[]
+}
+
 export const HostedPluginServer = Symbol('HostedPluginServer');
 export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
-    getDeployedMetadata(): Promise<PluginMetadata[]>;
-    getDeployedFrontendMetadata(): Promise<PluginMetadata[]>;
-    getDeployedBackendMetadata(): Promise<PluginMetadata[]>;
+    getDeployedPluginIds(): Promise<string[]>;
+
+    getDeployedPlugins(params: GetDeployedPluginsParams): Promise<PluginMetadata[]>;
 
     getExtPluginAPI(): Promise<ExtPluginApi[]>;
 

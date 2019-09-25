@@ -32,12 +32,12 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
     /**
      * Managed plugin metadata backend entries.
      */
-    private currentBackendPluginsMetadata: PluginMetadata[] = [];
+    private readonly currentBackendPluginsMetadata = new Map<string, PluginMetadata>();
 
     /**
      * Managed plugin metadata frontend entries.
      */
-    private currentFrontendPluginsMetadata: PluginMetadata[] = [];
+    private readonly currentFrontendPluginsMetadata = new Map<string, PluginMetadata>();
 
     private backendPluginsMetadataDeferred = new Deferred<void>();
 
@@ -47,14 +47,22 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         // await first deploy
         await this.frontendPluginsMetadataDeferred.promise;
         // fetch the last deployed state
-        return this.currentFrontendPluginsMetadata;
+        return [...this.currentFrontendPluginsMetadata.values()];
     }
 
     async getDeployedBackendMetadata(): Promise<PluginMetadata[]> {
         // await first deploy
         await this.backendPluginsMetadataDeferred.promise;
         // fetch the last deployed state
-        return this.currentBackendPluginsMetadata;
+        return [...this.currentBackendPluginsMetadata.values()];
+    }
+
+    getDeployedPluginMetadata(pluginId: string): PluginMetadata | undefined {
+        const metadata = this.currentBackendPluginsMetadata.get(pluginId);
+        if (metadata) {
+            return metadata;
+        }
+        return this.currentFrontendPluginsMetadata.get(pluginId);
     }
 
     getPluginMetadata(plugin: PluginDeployerEntry): Promise<PluginMetadata | undefined> {
@@ -65,11 +73,11 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         for (const plugin of frontendPlugins) {
             const metadata = await this.reader.getPluginMetadata(plugin.path());
             if (metadata) {
-                if (this.currentFrontendPluginsMetadata.some(value => value.model.id === metadata.model.id)) {
+                if (this.currentFrontendPluginsMetadata.has(metadata.model.id)) {
                     continue;
                 }
 
-                this.currentFrontendPluginsMetadata.push(metadata);
+                this.currentFrontendPluginsMetadata.set(metadata.model.id, metadata);
                 this.logger.info(`Deploying frontend plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint.frontend || plugin.path()}"`);
             }
         }
@@ -82,11 +90,11 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
         for (const plugin of backendPlugins) {
             const metadata = await this.reader.getPluginMetadata(plugin.path());
             if (metadata) {
-                if (this.currentBackendPluginsMetadata.some(value => value.model.id === metadata.model.id)) {
+                if (this.currentBackendPluginsMetadata.has(metadata.model.id)) {
                     continue;
                 }
 
-                this.currentBackendPluginsMetadata.push(metadata);
+                this.currentBackendPluginsMetadata.set(metadata.model.id, metadata);
                 this.logger.info(`Deploying backend plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint.backend || plugin.path()}"`);
             }
         }
