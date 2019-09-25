@@ -76,19 +76,7 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     ) { }
 
     onStart(app: FrontendApplication): void {
-        const itr = app.shell.children();
-        let child = itr.next();
-        while (child) {
-            // Top panel for the menu contribution is not required for Electron.
-            // TODO: Make sure this is the case on Windows too.
-            if (child.id === 'theia-top-panel') {
-                child.setHidden(true);
-                child = undefined;
-            } else {
-                child = itr.next();
-            }
-        }
-
+        this.hideTopPanel(app);
         this.setMenu();
         if (isOSX) {
             // OSX: Recreate the menus when changing windows.
@@ -110,6 +98,26 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
             }
         };
         onStateChange = this.stateService.onStateChanged(stateServiceListener);
+    }
+
+    /**
+     * Makes the `theia-top-panel` hidden as it is unused for the electron-based application.
+     * The `theia-top-panel` is used as the container of the main, application menu-bar for the
+     * browser. Electron has it's own.
+     * By default, this method is called on application `onStart`.
+     */
+    protected hideTopPanel(app: FrontendApplication): void {
+        const itr = app.shell.children();
+        let child = itr.next();
+        while (child) {
+            // Top panel for the menu contribution is not required for Electron.
+            if (child.id === 'theia-top-panel') {
+                child.setHidden(true);
+                child = undefined;
+            } else {
+                child = itr.next();
+            }
+        }
     }
 
     private setMenu(menu: electron.Menu = this.factory.createMenuBar(), electronWindow: electron.BrowserWindow = electron.remote.getCurrentWindow()): void {
