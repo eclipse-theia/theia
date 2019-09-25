@@ -89,7 +89,7 @@ export class PluginContributionHandler {
      * @throws never, loading of each contribution should handle errors
      * in order to avoid preventing loading of other contibutions or extensions
      */
-    handleContributions(plugin: PluginMetadata): Disposable {
+    handleContributions(clientId: string, plugin: PluginMetadata): Disposable {
         const contributions = plugin.model.contributes;
         if (!contributions) {
             return Disposable.NULL;
@@ -99,7 +99,7 @@ export class PluginContributionHandler {
             try {
                 toDispose.push(contribute());
             } catch (e) {
-                console.error(`[${plugin.model.id}]: Failed to load '${id}' contribution.`, e);
+                console.error(`[${clientId}][${plugin.model.id}]: Failed to load '${id}' contribution.`, e);
             }
         };
 
