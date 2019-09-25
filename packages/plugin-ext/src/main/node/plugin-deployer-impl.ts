@@ -126,28 +126,22 @@ export class PluginDeployerImpl implements PluginDeployer {
                     await this.applyFileHandlers(pluginDeployerEntries);
                     await this.applyDirectoryFileHandlers(pluginDeployerEntries);
                     for (const deployerEntry of pluginDeployerEntries) {
-                        const metadata = await this.pluginDeployerHandler.getPluginMetadata(deployerEntry);
-                        if (metadata && !pluginsToDeploy.has(metadata.model.id)) {
-                            pluginsToDeploy.set(metadata.model.id, deployerEntry);
-                            chunk.push(metadata);
+                        const dependencies = await this.pluginDeployerHandler.getPluginDependencies(deployerEntry);
+                        if (dependencies && !pluginsToDeploy.has(dependencies.metadata.model.id)) {
+                            pluginsToDeploy.set(dependencies.metadata.model.id, deployerEntry);
+                            if (dependencies.mapping) {
+                                chunk.push(dependencies.mapping);
+                            }
                         }
                     }
                 } catch (e) {
                     console.error(`Failed to resolve plugins from '${current}'`, e);
                 }
             }
-            for (const metadata of chunk) {
-                const extensionDependencies = metadata.source.extensionDependencies;
-                const deployableExtensionDependencies = metadata.model.extensionDependencies;
-                if (extensionDependencies && deployableExtensionDependencies) {
-                    for (let dependencyIndex = 0; dependencyIndex < extensionDependencies.length; dependencyIndex++) {
-                        const dependencyId = extensionDependencies[dependencyIndex].toLowerCase();
-                        if (!pluginsToDeploy.has(dependencyId)) {
-                            const deployableDependency = deployableExtensionDependencies[dependencyIndex];
-                            if (deployableDependency) {
-                                queue.push(deployableDependency);
-                            }
-                        }
+            for (const dependencies of chunk) {
+                for (const [dependency, deployableDependency] of dependencies) {
+                    if (!pluginsToDeploy.has(dependency)) {
+                        queue.push(deployableDependency);
                     }
                 }
             }

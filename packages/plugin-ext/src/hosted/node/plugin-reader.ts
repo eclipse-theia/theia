@@ -23,7 +23,7 @@ import * as escape_html from 'escape-html';
 import { ILogger } from '@theia/core';
 import { inject, injectable, optional, multiInject } from 'inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { PluginMetadata, getPluginId, MetadataProcessor } from '../../common/plugin-protocol';
+import { PluginMetadata, getPluginId, MetadataProcessor, PluginPackage, PluginContribution } from '../../common/plugin-protocol';
 import { MetadataScanner } from './metadata-scanner';
 
 @injectable()
@@ -77,35 +77,36 @@ export class HostedPluginReader implements BackendApplicationContribution {
         res.status(404).send(`The plugin with id '${escape_html(pluginId)}' does not exist.`);
     }
 
-    async getPluginMetadata(pluginPath: string): Promise<PluginMetadata | undefined> {
-        return this.doGetPluginMetadata(pluginPath);
-    }
-
     /**
-     * MUST never throw to isolate plugin deployment
+     * @throws never
      */
-    async doGetPluginMetadata(pluginPath: string | undefined): Promise<PluginMetadata | undefined> {
+    async getPluginMetadata(pluginPath: string | undefined): Promise<PluginMetadata | undefined> {
         try {
-            if (!pluginPath) {
-                return undefined;
-            }
-            pluginPath = path.normalize(pluginPath + '/');
-            return await this.loadPluginMetadata(pluginPath);
+            const manifest = await this.readPackage(pluginPath);
+            return manifest && this.readMetadata(manifest);
         } catch (e) {
             this.logger.error(`Failed to load plugin metadata from "${pluginPath}"`, e);
             return undefined;
         }
     }
 
-    protected async loadPluginMetadata(pluginPath: string): Promise<PluginMetadata | undefined> {
+    async readPackage(pluginPath: string | undefined): Promise<PluginPackage | undefined> {
+        if (!pluginPath) {
+            return undefined;
+        }
+        pluginPath = path.normalize(pluginPath + '/');
         const manifest = await this.loadManifest(pluginPath);
         if (!manifest) {
             return undefined;
         }
         manifest.packagePath = pluginPath;
-        const pluginMetadata = this.scanner.getPluginMetadata(manifest);
+        return manifest;
+    }
+
+    readMetadata(plugin: PluginPackage): PluginMetadata {
+        const pluginMetadata = this.scanner.getPluginMetadata(plugin);
         if (pluginMetadata.model.entryPoint.backend) {
-            pluginMetadata.model.entryPoint.backend = path.resolve(pluginPath, pluginMetadata.model.entryPoint.backend);
+            pluginMetadata.model.entryPoint.backend = path.resolve(plugin.packagePath, pluginMetadata.model.entryPoint.backend);
         }
         if (pluginMetadata) {
             // Add post processor
@@ -114,9 +115,19 @@ export class HostedPluginReader implements BackendApplicationContribution {
                     metadataProcessor.process(pluginMetadata);
                 });
             }
-            this.pluginsIdsFiles.set(getPluginId(pluginMetadata.model), pluginPath);
+            this.pluginsIdsFiles.set(getPluginId(pluginMetadata.model), plugin.packagePath);
         }
         return pluginMetadata;
+    }
+
+    readContribution(plugin: PluginPackage): PluginContribution | undefined {
+        const scanner = this.scanner.getScanner(plugin);
+        return scanner.getContribution(plugin);
+    }
+
+    readDependencies(plugin: PluginPackage): Map<string, string> | undefined {
+        const scanner = this.scanner.getScanner(plugin);
+        return scanner.getDependencies(plugin);
     }
 
     protected async loadManifest(pluginPath: string): Promise<any> {
@@ -169,5 +180,4 @@ export class HostedPluginReader implements BackendApplicationContribution {
     }
 
     static NLS_REGEX = /^%([\w\d.-]+)%$/i;
-
 }

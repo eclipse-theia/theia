@@ -19,7 +19,7 @@ import { ITokenTypeMap, IEmbeddedLanguagesMap, StandardTokenType } from 'vscode-
 import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginViewRegistry } from './view/plugin-view-registry';
-import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, PluginMetadata } from '../../common';
+import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin } from '../../common';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser/preferences';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
@@ -89,8 +89,8 @@ export class PluginContributionHandler {
      * @throws never, loading of each contribution should handle errors
      * in order to avoid preventing loading of other contibutions or extensions
      */
-    handleContributions(clientId: string, plugin: PluginMetadata): Disposable {
-        const contributions = plugin.model.contributes;
+    handleContributions(clientId: string, plugin: DeployedPlugin): Disposable {
+        const contributions = plugin.contributes;
         if (!contributions) {
             return Disposable.NULL;
         }
@@ -99,7 +99,7 @@ export class PluginContributionHandler {
             try {
                 toDispose.push(contribute());
             } catch (e) {
-                console.error(`[${clientId}][${plugin.model.id}]: Failed to load '${id}' contribution.`, e);
+                console.error(`[${clientId}][${plugin.metadata.model.id}]: Failed to load '${id}' contribution.`, e);
             }
         };
 

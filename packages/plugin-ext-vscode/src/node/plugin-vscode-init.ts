@@ -44,7 +44,8 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
     vscode.commands.registerCommand = function (command: theia.CommandDescription | string, handler?: <T>(...args: any[]) => T | Thenable<T>, thisArg?: any): any {
         // use of the ID when registering commands
         if (typeof command === 'string') {
-            const commands = plugin.model.contributes && plugin.model.contributes.commands;
+            const rawCommands = plugin.rawModel.contributes && plugin.rawModel.contributes.commands;
+            const commands = rawCommands ? Array.isArray(rawCommands) ? rawCommands : [rawCommands] : undefined;
             if (handler && commands && commands.some(item => item.command === command)) {
                 return vscode.commands.registerHandler(command, handler, thisArg);
             }

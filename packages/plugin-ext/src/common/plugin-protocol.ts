@@ -228,6 +228,14 @@ export interface PluginScanner {
      * @returns {PluginLifecycle}
      */
     getLifecycle(plugin: PluginPackage): PluginLifecycle;
+
+    getContribution(plugin: PluginPackage): PluginContribution | undefined;
+
+    /**
+     * A mapping between a dependency as its defined in package.json
+     * and its deployable form, e.g. `publisher.name` -> `vscode:extension/publisher.name`
+     */
+    getDependencies(plugin: PluginPackage): Map<string, string> | undefined;
 }
 
 export const PluginDeployer = Symbol('PluginDeployer');
@@ -374,22 +382,19 @@ export interface PluginModel {
         type: PluginEngine;
         version: string;
     };
-    entryPoint: {
-        frontend?: string;
-        backend?: string;
-    };
-    contributes?: PluginContribution;
-    /**
-     * The deployable form of extensionDependencies from package.json,
-     * i.e. not `publisher.name`, but `vscode:extension/publisher.name`.
-     */
-    extensionDependencies?: string[];
+    entryPoint: PluginEntryPoint;
+}
+
+export interface PluginEntryPoint {
+    frontend?: string;
+    backend?: string;
 }
 
 /**
  * This interface describes some static plugin contributions.
  */
 export interface PluginContribution {
+    activationEvents?: string[];
     configuration?: PreferenceSchema[];
     configurationDefaults?: PreferenceSchemaProperties;
     languages?: LanguageContribution[];
@@ -610,16 +615,26 @@ export interface HostedPluginClient {
     onDidDeploy(): void;
 }
 
+export interface PluginDependencies {
+    metadata: PluginMetadata
+    mapping?: Map<string, string>
+}
+
 export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
 export interface PluginDeployerHandler {
     deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
     deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
 
-    getPluginMetadata(pluginToBeInstalled: PluginDeployerEntry): Promise<PluginMetadata | undefined>
+    getPluginDependencies(pluginToBeInstalled: PluginDeployerEntry): Promise<PluginDependencies | undefined>
 }
 
 export interface GetDeployedPluginsParams {
     pluginIds: string[]
+}
+
+export interface DeployedPlugin {
+    metadata: PluginMetadata;
+    contributes?: PluginContribution;
 }
 
 export const HostedPluginServer = Symbol('HostedPluginServer');
@@ -627,7 +642,7 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
     getDeployedPluginIds(): Promise<string[]>;
 
-    getDeployedPlugins(params: GetDeployedPluginsParams): Promise<PluginMetadata[]>;
+    getDeployedPlugins(params: GetDeployedPluginsParams): Promise<DeployedPlugin[]>;
 
     getExtPluginAPI(): Promise<ExtPluginApi[]>;
 

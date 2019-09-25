@@ -16,13 +16,14 @@
 
 import * as path from 'path';
 import * as theia from '@theia/plugin';
-import { PlatformSpecificAdapterContribution, DebuggerContribution } from '../../../common';
+import { PlatformSpecificAdapterContribution, PluginPackageDebuggersContribution } from '../../../common';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
 
 /**
  * Resolves [DebugAdapterExecutable](#DebugAdapterExecutable) based on contribution.
  */
-export async function resolveDebugAdapterExecutable(pluginPath: string, debuggerContribution: DebuggerContribution): Promise<theia.DebugAdapterExecutable | undefined> {
+export async function resolveDebugAdapterExecutable(
+    pluginPath: string, debuggerContribution: PluginPackageDebuggersContribution): Promise<theia.DebugAdapterExecutable | undefined> {
     const info = toPlatformInfo(debuggerContribution);
     let program = (info && info.program || debuggerContribution.program);
     if (!program) {
@@ -43,7 +44,7 @@ export async function resolveDebugAdapterExecutable(pluginPath: string, debugger
     };
 }
 
-function toPlatformInfo(executable: DebuggerContribution): PlatformSpecificAdapterContribution | undefined {
+function toPlatformInfo(executable: PluginPackageDebuggersContribution): PlatformSpecificAdapterContribution | undefined {
     if (isWindows && !process.env.hasOwnProperty('PROCESSOR_ARCHITEW6432')) {
         return executable.winx86 || executable.win || executable.windows;
     }
