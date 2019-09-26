@@ -128,6 +128,13 @@ const { fork } = require('child_process');
 const { app, dialog, shell, BrowserWindow, ipcMain, Menu } = electron;
 
 const applicationName = \`${this.pck.props.frontend.config.applicationName}\`;
+const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
+
+if (isSingleInstance && !app.requestSingleInstanceLock()) {
+    // There is another instance running, exit now. The other instance will request focus.
+    app.quit();
+    return;
+}
 
 const nativeKeymap = require('native-keymap');
 const Storage = require('electron-store');
@@ -259,6 +266,19 @@ app.on('ready', () => {
     // @ts-ignore
     const devMode = process.defaultApp || /node_modules[\/]electron[\/]/.test(process.execPath);
     const mainWindow = createNewWindow();
+
+    if (isSingleInstance) {
+        app.on('second-instance', (event, commandLine, workingDirectory) => {
+            // Someone tried to run a second instance, we should focus our window.
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                if (mainWindow.isMinimized()) {
+                    mainWindow.restore();
+                }
+                mainWindow.focus()
+            }
+        })
+    }
+
     const loadMainWindow = (port) => {
         if (!mainWindow.isDestroyed()) {
             mainWindow.loadURL('file://' + join(__dirname, '../../lib/index.html') + '?port=' + port);
