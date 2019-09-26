@@ -57,6 +57,7 @@ export class ViewContainerIdentifier {
 @injectable()
 export class ViewContainer extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider {
 
+    protected _containerLayout: ViewContainerLayout;
     protected panel: SplitPanel;
     protected attached = new Deferred<void>();
 
@@ -101,15 +102,14 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.addClass('theia-view-container');
         const layout = new PanelLayout();
         this.layout = layout;
-        this.panel = new SplitPanel({
-            layout: new ViewContainerLayout({
-                renderer: SplitPanel.defaultRenderer,
-                orientation: this.orientation,
-                spacing: 2,
-                headerSize: ViewContainerPart.HEADER_HEIGHT,
-                animationDuration: 200
-            }, this.splitPositionHandler)
-        });
+        this._containerLayout = new ViewContainerLayout({
+            renderer: SplitPanel.defaultRenderer,
+            orientation: this.orientation,
+            spacing: 2,
+            headerSize: ViewContainerPart.HEADER_HEIGHT,
+            animationDuration: 200
+        }, this.splitPositionHandler);
+        this.panel = new SplitPanel({ layout: this._containerLayout });
         this.panel.node.tabIndex = -1;
         layout.addWidget(this.panel);
 
@@ -330,7 +330,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     get containerLayout(): ViewContainerLayout {
-        return this.panel.layout as ViewContainerLayout;
+        return this._containerLayout as ViewContainerLayout;
     }
 
     protected get orientation(): SplitLayout.Orientation {
