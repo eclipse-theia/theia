@@ -55,11 +55,6 @@ export interface QuickPickProblemMatcherItem {
 
 @injectable()
 export class TaskService implements TaskConfigurationClient {
-    /**
-     * Reflects whether a valid task configuration file was found
-     * in the current workspace, and is being watched for changes.
-     */
-    protected configurationFileFound: boolean = false;
 
     /**
      * The last executed task.
@@ -132,18 +127,6 @@ export class TaskService implements TaskConfigurationClient {
 
     @postConstruct()
     protected init(): void {
-        this.workspaceService.onWorkspaceChanged(async roots => {
-            this.configurationFileFound = (await Promise.all(roots.map(r => this.taskConfigurations.watchConfigurationFile(r.uri)))).some(result => !!result);
-            const rootUris = roots.map(r => new URI(r.uri));
-            const taskConfigFileUris = this.taskConfigurations.configFileUris.map(strUri => new URI(strUri));
-            for (const taskConfigUri of taskConfigFileUris) {
-                if (!rootUris.some(rootUri => !!rootUri.relative(taskConfigUri))) {
-                    this.taskConfigurations.unwatchConfigurationFile(taskConfigUri.toString());
-                    this.taskConfigurations.removeTasks(taskConfigUri.toString());
-                }
-            }
-        });
-
         // notify user that task has started
         this.taskWatcher.onTaskCreated((event: TaskInfo) => {
             if (this.isEventForThisClient(event.ctx)) {
