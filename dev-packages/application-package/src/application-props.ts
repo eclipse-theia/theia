@@ -116,6 +116,11 @@ export interface FrontendApplicationConfig extends ApplicationConfig {
  */
 export interface BackendApplicationConfig extends ApplicationConfig {
 
+    /**
+     * If true and in Electron mode, only one instance of the application is allowed to run at a time.
+     */
+    singleInstance?: boolean;
+
 }
 
 /**
