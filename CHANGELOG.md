@@ -5,9 +5,21 @@
 Breaking changes:
 
 - [plugin] don't block web socket with many plugins [6252](https://github.com/eclipse-theia/theia/pull/6252)
-  - frontend plugins don't have access to raw package.json model anymore
-  - backend plugins don't have access to `PluginModel.contributes` anymore, read them from raw package.json model instead
-  - `PluginManagerExt.$init` does not start plugins anymore, but only initialize the manager RPC services, call `$start` to start plugins
+  - `PluginModel` does not have anymore `contributes` and `dependencies` to avoid sending unnecessary data.
+    - Use `PluginReader.readContribution` to load contributes.
+    - Use `PluginReader.readDependencies` to load dependencies.
+  - `PluginMetadata` does not have anymore raw package.json model to avoid sending excessive data to the frontend.
+    - `theia.Plugin.packageJSON` throws an unsupported error for frontend plugins as a consequence. Please convert to a backend plugin if you need access to it.
+  - `PluginManagerExt.$init` does not start plugins anymore, but only initialize the manager RPC services to avoid sending excessive initialization data, as all preferences, on each deployment.
+    - Please call `$start` to start plugins.
+  - `PluginDeployerHandler.getPluginMetadata` is replaced with `PluginDeployerHandler.getPluginDependencies` to access plugin dependencies.
+  - `HostedPluginServer.getDeployedMetadata` is replaced with `HostedPluginServer.getDeployedPluginIds` and `HostedPluginServer.getDeployedPlugins`
+  to fetch first only ids of deployed plugins and then deployed metadata for only yet not loaded plugins.
+  - `HostedPluginDeployerHandler.getDeployedFrontendMetadata` and `HostedPluginDeployerHandler.getDeployedBackendMetadata` are replaced with 
+  `HostedPluginDeployerHandler.getDeployedFrontendPluginIds`, `HostedPluginDeployerHandlergetDeployedBackendPluginIds` and `HostedPluginDeployerHandler.getDeployedPlugin` to featch first only ids and then deplyoed metadata fro only yet not loaded plugins.
+  - `PluginHost.init` can initialize plugins asynchronous, synchronous initialization is still supported.
+  - `HostedPluginReader.doGetPluginMetadata` is renamed to `HostedPluginReader.getPluginMetadata`.
+  - `PluginDebugAdapterContribution.languages`, `PluginDebugAdapterContribution.getSchemaAttributes` and `PluginDebugAdapterContribution.getConfigurationSnippets` are removed to prevent sending the contributions second time to the frontend. Debug contributions are loaded statically from the deployed plugin metadata instead. The same for corresponding methods in `DebugExtImpl`.
 
 ## v0.11.0
 
