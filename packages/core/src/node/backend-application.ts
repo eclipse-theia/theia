@@ -14,17 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as path from 'path';
 import * as http from 'http';
 import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
-import { inject, named, injectable } from 'inversify';
+import { inject, named, injectable, postConstruct } from 'inversify';
 import { ILogger, ContributionProvider, MaybePromise } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
 import { AddressInfo } from 'net';
+import { ApplicationPackage } from '@theia/application-package';
 
 export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
 export interface BackendApplicationContribution {
@@ -93,6 +95,9 @@ export class BackendApplication {
 
     protected readonly app: express.Application = express();
 
+    @inject(ApplicationPackage)
+    protected readonly applicationPackage: ApplicationPackage;
+
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
@@ -124,6 +129,17 @@ export class BackendApplication {
                 }
             }
         }
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.app.get('*.js', this.serveGzipped.bind(this, 'text/javascript'));
+        this.app.get('*.js.map', this.serveGzipped.bind(this, 'application/json'));
+        this.app.get('*.css', this.serveGzipped.bind(this, 'text/css'));
+        this.app.get('*.wasm', this.serveGzipped.bind(this, 'application/wasm'));
+        this.app.get('*.gif', this.serveGzipped.bind(this, 'image/gif'));
+        this.app.get('*.png', this.serveGzipped.bind(this, 'image/png'));
+        this.app.get('*.svg', this.serveGzipped.bind(this, 'image/svg+xml'));
 
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.configure) {
@@ -215,6 +231,24 @@ export class BackendApplication {
                 }
             }
         }
+    }
+
+    protected async serveGzipped(contentType: string, req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
+        const acceptedEncodings = req.acceptsEncodings();
+
+        const gzUrl = `${req.url}.gz`;
+        const gzPath = path.join(this.applicationPackage.projectPath, 'lib', gzUrl);
+        if (acceptedEncodings.indexOf('gzip') === -1 || !(await fs.pathExists(gzPath))) {
+            next();
+            return;
+        }
+
+        req.url = gzUrl;
+
+        res.set('Content-Encoding', 'gzip');
+        res.set('Content-Type', contentType);
+
+        next();
     }
 
 }

@@ -37,6 +37,7 @@
     "babel-loader": "^8.0.6",
     "bunyan": "^1.8.10",
     "circular-dependency-plugin": "^5.0.0",
+    "@theia/compression-webpack-plugin": "^3.0.0",
     "copy-webpack-plugin": "^4.5.0",
     "css-loader": "^0.28.1",
     "electron-rebuild": "^1.8.6",
