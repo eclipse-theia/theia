@@ -23,8 +23,6 @@ import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './t
 import { createTextmateTokenizer, TokenizerOption } from './textmate-tokenizer';
 import { TextmateRegistry } from './textmate-registry';
 import { MonacoThemeRegistry } from './monaco-theme-registry';
-import { MonacoEditor } from '../monaco-editor';
-import { EditorManager } from '@theia/editor/lib/browser';
 
 export const OnigasmPromise = Symbol('OnigasmPromise');
 export type OnigasmPromise = Promise<IOnigLib>;
@@ -59,9 +57,6 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
     @inject(MonacoThemeRegistry)
     protected readonly monacoThemeRegistry: MonacoThemeRegistry;
-
-    @inject(EditorManager)
-    private readonly editorManager: EditorManager;
 
     initialize(): void {
         if (!isBasicWasmSupported) {
@@ -109,7 +104,6 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         for (const { id } of monaco.languages.getLanguages()) {
             monaco.languages.onLanguage(id, () => this.activateLanguage(id));
         }
-        this.detectLanguages();
     }
 
     protected readonly toDisposeOnUpdateTheme = new DisposableCollection();
@@ -166,11 +160,4 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         }
     }
 
-    detectLanguages(): void {
-        for (const editor of MonacoEditor.getAll(this.editorManager)) {
-            if (editor.languageAutoDetected) {
-                editor.detectLanguage();
-            }
-        }
-    }
 }
