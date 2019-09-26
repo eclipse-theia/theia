@@ -19,10 +19,15 @@ import { backendApplicationModule } from '@theia/core/lib/node/backend-applicati
 import processBackendModule from '@theia/process/lib/node/process-backend-module';
 import { messagingBackendModule } from '@theia/core/lib/node/messaging/messaging-backend-module';
 import terminalBackendModule from '../terminal-backend-module';
+// tslint:disable-next-line:no-implicit-dependencies
+import { ApplicationPackage } from '@theia/application-package/lib/application-package';
 
 export function createTerminalTestContainer(): Container {
     const container = new Container();
+
     container.load(backendApplicationModule);
+    container.rebind(ApplicationPackage).toConstantValue({} as ApplicationPackage);
+
     bindLogger(container.bind.bind(container));
     container.load(messagingBackendModule);
     container.load(processBackendModule);

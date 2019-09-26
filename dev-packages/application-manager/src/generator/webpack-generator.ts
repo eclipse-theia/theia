@@ -38,18 +38,49 @@ const webpack = require('webpack');
 const yargs = require('yargs');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
+const CompressionPlugin = require('@theia/compression-webpack-plugin')
 
 const outputPath = path.resolve(__dirname, 'lib');
-const { mode }  = yargs.option('mode', {
+const { mode, staticCompression }  = yargs.option('mode', {
     description: "Mode to use",
     choices: ["development", "production"],
     default: "production"
+}).option('static-compression', {
+    description: 'Controls whether to enable compression of static artifacts.',
+    type: 'boolean',
+    default: true
 }).argv;
 const development = mode === 'development';${this.ifMonaco(() => `
 
 const monacoEditorCorePath = development ? '${this.resolve('@typefox/monaco-editor-core', 'dev/vs')}' : '${this.resolve('@typefox/monaco-editor-core', 'min/vs')}';
 const monacoCssLanguagePath = '${this.resolve('monaco-css', 'release/min')}';
 const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`)}
+
+const plugins = [new CopyWebpackPlugin([${this.ifMonaco(() => `
+    {
+        from: monacoEditorCorePath,
+        to: 'vs'
+    },
+    {
+        from: monacoCssLanguagePath,
+        to: 'vs/language/css'
+    },
+    {
+        from: monacoHtmlLanguagePath,
+        to: 'vs/language/html'
+    }`)}
+])];
+// it should go after copy-plugin in order to compress monaco as well
+if (staticCompression) {
+    plugins.push(new CompressionPlugin({
+        // enable reuse of compressed artifacts for incremental development
+        cache: development
+    }));
+}
+plugins.push(new CircularDependencyPlugin({
+    exclude: /(node_modules|examples)\\/./,
+    failOnError: false // https://github.com/nodejs/readable-stream/issues/280#issuecomment-297076462
+}));
 
 module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
@@ -163,26 +194,7 @@ module.exports = {
         }`)}
     },
     devtool: 'source-map',
-    plugins: [
-        new CopyWebpackPlugin([${this.ifMonaco(() => `
-            {
-                from: monacoEditorCorePath,
-                to: 'vs'
-            },
-            {
-                from: monacoCssLanguagePath,
-                to: 'vs/language/css'
-            },
-            {
-                from: monacoHtmlLanguagePath,
-                to: 'vs/language/html'
-            }`)}
-        ]),
-        new CircularDependencyPlugin({
-            exclude: /(node_modules|examples)\\/./,
-            failOnError: false // https://github.com/nodejs/readable-stream/issues/280#issuecomment-297076462
-        }),
-    ],
+    plugins,
     stats: {
         warnings: true
     }

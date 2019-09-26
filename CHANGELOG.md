@@ -2,6 +2,9 @@
 
 ## v0.12.0
 
+- [cli] enable static compression of build artifacts [#6266](https://github.com/eclipse-theia/theia/pull/6266)
+  - to disable pass `--no-static-compression` to `theia build` or `theia watch`.
+
 Breaking changes:
 
 - [plugin] don't block web socket with many plugins [6252](https://github.com/eclipse-theia/theia/pull/6252)
@@ -15,7 +18,7 @@ Breaking changes:
   - `PluginDeployerHandler.getPluginMetadata` is replaced with `PluginDeployerHandler.getPluginDependencies` to access plugin dependencies.
   - `HostedPluginServer.getDeployedMetadata` is replaced with `HostedPluginServer.getDeployedPluginIds` and `HostedPluginServer.getDeployedPlugins`
   to fetch first only ids of deployed plugins and then deployed metadata for only yet not loaded plugins.
-  - `HostedPluginDeployerHandler.getDeployedFrontendMetadata` and `HostedPluginDeployerHandler.getDeployedBackendMetadata` are replaced with 
+  - `HostedPluginDeployerHandler.getDeployedFrontendMetadata` and `HostedPluginDeployerHandler.getDeployedBackendMetadata` are replaced with
   `HostedPluginDeployerHandler.getDeployedFrontendPluginIds`, `HostedPluginDeployerHandlergetDeployedBackendPluginIds` and `HostedPluginDeployerHandler.getDeployedPlugin` to featch first only ids and then deplyoed metadata fro only yet not loaded plugins.
   - `PluginHost.init` can initialize plugins asynchronous, synchronous initialization is still supported.
   - `HostedPluginReader.doGetPluginMetadata` is renamed to `HostedPluginReader.getPluginMetadata`.
