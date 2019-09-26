@@ -84,6 +84,8 @@ export class PluginContributionHandler {
     protected readonly onDidRegisterCommandHandlerEmitter = new Emitter<string>();
     readonly onDidRegisterCommandHandler = this.onDidRegisterCommandHandlerEmitter.event;
 
+    protected readonly activatedLanguages = new Set<string>();
+
     /**
      * Always synchronous in order to simplify handling disconnections.
      * @throws never, loading of each contribution should handle errors
@@ -94,7 +96,7 @@ export class PluginContributionHandler {
         if (!contributions) {
             return Disposable.NULL;
         }
-        const toDispose = new DisposableCollection;
+        const toDispose = new DisposableCollection();
         const pushContribution = (id: string, contribute: () => Disposable) => {
             try {
                 toDispose.push(contribute());
@@ -115,8 +117,15 @@ export class PluginContributionHandler {
             pushContribution('configurationDefaults', () => this.updateDefaultOverridesSchema(configurationDefaults));
         }
 
-        if (contributions.languages) {
-            for (const lang of contributions.languages) {
+        const languages = contributions.languages;
+        if (languages && languages.length) {
+            for (const lang of languages) {
+                /*
+                 * Monaco guesses a language for opened plain text models on `monaco.languages.register`.
+                 * It can trigger language activation before grammars are registered.
+                 * Install onLanguage listener earlier in order to catch such activations and activate grammars as well.
+                 */
+                monaco.languages.onLanguage(lang.id, () => this.activatedLanguages.add(lang.id));
                 // it is not possible to unregister a language
                 monaco.languages.register({
                     id: lang.id,
@@ -144,7 +153,6 @@ export class PluginContributionHandler {
 
         const grammars = contributions.grammars;
         if (grammars && grammars.length) {
-            toDispose.push(Disposable.create(() => this.monacoTextmateService.detectLanguages()));
             for (const grammar of grammars) {
                 if (grammar.injectTo) {
                     for (const injectScope of grammar.injectTo) {
@@ -181,11 +189,10 @@ export class PluginContributionHandler {
                         tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
                     }));
                     pushContribution(`grammar.language.${language}.activation`,
-                        () => monaco.languages.onLanguage(language, () => this.monacoTextmateService.activateLanguage(language))
+                        () => this.onDidActivateLanguage(language, () => this.monacoTextmateService.activateLanguage(language))
                     );
                 }
             }
-            this.monacoTextmateService.detectLanguages();
         }
 
         pushContribution('commands', () => this.registerCommands(contributions));
@@ -309,6 +316,14 @@ export class PluginContributionHandler {
 
     hasCommandHandler(id: string): boolean {
         return !!this.commandHandlers.get(id);
+    }
+
+    protected onDidActivateLanguage(language: string, cb: () => {}): Disposable {
+        if (this.activatedLanguages.has(language)) {
+            cb();
+            return Disposable.NULL;
+        }
+        return monaco.languages.onLanguage(language, cb);
     }
 
     private updateConfigurationSchema(schema: PreferenceSchema): Disposable {
