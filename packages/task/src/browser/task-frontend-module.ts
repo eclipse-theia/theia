@@ -33,6 +33,8 @@ import { TaskActionProvider, ConfigureTaskAction } from './task-action-provider'
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { ProblemPatternRegistry } from './task-problem-pattern-registry';
+import { TaskConfigurationManager } from './task-configuration-manager';
+import { bindTaskPreferences } from './task-preferences';
 import '../../src/browser/style/index.css';
 import './tasks-monaco-contribution';
 
@@ -51,6 +53,7 @@ export default new ContainerModule(bind => {
     bind(TaskTerminateQuickOpen).toSelf().inSingletonScope();
     bind(TaskConfigurations).toSelf().inSingletonScope();
     bind(ProvidedTaskConfigurations).toSelf().inSingletonScope();
+    bind(TaskConfigurationManager).toSelf().inSingletonScope();
 
     bind(TaskServer).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
@@ -70,4 +73,5 @@ export default new ContainerModule(bind => {
     bind(TaskSchemaUpdater).toSelf().inSingletonScope();
 
     bindProcessTaskModule(bind);
+    bindTaskPreferences(bind);
 });

@@ -20,6 +20,8 @@ import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { TaskService } from './task-service';
 
+export const taskSchemaId = 'vscode://schemas/tasks';
+
 @injectable()
 export class TaskSchemaUpdater {
     @inject(JsonSchemaStore)
@@ -45,15 +47,15 @@ export class TaskSchemaUpdater {
         };
         const taskTypes = await this.taskService.getRegisteredTaskTypes();
         taskSchema.properties.tasks.items.oneOf![0].allOf![0].properties!.type.enum = taskTypes;
-        const taskSchemaUrl = new URI('vscode://task/tasks.json');
+        const taskSchemaUri = new URI(taskSchemaId);
         const contents = JSON.stringify(taskSchema);
         try {
-            this.inmemoryResources.update(taskSchemaUrl, contents);
+            this.inmemoryResources.update(taskSchemaUri, contents);
         } catch (e) {
-            this.inmemoryResources.add(taskSchemaUrl, contents);
+            this.inmemoryResources.add(taskSchemaUri, contents);
             this.jsonSchemaStore.registerSchema({
                 fileMatch: ['tasks.json'],
-                url: taskSchemaUrl.toString()
+                url: taskSchemaUri.toString()
             });
         }
     }
@@ -107,6 +109,7 @@ const commandOptionsSchema: IJSONSchema = {
 };
 
 const taskConfigurationSchema: IJSONSchema = {
+    $id: taskSchemaId,
     oneOf: [
         {
             allOf: [

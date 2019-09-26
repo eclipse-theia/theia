@@ -17,7 +17,8 @@
 import { injectable, inject } from 'inversify';
 import { TaskService } from './task-service';
 import { TaskRunQuickOpenItem } from './quick-open-task';
-import { QuickOpenBaseAction, QuickOpenItem, QuickOpenActionProvider, QuickOpenAction } from '@theia/core/lib/browser/quick-open';
+import { QuickOpenBaseAction, QuickOpenItem } from '@theia/core/lib/browser/quick-open';
+import { QuickOpenAction, QuickOpenActionProvider } from '@theia/core/lib/common/quick-open-model';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 
 @injectable()
