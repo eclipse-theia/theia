@@ -135,7 +135,7 @@ export class ThemeRulesService {
                 path = this.isDark() ? value.dark : value.light;
             }
             if (path.startsWith('/')) {
-                path = `webview${path}`;
+                path = `/webview${path}`;
             }
             cssRules.push(`.webview-icon.${key}-file-icon::before { background-image: url(${path}); }`);
         });
