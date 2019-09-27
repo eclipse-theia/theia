@@ -125,7 +125,7 @@ process.env.LC_NUMERIC = 'C';
 const electron = require('electron');
 const { join, resolve } = require('path');
 const { fork } = require('child_process');
-const { app, shell, BrowserWindow, ipcMain, Menu } = electron;
+const { app, dialog, shell, BrowserWindow, ipcMain, Menu } = electron;
 
 const applicationName = \`${this.pck.props.frontend.config.applicationName}\`;
 
@@ -133,36 +133,6 @@ const nativeKeymap = require('native-keymap');
 const Storage = require('electron-store');
 const electronStore = new Storage();
 
-let canPreventStop = true;
-const windows = [];
-
-app.on('before-quit', async event => {
-    if (canPreventStop) {
-        // Pause the stop.
-        event.preventDefault();
-        let preventStop = false;
-        // Ask all opened windows whether they want to prevent the \`close\` event or not.
-        for (const window of windows) {
-            if (!preventStop) {
-                window.webContents.send('prevent-stop-request');
-                const preventStopPerWindow = await new Promise((resolve) => {
-                    ipcMain.once('prevent-stop-response', (_, arg) => {
-                        if (!!arg && 'preventStop' in arg && typeof arg.preventStop === 'boolean') {
-                            resolve(arg.preventStop);
-                        }
-                    })
-                });
-                if (preventStopPerWindow) {
-                    preventStop = true;
-                }
-            }
-        }
-        if (!preventStop) {
-            canPreventStop = false;
-            app.quit();
-        }
-    }
-});
 app.on('ready', () => {
     const { screen } = electron;
 
@@ -243,13 +213,18 @@ app.on('ready', () => {
         newWindow.on('close', saveWindowState);
         newWindow.on('resize', saveWindowStateDelayed);
         newWindow.on('move', saveWindowStateDelayed);
-        newWindow.on('closed', () => {
-            const index = windows.indexOf(newWindow);
-            if (index !== -1) {
-                windows.splice(index, 1);
-            }
-            if (windows.length === 0) {
-                app.quit();
+
+        newWindow.webContents.on('will-prevent-unload', event => {
+            const preventStop = 0 !== dialog.showMessageBox(newWindow, {
+                type: 'question',
+                buttons: ['Yes', 'No'],
+                title: 'Confirm',
+                message: 'Are you sure you want to quit?',
+                detail: 'Any unsaved changes will not be saved.'
+            });
+
+            if (!preventStop) {
+                event.preventDefault();
             }
         });
 
@@ -267,7 +242,6 @@ app.on('ready', () => {
         if (!!theUrl) {
             newWindow.loadURL(theUrl);
         }
-        windows.push(newWindow);
         return newWindow;
     }
 
