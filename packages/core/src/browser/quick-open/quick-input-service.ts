@@ -119,11 +119,17 @@ export class QuickInputService {
         let label = prompt;
         let currentText = '';
         const validateInput = options && options.validateInput;
+        let initial: boolean = true;
 
         this.quickOpenService.open({
             onType: async (lookFor, acceptor) => {
-                this.onDidChangeValueEmitter.fire(lookFor);
-                const error = validateInput && lookFor !== undefined ? await validateInput(lookFor) : undefined;
+                let error: string | undefined;
+                if (initial) {
+                    initial = false;
+                } else {
+                    this.onDidChangeValueEmitter.fire(lookFor);
+                    error = validateInput && lookFor !== undefined ? await validateInput(lookFor) : undefined;
+                }
                 label = error || prompt;
                 if (error) {
                     this.quickOpenService.showDecoration(MessageType.Error);
