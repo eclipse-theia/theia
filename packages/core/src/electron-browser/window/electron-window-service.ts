@@ -17,19 +17,10 @@
 import { injectable } from 'inversify';
 import { ipcRenderer } from 'electron';
 import { NewWindowOptions } from '../../browser/window/window-service';
-import { FrontendApplication } from '../../browser/frontend-application';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 
 @injectable()
 export class ElectronWindowService extends DefaultWindowService {
-
-    onStart(app: FrontendApplication): void {
-        this.frontendApplication = app;
-        // We do not want to add a `beforeunload` listener to the `window`.
-        // Why? Because by the time we get into the unload handler, it is already too late. Our application has quit.
-        // _Emitted when the `window` is going to be closed. It's emitted before the `beforeunload` and `unload` event of the DOM._
-        // https://github.com/electron/electron/blob/master/docs/api/browser-window.md#event-close
-    }
 
     openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
         if (external) {
@@ -38,6 +29,11 @@ export class ElectronWindowService extends DefaultWindowService {
             ipcRenderer.send('create-new-window', url);
         }
         return undefined;
+    }
+
+    protected preventUnload(event: BeforeUnloadEvent): string | void {
+        // The user will be shown a confirmation dialog by the will-prevent-unload handler in the Electron main script
+        event.returnValue = false;
     }
 
 }
