@@ -73,11 +73,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
 
     // tslint:disable-next-line:no-any
     $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
-        try {
-            return Promise.resolve(this.delegate.executeCommand(id, ...args));
-        } catch (e) {
-            return Promise.reject(e);
-        }
+        return this.delegate.executeCommand(id, ...args);
     }
 
     $getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined> {
