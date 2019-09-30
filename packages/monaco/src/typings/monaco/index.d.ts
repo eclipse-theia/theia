@@ -19,6 +19,7 @@
 
 declare module monaco.instantiation {
     export interface IInstantiationService {
+        invokeFunction: (fn: any, ...args: any) => any
     }
 }
 
@@ -273,6 +274,10 @@ declare module monaco.editor {
 
 declare module monaco.commands {
 
+    export const CommandsRegistry: {
+        getCommands(): Map<string, { id: string, handler: (...args: any) => any }>;
+    };
+
     export interface ICommandEvent {
         commandId: string;
     }
@@ -514,6 +519,7 @@ declare module monaco.services {
         export const codeEditorService: LazyStaticService<monaco.editor.ICodeEditorService>;
         export const configurationService: LazyStaticService<IConfigurationService>;
         export const resourcePropertiesService: LazyStaticService<ITextResourcePropertiesService>;
+        export const instantiationService: LazyStaticService<monaco.instantiation.IInstantiationService>;
     }
 }
 
