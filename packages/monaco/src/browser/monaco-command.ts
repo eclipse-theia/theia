@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { ProtocolToMonacoConverter } from 'monaco-languageclient/lib';
 import { Position, Location } from '@theia/languages/lib/browser';
-import { Command, CommandContribution } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry } from '@theia/core';
 import { CommonCommands } from '@theia/core/lib/browser';
 import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
 import { QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
@@ -91,7 +91,10 @@ export namespace MonacoCommands {
 export class MonacoEditorCommandHandlers implements CommandContribution {
 
     @inject(MonacoCommandRegistry)
-    protected readonly registry: MonacoCommandRegistry;
+    protected readonly monacoCommandRegistry: MonacoCommandRegistry;
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
 
     @inject(ProtocolToMonacoConverter)
     protected readonly p2m: ProtocolToMonacoConverter;
@@ -103,6 +106,28 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         this.registerCommonCommandHandlers();
         this.registerEditorCommandHandlers();
         this.registerMonacoActionCommands();
+        this.registerInternalLanguageServiceCommands();
+    }
+
+    protected registerInternalLanguageServiceCommands(): void {
+        const instantiationService = monaco.services.StaticServices.instantiationService.get();
+        const monacoCommands = monaco.commands.CommandsRegistry.getCommands();
+        for (const command of monacoCommands.keys()) {
+            if (command.startsWith('_execute')) {
+                this.commandRegistry.registerCommand(
+                    {
+                        id: MonacoCommandRegistry.MONACO_COMMAND_PREFIX + command
+                    },
+                    {
+                        // tslint:disable-next-line:no-any
+                        execute: (...args: any) => instantiationService.invokeFunction(
+                            monacoCommands.get(command)!.handler,
+                            ...args
+                        )
+                    }
+                );
+            }
+        }
     }
 
     protected registerCommonCommandHandlers(): void {
@@ -110,7 +135,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         for (const action in MonacoCommands.COMMON_ACTIONS) {
             const command = MonacoCommands.COMMON_ACTIONS[action];
             const handler = this.newCommonActionHandler(action);
-            this.registry.registerHandler(command, handler);
+            this.monacoCommandRegistry.registerHandler(command, handler);
         }
     }
     protected newCommonActionHandler(action: string): MonacoEditorCommandHandler {
@@ -121,11 +146,11 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     }
 
     protected registerEditorCommandHandlers(): void {
-        this.registry.registerHandler(EditorCommands.SHOW_REFERENCES.id, this.newShowReferenceHandler());
-        this.registry.registerHandler(EditorCommands.CONFIG_INDENTATION.id, this.newConfigIndentationHandler());
-        this.registry.registerHandler(EditorCommands.CONFIG_EOL.id, this.newConfigEolHandler());
-        this.registry.registerHandler(EditorCommands.INDENT_USING_SPACES.id, this.newConfigTabSizeHandler(true));
-        this.registry.registerHandler(EditorCommands.INDENT_USING_TABS.id, this.newConfigTabSizeHandler(false));
+        this.monacoCommandRegistry.registerHandler(EditorCommands.SHOW_REFERENCES.id, this.newShowReferenceHandler());
+        this.monacoCommandRegistry.registerHandler(EditorCommands.CONFIG_INDENTATION.id, this.newConfigIndentationHandler());
+        this.monacoCommandRegistry.registerHandler(EditorCommands.CONFIG_EOL.id, this.newConfigEolHandler());
+        this.monacoCommandRegistry.registerHandler(EditorCommands.INDENT_USING_SPACES.id, this.newConfigTabSizeHandler(true));
+        this.monacoCommandRegistry.registerHandler(EditorCommands.INDENT_USING_TABS.id, this.newConfigTabSizeHandler(false));
     }
 
     protected newShowReferenceHandler(): MonacoEditorCommandHandler {
@@ -241,7 +266,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     protected registerMonacoActionCommands(): void {
         for (const action of MonacoCommands.ACTIONS.values()) {
             const handler = this.newMonacoActionHandler(action);
-            this.registry.registerCommand(action, handler);
+            this.monacoCommandRegistry.registerCommand(action, handler);
         }
     }
     protected newMonacoActionHandler(action: MonacoCommand): MonacoEditorCommandHandler {
