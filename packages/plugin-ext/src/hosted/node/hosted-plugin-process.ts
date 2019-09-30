@@ -181,7 +181,11 @@ export class HostedPluginProcess implements ServerPluginRunner {
             return;
         }
         this.logger.error(`[${serverName}: ${pid}] IPC exited, with signal: ${signal}, and exit code: ${code}`);
-        this.messageService.error('Plugin runtime crashed unexpectedly, all plugins are not working, please reload...', { timeout: 15 * 60 * 1000 });
+        this.messageService.error(
+            'Plugin runtime crashed unexpectedly, all plugins are not working, please reload the page. ' +
+            'It might happen if there is not enough memory for the plugins.',
+            { timeout: 15 * 60 * 1000 }
+        );
     }
 
     private onChildProcessError(err: Error): void {
