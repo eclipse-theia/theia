@@ -36,7 +36,7 @@ FROM node:8
 RUN useradd --create-home theia
 WORKDIR /home/theia
 RUN rm -rf /opt/yarn && rm -f /usr/local/bin/yarn && rm -f /usr/local/bin/yarnpkg
-RUN apt-get update && apt-get install -y npm && npm install -g yarn@1.3.2
+RUN npm install -g yarn@1.3.2
 USER theia
 RUN git clone --depth 1 https://github.com/eclipse-theia/theia && \
     cd theia && \
