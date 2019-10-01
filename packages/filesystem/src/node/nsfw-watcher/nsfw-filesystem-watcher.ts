@@ -121,7 +121,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
                 }
                 if (event.action === nsfw.actions.RENAMED) {
                     this.pushDeleted(watcherId, this.resolvePath(event.directory, event.oldFile!));
-                    this.pushAdded(watcherId, this.resolvePath(event.directory, event.newFile!));
+                    this.pushAdded(watcherId, this.resolvePath(event.newDirectory || event.directory, event.newFile!));
                 }
             }
         }, {

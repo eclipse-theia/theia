@@ -31,6 +31,7 @@ declare module 'nsfw' {
         export interface ChangeEvent {
             action: number;
             directory: string;
+            newDirectory?: string;
             file?: string;
             oldFile?: string;
             newFile?: string;
