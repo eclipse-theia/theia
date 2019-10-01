@@ -20,7 +20,7 @@ import { injectable, inject, named } from 'inversify';
 import { ILogger, ConnectionErrorHandler, ContributionProvider, MessageService } from '@theia/core/lib/common';
 import { Emitter } from '@theia/core/lib/common/event';
 import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
-import { HostedPluginClient, ServerPluginRunner, PluginMetadata, PluginHostEnvironmentVariable } from '../../common/plugin-protocol';
+import { HostedPluginClient, ServerPluginRunner, PluginHostEnvironmentVariable, DeployedPlugin } from '../../common/plugin-protocol';
 import { RPCProtocolImpl } from '../../common/rpc-protocol';
 import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
@@ -192,7 +192,17 @@ export class HostedPluginProcess implements ServerPluginRunner {
         this.logger.error(`Error from plugin host: ${err.message}`);
     }
 
-    async getExtraPluginMetadata(): Promise<PluginMetadata[]> {
+    /**
+     * Provides additional plugin ids.
+     */
+    public async getExtraDeployedPluginIds(): Promise<string[]> {
+        return [];
+    }
+
+    /**
+     * Provides additional deployed plugins.
+     */
+    public async getExtraDeployedPlugins(): Promise<DeployedPlugin[]> {
         return [];
     }
 

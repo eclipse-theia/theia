@@ -685,9 +685,15 @@ export interface ServerPluginRunner {
     clientClosed(): void;
 
     /**
-     * Provides additional metadata.
+     * Provides additional deployed plugins.
      */
-    getExtraPluginMetadata(): Promise<PluginMetadata[]>;
+    getExtraDeployedPlugins(): Promise<DeployedPlugin[]>;
+
+    /**
+     * Provides additional plugin ids.
+     */
+    getExtraDeployedPluginIds(): Promise<string[]>;
+
 }
 
 export const PluginHostEnvironmentVariable = Symbol('PluginHostEnvironmentVariable');

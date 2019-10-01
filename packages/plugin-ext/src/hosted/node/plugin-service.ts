@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable, inject, named, postConstruct } from 'inversify';
-import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployer, GetDeployedPluginsParams, DeployedPlugin } from '../../common/plugin-protocol';
+import { HostedPluginServer, HostedPluginClient, PluginDeployer, GetDeployedPluginsParams, DeployedPlugin } from '../../common/plugin-protocol';
 import { HostedPluginSupport } from './hosted-plugin';
 import { ILogger, Disposable } from '@theia/core';
 import { ContributionProvider } from '@theia/core';
@@ -75,9 +75,8 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         for (const pluginId of backendMetadata) {
             plugins.add(pluginId);
         }
-        const extraPluginMetadata = await this.hostedPlugin.getExtraPluginMetadata();
-        for (const plugin of extraPluginMetadata) {
-            plugins.add(plugin.model.id);
+        for (const pluginId of await this.hostedPlugin.getExtraDeployedPluginIds()) {
+            plugins.add(pluginId);
         }
         return [...plugins.values()];
     }
@@ -87,20 +86,17 @@ export class HostedPluginServerImpl implements HostedPluginServer {
             return [];
         }
         const plugins = [];
-        let extraPluginMetadata: Map<string, PluginMetadata> | undefined;
+        let extraDeployedPlugins: Map<string, DeployedPlugin> | undefined;
         for (const pluginId of pluginIds) {
             let plugin = this.deployerHandler.getDeployedPlugin(pluginId);
             if (!plugin) {
-                if (!extraPluginMetadata) {
-                    extraPluginMetadata = new Map<string, PluginMetadata>();
-                    for (const extraMetadata of await this.hostedPlugin.getExtraPluginMetadata()) {
-                        extraPluginMetadata.set(extraMetadata.model.id, extraMetadata);
+                if (!extraDeployedPlugins) {
+                    extraDeployedPlugins = new Map<string, DeployedPlugin>();
+                    for (const extraDeployedPlugin of await this.hostedPlugin.getExtraDeployedPlugins()) {
+                        extraDeployedPlugins.set(extraDeployedPlugin.metadata.model.id, extraDeployedPlugin);
                     }
                 }
-                const metadata = extraPluginMetadata.get(pluginId);
-                if (metadata) {
-                    plugin = { metadata };
-                }
+                plugin = extraDeployedPlugins.get(pluginId);
             }
             if (plugin) {
                 plugins.push(plugin);
