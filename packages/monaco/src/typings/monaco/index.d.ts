@@ -747,10 +747,7 @@ declare module monaco.quickOpen {
 
     export interface IActionProvider {
         hasActions(element: any, item: any): boolean;
-        getActions(element: any, item: any): Promise<IAction[]>;
-        hasSecondaryActions(element: any, item: any): boolean;
-        getSecondaryActions(element: any, item: any): Promise<IAction[]>;
-        getActionItem(element: any, item: any, action: IAction): any;
+        getActions(element: any, item: any): ReadonlyArray<IAction>;
     }
 
     export class QuickOpenModel implements IModel<QuickOpenEntry>, IDataSource<QuickOpenEntry>, IFilter<QuickOpenEntry>, IRunner<QuickOpenEntry> {

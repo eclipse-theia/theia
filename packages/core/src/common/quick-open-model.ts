@@ -111,7 +111,7 @@ export interface QuickOpenModel {
 
 export interface QuickOpenActionProvider {
     hasActions(item: QuickOpenItem): boolean;
-    getActions(item: QuickOpenItem): Promise<QuickOpenAction[]>;
+    getActions(item: QuickOpenItem): ReadonlyArray<QuickOpenAction>;
 }
 
 export interface QuickOpenActionOptions {

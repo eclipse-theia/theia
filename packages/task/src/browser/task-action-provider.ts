@@ -61,7 +61,7 @@ export class TaskActionProvider implements QuickOpenActionProvider {
         return true;
     }
 
-    async getActions(): Promise<QuickOpenAction[]> {
+    getActions(): ReadonlyArray<QuickOpenAction> {
         return [this.configureTaskAction];
     }
 }
