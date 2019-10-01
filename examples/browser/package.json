@@ -44,6 +44,7 @@
     "@theia/plugin-dev": "^0.12.0",
     "@theia/plugin-ext": "^0.12.0",
     "@theia/plugin-ext-vscode": "^0.12.0",
+    "@theia/plugin-metrics": "^0.12.0",
     "@theia/preferences": "^0.12.0",
     "@theia/preview": "^0.12.0",
     "@theia/process": "^0.12.0",

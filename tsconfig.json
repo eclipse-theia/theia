@@ -124,6 +124,9 @@
       "@theia/plugin-ext-vscode/lib/*": [
         "packages/plugin-ext-vscode/src/*"
       ],
+      "@theia/plugin-metrics/lib/*": [
+        "packages/plugin-metrics/src/*"
+      ],
       "@theia/userstorage/lib/*": [
         "packages/userstorage/src/*"
       ],

@@ -48,6 +48,7 @@ cache:
   - packages/plugin-dev/node_modules
   - packages/plugin-ext-vscode/node_modules
   - packages/plugin-ext/node_modules
+  - packages/plugin-metrics/node_modules
   - packages/plugin/node_modules
   - packages/preferences/node_modules
   - packages/preview/node_modules
