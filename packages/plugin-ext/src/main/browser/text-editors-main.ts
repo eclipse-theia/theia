@@ -34,7 +34,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { TextEditorMain } from './text-editor-main';
 import { disposed } from '../../common/errors';
-import { reviveWorkspaceEditDto } from './languages-main';
+import { toMonacoWorkspaceEdit } from './languages-main';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 
@@ -113,7 +113,7 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
     }
 
     $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
-        const edits = reviveWorkspaceEditDto(dto);
+        const edits = toMonacoWorkspaceEdit(dto);
         return new Promise(resolve => {
             this.bulkEditService.apply(edits).then(() => resolve(true), err => resolve(false));
         });
