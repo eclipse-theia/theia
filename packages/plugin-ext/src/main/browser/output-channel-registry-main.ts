@@ -18,7 +18,7 @@ import { injectable, inject } from 'inversify';
 import { OutputWidget } from '@theia/output/lib/browser/output-widget';
 import { OutputContribution } from '@theia/output/lib/browser/output-contribution';
 import { OutputChannel, OutputChannelManager } from '@theia/output/lib/common/output-channel';
-import { OutputChannelRegistryMain } from '../../common/plugin-api-rpc';
+import { OutputChannelRegistryMain, PluginInfo } from '../../common/plugin-api-rpc';
 
 @injectable()
 export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain {
@@ -33,7 +33,7 @@ export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain 
 
     private channels: Map<string, OutputChannel> = new Map();
 
-    $append(channelName: string, value: string): PromiseLike<void> {
+    $append(channelName: string, value: string, pluginInfo: PluginInfo): PromiseLike<void> {
         const outputChannel = this.getChannel(channelName);
         if (outputChannel) {
             outputChannel.append(value);
