@@ -333,7 +333,7 @@ export function createAPIFactory(
                 return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority);
             },
             createOutputChannel(name: string): theia.OutputChannel {
-                return outputChannelRegistryExt.createOutputChannel(name);
+                return outputChannelRegistryExt.createOutputChannel(name, pluginToPluginInfo(plugin));
             },
             createWebviewPanel(viewType: string,
                 title: string,

@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import * as theia from '@theia/plugin';
-import {OutputChannelRegistryMain} from '../../common/plugin-api-rpc';
+import { OutputChannelRegistryMain, PluginInfo } from '../../common/plugin-api-rpc';
 
 export class OutputChannelImpl implements theia.OutputChannel {
 
     private disposed: boolean;
 
-    constructor(readonly name: string, private proxy: OutputChannelRegistryMain) {
+    constructor(readonly name: string, private proxy: OutputChannelRegistryMain, private readonly pluginInfo: PluginInfo) {
     }
 
     dispose(): void {
@@ -33,7 +33,7 @@ export class OutputChannelImpl implements theia.OutputChannel {
 
     append(value: string): void {
         this.validate();
-        this.proxy.$append(this.name, value);
+        this.proxy.$append(this.name, value, this.pluginInfo);
     }
 
     appendLine(value: string): void {

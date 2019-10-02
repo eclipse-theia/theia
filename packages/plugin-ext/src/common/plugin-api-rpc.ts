@@ -991,7 +991,7 @@ export interface PreferenceRegistryExt {
 }
 
 export interface OutputChannelRegistryMain {
-    $append(channelName: string, value: string): PromiseLike<void>;
+    $append(channelName: string, value: string, pluginInfo: PluginInfo): PromiseLike<void>;
     $clear(channelName: string): PromiseLike<void>;
     $dispose(channelName: string): PromiseLike<void>;
     $reveal(channelName: string, preserveFocus: boolean): PromiseLike<void>;
