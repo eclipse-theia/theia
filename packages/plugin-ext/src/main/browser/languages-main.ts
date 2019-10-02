@@ -32,7 +32,6 @@ import {
     LanguagesExt,
     WorkspaceEditDto,
     ResourceTextEditDto,
-    ResourceFileEditDto,
     PluginInfo
 } from '../../common/plugin-api-rpc';
 import { injectable, inject } from 'inversify';
@@ -43,13 +42,13 @@ import {
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
-import URI from 'vscode-uri/lib/umd';
 import CoreURI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import * as vst from 'vscode-languageserver-types';
 import * as theia from '@theia/plugin';
+import { UriComponents } from '../../common/uri-components';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -76,8 +75,8 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return Promise.resolve(monaco.languages.getLanguages().map(l => l.id));
     }
 
-    $changeLanguage(resource: URI, languageId: string): Promise<void> {
-        const uri = URI.revive(resource);
+    $changeLanguage(resource: UriComponents, languageId: string): Promise<void> {
+        const uri = monaco.Uri.revive(resource);
         const model = monaco.editor.getModel(uri);
         if (!model) {
             return Promise.reject(new Error('Invalid uri'));
@@ -703,7 +702,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     protected provideRenameEdits(handle: number, model: monaco.editor.ITextModel,
         position: monaco.Position, newName: string, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.WorkspaceEdit & monaco.languages.Rejection> {
-        return this.proxy.$provideRenameEdits(handle, model.uri, position, newName, token).then(reviveWorkspaceEditDto);
+        return this.proxy.$provideRenameEdits(handle, model.uri, position, newName, token).then(toMonacoWorkspaceEdit);
     }
 
     protected resolveRenameLocation(handle: number, model: monaco.editor.ITextModel,
@@ -797,16 +796,14 @@ function reviveOnEnterRules(onEnterRules?: SerializedOnEnterRule[]): monaco.lang
     return onEnterRules.map(reviveOnEnterRule);
 }
 
-export function reviveWorkspaceEditDto(data: WorkspaceEditDto): monaco.languages.WorkspaceEdit {
-    if (data && data.edits) {
-        for (const edit of data.edits) {
-            if (typeof (<ResourceTextEditDto>edit).resource === 'object') {
-                (<ResourceTextEditDto>edit).resource = URI.revive((<ResourceTextEditDto>edit).resource);
+export function toMonacoWorkspaceEdit(data: WorkspaceEditDto | undefined): monaco.languages.WorkspaceEdit {
+    return {
+        edits: (data && data.edits || []).map(edit => {
+            if (ResourceTextEditDto.is(edit)) {
+                return { resource: monaco.Uri.revive(edit.resource), edits: edit.edits };
             } else {
-                (<ResourceFileEditDto>edit).newUri = URI.revive((<ResourceFileEditDto>edit).newUri);
-                (<ResourceFileEditDto>edit).oldUri = URI.revive((<ResourceFileEditDto>edit).oldUri);
+                return { newUri: monaco.Uri.revive(edit.newUri), oldUri: monaco.Uri.revive(edit.oldUri), options: edit.options };
             }
-        }
-    }
-    return <monaco.languages.WorkspaceEdit>data;
+        })
+    };
 }

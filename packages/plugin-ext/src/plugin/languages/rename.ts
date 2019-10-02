@@ -57,7 +57,7 @@ export class RenameAdapter {
             if (rejectReason) {
                 return <WorkspaceEditDto>{
                     rejectReason,
-                    edits: undefined!
+                    edits: []
                 };
             } else {
                 return Promise.reject<WorkspaceEditDto>(error);

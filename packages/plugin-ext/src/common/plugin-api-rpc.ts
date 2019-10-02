@@ -1057,6 +1057,11 @@ export interface ResourceTextEditDto {
     modelVersionId?: number;
     edits: TextEdit[];
 }
+export namespace ResourceTextEditDto {
+    export function is(arg: Object): arg is ResourceTextEditDto {
+        return !!arg && typeof arg === 'object' && 'resource' in arg && 'edits' in arg;
+    }
+}
 
 export interface WorkspaceEditDto {
     edits: (ResourceFileEditDto | ResourceTextEditDto)[];
