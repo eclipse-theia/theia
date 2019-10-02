@@ -2,7 +2,7 @@
 
 <div id="theia-logo" align="left">
     <br />
-    <img src="https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/EF_GRY-OR_svg.svg" alt="Eclipse Logo" width="300"/>
+    <img src="https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/EF_GRY-OR_svg.svg?sanitize=true" alt="Eclipse Logo" width="300"/>
 </div>
 
 # Community Code of Conduct
