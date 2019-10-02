@@ -18,6 +18,7 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { ILogger } from '../common/logger';
 import { MessageService } from '../common/message-service';
 import { WindowService } from './window/window-service';
+import { environment } from '@theia/application-package/lib/environment';
 
 export const StorageService = Symbol('IStorageService');
 /**
@@ -83,6 +84,9 @@ export class LocalStorageService implements StorageService {
     }
 
     protected prefix(key: string): string {
+        if (environment.electron.is()) {
+            return `theia:${key}`;
+        }
         const pathname = typeof window === 'undefined' ? '' : window.location.pathname;
         return `theia:${pathname}:${key}`;
     }
