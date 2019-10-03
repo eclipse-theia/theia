@@ -18,6 +18,8 @@ import * as theia from '@theia/plugin';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { StorageMain, StorageExt } from '../common/plugin-api-rpc';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../common/types';
+import { RPCProtocol } from '../common/rpc-protocol';
+import { PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 
 export class Memento implements theia.Memento {
 
@@ -68,13 +70,11 @@ export class KeyValueStorageProxy implements StorageExt {
     private globalDataCache: KeysToKeysToAnyValue;
     private workspaceDataCache: KeysToKeysToAnyValue;
 
-    constructor(
-        proxy: StorageMain,
-        initGlobalData: KeysToKeysToAnyValue,
-        initWorkspaceData: KeysToKeysToAnyValue
-    ) {
-        this.proxy = proxy;
+    constructor(rpc: RPCProtocol) {
+        this.proxy = rpc.getProxy<StorageMain>(PLUGIN_RPC_CONTEXT.STORAGE_MAIN);
+    }
 
+    init(initGlobalData: KeysToKeysToAnyValue, initWorkspaceData: KeysToKeysToAnyValue): void {
         this.globalDataCache = initGlobalData;
         this.workspaceDataCache = initWorkspaceData;
     }
