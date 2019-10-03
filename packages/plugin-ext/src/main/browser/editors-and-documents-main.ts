@@ -70,6 +70,10 @@ export class EditorsAndDocumentsMain implements Disposable {
         this.toDispose.push(this.onDocumentRemoveEmitter);
     }
 
+    listen(): void {
+        this.stateComputer.listen();
+    }
+
     dispose(): void {
         this.toDispose.dispose();
     }
@@ -177,17 +181,22 @@ class EditorAndDocumentStateComputer implements Disposable {
         private callback: (delta: EditorAndDocumentStateDelta) => void,
         private readonly editorService: TextEditorService,
         private readonly modelService: EditorModelService
-    ) {
-        this.toDispose.push(editorService.onTextEditorAdd(e => {
+    ) { }
+
+    listen(): void {
+        if (this.toDispose.disposed) {
+            return;
+        }
+        this.toDispose.push(this.editorService.onTextEditorAdd(e => {
             this.onTextEditorAdd(e);
         }));
-        this.toDispose.push(editorService.onTextEditorRemove(e => {
+        this.toDispose.push(this.editorService.onTextEditorRemove(e => {
             this.onTextEditorRemove(e);
         }));
-        this.toDispose.push(modelService.onModelAdded(this.onModelAdded, this));
-        this.toDispose.push(modelService.onModelRemoved(() => this.update()));
+        this.toDispose.push(this.modelService.onModelAdded(this.onModelAdded, this));
+        this.toDispose.push(this.modelService.onModelRemoved(() => this.update()));
 
-        editorService.listTextEditors().forEach(e => this.onTextEditorAdd(e));
+        this.editorService.listTextEditors().forEach(e => this.onTextEditorAdd(e));
         this.update();
     }
 
