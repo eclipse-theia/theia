@@ -18,7 +18,7 @@ import * as Xterm from 'xterm';
 import { proposeGeometry } from 'xterm/lib/addons/fit/fit';
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
-import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
+import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, MessageLoop, KeyCode } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
@@ -434,11 +434,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.termOpened = true;
         this.initialData = '';
-
-        if (isFirefox) {
-            // The software scrollbars don't work with xterm.js, so we disable the scrollbar if we are on firefox.
-            (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
-        }
     }
     protected write(data: string): void {
         if (this.termOpened) {

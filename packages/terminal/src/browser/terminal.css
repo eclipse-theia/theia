@@ -20,6 +20,11 @@
     padding: var(--theia-code-padding);
 }
 
+.xterm .xterm-viewport {
+  /* fix partly-hidden terminal scrollbar. */
+  scrollbar-width: none;
+}
+
 .xterm .xterm-screen canvas {
   /* fix random 1px white border on terminal in Firefox. See https://github.com/eclipse-theia/theia/issues/4665 */
   border: 1px solid var(--theia-layout-color0);
