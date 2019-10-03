@@ -126,8 +126,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.hoverMessage.style.borderWidth = '0.5px';
         this.hoverMessage.style.borderStyle = 'solid';
         this.hoverMessage.style.padding = '5px';
-        this.hoverMessage.style.zIndex = '1';
-        // initially invisible
+        // Above the xterm.js canvas layers:
+        // https://github.com/xtermjs/xterm.js/blob/ff790236c1b205469f17a21246141f512d844295/src/renderer/Renderer.ts#L41-L46
+        this.hoverMessage.style.zIndex = '10';
+        // Initially invisible:
         this.hoverMessage.style.display = 'none';
         this.node.appendChild(this.hoverMessage);
 
