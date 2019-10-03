@@ -68,6 +68,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     rpc.set(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, preferenceRegistryMain);
 
     const editorsAndDocuments = new EditorsAndDocumentsMain(rpc, container);
+
     const modelService = container.get(EditorModelService);
     const editorManager = container.get(EditorManager);
     const openerService = container.get<OpenerService>(OpenerService);
@@ -79,6 +80,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const monacoEditorService = container.get(MonacoEditorService);
     const editorsMain = new TextEditorsMainImpl(editorsAndDocuments, rpc, bulkEditService, monacoEditorService);
     rpc.set(PLUGIN_RPC_CONTEXT.TEXT_EDITORS_MAIN, editorsMain);
+
+    // start listening only after all clients are subscribed to events
+    editorsAndDocuments.listen();
 
     const statusBarMessageRegistryMain = new StatusBarMessageRegistryMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_MAIN, statusBarMessageRegistryMain);
