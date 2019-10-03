@@ -29,6 +29,7 @@ import { WorkspaceExtImpl } from '../../../plugin/workspace';
 import { MessageRegistryExt } from '../../../plugin/message-registry';
 import { WorkerEnvExtImpl } from './worker-env-ext';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
+import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 
 // tslint:disable-next-line:no-any
 const ctx = self as any;
@@ -51,6 +52,7 @@ function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
     ctx.importScripts('/context/' + contextPath);
 }
 const envExt = new WorkerEnvExtImpl(rpc);
+const storageProxy = new KeyValueStorageProxy(rpc);
 const editorsAndDocuments = new EditorsAndDocumentsExtImpl(rpc);
 const messageRegistryExt = new MessageRegistryExt(rpc);
 const workspaceExt = new WorkspaceExtImpl(rpc, editorsAndDocuments, messageRegistryExt);
@@ -129,7 +131,7 @@ const pluginManager = new PluginManagerExtImpl({
             }
         }
     }
-}, envExt, preferenceRegistryExt, rpc);
+}, envExt, storageProxy, preferenceRegistryExt, rpc);
 
 const apiFactory = createAPIFactory(
     rpc,

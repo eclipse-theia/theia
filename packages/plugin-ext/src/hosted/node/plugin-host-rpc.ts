@@ -28,6 +28,7 @@ import { MessageRegistryExt } from '../../plugin/message-registry';
 import { EnvNodeExtImpl } from '../../plugin/node/env-node-ext';
 import { ClipboardExt } from '../../plugin/clipboard-ext';
 import { loadManifest } from './plugin-manifest-loader';
+import { KeyValueStorageProxy } from '../../plugin/plugin-storage';
 
 /**
  * Handle the RPC calls.
@@ -44,17 +45,19 @@ export class PluginHostRPC {
 
     initialize(): void {
         const envExt = new EnvNodeExtImpl(this.rpc);
+        const storageProxy = new KeyValueStorageProxy(this.rpc);
         const debugExt = new DebugExtImpl(this.rpc);
         const editorsAndDocumentsExt = new EditorsAndDocumentsExtImpl(this.rpc);
         const messageRegistryExt = new MessageRegistryExt(this.rpc);
         const workspaceExt = new WorkspaceExtImpl(this.rpc, editorsAndDocumentsExt, messageRegistryExt);
         const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc, workspaceExt);
         const clipboardExt = new ClipboardExt(this.rpc);
-        this.pluginManager = this.createPluginManager(envExt, preferenceRegistryExt, this.rpc);
+        this.pluginManager = this.createPluginManager(envExt, storageProxy, preferenceRegistryExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
         this.rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocumentsExt);
         this.rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
         this.rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
+        this.rpc.set(MAIN_RPC_CONTEXT.STORAGE_EXT, storageProxy);
 
         this.apiFactory = createAPIFactory(
             this.rpc,
@@ -82,7 +85,7 @@ export class PluginHostRPC {
     }
 
     // tslint:disable-next-line:no-any
-    createPluginManager(envExt: EnvExtImpl, preferencesManager: PreferenceRegistryExtImpl, rpc: any): PluginManagerExtImpl {
+    createPluginManager(envExt: EnvExtImpl, storageProxy: KeyValueStorageProxy, preferencesManager: PreferenceRegistryExtImpl, rpc: any): PluginManagerExtImpl {
         const { extensionTestsPath } = process.env;
         const self = this;
         const pluginManager = new PluginManagerExtImpl({
@@ -213,7 +216,7 @@ export class PluginHostRPC {
                     `Path ${extensionTestsPath} does not point to a valid extension test runner.`
                 );
             } : undefined
-        }, envExt, preferencesManager, rpc);
+        }, envExt, storageProxy, preferencesManager, rpc);
         return pluginManager;
     }
 }

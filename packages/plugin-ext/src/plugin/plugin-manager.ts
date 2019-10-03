@@ -16,7 +16,6 @@
 
 import {
     PLUGIN_RPC_CONTEXT,
-    MAIN_RPC_CONTEXT,
     MainMessageType,
     MessageRegistryMain,
     PluginManagerExt,
@@ -81,7 +80,6 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     private readonly activatedPlugins = new Map<string, ActivatedPlugin>();
     private readonly pluginActivationPromises = new Map<string, Deferred<void>>();
     private readonly pluginContextsMap = new Map<string, theia.PluginContext>();
-    private storageProxy: KeyValueStorageProxy;
 
     private onDidChangeEmitter = new Emitter<void>();
     private messageRegistryProxy: MessageRegistryMain;
@@ -92,6 +90,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     constructor(
         private readonly host: PluginHost,
         private readonly envExt: EnvExtImpl,
+        private readonly storageProxy: KeyValueStorageProxy,
         private readonly preferencesManager: PreferenceRegistryExtImpl,
         private readonly rpc: RPCProtocol
     ) {
@@ -138,12 +137,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     async $init(params: PluginManagerInitializeParams): Promise<void> {
-        this.storageProxy = this.rpc.set(
-            MAIN_RPC_CONTEXT.STORAGE_EXT,
-            new KeyValueStorageProxy(this.rpc.getProxy(PLUGIN_RPC_CONTEXT.STORAGE_MAIN),
-                params.globalState,
-                params.workspaceState)
-        );
+        this.storageProxy.init(params.globalState, params.workspaceState);
 
         this.envExt.setQueryParameters(params.env.queryParams);
         this.envExt.setLanguage(params.env.language);
