@@ -364,7 +364,10 @@ export class TaskService implements TaskConfigurationClient {
                 if (resolvedMatcher) {
                     const scope = task._scope || task._source;
                     if (resolvedMatcher.filePrefix && scope) {
-                        const options = { context: new URI(scope).withScheme('file') };
+                        const options = {
+                            context: new URI(scope).withScheme('file'),
+                            configurationSection: 'tasks'
+                        };
                         const resolvedPrefix = await this.variableResolverService.resolve(resolvedMatcher.filePrefix, options);
                         Object.assign(resolvedMatcher, { filePrefix: resolvedPrefix });
                     }
