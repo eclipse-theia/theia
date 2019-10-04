@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable } from 'inversify';
-import { DisposableCollection, deepClone } from '@theia/core/lib/common';
+import { DisposableCollection, deepClone, Disposable, } from '@theia/core/lib/common';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter, TextDocumentSaveReason } from 'monaco-languageclient';
 import { MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
@@ -47,6 +47,16 @@ export class MonacoEditorProvider {
     protected readonly services: MonacoEditorServices;
 
     private isWindowsBackend: boolean = false;
+
+    protected _current: MonacoEditor | undefined;
+    /**
+     * Returns the last focused MonacoEditor.
+     * It takes into account inline editors as well.
+     * If you are interested only in standalone editors then use `MonacoEditor.getCurrent(EditorManager)`
+     */
+    get current(): MonacoEditor | undefined {
+        return this._current;
+    }
 
     constructor(
         @inject(MonacoEditorService) protected readonly codeEditorService: MonacoEditorService,
@@ -119,6 +129,18 @@ export class MonacoEditorProvider {
         commandService.setDelegate(standaloneCommandService);
         this.installQuickOpenService(editor);
         this.installReferencesController(editor);
+
+        toDispose.push(editor.onFocusChanged(focused => {
+            if (focused) {
+                this._current = editor;
+            }
+        }));
+        toDispose.push(Disposable.create(() => {
+            if (this._current === editor) {
+                this._current = undefined;
+            }
+        }));
+
         return editor;
     }
 
