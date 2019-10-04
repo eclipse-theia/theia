@@ -16,8 +16,9 @@
 
 import { injectable, inject } from 'inversify';
 import { Command, CommandHandler, CommandRegistry, SelectionService } from '@theia/core';
-import { EditorManager, TextEditorSelection } from '@theia/editor/lib/browser';
+import { TextEditorSelection } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
+import { MonacoEditorProvider } from './monaco-editor-provider';
 
 export interface MonacoEditorCommandHandler {
     // tslint:disable-next-line:no-any
@@ -30,11 +31,12 @@ export class MonacoCommandRegistry {
 
     public static MONACO_COMMAND_PREFIX = 'monaco.';
 
-    constructor(
-        @inject(CommandRegistry) protected readonly commands: CommandRegistry,
-        @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(SelectionService) protected readonly selectionService: SelectionService
-    ) { }
+    @inject(MonacoEditorProvider)
+    protected readonly monacoEditors: MonacoEditorProvider;
+
+    @inject(CommandRegistry) protected readonly commands: CommandRegistry;
+
+    @inject(SelectionService) protected readonly selectionService: SelectionService;
 
     protected prefix(command: string): string {
         return MonacoCommandRegistry.MONACO_COMMAND_PREFIX + command;
@@ -66,7 +68,7 @@ export class MonacoCommandRegistry {
 
     // tslint:disable-next-line:no-any
     protected execute(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): any {
-        const editor = MonacoEditor.getCurrent(this.editorManager);
+        const editor = this.monacoEditors.current;
         if (editor) {
             editor.focus();
             return Promise.resolve(monacoHandler.execute(editor, ...args));
@@ -76,7 +78,7 @@ export class MonacoCommandRegistry {
 
     // tslint:disable-next-line:no-any
     protected isEnabled(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): boolean {
-        const editor = MonacoEditor.getCurrent(this.editorManager);
+        const editor = this.monacoEditors.current;
         return !!editor && (!monacoHandler.isEnabled || monacoHandler.isEnabled(editor, ...args));
     }
 
