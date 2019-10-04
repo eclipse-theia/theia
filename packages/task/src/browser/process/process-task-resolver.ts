@@ -42,7 +42,9 @@ export class ProcessTaskResolver implements TaskResolver {
             throw new Error('Unsupported task configuration type.');
         }
         const context = new URI(this.taskDefinitionRegistry.getDefinition(taskConfig) ? taskConfig.scope : taskConfig._source).withScheme('file');
-        const variableResolverOptions = { context };
+        const variableResolverOptions = {
+            context, configurationSection: 'tasks'
+        };
         const processTaskConfig = taskConfig as ProcessTaskConfiguration;
         const result: ProcessTaskConfiguration = {
             ...processTaskConfig,

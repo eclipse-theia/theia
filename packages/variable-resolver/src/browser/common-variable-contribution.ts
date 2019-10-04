@@ -85,7 +85,7 @@ export class CommonVariableContribution implements VariableContribution {
                 const inputs = !!configuration && 'inputs' in configuration ? configuration.inputs : undefined;
                 const input = Array.isArray(inputs) && inputs.find(item => !!item && item.id === variable);
                 if (!input) {
-                    return undefined;
+                    throw new Error(`Undefined input variable "${variable}" encountered. Remove or define "${variable}" to continue.`);
                 }
                 if (input.type === 'promptString') {
                     if (typeof input.description !== 'string') {
