@@ -119,7 +119,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
             this.mouseTracker);
         view.disposed.connect(() => {
             toDisposeOnClose.dispose();
-            this.proxy.$onDidDisposeWebviewPanel(viewId);
+            this.proxy.$onDidDisposeWebviewPanel(panelId);
         });
         this.toDispose.push(view);
 
