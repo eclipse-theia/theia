@@ -181,11 +181,15 @@ export class HostedPluginProcess implements ServerPluginRunner {
             return;
         }
         this.logger.error(`[${serverName}: ${pid}] IPC exited, with signal: ${signal}, and exit code: ${code}`);
-        this.messageService.error(
-            'Plugin runtime crashed unexpectedly, all plugins are not working, please reload the page. ' +
-            'It might happen if there is not enough memory for the plugins.',
-            { timeout: 15 * 60 * 1000 }
-        );
+
+        const message = 'Plugin runtime crashed unexpectedly, all plugins are not working, please reload the page.';
+        let hintMessage: string = 'If it doesn\'t help, please check Theia server logs.';
+        if (signal && signal.toUpperCase() === 'SIGKILL') {
+            // May happen in case of OOM or manual force stop.
+            hintMessage = 'Probably there is not enough memory for the plugins. ' + hintMessage;
+        }
+
+        this.messageService.error(message + ' ' + hintMessage, { timeout: 15 * 60 * 1000 });
     }
 
     private onChildProcessError(err: Error): void {
