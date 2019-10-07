@@ -203,7 +203,14 @@ app.on('ready', () => {
             minHeight: 120,
             x: windowState.x,
             y: windowState.y,
-            isMaximized: windowState.isMaximized
+            isMaximized: windowState.isMaximized,
+            webPreferences: {
+                nodeIntegration: false,
+                nodeIntegrationInWorker: false,
+                nodeIntegrationInSubFrames: false,
+                enableRemoteModule: false,
+                webSecurity: true
+            }
         };
 
         // Always hide the window, we will show the window when it is ready to be shown in any case.
