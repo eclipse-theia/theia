@@ -150,7 +150,6 @@ export namespace VariableResolverService {
             } catch (e) {
                 console.error(`Failed to resolved '${name}' variable`, e);
                 this.resolved.set(name, undefined);
-                throw e;
             }
         }
 
