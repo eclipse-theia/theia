@@ -17,6 +17,7 @@ import { injectable, inject } from 'inversify';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources, deepClone } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
+import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 import URI from '@theia/core/lib/common/uri';
 import { TaskService } from './task-service';
 
@@ -42,7 +43,8 @@ export class TaskSchemaUpdater {
                     items: {
                         ...deepClone(taskConfigurationSchema)
                     }
-                }
+                },
+                inputs: inputsSchema.definitions!.inputs
             }
         };
         const taskTypes = await this.taskService.getRegisteredTaskTypes();
