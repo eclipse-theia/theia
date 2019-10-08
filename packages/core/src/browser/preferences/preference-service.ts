@@ -88,7 +88,6 @@ export interface PreferenceService extends Disposable {
     overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined;
 
     resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T>;
-    validate(name: string, value: any): boolean;
 }
 
 /**
@@ -357,9 +356,5 @@ export class PreferenceServiceImpl implements PreferenceService {
             configUri: result.configUri,
             value: result.value !== undefined ? deepFreeze(result.value) : defaultValue
         };
-    }
-
-    validate(name: string, value: any): boolean {
-        return this.schema.validate(name, value);
     }
 }

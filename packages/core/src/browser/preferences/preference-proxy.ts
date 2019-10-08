@@ -86,15 +86,7 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
         const preferenceName = OverridePreferenceName.is(arg) ?
             preferences.overridePreferenceName(arg) :
             <string>arg;
-        const value = preferences.get(preferenceName, defaultValue, resourceUri || opts.resourceUri);
-        if (preferences.validate(preferenceName, value)) {
-            return value;
-        }
-        if (defaultValue !== undefined) {
-            return defaultValue;
-        }
-        const values = preferences.inspect(preferenceName, resourceUri);
-        return values && values.defaultValue;
+        return preferences.get(preferenceName, defaultValue, resourceUri || opts.resourceUri);
     };
 
     const ownKeys: () => string[] = () => {
@@ -163,11 +155,7 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
                 if (value === undefined) {
                     value = preferences.get(fullProperty, undefined, opts.resourceUri);
                 }
-                if (preferences.validate(fullProperty, value)) {
-                    return value;
-                }
-                const values = preferences.inspect(fullProperty, opts.resourceUri);
-                return values && values.defaultValue;
+                return value;
             }
         }
         if (property === 'onPreferenceChanged') {
