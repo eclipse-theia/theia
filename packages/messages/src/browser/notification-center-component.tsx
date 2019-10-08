@@ -55,7 +55,7 @@ export class NotificationCenterComponent extends React.Component<NotificationCen
 
     render(): React.ReactNode {
         const empty = this.state.notifications.length === 0;
-        const title = empty ? 'NO NOTIFICATIONS' : 'NOTIFICATIONS';
+        const title = empty ? 'NO NEW NOTIFICATIONS' : 'NOTIFICATIONS';
         return (
             <div className={`theia-notifications-container theia-notification-center ${this.state.visibilityState === 'center' ? 'open' : 'closed'}`}>
                 <div className='theia-notification-center-header'>
