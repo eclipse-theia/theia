@@ -77,7 +77,6 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
 
     @inject(ContributionProvider) @named(PreferenceContribution)
     protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>;
-    protected validateFunction: Ajv.ValidateFunction;
 
     @inject(PreferenceConfigurations)
     protected readonly configurations: PreferenceConfigurations;
@@ -94,8 +93,6 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
             this.doSetSchema(contrib.schema);
         });
         this.combinedSchema.additionalProperties = false;
-        this.updateValidate();
-        this.onDidPreferencesChanged(() => this.updateValidate());
         this._ready.resolve();
     }
 
@@ -173,8 +170,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         const valid = ajv.validateSchema(schema);
         if (!valid) {
             const errors = !!ajv.errors ? ajv.errorsText(ajv.errors) : 'unknown validation error';
-            console.error('An invalid preference schema was rejected: ' + errors);
-            return [];
+            console.warn('A contributed preference schema has validation issues : ' + errors);
         }
         const scope = PreferenceScope.Default;
         const domain = this.getDomain();
@@ -193,7 +189,6 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
                     this.overridePatternProperties.properties[preferenceName] = schemaProps;
                 }
                 this.combinedSchema.properties[preferenceName] = schemaProps;
-                this.unsupportedPreferences.delete(preferenceName);
 
                 const value = schemaProps.defaultValue = this.getDefaultValue(schemaProps, preferenceName);
                 if (this.testOverrideValue(preferenceName, value)) {
@@ -209,6 +204,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         }
         return changes;
     }
+
     protected doSetPreferenceValue(preferenceName: string, newValue: any, { scope, domain }: {
         scope: PreferenceScope,
         domain?: string[]
@@ -248,37 +244,6 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         }
         // tslint:disable-next-line:no-null-keyword
         return null;
-    }
-
-    protected updateValidate(): void {
-        const schema = {
-            ...this.combinedSchema,
-            properties: {
-                ...this.combinedSchema.properties
-            }
-        };
-        for (const sectionName of this.configurations.getSectionNames()) {
-            delete schema.properties[sectionName];
-        }
-        this.validateFunction = new Ajv().compile(schema);
-    }
-
-    protected readonly unsupportedPreferences = new Set<string>();
-    validate(name: string, value: any): boolean {
-        if (this.configurations.isSectionName(name)) {
-            return true;
-        }
-        const overridden = this.overriddenPreferenceName(name);
-        const preferenceName = overridden && overridden.preferenceName || name;
-        const result = this.validateFunction({ [preferenceName]: value }) as boolean;
-        if (!result && !(name in this.combinedSchema.properties)) {
-            // in order to avoid reporting it on each change
-            if (!this.unsupportedPreferences.has(name)) {
-                this.unsupportedPreferences.add(name);
-                console.warn(`"${name}" preference is not supported`);
-            }
-        }
-        return result;
     }
 
     getCombinedSchema(): PreferenceDataSchema {

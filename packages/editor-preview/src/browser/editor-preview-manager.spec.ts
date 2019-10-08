@@ -87,12 +87,10 @@ describe('editor-preview-manager', () => {
 
     it('should handle preview requests if editor.enablePreview enabled', async () => {
         (mockPreference.get as sinon.SinonStub).returns(true);
-        (mockPreference.validate as sinon.SinonStub).returns(true);
         expect(await previewManager.canHandle(new URI(), { preview: true })).to.be.greaterThan(0);
     });
     it('should not handle preview requests if editor.enablePreview disabled', async () => {
         (mockPreference.get as sinon.SinonStub).returns(false);
-        (mockPreference.validate as sinon.SinonStub).returns(true);
         expect(await previewManager.canHandle(new URI(), { preview: true })).to.equal(0);
     });
     it('should not handle requests that are not preview or currently being previewed', async () => {

@@ -220,8 +220,6 @@ describe('Preference Service', () => {
         })), 'events before');
         assert.strictEqual(prefService.get('editor.insertSpaces'), true, 'get before');
         assert.strictEqual(prefService.get('[go].editor.insertSpaces'), false, 'get before overridden');
-        assert.strictEqual(prefSchema.validate('editor.insertSpaces', false), true, 'validate before');
-        assert.strictEqual(prefSchema.validate('[go].editor.insertSpaces', true), true, 'validate before overridden');
 
         events.length = 0;
         toUnset.dispose();
@@ -241,8 +239,6 @@ describe('Preference Service', () => {
         })), 'events after');
         assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after');
         assert.strictEqual(prefService.get('[go].editor.insertSpaces'), undefined, 'get after overridden');
-        assert.strictEqual(prefSchema.validate('editor.insertSpaces', true), false, 'validate after');
-        assert.strictEqual(prefSchema.validate('[go].editor.insertSpaces', true), false, 'validate after overridden');
     });
 
     describe('overridden preferences', () => {
