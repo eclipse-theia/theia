@@ -493,11 +493,13 @@ export interface TreeViewsExt {
     $setVisible(treeViewId: string, visible: boolean): Promise<void>;
 }
 
-export class TreeViewItem {
+export interface TreeViewItem {
 
     id: string;
 
     label: string;
+
+    description?: string;
 
     /* font-awesome icon for compatibility */
     icon?: string;

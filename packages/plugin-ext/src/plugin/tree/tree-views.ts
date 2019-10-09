@@ -226,7 +226,6 @@ class TreeViewExtImpl<T> implements Disposable {
 
         // ask data provider for children for cached element
         const result = await this.treeDataProvider.getChildren(parent);
-
         if (result) {
             const treeItems: TreeViewItem[] = [];
             const promises = result.map(async (value, index) => {
@@ -234,7 +233,6 @@ class TreeViewExtImpl<T> implements Disposable {
                 // Ask data provider for a tree item for the value
                 // Data provider must return theia.TreeItem
                 const treeItem: TreeItem2 = await this.treeDataProvider.getTreeItem(value);
-
                 // Convert theia.TreeItem to the TreeViewItem
 
                 // Take a label
@@ -247,7 +245,7 @@ class TreeViewExtImpl<T> implements Disposable {
                 }
 
                 // Use resource URI if label is not set
-                if (!label && treeItem.resourceUri) {
+                if (label === undefined && treeItem.resourceUri) {
                     label = treeItem.resourceUri.path.toString();
                     label = decodeURIComponent(label);
                     if (label.indexOf('/') >= 0) {
@@ -260,7 +258,7 @@ class TreeViewExtImpl<T> implements Disposable {
                 const id = treeItem.id || `${parentId}/${index}:${label}`;
 
                 // Use item ID if item label is still not set
-                if (!label) {
+                if (label === undefined) {
                     label = treeItem.id;
                 }
 
@@ -314,6 +312,7 @@ class TreeViewExtImpl<T> implements Disposable {
                     icon,
                     iconUrl,
                     themeIconId,
+                    description: treeItem.description,
                     resourceUri: treeItem.resourceUri,
                     tooltip: treeItem.tooltip,
                     collapsibleState: treeItem.collapsibleState,

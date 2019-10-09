@@ -125,7 +125,8 @@ export class PluginTree extends TreeImpl {
         const update = {
             name: item.label,
             icon,
-            description: item.tooltip,
+            description: item.description,
+            tooltip: item.tooltip,
             contextValue: item.contextValue
         };
         const node = this.getNode(item.id);
@@ -242,7 +243,7 @@ export class TreeViewWidget extends TreeWidget {
         if (node.description) {
             attrs = {
                 ...attrs,
-                title: node.description
+                title: 'tooltip' in node ? node['tooltip'] : ''
             };
         }
 
@@ -253,10 +254,10 @@ export class TreeViewWidget extends TreeWidget {
     protected getCaption(node: TreeNode): React.ReactNode[] {
         const nodes: React.ReactNode[] = [];
 
-        let work = node.name;
+        let work = node.name || '';
 
         const regex = /\[([^\[]+)\]\(([^\)]+)\)/g;
-        const matchResult = node.name.match(regex);
+        const matchResult = work.match(regex);
 
         if (matchResult) {
             matchResult.forEach(match => {
@@ -274,7 +275,12 @@ export class TreeViewWidget extends TreeWidget {
             });
         }
 
-        nodes.push(work);
+        nodes.push(<div>{work}</div>);
+        if (node.description) {
+            nodes.push(<div className='theia-tree-view-description'>
+                {node.description}
+            </div>);
+        }
         return nodes;
     }
 
@@ -340,4 +346,23 @@ export class TreeViewWidget extends TreeWidget {
         }
     }
 
+    handleEnter(event: KeyboardEvent): void {
+        super.handleEnter(event);
+        this.tryExecuteCommand();
+    }
+
+    handleClickEvent(node: TreeNode, event: React.MouseEvent<HTMLElement>): void {
+        super.handleClickEvent(node, event);
+        this.tryExecuteCommand(node);
+    }
+
+    // execute TreeItem.command if present
+    protected tryExecuteCommand(node?: TreeNode): void {
+        const treeNodes = (node ? [node] : this.model.selectedNodes) as TreeViewNode[];
+        for (const treeNode of treeNodes) {
+            if (treeNode && treeNode.command) {
+                this.commands.executeCommand(treeNode.command.id, ...(treeNode.command.arguments || []));
+            }
+        }
+    }
 }

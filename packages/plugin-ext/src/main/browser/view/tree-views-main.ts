@@ -20,7 +20,7 @@ import { RPCProtocol } from '../../../common/rpc-protocol';
 import { PluginViewRegistry, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
 import { SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode, WidgetManager } from '@theia/core/lib/browser';
 import { ViewContextKeyService } from './view-context-key-service';
-import { CommandRegistry, Disposable, DisposableCollection } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core';
 import { TreeViewWidget, TreeViewNode } from './tree-view-widget';
 
 export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
@@ -28,7 +28,6 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
     private readonly proxy: TreeViewsExt;
     private readonly viewRegistry: PluginViewRegistry;
     private readonly contextKeys: ViewContextKeyService;
-    private readonly commands: CommandRegistry;
     private readonly widgetManager: WidgetManager;
 
     private readonly treeViewProviders = new Map<string, Disposable>();
@@ -42,7 +41,6 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         this.viewRegistry = container.get(PluginViewRegistry);
 
         this.contextKeys = this.container.get(ViewContextKeyService);
-        this.commands = this.container.get(CommandRegistry);
         this.widgetManager = this.container.get(WidgetManager);
     }
 
@@ -125,12 +123,6 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
             this.contextKeys.view.set(treeViewId);
 
             this.proxy.$setSelection(treeViewId, event.map((node: TreeViewNode) => node.id));
-
-            // execute TreeItem.command if present
-            const treeNode = event[0] as TreeViewNode;
-            if (treeNode && treeNode.command) {
-                this.commands.executeCommand(treeNode.command.id, ...(treeNode.command.arguments || []));
-            }
         }));
 
         const updateVisible = () => this.proxy.$setVisible(treeViewId, treeViewWidget.isVisible);

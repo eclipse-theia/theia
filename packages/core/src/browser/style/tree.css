@@ -87,7 +87,7 @@
 }
 
 .theia-Tree .theia-TreeNode.theia-mod-selected {
-    background: var(--theia-accent-color4);
+    background: var(--theia-layout-color4);
 }
 
 .theia-TreeNode.theia-mod-not-selectable {
