@@ -27,7 +27,8 @@ import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposa
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import VSCodeURI from 'vscode-uri';
 import URI from '@theia/core/lib/common/uri';
-import { CancellationToken, CancellationTokenSource, Range, Position } from 'vscode-languageserver-protocol';
+import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver-protocol';
+import { Range, Position } from '../plugin/types-impl';
 
 export interface MessageConnection {
     send(msg: {}): void;
@@ -394,7 +395,7 @@ namespace ObjectsTransferrer {
                 $type: SerializedObjectType.THEIA_URI,
                 data: value.toString()
             } as SerializedObject;
-        } else if (Range.is(value)) {
+        } else if (value instanceof Range) {
             const range = value as Range;
             const serializedValue = {
                 start: {
@@ -434,8 +435,9 @@ namespace ObjectsTransferrer {
                 case SerializedObjectType.THEIA_RANGE:
                     // tslint:disable-next-line:no-any
                     const obj: any = JSON.parse(value.data);
-                    // May require to use types-impl there instead of vscode lang server Range for the revival
-                    return Range.create(Position.create(obj.start.line, obj.start.character), Position.create(obj.end.line, obj.end.character));
+                    const start = new Position(obj.start.line, obj.start.character);
+                    const end = new Position(obj.end.line, obj.end.character);
+                    return new Range(start, end);
             }
         }
 
