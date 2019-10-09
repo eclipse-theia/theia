@@ -29,9 +29,17 @@
 }
 
 .theia-tree-view-inline-action {
-    background-size: 22px !important;
-    width: 22px !important;
-    height: 22px !important;
+    padding: 2px;
+}
+
+.theia-tree-view-description {
+    color: var(--theia-ui-font-color2);
+    font-size: var(--theia-ui-font-size0);
+    margin-left: var(--theia-ui-padding);
+}
+
+.theia-TreeNodeSegment {
+    display: flex;
 }
 
 .theia-tree-view .theia-TreeNodeContent {

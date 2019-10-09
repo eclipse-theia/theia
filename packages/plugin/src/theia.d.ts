@@ -3878,6 +3878,12 @@ declare module '@theia/plugin' {
         iconPath?: string | Uri | { light: string | Uri; dark: string | Uri } | ThemeIcon;
 
         /**
+         * A human readable string which is rendered less prominent.
+         * When `true`, it is derived from [resourceUri](#TreeItem.resourceUri) and when `falsy`, it is not shown.
+         */
+        description?: string | boolean;
+
+        /**
          * The [uri](#Uri) of the resource representing this item.
          *
          * Will be used to derive the [label](#TreeItem.label), when it is not provided.
