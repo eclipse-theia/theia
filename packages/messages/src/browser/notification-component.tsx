@@ -53,7 +53,6 @@ export class NotificationComponent extends React.Component<NotificationComponent
             const action = event.target.dataset.action;
             if (messageId && action) {
                 this.props.manager.accept(messageId, action);
-                this.props.manager.toggleExpansion(messageId);
             }
         }
     }
