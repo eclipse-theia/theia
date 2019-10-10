@@ -26,13 +26,23 @@ import { ProblemMatcherRegistry } from '@theia/task/lib/browser/task-problem-mat
 import { ProblemPatternRegistry } from '@theia/task/lib/browser/task-problem-pattern-registry';
 
 /**
- * Data required to define a C/C++ build task the user could run.
+ * Representation of a C/C++ build task configuration.
+ * Describes the data required to define a C/C++ build task the user could run.
  */
 interface CppBuildTaskConfiguration extends ContributedTaskConfiguration {
+    /**
+     * The C/C++ build configuration.
+     */
     config: CppBuildConfiguration;
 }
 
+/**
+ * The C/C++ build task type key.
+ */
 const CPP_BUILD_TASK_TYPE_KEY: string = 'cpp.build';
+/**
+ * The C/C++ build task source.
+ */
 const CPP_BUILD_TASK_SOURCE: string = 'cpp';
 
 @injectable()
@@ -44,6 +54,9 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
     @inject(ProblemMatcherRegistry) protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
     @inject(ProblemPatternRegistry) protected readonly problemPatternRegistry: ProblemPatternRegistry;
 
+    /**
+     * Initialize the task provider.
+     */
     @postConstruct()
     protected init(): void {
         this.registerTaskDefinition();
@@ -70,10 +83,18 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
         });
     }
 
+    /**
+     * Register the task provider.
+     * @param registry the task provider registry.
+     */
     registerProviders(registry: TaskProviderRegistry): void {
         registry.register(CPP_BUILD_TASK_SOURCE, this);
     }
 
+    /**
+     * Register the task resolver.
+     * @param registry the task resolver registry.
+     */
     registerResolvers(registry: TaskResolverRegistry): void {
         registry.register(CPP_BUILD_TASK_TYPE_KEY, this);
     }
@@ -142,6 +163,9 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
         return taskConfigs;
     }
 
+    /**
+     * Register the task definition.
+     */
     private registerTaskDefinition(): void {
         this.taskDefinitionRegistry.register({
             taskType: CPP_BUILD_TASK_TYPE_KEY,

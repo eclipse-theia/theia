@@ -19,7 +19,13 @@ import { BaseLanguageServerContribution, IConnection, LanguageServerStartOptions
 import { parseArgs } from '@theia/process/lib/node/utils';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, CLANGD_EXECUTABLE_DEFAULT, CppStartParameters } from '../common';
 
+/**
+ * Representation of C/C++ start options.
+ */
 export interface CppStartOptions extends LanguageServerStartOptions {
+    /**
+     * The C/C++ start parameters.
+     */
     parameters?: CppStartParameters
 }
 
@@ -29,6 +35,11 @@ export class CppContribution extends BaseLanguageServerContribution {
     readonly id = CPP_LANGUAGE_ID;
     readonly name = CPP_LANGUAGE_NAME;
 
+    /**
+     * Start the language server.
+     * @param clientConnection the language client connection.
+     * @param parameters the startup parameters.
+     */
     async start(clientConnection: IConnection, { parameters }: CppStartOptions): Promise<void> {
 
         const command =
@@ -58,6 +69,12 @@ export class CppContribution extends BaseLanguageServerContribution {
         this.forward(clientConnection, serverConnection);
     }
 
+    /**
+     * Determine if clang-tidy is supported by the user.
+     * @param command the given command.
+     *
+     * @returns `true` if clang-tidy is supported.
+     */
     protected async testSupportsClangTidy(command: string): Promise<boolean> {
         // clangd should fail if -clang-tidy flag is not supported
         // but if it is supported, it will run forever until killed/stopped.

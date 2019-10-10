@@ -28,6 +28,13 @@ export class CppKeybindingContext implements KeybindingContext {
 
     id = 'cpp.keybinding.context';
 
+    /**
+     * Determine if the keybinding is enabled.
+     * The keybinding is enabled if the editor currently contains an active C/C++ file.
+     * @param arg the keybinding.
+     *
+     * @returns `true` if the keybinding is enabled.
+     */
     isEnabled(arg: Keybinding): boolean {
         return editorContainsCppFiles(this.editorService);
     }
@@ -40,6 +47,10 @@ export class CppKeybindingContribution implements KeybindingContribution {
         @inject(CppKeybindingContext) protected readonly cppKeybindingContext: CppKeybindingContext
     ) { }
 
+    /**
+     * Register keybindings.
+     * @param registry the keybinding registry.
+     */
     registerKeybindings(registry: KeybindingRegistry): void {
         [
             {
