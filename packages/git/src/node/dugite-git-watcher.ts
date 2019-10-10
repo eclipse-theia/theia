@@ -48,7 +48,7 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
         const repositoryUri = repository.localUri;
         let subscriptions = this.subscriptions.get(repositoryUri);
         if (subscriptions === undefined) {
-            const unsubscribe = watcher.onStatusChanged(e => {
+            const unsubscribe = watcher.onGitStatusChanged(e => {
                 if (this.client) {
                     this.client.onGitChanged(e);
                 }

@@ -30,7 +30,7 @@ export class GitRepositoryManager {
 
     run<T>(repository: Repository, op: () => Promise<T>): Promise<T> {
         const result = op();
-        this.ensureSync(repository, result);
+        result.then(() => this.sync(repository));
         return result;
     }
 
@@ -38,16 +38,11 @@ export class GitRepositoryManager {
         return this.watchers.acquire(repository);
     }
 
-    protected async ensureSync<T>(repository: Repository, result: Promise<T>): Promise<T> {
-        result.then(() => this.sync(repository));
-        return result;
-    }
-
-    async sync(repository: Repository): Promise<void> {
+    protected async sync(repository: Repository): Promise<void> {
         const reference = await this.getWatcher(repository);
         const watcher = reference.object;
-        reference.dispose();
-        watcher.sync();
+        // dispose the reference once the next sync cycle is actaully completed
+        watcher.sync().then(() => reference.dispose());
     }
 
 }

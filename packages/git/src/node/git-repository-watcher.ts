@@ -14,10 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
+import { injectable, inject, postConstruct } from 'inversify';
+import { Disposable, Event, Emitter, ILogger } from '@theia/core';
 import { Git, Repository, WorkingDirectoryStatus, GitUtils } from '../common';
 import { GitStatusChangeEvent } from '../common/git-watcher';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const GitRepositoryWatcherFactory = Symbol('GitRepositoryWatcherFactory');
 export type GitRepositoryWatcherFactory = (options: GitRepositoryWatcherOptions) => GitRepositoryWatcher;
@@ -30,8 +31,8 @@ export class GitRepositoryWatcherOptions {
 @injectable()
 export class GitRepositoryWatcher implements Disposable {
 
-    protected readonly onStatusChangedEmitter = new Emitter<GitStatusChangeEvent>();
-    readonly onStatusChanged: Event<GitStatusChangeEvent> = this.onStatusChangedEmitter.event;
+    protected readonly onGitStatusChangedEmitter = new Emitter<GitStatusChangeEvent>();
+    readonly onGitStatusChanged: Event<GitStatusChangeEvent> = this.onGitStatusChangedEmitter.event;
 
     @inject(Git)
     protected readonly git: Git;
@@ -42,71 +43,88 @@ export class GitRepositoryWatcher implements Disposable {
     @inject(GitRepositoryWatcherOptions)
     protected readonly options: GitRepositoryWatcherOptions;
 
-    protected readonly toDispose = new DisposableCollection();
+    @postConstruct()
+    protected init(): void {
+        this.spinTheLoop();
+    }
+
     watch(): void {
-        if (this.toDispose.disposed) {
-            this.logger.info('Started watching the git repository:', this.options.repository.localUri);
-            this.toDispose.push(Disposable.create(() => {
-                this.logger.info('Stopped watching the git repository:', this.options.repository.localUri);
-                this.clear();
-            }));
-        }
-        this.schedule(true);
-    }
-
-    sync(): void {
-        this.clear();
-        this.schedule(false, 0);
-    }
-
-    dispose(): void {
-        this.toDispose.dispose();
-    }
-
-    protected initial: boolean = true;
-    protected watchTimer: NodeJS.Timer | undefined;
-    protected schedule(initial: boolean = false, delay = initial ? 0 : 5000): void {
-        if (initial && !this.initial) {
-            this.initial = true;
-            this.clear();
-        }
-        if (this.watchTimer) {
+        if (this.watching) {
+            console.debug('Repository watcher is already active.');
             return;
         }
-        this.watchTimer = setTimeout(async () => {
-            this.watchTimer = undefined;
-            const syncInitial = this.initial;
-            this.initial = false;
-            if (await this.syncStatus(syncInitial)) {
-                this.schedule();
-            }
-        }, delay);
+        this.watching = true;
+        this.sync();
     }
-    protected clear(): void {
-        if (this.watchTimer) {
-            clearTimeout(this.watchTimer);
-            this.watchTimer = undefined;
+
+    protected syncWorkPromises: Deferred<void>[] = [];
+    sync(): Promise<void> {
+        if (this.idle) {
+            if (this.interruptIdle) {
+                this.interruptIdle();
+            }
+        } else {
+            this.skipNextIdle = true;
+        }
+        const result = new Deferred<void>();
+        this.syncWorkPromises.push(result);
+        return result.promise;
+    }
+
+    protected disposed = false;
+    dispose(): void {
+        if (!this.disposed) {
+            this.disposed = true;
+            if (this.idle) {
+                if (this.interruptIdle) {
+                    this.interruptIdle();
+                }
+            }
+        }
+    }
+
+    protected watching = false;
+    protected idle = true;
+    protected interruptIdle: (() => void) | undefined;
+    protected skipNextIdle = false;
+    protected async spinTheLoop(): Promise<void> {
+        while (!this.disposed) {
+
+            // idle
+            if (this.skipNextIdle) {
+                this.skipNextIdle = false;
+            } else {
+                const idleTimeout = this.watching ? 5000 : /* super long */ 1000 * 60 * 60 * 24;
+                await new Promise(resolve => {
+                    const id = setTimeout(resolve, idleTimeout);
+                    this.interruptIdle = () => { clearTimeout(id); resolve(); };
+                }).then(() => {
+                    this.interruptIdle = undefined;
+                });
+            }
+
+            // work
+            await this.syncStatus();
+            this.syncWorkPromises.splice(0, this.syncWorkPromises.length).forEach(d => d.resolve());
         }
     }
 
     protected status: WorkingDirectoryStatus | undefined;
-    protected async syncStatus(initial: boolean = false): Promise<boolean> {
+    protected async syncStatus(): Promise<void> {
         try {
             const source = this.options.repository;
-            const newStatus = await this.git.status(source);
             const oldStatus = this.status;
-            if (initial || !WorkingDirectoryStatus.equals(newStatus, oldStatus)) {
+            const newStatus = await this.git.status(source);
+            if (!WorkingDirectoryStatus.equals(newStatus, oldStatus)) {
                 this.status = newStatus;
-                this.onStatusChangedEmitter.fire({ source, status: newStatus, oldStatus });
+                this.onGitStatusChangedEmitter.fire({ source, status: newStatus, oldStatus });
             }
         } catch (error) {
-            if (GitUtils.isRepositoryDoesNotExistError(error)) {
-                return false;
+            if (!GitUtils.isRepositoryDoesNotExistError(error)) {
+                const { localUri } = this.options.repository;
+                this.logger.error('Error occurred while synchronizing the status of the repository.', localUri, error);
             }
-            const { localUri } = this.options.repository;
-            this.logger.error('Error occurred while synchronizing the status of the repository.', localUri, error);
         }
-        return true;
     }
 
 }

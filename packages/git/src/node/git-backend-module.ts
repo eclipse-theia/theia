@@ -48,6 +48,8 @@ export namespace GitBindingOptions {
 export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions = GitBindingOptions.Default): void {
     bindingOptions.bindManager(bind(GitRepositoryManager));
     bind(GitRepositoryWatcherFactory).toFactory(ctx => (options: GitRepositoryWatcherOptions) => {
+        // GitRepositoryWatcherFactory is injected into the singleton GitRepositoryManager only.
+        // GitRepositoryWatcher instances created there should be able to access the (singleton) Git.
         const child = new Container({ defaultScope: 'Singleton' });
         child.parent = ctx.container;
         child.bind(GitRepositoryWatcher).toSelf();
@@ -70,15 +72,18 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
     bind(CommitDetailsParser).toSelf().inSingletonScope();
     bind(GitBlameParser).toSelf().inSingletonScope();
     bind(GitExecProvider).toSelf().inSingletonScope();
+    bind(DugiteGit).toSelf().inSingletonScope();
+    bind(Git).toService(DugiteGit);
+    bind(DefaultGitInit).toSelf();
+    bind(GitInit).toService(DefaultGitInit);
     bind(ConnectionContainerModule).toConstantValue(gitConnectionModule);
 }
 
 const gitConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
-    bind(DefaultGitInit).toSelf();
-    bind(GitInit).toService(DefaultGitInit);
-    bind(DugiteGit).toSelf().inSingletonScope();
-    bind(Git).toService(DugiteGit);
-    bindBackendService(GitPath, Git);
+    // DugiteGit is bound in singleton scope; each connection should use a proxy for that.
+    const GitProxy = Symbol('GitProxy');
+    bind(GitProxy).toDynamicValue(ctx => new Proxy(ctx.container.get(DugiteGit), {}));
+    bindBackendService(GitPath, GitProxy);
 });
 
 export function bindRepositoryWatcher(bind: interfaces.Bind): void {
