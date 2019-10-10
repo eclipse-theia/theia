@@ -19,6 +19,9 @@ import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceP
 import { CppBuildConfiguration } from '../common/cpp-build-configuration-protocol';
 import { CLANGD_EXECUTABLE_DEFAULT } from '../common';
 
+/**
+ * Representation of the C/C++ preference schema.
+ */
 export const cppPreferencesSchema: PreferenceSchema = {
     type: 'object',
     properties: {
@@ -81,6 +84,9 @@ export const cppPreferencesSchema: PreferenceSchema = {
     }
 };
 
+/**
+ * Representation of C/C++ preference configuration.
+ */
 export class CppConfiguration {
     'cpp.buildConfigurations': CppBuildConfiguration[];
     'cpp.experimentalCompilationDatabaseMap': boolean;
@@ -94,10 +100,19 @@ export class CppConfiguration {
 export const CppPreferences = Symbol('CppPreferences');
 export type CppPreferences = PreferenceProxy<CppConfiguration>;
 
+/**
+ * Create the C/C++ preferences.
+ * @param preferences the preference service.
+ *
+ * @returns the C/C++ preferences.
+ */
 export function createCppPreferences(preferences: PreferenceService): CppPreferences {
     return createPreferenceProxy(preferences, cppPreferencesSchema);
 }
 
+/**
+ * Bind the C/C++ preferences to the application.
+ */
 export function bindCppPreferences(bind: interfaces.Bind): void {
     bind(CppPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);

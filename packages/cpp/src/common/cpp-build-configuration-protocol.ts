@@ -62,6 +62,9 @@ export interface CppBuildConfigurationServer {
 @injectable()
 export class MockCppBuildConfigurationServer implements CppBuildConfigurationServer {
     constructor() { }
+    /**
+     * Dispose the configuration server.
+     */
     dispose(): void { }
     getMergedCompilationDatabase(params: { directories: string[] }): Promise<string> {
         return Promise.resolve('');

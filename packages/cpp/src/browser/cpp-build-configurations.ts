@@ -29,11 +29,23 @@ import { deepClone } from '@theia/core';
  */
 export { CppBuildConfiguration };
 
+/**
+ * Determine if the argument is a C/C++ build configuration.
+ *
+ * @returns `true` if the argument is a C/C++ build configuration.
+ */
 // tslint:disable-next-line:no-any
 export function isCppBuildConfiguration(arg: any): arg is CppBuildConfiguration {
     return arg.name !== undefined && arg.directory !== undefined;
 }
 
+/**
+ * Determine if two C/C++ build configurations are equal.
+ * @param a the first C/C++ build configuration.
+ * @param b the second C/C++ build configuration.
+ *
+ * @returns `true` if both `a` and `b` are equal.
+ */
 export function equals(a: CppBuildConfiguration, b: CppBuildConfiguration): boolean {
     return (
         a.name === b.name &&
@@ -50,6 +62,10 @@ class SavedActiveBuildConfigurations {
 }
 
 export const CppBuildConfigurationManager = Symbol('CppBuildConfigurationManager');
+
+/**
+ * Representation of a C/C++ build configuration manager.
+ */
 export interface CppBuildConfigurationManager {
 
     /**
@@ -176,6 +192,9 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
 
     public ready: Promise<void>;
 
+    /**
+     * Initialize the manager.
+     */
     @postConstruct()
     async init(): Promise<void> {
         // Try to read the active build config from local storage.
@@ -191,6 +210,12 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
         });
     }
 
+    /**
+     * Get the C/C++ build configuration from the preferences.
+     * @param root the optional workspace root.
+     *
+     * @returns an array of build configurations.
+     */
     protected getConfigsFromPreferences(root?: string): CppBuildConfiguration[] {
         if (root) {
             return Array.from(this.cppPreferences.get(CPP_BUILD_CONFIGURATIONS_PREFERENCE_KEY, [], root));
@@ -270,6 +295,12 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
         return a.name === b.name && a.directory === b.directory;
     }
 
+    /**
+     * Get the active build configuration.
+     * @param root the optional workspace root.
+     *
+     * @returns the active build configuration if it exists, else `undefined`.
+     */
     getActiveConfig(root?: string): CppBuildConfiguration | undefined {
         // Get the active workspace root for the given uri, else for the first workspace root.
         const workspaceRoot = this.getRoot(root);
@@ -279,10 +310,22 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
         return this.activeConfigurations.get(workspaceRoot);
     }
 
+    /**
+     * Get all active build configurations.
+     * - If for a given root the build configuration is `undefined`, the root does not contain
+     * an active build configuration.
+     *
+     * @returns the map of all active configurations if available, for each workspace root.
+     */
     getAllActiveConfigs(): Map<string, CppBuildConfiguration | undefined> {
         return this.activeConfigurations;
     }
 
+    /**
+     * Set the active build configuration.
+     * @param config the build configuration to be set. If `undefined` there will be no active configuration.
+     * @param root the optional workspace root. If unprovided, fallback to the first workspace root if available.
+     */
     setActiveConfig(config: CppBuildConfiguration | undefined, root?: string): void {
         // Set the active workspace root for the given uri, else for the first workspace root.
         const workspaceRoot = this.getRoot(root);
@@ -311,6 +354,12 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
         return this.activeConfigChange2Emitter.event;
     }
 
+    /**
+     * Get all build configurations.
+     * @param root the optional workspace root.
+     *
+     * @returns an array of build configurations.
+     */
     getConfigs(root?: string): CppBuildConfiguration[] {
         const workspaceRoot = this.getRoot(root);
         if (!workspaceRoot) {
@@ -323,6 +372,12 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
         return configs;
     }
 
+    /**
+     * Get all valid build configurations.
+     * @param root the optional workspace root.
+     *
+     * @returns an array of build configurations.
+     */
     getValidConfigs(root?: string): CppBuildConfiguration[] {
         return this.getConfigs(root)
             .filter(a => a.name !== '' && a.directory !== '')
@@ -330,12 +385,19 @@ export class CppBuildConfigurationManagerImpl implements CppBuildConfigurationMa
     }
 
     /**
-     * @todo Optimize by caching the merge result, based on the `CppBuildConfiguration.directory` field?
+     * Get the merged compilation database.
      */
     async getMergedCompilationDatabase(params: { directories: string[] }): Promise<string> {
+        // TODO: Optimize by caching the merge result, based on the `CppBuildConfiguration.directory` field?
         return this.buildConfigurationServer.getMergedCompilationDatabase(params);
     }
 
+    /**
+     * Get the root directory.
+     * @param root the optional workspace root.
+     *
+     * @returns the root directory if it is present, else `undefined`.
+     */
     protected getRoot(root?: string): string | undefined {
         if (root) {
             return root;

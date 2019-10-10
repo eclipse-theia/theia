@@ -129,7 +129,7 @@ export class CppBuildConfigurationChanger {
      * Lists the different options for a given root if specified, first else.
      * In this case, the options are to set/unset/create a build configuration.
      *
-     * @param root
+     * @param root the workspace root.
      */
     protected async selectCppAction(root: string | undefined): Promise<string | CppBuildConfiguration | undefined> {
         const items: QuickPickItem<'createNew' | 'reset' | CppBuildConfiguration>[] = [];

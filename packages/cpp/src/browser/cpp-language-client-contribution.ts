@@ -38,9 +38,12 @@ import URI from '@theia/core/lib/common/uri';
  * notification since the data received is described as 'any' type in LSP.
  */
 interface ClangdConfigurationParamsChange {
-    compilationDatabasePath?: string;
-
     /**
+     * The path to the compilation database.
+     */
+    compilationDatabasePath?: string;
+    /**
+     * Representation of a compilation database map.
      * Experimental field.
      */
     compilationDatabaseMap?: Array<{
@@ -79,12 +82,19 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         super(workspace, languages, languageClientFactory);
     }
 
+    /**
+     * Initialize the client contribution.
+     */
     @postConstruct()
     protected init(): void {
         this.cppBuildConfigurations.onActiveConfigChange2(() => this.onActiveBuildConfigChanged());
         this.cppPreferences.onPreferenceChanged(() => this.restart());
     }
 
+    /**
+     * Handle the language client `onReady` event.
+     * @param languageClient the language client.
+     */
     protected onReady(languageClient: ILanguageClient): void {
         super.onReady(languageClient);
 
@@ -92,6 +102,12 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         this.cppBuildConfigurationsStatusBarElement.show();
     }
 
+    /**
+     * Create a compilation database map.
+     * @param mergeCompilationDatabases flag determining whether to merge the compilation databases.
+     *
+     * @returns the compilation database map.
+     */
     protected async createCompilationDatabaseMap(mergeCompilationDatabases: boolean): Promise<Map<string, string>> {
         const activeConfigurations = new Map<string, CppBuildConfiguration>();
         const databaseMap = new Map<string, string>();
@@ -120,12 +136,21 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         return databaseMap;
     }
 
+    /**
+     * Create the language client.
+     * @param connection the message connection.
+     *
+     * @returns the language client.
+     */
     protected createLanguageClient(connection: MessageConnection): ILanguageClient {
         const client: ILanguageClient & Readonly<{ languageId: string }> = Object.assign(super.createLanguageClient(connection), { languageId: this.id });
         client.registerFeature(SemanticHighlightingService.createNewFeature(this.semanticHighlightingService, client));
         return client;
     }
 
+    /**
+     * Update the language initialization options.
+     */
     private async updateInitializationOptions(): Promise<void> {
         const clangdParams: ClangdConfigurationParamsChange = {};
         const experimentalCompilationDatabaseMap = this.cppPreferences['cpp.experimentalCompilationDatabaseMap'];
@@ -142,6 +167,9 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         lc.clientOptions.initializationOptions = clangdParams;
     }
 
+    /**
+     * Handle the `activeBuildConfigChanged` event.
+     */
     protected onActiveBuildConfigChanged(): void {
         this.restart();
     }
@@ -165,6 +193,11 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         return [this.id];
     }
 
+    /**
+     * Create the language client options.
+     *
+     * @returns the language client options.
+     */
     protected createOptions(): LanguageClientOptions {
         const clientOptions = super.createOptions();
         clientOptions.initializationFailedHandler = () => {
@@ -183,6 +216,11 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         return clientOptions;
     }
 
+    /**
+     * Get the language start options.
+     *
+     * @returns a promise resolving to the `CppStartParameters`.
+     */
     protected async getStartParameters(): Promise<CppStartParameters> {
 
         // getStartParameters is one of the only async steps in the LC

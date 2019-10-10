@@ -27,10 +27,13 @@ import { HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
 import { ExecuteCommandRequest, ExecuteCommandParams } from 'vscode-languageserver-protocol';
 import { CppPreferences } from './cpp-preferences';
 
+/**
+ * The C/C++ command category.
+ */
 const CPP_CATEGORY = 'C/C++';
 
 /**
- * Switch between source/header file
+ * Command to switch between source/header files.
  */
 export const SWITCH_SOURCE_HEADER: Command = {
     id: 'switch_source_header',
@@ -39,40 +42,62 @@ export const SWITCH_SOURCE_HEADER: Command = {
 };
 
 /**
- * A command that is used to show the references from a CodeLens.
+ * Command that is used to show the references from a CodeLens.
  */
 export const SHOW_CLANGD_REFERENCES: Command = {
     id: 'clangd.references'
 };
 
+/**
+ * Command to dump file inclusions.
+ */
 export const DUMP_INCLUSIONS: Command = {
     id: 'clangd.dumpinclusions',
     category: CPP_CATEGORY,
     label: 'Dump File Inclusions (Debug)',
 };
 
+/**
+ * Command to dump files included the active file.
+ */
 export const DUMP_INCLUDED_BY: Command = {
     id: 'clangd.dumpincludedby',
     category: CPP_CATEGORY,
     label: 'Dump Files Including this File (Debug)',
 };
 
+/**
+ * Command to re-index the workspace.
+ */
 export const REINDEX: Command = {
     id: 'clangd.reindex',
     category: CPP_CATEGORY,
     label: 'Reindex Workspace (Debug)',
 };
 
+/**
+ * Command to print index statistics.
+ */
 export const PRINT_STATS: Command = {
     id: 'clangd.printstats',
     category: CPP_CATEGORY,
     label: 'Print Index Statistics (Debug)',
 };
 
+/**
+ * Command to open the file path.
+ * @param path the file path.
+ */
 export const FILE_OPEN_PATH = (path: string): Command => <Command>{
     id: 'file:openPath'
 };
 
+/**
+ * Determine if a C/C++ file is currently active (opened).
+ * @param editorManager the editor manager if it is defined.
+ *
+ * @returns `true` if the current active editor is a C/C++ file.
+ */
 export function editorContainsCppFiles(editorManager: EditorManager | undefined): boolean {
     if (editorManager && editorManager.activeEditor) {
         const uri = editorManager.activeEditor.editor.document.uri;
@@ -92,7 +117,6 @@ export class CppCommandContribution implements CommandContribution {
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(EditorManager) private editorService: EditorManager,
         protected readonly selectionService: SelectionService
-
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
@@ -122,6 +146,9 @@ export class CppCommandContribution implements CommandContribution {
         });
     }
 
+    /**
+     * Actually switch the source header.
+     */
     protected async switchSourceHeader(): Promise<void> {
         const uri = UriSelection.getUri(this.selectionService.selection);
         if (!uri) {
@@ -135,6 +162,9 @@ export class CppCommandContribution implements CommandContribution {
         }
     }
 
+    /**
+     * Actually dump file inclusions.
+     */
     private async dumpInclusions(): Promise<void> {
         const uri = UriSelection.getUri(this.selectionService.selection);
         if (!uri) {
@@ -146,6 +176,9 @@ export class CppCommandContribution implements CommandContribution {
         languageClient.sendRequest(ExecuteCommandRequest.type, params);
     }
 
+    /**
+     * Actually dump files including the active file.
+     */
     private async dumpIncludedBy(): Promise<void> {
         const uri = UriSelection.getUri(this.selectionService.selection);
         if (!uri) {
@@ -157,12 +190,18 @@ export class CppCommandContribution implements CommandContribution {
         languageClient.sendRequest(ExecuteCommandRequest.type, params);
     }
 
+    /**
+     * Actually perform re-index.
+     */
     private async reindex(): Promise<void> {
         const params: ExecuteCommandParams = { command: REINDEX.id };
         const languageClient = await this.clientContribution.languageClient;
         languageClient.sendRequest(ExecuteCommandRequest.type, params);
     }
 
+    /**
+     * Actually perform print stats.
+     */
     private async printStats(): Promise<void> {
         const params: ExecuteCommandParams = { command: PRINT_STATS.id };
         const languageClient = await this.clientContribution.languageClient;
