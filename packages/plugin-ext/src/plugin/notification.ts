@@ -37,7 +37,8 @@ export class NotificationExtImpl implements NotificationExt {
         const progress = task({ report: async item => this.proxy.$updateProgress(await id.promise, item)}, tokenSource.token);
         const title = options.title ? options.title : '';
         const location = this.mapLocation(options.location);
-        id.resolve(await this.proxy.$startProgress({ title, location }));
+        const cancellable = options.cancellable;
+        id.resolve(await this.proxy.$startProgress({ title, location, cancellable }));
         const stop = async () => this.proxy.$stopProgress(await id.promise);
         const promise = Promise.all([
             progress,

@@ -686,7 +686,7 @@ export interface DecorationProvider {
 }
 
 export interface NotificationMain {
-    $startProgress(options: string | NotificationMain.StartProgressOptions): Promise<string>;
+    $startProgress(options: NotificationMain.StartProgressOptions): Promise<string>;
     $stopProgress(id: string): void;
     $updateProgress(id: string, report: NotificationMain.ProgressReport): void;
 }
@@ -694,6 +694,7 @@ export namespace NotificationMain {
     export interface StartProgressOptions {
         title: string;
         location?: string;
+        cancellable?: boolean;
     }
     export interface ProgressReport {
         message?: string;

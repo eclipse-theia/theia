@@ -38,7 +38,7 @@ export class NotificationMainImpl implements NotificationMain, Disposable {
         this.toDispose.dispose();
     }
 
-    async $startProgress(options: string | NotificationMain.StartProgressOptions): Promise<string> {
+    async $startProgress(options: NotificationMain.StartProgressOptions): Promise<string> {
         const progressMessage = this.mapOptions(options);
         const progress = await this.progressService.showProgress(progressMessage);
         const id = progress.id;
@@ -51,10 +51,9 @@ export class NotificationMainImpl implements NotificationMain, Disposable {
         }
         return id;
     }
-    protected mapOptions(options: string | NotificationMain.StartProgressOptions): ProgressMessage {
-        const text = typeof options === 'string' ? options : options.title;
-        const location = typeof options === 'string' ? 'notification' : options.location;
-        return { text, options: { location, cancelable: true } };
+    protected mapOptions(options: NotificationMain.StartProgressOptions): ProgressMessage {
+        const { title, location, cancellable } = options;
+        return { text: title, options: { location, cancelable: cancellable } };
     }
 
     $stopProgress(id: string): void {
