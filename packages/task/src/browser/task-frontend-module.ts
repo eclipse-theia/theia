@@ -37,6 +37,7 @@ import { TaskConfigurationManager } from './task-configuration-manager';
 import { bindTaskPreferences } from './task-preferences';
 import '../../src/browser/style/index.css';
 import './tasks-monaco-contribution';
+import { TaskNameResolver } from './task-name-resolver';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
@@ -71,6 +72,7 @@ export default new ContainerModule(bind => {
     bind(TaskResolverRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, TaskContribution);
     bind(TaskSchemaUpdater).toSelf().inSingletonScope();
+    bind(TaskNameResolver).toSelf().inSingletonScope();
 
     bindProcessTaskModule(bind);
     bindTaskPreferences(bind);

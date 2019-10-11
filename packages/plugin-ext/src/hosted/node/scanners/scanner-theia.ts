@@ -493,14 +493,14 @@ export class TheiaPluginScanner implements PluginScanner {
             };
             properties['preLaunchTask'] = {
                 anyOf: [taskSchema, {
-                    type: ['string', 'null'],
+                    type: ['string'],
                 }],
                 default: '',
                 description: nls.localize('debugPrelaunchTask', 'Task to run before debug session starts.')
             };
             properties['postDebugTask'] = {
                 anyOf: [taskSchema, {
-                    type: ['string', 'null'],
+                    type: ['string'],
                 }],
                 default: '',
                 description: nls.localize('debugPostDebugTask', 'Task to run after debug session ends.')

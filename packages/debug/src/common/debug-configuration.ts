@@ -62,6 +62,12 @@ export interface DebugConfiguration {
 
     /** default: neverOpen */
     internalConsoleOptions?: 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart'
+
+    /** Task to run before debug session starts */
+    preLaunchTask?: string;
+
+    /** Task to run after debug session ends */
+    postDebugTask?: string;
 }
 export namespace DebugConfiguration {
     export function is(arg: DebugConfiguration | any): arg is DebugConfiguration {
