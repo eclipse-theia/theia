@@ -120,6 +120,9 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
         });
     }
 
+    /**
+     * Determine if the current widget is the keybindings widget.
+     */
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), fn: (widget: KeybindingWidget) => T): T | false {
         if (widget instanceof KeybindingWidget && widget.id === KeybindingWidget.ID) {
             return fn(widget);
