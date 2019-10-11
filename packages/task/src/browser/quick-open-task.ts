@@ -20,10 +20,11 @@ import { TaskInfo, TaskConfiguration } from '../common/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import URI from '@theia/core/lib/common/uri';
 import { TaskActionProvider } from './task-action-provider';
-import { LabelProvider, QuickOpenHandler, QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser';
+import { QuickOpenHandler, QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { QuickOpenModel, QuickOpenItem, QuickOpenActionProvider, QuickOpenMode, QuickOpenGroupItem, QuickOpenGroupItemOptions } from '@theia/core/lib/common/quick-open-model';
+import { TaskNameResolver } from './task-name-resolver';
 
 @injectable()
 export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
@@ -44,14 +45,14 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
     @inject(TaskActionProvider)
     protected readonly taskActionProvider: TaskActionProvider;
 
-    @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
-
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
     @inject(TaskDefinitionRegistry)
     protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+
+    @inject(TaskNameResolver)
+    protected readonly taskNameResolver: TaskNameResolver;
 
     /** Initialize this quick open model with the tasks. */
     async init(): Promise<void> {
@@ -67,7 +68,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                 const item = new TaskRunQuickOpenItem(task, this.taskService, isMulti, {
                     groupLabel: index === 0 ? 'recently used tasks' : undefined,
                     showBorder: false
-                });
+                }, this.taskNameResolver);
                 item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
                 return item;
             }),
@@ -79,7 +80,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                             ? false
                             : index === 0 ? true : false
                     )
-                });
+                }, this.taskNameResolver);
                 item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
                 return item;
             }),
@@ -91,7 +92,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                             ? false
                             : index === 0 ? true : false
                     )
-                });
+                }, this.taskNameResolver);
                 item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
                 return item;
             })
@@ -176,12 +177,12 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         const { filteredConfiguredTasks, filteredProvidedTasks } = this.getFilteredTasks([], configuredTasks, providedTasks);
         this.items.push(
             ...filteredConfiguredTasks.map((task, index) => {
-                const item = new TaskConfigureQuickOpenItem(task, this.taskService, this.labelProvider, this.workspaceService, isMulti);
+                const item = new TaskConfigureQuickOpenItem(task, this.taskService, this.taskNameResolver, this.workspaceService, isMulti);
                 item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
                 return item;
             }),
             ...filteredProvidedTasks.map((task, index) => {
-                const item = new TaskConfigureQuickOpenItem(task, this.taskService, this.labelProvider, this.workspaceService, isMulti);
+                const item = new TaskConfigureQuickOpenItem(task, this.taskService, this.taskNameResolver, this.workspaceService, isMulti);
                 item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
                 return item;
             }),
@@ -244,6 +245,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
         protected taskService: TaskService,
         protected isMulti: boolean,
         protected readonly options: QuickOpenGroupItemOptions,
+        protected readonly taskNameResolver: TaskNameResolver,
     ) {
         super(options);
     }
@@ -253,10 +255,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getLabel(): string {
-        if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
-            return `${this.task.source}: ${this.task.label}`;
-        }
-        return `${this.task.type}: ${this.task.label}`;
+        return this.taskNameResolver.resolve(this.task);
     }
 
     getGroupLabel(): string {
@@ -323,7 +322,7 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
     constructor(
         protected readonly task: TaskConfiguration,
         protected readonly taskService: TaskService,
-        protected readonly labelProvider: LabelProvider,
+        protected readonly taskNameResolver: TaskNameResolver,
         protected readonly workspaceService: WorkspaceService,
         protected readonly isMulti: boolean
     ) {
@@ -333,10 +332,7 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getLabel(): string {
-        if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
-            return `${this.task.source}: ${this.task.label}`;
-        }
-        return `${this.task.type}: ${this.task.label}`;
+        return this.taskNameResolver.resolve(this.task);
     }
 
     getDescription(): string {

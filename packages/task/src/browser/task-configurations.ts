@@ -257,7 +257,8 @@ export class TaskConfigurations implements Disposable {
             }
             return {
                 ...config,
-                _source: rootFolderUri
+                _source: rootFolderUri,
+                _scope: rootFolderUri
             };
         });
         this.rawTaskConfigurations.set(rootFolderUri, tasks);

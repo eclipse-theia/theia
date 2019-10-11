@@ -32,6 +32,12 @@ export interface TaskCustomization {
 export interface TaskConfiguration extends TaskCustomization {
     /** A label that uniquely identifies a task configuration per source */
     readonly label: string;
+    /**
+     * For a provided task, it is the string representation of the URI where the task is supposed to run from. It is `undefined` for global tasks.
+     * For a configured task, it is workspace URI that task belongs to.
+     * This field is not supposed to be used in `tasks.json`
+     */
+    readonly _scope: string | undefined;
 }
 
 export interface ContributedTaskConfiguration extends TaskConfiguration {
@@ -41,11 +47,6 @@ export interface ContributedTaskConfiguration extends TaskConfiguration {
      * This field is not supposed to be used in `tasks.json`
      */
     readonly _source: string;
-    /**
-     * For a provided task, it is the string representation of the URI where the task is supposed to run from. It is `undefined` for global tasks.
-     * This field is not supposed to be used in `tasks.json`
-     */
-    readonly _scope: string | undefined;
 }
 
 /** Runtime information about Task. */
