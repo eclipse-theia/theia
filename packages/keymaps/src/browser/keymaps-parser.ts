@@ -56,6 +56,11 @@ export class KeymapsParser {
         }).compile(keymapsSchema);
     }
 
+    /**
+     * Parse the keybindings for potential errors.
+     * @param content the content.
+     * @param errors the optional list of parsing errors.
+     */
     parse(content: string, errors?: string[]): Keybinding[] {
         const strippedContent = parser.stripComments(content);
         const parsingErrors: parser.ParseError[] | undefined = errors ? [] : undefined;
@@ -76,6 +81,10 @@ export class KeymapsParser {
         return [];
     }
 
+    /**
+     * Print the parsed error code.
+     * @param code the error code if available.
+     */
     // https://github.com/Microsoft/node-jsonc-parser/issues/13
     // tslint:disable-next-line:typedef
     protected printParseErrorCode(code: number | undefined) {

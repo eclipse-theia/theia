@@ -106,6 +106,11 @@ describe('keymaps-parser', () => {
 ]`);
     });
 
+    /**
+     * Assert that the content equals the expected content.
+     * @param expectation the expected string.
+     * @param content the content to verify.
+     */
     function assertParsing(expectation: string, content: string): void {
         const errors: string[] = [];
         const keybindings = parser.parse(content, errors);

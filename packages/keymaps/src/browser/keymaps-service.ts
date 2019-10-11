@@ -23,9 +23,21 @@ import { KeymapsParser } from './keymaps-parser';
 import * as jsoncparser from 'jsonc-parser';
 import { Emitter } from '@theia/core/lib/common/';
 
+/**
+ * Representation of a JSON keybinding.
+ */
 export interface KeybindingJson {
+    /**
+     * The keybinding command.
+     */
     command: string,
+    /**
+     * The actual keybinding.
+     */
     keybinding: string,
+    /**
+     * The keybinding context.
+     */
     context: string,
 }
 
@@ -49,6 +61,9 @@ export class KeymapsService {
 
     protected resource: Resource;
 
+    /**
+     * Initialize the keybinding service.
+     */
     @postConstruct()
     protected async init(): Promise<void> {
         this.resource = await this.resourceProvider(new URI().withScheme(UserStorageUri.SCHEME).withPath('keymaps.json'));
@@ -59,12 +74,18 @@ export class KeymapsService {
         this.keyBindingRegistry.onKeybindingsChanged(() => this.changeKeymapEmitter.fire(undefined));
     }
 
+    /**
+     * Reconcile all the keybindings, registering them to the registry.
+     */
     protected async reconcile(): Promise<void> {
         const keybindings = await this.parseKeybindings();
         this.keyBindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
         this.changeKeymapEmitter.fire(undefined);
     }
 
+    /**
+     * Parsed the read keybindings.
+     */
     protected async parseKeybindings(): Promise<Keybinding[]> {
         try {
             const content = await this.resource.readContents();
@@ -74,6 +95,10 @@ export class KeymapsService {
         }
     }
 
+    /**
+     * Open the keybindings widget.
+     * @param ref the optional reference for opening the widget.
+     */
     open(ref?: Widget): void {
         const options: WidgetOpenerOptions = {
             widgetOptions: ref ? { area: 'main', mode: 'split-right', ref } : { area: 'main' },
@@ -82,6 +107,10 @@ export class KeymapsService {
         open(this.opener, this.resource.uri, options);
     }
 
+    /**
+     * Set the keybinding in the JSON.
+     * @param keybindingJson the JSON keybindings.
+     */
     async setKeybinding(keybindingJson: KeybindingJson): Promise<void> {
         if (!this.resource.saveContents) {
             return;
@@ -102,6 +131,10 @@ export class KeymapsService {
         await this.resource.saveContents(JSON.stringify(keybindings, undefined, 4));
     }
 
+    /**
+     * Remove the given keybinding with the given command id from the JSON.
+     * @param commandId the keybinding command id.
+     */
     async removeKeybinding(commandId: string): Promise<void> {
         if (!this.resource.saveContents) {
             return;
@@ -112,6 +145,11 @@ export class KeymapsService {
         await this.resource.saveContents(JSON.stringify(filtered, undefined, 4));
     }
 
+    /**
+     * Get the list of keybindings from the JSON.
+     *
+     * @returns the list of keybindings in JSON.
+     */
     async getKeybindings(): Promise<KeybindingJson[]> {
         if (!this.resource.saveContents) {
             return [];

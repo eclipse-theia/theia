@@ -45,7 +45,15 @@ export type MenuPath = string[];
 export const MAIN_MENU_BAR: MenuPath = ['menubar'];
 
 export const MenuContribution = Symbol('MenuContribution');
+
+/**
+ * Representation of a menu contribution.
+ */
 export interface MenuContribution {
+    /**
+     * Registers menus.
+     * @param menus the menu model registry.
+     */
     registerMenus(menus: MenuModelRegistry): void;
 }
 

@@ -206,10 +206,15 @@ export namespace TabBarToolbar {
  * Clients should implement this interface if they want to contribute to the tab-bar toolbar.
  */
 export const TabBarToolbarContribution = Symbol('TabBarToolbarContribution');
+/**
+ * Representation of a tabbar toolbar contribution.
+ */
 export interface TabBarToolbarContribution {
-
+    /**
+     * Registers toolbar items.
+     * @param registry the tabbar toolbar registry.
+     */
     registerToolbarItems(registry: TabBarToolbarRegistry): void;
-
 }
 
 /**

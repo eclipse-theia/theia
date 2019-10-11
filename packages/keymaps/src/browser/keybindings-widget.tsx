@@ -80,10 +80,13 @@ export class KeybindingWidget extends ReactWidget {
     @inject(KeymapsService)
     protected readonly keymapsService: KeymapsService;
 
-    protected items: KeybindingItem[] = [];
-
     static readonly ID = 'keybindings.view.widget';
     static readonly LABEL = 'Keyboard Shortcuts';
+
+    /**
+     * The list of all available keybindings.
+     */
+    protected items: KeybindingItem[] = [];
 
     /**
      * The current user search query.
@@ -94,6 +97,9 @@ export class KeybindingWidget extends ReactWidget {
      * The regular expression used to extract values between fuzzy results.
      */
     protected readonly regexp = /<match>(.*?)<\/match>/g;
+    /**
+     * The regular expression used to extract values between the keybinding separator.
+     */
     protected readonly keybindingSeparator = /<match>\+<\/match>/g;
 
     /**
@@ -108,8 +114,14 @@ export class KeybindingWidget extends ReactWidget {
     protected readonly onDidUpdateEmitter = new Emitter<void>();
     readonly onDidUpdate: Event<void> = this.onDidUpdateEmitter.event;
 
+    /**
+     * Search keybindings.
+     */
     protected readonly searchKeybindings: () => void = debounce(() => this.doSearchKeybindings(), 50);
 
+    /**
+     * Initialize the widget.
+     */
     @postConstruct()
     protected init(): void {
         this.id = KeybindingWidget.ID;
@@ -368,7 +380,7 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Render the actions container with action icons.
-     * @param item {KeybindingItem} the keybinding item for the row.
+     * @param item the keybinding item for the row.
      */
     protected renderActions(item: KeybindingItem): React.ReactNode {
         return <span className='kb-actions-icons'>{this.renderEdit(item)}{this.renderReset(item)}</span>;
@@ -376,7 +388,7 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Render the edit action used to update a keybinding.
-     * @param item {KeybindingItem} the keybinding item for the row.
+     * @param item the keybinding item for the row.
      */
     protected renderEdit(item: KeybindingItem): React.ReactNode {
         return <a title='Edit Keybinding' href='#' onClick={a => this.editKeybinding(item)}><i className='fa fa-pencil kb-action-item'></i></a>;
@@ -385,7 +397,7 @@ export class KeybindingWidget extends ReactWidget {
     /**
      * Render the reset action to reset the custom keybinding.
      * Only visible if a keybinding has a `user` scope.
-     * @param item {KeybindingItem} the keybinding item for the row.
+     * @param item the keybinding item for the row.
      */
     protected renderReset(item: KeybindingItem): React.ReactNode {
         return (item.source && this.getRawValue(item.source) === KeybindingScope[1].toLocaleLowerCase())
@@ -394,7 +406,7 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Render the keybinding.
-     * @param keybinding {string} the keybinding value.
+     * @param keybinding the keybinding value.
      */
     protected renderKeybinding(keybinding: string): React.ReactNode {
         const regex = new RegExp(this.keybindingSeparator);
@@ -472,8 +484,14 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Compare two strings.
-     * @param a {string | undefined} the first string.
-     * @param b {string | undefined} the second string.
+     * - Strings are first normalized before comparison (`toLowerCase`).
+     * @param a the optional first string.
+     * @param b the optional second string.
+     *
+     * @returns an integer indicating whether `a` comes before, after or is equivalent to `b`.
+     * - returns `-1` if `a` occurs before `b`.
+     * - returns `1` if `a` occurs after `b`.
+     * - returns `0` if they are equivalent.
      */
     protected compareItem(a: string | undefined, b: string | undefined): number {
         if (a && b) {
@@ -498,7 +516,7 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Prompt users to update the keybinding for the given command.
-     * @param item {KeybindingItem} the keybinding item.
+     * @param item the keybinding item.
      */
     protected editKeybinding(item: KeybindingItem): void {
         const command = this.getRawValue(item.command);
@@ -519,7 +537,7 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Prompt users for confirmation before resetting.
-     * @param command {string} the command label.
+     * @param command the command label.
      *
      * @returns a Promise which resolves to `true` if a user accepts resetting.
      */
@@ -533,7 +551,7 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Reset the keybinding to its default value.
-     * @param item {KeybindingItem} the keybinding item.
+     * @param item the keybinding item.
      */
     protected async resetKeybinding(item: KeybindingItem): Promise<void> {
         const rawCommandId = this.getRawValue(item.id);
@@ -546,9 +564,9 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Validate the provided keybinding value against its previous value.
-     * @param command {string} the command label.
-     * @param oldKeybinding {string} the old keybinding value.
-     * @param keybinding {string} the new keybinding value.
+     * @param command the command label.
+     * @param oldKeybinding the old keybinding value.
+     * @param keybinding the new keybinding value.
      *
      * @returns the end user message to display.
      */
@@ -573,7 +591,7 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Build the cell data with highlights if applicable.
-     * @param raw {string} the raw cell value.
+     * @param raw the raw cell value.
      *
      * @returns the list of cell data.
      */
@@ -612,7 +630,7 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Render the fuzzy representation of a matched result.
-     * @param property {string} one of the `KeybindingItem` properties.
+     * @param property one of the `KeybindingItem` properties.
      */
     protected renderMatchedData(property: string): React.ReactNode {
         if (this.query !== '') {
@@ -629,7 +647,7 @@ export class KeybindingWidget extends ReactWidget {
 
     /**
      * Render the raw value of a item without fuzzy highlighting.
-     * @param property {string} one of the `KeybindingItem` properties.
+     * @param property one of the `KeybindingItem` properties.
      */
     protected getRawValue(property: string): string {
         return property.replace(new RegExp(this.regexp), '$1');
@@ -675,8 +693,8 @@ class EditKeybindingDialog extends SingleTextInputDialog {
 
     /**
      * Add `Reset` action used to reset a custom keybinding, and close the dialog.
-     * @param element {HTMLElement} the HTML element in question.
-     * @param additionalEventTypes {K[]} additional event types.
+     * @param element the HTML element in question.
+     * @param additionalEventTypes additional event types.
      */
     protected addResetAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
         this.addKeyListener(element, Key.ENTER, () => {
@@ -712,7 +730,7 @@ class EditKeybindingDialog extends SingleTextInputDialog {
 
     /**
      * Extract the raw value from a string (without fuzzy matching).
-     * @param a {string} given string value for extraction.
+     * @param a given string value for extraction.
      *
      * @returns the raw value of a string without any fuzzy matching.
      */
