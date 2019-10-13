@@ -127,5 +127,4 @@ export class ScmInput implements Disposable {
             this.fireDidChange();
         }
     }
-
 }

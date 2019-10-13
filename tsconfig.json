@@ -124,6 +124,9 @@
       "@theia/scm/lib/*": [
         "packages/scm/src/*"
       ],
+      "@theia/scm-extra/lib/*": [
+        "packages/scm-extra/src/*"
+      ],
       "@theia/search-in-workspace/lib/*": [
         "packages/search-in-workspace/src/*"
       ],

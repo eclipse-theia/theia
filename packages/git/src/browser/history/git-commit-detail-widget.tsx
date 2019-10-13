@@ -14,48 +14,53 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import { LabelProvider } from '@theia/core/lib/browser';
-import { Git, GitFileChange } from '../../common';
+import { GitFileChange } from '../../common';
 import { GitDiffWidget } from '../diff/git-diff-widget';
 import { GitRepositoryProvider } from '../git-repository-provider';
-import { GitFileChangeNode } from '../git-file-change-node';
+import { ScmAvatarService } from '@theia/scm/lib/browser/scm-avatar-service';
 import * as React from 'react';
 
-export const GIT_COMMIT_DETAIL = 'git-commit-detail-widget';
-
-export interface GitCommitDetails {
-    readonly authorName: string;
-    readonly authorEmail: string;
-    readonly authorDate: Date;
-    readonly authorDateRelative: string;
-    readonly authorAvatar: string;
-    readonly commitMessage: string;
-    readonly messageBody?: string;
-    readonly fileChangeNodes: GitFileChangeNode[];
-    readonly commitSha: string;
-}
-
 export const GitCommitDetailWidgetOptions = Symbol('GitCommitDetailWidgetOptions');
-export interface GitCommitDetailWidgetOptions extends GitCommitDetails {
-    readonly range: Git.Options.Range
+export interface GitCommitDetailWidgetOptions {
+    commitSha: string;
+    commitMessage: string;
+    messageBody?: string;
+    authorName: string;
+    authorEmail: string;
+    authorDate: string;
+    authorDateRelative: string;
 }
 
 @injectable()
 export class GitCommitDetailWidget extends GitDiffWidget {
 
+    protected authorAvatar: string;
+
     constructor(
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
+        @inject(ScmAvatarService) protected readonly avatarService: ScmAvatarService,
         @inject(GitCommitDetailWidgetOptions) protected readonly commitDetailOptions: GitCommitDetailWidgetOptions
     ) {
         super();
         this.id = 'commit' + commitDetailOptions.commitSha;
-        this.title.label = commitDetailOptions.commitSha;
-        this.options = { range: commitDetailOptions.range };
+        this.title.label = commitDetailOptions.commitSha.substr(0, 8);
+        this.options = {
+            range: {
+                fromRevision: commitDetailOptions.commitSha + '~1',
+                toRevision: commitDetailOptions.commitSha
+            }
+        };
         this.title.closable = true;
         this.title.iconClass = 'icon-git-commit tab-git-icon';
+    }
+
+    @postConstruct()
+    protected async init(): Promise<void> {
+        this.authorAvatar = await this.avatarService.getAvatar(this.commitDetailOptions.authorEmail);
     }
 
     protected renderDiffListHeader(): React.ReactNode {
@@ -83,7 +88,7 @@ export class GitCommitDetailWidget extends GitDiffWidget {
             <div className='header-value noWrapInfo'>{this.commitDetailOptions.commitSha}</div>
         </div>;
         const gravatar = <div className='image-container'>
-            <img className='gravatar' src={this.commitDetailOptions.authorAvatar}></img></div>;
+            <img className='gravatar' src={this.authorAvatar}></img></div>;
         const commitInfo = <div className='header-row commit-info-row'>{gravatar}<div className='commit-info'>{authorRow}{mailRow}{dateRow}{revisionRow}</div></div>;
         const header = <div className='theia-header'>Files changed</div>;
 

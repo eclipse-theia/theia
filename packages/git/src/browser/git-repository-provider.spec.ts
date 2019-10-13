@@ -35,9 +35,11 @@ import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmContextKeyService } from '@theia/scm/lib/browser/scm-context-key-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { GitScmProvider } from './git-scm-provider';
+import { createGitScmProviderFactory } from './git-frontend-module';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { GitErrorHandler } from './git-error-handler';
 import { GitPreferences } from './git-preferences';
+import { GitRepositoryTracker } from './git-repository-tracker';
 const expect = chai.expect;
 
 disableJSDOM();
@@ -72,6 +74,7 @@ describe('GitRepositoryProvider', () => {
     let mockFilesystem: FileSystem;
     let mockFileSystemWatcher: FileSystemWatcher;
     let mockStorageService: StorageService;
+    let mockGitRepositoryTracker: GitRepositoryTracker;
 
     let gitRepositoryProvider: GitRepositoryProvider;
     const mockRootChangeEmitter: Emitter<FileStat[]> = new Emitter();
@@ -90,6 +93,7 @@ describe('GitRepositoryProvider', () => {
         mockFilesystem = sinon.createStubInstance(FileSystemNode);
         mockFileSystemWatcher = sinon.createStubInstance(FileSystemWatcher);
         mockStorageService = sinon.createStubInstance(LocalStorageService);
+        mockGitRepositoryTracker = sinon.createStubInstance(GitRepositoryTracker);
 
         testContainer = new Container();
         testContainer.bind(GitRepositoryProvider).toSelf().inSingletonScope();
@@ -99,7 +103,7 @@ describe('GitRepositoryProvider', () => {
         testContainer.bind(FileSystemWatcher).toConstantValue(mockFileSystemWatcher);
         testContainer.bind(StorageService).toConstantValue(mockStorageService);
         testContainer.bind(ScmService).toSelf().inSingletonScope();
-        testContainer.bind(GitScmProvider.Factory).toFactory(GitScmProvider.createFactory);
+        testContainer.bind(GitScmProvider.Factory).toFactory(createGitScmProviderFactory);
         testContainer.bind(ScmContextKeyService).toSelf().inSingletonScope();
         testContainer.bind(ContextKeyService).toSelf().inSingletonScope();
         testContainer.bind(GitCommitMessageValidator).toSelf().inSingletonScope();
@@ -108,6 +112,7 @@ describe('GitRepositoryProvider', () => {
         testContainer.bind(CommandService).toConstantValue(<CommandService>{});
         testContainer.bind(LabelProvider).toConstantValue(<LabelProvider>{});
         testContainer.bind(GitPreferences).toConstantValue(<GitPreferences>{});
+        testContainer.bind(GitRepositoryTracker).toConstantValue(mockGitRepositoryTracker);
 
         sinon.stub(mockWorkspaceService, 'onWorkspaceChanged').value(mockRootChangeEmitter.event);
         sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);

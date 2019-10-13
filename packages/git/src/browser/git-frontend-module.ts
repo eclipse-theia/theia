@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule, interfaces } from 'inversify';
 import { CommandContribution, MenuContribution, ResourceResolver } from '@theia/core/lib/common';
 import {
     WebSocketConnectionProvider,
@@ -41,9 +41,11 @@ import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitSyncService } from './git-sync-service';
 import { GitErrorHandler } from './git-error-handler';
-import { GitScmProvider } from './git-scm-provider';
-import { GitFileChangeLabelProvider } from './git-file-change-label-provider';
+import { GitScmProvider, GitScmProviderOptions } from './git-scm-provider';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { ScmHistorySupport } from '@theia/scm-extra/lib/browser/history/scm-history-widget';
+import { ScmHistoryProvider } from '@theia/scm-extra/lib/browser/history';
+import { GitHistorySupport } from './history/git-history-support';
 
 export default new ContainerModule(bind => {
     bindGitPreferences(bind);
@@ -67,7 +69,7 @@ export default new ContainerModule(bind => {
     bind(GitResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(GitResourceResolver);
 
-    bind(GitScmProvider.Factory).toFactory(GitScmProvider.createFactory);
+    bind(GitScmProvider.Factory).toFactory(createGitScmProviderFactory);
     bind(GitRepositoryProvider).toSelf().inSingletonScope();
     bind(GitQuickOpenService).toSelf().inSingletonScope();
 
@@ -78,7 +80,18 @@ export default new ContainerModule(bind => {
 
     bind(GitSyncService).toSelf().inSingletonScope();
     bind(GitErrorHandler).toSelf().inSingletonScope();
-
-    bind(GitFileChangeLabelProvider).toSelf().inSingletonScope();
-    bind(LabelProviderContribution).toService(GitFileChangeLabelProvider);
 });
+
+export function createGitScmProviderFactory(ctx: interfaces.Context): GitScmProvider.Factory {
+    return (options: GitScmProviderOptions) => {
+        const container = ctx.container.createChild();
+        container.bind(GitScmProviderOptions).toConstantValue(options);
+        container.bind(GitScmProvider).toSelf().inSingletonScope();
+        container.bind(GitHistorySupport).toSelf().inSingletonScope();
+        container.bind(ScmHistorySupport).toService(GitHistorySupport);
+        const provider = container.get(GitScmProvider);
+        const historySupport = container.get(GitHistorySupport);
+        (provider as ScmHistoryProvider).historySupport = historySupport;
+        return provider;
+    };
+}

@@ -21,6 +21,7 @@ import { injectable, inject } from 'inversify';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { ScmRepository, ScmProviderOptions } from './scm-repository';
 import { ScmCommand, ScmProvider } from './scm-provider';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class ScmService {
@@ -74,6 +75,13 @@ export class ScmService {
         }
         this.onDidChangeSelectedRepositoryEmitter.fire(this._selectedRepository);
         this.fireDidChangeStatusBarCommands();
+    }
+
+    findRepository(uri: URI): ScmRepository | undefined {
+        const reposSorted = this.repositories.sort(
+            (ra: ScmRepository, rb: ScmRepository) => rb.provider.rootUri.length - ra.provider.rootUri.length
+        );
+        return reposSorted.find(repo => new URI(repo.provider.rootUri).isEqualOrParent(uri));
     }
 
     registerScmProvider(provider: ScmProvider, options: ScmProviderOptions = {}): ScmRepository {

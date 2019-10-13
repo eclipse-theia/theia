@@ -21,7 +21,6 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
-import URI from '@theia/core/lib/common/uri';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { Git, Repository } from '../common';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
@@ -126,29 +125,6 @@ export class GitRepositoryProvider {
             }
         }
         return repositories;
-    }
-
-    findRepository(uri: URI): Repository | undefined {
-        const reposSorted = this.allRepositories.sort(Repository.sortComparator);
-        return reposSorted.find(repo => new URI(repo.localUri).isEqualOrParent(uri));
-    }
-
-    findRepositoryOrSelected(arg: URI | string | { uri?: string | URI } | undefined): Repository | undefined {
-        let uri: URI | string | undefined;
-        if (arg) {
-            if (arg instanceof URI || typeof arg === 'string') {
-                uri = arg;
-            } else if (typeof arg === 'object' && 'uri' in arg && arg.uri) {
-                uri = arg.uri;
-            }
-            if (uri) {
-                if (typeof uri === 'string') {
-                    uri = new URI(uri);
-                }
-                return this.findRepository(uri);
-            }
-        }
-        return this.selectedRepository;
     }
 
     async refresh(options?: GitRefreshOptions): Promise<void> {

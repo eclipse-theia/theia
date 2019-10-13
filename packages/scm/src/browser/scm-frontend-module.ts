@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import '../../src/browser/style/index.css';
+import '../../src/browser/style/diff.css';
 
 import { ContainerModule } from 'inversify';
 import {

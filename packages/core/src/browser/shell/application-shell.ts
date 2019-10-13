@@ -52,12 +52,14 @@ export type ApplicationShellLayoutVersion =
     /** layout versioning is introduced, unversioned layout are not compatible */
     2.0 |
     /** view containers are introduced, backward compatible to 2.0 */
-    3.0;
+    3.0 |
+    /** git history view is replaced by a more generic scm history view, backward compatible to 3.0 */
+    4.0;
 
 /**
  * When a version is increased, make sure to introduce a migration (ApplicationShellLayoutMigration) to this version.
  */
-export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 3.0;
+export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 4.0;
 
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
