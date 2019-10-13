@@ -15,28 +15,27 @@
  ********************************************************************************/
 
 import { SELECTED_CLASS, Key, Widget } from '@theia/core/lib/browser';
-import { GitFileStatus } from '../common';
+import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import URI from '@theia/core/lib/common/uri';
-import { GitRepositoryProvider } from './git-repository-provider';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { Message } from '@phosphor/messaging';
 import { ElementExt } from '@phosphor/domutils';
 import { inject, injectable } from 'inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from 'react';
-import { GitFileChangeLabelProvider } from './git-file-change-label-provider';
-import { GitFileChangeNode } from './git-file-change-node';
+import { ScmFileChangeLabelProvider } from './scm-file-change-label-provider';
+import { ScmFileChangeNode } from './scm-file-change-node';
 
 @injectable()
-export abstract class GitNavigableListWidget<T extends { selected?: boolean }> extends ReactWidget {
+export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> extends ReactWidget {
 
-    protected gitNodes: T[];
+    protected scmNodes: T[];
     private _scrollContainer: string;
 
-    @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider;
+    @inject(ScmService) protected readonly scmService: ScmService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(GitFileChangeLabelProvider)
-    protected readonly gitLabelProvider: GitFileChangeLabelProvider;
+    @inject(ScmFileChangeLabelProvider)
+    protected readonly scmLabelProvider: ScmFileChangeLabelProvider;
 
     constructor() {
         super();
@@ -78,13 +77,10 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         this.update();
     }
 
-    protected getAbbreviatedStatusCaption(status: GitFileStatus, staged?: boolean): string {
-        return GitFileStatus.toAbbreviation(status, staged);
-    }
     protected getRepositoryLabel(uri: string): string | undefined {
-        const repository = this.repositoryProvider.findRepository(new URI(uri));
-        const isSelectedRepo = this.repositoryProvider.selectedRepository && repository && this.repositoryProvider.selectedRepository.localUri === repository.localUri;
-        return repository && !isSelectedRepo ? this.labelProvider.getLongName(new URI(repository.localUri)) : undefined;
+        const repository = this.scmService.findRepository(new URI(uri));
+        const isSelectedRepo = this.scmService.selectedRepository && repository && this.scmService.selectedRepository.provider.rootUri === repository.provider.rootUri;
+        return repository && !isSelectedRepo ? this.labelProvider.getLongName(new URI(repository.provider.rootUri)) : undefined;
     }
 
     protected renderHeaderRow({ name, value, classNames, title }: { name: string, value: React.ReactNode, classNames?: string[], title?: string }): React.ReactNode {
@@ -98,7 +94,7 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         </div>;
     }
 
-    protected addGitListNavigationKeyListeners(container: HTMLElement): void {
+    protected addListNavigationKeyListeners(container: HTMLElement): void {
         this.addKeyListener(container, Key.ARROW_LEFT, () => this.navigateLeft());
         this.addKeyListener(container, Key.ARROW_RIGHT, () => this.navigateRight());
         this.addKeyListener(container, Key.ARROW_UP, () => this.navigateUp());
@@ -127,7 +123,7 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
     }
 
     protected getSelected(): T | undefined {
-        return this.gitNodes ? this.gitNodes.find(c => c.selected || false) : undefined;
+        return this.scmNodes ? this.scmNodes.find(c => c.selected || false) : undefined;
     }
 
     protected selectNode(node: T): void {
@@ -141,47 +137,47 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
 
     protected selectNextNode(): void {
         const idx = this.indexOfSelected;
-        if (idx >= 0 && idx < this.gitNodes.length - 1) {
-            this.selectNode(this.gitNodes[idx + 1]);
-        } else if (this.gitNodes.length > 0 && idx === -1) {
-            this.selectNode(this.gitNodes[0]);
+        if (idx >= 0 && idx < this.scmNodes.length - 1) {
+            this.selectNode(this.scmNodes[idx + 1]);
+        } else if (this.scmNodes.length > 0 && idx === -1) {
+            this.selectNode(this.scmNodes[0]);
         }
     }
 
     protected selectPreviousNode(): void {
         const idx = this.indexOfSelected;
         if (idx > 0) {
-            this.selectNode(this.gitNodes[idx - 1]);
+            this.selectNode(this.scmNodes[idx - 1]);
         }
     }
 
     protected get indexOfSelected(): number {
-        if (this.gitNodes && this.gitNodes.length > 0) {
-            return this.gitNodes.findIndex(c => c.selected || false);
+        if (this.scmNodes && this.scmNodes.length > 0) {
+            return this.scmNodes.findIndex(c => c.selected || false);
         }
         return -1;
     }
 }
 
-export namespace GitItemComponent {
+export namespace ScmItemComponent {
     export interface Props {
         labelProvider: LabelProvider;
-        gitLabelProvider: GitFileChangeLabelProvider;
-        change: GitFileChangeNode;
-        revealChange: (change: GitFileChangeNode) => void
-        selectNode: (change: GitFileChangeNode) => void
+        scmLabelProvider: ScmFileChangeLabelProvider;
+        change: ScmFileChangeNode;
+        revealChange: (change: ScmFileChangeNode) => void
+        selectNode: (change: ScmFileChangeNode) => void
     }
 }
-export class GitItemComponent extends React.Component<GitItemComponent.Props> {
+export class ScmItemComponent extends React.Component<ScmItemComponent.Props> {
 
     render(): JSX.Element {
-        const { labelProvider, gitLabelProvider, change } = this.props;
+        const { labelProvider, scmLabelProvider, change } = this.props;
         const icon = labelProvider.getIcon(change);
         const label = labelProvider.getName(change);
         const description = labelProvider.getLongName(change);
-        const caption = gitLabelProvider.getCaption(change);
-        const statusCaption = gitLabelProvider.getStatusCaption(change.status, true);
-        return <div className={`gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}`}
+        const caption = scmLabelProvider.getCaption(change);
+        const statusCaption = scmLabelProvider.getStatusCaption(change);
+        return <div className={`scmItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}`}
             onDoubleClick={this.revealChange}
             onClick={this.selectNode}>
             <span className={icon + ' file-icon'}></span>
@@ -191,10 +187,10 @@ export class GitItemComponent extends React.Component<GitItemComponent.Props> {
             </div>
             <div
                 title={caption}
-                className={'status staged ' + GitFileStatus[change.status].toLowerCase()}>
+                className={change.fileChange.getClassNameForStatus()}>
                 {statusCaption.charAt(0)}
             </div>
-        </div >;
+        </div>;
     }
 
     protected readonly revealChange = () => this.props.revealChange(this.props.change);

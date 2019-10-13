@@ -9,6 +9,7 @@
     "@theia/languages": "^0.16.0",
     "@theia/navigator": "^0.16.0",
     "@theia/scm": "^0.16.0",
+    "@theia/scm-extra": "^0.16.0",
     "@theia/workspace": "^0.16.0",
     "@types/diff": "^3.2.2",
     "@types/p-queue": "^2.3.1",

@@ -99,6 +99,9 @@
       "path": "../../packages/scm/compile.tsconfig.json"
     },
     {
+      "path": "../../packages/scm-extra/compile.tsconfig.json"
+    },
+    {
       "path": "../../packages/search-in-workspace/compile.tsconfig.json"
     },
     {

@@ -70,7 +70,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         super({
             viewContainerId: SCM_VIEW_CONTAINER_ID,
             widgetId: SCM_WIDGET_FACTORY_ID,
-            widgetName: 'SCM',
+            widgetName: 'Source Control',
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 300

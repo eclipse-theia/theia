@@ -34,6 +34,12 @@
     align-items: center;
 }
 
+.theia-scm:focus, .theia-scm :focus {
+    outline: 0;
+    box-shadow: none;
+    border: none;
+}
+
 .theia-scm .space-between {
     justify-content: space-between;
 }

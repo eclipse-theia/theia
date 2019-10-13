@@ -14,27 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { GitHistoryContribution, GIT_HISTORY_ID } from './git-history-contribution';
 import { interfaces, Container } from 'inversify';
-import { WidgetFactory, OpenHandler, bindViewContribution } from '@theia/core/lib/browser';
-import { GitHistoryWidget } from './git-history-widget';
-import { GIT_COMMIT_DETAIL, GitCommitDetailWidget, GitCommitDetails, GitCommitDetailWidgetOptions } from './git-commit-detail-widget';
-
-import '../../../src/browser/style/history.css';
-import '../../../src/browser/style/git-icons.css';
+import { WidgetFactory, OpenHandler } from '@theia/core/lib/browser';
+import { GitCommitDetailWidget, GitCommitDetailWidgetOptions } from './git-commit-detail-widget';
 import { GitCommitDetailOpenHandler } from './git-commit-detail-open-handler';
+import { GitScmProvider } from '../git-scm-provider';
+import { ScmHistoryCommit } from '@theia/scm-extra/lib/browser/scm-file-change-node';
+
+import '../../../src/browser/style/git-icons.css';
 
 export function bindGitHistoryModule(bind: interfaces.Bind): void {
 
-    bind(GitHistoryWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
-        id: GIT_HISTORY_ID,
-        createWidget: () => ctx.container.get<GitHistoryWidget>(GitHistoryWidget)
-    }));
-
-    bind(WidgetFactory).toDynamicValue(ctx => ({
-        id: GIT_COMMIT_DETAIL,
-        createWidget: (options: GitCommitDetails) => {
+        id: GitScmProvider.GIT_COMMIT_DETAIL,
+        createWidget: (options: ScmHistoryCommit) => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
             child.bind(GitCommitDetailWidget).toSelf();
@@ -45,7 +38,5 @@ export function bindGitHistoryModule(bind: interfaces.Bind): void {
 
     bind(GitCommitDetailOpenHandler).toSelf();
     bind(OpenHandler).toService(GitCommitDetailOpenHandler);
-
-    bindViewContribution(bind, GitHistoryContribution);
 
 }

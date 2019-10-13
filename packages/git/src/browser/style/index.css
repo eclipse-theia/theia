@@ -23,96 +23,39 @@
     padding-left: 19px;
 }
 
-.theia-git:focus, .theia-git :focus {
-    outline: 0;
-    box-shadow: none;
-    border: none;
-}
-
-.theia-git .noWrapInfo {
-    width: 100%;
-}
-
 .theia-git .space-between {
     justify-content: space-between;
 }
 
-.theia-git .gitItem {
-    font-size: var(--theia-ui-font-size1);
-    display: inline-flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    height: var(--theia-content-line-height);
-    line-height: var(--theia-content-line-height);
-    padding: 0px;
-    padding-right: var(--theia-ui-padding);
-}
-
-.theia-git .gitItem:hover {
-    background-color: var(--theia-list-hoverBackground);
-    color: var(--theia-list-hoverForeground);
-    cursor: pointer;
-}
-
-.theia-git:focus-within .gitItem:focus {
-    background: var(--theia-list-focusBackground);
-    color: var(--theia-list-focusForeground);
-}
-
-.theia-git:not(:focus-within) .gitItem:not(:focus) {
-    background: var(--theia-list-inactiveFocusBackground);
-}
-
-.theia-git:focus-within .gitItem.theia-mod-selected {
-    background: var(--theia-list-activeSelectionBackground);
-    color: var(--theia-list-activeSelectionForeground);
-}
-
-.theia-git:not(:focus-within) .gitItem.theia-mod-selected {
-    background: var(--theia-list-inactiveSelectionBackground);
-    color: var(--theia-list-inactiveSelectionForeground);
-}
-
-.theia-git .gitItem .file-icon {
-    display: initial;
-}
-
-.theia-git .gitItem .path {
-    font-size: var(--theia-ui-font-size0);
-    margin-left: 3px;
-    opacity: .7;
-}
-
-.theia-git .gitItem .status {
-    padding: 2px 4px;
-    font-size: var(--theia-ui-font-size0);
-}
-
-.theia-git .gitItem .status.new {
+.theia-scm .scmItem .git-status.new {
     color: var(--theia-gitDecoration-untrackedResourceForeground);
 }
 
-.theia-git .gitItem .status.new.staged {
+.theia-scm .scmItem .git-status.new.staged {
     color: var(--theia-gitDecoration-addedResourceForeground);
 }
 
-.theia-git .gitItem .status.modified {
+.theia-scm .scmItem .git-status.modified {
     color: var(--theia-gitDecoration-modifiedResourceForeground);
 }
 
-.theia-git .gitItem .status.deleted {
+.theia-scm .scmItem .git-status.deleted {
     color: var(--theia-gitDecoration-deletedResourceForeground);
 }
 
-.theia-git .gitItem .status.renamed {
+.theia-scm .scmItem .git-status.renamed {
     color: var(--theia-gitDecoration-untrackedResourceForeground);
 }
 
-.theia-git .gitItem .status.conflicted {
+.theia-scm .scmItem .git-status.conflicted {
     color: var(--theia-gitDecoration-conflictingResourceForeground);
 }
 
-.theia-git .gitItem .status.copied {
+.theia-scm .scmItem .git-status.copied {
     color: var(--theia-gitDecoration-modifiedResourceForeground);
+}
+
+.tab-git-icon {
+    width: 20px!important;
+    height: 20px;
 }

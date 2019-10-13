@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Ericsson and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,14 +14,27 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { GitFileChange } from '../common/git-model';
-
-export interface GitFileChangeNode extends GitFileChange {
-    readonly commitSha?: string;
-    selected?: boolean;
+.scm-diff-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
 }
-export namespace GitFileChangeNode {
-    export function is(node: Object | undefined): node is GitFileChangeNode {
-        return !!node && 'uri' in node && 'status' in node;
-    }
+
+.scm-diff-container .listContainer {
+    flex: 1;
+    position: relative;
+}
+
+.scm-diff-container .listContainer .commitList {
+    height: 100%;
+}
+
+.scm-diff-container .subject {
+    font-size: var(--theia-ui-font-size2);
+    font-weight: bold;
+}
+
+.scm-diff-container .noWrapInfo {
+    width: 100%;
 }
