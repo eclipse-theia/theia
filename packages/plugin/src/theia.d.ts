@@ -7523,6 +7523,11 @@ declare module '@theia/plugin' {
          */
         readonly name: string;
 
+		/**
+		 * The "resolved" [debug configuration](#DebugConfiguration) of this session.
+		 */
+        readonly configuration: DebugConfiguration;
+
         /**
          * Send a custom request to the debug adapter.
          */

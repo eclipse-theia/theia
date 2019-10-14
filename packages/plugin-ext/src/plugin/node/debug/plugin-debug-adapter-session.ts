@@ -27,6 +27,7 @@ import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implements theia.DebugSession {
     readonly type: string;
     readonly name: string;
+    readonly configuration: theia.DebugConfiguration;
 
     constructor(
         protected readonly communicationProvider: CommunicationProvider,
@@ -37,6 +38,7 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implement
 
         this.type = theiaSession.type;
         this.name = theiaSession.name;
+        this.configuration = theiaSession.configuration;
     }
 
     async start(channel: IWebSocket): Promise<void> {
