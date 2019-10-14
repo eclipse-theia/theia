@@ -25,6 +25,7 @@ describe('Path', () => {
         assert.deepEqual(path.isAbsolute, true);
         assert.deepEqual(path.root!.toString(), '/');
         assert.deepEqual(path.dir.toString(), '/foo/bar');
+        assert.deepEqual(path.hasDir, true);
         assert.deepEqual(path.base, 'file.txt');
         assert.deepEqual(path.name, 'file');
         assert.deepEqual(path.ext, '.txt');
@@ -36,6 +37,7 @@ describe('Path', () => {
         assert.deepEqual(path.isAbsolute, false);
         assert.deepEqual(path.root, undefined);
         assert.deepEqual(path.dir.toString(), 'foo/bar');
+        assert.deepEqual(path.hasDir, true);
         assert.deepEqual(path.base, 'file.txt');
         assert.deepEqual(path.name, 'file');
         assert.deepEqual(path.ext, '.txt');
@@ -47,6 +49,7 @@ describe('Path', () => {
         assert.deepEqual(path.isAbsolute, true);
         assert.deepEqual(path.root!.toString(), '/');
         assert.deepEqual(path.dir.toString(), '/');
+        assert.deepEqual(path.hasDir, true);
         assert.deepEqual(path.base, 'foo');
         assert.deepEqual(path.name, 'foo');
         assert.deepEqual(path.ext, '');
@@ -58,6 +61,7 @@ describe('Path', () => {
         assert.deepEqual(path.isAbsolute, false);
         assert.deepEqual(path.root, undefined);
         assert.deepEqual(path.dir.toString(), 'foo');
+        assert.deepEqual(path.hasDir, false);
         assert.deepEqual(path.base, 'foo');
         assert.deepEqual(path.name, 'foo');
         assert.deepEqual(path.ext, '');
@@ -69,6 +73,7 @@ describe('Path', () => {
         assert.deepEqual(path.isAbsolute, true);
         assert.deepEqual(path.root!.toString(), '/');
         assert.deepEqual(path.dir.toString(), '/');
+        assert.deepEqual(path.hasDir, false);
         assert.deepEqual(path.base, '');
         assert.deepEqual(path.name, '');
         assert.deepEqual(path.ext, '');
@@ -80,6 +85,7 @@ describe('Path', () => {
         assert.deepEqual(path.isAbsolute, true);
         assert.deepEqual(path.root!.toString(), '/c:');
         assert.deepEqual(path.dir.toString(), '/c:/foo/bar');
+        assert.deepEqual(path.hasDir, true);
         assert.deepEqual(path.base, 'file.txt');
         assert.deepEqual(path.name, 'file');
         assert.deepEqual(path.ext, '.txt');
@@ -91,6 +97,7 @@ describe('Path', () => {
         assert.deepEqual(path.isAbsolute, true);
         assert.deepEqual(path.root!.toString(), '/c:');
         assert.deepEqual(path.dir.toString(), '/c:');
+        assert.deepEqual(path.hasDir, true);
         assert.deepEqual(path.base, 'foo');
         assert.deepEqual(path.name, 'foo');
         assert.deepEqual(path.ext, '');
@@ -102,6 +109,7 @@ describe('Path', () => {
         assert.deepEqual(path.isAbsolute, true);
         assert.deepEqual(path.root!.toString(), '/c:');
         assert.deepEqual(path.dir.toString(), '/c:');
+        assert.deepEqual(path.hasDir, true);
         assert.deepEqual(path.base, '');
         assert.deepEqual(path.name, '');
         assert.deepEqual(path.ext, '');
@@ -113,6 +121,7 @@ describe('Path', () => {
         assert.deepEqual(path.isAbsolute, true);
         assert.deepEqual(path.root!.toString(), '/c:');
         assert.deepEqual(path.dir.toString(), '/c:');
+        assert.deepEqual(path.hasDir, false);
         assert.deepEqual(path.base, 'c:');
         assert.deepEqual(path.name, 'c:');
         assert.deepEqual(path.ext, '');
