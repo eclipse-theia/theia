@@ -21,6 +21,42 @@ const expect = chai.expect;
 
 describe('uri', () => {
 
+    describe('#getAllLocations', () => {
+
+        it('of /foo/bar/file.txt', () => {
+            expect(new URI('/foo/bar/file.txt').allLocations.map(x => x.toString()))
+                .deep.equals([
+                    new URI('/foo/bar/file.txt').toString(),
+                    new URI('/foo/bar').toString(),
+                    new URI('/foo').toString(),
+                    new URI('/').toString()
+                ]);
+        });
+
+        it('of foo', () => {
+            expect(new URI('foo').allLocations.map(x => x.toString()))
+                .deep.equals([
+                    new URI('foo').toString(),
+                    new URI('/').toString()
+                ]);
+        });
+
+        it('of foo:bar.txt', () => {
+            expect(new URI().withScheme('foo').withPath('bar.txt').allLocations.map(x => x.toString()))
+                .deep.equals([
+                    'foo:bar.txt'
+                ]);
+        });
+
+        it('of foo:bar/foobar.txt', () => {
+            expect(new URI().withScheme('foo').withPath('bar/foobar.txt').allLocations.map(x => x.toString()))
+                .deep.equals([
+                    new URI().withScheme('foo').withPath('bar/foobar.txt').toString(),
+                    new URI().withScheme('foo').withPath('bar').toString()
+                ]);
+        });
+    });
+
     describe('#getParent', () => {
 
         it('of file:///foo/bar.txt', () => {

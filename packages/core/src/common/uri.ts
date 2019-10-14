@@ -51,7 +51,7 @@ export default class URI {
     get allLocations(): URI[] {
         const locations = [];
         let location: URI = this;
-        while (!location.path.isRoot) {
+        while (!location.path.isRoot && location.path.hasDir) {
             locations.push(location);
             location = location.parent;
         }
