@@ -209,6 +209,7 @@ export class DebugExtImpl implements DebugExt {
             id: sessionId,
             type: debugConfiguration.type,
             name: debugConfiguration.name,
+            configuration: debugConfiguration,
             customRequest: (command: string, args?: any) => this.proxy.$customRequest(sessionId, command, args)
         };
 
