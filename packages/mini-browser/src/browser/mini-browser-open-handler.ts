@@ -132,7 +132,7 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
         let result = await this.defaultOptions();
         if (uri) {
             // Decorate it with a few properties inferred from the URI.
-            const startPage = uri.toString();
+            const startPage = uri.toString(true);
             const name = this.labelProvider.getName(uri);
             const iconClass = `${await this.labelProvider.getIcon(uri)} file-icon`;
             // The background has to be reset to white only for "real" web-pages but not for images, for instance.
