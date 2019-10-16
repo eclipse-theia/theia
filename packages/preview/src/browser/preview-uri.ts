@@ -26,7 +26,11 @@ export namespace PreviewUri {
         if (match(uri)) {
             return uri;
         }
-        const query = [param, ...uri.query.split('&')].join('&');
+        const params = [param];
+        if (uri.query) {
+            params.push(...uri.query.split('&'));
+        }
+        const query = params.join('&');
         return uri.withQuery(query);
     }
     export function decode(uri: URI): URI {
