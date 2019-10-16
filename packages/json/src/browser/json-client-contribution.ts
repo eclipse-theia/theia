@@ -83,6 +83,10 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         return [this.id];
     }
 
+    protected get initializationOptions(): {} {
+        return {};
+    }
+
     protected onReady(languageClient: ILanguageClient, toStop: DisposableCollection): void {
         super.onReady(languageClient, toStop);
         // handle content request
