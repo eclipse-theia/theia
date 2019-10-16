@@ -37,6 +37,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { GitScmProvider } from './git-scm-provider';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { GitErrorHandler } from './git-error-handler';
+import { GitPreferences } from './git-preferences';
 const expect = chai.expect;
 
 disableJSDOM();
@@ -106,6 +107,7 @@ describe('GitRepositoryProvider', () => {
         testContainer.bind(GitErrorHandler).toConstantValue(<GitErrorHandler>{});
         testContainer.bind(CommandService).toConstantValue(<CommandService>{});
         testContainer.bind(LabelProvider).toConstantValue(<LabelProvider>{});
+        testContainer.bind(GitPreferences).toConstantValue(<GitPreferences>{});
 
         sinon.stub(mockWorkspaceService, 'onWorkspaceChanged').value(mockRootChangeEmitter.event);
         sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);

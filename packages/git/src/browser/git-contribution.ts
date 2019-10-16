@@ -29,6 +29,7 @@ import { GitErrorHandler } from '../browser/git-error-handler';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmResource, ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
+import { GitPreferences } from './git-preferences';
 
 export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
@@ -207,6 +208,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
     @inject(GitErrorHandler) protected readonly gitErrorHandler: GitErrorHandler;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(ProgressService) protected readonly progressService: ProgressService;
+    @inject(GitPreferences) protected readonly gitPreferences: GitPreferences;
 
     onStart(): void {
         this.updateStatusBar();
@@ -690,7 +692,8 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         scmRepository.input.issue = undefined;
         try {
             // We can make sure, repository exists, otherwise we would not have this button.
-            const { signOff, amend } = options;
+            const amend = options.amend;
+            const signOff = options.signOff || this.gitPreferences['git.alwaysSignOff'];
             const repository = scmRepository.provider.repository;
             await this.git.commit(repository, message, { signOff, amend });
             scmRepository.input.value = '';
