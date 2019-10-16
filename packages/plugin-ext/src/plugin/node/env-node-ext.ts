@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as mac from 'macaddress';
 import { EnvExtImpl } from '../env';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { createHash } from 'crypto';
-import { getMac } from 'getmac';
 import { v4 } from 'uuid';
 
 /**
@@ -30,7 +30,7 @@ export class EnvNodeExtImpl extends EnvExtImpl {
 
     constructor(rpc: RPCProtocol) {
         super(rpc);
-        getMac((err, macAddress) => {
+        mac.one((err, macAddress) => {
             if (err) {
                 this.macMachineId = v4();
             } else {

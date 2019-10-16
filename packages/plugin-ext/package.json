@@ -25,9 +25,9 @@
     "@theia/terminal": "^0.9.0",
     "@theia/workspace": "^0.9.0",
     "decompress": "^4.2.0",
-    "getmac": "^1.4.6",
     "jsonc-parser": "^2.0.2",
     "lodash.clonedeep": "^4.5.0",
+    "macaddress": "^0.2.9",
     "uuid": "^3.2.1",
     "vscode-debugprotocol": "^1.32.0"
   },
