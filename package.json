@@ -12,7 +12,7 @@
   "devDependencies": {
     "@types/chai": "^4.0.1",
     "@types/chai-string": "^1.4.0",
-    "@types/jsdom": "^11.0.4",
+    "@types/jsdom": "^12.2.4",
     "@types/mocha": "^2.2.41",
     "@types/node": "~10.3.6",
     "@types/sinon": "^2.3.5",
@@ -26,7 +26,7 @@
     "ignore-styles": "^5.0.1",
     "istanbul": "^0.4.5",
     "istanbul-instrumenter-loader": "^3.0.1",
-    "jsdom": "^11.5.1",
+    "jsdom": "^15.2.0",
     "lerna": "^2.2.0",
     "mocha": "^3.4.2",
     "nyc": "^11.0.3",
