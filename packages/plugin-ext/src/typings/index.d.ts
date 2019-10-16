@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-declare module 'getmac' {
-    function getMac(cb: (error: Error, macAddress: string) => void): void;
+declare module 'macaddress' {
+    export type MacAddresCallback = (err: any, data: any) => void;
+    export type MacAddressOneCallback = (err: any, mac: string) => void;
+    export function one(ifaceOrCallback: string | MacAddressOneCallback, callback?: MacAddressOneCallback): void;
+    export function all(callback: MacAddresCallback): void;
+    export function networkInterfaces(): any;
 }
