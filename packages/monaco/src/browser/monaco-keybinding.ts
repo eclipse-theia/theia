@@ -20,7 +20,7 @@ import { EditorKeybindingContexts } from '@theia/editor/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
-import { isOSX } from '@theia/core';
+import { isOSX, environment } from '@theia/core';
 
 function monaco2BrowserKeyCode(keyCode: monaco.KeyCode): number {
     for (let i = 0; i < KEY_CODE_MAP.length; i++) {
@@ -47,9 +47,14 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             if (command) {
                 const raw = item.keybinding;
                 const when = item.when && item.when.serialize();
-                const keybinding = raw instanceof monaco.keybindings.SimpleKeybinding
-                    ? this.keyCode(raw).toString()
-                    : this.keySequence(raw as monaco.keybindings.ChordKeybinding).join(' ');
+                let keybinding;
+                if (item.command === MonacoCommands.GO_TO_DEFINITION && !environment.electron.is()) {
+                    keybinding = 'ctrlcmd+f11';
+                } else {
+                    keybinding = raw instanceof monaco.keybindings.SimpleKeybinding
+                        ? this.keyCode(raw).toString()
+                        : this.keySequence(raw as monaco.keybindings.ChordKeybinding).join(' ');
+                }
                 registry.registerKeybinding({ command, keybinding, when });
             }
         }
