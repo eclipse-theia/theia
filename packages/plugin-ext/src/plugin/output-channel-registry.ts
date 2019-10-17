@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import {
-    PLUGIN_RPC_CONTEXT as Ext, OutputChannelRegistryMain, PluginInfo
+    PLUGIN_RPC_CONTEXT as Ext, OutputChannelRegistryMain, PluginInfo, OutputChannelRegistryExt
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { OutputChannelImpl } from './output-channel/output-channel-item';
 
-export class OutputChannelRegistryExt {
+export class OutputChannelRegistryExtImpl implements OutputChannelRegistryExt {
 
     proxy: OutputChannelRegistryMain;
 
