@@ -56,6 +56,8 @@ export namespace MonacoCommands {
     export const SELECTION_ADD_PREVIOUS_OCCURRENCE = 'editor.action.addSelectionToPreviousFindMatch';
     export const SELECTION_SELECT_ALL_OCCURRENCES = 'editor.action.selectHighlights';
 
+    export const GO_TO_DEFINITION = 'editor.action.revealDefinition';
+
     export const ACTIONS = new Map<string, MonacoCommand>();
     ACTIONS.set(SELECTION_SELECT_ALL, { id: SELECTION_SELECT_ALL, label: 'Select All', delegate: 'editor.action.selectAll' });
     export const EXCLUDE_ACTIONS = new Set([
