@@ -210,6 +210,10 @@ export interface TerminalServiceExt {
     $currentTerminalChanged(id: string | undefined): void;
 }
 
+export interface OutputChannelRegistryExt {
+    createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel
+}
+
 export interface ConnectionMain {
     $createConnection(id: string): Promise<void>;
     $deleteConnection(id: string): Promise<void>;
@@ -1334,6 +1338,7 @@ export const MAIN_RPC_CONTEXT = {
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
     TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
+    OUTPUT_CHANNEL_REGISTRY_EXT: createProxyIdentifier<OutputChannelRegistryExt>('OutputChannelRegistryExt'),
     TREE_VIEWS_EXT: createProxyIdentifier<TreeViewsExt>('TreeViewsExt'),
     PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt'),
     LANGUAGES_EXT: createProxyIdentifier<LanguagesExt>('LanguagesExt'),
