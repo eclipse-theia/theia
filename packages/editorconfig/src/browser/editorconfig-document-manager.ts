@@ -202,15 +202,15 @@ export class EditorconfigDocumentManager {
     private getEditsTrimmingTrailingWhitespaces(editor: MonacoEditor, properties: KnownProps, saveReason?: TextDocumentSaveReason): monaco.editor.IIdentifiedSingleEditOperation[] {
         const edits = [];
 
-        if (MonacoEditor.get(this.editorManager.activeEditor) === editor) {
-            const trimReason = (saveReason !== TextDocumentSaveReason.Manual) ? 'auto-save' : undefined;
-            editor.commandService.executeCommand('editor.action.trimTrailingWhitespace', {
-                reason: trimReason
-            });
-            return [];
-        }
-
         if (this.isSet(properties.trim_trailing_whitespace)) {
+            if (MonacoEditor.get(this.editorManager.activeEditor) === editor) {
+                const trimReason = (saveReason !== TextDocumentSaveReason.Manual) ? 'auto-save' : undefined;
+                editor.commandService.executeCommand('editor.action.trimTrailingWhitespace', {
+                    reason: trimReason
+                });
+                return [];
+            }
+
             const lines = editor.document.lineCount;
             for (let i = 1; i <= lines; i++) {
                 const line = editor.document.textEditorModel.getLineContent(i);
