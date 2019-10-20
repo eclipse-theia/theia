@@ -99,7 +99,7 @@ describe('CppTaskProvider', function (): void {
 
         const resolvedTask = await taskProvider.resolveTask(tasks[0]);
         expect(resolvedTask.type === 'shell');
-        expect((<ProcessTaskConfiguration>resolvedTask).cwd).to.be.equal('/tmp/build2');
+        expect((<ProcessTaskConfiguration>resolvedTask).options!.cwd).to.be.equal('/tmp/build2');
         expect((<ProcessTaskConfiguration>resolvedTask).command).to.be.equal('very');
         expect((<ProcessTaskConfiguration>resolvedTask).args).to.deep.equal(['complex', 'command']);
     });

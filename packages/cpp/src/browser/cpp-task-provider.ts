@@ -124,7 +124,9 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
             type: 'shell',
             command,
             args,
-            cwd: task.config.directory,
+            options: {
+                cwd: task.config.directory,
+            }
         };
         return resolver.resolveTask(resolvedTask);
     }
