@@ -283,7 +283,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
         }
 
         if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
-            this.taskService.run(this.task.source, this.task.label);
+            this.taskService.run(this.task.source || this.task._source, this.task.label);
         } else {
             this.taskService.run(this.task._source, this.task.label);
         }

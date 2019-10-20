@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { TaskConfiguration } from '../common';
+import { TaskConfiguration, ContributedTaskConfiguration } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 
 @injectable()
@@ -28,11 +28,15 @@ export class TaskNameResolver {
      * It is aligned with VS Code.
      */
     resolve(task: TaskConfiguration): string {
-        if (this.taskDefinitionRegistry.getDefinition(task)) {
-            return `${task.source}: ${task.label}`;
+        if (this.isDetectedTask(task)) {
+            return `${task.source || task._source}: ${task.label}`;
         }
 
         // it is a hack, when task is customized but extension is absent
         return task.label || `${task.type}: ${task.task}`;
+    }
+
+    private isDetectedTask(task: TaskConfiguration): task is ContributedTaskConfiguration {
+        return !!this.taskDefinitionRegistry.getDefinition(task);
     }
 }
