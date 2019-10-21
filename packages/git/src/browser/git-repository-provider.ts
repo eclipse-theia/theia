@@ -86,10 +86,15 @@ export class GitRepositoryProvider {
     }
 
     /**
-     * Sets or un-sets the repository.
+     * Sets the selected repository, but do nothing if the given repository is not a Git repository
+     * registered with the SCM service.  We must be sure not to clear the selection if the selected
+     * repository is managed by an SCM other than Git.
      */
     set selectedRepository(repository: Repository | undefined) {
-        this.scmService.selectedRepository = this.toScmRepository(repository);
+        const scmRepository = this.toScmRepository(repository);
+        if (scmRepository) {
+            this.scmService.selectedRepository = scmRepository;
+        }
     }
 
     get selectedScmRepository(): GitScmRepository | undefined {
