@@ -180,6 +180,9 @@ export class FrontendApplication {
         window.addEventListener('drop', event => {
             event.preventDefault();
         }, false);
+        window.addEventListener('contextmenu', event => {
+            event.preventDefault();
+        }, false);
 
     }
 
