@@ -65,9 +65,6 @@ export class ScmService {
         }
         this.toDisposeOnSelected.dispose();
         this._selectedRepository = repository;
-        if (!repository) {
-            this._selectedRepository = this._repositories.values().next().value;
-        }
         this.updateContextKeys();
         if (this._selectedRepository) {
             this.toDisposeOnSelected.push(this._selectedRepository.onDidChange(() => this.updateContextKeys()));
@@ -91,7 +88,7 @@ export class ScmService {
             dispose.bind(repository)();
             this.onDidRemoveRepositoryEmitter.fire(repository);
             if (this._selectedRepository === repository) {
-                this.selectedRepository = undefined;
+                this.selectedRepository = this._repositories.values().next().value;
             }
         };
         this._repositories.set(key, repository);
