@@ -13,13 +13,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources, deepClone } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 import URI from '@theia/core/lib/common/uri';
 import { TaskService } from './task-service';
+import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 
 export const taskSchemaId = 'vscode://schemas/tasks';
 
@@ -34,8 +35,31 @@ export class TaskSchemaUpdater {
     @inject(TaskService)
     protected readonly taskService: TaskService;
 
-    async update(): Promise<void> {
+    @inject(ProblemMatcherRegistry)
+    protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
 
+    @postConstruct()
+    protected init(): void {
+        this.updateProblemMatcherNames();
+        // update problem matcher names in the task schema every time a problem matcher is added or disposed
+        this.problemMatcherRegistry.onDidChangeProblemMatcher(() => this.updateProblemMatcherNames());
+    }
+
+    async update(): Promise<void> {
+        const taskSchemaUri = new URI(taskSchemaId);
+        const schemaContent = await this.getTaskSchema();
+        try {
+            this.inmemoryResources.update(taskSchemaUri, schemaContent);
+        } catch (e) {
+            this.inmemoryResources.add(taskSchemaUri, schemaContent);
+            this.jsonSchemaStore.registerSchema({
+                fileMatch: ['tasks.json'],
+                url: taskSchemaUri.toString()
+            });
+        }
+    }
+
+    private async getTaskSchema(): Promise<string> {
         const taskSchema = {
             properties: {
                 tasks: {
@@ -49,17 +73,15 @@ export class TaskSchemaUpdater {
         };
         const taskTypes = await this.taskService.getRegisteredTaskTypes();
         taskSchema.properties.tasks.items.oneOf![0].allOf![0].properties!.type.enum = taskTypes;
-        const taskSchemaUri = new URI(taskSchemaId);
-        const contents = JSON.stringify(taskSchema);
-        try {
-            this.inmemoryResources.update(taskSchemaUri, contents);
-        } catch (e) {
-            this.inmemoryResources.add(taskSchemaUri, contents);
-            this.jsonSchemaStore.registerSchema({
-                fileMatch: ['tasks.json'],
-                url: taskSchemaUri.toString()
-            });
-        }
+        return JSON.stringify(taskSchema);
+    }
+
+    /** Gets the most up-to-date names of problem matchers from the registry and update the task schema */
+    private updateProblemMatcherNames(): void {
+        const matcherNames = this.problemMatcherRegistry.getAll().map(m => m.name.startsWith('$') ? m.name : `$${m.name}`);
+        problemMatcherNames.length = 0;
+        problemMatcherNames.push(...matcherNames);
+        this.update();
     }
 }
 
@@ -110,6 +132,7 @@ const commandOptionsSchema: IJSONSchema = {
     }
 };
 
+const problemMatcherNames: string[] = [];
 const taskConfigurationSchema: IJSONSchema = {
     $id: taskSchemaId,
     oneOf: [
@@ -162,6 +185,11 @@ const taskConfigurationSchema: IJSONSchema = {
                         problemMatcher: {
                             oneOf: [
                                 {
+                                    type: 'string',
+                                    description: 'Name of the problem matcher to parse the output of the task',
+                                    enum: problemMatcherNames
+                                },
+                                {
                                     type: 'object',
                                     description: 'User defined problem matcher(s) to parse the output of the task',
                                 },
@@ -169,7 +197,8 @@ const taskConfigurationSchema: IJSONSchema = {
                                     type: 'array',
                                     description: 'Name(s) of the problem matcher(s) to parse the output of the task',
                                     items: {
-                                        type: 'string'
+                                        type: 'string',
+                                        enum: problemMatcherNames
                                     }
                                 }
                             ]
