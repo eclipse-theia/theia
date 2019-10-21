@@ -20,6 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { inject, injectable, postConstruct } from 'inversify';
+import { Event, Emitter } from '@theia/core/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
     ApplyToKind, FileLocationKind, NamedProblemMatcher, Severity,
@@ -36,11 +37,17 @@ export class ProblemMatcherRegistry {
     @inject(ProblemPatternRegistry)
     protected readonly problemPatternRegistry: ProblemPatternRegistry;
 
+    protected readonly onDidChangeProblemMatcherEmitter = new Emitter<void>();
+    get onDidChangeProblemMatcher(): Event<void> {
+        return this.onDidChangeProblemMatcherEmitter.event;
+    }
+
     @postConstruct()
     protected init(): void {
         this.problemPatternRegistry.onReady().then(() => {
             this.fillDefaults();
             this.readyPromise = new Promise<void>((res, rej) => res(undefined));
+            this.onDidChangeProblemMatcherEmitter.fire(undefined);
         });
     }
 
@@ -58,8 +65,11 @@ export class ProblemMatcherRegistry {
             console.error('Only named Problem Matchers can be registered.');
             return Disposable.NULL;
         }
-        const toDispose = new DisposableCollection(Disposable.create(() => {/* mark as not disposed */ }));
-        this.doRegister(matcher, toDispose);
+        const toDispose = new DisposableCollection(Disposable.create(() => {
+            /* mark as not disposed */
+            this.onDidChangeProblemMatcherEmitter.fire(undefined);
+        }));
+        this.doRegister(matcher, toDispose).then(() => this.onDidChangeProblemMatcherEmitter.fire(undefined));
         return toDispose;
     }
     protected async doRegister(matcher: ProblemMatcherContribution, toDispose: DisposableCollection): Promise<void> {
