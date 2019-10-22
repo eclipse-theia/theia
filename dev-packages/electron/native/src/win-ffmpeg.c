@@ -35,14 +35,6 @@ char *load_ffmpeg_library(struct FFMPEG_Library *library, char *library_path)
         goto error;
     }
 
-    void (*av_register_all)(void) = (void (*)(void))
-        GetProcAddress(handle, "av_register_all");
-    if (!av_register_all)
-    {
-        error = error_function_not_found;
-        goto error;
-    }
-
     struct AVCodecDescriptor *(*av_codec_next)(const struct AVCodecDescriptor *) = (struct AVCodecDescriptor * (*)(const struct AVCodecDescriptor *))
         GetProcAddress(handle, "avcodec_descriptor_next");
     if (!av_codec_next)
@@ -60,7 +52,6 @@ char *load_ffmpeg_library(struct FFMPEG_Library *library, char *library_path)
     }
 
     library->handle = handle;
-    library->av_register_all = av_register_all;
     library->avcodec_descriptor_next = av_codec_next;
     library->avcodec_find_decoder = avcodec_find_decoder;
     return NULL;

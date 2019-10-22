@@ -30,14 +30,7 @@ char *load_ffmpeg_library(struct FFMPEG_Library *library, char *library_path)
     {
         goto error;
     }
-
-    void (*av_register_all)(void) = dlsym(handle, "av_register_all");
-    error = dlerror();
-    if (error != NULL)
-    {
-        goto error;
-    }
-
+   
     struct AVCodecDescriptor *(*avcodec_descriptor_next)(const struct AVCodecDescriptor *) = dlsym(handle, "avcodec_descriptor_next");
     error = dlerror();
     if (error != NULL)
@@ -53,7 +46,6 @@ char *load_ffmpeg_library(struct FFMPEG_Library *library, char *library_path)
     }
 
     library->handle = handle;
-    library->av_register_all = av_register_all;
     library->avcodec_descriptor_next = avcodec_descriptor_next;
     library->avcodec_find_decoder = avcodec_find_decoder;
     return NULL;
