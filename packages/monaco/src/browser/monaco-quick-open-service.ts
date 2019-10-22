@@ -135,6 +135,10 @@ export class MonacoQuickOpenService extends QuickOpenService {
         const widget = this.widget;
         if (widget.inputBox) {
             widget.inputBox.inputElement.tabIndex = 1;
+            // Position the cursor at the end of the input unless a user has made a selection.
+            if (widget.inputBox.inputElement.selectionStart === widget.inputBox.inputElement.selectionEnd) {
+                widget.inputBox.inputElement.selectionStart = widget.inputBox.inputElement.value.length;
+            }
         }
     }
 
