@@ -69,9 +69,6 @@ napi_value codecs(napi_env env, napi_callback_info info)
         goto error;
     }
 
-    // Register all codecs contained in the library.
-    ffmpeg.av_register_all();
-
     // Iterate over the codec descriptions.
     // It includes descriptions for codecs that may not be present in the library.
     struct AVCodecDescriptor *descriptor = ffmpeg.avcodec_descriptor_next(NULL);

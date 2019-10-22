@@ -49,11 +49,6 @@ struct FFMPEG_Library
     void *handle;
 
     /**
-     * https://github.com/FFmpeg/FFmpeg/blob/release/3.2/libavformat/avformat.h#L1982
-     */
-    void (*av_register_all)(void);
-
-    /**
      * https://github.com/FFmpeg/FFmpeg/blob/release/3.2/libavcodec/avcodec.h#L6228
      *
      * We use AVCodecDescriptor because it is the only structure that we can
@@ -70,7 +65,7 @@ struct FFMPEG_Library
 };
 
 #define NULL_FFMPEG_LIBRARY \
-    (struct FFMPEG_Library) { NULL, NULL, NULL, NULL }
+    (struct FFMPEG_Library) { NULL, NULL, NULL }
 
 /**
  * Loader that will inject the loaded functions into a FFMPEG_Library structure.
