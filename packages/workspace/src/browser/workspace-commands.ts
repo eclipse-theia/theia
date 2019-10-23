@@ -204,6 +204,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const dialog = new SingleTextInputDialog({
                         title: 'New File',
                         initialValue: vacantChildUri.path.base,
+                        spellCheck: false,
                         validate: name => this.validateFileName(name, parent, true)
                     });
 
@@ -226,6 +227,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const dialog = new SingleTextInputDialog({
                         title: 'New Folder',
                         initialValue: vacantChildUri.path.base,
+                        spellCheck: false,
                         validate: name => this.validateFileName(name, parent, true)
                     });
                     dialog.open().then(name => {
@@ -256,6 +258,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                                 start: 0,
                                 end: uri.path.name.length
                             },
+                            spellCheck: false,
                             validate: (name, mode) => {
                                 if (initialValue === name && mode === 'preview') {
                                     return false;

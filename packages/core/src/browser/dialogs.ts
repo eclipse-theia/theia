@@ -369,6 +369,7 @@ export class SingleTextInputDialogProps extends DialogProps {
         end: number
         direction?: 'forward' | 'backward' | 'none'
     };
+    readonly spellCheck?: boolean;
     readonly validate?: (input: string, mode: DialogMode) => MaybePromise<DialogError>;
 }
 
@@ -385,6 +386,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         this.inputField.type = 'text';
         this.inputField.setAttribute('style', 'flex: 0;');
         this.inputField.value = props.initialValue || '';
+        this.inputField.spellcheck = props.spellCheck !== undefined ? props.spellCheck : true;
         if (props.initialSelectionRange) {
             this.inputField.setSelectionRange(
                 props.initialSelectionRange.start,
