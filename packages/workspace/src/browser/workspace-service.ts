@@ -70,9 +70,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
     @postConstruct()
     protected async init(): Promise<void> {
         this.applicationName = FrontendApplicationConfigProvider.get().applicationName;
-        const wpUriString = await this.getDefaultWorkspacePath();
-        const wpStat = await this.toFileStat(wpUriString);
-        await this.setWorkspace(wpStat);
+        const wsUriString = await this.getDefaultWorkspaceUri();
+        const wsStat = await this.toFileStat(wsUriString);
+        await this.setWorkspace(wsStat);
 
         this.watcher.onFilesChanged(event => {
             if (this._workspace && FileChangeEvent.isAffected(event, new URI(this._workspace.uri))) {
@@ -88,9 +88,16 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
-     * Get the path of the workspace to use initially.
+     * Resolves to the default workspace URI as string.
+     *
+     * The default implementation tries to extract the default workspace location
+     * from the `window.location.hash`, then falls-back to the most recently
+     * used workspace root from the server.
+     *
+     * It is not ensured that the resolved workspace URI is valid, it can point
+     * to a non-existing location.
      */
-    protected getDefaultWorkspacePath(): MaybePromise<string | undefined> {
+    protected getDefaultWorkspaceUri(): MaybePromise<string | undefined> {
         // Prefer the workspace path specified as the URL fragment, if present.
         if (window.location.hash.length > 1) {
             // Remove the leading # and decode the URI.
@@ -101,6 +108,14 @@ export class WorkspaceService implements FrontendApplicationContribution {
             // specified on the CLI, or the most recent).
             return this.server.getMostRecentlyUsedWorkspace();
         }
+    }
+
+    /**
+     * Get the path of the workspace to use initially.
+     * @deprecated use `WorkspaceService#getDefaultWorkspaceUri` instead.
+     */
+    protected getDefaultWorkspacePath(): MaybePromise<string | undefined> {
+        return this.getDefaultWorkspaceUri();
     }
 
     /**
