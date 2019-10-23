@@ -19,6 +19,7 @@ import { FrontendApplication, AbstractViewContribution } from '@theia/core/lib/b
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { injectable, inject } from 'inversify';
 import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
+import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
@@ -27,8 +28,7 @@ import { FileSystem } from '@theia/filesystem/lib/common';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import URI from '@theia/core/lib/common/uri';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
-import { Git } from '../../common';
-import { GitRepositoryProvider } from '../git-repository-provider';
+import { Git, Repository } from '../../common';
 
 export namespace GitDiffCommands {
     export const OPEN_FILE_DIFF: Command = {
@@ -49,7 +49,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(OpenerService) protected openerService: OpenerService,
         @inject(MessageService) protected readonly notifications: MessageService,
-        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider
+        @inject(ScmService) protected readonly scmService: ScmService
     ) {
         super({
             widgetId: GIT_DIFF,
@@ -69,8 +69,8 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(GitDiffCommands.OPEN_FILE_DIFF, this.newUriAwareCommandHandler({
-            isVisible: uri => !!this.repositoryProvider.findRepository(uri),
-            isEnabled: uri => !!this.repositoryProvider.findRepository(uri),
+            isVisible: uri => !!this.findGitRepository(uri),
+            isEnabled: uri => !!this.findGitRepository(uri),
             execute: async fileUri => {
                 await this.quickOpenService.chooseTagsAndBranches(
                     async (fromRevision, toRevision) => {
@@ -96,9 +96,17 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                                 }
                             }
                         }
-                    }, this.repositoryProvider.findRepository(fileUri));
+                    }, this.findGitRepository(fileUri));
             }
         }));
+    }
+
+    protected findGitRepository(uri: URI): Repository | undefined {
+        const repo = this.scmService.findRepository(uri);
+        if (repo && repo.provider.id === 'git') {
+            return { localUri: repo.provider.rootUri };
+        }
+        return undefined;
     }
 
     async showWidget(options: Git.Options.Diff): Promise<GitDiffWidget> {

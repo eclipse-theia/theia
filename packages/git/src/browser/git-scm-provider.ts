@@ -30,7 +30,8 @@ import { Repository, Git, CommitWithChanges, GitFileChange, WorkingDirectoryStat
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitErrorHandler } from './git-error-handler';
 import { EditorWidget } from '@theia/editor/lib/browser';
-import { ScmProvider, ScmCommand, ScmResourceGroup, ScmAmendSupport, ScmCommit } from '@theia/scm/lib/browser/scm-provider';
+import { ScmProvider, ScmCommand, ScmResourceGroup, ScmAmendSupport, ScmCommit, ScmFileChange } from '@theia/scm/lib/browser/scm-provider';
+import { GitCommitDetailWidgetOptions } from './history/git-commit-detail-widget';
 
 @injectable()
 export class GitScmProviderOptions {
@@ -84,7 +85,7 @@ export class GitScmProvider implements ScmProvider {
 
     @postConstruct()
     protected init(): void {
-        this._amendSupport = new GitAmendSupport(this.repository, this.git);
+        this._amendSupport = new GitAmendSupport(this, this.repository, this.git);
     }
 
     get repository(): Repository {
@@ -362,8 +363,59 @@ export class GitScmProvider implements ScmProvider {
         await Promise.all(uris.map(uri => this.delete(new URI(uri))));
     }
 
+    public createScmCommit(gitCommit: CommitWithChanges): ScmCommit {
+        const range = {
+            fromRevision: gitCommit.sha + '~1',
+            toRevision: gitCommit.sha
+        };
+
+        const scmCommit: GitScmCommit = {
+            id: gitCommit.sha,
+            commitDetailUri: this.toCommitDetailUri(gitCommit.sha),
+            summary: gitCommit.summary,
+            messageBody: gitCommit.body,
+            authorName: gitCommit.author.name,
+            authorEmail: gitCommit.author.email,
+            authorTimestamp: gitCommit.author.timestamp,
+            authorDateRelative: gitCommit.authorDateRelative,
+            scmProvider: this,
+            gitFileChanges: gitCommit.fileChanges.map(change => new GitScmFileChange(change, this, range)),
+            get fileChanges() {
+                return this.gitFileChanges;
+            },
+            get commitDetailOptions(): GitCommitDetailWidgetOptions {
+                return {
+                    commitSha: gitCommit.sha,
+                    commitMessage: gitCommit.summary,
+                    messageBody: gitCommit.body,
+                    authorName: gitCommit.author.name,
+                    authorEmail: gitCommit.author.email,
+                    authorDate: gitCommit.author.timestamp,
+                    authorDateRelative: gitCommit.authorDateRelative,
+                };
+            }
+        };
+        return scmCommit;
+    }
+
+    public relativePath(uri: string): string {
+        const parsedUri = new URI(uri);
+        const gitRepo = { localUri: this.rootUri };
+        const relativePath = Repository.relativePath(gitRepo, parsedUri);
+        if (relativePath) {
+            return relativePath.toString();
+        }
+        return this.labelProvider.getLongName(parsedUri);
+    }
+
+    protected toCommitDetailUri(commitSha: string): URI {
+        return new URI('').withScheme(GitScmProvider.GIT_COMMIT_DETAIL).withFragment(commitSha);
+    }
+
 }
 export namespace GitScmProvider {
+    export const GIT_COMMIT_DETAIL = 'git-commit-detail-widget';
+
     export interface State {
         status?: WorkingDirectoryStatus
         stagedChanges: GitFileChange[]
@@ -380,21 +432,22 @@ export namespace GitScmProvider {
             groups: []
         };
     }
-    export const Factory = Symbol('GitScmProvider.Factory');
-    export type Factory = (options: GitScmProviderOptions) => GitScmProvider;
-    export function createFactory(ctx: interfaces.Context): Factory {
+    export type ContainerFactory = (options: GitScmProviderOptions) => interfaces.Container;
+    export function createFactory(ctx: interfaces.Context): ContainerFactory {
+        const typeContainer = ctx.container.get(GitScmProvider.ScmTypeContainer as interfaces.ServiceIdentifier<interfaces.Container>);
         return (options: GitScmProviderOptions) => {
-            const container = ctx.container.createChild();
+            const container = typeContainer.createChild();
             container.bind(GitScmProviderOptions).toConstantValue(options);
-            container.bind(GitScmProvider).toSelf().inSingletonScope();
-            return container.get(GitScmProvider);
+            return container;
         };
     }
+    export const ScmTypeContainer = Symbol('GitScmProvider.TypeContainer');
+    export const ContainerFactory = Symbol('GitScmProvider.ProviderContainer');
 }
 
 export class GitAmendSupport implements ScmAmendSupport {
 
-    constructor(protected readonly repository: Repository, protected readonly git: Git) { }
+    constructor(protected readonly provider: GitScmProvider, protected readonly repository: Repository, protected readonly git: Git) { }
 
     public async getInitialAmendingCommits(amendingHeadCommitSha: string, latestCommitSha: string): Promise<ScmCommit[]> {
         const commits = await this.git.log(
@@ -405,7 +458,7 @@ export class GitAmendSupport implements ScmAmendSupport {
             }
         );
 
-        return commits.map(this.createScmCommit);
+        return commits.map(commit => this.provider.createScmCommit(commit));
     }
 
     public async getMessage(commit: string): Promise<string> {
@@ -419,17 +472,67 @@ export class GitAmendSupport implements ScmAmendSupport {
     public async getLastCommit(): Promise<ScmCommit | undefined> {
         const commits = await this.git.log(this.repository, { maxCount: 1 });
         if (commits.length > 0) {
-            return this.createScmCommit(commits[0]);
+            return this.provider.createScmCommit(commits[0]);
         }
     }
+}
 
-    private createScmCommit(gitCommit: CommitWithChanges) {
-        return {
-            id: gitCommit.sha,
-            summary: gitCommit.summary,
-            authorName: gitCommit.author.name,
-            authorEmail: gitCommit.author.email,
-            authorDateRelative: gitCommit.authorDateRelative
-        };
+export interface GitScmCommit extends ScmCommit {
+    scmProvider: GitScmProvider;
+    gitFileChanges: GitScmFileChange[];
+}
+
+export class GitScmFileChange implements ScmFileChange {
+
+    constructor(
+        protected readonly fileChange: GitFileChange,
+        protected readonly scmProvider: GitScmProvider,
+        protected readonly range?: Git.Options.Range
+    ) { }
+
+    get uri() {
+        return this.fileChange.uri;
+    }
+
+    getCaption(): string {
+        const provider = this.scmProvider;
+        let result = `${provider.relativePath(this.fileChange.uri)} - ${GitFileStatus.toString(this.fileChange.status, true)}`;
+        if (this.fileChange.oldUri) {
+            result = `${provider.relativePath(this.fileChange.oldUri)} -> ${result}`;
+        }
+        return result;
+    }
+
+    getStatusCaption(): string {
+        return GitFileStatus.toString(this.fileChange.status, this.fileChange.staged);
+    }
+
+    getStatusAbbreviation(): string {
+        return GitFileStatus.toAbbreviation(this.fileChange.status, this.fileChange.staged);
+    }
+
+    getClassNameForStatus(): string {
+        return GitFileStatus[this.fileChange.status];
+    }
+
+    getUriToOpen(): URI {
+        const uri: URI = new URI(this.fileChange.uri);
+        const fromFileURI = this.fileChange.oldUri ? new URI(this.fileChange.oldUri) : uri; // set oldUri on renamed and copied
+        if (!this.range) {
+            return uri;
+        }
+        const fromRevision = this.range.fromRevision || 'HEAD';
+        const toRevision = this.range.toRevision || 'HEAD';
+        const fromURI = fromFileURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(fromRevision.toString());
+        const toURI = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(toRevision.toString());
+        let uriToOpen = uri;
+        if (this.fileChange.status === GitFileStatus.Deleted) {
+            uriToOpen = fromURI;
+        } else if (this.fileChange.status === GitFileStatus.New) {
+            uriToOpen = toURI;
+        } else {
+            uriToOpen = DiffUris.encode(fromURI, toURI);
+        }
+        return uriToOpen;
     }
 }

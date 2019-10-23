@@ -18,11 +18,15 @@ import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { StatefulWidget, SELECTED_CLASS, DiffUris } from '@theia/core/lib/browser';
 import { EditorManager, EditorOpenerOptions, EditorWidget, DiffNavigatorProvider, DiffNavigator } from '@theia/editor/lib/browser';
+import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
+import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
+import { GitScmProvider, GitScmFileChange } from '../git-scm-provider';
 import { GitWatcher } from '../../common';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
-import { GitNavigableListWidget } from '../git-navigable-list-widget';
+import { ScmNavigableListWidget } from '@theia/scm/lib/browser/scm-navigable-list-widget';
 import { GitFileChangeNode } from '../git-file-change-node';
+import { GitRepositoryProvider } from '../git-repository-provider';
 import { Message } from '@phosphor/messaging';
 import * as React from 'react';
 
@@ -30,7 +34,7 @@ import * as React from 'react';
 
 export const GIT_DIFF = 'git-diff';
 @injectable()
-export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> implements StatefulWidget {
+export class GitDiffWidget extends ScmNavigableListWidget<GitFileChangeNode> implements StatefulWidget {
 
     protected readonly GIT_DIFF_TITLE = 'Diff';
 
@@ -42,9 +46,11 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     protected listView?: GitDiffListContainer;
 
     @inject(Git) protected readonly git: Git;
+    @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider;
     @inject(DiffNavigatorProvider) protected readonly diffNavigatorProvider: DiffNavigatorProvider;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(GitWatcher) protected readonly gitWatcher: GitWatcher;
+    @inject(ScmService) protected readonly sucmService: ScmService;
 
     constructor() {
         super();
@@ -55,6 +61,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         this.title.closable = true;
         this.title.iconClass = 'theia-git-diff-icon';
 
+        this.addClass('theia-scm');
         this.addClass('theia-git');
     }
 
@@ -77,8 +84,10 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
 
     async setContent(options: Git.Options.Diff) {
         this.options = options;
-        const repository = this.repositoryProvider.findRepositoryOrSelected(options);
-        if (repository) {
+        const scmRepository = this.findRepositoryOrSelected(options.uri);
+        if (scmRepository && scmRepository.provider.id === 'git') {
+            const provider = scmRepository.provider as GitScmProvider;
+            const repository = { localUri: scmRepository.provider.rootUri };
             const fileChanges: GitFileChange[] = await this.git.diff(repository, {
                 range: options.range,
                 uri: options.uri
@@ -92,14 +101,23 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                     this.relativePath(fileChangeUri.parent)
                 ]);
 
-                const caption = this.computeCaption(fileChange);
+                const gitScmFileChange = new GitScmFileChange(fileChange, provider, options.range);
+                const caption = this.computeCaption(gitScmFileChange);
+                const statusCaption = gitScmFileChange.getStatusCaption();
                 fileChangeNodes.push({
-                    ...fileChange, icon, label, description, caption
+                    ...fileChange, icon, label, description, caption, statusCaption
                 });
             }
             this.fileChangeNodes = fileChangeNodes;
             this.update();
         }
+    }
+
+    protected findRepositoryOrSelected(uri?: string): ScmRepository | undefined {
+        if (uri) {
+            return this.scmService.findRepository(new URI(uri));
+        }
+        return this.scmService.selectedRepository;
     }
 
     storeState(): object {
@@ -125,10 +143,10 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
 
     protected render(): React.ReactNode {
-        this.gitNodes = this.fileChangeNodes;
+        this.scmNodes = this.fileChangeNodes;
         const commitishBar = this.renderDiffListHeader();
         const fileChangeList = this.renderFileChangeList();
-        return <div className='git-diff-container'>{commitishBar}{fileChangeList}</div>;
+        return <div className='scm-diff-container'>{commitishBar}{fileChangeList}</div>;
     }
 
     protected renderDiffListHeader(): React.ReactNode {
@@ -237,7 +255,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     protected doAddGitDiffListKeyListeners(id: string) {
         const container = document.getElementById(id);
         if (container) {
-            this.addGitListNavigationKeyListeners(container);
+            this.addListNavigationKeyListeners(container);
         }
     }
 
@@ -265,7 +283,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
             <div
                 title={change.caption}
                 className={'status staged ' + GitFileStatus[change.status].toLowerCase()}>
-                {this.getStatusCaption(change.status, true).charAt(0)}
+                {change.statusCaption ? change.statusCaption.charAt(0) : undefined}
             </div>
         </div>;
     }
@@ -287,8 +305,8 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                     this.revealChange(selected);
                 }
             });
-        } else if (this.gitNodes.length > 0) {
-            this.selectNode(this.gitNodes[0]);
+        } else if (this.scmNodes.length > 0) {
+            this.selectNode(this.scmNodes[0]);
             this.openSelected();
         }
     }
@@ -315,19 +333,19 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
 
     protected selectNextNode() {
         const idx = this.indexOfSelected;
-        if (idx >= 0 && idx < this.gitNodes.length - 1) {
-            this.selectNode(this.gitNodes[idx + 1]);
-        } else if (this.gitNodes.length > 0 && (idx === -1 || idx === this.gitNodes.length - 1)) {
-            this.selectNode(this.gitNodes[0]);
+        if (idx >= 0 && idx < this.scmNodes.length - 1) {
+            this.selectNode(this.scmNodes[idx + 1]);
+        } else if (this.scmNodes.length > 0 && (idx === -1 || idx === this.scmNodes.length - 1)) {
+            this.selectNode(this.scmNodes[0]);
         }
     }
 
     protected selectPreviousNode() {
         const idx = this.indexOfSelected;
         if (idx > 0) {
-            this.selectNode(this.gitNodes[idx - 1]);
+            this.selectNode(this.scmNodes[idx - 1]);
         } else if (idx === 0) {
-            this.selectNode(this.gitNodes[this.gitNodes.length - 1]);
+            this.selectNode(this.scmNodes[this.scmNodes.length - 1]);
         }
     }
 

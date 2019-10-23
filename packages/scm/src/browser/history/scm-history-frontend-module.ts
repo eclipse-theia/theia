@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2019 Arm and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,35 +14,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-.theia-git .commitListElement {
-    margin: 3px 0;
-}
+import { interfaces } from 'inversify';
+import { ScmHistoryContribution, SCM_HISTORY_ID } from './scm-history-contribution';
+import { WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
+import { ScmHistoryWidget } from './scm-history-widget';
 
-.theia-git .commitBody {
-    padding-bottom: 10px;
-}
+import '../../../src/browser/style/history.css';
 
-.theia-git .commitFileList .theia-header {
-    margin-top: 5px;
-}
+export function bindScmHistoryModule(bind: interfaces.Bind) {
 
-.theia-git .commit-info .header-row {
-    margin: 4px 0;
-}
+    bind(ScmHistoryWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: SCM_HISTORY_ID,
+        createWidget: () => ctx.container.get<ScmHistoryWidget>(ScmHistoryWidget)
+    }));
 
-.theia-git .commit-info .header-row .theia-header {
-    margin: 1px 0;
-}
+    bindViewContribution(bind, ScmHistoryContribution);
 
-.theia-git .commit-info .header-row .header-value {
-    margin: 0 0 0 5px;
-}
-
-.theia-git .commit-info-row .image-container {
-    display: flex;
-}
-
-.tab-git-icon {
-    width: 20px!important;
-    height: 20px;
 }

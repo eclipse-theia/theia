@@ -90,14 +90,16 @@ export class NameStatusParser extends OutputParser<GitFileChange> {
                 changes.push({
                     status,
                     uri,
-                    oldUri
+                    oldUri,
+                    staged: true
                 });
                 index = index + 3;
             } else {
                 const uri = this.toUri(repositoryUri, items[index + 1]);
                 changes.push({
                     status,
-                    uri
+                    uri,
+                    staged: true
                 });
                 index = index + 2;
             }

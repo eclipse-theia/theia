@@ -42,6 +42,8 @@ import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitSyncService } from './git-sync-service';
 import { GitErrorHandler } from './git-error-handler';
 import { GitScmProvider } from './git-scm-provider';
+import { GitHistorySupport } from './history/git-history-support';
+import { ScmHistorySupport } from '@theia/scm/lib/browser/history/scm-history-widget';
 
 export default new ContainerModule(bind => {
     bindGitPreferences(bind);
@@ -64,9 +66,16 @@ export default new ContainerModule(bind => {
     bind(GitResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(GitResourceResolver);
 
-    bind(GitScmProvider.Factory).toFactory(GitScmProvider.createFactory);
+    bind(GitScmProvider.ContainerFactory).toFactory(GitScmProvider.createFactory);
     bind(GitRepositoryProvider).toSelf().inSingletonScope();
     bind(GitQuickOpenService).toSelf().inSingletonScope();
+    bind(GitScmProvider.ScmTypeContainer).toDynamicValue(({ container }) => {
+        const child = container.createChild();
+        child.bind(GitScmProvider).toSelf().inTransientScope();
+        child.bind(GitHistorySupport).toSelf().inTransientScope();
+        child.bind(ScmHistorySupport).toService(GitHistorySupport);
+        return child;
+    }).inSingletonScope();
 
     bind(LabelProviderContribution).to(GitUriLabelProviderContribution).inSingletonScope();
     bind(NavigatorTreeDecorator).to(GitDecorator).inSingletonScope();

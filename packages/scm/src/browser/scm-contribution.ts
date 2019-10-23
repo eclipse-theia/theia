@@ -25,11 +25,14 @@ import {
 } from '@theia/core/lib/browser';
 import { CommandRegistry, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
+import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { ScmService } from './scm-service';
 import { ScmWidget } from '../browser/scm-widget';
 import URI from '@theia/core/lib/common/uri';
 import { ScmQuickOpenService } from './scm-quick-open-service';
 import { ScmRepository } from './scm-repository';
+
+export const EDITOR_CONTEXT_MENU_SCM = [...EDITOR_CONTEXT_MENU, '3_scm'];
 
 export const SCM_WIDGET_FACTORY_ID = 'scm';
 
@@ -60,7 +63,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
     constructor() {
         super({
             widgetId: SCM_WIDGET_FACTORY_ID,
-            widgetName: 'SCM',
+            widgetName: 'Source Control',
             defaultWidgetOptions: {
                 area: 'left',
                 rank: 300

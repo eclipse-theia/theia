@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { SELECTED_CLASS, Key } from '@theia/core/lib/browser';
-import { GitFileStatus, Repository, GitFileChange } from '../common';
+import { ScmFileChange } from './scm-provider';
+import { ScmService } from './scm-service';
 import URI from '@theia/core/lib/common/uri';
-import { GitRepositoryProvider } from './git-repository-provider';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { Message } from '@phosphor/messaging';
 import { ElementExt } from '@phosphor/domutils';
@@ -26,12 +26,12 @@ import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from 'react';
 
 @injectable()
-export abstract class GitNavigableListWidget<T extends { selected?: boolean }> extends ReactWidget {
+export abstract class ScmNavigableListWidget<T extends { selected?: boolean }> extends ReactWidget {
 
-    protected gitNodes: T[];
+    protected scmNodes: T[];
     private _scrollContainer: string;
 
-    @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider;
+    @inject(ScmService) protected readonly scmService: ScmService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
     constructor() {
@@ -66,36 +66,35 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         })();
     }
 
-    protected getStatusCaption(status: GitFileStatus, staged?: boolean): string {
-        return GitFileStatus.toString(status, staged);
+    protected getStatusCaption(status: ScmFileChange): string {
+        return status.getStatusCaption();
     }
 
-    protected getAbbreviatedStatusCaption(status: GitFileStatus, staged?: boolean): string {
-        return GitFileStatus.toAbbreviation(status, staged);
+    protected getAbbreviatedStatusCaption(status: ScmFileChange): string {
+        return status.getStatusAbbreviation();
     }
 
     protected relativePath(uri: URI | string): string {
         const parsedUri = typeof uri === 'string' ? new URI(uri) : uri;
-        const repo = this.repositoryProvider.findRepository(parsedUri);
-        const relativePath = repo && Repository.relativePath(repo, parsedUri);
-        if (relativePath) {
-            return relativePath.toString();
+        const repository = this.scmService.findRepository(parsedUri);
+        if (repository) {
+            const repositoryUri = new URI(repository.provider.rootUri);
+            const relativePath = repositoryUri.relative(new URI(String(uri)));
+            if (relativePath) {
+                return relativePath.toString();
+            }
         }
         return this.labelProvider.getLongName(parsedUri);
     }
 
     protected getRepositoryLabel(uri: string): string | undefined {
-        const repository = this.repositoryProvider.findRepository(new URI(uri));
-        const isSelectedRepo = this.repositoryProvider.selectedRepository && repository && this.repositoryProvider.selectedRepository.localUri === repository.localUri;
-        return repository && !isSelectedRepo ? this.labelProvider.getLongName(new URI(repository.localUri)) : undefined;
+        const repository = this.scmService.findRepository(new URI(uri));
+        const isSelectedRepo = this.scmService.selectedRepository && repository && this.scmService.selectedRepository.provider.rootUri === repository.provider.rootUri;
+        return repository && !isSelectedRepo ? this.labelProvider.getLongName(new URI(repository.provider.rootUri)) : undefined;
     }
 
-    protected computeCaption(fileChange: GitFileChange): string {
-        let result = `${this.relativePath(fileChange.uri)} - ${this.getStatusCaption(fileChange.status, true)}`;
-        if (fileChange.oldUri) {
-            result = `${this.relativePath(fileChange.oldUri)} -> ${result}`;
-        }
-        return result;
+    protected computeCaption(fileChange: ScmFileChange): string {
+        return fileChange.getCaption();
     }
 
     protected renderHeaderRow({ name, value, classNames, title }: { name: string, value: React.ReactNode, classNames?: string[], title?: string }): React.ReactNode {
@@ -109,7 +108,7 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
         </div>;
     }
 
-    protected addGitListNavigationKeyListeners(container: HTMLElement) {
+    protected addListNavigationKeyListeners(container: HTMLElement) {
         this.addKeyListener(container, Key.ARROW_LEFT, () => this.navigateLeft());
         this.addKeyListener(container, Key.ARROW_RIGHT, () => this.navigateRight());
         this.addKeyListener(container, Key.ARROW_UP, () => this.navigateUp());
@@ -138,7 +137,7 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
     }
 
     protected getSelected(): T | undefined {
-        return this.gitNodes ? this.gitNodes.find(c => c.selected || false) : undefined;
+        return this.scmNodes ? this.scmNodes.find(c => c.selected || false) : undefined;
     }
 
     protected selectNode(node: T) {
@@ -152,23 +151,23 @@ export abstract class GitNavigableListWidget<T extends { selected?: boolean }> e
 
     protected selectNextNode() {
         const idx = this.indexOfSelected;
-        if (idx >= 0 && idx < this.gitNodes.length - 1) {
-            this.selectNode(this.gitNodes[idx + 1]);
-        } else if (this.gitNodes.length > 0 && idx === -1) {
-            this.selectNode(this.gitNodes[0]);
+        if (idx >= 0 && idx < this.scmNodes.length - 1) {
+            this.selectNode(this.scmNodes[idx + 1]);
+        } else if (this.scmNodes.length > 0 && idx === -1) {
+            this.selectNode(this.scmNodes[0]);
         }
     }
 
     protected selectPreviousNode() {
         const idx = this.indexOfSelected;
         if (idx > 0) {
-            this.selectNode(this.gitNodes[idx - 1]);
+            this.selectNode(this.scmNodes[idx - 1]);
         }
     }
 
     protected get indexOfSelected(): number {
-        if (this.gitNodes && this.gitNodes.length > 0) {
-            return this.gitNodes.findIndex(c => c.selected || false);
+        if (this.scmNodes && this.scmNodes.length > 0) {
+            return this.scmNodes.findIndex(c => c.selected || false);
         }
         return -1;
     }
