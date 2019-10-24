@@ -238,7 +238,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         }
     }
 
-    protected setInputValue = (event: React.ChangeEvent<HTMLTextAreaElement> | string) => {
+    protected setInputValue = (event: { currentTarget: HTMLTextAreaElement } | string) => {
         const repository = this.scmService.selectedRepository;
         if (repository) {
             repository.input.value = typeof event === 'string' ? event : event.currentTarget.value;
