@@ -35,8 +35,9 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
         }
         const registerLanguage = monaco.languages.register.bind(monaco.languages);
         monaco.languages.register = language => {
-            registerLanguage(language);
+            // first register override identifier, because monaco will immediately update already opened documents and then initialize with bad preferences.
             this.preferenceSchema.registerOverrideIdentifier(language.id);
+            registerLanguage(language);
         };
     }
 
