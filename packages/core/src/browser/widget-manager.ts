@@ -25,35 +25,45 @@ export const WidgetFactory = Symbol('WidgetFactory');
  */
 export interface WidgetFactory {
 
-    /*
-     * the factory's id
+    /**
+     * The factory id.
      */
     readonly id: string;
 
     /**
-     * Creates a widget and attaches it to the shell
-     * The options need to be serializable JSON data.
+     * Creates a widget and attaches it to the application shell.
+     * @param options serializable JSON data.
      */
     createWidget(options?: any): MaybePromise<Widget>;
 }
 
-/*
- * a serializable description to create a widget
+/**
+ * Representation of the `WidgetConstructionOptions`.
+ * Defines a serializable description to create widgets.
  */
 export interface WidgetConstructionOptions {
     /**
-     * the id of the widget factory to use.
+     * The id of the widget factory to use.
      */
     factoryId: string,
 
-    /*
-     * widget factory specific information
+    /**
+     * The widget factory specific information.
      */
     options?: any
 }
 
+/**
+ * Representation of a `didCreateWidgetEvent`.
+ */
 export interface DidCreateWidgetEvent {
+    /**
+     * The widget which was created.
+     */
     readonly widget: Widget;
+    /**
+     * The widget factory id.
+     */
     readonly factoryId: string;
 }
 
@@ -77,6 +87,12 @@ export class WidgetManager {
     protected readonly onDidCreateWidgetEmitter = new Emitter<DidCreateWidgetEvent>();
     readonly onDidCreateWidget: Event<DidCreateWidgetEvent> = this.onDidCreateWidgetEmitter.event;
 
+    /**
+     * Get the list of widgets created for the given factory id.
+     * @param factoryId the widget factory id.
+     *
+     * @returns the list of widgets created for the given factory id.
+     */
     getWidgets(factoryId: string): Widget[] {
         const result: Widget[] = [];
         for (const [key, widget] of this.widgets.entries()) {
@@ -87,6 +103,11 @@ export class WidgetManager {
         return result;
     }
 
+    /**
+     * Try and get the widget.
+     *
+     * @returns the widget if available, else `undefined`.
+     */
     tryGetWidget<T extends Widget>(factoryId: string, options?: any): T | undefined {
         const key = this.toKey({ factoryId, options });
         const existing = this.widgetPromises.get(key);
@@ -97,7 +118,9 @@ export class WidgetManager {
     }
 
     /**
-     * return the widget for the given description
+     * Get the widget for the given description.
+     *
+     * @returns a promise resolving to the widget if available, else `undefined.
      */
     async getWidget<T extends Widget>(factoryId: string, options?: any): Promise<T | undefined> {
         const key = this.toKey({ factoryId, options });
@@ -114,8 +137,8 @@ export class WidgetManager {
         return undefined;
     }
 
-    /*
-     * creates or returns the widget for the given description.
+    /**
+     * Creates or returns the widget for the given description.
      */
     async getOrCreateWidget<T extends Widget>(factoryId: string, options?: any): Promise<T> {
         const key = this.toKey({ factoryId, options });
@@ -146,8 +169,11 @@ export class WidgetManager {
         }
     }
 
-    /*
-     *  returns the construction description for the given widget, or undefined if the widget was not created through this manager.
+    /**
+     * Get the widget construction options.
+     * @param widget the widget.
+     *
+     * @returns the widget construction options if the widget was created through the manager, else `undefined`.
      */
     getDescription(widget: Widget): WidgetConstructionOptions | undefined {
         for (const [key, aWidget] of this.widgets.entries()) {
@@ -158,10 +184,22 @@ export class WidgetManager {
         return undefined;
     }
 
+    /**
+     * Convert the widget construction options to string.
+     * @param options the widget construction options.
+     *
+     * @returns the widget construction options represented as a string.
+     */
     protected toKey(options: WidgetConstructionOptions): string {
         return JSON.stringify(options);
     }
 
+    /**
+     * Convert the key into the widget construction options object.
+     * @param key the key.
+     *
+     * @returns the widget construction options object.
+     */
     protected fromKey(key: string): WidgetConstructionOptions {
         return JSON.parse(key);
     }

@@ -25,7 +25,14 @@ import { CompositeTreeNode } from '@theia/core/lib/browser/tree';
 
 export const OUTLINE_WIDGET_FACTORY_ID = 'outline-view';
 
+/**
+ * Collection of `outline-view` commands.
+ */
 export namespace OutlineViewCommands {
+    /**
+     * Command which collapses all nodes
+     * from the `outline-view` tree.
+     */
     export const COLLAPSE_ALL: Command = {
         id: 'outlineView.collapse.all',
         iconClass: 'collapse-all'
@@ -81,6 +88,9 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
         }
     }
 
+    /**
+     * Determine if the current widget is the `outline-view`.
+     */
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), cb: (widget: OutlineViewWidget) => T): T | false {
         if (widget instanceof OutlineViewWidget && widget.id === OUTLINE_WIDGET_FACTORY_ID) {
             return cb(widget);
