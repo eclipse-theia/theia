@@ -53,6 +53,11 @@ export class OutlineViewService implements WidgetFactory {
         return this.widget !== undefined && this.widget.isVisible;
     }
 
+    /**
+     * Publish the collection of outline view symbols.
+     * - Publishing includes setting the `OutlineViewWidget` tree with symbol information.
+     * @param roots the list of outline symbol information nodes.
+     */
     publish(roots: OutlineSymbolInformationNode[]): void {
         if (this.widget) {
             this.widget.setOutlineTree(roots);

@@ -41,5 +41,11 @@ export abstract class ReactWidget extends BaseWidget {
         ReactDOM.render(<React.Fragment>{this.render()}</React.Fragment>, this.node, () => this.onRender.dispose());
     }
 
+    /**
+     * Render the React widget in the DOM.
+     * - If the widget has been previously rendered,
+     * any subsequent calls will perform an update and only
+     * change the DOM if absolutely necessary.
+     */
     protected abstract render(): React.ReactNode;
 }

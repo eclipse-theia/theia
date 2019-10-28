@@ -31,11 +31,30 @@ import { Emitter } from '@theia/core';
 import { CompositeTreeNode } from '@theia/core/lib/browser';
 import * as React from 'react';
 
+/**
+ * Representation of an outline symbol information node.
+ */
 export interface OutlineSymbolInformationNode extends CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode {
+    /**
+     * The `iconClass` for the given tree node.
+     */
     iconClass: string;
 }
 
+/**
+ * Collection of outline symbol information node functions.
+ */
 export namespace OutlineSymbolInformationNode {
+    /**
+     * Determine if the given tree node is an `OutlineSymbolInformationNode`.
+     * - The tree node is an `OutlineSymbolInformationNode` if:
+     *  - The node exists.
+     *  - The node is selectable.
+     *  - The node contains a defined `iconClass` property.
+     * @param node the tree node.
+     *
+     * @returns `true` if the given node is an `OutlineSymbolInformationNode`.
+     */
     export function is(node: TreeNode): node is OutlineSymbolInformationNode {
         return !!node && SelectableTreeNode.is(node) && 'iconClass' in node;
     }
@@ -64,8 +83,14 @@ export class OutlineViewWidget extends TreeWidget {
         this.addClass('theia-outline-view');
     }
 
+    /**
+     * Set the outline tree with the list of `OutlineSymbolInformationNode`.
+     * @param roots the list of `OutlineSymbolInformationNode`.
+     */
     public setOutlineTree(roots: OutlineSymbolInformationNode[]): void {
+        // Gather the list of available nodes.
         const nodes = this.reconcileTreeState(roots);
+        // Update the model root node, appending the outline symbol information nodes as children.
         this.model.root = {
             id: 'outline-view-root',
             name: 'Outline Root',
@@ -75,6 +100,12 @@ export class OutlineViewWidget extends TreeWidget {
         } as CompositeTreeNode;
     }
 
+    /**
+     * Reconcile the outline tree state, gathering all available nodes.
+     * @param nodes the list of `TreeNode`.
+     *
+     * @returns the list of tree nodes.
+     */
     protected reconcileTreeState(nodes: TreeNode[]): TreeNode[] {
         nodes.forEach(node => {
             if (OutlineSymbolInformationNode.is(node)) {
@@ -114,6 +145,14 @@ export class OutlineViewWidget extends TreeWidget {
         };
     }
 
+    /**
+     * Get the tooltip for the given tree node.
+     * - The tooltip is discovered when hovering over a tree node.
+     * - If available, the tooltip is the concatenation of the node name, and it's type.
+     * @param node the tree node.
+     *
+     * @returns the tooltip for the tree node if available, else `undefined`.
+     */
     protected getNodeTooltip(node: TreeNode): string | undefined {
         if (OutlineSymbolInformationNode.is(node)) {
             return node.name + ` (${node.iconClass})`;

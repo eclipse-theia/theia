@@ -49,6 +49,15 @@ export default new ContainerModule(bind => {
     bind(TabBarToolbarContribution).toService(OutlineViewContribution);
 });
 
+/**
+ * Create an `OutlineViewWidget`.
+ * - The creation of the `OutlineViewWidget` includes:
+ *  - The creation of the tree widget itself with it's own customized props.
+ *  - The binding of necessary components into the container.
+ * @param parent the Inversify container.
+ *
+ * @returns the `OutlineViewWidget`.
+ */
 function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidget {
     const child = createTreeContainer(parent);
 
