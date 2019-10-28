@@ -24,7 +24,6 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { TextDocumentShowOptions } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import { createUntitledResource } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
-import { WebviewWidget } from '@theia/plugin-ext/lib/main/browser/webview/webview';
 import { fromViewColumn, toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -43,10 +42,6 @@ export namespace VscodeCommands {
 
     export const SET_CONTEXT: Command = {
         id: 'setContext'
-    };
-
-    export const PREVIEW_HTML: Command = {
-        id: 'vscode.previewHtml'
     };
 }
 
@@ -121,26 +116,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             // tslint:disable-next-line: no-any
             execute: (contextKey: any, contextValue: any) => {
                 this.contextKeyService.createKey(String(contextKey), contextValue);
-            }
-        });
-        commands.registerCommand(VscodeCommands.PREVIEW_HTML, {
-            isVisible: () => false,
-            // tslint:disable-next-line: no-any
-            execute: async (resource: URI, position?: any, label?: string, options?: any) => {
-                label = label || resource.fsPath;
-                const view = new WebviewWidget(label, { allowScripts: true }, {}, this.mouseTracker);
-                const res = await this.resources(new TheiaURI(resource));
-                const str = await res.readContents();
-                const html = this.getHtml(str);
-                this.shell.addWidget(view, { area: 'main', mode: 'split-right' });
-                this.shell.activateWidget(view.id);
-                view.setHTML(html);
-
-                const editorWidget = await this.editorManager.getOrCreateByUri(new TheiaURI(resource));
-                editorWidget.editor.onDocumentContentChanged(listener => {
-                    view.setHTML(this.getHtml(editorWidget.editor.document.getText()));
-                });
-
             }
         });
 
@@ -335,10 +310,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         );
         // TODO register other `vscode.execute...` commands.
         // see https://github.com/microsoft/vscode/blob/master/src/vs/workbench/api/common/extHostApiCommands.ts
-    }
-
-    private getHtml(body: String): string {
-        return `<!DOCTYPE html><html><head></head>${body}</html>`;
     }
 
 }
