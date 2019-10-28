@@ -14,18 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { v4 } from 'uuid';
 import { WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import URI from 'vscode-uri/lib/umd';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters';
-import { IdGenerator } from '../common/id-generator';
 import { Disposable, WebviewPanelTargetArea } from './types-impl';
 
 export class WebviewsExtImpl implements WebviewsExt {
     private readonly proxy: WebviewsMain;
-    private readonly idGenerator = new IdGenerator('v');
     private readonly webviewPanels = new Map<string, WebviewPanelImpl>();
     private readonly serializers = new Map<string, theia.WebviewPanelSerializer>();
 
@@ -85,7 +84,7 @@ export class WebviewsExtImpl implements WebviewsExt {
         extensionLocation: URI): theia.WebviewPanel {
 
         const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
-        const viewId = this.idGenerator.nextId();
+        const viewId = v4();
         this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, options, extensionLocation);
 
         const webview = new WebviewImpl(viewId, this.proxy, options);

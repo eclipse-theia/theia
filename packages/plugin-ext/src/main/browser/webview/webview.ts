@@ -13,9 +13,11 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
+import { injectable, inject, postConstruct } from 'inversify';
 import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
-import { IdGenerator } from '../../../common/id-generator';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+// TODO: get rid of dependencies to the mini browser
 import { MiniBrowserContentStyle } from '@theia/mini-browser/lib/browser/mini-browser-content-style';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
@@ -31,8 +33,16 @@ export interface WebviewEvents {
     onLoad?(contentDocument: Document): void;
 }
 
+@injectable()
+export class WebviewWidgetIdentifier {
+    id: string;
+}
+
+@injectable()
 export class WebviewWidget extends BaseWidget {
-    private static readonly ID = new IdGenerator('webview-widget-');
+
+    static FACTORY_ID = 'plugin-webview';
+
     private iframe: HTMLIFrameElement;
     private state: { [key: string]: any } | undefined = undefined;
     private loadTimeout: number | undefined;
@@ -42,15 +52,19 @@ export class WebviewWidget extends BaseWidget {
     // XXX This is a hack to be able to tack the mouse events when drag and dropping the widgets. On `mousedown` we put a transparent div over the `iframe` to avoid losing the mouse tacking.
     protected readonly transparentOverlay: HTMLElement;
 
-    constructor(title: string,
-        private options: WebviewWidgetOptions,
-        private eventDelegate: WebviewEvents,
-        protected readonly mouseTracker: ApplicationShellMouseTracker) {
+    @inject(WebviewWidgetIdentifier)
+    protected readonly identifier: WebviewWidgetIdentifier;
+
+    @inject(ApplicationShellMouseTracker)
+    protected readonly mouseTracker: ApplicationShellMouseTracker;
+
+    private options: WebviewWidgetOptions = {};
+    eventDelegate: WebviewEvents = {};
+
+    constructor() {
         super();
         this.node.tabIndex = 0;
-        this.id = WebviewWidget.ID.nextId();
         this.title.closable = true;
-        this.title.label = title;
         this.addClass(WebviewWidget.Styles.WEBVIEW);
         this.scrollY = 0;
 
@@ -59,16 +73,21 @@ export class WebviewWidget extends BaseWidget {
         this.transparentOverlay.style.display = 'none';
         this.node.appendChild(this.transparentOverlay);
 
-        this.toDispose.push(this.mouseTracker.onMousedown(e => {
+        this.toDispose.push(this.mouseTracker.onMousedown(() => {
             if (this.iframe.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'block';
             }
         }));
-        this.toDispose.push(this.mouseTracker.onMouseup(e => {
+        this.toDispose.push(this.mouseTracker.onMouseup(() => {
             if (this.iframe.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'none';
             }
         }));
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.id = WebviewWidget.FACTORY_ID + ':' + this.identifier.id;
     }
 
     protected handleMessage(message: any): void {
@@ -88,11 +107,14 @@ export class WebviewWidget extends BaseWidget {
     }
 
     setOptions(options: WebviewWidgetOptions): void {
-        if (!this.iframe || this.options.allowScripts === options.allowScripts) {
+        if (this.options.allowScripts === options.allowScripts) {
+            return;
+        }
+        this.options = options;
+        if (!this.iframe) {
             return;
         }
         this.updateSandboxAttribute(this.iframe, options.allowScripts);
-        this.options = options;
         this.reloadFrame();
     }
 

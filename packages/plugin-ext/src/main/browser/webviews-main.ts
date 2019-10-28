@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import debounce = require('lodash.debounce');
 import { WebviewsMain, MAIN_RPC_CONTEXT, WebviewsExt } from '../../common/plugin-api-rpc';
 import { interfaces } from 'inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
@@ -21,26 +22,25 @@ import { UriComponents } from '../../common/uri-components';
 import { WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions } from '@theia/plugin';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import { WebviewWidget } from './webview/webview';
+import { WebviewWidget, WebviewWidgetIdentifier } from './webview/webview';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ThemeRulesService } from './webview/theme-rules-service';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ViewColumnService } from './view-column-service';
-import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
-
-import debounce = require('lodash.debounce');
+import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 
 export class WebviewsMainImpl implements WebviewsMain, Disposable {
+
     private readonly revivers = new Set<string>();
     private readonly proxy: WebviewsExt;
     protected readonly shell: ApplicationShell;
+    protected readonly widgets: WidgetManager;
     protected readonly viewColumnService: ViewColumnService;
     protected readonly keybindingRegistry: KeybindingRegistry;
     protected readonly themeService = ThemeService.get();
     protected readonly themeRulesService = ThemeRulesService.get();
     protected readonly updateViewOptions: () => void;
 
-    private readonly views = new Map<string, WebviewWidget>();
     private readonly viewsOptions = new Map<string, {
         panelOptions: WebviewPanelShowOptions;
         options: (WebviewPanelOptions & WebviewOptions) | undefined;
@@ -49,16 +49,14 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         visible: boolean;
     }>();
 
-    protected readonly mouseTracker: ApplicationShellMouseTracker;
-
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEWS_EXT);
         this.shell = container.get(ApplicationShell);
-        this.mouseTracker = container.get(ApplicationShellMouseTracker);
         this.keybindingRegistry = container.get(KeybindingRegistry);
         this.viewColumnService = container.get(ViewColumnService);
+        this.widgets = container.get(WidgetManager);
         this.updateViewOptions = debounce<() => void>(() => {
             for (const key of this.viewsOptions.keys()) {
                 this.checkViewOptions(key);
@@ -73,50 +71,54 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         this.toDispose.dispose();
     }
 
-    $createWebviewPanel(
+    async $createWebviewPanel(
         panelId: string,
+        // TODO check webview API completness, implement or get rid of missing APIs
         viewType: string,
         title: string,
         showOptions: WebviewPanelShowOptions,
         options: (WebviewPanelOptions & WebviewOptions) | undefined,
+        // TODO check webview API completness, implement or get rid of missing APIs
         extensionLocation: UriComponents
-    ): void {
+    ): Promise<void> {
         const toDisposeOnClose = new DisposableCollection();
         const toDisposeOnLoad = new DisposableCollection();
-        const view = new WebviewWidget(title, {
+        const view = await this.widgets.getOrCreateWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: panelId });
+        view.title.label = title;
+        view.setOptions({
             allowScripts: options ? options.enableScripts : false
-        }, {
-                onMessage: m => {
-                    this.proxy.$onMessage(panelId, m);
-                },
-                onKeyboardEvent: e => {
-                    this.keybindingRegistry.run(e);
-                },
-                onLoad: contentDocument => {
-                    const styleId = 'webview-widget-theme';
-                    let styleElement: HTMLStyleElement | null | undefined;
-                    if (!toDisposeOnLoad.disposed) {
-                        // if reload the frame
-                        toDisposeOnLoad.dispose();
-                        styleElement = <HTMLStyleElement>contentDocument.getElementById(styleId);
-                    }
-                    toDisposeOnClose.push(toDisposeOnLoad);
-                    if (!styleElement) {
-                        const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
-                        styleElement = this.themeRulesService.createStyleSheet(parent);
-                        styleElement.id = styleId;
-                        parent.appendChild(styleElement);
-                    }
-
-                    this.themeRulesService.setRules(styleElement, this.themeRulesService.getCurrentThemeRules());
-                    contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
-                    toDisposeOnLoad.push(this.themeService.onThemeChange(() => {
-                        this.themeRulesService.setRules(<HTMLElement>styleElement, this.themeRulesService.getCurrentThemeRules());
-                        contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
-                    }));
-                }
+        });
+        view.eventDelegate = {
+            onMessage: m => {
+                this.proxy.$onMessage(panelId, m);
             },
-            this.mouseTracker);
+            onKeyboardEvent: e => {
+                this.keybindingRegistry.run(e);
+            },
+            onLoad: contentDocument => {
+                const styleId = 'webview-widget-theme';
+                let styleElement: HTMLStyleElement | null | undefined;
+                if (!toDisposeOnLoad.disposed) {
+                    // if reload the frame
+                    toDisposeOnLoad.dispose();
+                    styleElement = <HTMLStyleElement>contentDocument.getElementById(styleId);
+                }
+                toDisposeOnClose.push(toDisposeOnLoad);
+                if (!styleElement) {
+                    const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
+                    styleElement = this.themeRulesService.createStyleSheet(parent);
+                    styleElement.id = styleId;
+                    parent.appendChild(styleElement);
+                }
+
+                this.themeRulesService.setRules(styleElement, this.themeRulesService.getCurrentThemeRules());
+                contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
+                toDisposeOnLoad.push(this.themeService.onThemeChange(() => {
+                    this.themeRulesService.setRules(<HTMLElement>styleElement, this.themeRulesService.getCurrentThemeRules());
+                    contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
+                }));
+            }
+        };
         view.disposed.connect(() => {
             toDisposeOnClose.dispose();
             this.proxy.$onDidDisposeWebviewPanel(panelId);
@@ -126,16 +128,14 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         const viewId = view.id;
         toDisposeOnClose.push(Disposable.create(() => this.themeRulesService.setIconPath(viewId, undefined)));
 
-        this.views.set(panelId, view);
-        toDisposeOnClose.push(Disposable.create(() => this.views.delete(panelId)));
-
         this.viewsOptions.set(viewId, { panelOptions: showOptions, options: options, panelId, visible: false, active: false });
         toDisposeOnClose.push(Disposable.create(() => this.viewsOptions.delete(viewId)));
 
         this.addOrReattachWidget(panelId, showOptions);
     }
-    private addOrReattachWidget(handler: string, showOptions: WebviewPanelShowOptions): void {
-        const view = this.views.get(handler);
+
+    private addOrReattachWidget(handle: string, showOptions: WebviewPanelShowOptions): void {
+        const view = this.tryGetWebview(handle);
         if (!view) {
             return;
         }
@@ -184,7 +184,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         options.active = active;
     }
     $disposeWebview(handle: string): void {
-        const view = this.views.get(handle);
+        const view = this.tryGetWebview(handle);
         if (view) {
             view.dispose();
         }
@@ -256,12 +256,12 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         this.revivers.delete(viewType);
     }
 
-    private async checkViewOptions(handler: string, viewColumn?: number | undefined): Promise<void> {
-        const options = this.viewsOptions.get(handler);
+    private async checkViewOptions(handle: string, viewColumn?: number | undefined): Promise<void> {
+        const options = this.viewsOptions.get(handle);
         if (!options || !options.panelOptions) {
             return;
         }
-        const view = this.views.get(options.panelId);
+        const view = this.tryGetWebview(handle);
         if (!view) {
             return;
         }
@@ -281,11 +281,15 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     }
 
     private getWebview(viewId: string): WebviewWidget {
-        const webview = this.views.get(viewId);
+        const webview = this.tryGetWebview(viewId);
         if (!webview) {
             throw new Error(`Unknown Webview: ${viewId}`);
         }
         return webview;
+    }
+
+    private tryGetWebview(id: string): WebviewWidget | undefined {
+        return this.widgets.tryGetWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id });
     }
 
 }
