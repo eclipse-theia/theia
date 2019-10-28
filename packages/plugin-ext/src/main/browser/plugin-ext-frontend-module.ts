@@ -63,6 +63,7 @@ import { LanguagesMainFactory, OutputChannelRegistryFactory } from '../../common
 import { LanguagesMainImpl } from './languages-main';
 import { OutputChannelRegistryMainImpl } from './output-channel-registry-main';
 import { InPluginFileSystemWatcherManager } from './in-plugin-filesystem-watcher-manager';
+import { WebviewWidget, WebviewWidgetIdentifier } from './webview/webview';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -143,6 +144,16 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
             child.bind(TreeViewWidget).toSelf();
             child.rebind(TreeWidget).toService(TreeViewWidget);
             return child.get(TreeWidget);
+        }
+    })).inSingletonScope();
+
+    bind(WebviewWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: WebviewWidget.FACTORY_ID,
+        createWidget: (identifier: WebviewWidgetIdentifier) => {
+            const child = container.createChild();
+            child.bind(WebviewWidgetIdentifier).toConstantValue(identifier);
+            return child.get(WebviewWidget);
         }
     })).inSingletonScope();
 
