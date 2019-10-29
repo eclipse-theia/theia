@@ -29,7 +29,7 @@ import { ThemeService } from '@theia/core/lib/browser/theming';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { TerminalPreferences } from './terminal-preferences';
+import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE } from './terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
@@ -109,6 +109,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             letterSpacing: this.preferences['terminal.integrated.letterSpacing'],
             lineHeight: this.preferences['terminal.integrated.lineHeight'],
             scrollback: this.preferences['terminal.integrated.scrollback'],
+            rendererType: this.getTerminalRendererType(this.preferences['terminal.integrated.rendererType']),
             theme: {
                 foreground: cssProps.foreground,
                 background: cssProps.background,
@@ -137,7 +138,17 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             const lastSeparator = change.preferenceName.lastIndexOf('.');
             if (lastSeparator > 0) {
                 const preferenceName = change.preferenceName.substr(lastSeparator + 1);
-                this.term.setOption(preferenceName, this.preferences[change.preferenceName]);
+                let preferenceValue = this.preferences[change.preferenceName];
+
+                if (preferenceName === 'rendererType') {
+                    const newRendererType: string = this.preferences[change.preferenceName] as string;
+                    if (newRendererType !== this.getTerminalRendererType(newRendererType)) {
+                        // given terminal renderer type is not supported or invalid
+                        preferenceValue = DEFAULT_TERMINAL_RENDERER_TYPE;
+                    }
+                }
+
+                this.term.setOption(preferenceName, preferenceValue);
                 this.needsResize = true;
                 this.update();
             }
@@ -189,6 +200,18 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         for (const contribution of this.terminalContributionProvider.getContributions()) {
             contribution.onCreate(this);
         }
+    }
+
+    /**
+     * Returns given renderer type if it is valid and supported or default renderer otherwise.
+     *
+     * @param terminalRendererType desired terminal renderer type
+     */
+    private getTerminalRendererType(terminalRendererType?: string | TerminalRendererType): Xterm.RendererType {
+        if (terminalRendererType && isTerminalRendererType(terminalRendererType)) {
+            return terminalRendererType;
+        }
+        return DEFAULT_TERMINAL_RENDERER_TYPE;
     }
 
     showHoverMessage(x: number, y: number, message: string): void {
