@@ -121,9 +121,6 @@ notifications:
     on_start: never
 jobs:
   fast_finish: true
-  allow_failures:
-    - os: osx
-    - os: windows
   include:
   - stage: test
     os: linux
