@@ -2,6 +2,9 @@
 
 ## v1.5.0
 
+<a name="1_5_0_electron_main_extension"></a>
+- [[electron]](#1_5_0_electron_main_extension) Electron applications can now be configured/extended through `inversify`. Added new `electronMain` extension points to provide inversify container modules. [#8076](https://github.com/eclipse-theia/theia/pull/8076)
+
 <a name="breaking_changes_1.5.0">[Breaking Changes:](#breaking_changes_1.5.0)</a>
 
 - [core] removed `KeybindingRegistry#getScopedKeybindingsForCommand` [#8283](https://github.com/eclipse-theia/theia/pull/8283)
@@ -22,6 +25,8 @@
 <a name="1.5.0_root_user_storage_uri"></a>
 - [[user-storage]](#1.5.0_root_user_storage_uri) settings URI must start with `/user` root to satisfy expectations of `FileService` []()
   - If you implement a custom user storage make sure to check old relative locations, otherwise it can cause user data loss.
+<a name="1_5_0_electron_window_options_ipc">
+- [[electron]](#1_5_0_electron_window_options_ipc) Removed the `set-window-options` and `get-persisted-window-options-additions` Electron IPC handlers from the Electron Main process.
 
 ## v1.4.0
 

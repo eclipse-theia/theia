@@ -24,6 +24,7 @@ export interface Extension {
     frontendElectron?: string;
     backend?: string;
     backendElectron?: string;
+    electronMain?: string;
 }
 
 export class ExtensionPackage {
