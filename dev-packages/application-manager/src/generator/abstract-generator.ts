@@ -48,6 +48,10 @@ export abstract class AbstractGenerator {
         return this.compileModuleImports(modules, 'require');
     }
 
+    protected compileElectronMainModuleImports(modules?: Map<string, string>): string {
+        return modules && this.compileModuleImports(modules, 'require') || '';
+    }
+
     protected compileModuleImports(modules: Map<string, string>, fn: 'import' | 'require'): string {
         if (modules.size === 0) {
             return '';
