@@ -18,9 +18,11 @@ import { ContainerModule } from 'inversify';
 import { FrontendApplicationContribution } from '../../browser/frontend-application';
 import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
 import { ElectronWebSocketConnectionProvider } from './electron-ws-connection-provider';
+import { ElectronIpcConnectionProvider } from './electron-ipc-connection-provider';
 
 export const messagingFrontendModule = new ContainerModule(bind => {
     bind(ElectronWebSocketConnectionProvider).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ElectronWebSocketConnectionProvider);
     bind(WebSocketConnectionProvider).toService(ElectronWebSocketConnectionProvider);
+    bind(ElectronIpcConnectionProvider).toSelf().inSingletonScope();
 });

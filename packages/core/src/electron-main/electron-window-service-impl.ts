@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2020 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,25 +14,25 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { shell } from 'electron';
 import { injectable, inject } from 'inversify';
-import { NewWindowOptions } from '../../browser/window/window-service';
-import { DefaultWindowService } from '../../browser/window/default-window-service';
-import { ElectronWindowService as ElectronMainWindowService } from '../../electron-common/electron-window-service';
+import { ElectronWindowService } from '../electron-common/electron-window-service';
+import { ElectronApplication } from './electron-application';
+import { NewWindowOptions } from '../browser/window/window-service';
 
 @injectable()
-export class ElectronWindowService extends DefaultWindowService {
+export class ElectronWindowServiceImpl implements ElectronWindowService {
 
-    @inject(ElectronMainWindowService)
-    protected readonly delegate: ElectronMainWindowService;
+    @inject(ElectronApplication)
+    protected readonly app: ElectronApplication;
 
-    openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
-        this.delegate.openNewWindow(url, { external });
+    openNewWindow(url: string, { external }: NewWindowOptions): undefined {
+        if (!!external) {
+            shell.openExternal(url);
+        } else {
+            this.app.openWindowWithWorkspace(url);
+        }
         return undefined;
-    }
-
-    protected preventUnload(event: BeforeUnloadEvent): string | void {
-        // The user will be shown a confirmation dialog by the will-prevent-unload handler in the Electron main script
-        event.returnValue = false;
     }
 
 }

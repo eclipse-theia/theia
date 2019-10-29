@@ -19,6 +19,11 @@ import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { WebSocketConnectionProvider, WebSocketOptions } from '../../browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '../../browser/frontend-application';
 
+/**
+ * Customized connection provider between the frontend and the backend in electron environment.
+ * This customized connection provider makes sure the websocket connection does not try to reconnect
+ * once the electron-browser window is refreshed. Otherwise, backend resources are not disposed.
+ */
 @injectable()
 export class ElectronWebSocketConnectionProvider extends WebSocketConnectionProvider implements FrontendApplicationContribution {
 
