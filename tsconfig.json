@@ -164,6 +164,9 @@
       ],
       "@theia/vsx-registry/lib/*": [
         "packages/vsx-registry/src/*"
+      ],
+      "@theia/electron/lib/*": [
+        "packages/electron/src/*"
       ]
     }
   }

@@ -124,6 +124,9 @@
     },
     {
       "path": "../../packages/vsx-registry/compile.tsconfig.json"
+    },
+    {
+      "path": "../../packages/electron/compile.tsconfig.json"
     }
   ]
 }

@@ -13,7 +13,6 @@ cache:
     - dev-packages/application-manager/node_modules
     - dev-packages/application-package/node_modules
     - dev-packages/cli/node_modules
-    - dev-packages/electron/node_modules
     - examples/api-samples/node_modules
     - examples/browser/node_modules
     - examples/electron/node_modules
@@ -24,6 +23,7 @@ cache:
     - packages/debug/node_modules
     - packages/editor-preview/node_modules
     - packages/editor/node_modules
+    - packages/electron/node_modules
     - packages/file-search/node_modules
     - packages/filesystem/node_modules
     - packages/getting-started/node_modules

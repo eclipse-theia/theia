@@ -14,12 +14,22 @@
     "url": "https://github.com/eclipse-theia/theia/issues"
   },
   "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "native",
+    "lib",
+    "src",
+    "*.js"
+  ],
   "bin": {
     "electron": "electron-cli.js",
     "electron-codecs-test": "electron-codecs-test.js",
     "electron-replace-ffmpeg": "electron-replace-ffmpeg.js"
   },
+  "devDependencies": {
+    "@theia/cli": "^1.2.0"
+  },
   "dependencies": {
+    "@theia/core": "^1.2.0",
     "electron": "^4.2.11",
     "electron-download": "^4.1.1",
     "electron-store": "^2.0.0",
@@ -31,6 +41,15 @@
   },
   "scripts": {
     "postinstall": "node scripts/post-install.js",
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
     "test": "mocha \"tests/**/*.spec.js\""
-  }
+  },
+  "theiaExtensions": [
+    {
+      "frontendElectron": "lib/electron-browser/window/electron-window-module"
+    }
+  ]
 }

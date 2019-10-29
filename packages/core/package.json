@@ -57,8 +57,7 @@
       "frontendElectron": "lib/electron-browser/menu/electron-menu-module"
     },
     {
-      "frontend": "lib/browser/window/browser-window-module",
-      "frontendElectron": "lib/electron-browser/window/electron-window-module"
+      "frontend": "lib/browser/window/browser-window-module"
     },
     {
       "frontend": "lib/browser/keyboard/browser-keyboard-module",

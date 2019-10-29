@@ -16,7 +16,8 @@
 
 import { clipboard } from 'electron';
 import { injectable } from 'inversify';
-import { ClipboardService } from '../browser/clipboard-service';
+
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 @injectable()
 export class ElectronClipboardService implements ClipboardService {
