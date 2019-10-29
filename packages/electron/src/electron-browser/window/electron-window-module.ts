@@ -15,14 +15,19 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { WindowService } from '../../browser/window/window-service';
-import { ElectronWindowService } from './electron-window-service';
-import { FrontendApplicationContribution } from '../../browser/frontend-application';
-import { ElectronClipboardService } from '../electron-clipboard-service';
-import { ClipboardService } from '../../browser/clipboard-service';
 
-export default new ContainerModule(bind => {
-    bind(WindowService).to(ElectronWindowService).inSingletonScope();
-    bind(FrontendApplicationContribution).toService(WindowService);
-    bind(ClipboardService).to(ElectronClipboardService).inSingletonScope();
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
+
+import { ElectronMainWindowService, electronMainWindowServicePath } from '../../electron-common/electron-window-protocol';
+import { ElectronIpcConnectionProvider } from '../messaging/electron-ipc-connection-provider';
+import { ElectronClipboardService } from '../electron-clipboard-service';
+import { ElectronWindowService } from './electron-window-service';
+
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bind(ElectronMainWindowService).toDynamicValue(context =>
+        ElectronIpcConnectionProvider.createProxy(context.container, electronMainWindowServicePath)
+    ).inSingletonScope();
+    rebind(ClipboardService).to(ElectronClipboardService).inSingletonScope();
+    rebind(WindowService).to(ElectronWindowService).inSingletonScope();
 });

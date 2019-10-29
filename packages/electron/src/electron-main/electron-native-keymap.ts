@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2020 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,26 +14,27 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { webContents } from 'electron';
 import { injectable } from 'inversify';
-import { ipcRenderer } from 'electron';
-import { NewWindowOptions } from '../../browser/window/window-service';
-import { DefaultWindowService } from '../../browser/window/default-window-service';
+import { ElectronMainContribution } from './electron-application';
+const nativeKeymap = require('native-keymap');
 
 @injectable()
-export class ElectronWindowService extends DefaultWindowService {
+export class ElectronNativeKeymap implements ElectronMainContribution {
 
-    openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
-        if (external) {
-            ipcRenderer.send('open-external', url);
-        } else {
-            ipcRenderer.send('create-new-window', url);
-        }
-        return undefined;
-    }
-
-    protected preventUnload(event: BeforeUnloadEvent): string | void {
-        // The user will be shown a confirmation dialog by the will-prevent-unload handler in the Electron main script
-        event.returnValue = false;
+    /**
+     * Notify all renderer processes on keyboard layout change.
+     */
+    onStart(): void {
+        nativeKeymap.onDidChangeKeyboardLayout(() => {
+            const newLayout = {
+                info: nativeKeymap.getCurrentKeyboardLayout(),
+                mapping: nativeKeymap.getKeyMap()
+            };
+            for (const webContent of webContents.getAllWebContents()) {
+                webContent.send('keyboardLayoutChanged', newLayout);
+            }
+        });
     }
 
 }
