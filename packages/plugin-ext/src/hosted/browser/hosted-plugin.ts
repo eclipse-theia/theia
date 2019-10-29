@@ -53,6 +53,7 @@ import { Emitter, isCancelled } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
 import { TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
+import { WebviewEnvironment } from '../../main/browser/webview/webview-environment';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -126,6 +127,9 @@ export class HostedPluginSupport {
 
     @inject(ProgressService)
     protected readonly progressService: ProgressService;
+
+    @inject(WebviewEnvironment)
+    protected readonly webviewEnvironment: WebviewEnvironment;
 
     private theiaReadyPromise: Promise<any>;
 
@@ -355,13 +359,15 @@ export class HostedPluginSupport {
             this.managers.set(host, manager);
             toDisconnect.push(Disposable.create(() => this.managers.delete(host)));
 
-            const [extApi, globalState, workspaceState] = await Promise.all([
+            const [extApi, globalState, workspaceState, webviewResourceRoot, webviewCspSource] = await Promise.all([
                 this.server.getExtPluginAPI(),
                 this.pluginServer.getAllStorageValues(undefined),
                 this.pluginServer.getAllStorageValues({
                     workspace: this.workspaceService.workspace,
                     roots: this.workspaceService.tryGetRoots()
-                })
+                }),
+                this.webviewEnvironment.resourceRoot(),
+                this.webviewEnvironment.cspSource()
             ]);
             if (toDisconnect.disposed) {
                 return undefined;
@@ -372,7 +378,11 @@ export class HostedPluginSupport {
                 globalState,
                 workspaceState,
                 env: { queryParams: getQueryParameters(), language: navigator.language },
-                extApi
+                extApi,
+                webview: {
+                    webviewResourceRoot,
+                    webviewCspSource
+                }
             });
             if (toDisconnect.disposed) {
                 return undefined;
