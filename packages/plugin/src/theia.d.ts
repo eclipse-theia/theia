@@ -2719,6 +2719,21 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Defines a port mapping used for localhost inside the webview.
+     */
+    export interface WebviewPortMapping {
+        /**
+         * Localhost port to remap inside the webview.
+         */
+        readonly webviewPort: number;
+
+        /**
+         * Destination port. The `webviewPort` is resolved to this port.
+         */
+        readonly extensionHostPort: number;
+    }
+
+    /**
      * Content settings for a webview.
      */
     export interface WebviewOptions {
@@ -2744,6 +2759,21 @@ declare module '@theia/plugin' {
          * Pass in an empty array to disallow access to any local resources.
          */
         readonly localResourceRoots?: ReadonlyArray<Uri>;
+
+        /**
+         * Mappings of localhost ports used inside the webview.
+         *
+         * Port mapping allow webviews to transparently define how localhost ports are resolved. This can be used
+         * to allow using a static localhost port inside the webview that is resolved to random port that a service is
+         * running on.
+         *
+         * If a webview accesses localhost content, we recommend that you specify port mappings even if
+         * the `webviewPort` and `extensionHostPort` ports are the same.
+         *
+         * *Note* that port mappings only work for `http` or `https` urls. Websocket urls (e.g. `ws://localhost:3000`)
+         * cannot be mapped to another port.
+         */
+        readonly portMapping?: ReadonlyArray<WebviewPortMapping>;
     }
 
     /**
@@ -2775,6 +2805,30 @@ declare module '@theia/plugin' {
          * @param message Body of the message.
          */
         postMessage(message: any): PromiseLike<boolean>;
+
+        /**
+         * Convert a uri for the local file system to one that can be used inside webviews.
+         *
+         * Webviews cannot directly load resources from the workspace or local file system using `file:` uris. The
+         * `asWebviewUri` function takes a local `file:` uri and converts it into a uri that can be used inside of
+         * a webview to load the same resource:
+         *
+         * ```ts
+         * webview.html = `<img src="${webview.asWebviewUri(vscode.Uri.file('/Users/codey/workspace/cat.gif'))}">`
+         * ```
+         */
+        asWebviewUri(localResource: Uri): Uri;
+
+        /**
+         * Content security policy source for webview resources.
+         *
+         * This is the origin that should be used in a content security policy rule:
+         *
+         * ```
+         * img-src https: ${webview.cspSource} ...;
+         * ```
+         */
+        readonly cspSource: string;
     }
 
     /**
@@ -7533,9 +7587,9 @@ declare module '@theia/plugin' {
          */
         readonly name: string;
 
-		/**
-		 * The "resolved" [debug configuration](#DebugConfiguration) of this session.
-		 */
+        /**
+         * The "resolved" [debug configuration](#DebugConfiguration) of this session.
+         */
         readonly configuration: DebugConfiguration;
 
         /**
@@ -8424,10 +8478,10 @@ declare module '@theia/plugin' {
     }
 
     export interface TaskFilter {
-		/**
-		 * The task version as used in the tasks.json file.
-		 * The string support the package.json semver notation.
-		 */
+        /**
+         * The task version as used in the tasks.json file.
+         * The string support the package.json semver notation.
+         */
         version?: string;
 
         /**
@@ -8457,11 +8511,11 @@ declare module '@theia/plugin' {
         export function fetchTasks(filter?: TaskFilter): PromiseLike<Task[]>;
 
         /**
-		 * Executes a task that is managed by VS Code. The returned
-		 * task execution can be used to terminate the task.
-		 *
-		 * @param task the task to execute
-		 */
+         * Executes a task that is managed by VS Code. The returned
+         * task execution can be used to terminate the task.
+         *
+         * @param task the task to execute
+         */
         export function executeTask(task: Task): PromiseLike<TaskExecution>;
 
         /**

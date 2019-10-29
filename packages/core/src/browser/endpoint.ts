@@ -53,6 +53,9 @@ export class Endpoint {
     }
 
     protected get host(): string {
+        if (this.options.host) {
+            return this.options.host;
+        }
         if (this.location.host) {
             return this.location.host;
         }
@@ -77,6 +80,9 @@ export class Endpoint {
     }
 
     protected get wsScheme(): string {
+        if (this.options.wsScheme) {
+            return this.options.wsScheme;
+        }
         return this.httpScheme === Endpoint.PROTO_HTTPS ? Endpoint.PROTO_WSS : Endpoint.PROTO_WS;
     }
 

@@ -61,7 +61,7 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
         // redefine property
         Object.defineProperty(panel.webview, 'html', {
             set: function (html: string): void {
-                const newHtml = html.replace(new RegExp('vscode-resource:/', 'g'), '/webview/');
+                const newHtml = html.replace(new RegExp('vscode-resource:/', 'g'), 'theia-resource:/');
                 this.checkIsDisposed();
                 if (this._html !== newHtml) {
                     this._html = newHtml;
@@ -74,7 +74,7 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
         const originalPostMessage = panel.webview.postMessage;
         panel.webview.postMessage = (message: any): PromiseLike<boolean> => {
             const decoded = JSON.stringify(message);
-            const newMessage = decoded.replace(new RegExp('vscode-resource:/', 'g'), '/webview/');
+            const newMessage = decoded.replace(new RegExp('vscode-resource:/', 'g'), 'theia-resource:/');
             return originalPostMessage.call(panel.webview, JSON.parse(newMessage));
         };
 

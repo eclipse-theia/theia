@@ -10,7 +10,7 @@ tasks:
 - init: yarn
   command: >
     jwm &
-    yarn --cwd examples/browser start ../..
+    yarn --cwd examples/browser start ../.. --hostname=0.0.0.0
 github:
   prebuilds:
     pullRequestsFromForks: true

@@ -39,6 +39,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
 import * as os from 'os';
 import * as fs from 'fs-extra';
+import { WebviewsExtImpl } from './webviews';
 
 export interface PluginHost {
 
@@ -72,7 +73,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onDebug', 'onDebugInitialConfigurations', 'onDebugResolve', 'onDebugAdapterProtocolTracker',
         'workspaceContains',
         'onView',
-        'onUri'
+        'onUri',
+        'onWebviewPanel'
     ]);
 
     private readonly registry = new Map<string, Plugin>();
@@ -94,6 +96,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         private readonly envExt: EnvExtImpl,
         private readonly storageProxy: KeyValueStorageProxy,
         private readonly preferencesManager: PreferenceRegistryExtImpl,
+        private readonly webview: WebviewsExtImpl,
         private readonly rpc: RPCProtocol
     ) {
         this.messageRegistryProxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN);
@@ -149,6 +152,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         if (params.extApi) {
             this.host.initExtApi(params.extApi);
         }
+
+        this.webview.init(params.webview);
     }
 
     async $start(params: PluginManagerStartParams): Promise<void> {

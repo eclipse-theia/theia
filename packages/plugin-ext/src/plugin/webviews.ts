@@ -15,21 +15,33 @@
  ********************************************************************************/
 
 import { v4 } from 'uuid';
-import { WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
+import { WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, WebviewInitData, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
-import URI from 'vscode-uri/lib/umd';
+import URI from 'vscode-uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters';
 import { Disposable, WebviewPanelTargetArea } from './types-impl';
+import { WorkspaceExtImpl } from './workspace';
 
 export class WebviewsExtImpl implements WebviewsExt {
     private readonly proxy: WebviewsMain;
     private readonly webviewPanels = new Map<string, WebviewPanelImpl>();
-    private readonly serializers = new Map<string, theia.WebviewPanelSerializer>();
+    private readonly serializers = new Map<string, {
+        serializer: theia.WebviewPanelSerializer,
+        pluginLocation: URI
+    }>();
+    private initData: WebviewInitData | undefined;
 
-    constructor(rpc: RPCProtocol) {
+    constructor(
+        rpc: RPCProtocol,
+        private readonly workspace: WorkspaceExtImpl,
+    ) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.WEBVIEWS_MAIN);
+    }
+
+    init(initData: WebviewInitData): void {
+        this.initData = initData;
     }
 
     // tslint:disable-next-line:no-any
@@ -66,43 +78,51 @@ export class WebviewsExtImpl implements WebviewsExt {
         state: any,
         position: number,
         options: theia.WebviewOptions & theia.WebviewPanelOptions): PromiseLike<void> {
-        const serializer = this.serializers.get(viewType);
-        if (!serializer) {
+        if (!this.initData) {
+            return Promise.reject(new Error('Webviews are not initialized'));
+        }
+        const entry = this.serializers.get(viewType);
+        if (!entry) {
             return Promise.reject(new Error(`No serializer found for '${viewType}'`));
         }
+        const { serializer, pluginLocation } = entry;
 
-        const webview = new WebviewImpl(viewId, this.proxy, options);
+        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, pluginLocation);
         const revivedPanel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, toViewColumn(position)!, options, webview);
         this.webviewPanels.set(viewId, revivedPanel);
         return serializer.deserializeWebviewPanel(revivedPanel, state);
     }
 
-    createWebview(viewType: string,
+    createWebview(
+        viewType: string,
         title: string,
         showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
-        options: (theia.WebviewPanelOptions & theia.WebviewOptions) | undefined,
-        extensionLocation: URI): theia.WebviewPanel {
-
+        options: theia.WebviewPanelOptions & theia.WebviewOptions,
+        pluginLocation: URI
+    ): theia.WebviewPanel {
+        if (!this.initData) {
+            throw new Error('Webviews are not initialized');
+        }
         const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
         const viewId = v4();
-        this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, options, extensionLocation);
+        this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, options);
 
-        const webview = new WebviewImpl(viewId, this.proxy, options);
+        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, pluginLocation);
         const panel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, webviewShowOptions, options, webview);
         this.webviewPanels.set(viewId, panel);
         return panel;
-
     }
 
     registerWebviewPanelSerializer(
         viewType: string,
-        serializer: theia.WebviewPanelSerializer
+        serializer: theia.WebviewPanelSerializer,
+        pluginLocation: URI
     ): theia.Disposable {
         if (this.serializers.has(viewType)) {
             throw new Error(`Serializer for '${viewType}' already registered`);
         }
 
-        this.serializers.set(viewType, serializer);
+        this.serializers.set(viewType, { serializer, pluginLocation });
         this.proxy.$registerSerializer(viewType);
 
         return new Disposable(() => {
@@ -130,10 +150,15 @@ export class WebviewImpl implements theia.Webview {
     // tslint:disable-next-line:no-any
     public readonly onDidReceiveMessage: Event<any> = this.onMessageEmitter.event;
 
-    constructor(private readonly viewId: string,
+    constructor(
+        private readonly viewId: string,
         private readonly proxy: WebviewsMain,
-        options: theia.WebviewOptions | undefined) {
-        this._options = options!;
+        options: theia.WebviewOptions,
+        private readonly initData: WebviewInitData,
+        private readonly workspace: WorkspaceExtImpl,
+        private readonly pluginLocation: URI
+    ) {
+        this._options = options;
     }
 
     dispose(): void {
@@ -144,33 +169,30 @@ export class WebviewImpl implements theia.Webview {
         this.onMessageEmitter.dispose();
     }
 
-    // tslint:disable-next-line:no-any
-    postMessage(message: any): PromiseLike<boolean> {
-        this.checkIsDisposed();
-        // replace theia-resource: content in the given message
-        const decoded = JSON.stringify(message);
-        let newMessage = decoded.replace(new RegExp('theia-resource:/', 'g'), '/webview/');
-        if (this._options && this._options.localResourceRoots) {
-            newMessage = this.filterLocalRoots(newMessage, this._options.localResourceRoots);
-        }
-        return this.proxy.$postMessage(this.viewId, JSON.parse(newMessage));
+    asWebviewUri(resource: theia.Uri): theia.Uri {
+        const uri = this.initData.webviewResourceRoot
+            // Make sure we preserve the scheme of the resource but convert it into a normal path segment
+            // The scheme is important as we need to know if we are requesting a local or a remote resource.
+            .replace('{{resource}}', resource.scheme + resource.toString().replace(/^\S+?:/, ''))
+            .replace('{{uuid}}', this.viewId);
+        return URI.parse(uri);
     }
 
-    protected filterLocalRoots(content: string, localResourceRoots: ReadonlyArray<theia.Uri>): string {
-        const webViewsRegExp = /"(\/webview\/.*?)\"/g;
-        let m;
-        while ((m = webViewsRegExp.exec(content)) !== null) {
-            if (m.index === webViewsRegExp.lastIndex) {
-                webViewsRegExp.lastIndex++;
-            }
-            // take group 1 which is webview URL
-            const url = m[1];
-            const isIncluded = localResourceRoots.some((uri): boolean => url.substring('/webview'.length).startsWith(uri.fsPath));
-            if (!isIncluded) {
-                content = content.replace(url, url.replace('/webview', '/webview-disallowed-localroot'));
-            }
+    get cspSource(): string {
+        return this.initData.webviewCspSource.replace('{{uuid}}', this.viewId);
+    }
+
+    get html(): string {
+        this.checkIsDisposed();
+        return this._html;
+    }
+
+    set html(value: string) {
+        this.checkIsDisposed();
+        if (this._html !== value) {
+            this._html = value;
+            this.proxy.$setHtml(this.viewId, value);
         }
-        return content;
     }
 
     get options(): theia.WebviewOptions {
@@ -180,26 +202,20 @@ export class WebviewImpl implements theia.Webview {
 
     set options(newOptions: theia.WebviewOptions) {
         this.checkIsDisposed();
-        this.proxy.$setOptions(this.viewId, newOptions);
+        this.proxy.$setOptions(this.viewId, {
+            ...newOptions,
+            localResourceRoots: newOptions.localResourceRoots || [
+                ...(this.workspace.workspaceFolders || []).map(x => x.uri),
+                this.pluginLocation,
+            ]
+        });
         this._options = newOptions;
     }
 
-    get html(): string {
+    // tslint:disable-next-line:no-any
+    postMessage(message: any): PromiseLike<boolean> {
         this.checkIsDisposed();
-        return this._html;
-    }
-
-    set html(html: string) {
-        let newHtml = html.replace(new RegExp('theia-resource:/', 'g'), '/webview/');
-        if (this._options && this._options.localResourceRoots) {
-            newHtml = this.filterLocalRoots(newHtml, this._options.localResourceRoots);
-        }
-
-        this.checkIsDisposed();
-        if (this._html !== newHtml) {
-            this._html = newHtml;
-            this.proxy.$setHtml(this.viewId, newHtml);
-        }
+        return this.proxy.$postMessage(this.viewId, message);
     }
 
     private checkIsDisposed(): void {

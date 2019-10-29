@@ -69,7 +69,7 @@ export class ThemeRulesService {
             insertRule: (rule: string, index: number) => void,
             removeRule: (index: number) => void,
             rules: CSSRuleList
-        // tslint:disable-next-line:no-any
+            // tslint:disable-next-line:no-any
         } | undefined = (<any>styleElement).sheet;
         if (!sheet || !sheet.rules || !sheet.rules.length) {
             return cssText;
@@ -94,7 +94,7 @@ export class ThemeRulesService {
             insertRule: (rule: string, index: number) => void;
             removeRule: (index: number) => void;
             rules: CSSRuleList;
-        // tslint:disable-next-line:no-any
+            // tslint:disable-next-line:no-any
         } | undefined = (<any>styleSheet).sheet;
 
         if (!sheet) {

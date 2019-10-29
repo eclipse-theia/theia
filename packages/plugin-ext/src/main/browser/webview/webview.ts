@@ -15,16 +15,32 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
+import { ArrayExt } from '@phosphor/algorithm/lib/array';
+import { WebviewPanelOptions, WebviewPortMapping, Uri } from '@theia/plugin';
 import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Disposable } from '@theia/core/lib/common/disposable';
 // TODO: get rid of dependencies to the mini browser
 import { MiniBrowserContentStyle } from '@theia/mini-browser/lib/browser/mini-browser-content-style';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
+import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
+import { WebviewPanelViewState } from '../../../common/plugin-api-rpc';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { WebviewEnvironment } from './webview-environment';
+import URI from '@theia/core/lib/common/uri';
+import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 
 // tslint:disable:no-any
 
-export interface WebviewWidgetOptions {
+export const enum WebviewMessageChannels {
+    loadResource = 'load-resource',
+    webviewReady = 'webview-ready'
+}
+
+export interface WebviewContentOptions {
     readonly allowScripts?: boolean;
+    readonly localResourceRoots?: ReadonlyArray<Uri>;
+    readonly portMapping?: ReadonlyArray<WebviewPortMapping>;
+    readonly enableCommandUris?: boolean;
 }
 
 export interface WebviewEvents {
@@ -38,35 +54,57 @@ export class WebviewWidgetIdentifier {
     id: string;
 }
 
+export const WebviewWidgetExternalEndpoint = Symbol('WebviewWidgetExternalEndpoint');
+
 @injectable()
-export class WebviewWidget extends BaseWidget {
+export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     static FACTORY_ID = 'plugin-webview';
 
-    private iframe: HTMLIFrameElement;
-    private state: { [key: string]: any } | undefined = undefined;
-    private loadTimeout: number | undefined;
-    private scrollY: number;
-    private readyToReceiveMessage: boolean = false;
+    protected element: HTMLIFrameElement;
+
     // tslint:disable-next-line:max-line-length
-    // XXX This is a hack to be able to tack the mouse events when drag and dropping the widgets. On `mousedown` we put a transparent div over the `iframe` to avoid losing the mouse tacking.
-    protected readonly transparentOverlay: HTMLElement;
+    // XXX This is a hack to be able to tack the mouse events when drag and dropping the widgets.
+    // On `mousedown` we put a transparent div over the `iframe` to avoid losing the mouse tacking.
+    protected transparentOverlay: HTMLElement;
 
     @inject(WebviewWidgetIdentifier)
-    protected readonly identifier: WebviewWidgetIdentifier;
+    readonly identifier: WebviewWidgetIdentifier;
+
+    @inject(WebviewWidgetExternalEndpoint)
+    readonly externalEndpoint: string;
 
     @inject(ApplicationShellMouseTracker)
     protected readonly mouseTracker: ApplicationShellMouseTracker;
 
-    private options: WebviewWidgetOptions = {};
+    @inject(WebviewEnvironment)
+    protected readonly environment: WebviewEnvironment;
+
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
+    viewState: WebviewPanelViewState = {
+        visible: false,
+        active: false,
+        position: 0
+    };
+
+    protected html = '';
+    protected contentOptions: WebviewContentOptions = {};
+    state: any;
+
+    viewType: string;
+    options: WebviewPanelOptions = {};
     eventDelegate: WebviewEvents = {};
 
-    constructor() {
-        super();
+    protected readonly ready = new Deferred<void>();
+
+    @postConstruct()
+    protected init(): void {
         this.node.tabIndex = 0;
+        this.id = WebviewWidget.FACTORY_ID + ':' + this.identifier.id;
         this.title.closable = true;
         this.addClass(WebviewWidget.Styles.WEBVIEW);
-        this.scrollY = 0;
 
         this.transparentOverlay = document.createElement('div');
         this.transparentOverlay.classList.add(MiniBrowserContentStyle.TRANSPARENT_OVERLAY);
@@ -74,277 +112,205 @@ export class WebviewWidget extends BaseWidget {
         this.node.appendChild(this.transparentOverlay);
 
         this.toDispose.push(this.mouseTracker.onMousedown(() => {
-            if (this.iframe.style.display !== 'none') {
+            if (this.element.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'block';
             }
         }));
         this.toDispose.push(this.mouseTracker.onMouseup(() => {
-            if (this.iframe.style.display !== 'none') {
+            if (this.element.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'none';
             }
         }));
+
+        const element = document.createElement('iframe');
+        element.className = 'webview';
+        element.sandbox.add('allow-scripts', 'allow-same-origin');
+        element.setAttribute('src', `${this.externalEndpoint}/index.html?id=${this.identifier.id}`);
+        element.style.border = 'none';
+        element.style.width = '100%';
+        element.style.height = '100%';
+        this.element = element;
+        this.node.appendChild(this.element);
+
+        const subscription = this.on(WebviewMessageChannels.webviewReady, () => {
+            subscription.dispose();
+            this.ready.resolve();
+        });
+        this.toDispose.push(subscription);
+        this.toDispose.push(this.on(WebviewMessageChannels.loadResource, (entry: any) => {
+            const rawPath = entry.path;
+            const normalizedPath = decodeURIComponent(rawPath);
+            const uri = new URI(normalizedPath.replace(/^\/(\w+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
+            this.loadResource(rawPath, uri);
+        }));
     }
 
-    @postConstruct()
-    protected init(): void {
-        this.id = WebviewWidget.FACTORY_ID + ':' + this.identifier.id;
-    }
-
-    protected handleMessage(message: any): void {
-        switch (message.command) {
-            case 'onmessage':
-                this.eventDelegate.onMessage!(message.data);
-                break;
-            case 'do-update-state':
-                this.state = message.data;
-        }
-    }
-
-    async postMessage(message: any): Promise<void> {
-        // wait message can be delivered
-        await this.waitReadyToReceiveMessage();
-        this.iframe.contentWindow!.postMessage(message, '*');
-    }
-
-    setOptions(options: WebviewWidgetOptions): void {
-        if (this.options.allowScripts === options.allowScripts) {
+    setContentOptions(contentOptions: WebviewContentOptions): void {
+        if (WebviewWidget.compareWebviewContentOptions(this.contentOptions, contentOptions)) {
             return;
         }
-        this.options = options;
-        if (!this.iframe) {
-            return;
-        }
-        this.updateSandboxAttribute(this.iframe, options.allowScripts);
-        this.reloadFrame();
+        this.contentOptions = contentOptions;
+        this.doUpdateContent();
     }
 
     setIconClass(iconClass: string): void {
         this.title.iconClass = iconClass;
     }
 
-    protected readonly toDisposeOnHTML = new DisposableCollection();
+    setHTML(value: string): void {
+        this.html = this.preprocessHtml(value);
+        this.doUpdateContent();
+    }
 
-    setHTML(html: string): void {
-        const newDocument = new DOMParser().parseFromString(html, 'text/html');
-        if (!newDocument || !newDocument.body) {
-            return;
-        }
-
-        this.toDisposeOnHTML.dispose();
-        this.toDispose.push(this.toDisposeOnHTML);
-
-        (<any>newDocument.querySelectorAll('a')).forEach((a: any) => {
-            if (!a.title) {
-                a.title = a.href;
-            }
-        });
-
-        (window as any)[`postMessageExt${this.id}`] = (e: any) => {
-            this.handleMessage(e);
-        };
-        this.toDisposeOnHTML.push(Disposable.create(() =>
-            delete (window as any)[`postMessageExt${this.id}`]
-        ));
-        this.updateApiScript(newDocument);
-
-        const newFrame = document.createElement('iframe');
-        newFrame.setAttribute('id', 'pending-frame');
-        newFrame.setAttribute('frameborder', '0');
-        newFrame.style.cssText = 'display: block; margin: 0; overflow: hidden; position: absolute; width: 100%; height: 100%; visibility: hidden';
-        this.node.appendChild(newFrame);
-        this.iframe = newFrame;
-        this.toDisposeOnHTML.push(Disposable.create(() => {
-            newFrame.setAttribute('id', '');
-            this.node.removeChild(newFrame);
-        }));
-
-        newFrame.contentDocument!.open('text/html', 'replace');
-
-        const onLoad = (contentDocument: any, contentWindow: any) => {
-            if (newFrame && newFrame.contentDocument === contentDocument) {
-                newFrame.style.visibility = 'visible';
-            }
-            if (contentDocument.body) {
-                if (this.eventDelegate && this.eventDelegate.onKeyboardEvent) {
-                    const eventNames = ['keydown', 'keypress', 'click'];
-                    // Delegate events from the `iframe` to the application.
-                    eventNames.forEach((eventName: string) => {
-                        contentDocument.addEventListener(eventName, this.eventDelegate.onKeyboardEvent!, true);
-                        this.toDispose.push(Disposable.create(() => contentDocument.removeEventListener(eventName, this.eventDelegate.onKeyboardEvent!)));
-                    });
+    protected preprocessHtml(value: string): string {
+        return value
+            .replace(/(["'])theia-resource:(\/\/([^\s\/'"]+?)(?=\/))?([^\s'"]+?)(["'])/gi, (_, startQuote, _1, scheme, path, endQuote) => {
+                if (scheme) {
+                    return `${startQuote}${this.externalEndpoint}/theia-resource/${scheme}${path}${endQuote}`;
                 }
-                if (this.eventDelegate && this.eventDelegate.onLoad) {
-                    this.eventDelegate.onLoad(<Document>contentDocument);
-                }
-            }
-        };
-
-        this.loadTimeout = window.setTimeout(() => {
-            clearTimeout(this.loadTimeout);
-            this.loadTimeout = undefined;
-            onLoad(newFrame.contentDocument, newFrame.contentWindow);
-        }, 200);
-        this.toDisposeOnHTML.push(Disposable.create(() => {
-            if (typeof this.loadTimeout === 'number') {
-                clearTimeout(this.loadTimeout);
-                this.loadTimeout = undefined;
-            }
-        }));
-
-        newFrame.contentWindow!.addEventListener('load', e => {
-            if (this.loadTimeout) {
-                clearTimeout(this.loadTimeout);
-                this.loadTimeout = undefined;
-                onLoad(e.target, newFrame.contentWindow);
-            }
-        }, { once: true });
-        newFrame.contentDocument!.write(newDocument!.documentElement!.innerHTML);
-        newFrame.contentDocument!.close();
-
-        this.updateSandboxAttribute(newFrame);
+                return `${startQuote}${this.externalEndpoint}/theia-resource/file${path}${endQuote}`;
+            });
     }
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        // restore scrolling if there was one
-        if (this.scrollY > 0) {
-            this.iframe.contentWindow!.scrollTo({ top: this.scrollY });
-        }
-        this.node.focus();
-        // unblock messages
-        this.readyToReceiveMessage = true;
+        this.focus();
     }
 
-    // block messages
-    protected onBeforeShow(msg: Message): void {
-        this.readyToReceiveMessage = false;
+    focus(): void {
+        if (this.element) {
+            this.doSend('focus');
+        }
     }
 
-    protected onBeforeHide(msg: Message): void {
-        // persist scrolling
-        if (this.iframe.contentWindow) {
-            this.scrollY = this.iframe.contentWindow.scrollY;
-        }
-        super.onBeforeHide(msg);
+    reload(): void {
+        this.doUpdateContent();
     }
 
-    public reloadFrame(): void {
-        if (!this.iframe || !this.iframe.contentDocument || !this.iframe.contentDocument.documentElement) {
-            return;
-        }
-        this.setHTML(this.iframe.contentDocument.documentElement.innerHTML);
-    }
+    protected async loadResource(requestPath: string, uri: URI): Promise<void> {
+        try {
+            const normalizedUri = this.normalizeRequestUri(uri);
 
-    private updateSandboxAttribute(element: HTMLElement, isAllowScript?: boolean): void {
-        if (!element) {
-            return;
-        }
-        const allowScripts = isAllowScript !== undefined ? isAllowScript : this.options.allowScripts;
-        element.setAttribute('sandbox', allowScripts ? 'allow-scripts allow-forms allow-same-origin' : 'allow-same-origin');
-    }
-
-    private updateApiScript(contentDocument: Document, isAllowScript?: boolean): void {
-        if (!contentDocument) {
-            return;
-        }
-        const allowScripts = isAllowScript !== undefined ? isAllowScript : this.options.allowScripts;
-        const scriptId = 'webview-widget-codeApi';
-        if (!allowScripts) {
-            const script = contentDocument.getElementById(scriptId);
-            if (!script) {
-                return;
+            if (this.contentOptions.localResourceRoots) {
+                for (const root of this.contentOptions.localResourceRoots) {
+                    if (!new URI(root).path.isEqualOrParent(normalizedUri.path)) {
+                        continue;
+                    }
+                    const { content } = await this.fileSystem.resolveContent(normalizedUri.toString());
+                    return this.doSend('did-load-resource', {
+                        status: 200,
+                        path: requestPath,
+                        mime: 'text/plain', // TODO detect mimeType from URI extension
+                        data: content
+                    });
+                }
             }
-            script!.parentElement!.removeChild(script!);
-            return;
+        } catch {
+            // no-op
         }
 
-        const codeApiScript = contentDocument.createElement('script');
-        codeApiScript.id = scriptId;
-        codeApiScript.textContent = `
-        window.postMessageExt = window.parent['postMessageExt${this.id}'];
-        const acquireVsCodeApi = (function() {
-                let acquired = false;
-                let state = ${this.state ? `JSON.parse(${JSON.stringify(this.state)})` : undefined};
-                return () => {
-                    if (acquired) {
-                        throw new Error('An instance of the VS Code API has already been acquired');
-                    }
-                    acquired = true;
-                    return Object.freeze({
-                        postMessage: function(msg) {
-                            return window.postMessageExt({ command: 'onmessage', data: msg }, '*');
-                        },
-                        setState: function(newState) {
-                            state = newState;
-                            window.postMessageExt({ command: 'do-update-state', data: JSON.stringify(newState) }, '*');
-                            return newState;
-                        },
-                        getState: function() {
-                            return state;
-                        }
-                    });
-                };
-            })();
-            const acquireTheiaApi = (function() {
-                let acquired = false;
-                let state = ${this.state ? `JSON.parse(${JSON.stringify(this.state)})` : undefined};
-                return () => {
-                    if (acquired) {
-                        throw new Error('An instance of the VS Code API has already been acquired');
-                    }
-                    acquired = true;
-                    return Object.freeze({
-                        postMessage: function(msg) {
-                            return window.postMessageExt({ command: 'onmessage', data: msg }, '*');
-                        },
-                        setState: function(newState) {
-                            state = newState;
-                            window.postMessageExt({ command: 'do-update-state', data: JSON.stringify(newState) }, '*');
-                            return newState;
-                        },
-                        getState: function() {
-                            return state;
-                        }
-                    });
-                };
-            })();
-            delete window.parent;
-            delete window.top;
-            delete window.frameElement;
-         `;
-        const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
-        if (parent.hasChildNodes()) {
-            parent.insertBefore(codeApiScript, parent.firstChild);
-        } else {
-            parent.appendChild(codeApiScript);
-        }
-    }
-
-    /**
-     * Check if given object is ready to receive message and if it is ready, resolve promise
-     */
-    waitReceiveMessage(object: WebviewWidget, resolve: any): void {
-        if (object.readyToReceiveMessage) {
-            resolve(true);
-        } else {
-            setTimeout(this.waitReceiveMessage, 100, object, resolve);
-        }
-    }
-
-    /**
-     * Block until we're able to receive message
-     */
-    public async waitReadyToReceiveMessage(): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            this.waitReceiveMessage(this, resolve);
+        return this.doSend('did-load-resource', {
+            status: 404,
+            path: requestPath
         });
     }
-}
 
+    protected normalizeRequestUri(requestUri: URI): URI {
+        if (requestUri.scheme !== 'theia-resource') {
+            return requestUri;
+        }
+
+        // Modern vscode-resources uris put the scheme of the requested resource as the authority
+        if (requestUri.authority) {
+            return new URI(requestUri.authority + ':' + requestUri.path);
+        }
+
+        // Old style vscode-resource uris lose the scheme of the resource which means they are unable to
+        // load a mix of local and remote content properly.
+        return requestUri.withScheme('file');
+    }
+
+    sendMessage(data: any): void {
+        this.doSend('message', data);
+    }
+
+    protected doUpdateContent(): void {
+        this.doSend('content', {
+            contents: this.html,
+            options: this.contentOptions,
+            state: this.state
+        });
+    }
+
+    storeState(): WebviewWidget.State {
+        return {
+            viewType: this.viewType,
+            title: this.title.label,
+            options: this.options,
+            contentOptions: this.contentOptions,
+            state: this.state
+        };
+    }
+
+    restoreState(oldState: WebviewWidget.State): void {
+        const { viewType, title, options, contentOptions, state } = oldState;
+        this.viewType = viewType;
+        this.title.label = title;
+        this.options = options;
+        this.contentOptions = contentOptions;
+        this.state = state;
+    }
+
+    protected async doSend(channel: string, data?: any): Promise<void> {
+        try {
+            await this.ready.promise;
+            this.postMessage(channel, data);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    protected postMessage(channel: string, data?: any): void {
+        if (this.element) {
+            this.element.contentWindow!.postMessage({ channel, args: data }, '*');
+        }
+    }
+
+    protected on<T = unknown>(channel: WebviewMessageChannels, handler: (data: T) => void): Disposable {
+        const listener = (e: any) => {
+            if (!e || !e.data || e.data.target !== this.identifier.id) {
+                return;
+            }
+            if (e.data.channel === channel) {
+                handler(e.data.data);
+            }
+        };
+        window.addEventListener('message', listener);
+        return Disposable.create(() =>
+            window.removeEventListener('message', listener)
+        );
+    }
+
+}
 export namespace WebviewWidget {
     export namespace Styles {
-
         export const WEBVIEW = 'theia-webview';
-
+    }
+    export interface State {
+        viewType: string
+        title: string
+        options: WebviewPanelOptions
+        // TODO serialize/revive URIs
+        contentOptions: WebviewContentOptions
+        state: any
+        // TODO: preserve icon class
+    }
+    export function compareWebviewContentOptions(a: WebviewContentOptions, b: WebviewContentOptions): boolean {
+        return a.enableCommandUris === b.enableCommandUris
+            && a.allowScripts === b.allowScripts &&
+            ArrayExt.shallowEqual(a.localResourceRoots || [], b.localResourceRoots || [], (uri, uri2) => uri.toString() === uri2.toString()) &&
+            ArrayExt.shallowEqual(a.portMapping || [], b.portMapping || [], (m, m2) =>
+                m.extensionHostPort === m2.extensionHostPort && m.webviewPort === m2.webviewPort
+            );
     }
 }

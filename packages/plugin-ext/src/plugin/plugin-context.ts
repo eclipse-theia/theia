@@ -130,7 +130,6 @@ import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
 import { LanguagesContributionExtImpl } from './languages-contribution-ext';
 import { ConnectionExtImpl } from './connection-ext';
-import { WebviewsExtImpl } from './webviews';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
 import { FileSystemExtImpl } from './file-system';
@@ -140,6 +139,7 @@ import { DecorationProvider, LineChange } from '@theia/plugin';
 import { DecorationsExtImpl } from './decorations';
 import { TextEditorExt } from './text-editor';
 import { ClipboardExt } from './clipboard-ext';
+import { WebviewsExtImpl } from './webviews';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -150,7 +150,8 @@ export function createAPIFactory(
     editorsAndDocumentsExt: EditorsAndDocumentsExtImpl,
     workspaceExt: WorkspaceExtImpl,
     messageRegistryExt: MessageRegistryExt,
-    clipboard: ClipboardExt
+    clipboard: ClipboardExt,
+    webviewExt: WebviewsExtImpl
 ): PluginAPIFactory {
 
     const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -165,7 +166,6 @@ export function createAPIFactory(
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
     const languagesExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_EXT, new LanguagesExtImpl(rpc, documents, commandRegistry));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
-    const webviewExt = rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, new WebviewsExtImpl(rpc));
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
     const languagesContributionExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_CONTRIBUTION_EXT, new LanguagesContributionExtImpl(rpc, connectionExt));
@@ -338,11 +338,11 @@ export function createAPIFactory(
             createWebviewPanel(viewType: string,
                 title: string,
                 showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
-                options: theia.WebviewPanelOptions & theia.WebviewOptions): theia.WebviewPanel {
+                options: theia.WebviewPanelOptions & theia.WebviewOptions = {}): theia.WebviewPanel {
                 return webviewExt.createWebview(viewType, title, showOptions, options, Uri.file(plugin.pluginPath));
             },
             registerWebviewPanelSerializer(viewType: string, serializer: theia.WebviewPanelSerializer): theia.Disposable {
-                return webviewExt.registerWebviewPanelSerializer(viewType, serializer);
+                return webviewExt.registerWebviewPanelSerializer(viewType, serializer, Uri.file(plugin.pluginPath));
             },
             get state(): theia.WindowState {
                 return windowStateExt.getWindowState();

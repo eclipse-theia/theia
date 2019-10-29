@@ -30,6 +30,7 @@ import { MessageRegistryExt } from '../../../plugin/message-registry';
 import { WorkerEnvExtImpl } from './worker-env-ext';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
 import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
+import { WebviewsExtImpl } from '../../../plugin/webviews';
 
 // tslint:disable-next-line:no-any
 const ctx = self as any;
@@ -59,6 +60,7 @@ const workspaceExt = new WorkspaceExtImpl(rpc, editorsAndDocuments, messageRegis
 const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc, workspaceExt);
 const debugExt = createDebugExtStub(rpc);
 const clipboardExt = new ClipboardExt(rpc);
+const webviewExt = new WebviewsExtImpl(rpc, workspaceExt);
 
 const pluginManager = new PluginManagerExtImpl({
     // tslint:disable-next-line:no-any
@@ -131,7 +133,7 @@ const pluginManager = new PluginManagerExtImpl({
             }
         }
     }
-}, envExt, storageProxy, preferenceRegistryExt, rpc);
+}, envExt, storageProxy, preferenceRegistryExt, webviewExt, rpc);
 
 const apiFactory = createAPIFactory(
     rpc,
@@ -142,7 +144,8 @@ const apiFactory = createAPIFactory(
     editorsAndDocuments,
     workspaceExt,
     messageRegistryExt,
-    clipboardExt
+    clipboardExt,
+    webviewExt
 );
 let defaultApi: typeof theia;
 
@@ -169,6 +172,7 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
 rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocuments);
 rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
 rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
+rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, webviewExt);
 
 function isElectron(): boolean {
     if (typeof navigator === 'object' && typeof navigator.userAgent === 'string' && navigator.userAgent.indexOf('Electron') >= 0) {
