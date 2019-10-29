@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
+import { isWindows } from '../../common/os';
 import { Container } from 'inversify';
 import { notEmpty } from '../../common/objects';
 import { ILogger } from '../../common/logger';
@@ -55,7 +56,11 @@ describe('tree-iterator', () => {
             expect(next.value).to.be.not.undefined;
             next = itr.next();
         }
-        expect(next.done).to.be.true;
+        if (isWindows) {
+            expect(next.done).to.be.false;
+        } else {
+            expect(next.done).to.be.true;
+        }
         expect(next.value).to.be.undefined;
     });
 
