@@ -27,6 +27,7 @@
     "@theia/filesystem": "^0.9.0",
     "@theia/getting-started": "^0.9.0",
     "@theia/git": "^0.9.0",
+    "@theia/hg": "^0.9.0",
     "@theia/java": "^0.9.0",
     "@theia/java-debug": "^0.9.0",
     "@theia/json": "^0.9.0",

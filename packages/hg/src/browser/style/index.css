@@ -1,0 +1,194 @@
+/********************************************************************************
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-hg {
+    color: var(--theia-ui-font-color1);
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.theia-side-panel .theia-hg {
+    padding-left: 19px;
+}
+
+.theia-hg:focus, .theia-hg :focus {
+    outline: 0;
+    box-shadow: none;
+    border: none;
+}
+
+.theia-hg .noWrapInfo {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.theia-hg .space-between {
+    justify-content: space-between;
+}
+
+.theia-hg .gitItem {
+    margin: 1px 0 1px 3px;
+    padding: 2px;
+    font-size: var(--theia-ui-font-size1);
+    display: flex;
+    justify-content: space-between;
+}
+
+.theia-hg .gitItem .file-icon {
+    display: initial;
+}
+
+.theia-hg .gitItem:hover {
+    background-color: var(--theia-layout-color2);
+    cursor: pointer;
+}
+
+.theia-hg .gitItem .path {
+    color: var(--theia-ui-font-color2);
+    font-size: var(--theia-ui-font-size0);
+    margin-left: 3px;
+}
+
+.theia-hg .gitItem .status {
+    padding: 2px 4px;
+    font-size: var(--theia-ui-font-size0);
+}
+
+.theia-hg .gitItem .status.new {
+    color: var(--theia-success-color0);
+}
+
+.theia-hg .gitItem .status.new.staged {
+    color: var(--theia-success-color0);
+}
+
+.theia-hg .gitItem .status.modified {
+    color: var(--theia-brand-color0);
+}
+
+.theia-hg .gitItem .status.deleted {
+    color: var(--theia-warn-color0);
+}
+
+.theia-hg .gitItem .status.renamed {
+    color: var(--theia-brand-color0);
+}
+
+.theia-hg .gitItem .status.conflicted {
+    color: var(--theia-error-color0);
+}
+
+.theia-hg .gitItem .status.copied {
+    color: var(--theia-brand-color0);
+}
+
+.theia-hg div:focus .theia-mod-selected{
+    background: var(--theia-accent-color3);
+}
+
+.theia-hg .theia-mod-selected{
+    background: var(--theia-accent-color4);
+}
+
+.theia-hg-main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.theia-hg-commit-message-container textarea {
+    line-height: var(--theia-content-line-height);
+    font-size: var(--theia-ui-font-size1);
+    color: var(--theia-ui-font-color1);
+    background: var(--theia-layout-color2);
+    border-style: solid;
+    border-width: 1px;
+    resize: none;
+    box-sizing: border-box;
+    padding-left: 4px;
+}
+
+.theia-hg-commit-message {
+    width: 100%;
+}
+
+.theia-hg-commit-message-idle {
+    border-color: var(--theia-border-color0);
+}
+
+.theia-hg-commit-message-info {
+    border-color: var(--theia-info-color0);
+}
+
+.theia-hg-commit-message-success {
+    border-color: var(--theia-success-color0);
+}
+
+.theia-hg-commit-message-warning {
+    border-color: var(--theia-warn-color0);
+}
+
+.theia-hg-commit-message-error {
+    border-color: var(--theia-error-color0) !important;
+}
+
+.theia-hg-message,
+.theia-hg-commit-validation-message {
+    padding: 4px 4px 4px 4px;
+}
+
+.theia-hg-validation-message-idle {
+    background-color: var(--theia-border-color0) !important;
+}
+
+.theia-hg-validation-message-info {
+    background-color: var(--theia-info-color0) !important;
+    color: var(--theia-info-font-color0);
+}
+
+.theia-hg-validation-message-success {
+    background-color: var(--theia-success-color0) !important;
+    color: var(--theia-success-font-color0);
+}
+
+.theia-hg-message-warning,
+.theia-hg-validation-message-warning {
+    background-color: var(--theia-warn-color0) !important;
+    color: var(--theia-warn-font-color0);
+}
+
+.theia-hg-validation-message-error {
+    background-color: var(--theia-error-color0) !important;
+    color: var(--theia-error-font-color0);
+}
+
+.hg-tab-icon {
+    -webkit-mask: url('hg.svg');
+    mask: url('hg.svg');
+}
+
+.hg-theia-header {
+    padding: 5px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.hg-theia-header:hover {
+    background-color: var(--theia-layout-color2);
+    cursor: pointer;
+}
