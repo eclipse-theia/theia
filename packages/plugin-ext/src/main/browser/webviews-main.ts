@@ -15,8 +15,9 @@
  ********************************************************************************/
 
 import debounce = require('lodash.debounce');
-import { WebviewsMain, MAIN_RPC_CONTEXT, WebviewsExt, WebviewPanelViewState } from '../../common/plugin-api-rpc';
+import URI from 'vscode-uri';
 import { interfaces } from 'inversify';
+import { WebviewsMain, MAIN_RPC_CONTEXT, WebviewsExt, WebviewPanelViewState } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions } from '@theia/plugin';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
@@ -27,6 +28,7 @@ import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { JSONExt } from '@phosphor/coreutils/lib/json';
 import { Mutable } from '@theia/core/lib/common/types';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
+
 export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
     private readonly proxy: WebviewsExt;
@@ -75,10 +77,12 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     protected hookWebview(view: WebviewWidget): void {
         const handle = view.identifier.id;
         this.toDispose.push(view.onMessage(data => this.proxy.$onMessage(handle, data)));
-
-        const onDispose = () => this.proxy.$onDidDisposeWebviewPanel(handle);
-        view.disposed.connect(onDispose);
-        this.toDispose.push(Disposable.create(() => view.disposed.disconnect(onDispose)));
+        view.disposed.connect(() => {
+            if (this.toDispose.disposed) {
+                return;
+            }
+            this.proxy.$onDidDisposeWebviewPanel(handle);
+        });
     }
 
     private async addOrReattachWidget(handle: string, showOptions: WebviewPanelShowOptions): Promise<void> {
@@ -195,11 +199,26 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         this.hookWebview(widget);
         const handle = widget.identifier.id;
         const title = widget.title.label;
-        const state = widget.state;
+
+        let state = undefined;
+        if (widget.state) {
+            try {
+                state = JSON.parse(widget.state);
+            } catch {
+                // noop
+            }
+        }
+
         const options = widget.options;
+        const { allowScripts, localResourceRoots, ...contentOptions } = widget.contentOptions;
         this.viewColumnService.updateViewColumns();
         const position = this.viewColumnService.getViewColumn(widget.id) || 0;
-        await this.proxy.$deserializeWebviewPanel(handle, widget.viewType, title, state, position, options);
+        await this.proxy.$deserializeWebviewPanel(handle, widget.viewType, title, state, position, {
+            enableScripts: allowScripts,
+            localResourceRoots: localResourceRoots && localResourceRoots.map(root => URI.parse(root)),
+            ...contentOptions,
+            ...options
+        });
     }
 
     protected readonly updateViewStates = debounce(() => {
