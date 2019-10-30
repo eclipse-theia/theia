@@ -20,17 +20,13 @@ import { interfaces } from 'inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions } from '@theia/plugin';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WebviewWidget, WebviewWidgetIdentifier } from './webview/webview';
-import { ThemeService } from '@theia/core/lib/browser/theming';
-import { ThemeRulesService } from './webview/theme-rules-service';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ViewColumnService } from './view-column-service';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { JSONExt } from '@phosphor/coreutils/lib/json';
 import { Mutable } from '@theia/core/lib/common/types';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
-
 export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
     private readonly proxy: WebviewsExt;
@@ -38,15 +34,11 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     protected readonly widgets: WidgetManager;
     protected readonly pluginService: HostedPluginSupport;
     protected readonly viewColumnService: ViewColumnService;
-    protected readonly keybindingRegistry: KeybindingRegistry;
-    protected readonly themeService = ThemeService.get();
-    protected readonly themeRulesService = ThemeRulesService.get();
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEWS_EXT);
         this.shell = container.get(ApplicationShell);
-        this.keybindingRegistry = container.get(KeybindingRegistry);
         this.viewColumnService = container.get(ViewColumnService);
         this.widgets = container.get(WidgetManager);
         this.pluginService = container.get(HostedPluginSupport);
@@ -82,50 +74,11 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
     protected hookWebview(view: WebviewWidget): void {
         const handle = view.identifier.id;
-        const toDisposeOnClose = new DisposableCollection();
-        const toDisposeOnLoad = new DisposableCollection();
+        this.toDispose.push(view.onMessage(data => this.proxy.$onMessage(handle, data)));
 
-        view.eventDelegate = {
-            // TODO review callbacks
-            onMessage: m => {
-                this.proxy.$onMessage(handle, m);
-            },
-            onKeyboardEvent: e => {
-                this.keybindingRegistry.run(e);
-            },
-            onLoad: contentDocument => {
-                const styleId = 'webview-widget-theme';
-                let styleElement: HTMLStyleElement | null | undefined;
-                if (!toDisposeOnLoad.disposed) {
-                    // if reload the frame
-                    toDisposeOnLoad.dispose();
-                    styleElement = <HTMLStyleElement>contentDocument.getElementById(styleId);
-                }
-                toDisposeOnClose.push(toDisposeOnLoad);
-                if (!styleElement) {
-                    const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
-                    styleElement = this.themeRulesService.createStyleSheet(parent);
-                    styleElement.id = styleId;
-                    parent.appendChild(styleElement);
-                }
-
-                this.themeRulesService.setRules(styleElement, this.themeRulesService.getCurrentThemeRules());
-                contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
-                toDisposeOnLoad.push(this.themeService.onThemeChange(() => {
-                    this.themeRulesService.setRules(<HTMLElement>styleElement, this.themeRulesService.getCurrentThemeRules());
-                    contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
-                }));
-            }
-        };
-        this.toDispose.push(Disposable.create(() => view.eventDelegate = {}));
-
-        view.disposed.connect(() => {
-            toDisposeOnClose.dispose();
-            if (!this.toDispose.disposed) {
-                this.proxy.$onDidDisposeWebviewPanel(handle);
-            }
-        });
-        toDisposeOnClose.push(Disposable.create(() => this.themeRulesService.setIconPath(handle, undefined)));
+        const onDispose = () => this.proxy.$onDidDisposeWebviewPanel(handle);
+        view.disposed.connect(onDispose);
+        this.toDispose.push(Disposable.create(() => view.disposed.disconnect(onDispose)));
     }
 
     private async addOrReattachWidget(handle: string, showOptions: WebviewPanelShowOptions): Promise<void> {
@@ -205,7 +158,6 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     async $setIconPath(handle: string, iconPath: { light: string; dark: string; } | string | undefined): Promise<void> {
         const webview = await this.getWebview(handle);
         webview.setIconClass(iconPath ? `webview-icon ${handle}-file-icon` : '');
-        this.themeRulesService.setIconPath(handle, iconPath);
     }
 
     async $setHtml(handle: string, value: string): Promise<void> {
