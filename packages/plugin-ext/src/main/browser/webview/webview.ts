@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as mime from 'mime';
 import { injectable, inject, postConstruct } from 'inversify';
-import { ArrayExt } from '@phosphor/algorithm/lib/array';
 import { WebviewPanelOptions, WebviewPortMapping } from '@theia/plugin';
 import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
 import { Disposable } from '@theia/core/lib/common/disposable';
@@ -32,12 +32,15 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Schemes } from '../../../common/uri-components';
+import { JSONExt } from '@phosphor/coreutils';
 
 // tslint:disable:no-any
 
 export const enum WebviewMessageChannels {
     onmessage = 'onmessage',
     didClickLink = 'did-click-link',
+    didFocus = 'did-focus',
+    didBlur = 'did-blur',
     doUpdateState = 'do-update-state',
     doReload = 'do-reload',
     loadResource = 'load-resource',
@@ -71,7 +74,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     static FACTORY_ID = 'plugin-webview';
 
-    protected element: HTMLIFrameElement;
+    protected element: HTMLIFrameElement | undefined;
 
     // tslint:disable-next-line:max-line-length
     // XXX This is a hack to be able to tack the mouse events when drag and dropping the widgets.
@@ -106,8 +109,16 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     };
 
     protected html = '';
-    protected contentOptions: WebviewContentOptions = {};
-    state: any;
+
+    protected _contentOptions: WebviewContentOptions = {};
+    get contentOptions(): WebviewContentOptions {
+        return this._contentOptions;
+    }
+
+    protected _state: string | undefined;
+    get state(): string | undefined {
+        return this._state;
+    }
 
     viewType: string;
     options: WebviewPanelOptions = {};
@@ -132,12 +143,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this.node.appendChild(this.transparentOverlay);
 
         this.toDispose.push(this.mouseTracker.onMousedown(() => {
-            if (this.element.style.display !== 'none') {
+            if (this.element && this.element.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'block';
             }
         }));
         this.toDispose.push(this.mouseTracker.onMouseup(() => {
-            if (this.element.style.display !== 'none') {
+            if (this.element && this.element.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'none';
             }
         }));
@@ -151,6 +162,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         element.style.height = '100%';
         this.element = element;
         this.node.appendChild(this.element);
+        this.toDispose.push(Disposable.create(() => {
+            if (this.element) {
+                this.element.remove();
+                this.element = undefined;
+            }
+        }));
 
         const subscription = this.on(WebviewMessageChannels.webviewReady, () => {
             subscription.dispose();
@@ -160,7 +177,14 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this.toDispose.push(this.on(WebviewMessageChannels.onmessage, (data: any) => this.onMessageEmitter.fire(data)));
         this.toDispose.push(this.on(WebviewMessageChannels.didClickLink, (uri: string) => this.openLink(new URI(uri))));
         this.toDispose.push(this.on(WebviewMessageChannels.doUpdateState, (state: any) => {
-            this.state = state;
+            this._state = state;
+        }));
+        this.toDispose.push(this.on(WebviewMessageChannels.didFocus, () =>
+            // emulate the webview focus without actually changing focus
+            this.node.dispatchEvent(new FocusEvent('focus'))
+        ));
+        this.toDispose.push(this.on(WebviewMessageChannels.didBlur, () => {
+            /* no-op: webview loses focus only if another element gains focus in the main window */
         }));
         this.toDispose.push(this.on(WebviewMessageChannels.doReload, () => this.reload()));
         this.toDispose.push(this.on(WebviewMessageChannels.loadResource, (entry: any) => {
@@ -178,10 +202,10 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     setContentOptions(contentOptions: WebviewContentOptions): void {
-        if (WebviewWidget.compareWebviewContentOptions(this.contentOptions, contentOptions)) {
+        if (JSONExt.deepEqual(<any>this.contentOptions, <any>contentOptions)) {
             return;
         }
-        this.contentOptions = contentOptions;
+        this._contentOptions = contentOptions;
         this.doUpdateContent();
     }
 
@@ -206,6 +230,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
+        this.node.focus();
         this.focus();
     }
 
@@ -256,7 +281,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
                     return this.doSend('did-load-resource', {
                         status: 200,
                         path: requestPath,
-                        mime: 'text/plain', // TODO detect mimeType from URI extension
+                        mime: mime.getType(normalizedUri.path.toString()) || 'application/octet-stream',
                         data: content
                     });
                 }
@@ -313,8 +338,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this.viewType = viewType;
         this.title.label = title;
         this.options = options;
-        this.contentOptions = contentOptions;
-        this.state = state;
+        this._contentOptions = contentOptions;
+        this._state = state;
     }
 
     protected async doSend(channel: string, data?: any): Promise<void> {
@@ -357,15 +382,6 @@ export namespace WebviewWidget {
         title: string
         options: WebviewPanelOptions
         contentOptions: WebviewContentOptions
-        state: any
-        // TODO: preserve icon class
-    }
-    export function compareWebviewContentOptions(a: WebviewContentOptions, b: WebviewContentOptions): boolean {
-        return a.enableCommandUris === b.enableCommandUris
-            && a.allowScripts === b.allowScripts &&
-            ArrayExt.shallowEqual(a.localResourceRoots || [], b.localResourceRoots || [], (uri, uri2) => uri === uri2) &&
-            ArrayExt.shallowEqual(a.portMapping || [], b.portMapping || [], (m, m2) =>
-                m.extensionHostPort === m2.extensionHostPort && m.webviewPort === m2.webviewPort
-            );
+        state?: string
     }
 }

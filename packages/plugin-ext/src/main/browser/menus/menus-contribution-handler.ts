@@ -21,6 +21,7 @@ import { injectable, inject } from 'inversify';
 import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler, Disposable, DisposableCollection } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { MenuModelRegistry } from '@theia/core/lib/common';
+import { Emitter } from '@theia/core/lib/common/event';
 import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { QuickCommandService } from '@theia/core/lib/browser/quick-open/quick-command-service';
@@ -38,6 +39,7 @@ import { PluginViewWidget } from '../view/plugin-view-widget';
 import { ViewContextKeyService } from '../view/view-context-key-service';
 import { WebviewWidget } from '../webview/webview';
 import { Navigatable } from '@theia/core/lib/browser/navigatable';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
 export namespace CodeEditorWidget {
@@ -79,6 +81,9 @@ export class MenusContributionPointHandler {
 
     @inject(ViewContextKeyService)
     protected readonly viewContextKeys: ViewContextKeyService;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     handle(contributions: PluginContribution): Disposable {
         const allMenus = contributions.menus;
@@ -194,6 +199,23 @@ export class MenusContributionPointHandler {
         toDispose.push(this.commands.registerCommand(command, handler));
 
         const { when } = action;
+        const whenKeys = when && this.contextKeyService.parseKeys(when);
+        let onDidChange;
+        if (whenKeys && whenKeys.size) {
+            const onDidChangeEmitter = new Emitter<void>();
+            toDispose.push(onDidChangeEmitter);
+            onDidChange = onDidChangeEmitter.event;
+            this.contextKeyService.onDidChange.maxListeners = this.contextKeyService.onDidChange.maxListeners + 1;
+            toDispose.push(this.contextKeyService.onDidChange(event => {
+                if (event.affects(whenKeys)) {
+                    onDidChangeEmitter.fire(undefined);
+                }
+            }));
+            toDispose.push(Disposable.create(() => {
+                this.contextKeyService.onDidChange.maxListeners = this.contextKeyService.onDidChange.maxListeners - 1;
+            }));
+        }
+
         // handle group and priority
         // if group is empty or white space is will be set to navigation
         // ' ' => ['navigation', 0]
@@ -202,7 +224,7 @@ export class MenusContributionPointHandler {
         // if priority is not a number it will be set to 0
         // navigation@test => ['navigation', 0]
         const [group, sort] = (action.group || 'navigation').split('@');
-        const item: Mutable<TabBarToolbarItem> = { id, command: id, group: group.trim() || 'navigation', priority: ~~sort || undefined, when };
+        const item: Mutable<TabBarToolbarItem> = { id, command: id, group: group.trim() || 'navigation', priority: ~~sort || undefined, when, onDidChange };
         toDispose.push(this.tabBarToolbar.registerItem(item));
 
         toDispose.push(this.onDidRegisterCommand(action.command, pluginCommand => {
