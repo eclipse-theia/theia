@@ -333,6 +333,9 @@ export class ShellLayoutRestorer implements CommandContribution {
                     this.logger.warn(`Couldn't restore widget state for ${widget.id}. Error: ${e} `);
                 }
             }
+            if (widget.isDisposed) {
+                return undefined;
+            }
             return widget;
         } catch (e) {
             if (ApplicationShellLayoutMigrationError.is(e)) {

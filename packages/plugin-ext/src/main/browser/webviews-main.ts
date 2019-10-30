@@ -27,16 +27,16 @@ import { ThemeRulesService } from './webview/theme-rules-service';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ViewColumnService } from './view-column-service';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { JSONExt } from '@phosphor/coreutils/lib/json';
 import { Mutable } from '@theia/core/lib/common/types';
+import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 
 export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
-    private readonly revivers = new Set<string>();
     private readonly proxy: WebviewsExt;
     protected readonly shell: ApplicationShell;
     protected readonly widgets: WidgetManager;
+    protected readonly pluginService: HostedPluginSupport;
     protected readonly viewColumnService: ViewColumnService;
     protected readonly keybindingRegistry: KeybindingRegistry;
     protected readonly themeService = ThemeService.get();
@@ -49,20 +49,10 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         this.keybindingRegistry = container.get(KeybindingRegistry);
         this.viewColumnService = container.get(ViewColumnService);
         this.widgets = container.get(WidgetManager);
-        const pluginService = container.get(HostedPluginSupport);
+        this.pluginService = container.get(HostedPluginSupport);
         this.toDispose.push(this.shell.onDidChangeActiveWidget(() => this.updateViewStates()));
         this.toDispose.push(this.shell.onDidChangeCurrentWidget(() => this.updateViewStates()));
         this.toDispose.push(this.viewColumnService.onViewColumnChanged(() => this.updateViewStates()));
-        this.toDispose.push(this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
-            if (factoryId === WebviewWidget.FACTORY_ID && widget instanceof WebviewWidget) {
-                const restoreState = widget.restoreState.bind(widget);
-                widget.restoreState = async oldState => {
-                    restoreState(oldState);
-                    await pluginService.activateByEvent(`onWebviewPanel:${widget.viewType}`);
-                    this.restoreWidget(widget);
-                };
-            }
-        }));
     }
 
     dispose(): void {
@@ -80,9 +70,13 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         this.hookWebview(view);
         view.viewType = viewType;
         view.title.label = title;
-        const { enableFindWidget, retainContextWhenHidden, enableScripts, ...contentOptions } = options;
+        const { enableFindWidget, retainContextWhenHidden, enableScripts, localResourceRoots, ...contentOptions } = options;
         view.options = { enableFindWidget, retainContextWhenHidden };
-        view.setContentOptions({ allowScripts: enableScripts, ...contentOptions });
+        view.setContentOptions({
+            allowScripts: enableScripts,
+            localResourceRoots: localResourceRoots && localResourceRoots.map(root => root.toString()),
+            ...contentOptions
+        });
         this.addOrReattachWidget(panelId, showOptions);
     }
 
@@ -90,7 +84,9 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         const handle = view.identifier.id;
         const toDisposeOnClose = new DisposableCollection();
         const toDisposeOnLoad = new DisposableCollection();
+
         view.eventDelegate = {
+            // TODO review callbacks
             onMessage: m => {
                 this.proxy.$onMessage(handle, m);
             },
@@ -121,12 +117,14 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
                 }));
             }
         };
+        this.toDispose.push(Disposable.create(() => view.eventDelegate = {}));
+
         view.disposed.connect(() => {
             toDisposeOnClose.dispose();
-            this.proxy.$onDidDisposeWebviewPanel(handle);
+            if (!this.toDispose.disposed) {
+                this.proxy.$onDidDisposeWebviewPanel(handle);
+            }
         });
-
-        this.toDispose.push(view);
         toDisposeOnClose.push(Disposable.create(() => this.themeRulesService.setIconPath(handle, undefined)));
     }
 
@@ -191,11 +189,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
                 this.addOrReattachWidget(widget.identifier.id, showOptions);
                 return;
             }
-        } else if (!widget.options.retainContextWhenHidden) {
-            // reload content when revealing
-            widget.reload();
         }
-
         if (showOptions.preserveFocus) {
             this.shell.revealWidget(widget.id);
         } else {
@@ -221,8 +215,12 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
     async $setOptions(handle: string, options: WebviewOptions): Promise<void> {
         const webview = await this.getWebview(handle);
-        const { enableScripts, ...contentOptions } = options;
-        webview.setContentOptions({ allowScripts: enableScripts, ...contentOptions });
+        const { enableScripts, localResourceRoots, ...contentOptions } = options;
+        webview.setContentOptions({
+            allowScripts: enableScripts,
+            localResourceRoots: localResourceRoots && localResourceRoots.map(root => root.toString()),
+            ...contentOptions
+        });
     }
 
     // tslint:disable-next-line:no-any
@@ -233,47 +231,23 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     }
 
     $registerSerializer(viewType: string): void {
-        if (this.revivers.has(viewType)) {
-            throw new Error(`Reviver for ${viewType} already registered`);
-        }
-        this.revivers.add(viewType);
+        this.pluginService.registerWebviewReviver(viewType, widget => this.restoreWidget(widget));
         this.toDispose.push(Disposable.create(() => this.$unregisterSerializer(viewType)));
     }
 
     $unregisterSerializer(viewType: string): void {
-        this.revivers.delete(viewType);
+        this.pluginService.unregisterWebviewReviver(viewType);
     }
 
     protected async restoreWidget(widget: WebviewWidget): Promise<void> {
-        const viewType = widget.viewType;
-        if (!this.revivers.has(viewType)) {
-            widget.setHTML(this.getDeserializationFailedContents(viewType));
-            return;
-        }
-        try {
-            this.hookWebview(widget);
-            const handle = widget.identifier.id;
-            const title = widget.title.label;
-            const state = widget.state;
-            const options = widget.options;
-            this.viewColumnService.updateViewColumns();
-            const position = this.viewColumnService.getViewColumn(widget.id) || 0;
-            await this.proxy.$deserializeWebviewPanel(handle, viewType, title, state, position, options);
-        } catch (e) {
-            widget.setHTML(this.getDeserializationFailedContents(viewType));
-            console.error('Failed to restore the webview', e);
-        }
-    }
-
-    protected getDeserializationFailedContents(viewType: string): string {
-        return `<!DOCTYPE html>
-		<html>
-			<head>
-				<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
-			</head>
-			<body>An error occurred while restoring view:${viewType}</body>
-		</html>`;
+        this.hookWebview(widget);
+        const handle = widget.identifier.id;
+        const title = widget.title.label;
+        const state = widget.state;
+        const options = widget.options;
+        this.viewColumnService.updateViewColumns();
+        const position = this.viewColumnService.getViewColumn(widget.id) || 0;
+        await this.proxy.$deserializeWebviewPanel(handle, widget.viewType, title, state, position, options);
     }
 
     protected readonly updateViewStates = debounce(() => {

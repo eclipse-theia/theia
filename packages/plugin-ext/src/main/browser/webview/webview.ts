@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { ArrayExt } from '@phosphor/algorithm/lib/array';
-import { WebviewPanelOptions, WebviewPortMapping, Uri } from '@theia/plugin';
+import { WebviewPanelOptions, WebviewPortMapping } from '@theia/plugin';
 import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
 import { Disposable } from '@theia/core/lib/common/disposable';
 // TODO: get rid of dependencies to the mini browser
@@ -32,13 +32,15 @@ import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 // tslint:disable:no-any
 
 export const enum WebviewMessageChannels {
+    doUpdateState = 'do-update-state',
+    doReload = 'do-reload',
     loadResource = 'load-resource',
     webviewReady = 'webview-ready'
 }
 
 export interface WebviewContentOptions {
     readonly allowScripts?: boolean;
-    readonly localResourceRoots?: ReadonlyArray<Uri>;
+    readonly localResourceRoots?: ReadonlyArray<string>;
     readonly portMapping?: ReadonlyArray<WebviewPortMapping>;
     readonly enableCommandUris?: boolean;
 }
@@ -137,6 +139,10 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             this.ready.resolve();
         });
         this.toDispose.push(subscription);
+        this.toDispose.push(this.on(WebviewMessageChannels.doUpdateState, (state: any) => {
+            this.state = state;
+        }));
+        this.toDispose.push(this.on(WebviewMessageChannels.doReload, () => this.reload()));
         this.toDispose.push(this.on(WebviewMessageChannels.loadResource, (entry: any) => {
             const rawPath = entry.path;
             const normalizedPath = decodeURIComponent(rawPath);
@@ -300,7 +306,6 @@ export namespace WebviewWidget {
         viewType: string
         title: string
         options: WebviewPanelOptions
-        // TODO serialize/revive URIs
         contentOptions: WebviewContentOptions
         state: any
         // TODO: preserve icon class
@@ -308,7 +313,7 @@ export namespace WebviewWidget {
     export function compareWebviewContentOptions(a: WebviewContentOptions, b: WebviewContentOptions): boolean {
         return a.enableCommandUris === b.enableCommandUris
             && a.allowScripts === b.allowScripts &&
-            ArrayExt.shallowEqual(a.localResourceRoots || [], b.localResourceRoots || [], (uri, uri2) => uri.toString() === uri2.toString()) &&
+            ArrayExt.shallowEqual(a.localResourceRoots || [], b.localResourceRoots || [], (uri, uri2) => uri === uri2) &&
             ArrayExt.shallowEqual(a.portMapping || [], b.portMapping || [], (m, m2) =>
                 m.extensionHostPort === m2.extensionHostPort && m.webviewPort === m2.webviewPort
             );
