@@ -31,6 +31,7 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { TaskDefinitionRegistry, ProblemMatcherRegistry, ProblemPatternRegistry } from '@theia/task/lib/browser';
 import { PluginDebugService } from './debug/plugin-debug-service';
 import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-updater';
+import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-service';
 
 @injectable()
 export class PluginContributionHandler {
@@ -78,6 +79,9 @@ export class PluginContributionHandler {
 
     @inject(DebugSchemaUpdater)
     protected readonly debugSchema: DebugSchemaUpdater;
+
+    @inject(MonacoThemingService)
+    protected readonly monacoThemingService: MonacoThemingService;
 
     protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
 
@@ -227,6 +231,13 @@ export class PluginContributionHandler {
                     language: snippet.language,
                     source: snippet.source
                 }));
+            }
+        }
+
+        if (contributions.themes && contributions.themes.length) {
+            const includes = {};
+            for (const theme of contributions.themes) {
+                pushContribution(`themes.${theme.uri}`, () => this.monacoThemingService.register(theme, includes));
             }
         }
 
@@ -473,4 +484,5 @@ export class PluginContributionHandler {
             }
         }
     }
+
 }
