@@ -15,6 +15,18 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
+import { Disposable } from '../common/disposable';
+
+export interface ColorDefaults {
+    light?: string
+    dark?: string
+    hc?: string
+}
+
+export interface ColorOptions {
+    defaults?: ColorDefaults
+    description: string
+}
 
 /**
  * It should be implemented by an extension, e.g. by the monaco extension.
@@ -26,6 +38,10 @@ export class ColorRegistry {
 
     getCurrentColor(id: string): string | undefined {
         return undefined;
+    }
+
+    register(id: string, options: ColorOptions): Disposable {
+        return Disposable.NULL;
     }
 
 }

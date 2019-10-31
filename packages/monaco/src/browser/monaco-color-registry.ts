@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { ColorRegistry, ColorOptions } from '@theia/core/lib/browser/color-registry';
+import { Disposable } from '@theia/core/lib/common/disposable';
 
 @injectable()
 export class MonacoColorRegistry implements ColorRegistry {
@@ -32,6 +33,11 @@ export class MonacoColorRegistry implements ColorRegistry {
     getCurrentColor(id: string): string | undefined {
         const color = this.monacoThemeService.getTheme().getColor(id);
         return color && color.toString();
+    }
+
+    register(id: string, options: ColorOptions): Disposable {
+        const identifier = this.monacoColorRegistry.registerColor(id, options.defaults, options.description);
+        return Disposable.create(() => this.monacoColorRegistry.deregisterColor(identifier));
     }
 
 }

@@ -84,6 +84,7 @@ import { TabBarDecoratorService, TabBarDecorator } from './shell/tab-bar-decorat
 import { ContextMenuContext } from './menu/context-menu-context';
 import { bindResourceProvider, bindMessageService, bindPreferenceService } from './frontend-application-bindings';
 import { ColorRegistry } from './color-registry';
+import { ColorContribution, ColorApplicationContribution } from './color-application-contribution';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -91,7 +92,11 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     const themeService = ThemeService.get();
     themeService.register(...BuiltinThemeProvider.themes);
     themeService.startupTheme();
+
     bind(ColorRegistry).toSelf().inSingletonScope();
+    bindContributionProvider(bind, ColorContribution);
+    bind(ColorApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ColorApplicationContribution);
 
     bind(FrontendApplication).toSelf().inSingletonScope();
     bind(FrontendApplicationStateService).toSelf().inSingletonScope();
