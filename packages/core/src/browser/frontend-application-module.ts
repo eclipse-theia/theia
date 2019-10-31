@@ -83,6 +83,7 @@ import { ProgressStatusBarItem } from './progress-status-bar-item';
 import { TabBarDecoratorService, TabBarDecorator } from './shell/tab-bar-decorator';
 import { ContextMenuContext } from './menu/context-menu-context';
 import { bindResourceProvider, bindMessageService, bindPreferenceService } from './frontend-application-bindings';
+import { ColorRegistry } from './color-registry';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -90,6 +91,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     const themeService = ThemeService.get();
     themeService.register(...BuiltinThemeProvider.themes);
     themeService.startupTheme();
+    bind(ColorRegistry).toSelf().inSingletonScope();
 
     bind(FrontendApplication).toSelf().inSingletonScope();
     bind(FrontendApplicationStateService).toSelf().inSingletonScope();

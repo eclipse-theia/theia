@@ -13,6 +13,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
+// copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/browser/baseWebviewElement.ts
+// copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/browser/webviewElement.ts#
 
 import * as mime from 'mime';
 import { JSONExt } from '@phosphor/coreutils/lib/json';
@@ -36,6 +42,7 @@ import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Schemes } from '../../../common/uri-components';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
+import { WebviewThemeDataProvider } from './webview-theme-data-provider';
 
 // tslint:disable:no-any
 
@@ -107,6 +114,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     @inject(PluginSharedStyle)
     protected readonly sharedStyle: PluginSharedStyle;
+
+    @inject(WebviewThemeDataProvider)
+    protected readonly themeDataProvider: WebviewThemeDataProvider;
 
     viewState: WebviewPanelViewState = {
         visible: false,
@@ -205,6 +215,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             // keybinding service because these events do not bubble to the parent window anymore.
             this.dispatchKeyDown(data);
         }));
+
+        this.style();
+        this.toDispose.push(this.themeDataProvider.onDidChangeThemeData(() => this.style()));
     }
 
     setContentOptions(contentOptions: WebviewContentOptions): void {
@@ -267,6 +280,11 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     reload(): void {
         this.doUpdateContent();
+    }
+
+    protected style(): void {
+        const { styles, activeTheme } = this.themeDataProvider.getThemeData();
+        this.doSend('styles', { styles, activeTheme });
     }
 
     protected dispatchKeyDown(event: KeyboardEventInit): void {
