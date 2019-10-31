@@ -75,6 +75,7 @@ export interface PluginPackageContribution {
     keybindings?: PluginPackageKeybinding | PluginPackageKeybinding[];
     debuggers?: PluginPackageDebuggersContribution[];
     snippets: PluginPackageSnippetsContribution[];
+    themes?: PluginThemeContribution[];
     taskDefinitions?: PluginTaskDefinitionContribution[];
     problemMatchers?: PluginProblemMatcherContribution[];
     problemPatterns?: PluginProblemPatternContribution[];
@@ -131,6 +132,14 @@ export interface ScopeMap {
 export interface PluginPackageSnippetsContribution {
     language?: string;
     path?: string;
+}
+
+export interface PluginThemeContribution {
+    id?: string;
+    label?: string;
+    description?: string;
+    path?: string;
+    uiTheme?: 'vs' | 'vs-dark' | 'hc-black';
 }
 
 export interface PlatformSpecificAdapterContribution {
@@ -407,6 +416,7 @@ export interface PluginContribution {
     keybindings?: Keybinding[];
     debuggers?: DebuggerContribution[];
     snippets?: SnippetContribution[];
+    themes?: ThemeContribution[];
     taskDefinitions?: TaskDefinition[];
     problemMatchers?: ProblemMatcherContribution[];
     problemPatterns?: ProblemPatternContribution[];
@@ -416,6 +426,14 @@ export interface SnippetContribution {
     uri: string
     source: string
     language?: string
+}
+
+export interface ThemeContribution {
+    id?: string;
+    label?: string;
+    description?: string;
+    uri: string;
+    uiTheme?: 'vs' | 'vs-dark' | 'hc-black';
 }
 
 export interface GrammarsContribution {
