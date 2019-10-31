@@ -28,6 +28,7 @@ import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { JSONExt } from '@phosphor/coreutils/lib/json';
 import { Mutable } from '@theia/core/lib/common/types';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
+import { IconUrl } from '../../common/plugin-protocol';
 
 export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
@@ -159,9 +160,9 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         webview.title.label = value;
     }
 
-    async $setIconPath(handle: string, iconPath: { light: string; dark: string; } | string | undefined): Promise<void> {
+    async $setIconPath(handle: string, iconUrl: IconUrl | undefined): Promise<void> {
         const webview = await this.getWebview(handle);
-        webview.setIconClass(iconPath ? `webview-icon ${handle}-file-icon` : '');
+        webview.setIconUrl(iconUrl);
     }
 
     async $setHtml(handle: string, value: string): Promise<void> {

@@ -339,10 +339,10 @@ export function createAPIFactory(
                 title: string,
                 showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
                 options: theia.WebviewPanelOptions & theia.WebviewOptions = {}): theia.WebviewPanel {
-                return webviewExt.createWebview(viewType, title, showOptions, options, Uri.file(plugin.pluginPath));
+                return webviewExt.createWebview(viewType, title, showOptions, options, plugin);
             },
             registerWebviewPanelSerializer(viewType: string, serializer: theia.WebviewPanelSerializer): theia.Disposable {
-                return webviewExt.registerWebviewPanelSerializer(viewType, serializer, Uri.file(plugin.pluginPath));
+                return webviewExt.registerWebviewPanelSerializer(viewType, serializer, plugin);
             },
             get state(): theia.WindowState {
                 return windowStateExt.getWindowState();

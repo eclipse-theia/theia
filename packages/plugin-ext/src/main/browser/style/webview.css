@@ -25,12 +25,12 @@
     border: none; margin: 0; padding: 0;
 }
 
-.webview-icon {
+.theia-webview-icon {
     background: none !important;
     min-height: 20px;
 }
 
-.webview-icon::before {
+.theia-webview-icon::before {
     background-size: 13px;
     background-repeat: no-repeat;
     vertical-align: middle;
@@ -41,7 +41,7 @@
     content: "";
 }
 
-.p-TabBar.theia-app-sides .webview-icon::before {
+.p-TabBar.theia-app-sides .theia-webview-icon::before {
     width: var(--theia-private-sidebar-icon-size);
     height: var(--theia-private-sidebar-icon-size);
     background-size: contain;
