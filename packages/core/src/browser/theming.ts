@@ -25,8 +25,11 @@ import { CommonMenus } from './common-frontend-contribution';
 
 export const ThemeServiceSymbol = Symbol('ThemeService');
 
+export type ThemeType = 'light' | 'dark' | 'hc';
+
 export interface Theme {
     readonly id: string;
+    readonly type: ThemeType;
     readonly label: string;
     readonly description?: string;
     readonly editorTheme?: string;
@@ -197,8 +200,9 @@ export class BuiltinThemeProvider {
     static readonly darkCss = require('../../src/browser/style/variables-dark.useable.css');
     static readonly lightCss = require('../../src/browser/style/variables-bright.useable.css');
 
-    static readonly darkTheme = {
+    static readonly darkTheme: Theme = {
         id: 'dark',
+        type: 'dark',
         label: 'Dark Theme',
         description: 'Bright fonts on dark backgrounds.',
         editorTheme: 'dark-plus', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
@@ -210,8 +214,9 @@ export class BuiltinThemeProvider {
         }
     };
 
-    static readonly lightTheme = {
+    static readonly lightTheme: Theme = {
         id: 'light',
+        type: 'light',
         label: 'Light Theme',
         description: 'Dark fonts on light backgrounds.',
         editorTheme: 'light-plus', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts

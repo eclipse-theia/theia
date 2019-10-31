@@ -477,6 +477,7 @@ declare module monaco.services {
 
     export interface IStandaloneTheme {
         tokenTheme: TokenTheme;
+        getColor(color: string): Color | undefined;
     }
 
     export interface TokenTheme {
@@ -535,6 +536,16 @@ declare module monaco.theme {
     }
     export interface IThemable { }
     export function attachQuickOpenStyler(widget: IThemable, themeService: IThemeService): monaco.IDisposable;
+}
+
+declare module monaco.color {
+    export interface ColorContribution {
+        readonly id: string;
+    }
+    export interface IColorRegistry {
+        getColors(): ColorContribution[];
+    }
+    export function getColorRegistry(): IColorRegistry;
 }
 
 declare module monaco.referenceSearch {
