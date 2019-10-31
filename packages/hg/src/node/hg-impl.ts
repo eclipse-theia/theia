@@ -17,7 +17,6 @@
 import { injectable, inject } from 'inversify';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { ILogger } from '@theia/core';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import {
     Hg, HgUtils, Repository, HgFileChange, HgFileStatus, Branch, Commit,
     CommitIdentity, HgResult, CommitWithChanges, Remote, BranchType, MergeResult
@@ -59,16 +58,12 @@ export class HgImpl implements Hg {
     @inject(HgPromptServerImpl)
     protected readonly promptServer: HgPromptServerImpl;
 
-    protected ready: Deferred<void> = new Deferred();
-    protected hgEnv: Deferred<Object> = new Deferred();
-
     dispose(): void {
         this.locator.dispose();
         this.hgInit.dispose();
     }
 
     async clone(remoteUrl: string, options: Hg.Options.Clone): Promise<Repository> {
-        await this.ready.promise;
         const localPath = FileUri.fsPath(options.localUri);
         await hg.clone(this.hgInit, remoteUrl, localPath, []);
         const repository = { localUri: options.localUri };
@@ -132,7 +127,6 @@ export class HgImpl implements Hg {
     }
 
     async status(repository: Repository, options?: Hg.Options.Status): Promise<HgFileChange[]> {
-        await this.ready.promise;
         const repo = await this.getHgRepo(repository);
 
         const args = ['status'];
@@ -203,8 +197,6 @@ export class HgImpl implements Hg {
     }
 
     async add(repository: Repository, uris: string[]): Promise<void> {
-        await this.ready.promise;
-
         const paths = uris.map(uri => FileUri.fsPath(uri));
         await this.runCommand(repository, ['add', ...paths]);
     }
@@ -220,7 +212,6 @@ export class HgImpl implements Hg {
     }
 
     async forget(repository: Repository, uris: string[]): Promise<void> {
-        await this.ready.promise;
         const paths = uris.map(uri => FileUri.fsPath(uri));
         await this.runCommand(repository, ['forget', ...paths]);
     }
@@ -230,7 +221,6 @@ export class HgImpl implements Hg {
     async branch(repository: Repository, options: Hg.Options.BranchCommand.Create | Hg.Options.BranchCommand.Rename | Hg.Options.BranchCommand.Delete): Promise<void>;
     // tslint:disable-next-line:no-any
     async branch(repository: any, options: any): Promise<void | undefined | Branch | Branch[]> {
-        await this.ready.promise;
         const repo = await this.getHgRepo(repository);
 
         const output = await repo.runCommand(['branches']);
@@ -264,7 +254,6 @@ export class HgImpl implements Hg {
     }
 
     async checkout(repository: Repository, options: Hg.Options.Checkout.CheckoutBranch | Hg.Options.Checkout.WorkingTreeFile): Promise<void> {
-        await this.ready.promise;
         const repo = await this.getHgRepo(repository);
 
         if (HgUtils.isBranchCheckout(options)) {
@@ -290,7 +279,6 @@ export class HgImpl implements Hg {
                 }
             }
         }
-        await this.ready.promise;
         const args = ['commit'];
         if (messageWithSignOff) {
             args.push('-m');
@@ -305,8 +293,6 @@ export class HgImpl implements Hg {
     }
 
     async push(repository: Repository, { remote, localBranch, remoteBranch, setUpstream, force }: Hg.Options.Push = {}): Promise<void> {
-        await this.ready.promise;
-
         // Get the remote name in case we need it for interactive prompts
         const remotes = await this.paths(repository, { name: (remote || 'default') });
         if (remotes.length !== 1) {
@@ -356,8 +342,6 @@ export class HgImpl implements Hg {
     }
 
     async pull(repository: Repository, options: Hg.Options.Pull = {}): Promise<void> {
-        await this.ready.promise;
-
         const args = ['pull'];
         if (options.branch) {
             args.push('-b', options.branch);
@@ -384,8 +368,6 @@ export class HgImpl implements Hg {
      *
      */
     async reset(repository: Repository, options: Hg.Options.Reset): Promise<void> {
-        await this.ready.promise;
-
         // If the working tree is dirty then we commit the changes first.
         // This enables us to maintain the state of the working tree by reverting to this
         // new commit afterwards.
@@ -409,8 +391,6 @@ export class HgImpl implements Hg {
     }
 
     async merge(repository: Repository, revQuery: string): Promise<MergeResult> {
-        await this.ready.promise;
-
         const hgRepo = await this.getHgRepo(repository);
         const result = await hgRepo.runCommandReturningErrors(['merge', '-r', revQuery]);
         if (result.resultCode === 0) {
@@ -437,11 +417,9 @@ export class HgImpl implements Hg {
     }
 
     async show(repository: Repository, uri: string, options?: Hg.Options.Show): Promise<string> {
-        await this.ready.promise;
         const repo = await this.getHgRepo(repository);
 
         const path = FileUri.fsPath(uri);
-
         const localPath = FileUri.fsPath(path);
 
         let revision = '.';
@@ -464,7 +442,6 @@ export class HgImpl implements Hg {
     }
 
     async paths(repository: Repository, options?: Hg.Options.Paths): Promise<Remote[]> {
-        await this.ready.promise;
         const args = ['paths'];
         if (options && options.name) {
             args.push(options.name);
@@ -495,7 +472,6 @@ export class HgImpl implements Hg {
     }
 
     async exec(repository: Repository, args: string[], options?: Hg.Options.Execution): Promise<HgResult> {
-        await this.ready.promise;
         const repo = await this.getHgRepo(repository);
         const outputChunks = await repo.runCommand(args);
         return <HgResult>{
@@ -512,8 +488,6 @@ export class HgImpl implements Hg {
     }
 
     async log(repository: Repository, options: Hg.Options.Log = {}): Promise<CommitWithChanges[]> {
-        await this.ready.promise;
-
         const repo = await this.getHgRepo(repository);
 
         let args: string[] = ['log', '--template', logTemplate];
@@ -576,8 +550,6 @@ export class HgImpl implements Hg {
     }
 
     async parent(repository: Repository): Promise<string> {
-        await this.ready.promise;
-
         const repo = await this.getHgRepo(repository);
 
         const args: string[] = ['parent', '--template', parentTemplate];
@@ -646,8 +618,6 @@ export class HgImpl implements Hg {
     }
 
     async lsFiles(repository: Repository, uri: string): Promise<boolean> {
-        await this.ready.promise;
-
         const repo = await this.getHgRepo(repository);
         const file = relative(FileUri.fsPath(repository.localUri), FileUri.fsPath(uri));
         const args = ['status', file];
@@ -667,7 +637,6 @@ export class HgImpl implements Hg {
      * https://www.selenic.com/mercurial/hg.1.html#revert
      */
     async revert(repository: Repository, options: Hg.Options.Revert): Promise<void> {
-        await this.ready.promise;
         const args = ['revert'];
         if (options.revision) {
             args.push('-r');
@@ -688,7 +657,6 @@ export class HgImpl implements Hg {
      * https://www.selenic.com/mercurial/hg.1.html#update
      */
     async update(repository: Repository, options?: Hg.Options.Update): Promise<void> {
-        await this.ready.promise;
         const args = ['update'];
         if (options) {
             if (options.clean) {
