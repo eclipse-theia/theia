@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ThemeService, Theme, BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
+import { ThemeService, Theme } from '@theia/core/lib/browser/theming';
 import { IconUrl } from '../../common/plugin-protocol';
 import { Reference, SyncReferenceCollection } from '@theia/core/lib/common/reference';
 
@@ -110,7 +110,7 @@ export class PluginSharedStyle {
                 background-position: 2px;
                 width: ${size}px;
                 height: ${size}px;
-                background: no-repeat url("${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl}");
+                background: no-repeat url("${theme.type === 'light' ? lightIconUrl : darkIconUrl}");
                 background-size: ${size}px;
             `));
         return {

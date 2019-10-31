@@ -62,12 +62,15 @@ import { MimeService } from '@theia/core/lib/browser/mime-service';
 import { MonacoEditorServices } from './monaco-editor';
 import { MonacoColorRegistry } from './monaco-color-registry';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { MonacoThemingService } from './monaco-theming-service';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
 decorate(injectable(), monaco.contextKeyService.ContextKeyService);
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bind(MonacoThemingService).toSelf().inSingletonScope();
+
     bind(MonacoContextKeyService).toSelf().inSingletonScope();
     rebind(ContextKeyService).toService(MonacoContextKeyService);
 

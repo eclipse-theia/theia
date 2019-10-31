@@ -17,6 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { CommandRegistry, CommandContribution, CommandHandler, Command } from '../common/command';
 import { Emitter, Event } from '../common/event';
+import { Disposable } from '../common/disposable';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open/quick-open-model';
 import { QuickOpenService } from './quick-open/quick-open-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
@@ -63,10 +64,18 @@ export class ThemeService {
         global[ThemeServiceSymbol] = this;
     }
 
-    register(...themes: Theme[]): void {
+    register(...themes: Theme[]): Disposable {
         for (const theme of themes) {
             this.themes[theme.id] = theme;
         }
+        return Disposable.create(() => {
+            for (const theme of themes) {
+                delete this.themes[theme.id];
+            }
+            if (this.activeTheme && !this.themes[this.activeTheme.id]) {
+                this.startupTheme();
+            }
+        });
     }
 
     getThemes(): Theme[] {

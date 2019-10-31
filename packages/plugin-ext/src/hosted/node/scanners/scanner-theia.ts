@@ -43,7 +43,8 @@ import {
     SnippetContribution,
     PluginPackageCommand,
     PluginCommand,
-    IconUrl
+    IconUrl,
+    ThemeContribution
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -271,6 +272,12 @@ export class TheiaPluginScanner implements PluginScanner {
         } catch (err) {
             console.error(`Could not read '${rawPlugin.name}' contribution 'snippets'.`, rawPlugin.contributes!.snippets, err);
         }
+
+        try {
+            contributions.themes = this.readThemes(rawPlugin);
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'themes'.`, rawPlugin.contributes.themes, err);
+        }
         return contributions;
     }
 
@@ -291,6 +298,25 @@ export class TheiaPluginScanner implements PluginScanner {
 
     protected toPluginUrl(pck: PluginPackage, relativePath: string): string {
         return PluginPackage.toPluginUrl(pck, relativePath);
+    }
+
+    protected readThemes(pck: PluginPackage): ThemeContribution[] | undefined {
+        if (!pck.contributes || !pck.contributes.themes) {
+            return undefined;
+        }
+        const result: ThemeContribution[] = [];
+        for (const contribution of pck.contributes.themes) {
+            if (contribution.path) {
+                result.push({
+                    id: contribution.id,
+                    uri: FileUri.create(path.join(pck.packagePath, contribution.path)).toString(),
+                    description: contribution.description,
+                    label: contribution.label,
+                    uiTheme: contribution.uiTheme
+                });
+            }
+        }
+        return result;
     }
 
     protected readSnippets(pck: PluginPackage): SnippetContribution[] | undefined {
