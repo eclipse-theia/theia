@@ -24,6 +24,7 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { EditorPreferences, EditorConfiguration } from '@theia/editor/lib/browser/editor-preferences';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { ColorApplicationContribution } from '@theia/core/lib/browser/color-application-contribution';
 
 export type WebviewThemeType = 'vscode-light' | 'vscode-dark' | 'vscode-high-contrast';
 export interface WebviewThemeData {
@@ -43,6 +44,9 @@ export class WebviewThemeDataProvider {
     @inject(ColorRegistry)
     protected readonly colorRegistry: ColorRegistry;
 
+    @inject(ColorApplicationContribution)
+    protected readonly colorContribution: ColorApplicationContribution;
+
     protected themeData: WebviewThemeData | undefined;
 
     protected readonly editorStyles = new Map<keyof EditorConfiguration, string>([
@@ -53,7 +57,7 @@ export class WebviewThemeDataProvider {
 
     @postConstruct()
     protected init(): void {
-        ThemeService.get().onThemeChange(() => this.reset());
+        this.colorContribution.onDidChange(() => this.reset());
 
         this.editorPreferences.onPreferenceChanged(e => {
             if (this.editorStyles.has(e.preferenceName)) {

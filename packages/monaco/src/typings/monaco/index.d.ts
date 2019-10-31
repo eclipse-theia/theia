@@ -542,8 +542,15 @@ declare module monaco.color {
     export interface ColorContribution {
         readonly id: string;
     }
+    export interface ColorDefaults {
+        ligh?: string;
+        dark?: string;
+        hc?: string;
+    }
     export interface IColorRegistry {
         getColors(): ColorContribution[];
+        registerColor(id: string, defaults: ColorDefaults | undefined, description: string): string;
+        deregisterColor(id: string): void;
     }
     export function getColorRegistry(): IColorRegistry;
 }
