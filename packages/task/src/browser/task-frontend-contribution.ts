@@ -29,6 +29,7 @@ import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-con
 import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskConfiguration, TaskWatcher } from '../common';
 import { EditorManager } from '@theia/editor/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 export namespace TaskCommands {
     const TASK_CATEGORY = 'Task';
@@ -36,6 +37,18 @@ export namespace TaskCommands {
         id: 'task:run',
         category: TASK_CATEGORY,
         label: 'Run Task...'
+    };
+
+    export const TASK_RUN_BUILD: Command = {
+        id: 'task:run:build',
+        category: TASK_CATEGORY,
+        label: 'Run Build Task...'
+    };
+
+    export const TASK_RUN_TEST: Command = {
+        id: 'task:run:test',
+        category: TASK_CATEGORY,
+        label: 'Run Test Task...'
     };
 
     export const WORKBENCH_RUN_TASK: Command = {
@@ -135,6 +148,9 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
 
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
     @postConstruct()
     protected async init(): Promise<void> {
         this.taskWatcher.onTaskCreated(() => this.updateRunningTasksItem());
@@ -210,6 +226,24 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             }
         );
         registry.registerCommand(
+            TaskCommands.TASK_RUN_BUILD,
+            {
+                isEnabled: () => this.workspaceService.opened,
+                // tslint:disable-next-line:no-any
+                execute: (...args: any[]) =>
+                    this.quickOpenTask.runBuildOrTestTask('build')
+            }
+        );
+        registry.registerCommand(
+            TaskCommands.TASK_RUN_TEST,
+            {
+                isEnabled: () => this.workspaceService.opened,
+                // tslint:disable-next-line:no-any
+                execute: (...args: any[]) =>
+                    this.quickOpenTask.runBuildOrTestTask('test')
+            }
+        );
+        registry.registerCommand(
             TaskCommands.TASK_ATTACH,
             {
                 isEnabled: () => true,
@@ -268,18 +302,28 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         });
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
-            commandId: TaskCommands.TASK_RUN_LAST.id,
+            commandId: TaskCommands.TASK_RUN_BUILD.id,
             order: '1'
         });
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
-            commandId: TaskCommands.TASK_ATTACH.id,
+            commandId: TaskCommands.TASK_RUN_TEST.id,
             order: '2'
         });
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
-            commandId: TaskCommands.TASK_RUN_TEXT.id,
+            commandId: TaskCommands.TASK_RUN_LAST.id,
             order: '3'
+        });
+
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
+            commandId: TaskCommands.TASK_ATTACH.id,
+            order: '4'
+        });
+
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS, {
+            commandId: TaskCommands.TASK_RUN_TEXT.id,
+            order: '5'
         });
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_INFO, {

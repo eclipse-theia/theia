@@ -25,9 +25,27 @@ export const TaskClient = Symbol('TaskClient');
 
 export interface TaskCustomization {
     type: string;
+    group?: 'build' | 'test' | 'none' | { kind: 'build' | 'test' | 'none', isDefault: true };
     problemMatcher?: string | ProblemMatcherContribution | (string | ProblemMatcherContribution)[];
     // tslint:disable-next-line:no-any
     [name: string]: any;
+}
+export namespace TaskCustomization {
+    export function isBuildTask(task: TaskCustomization): boolean {
+        return task.group === 'build' || !!task.group && typeof task.group === 'object' && task.group.kind === 'build';
+    }
+
+    export function isDefaultBuildTask(task: TaskCustomization): boolean {
+        return !!task.group && typeof task.group === 'object' && task.group.kind === 'build' && task.group.isDefault;
+    }
+
+    export function isTestTask(task: TaskCustomization): boolean {
+        return task.group === 'test' || !!task.group && typeof task.group === 'object' && task.group.kind === 'test';
+    }
+
+    export function isDefaultTestTask(task: TaskCustomization): boolean {
+        return !!task.group && typeof task.group === 'object' && task.group.kind === 'test' && task.group.isDefault;
+    }
 }
 
 export interface TaskConfiguration extends TaskCustomization {

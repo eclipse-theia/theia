@@ -354,7 +354,7 @@ export class TaskService implements TaskConfigurationClient {
                     customizationObject.problemMatcher = matcherNames;
 
                     // write the selected matcher (or the decision of "never parse") into the `tasks.json`
-                    this.taskConfigurations.saveProblemMatcherForTask(task, matcherNames);
+                    this.updateTaskConfiguration(task, { problemMatcher: matcherNames });
                 } else if (selected.learnMore) { // user wants to learn more about parsing task output
                     open(this.openerService, new URI('https://code.visualstudio.com/docs/editor/tasks#_processing-task-output-with-problem-matchers'));
                 }
@@ -415,6 +415,29 @@ export class TaskService implements TaskConfigurationClient {
         return this.runTask(task, {
             customization: { ...taskCustomization, ...{ problemMatcher: resolvedMatchers } }
         });
+    }
+
+    /**
+     * Updates the task configuration in the `tasks.json`.
+     * The task config, together with updates, will be written into the `tasks.json` if it is not found in the file.
+     *
+     * @param task task that the updates will be applied to
+     * @param update the updates to be appplied
+     */
+    // tslint:disable-next-line:no-any
+    async updateTaskConfiguration(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
+        if (update.problemMatcher) {
+            if (Array.isArray(update.problemMatcher)) {
+                update.problemMatcher.forEach((name, index) => {
+                    if (!name.startsWith('$')) {
+                        update.problemMatcher[index] = `$${update.problemMatcher[index]}`;
+                    }
+                });
+            } else if (!update.problemMatcher.startsWith('$')) {
+                update.problemMatcher = `$${update.problemMatcher}`;
+            }
+        }
+        this.taskConfigurations.updateTaskConfig(task, update);
     }
 
     protected async getWorkspaceTasks(workspaceFolderUri: string | undefined): Promise<TaskConfiguration[]> {
