@@ -78,9 +78,8 @@ export class PluginSharedStyle {
     }): void {
         const sheet = (<CSSStyleSheet>this.style.sheet);
         const cssBody = body(ThemeService.get().getCurrentTheme());
-        sheet.insertRule(selector + ' { ' + cssBody + ' }', 0);
+        sheet.insertRule(selector + ' {\n' + cssBody + '\n}', 0);
     }
-
     deleteRule(selector: string): void {
         const sheet = (<CSSStyleSheet>this.style.sheet);
         const rules = sheet.rules || sheet.cssRules || [];

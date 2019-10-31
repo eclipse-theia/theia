@@ -18,18 +18,20 @@ import { v4 } from 'uuid';
 import { WebviewsExt, WebviewPanelViewState, WebviewsMain, PLUGIN_RPC_CONTEXT, WebviewInitData, /* WebviewsMain, PLUGIN_RPC_CONTEXT  */ } from '../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
+import { Plugin } from '../common/plugin-api-rpc';
 import URI from 'vscode-uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { fromViewColumn, toViewColumn, toWebviewPanelShowOptions } from './type-converters';
 import { Disposable, WebviewPanelTargetArea } from './types-impl';
 import { WorkspaceExtImpl } from './workspace';
+import { PluginIconPath } from './plugin-icon-path';
 
 export class WebviewsExtImpl implements WebviewsExt {
     private readonly proxy: WebviewsMain;
     private readonly webviewPanels = new Map<string, WebviewPanelImpl>();
     private readonly serializers = new Map<string, {
         serializer: theia.WebviewPanelSerializer,
-        pluginLocation: URI
+        plugin: Plugin
     }>();
     private initData: WebviewInitData | undefined;
 
@@ -85,9 +87,9 @@ export class WebviewsExtImpl implements WebviewsExt {
         if (!entry) {
             return Promise.reject(new Error(`No serializer found for '${viewType}'`));
         }
-        const { serializer, pluginLocation } = entry;
+        const { serializer, plugin } = entry;
 
-        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, pluginLocation);
+        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin);
         const revivedPanel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, toViewColumn(position)!, options, webview);
         this.webviewPanels.set(viewId, revivedPanel);
         return serializer.deserializeWebviewPanel(revivedPanel, state);
@@ -98,7 +100,7 @@ export class WebviewsExtImpl implements WebviewsExt {
         title: string,
         showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
         options: theia.WebviewPanelOptions & theia.WebviewOptions,
-        pluginLocation: URI
+        plugin: Plugin
     ): theia.WebviewPanel {
         if (!this.initData) {
             throw new Error('Webviews are not initialized');
@@ -107,7 +109,7 @@ export class WebviewsExtImpl implements WebviewsExt {
         const viewId = v4();
         this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, options);
 
-        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, pluginLocation);
+        const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin);
         const panel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, webviewShowOptions, options, webview);
         this.webviewPanels.set(viewId, panel);
         return panel;
@@ -116,13 +118,13 @@ export class WebviewsExtImpl implements WebviewsExt {
     registerWebviewPanelSerializer(
         viewType: string,
         serializer: theia.WebviewPanelSerializer,
-        pluginLocation: URI
+        plugin: Plugin
     ): theia.Disposable {
         if (this.serializers.has(viewType)) {
             throw new Error(`Serializer for '${viewType}' already registered`);
         }
 
-        this.serializers.set(viewType, { serializer, pluginLocation });
+        this.serializers.set(viewType, { serializer, plugin });
         this.proxy.$registerSerializer(viewType);
 
         return new Disposable(() => {
@@ -156,7 +158,7 @@ export class WebviewImpl implements theia.Webview {
         options: theia.WebviewOptions,
         private readonly initData: WebviewInitData,
         private readonly workspace: WorkspaceExtImpl,
-        private readonly pluginLocation: URI
+        readonly plugin: Plugin
     ) {
         this._options = options;
     }
@@ -206,7 +208,7 @@ export class WebviewImpl implements theia.Webview {
             ...newOptions,
             localResourceRoots: newOptions.localResourceRoots || [
                 ...(this.workspace.workspaceFolders || []).map(x => x.uri),
-                this.pluginLocation,
+                URI.file(this.plugin.pluginPath)
             ]
         });
         this._options = newOptions;
@@ -231,6 +233,7 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
     private _active = true;
     private _visible = true;
     private _showOptions: theia.WebviewPanelShowOptions;
+    private _iconPath: theia.Uri | { light: theia.Uri; dark: theia.Uri } | undefined;
 
     readonly onDisposeEmitter = new Emitter<void>();
     public readonly onDidDispose: Event<void> = this.onDisposeEmitter.event;
@@ -243,7 +246,7 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         private readonly _viewType: string,
         private _title: string,
         showOptions: theia.ViewColumn | theia.WebviewPanelShowOptions,
-        private readonly _options: theia.WebviewPanelOptions | undefined,
+        private readonly _options: theia.WebviewPanelOptions,
         private readonly _webview: WebviewImpl
     ) {
         this._showOptions = typeof showOptions === 'object' ? showOptions : { viewColumn: showOptions as theia.ViewColumn };
@@ -283,19 +286,15 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         }
     }
 
-    set iconPath(iconPath: theia.Uri | { light: theia.Uri; dark: theia.Uri }) {
+    get iconPath(): theia.Uri | { light: theia.Uri; dark: theia.Uri } | undefined {
+        return this._iconPath;
+    }
+
+    set iconPath(iconPath: theia.Uri | { light: theia.Uri; dark: theia.Uri } | undefined) {
         this.checkIsDisposed();
-        if (URI.isUri(iconPath)) {
-            if ('http' === iconPath.scheme || 'https' === iconPath.scheme) {
-                this.proxy.$setIconPath(this.viewId, iconPath.toString());
-            } else {
-                this.proxy.$setIconPath(this.viewId, (<theia.Uri>iconPath).path);
-            }
-        } else {
-            this.proxy.$setIconPath(this.viewId, {
-                light: (<{ light: theia.Uri; dark: theia.Uri }>iconPath).light.path,
-                dark: (<{ light: theia.Uri; dark: theia.Uri }>iconPath).dark.path
-            });
+        if (this._iconPath !== iconPath) {
+            this._iconPath = iconPath;
+            this.proxy.$setIconPath(this.viewId, PluginIconPath.toUrl(iconPath, this._webview.plugin));
         }
     }
 
@@ -306,7 +305,7 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
 
     get options(): theia.WebviewPanelOptions {
         this.checkIsDisposed();
-        return this._options!;
+        return this._options;
     }
 
     get viewColumn(): theia.ViewColumn | undefined {

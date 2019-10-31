@@ -15,15 +15,17 @@
  ********************************************************************************/
 
 import * as mime from 'mime';
+import { JSONExt } from '@phosphor/coreutils/lib/json';
 import { injectable, inject, postConstruct } from 'inversify';
 import { WebviewPanelOptions, WebviewPortMapping } from '@theia/plugin';
 import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
-import { Disposable } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 // TODO: get rid of dependencies to the mini browser
 import { MiniBrowserContentStyle } from '@theia/mini-browser/lib/browser/mini-browser-content-style';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { WebviewPanelViewState } from '../../../common/plugin-api-rpc';
+import { IconUrl } from '../../../common/plugin-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WebviewEnvironment } from './webview-environment';
 import URI from '@theia/core/lib/common/uri';
@@ -32,7 +34,8 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { Schemes } from '../../../common/uri-components';
-import { JSONExt } from '@phosphor/coreutils';
+import { PluginSharedStyle } from '../plugin-shared-style';
+import { BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 
 // tslint:disable:no-any
 
@@ -101,6 +104,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     @inject(KeybindingRegistry)
     protected readonly keybindings: KeybindingRegistry;
+
+    @inject(PluginSharedStyle)
+    protected readonly sharedStyle: PluginSharedStyle;
 
     viewState: WebviewPanelViewState = {
         visible: false,
@@ -209,8 +215,27 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this.doUpdateContent();
     }
 
-    setIconClass(iconClass: string): void {
-        this.title.iconClass = iconClass;
+    protected iconUrl: IconUrl | undefined;
+    protected readonly toDisposeOnIcon = new DisposableCollection();
+    setIconUrl(iconUrl: IconUrl | undefined): void {
+        if ((this.iconUrl && iconUrl && JSONExt.deepEqual(this.iconUrl, iconUrl)) || (this.iconUrl === iconUrl)) {
+            return;
+        }
+        this.toDisposeOnIcon.dispose();
+        this.toDispose.push(this.toDisposeOnIcon);
+        this.iconUrl = iconUrl;
+        if (iconUrl) {
+            const darkIconUrl = typeof iconUrl === 'object' ? iconUrl.dark : iconUrl;
+            const lightIconUrl = typeof iconUrl === 'object' ? iconUrl.light : iconUrl;
+            const iconClass = `webview-${this.identifier.id}-file-icon`;
+            this.toDisposeOnIcon.push(this.sharedStyle.insertRule(
+                `.theia-webview-icon.${iconClass}::before`,
+                theme => `background-image: url(${theme.id === BuiltinThemeProvider.lightTheme.id ? lightIconUrl : darkIconUrl});`
+            ));
+            this.title.iconClass = `theia-webview-icon ${iconClass}`;
+        } else {
+            this.title.iconClass = '';
+        }
     }
 
     setHTML(value: string): void {
@@ -327,6 +352,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         return {
             viewType: this.viewType,
             title: this.title.label,
+            iconUrl: this.iconUrl,
             options: this.options,
             contentOptions: this.contentOptions,
             state: this.state
@@ -334,9 +360,10 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     restoreState(oldState: WebviewWidget.State): void {
-        const { viewType, title, options, contentOptions, state } = oldState;
+        const { viewType, title, iconUrl, options, contentOptions, state } = oldState;
         this.viewType = viewType;
         this.title.label = title;
+        this.setIconUrl(iconUrl);
         this.options = options;
         this._contentOptions = contentOptions;
         this._state = state;
@@ -380,6 +407,7 @@ export namespace WebviewWidget {
     export interface State {
         viewType: string
         title: string
+        iconUrl?: IconUrl
         options: WebviewPanelOptions
         contentOptions: WebviewContentOptions
         state?: string

@@ -16,8 +16,6 @@
 
 // tslint:disable:no-any
 
-import * as path from 'path';
-import URI from 'vscode-uri';
 import {
     TreeDataProvider, TreeView, TreeViewExpansionEvent, TreeItem2, TreeItemLabel,
     TreeViewSelectionChangeEvent, TreeViewVisibilityChangeEvent
@@ -31,7 +29,7 @@ import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem }
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { CommandRegistryImpl, CommandsConverter } from '../command-registry';
 import { TreeViewSelection } from '../../common';
-import { PluginPackage } from '../../common/plugin-protocol';
+import { PluginIconPath } from '../plugin-icon-path';
 
 export class TreeViewsExtImpl implements TreeViewsExt {
 
@@ -279,31 +277,12 @@ class TreeViewExtImpl<T> implements Disposable {
                 let iconUrl;
                 let themeIconId;
                 const { iconPath } = treeItem;
-                if (iconPath) {
-                    const toUrl = (arg: string | URI) => {
-                        arg = arg instanceof URI && arg.scheme === 'file' ? arg.fsPath : arg;
-                        if (typeof arg !== 'string') {
-                            return arg.toString(true);
-                        }
-                        const { packagePath } = this.plugin.rawModel;
-                        const absolutePath = path.isAbsolute(arg) ? arg : path.join(packagePath, arg);
-                        const normalizedPath = path.normalize(absolutePath);
-                        const relativePath = path.relative(packagePath, normalizedPath);
-                        return PluginPackage.toPluginUrl(this.plugin.rawModel, relativePath);
-                    };
-                    if (typeof iconPath === 'string' && iconPath.indexOf('fa-') !== -1) {
-                        icon = iconPath;
-                    } else if (iconPath instanceof ThemeIcon) {
-                        themeIconId = iconPath.id;
-                    } else if (typeof iconPath === 'string' || iconPath instanceof URI) {
-                        iconUrl = toUrl(iconPath);
-                    } else {
-                        const { light, dark } = iconPath as { light: string | URI, dark: string | URI };
-                        iconUrl = {
-                            light: toUrl(light),
-                            dark: toUrl(dark)
-                        };
-                    }
+                if (typeof iconPath === 'string' && iconPath.indexOf('fa-') !== -1) {
+                    icon = iconPath;
+                } else if (iconPath instanceof ThemeIcon) {
+                    themeIconId = iconPath.id;
+                } else {
+                    iconUrl = PluginIconPath.toUrl(<PluginIconPath | undefined>iconPath, this.plugin);
                 }
 
                 const treeViewItem = {
