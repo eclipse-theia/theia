@@ -896,17 +896,22 @@ export function quickPickItemToPickOpenItem(items: Item[]): PickOpenItem[] {
         let description: string | undefined;
         let detail: string | undefined;
         let picked: boolean | undefined;
+        let groupLabel: string | undefined;
+        let showBorder: boolean | undefined;
         if (typeof item === 'string') {
             label = item;
         } else {
-            ({ label, description, detail, picked } = item);
+            ({ label, description, detail, picked, groupLabel, showBorder } = item);
         }
+
         pickItems.push({
             label,
             description,
             handle,
             detail,
-            picked
+            picked,
+            groupLabel,
+            showBorder
         });
     }
     return pickItems;

@@ -41,7 +41,7 @@ import { ThemeIcon, QuickInputButton } from '../../plugin/types-impl';
 import { QuickPickService, QuickPickItem, QuickPickValue } from '@theia/core/lib/common/quick-pick-service';
 import { QuickTitleBar } from '@theia/core/lib/browser/quick-open/quick-title-bar';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import { QuickTitleButtonSide } from '@theia/core/lib/common/quick-open-model';
+import { QuickTitleButtonSide, QuickOpenGroupItem } from '@theia/core/lib/common/quick-open-model';
 
 export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposable {
 
@@ -104,11 +104,13 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
     $setItems(items: PickOpenItem[]): Promise<any> {
         this.items = [];
         for (const i of items) {
-            this.items.push(new QuickOpenItem({
+            let item: QuickOpenItem | QuickOpenGroupItem;
+            // tslint:disable-next-line: no-any
+            const options: any = {
                 label: i.label,
                 description: i.description,
                 detail: i.detail,
-                run: mode => {
+                run: (mode: QuickOpenMode) => {
                     if (mode === QuickOpenMode.OPEN) {
                         this.proxy.$onItemSelected(i.handle);
                         this.doResolve(i.handle);
@@ -117,7 +119,17 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
                     }
                     return false;
                 }
-            }));
+            };
+
+            if (i.groupLabel !== undefined || i.showBorder !== undefined) {
+                options.groupLabel = i.groupLabel;
+                options.showBorder = i.showBorder;
+                item = new QuickOpenGroupItem(options);
+            } else {
+                item = new QuickOpenItem(options);
+            }
+
+            this.items.push(item);
         }
         if (this.acceptor) {
             this.acceptor(this.items);

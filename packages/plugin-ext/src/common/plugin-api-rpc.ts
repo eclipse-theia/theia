@@ -286,6 +286,8 @@ export interface PickOpenItem {
     description?: string;
     detail?: string;
     picked?: boolean;
+    groupLabel?: string;
+    showBorder?: boolean;
 }
 
 export enum MainMessageType {

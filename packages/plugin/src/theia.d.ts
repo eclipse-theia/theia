@@ -1991,6 +1991,16 @@ declare module '@theia/plugin' {
          * not implemented yet
          */
         picked?: boolean;
+
+        /**
+         * Used to display the group label in the right corner of item
+         */
+        groupLabel?: string;
+
+        /**
+         * Used to display border after item
+         */
+        showBorder?: boolean;
     }
 
     /**
