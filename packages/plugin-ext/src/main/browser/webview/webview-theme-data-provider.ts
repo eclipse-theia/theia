@@ -42,7 +42,7 @@ export class WebviewThemeDataProvider {
     protected readonly editorPreferences: EditorPreferences;
 
     @inject(ColorRegistry)
-    protected readonly colorRegistry: ColorRegistry;
+    protected readonly colors: ColorRegistry;
 
     @inject(ColorApplicationContribution)
     protected readonly colorContribution: ColorApplicationContribution;
@@ -86,8 +86,8 @@ export class WebviewThemeDataProvider {
         const addStyle = (id: string, rawValue: any) => {
             if (rawValue) {
                 const value = typeof rawValue === 'number' || typeof rawValue === 'string' ? rawValue : String(rawValue);
-                styles['vscode-' + id.replace('.', '-')] = value;
-                styles['theia-' + id.replace('.', '-')] = value;
+                styles[this.colors.toCssVariableName(id).substr(2)] = value;
+                styles[this.colors.toCssVariableName(id, 'vscode').substr(2)] = value;
             }
         };
 
@@ -96,8 +96,8 @@ export class WebviewThemeDataProvider {
         addStyle('font-size', '13px');
         this.editorStyles.forEach((value, key) => addStyle(value, this.editorPreferences[key]));
 
-        for (const id of this.colorRegistry.getColors()) {
-            const color = this.colorRegistry.getCurrentColor(id);
+        for (const id of this.colors.getColors()) {
+            const color = this.colors.getCurrentColor(id);
             if (color) {
                 addStyle(id, color.toString());
             }

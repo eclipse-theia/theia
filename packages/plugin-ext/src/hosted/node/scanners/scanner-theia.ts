@@ -58,6 +58,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { RecursivePartial } from '@theia/core/lib/common/types';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common/task-protocol';
+import { ColorDefinition } from '@theia/core/lib/browser/color-registry';
 
 namespace nls {
     export function localize(key: string, _default: string): string {
@@ -70,6 +71,8 @@ const INTERNAL_CONSOLE_OPTIONS_SCHEMA = {
     default: 'openOnFirstSessionStart',
     description: nls.localize('internalConsoleOptions', 'Controls when the internal debug console should open.')
 };
+
+const colorIdPattern = '^\\w+[.\\w+]*$';
 
 @injectable()
 export class TheiaPluginScanner implements PluginScanner {
@@ -278,6 +281,12 @@ export class TheiaPluginScanner implements PluginScanner {
         } catch (err) {
             console.error(`Could not read '${rawPlugin.name}' contribution 'themes'.`, rawPlugin.contributes.themes, err);
         }
+
+        try {
+            contributions.colors = this.readColors(rawPlugin);
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'colors'.`, rawPlugin.contributes.colors, err);
+        }
         return contributions;
     }
 
@@ -298,6 +307,42 @@ export class TheiaPluginScanner implements PluginScanner {
 
     protected toPluginUrl(pck: PluginPackage, relativePath: string): string {
         return PluginPackage.toPluginUrl(pck, relativePath);
+    }
+
+    protected readColors(pck: PluginPackage): ColorDefinition[] | undefined {
+        if (!pck.contributes || !pck.contributes.colors) {
+            return undefined;
+        }
+        const result: ColorDefinition[] = [];
+        for (const contribution of pck.contributes.colors) {
+            if (typeof contribution.id !== 'string' || contribution.id.length === 0) {
+                console.error("'configuration.colors.id' must be defined and can not be empty");
+                continue;
+            }
+            if (!contribution.id.match(colorIdPattern)) {
+                console.error("'configuration.colors.id' must follow the word[.word]*");
+                continue;
+            }
+            if (typeof contribution.description !== 'string' || contribution.id.length === 0) {
+                console.error("'configuration.colors.description' must be defined and can not be empty");
+                continue;
+            }
+            const defaults = contribution.defaults;
+            if (!defaults || typeof defaults !== 'object' || typeof defaults.light !== 'string' || typeof defaults.dark !== 'string' || typeof defaults.highContrast !== 'string') {
+                console.error("'configuration.colors.defaults' must be defined and must contain 'light', 'dark' and 'highContrast'");
+                continue;
+            }
+            result.push({
+                id: contribution.id,
+                description: contribution.description,
+                defaults: {
+                    light: defaults.light,
+                    dark: defaults.dark,
+                    hc: defaults.highContrast
+                }
+            });
+        }
+        return result;
     }
 
     protected readThemes(pck: PluginPackage): ThemeContribution[] | undefined {
