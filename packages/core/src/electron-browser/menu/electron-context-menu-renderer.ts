@@ -38,7 +38,7 @@ export class ElectronContextMenuRenderer implements ContextMenuRenderer {
         // native context menu stops the event loop, so there is no keyboard events
         this.context.resetAltPressed();
         if (onHide) {
-            onHide();
+            menu.once('menu-will-close', () => onHide());
         }
     }
 
