@@ -46,6 +46,7 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
 
         this.update();
         ThemeService.get().onThemeChange(() => this.update());
+        this.colors.onDidChange(() => this.update());
     }
 
     protected readonly toUpdate = new DisposableCollection();
@@ -61,11 +62,11 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
         const documentElement = document.documentElement;
         if (documentElement) {
             for (const id of this.colors.getColors()) {
-                const color = this.colors.getCurrentColor(id);
-                if (color) {
-                    const propertyName = `--theia-${id.replace('.', '-')}`;
-                    documentElement.style.setProperty(propertyName, color);
-                    this.toUpdate.push(Disposable.create(() => documentElement.style.removeProperty(propertyName)));
+                const variable = this.colors.getCurrentCssVariable(id);
+                if (variable) {
+                    const { name, value } = variable;
+                    documentElement.style.setProperty(name, value);
+                    this.toUpdate.push(Disposable.create(() => documentElement.style.removeProperty(name)));
                 }
             }
         }

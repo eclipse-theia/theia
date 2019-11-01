@@ -24,6 +24,7 @@ import { RecursivePartial } from '@theia/core/lib/common/types';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { FileStat } from '@theia/filesystem/lib/common';
+import { ColorDefinition } from '@theia/core/lib/browser/color-registry';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -77,6 +78,7 @@ export interface PluginPackageContribution {
     debuggers?: PluginPackageDebuggersContribution[];
     snippets: PluginPackageSnippetsContribution[];
     themes?: PluginThemeContribution[];
+    colors?: PluginColorContribution[];
     taskDefinitions?: PluginTaskDefinitionContribution[];
     problemMatchers?: PluginProblemMatcherContribution[];
     problemPatterns?: PluginProblemPatternContribution[];
@@ -133,6 +135,12 @@ export interface ScopeMap {
 export interface PluginPackageSnippetsContribution {
     language?: string;
     path?: string;
+}
+
+export interface PluginColorContribution {
+    id?: string;
+    description?: string;
+    defaults?: { light?: string, dark?: string, highContrast?: string };
 }
 
 export interface PluginThemeContribution {
@@ -418,6 +426,7 @@ export interface PluginContribution {
     debuggers?: DebuggerContribution[];
     snippets?: SnippetContribution[];
     themes?: ThemeContribution[];
+    colors?: ColorDefinition[];
     taskDefinitions?: TaskDefinition[];
     problemMatchers?: ProblemMatcherContribution[];
     problemPatterns?: ProblemPatternContribution[];
