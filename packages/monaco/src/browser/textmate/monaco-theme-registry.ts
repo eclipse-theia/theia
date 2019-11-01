@@ -91,8 +91,7 @@ export class MonacoThemeRegistry {
         if (typeof tokenColor.scope === 'undefined') {
             tokenColor.scope = [''];
         } else if (typeof tokenColor.scope === 'string') {
-            // tokenColor.scope = tokenColor.scope.split(',').map((scope: string) => scope.trim()); // ?
-            tokenColor.scope = [tokenColor.scope];
+            tokenColor.scope = tokenColor.scope.split(',').map((scope: string) => scope.trim());
         }
 
         for (const scope of tokenColor.scope) {

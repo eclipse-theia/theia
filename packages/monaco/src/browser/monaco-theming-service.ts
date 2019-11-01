@@ -18,6 +18,7 @@
 
 import { injectable, inject } from 'inversify';
 import * as jsoncparser from 'jsonc-parser';
+import * as plistparser from 'fast-plist';
 import { ThemeService, BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -41,23 +42,19 @@ export class MonacoThemingService {
     protected readonly fileSystem: FileSystem;
 
     // tslint:disable-next-line:no-any
-    register(theme: MonacoTheme, pendingIncludes: { [uri: string]: Promise<any> } = {}): Disposable {
+    register(theme: MonacoTheme, pending: { [uri: string]: Promise<any> } = {}): Disposable {
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
-        this.doRegister(theme, pendingIncludes, toDispose);
+        this.doRegister(theme, pending, toDispose);
         return toDispose;
     }
 
     protected async doRegister(theme: MonacoTheme,
-        pendingIncludes: { [uri: string]: Promise<any> },
+        pending: { [uri: string]: Promise<any> },
         toDispose: DisposableCollection
     ): Promise<void> {
         try {
-            if (new URI(theme.uri).path.ext !== '.json') {
-                console.error('Unknown theme file: ' + theme.uri);
-                return;
-            }
             const includes = {};
-            const json = await this.loadTheme(theme.uri, includes, pendingIncludes, toDispose);
+            const json = await this.loadTheme(theme.uri, includes, pending, toDispose);
             if (toDispose.disposed) {
                 return;
             }
@@ -75,26 +72,51 @@ export class MonacoThemingService {
     protected async loadTheme(
         uri: string,
         includes: { [include: string]: any },
-        pendingIncludes: { [uri: string]: Promise<any> },
+        pending: { [uri: string]: Promise<any> },
         toDispose: DisposableCollection
     ): Promise<any> {
         // tslint:enabled:no-any
         const { content } = await this.fileSystem.resolveContent(uri);
         if (toDispose.disposed) {
-            return undefined;
+            return;
+        }
+        const themeUri = new URI(uri);
+        if (themeUri.path.ext !== '.json') {
+            const value = plistparser.parse(content);
+            if (value && 'settings' in value && Array.isArray(value.settings)) {
+                return { tokenColors: value.settings };
+            }
+            throw new Error(`Problem parsing tmTheme file: ${uri}. 'settings' is not array.`);
         }
         const json = jsoncparser.parse(content, undefined, { disallowComments: false });
-        if (json.include) {
-            const includeUri = new URI(uri).parent.resolve(json.include).toString();
-            if (!pendingIncludes[includeUri]) {
-                pendingIncludes[includeUri] = this.loadTheme(includeUri, includes, pendingIncludes, toDispose);
+        if ('tokenColors' in json && typeof json.tokenColors === 'string') {
+            const value = await this.doLoadTheme(themeUri, json.tokenColors, includes, pending, toDispose);
+            if (toDispose.disposed) {
+                return;
             }
-            includes[json.include] = await pendingIncludes[includeUri];
+            json.tokenColors = value.tokenColors;
+        }
+        if (json.include) {
+            includes[json.include] = await this.doLoadTheme(themeUri, json.include, includes, pending, toDispose);
             if (toDispose.disposed) {
                 return;
             }
         }
         return json;
+    }
+
+    protected doLoadTheme(
+        themeUri: URI,
+        referencedPath: string,
+        includes: { [include: string]: any },
+        pending: { [uri: string]: Promise<any> },
+        toDispose: DisposableCollection
+    ): Promise<any> {
+        const referencedUri = themeUri.parent.resolve(referencedPath).toString();
+        if (!pending[referencedUri]) {
+            pending[referencedUri] = this.loadTheme(referencedUri, includes, pending, toDispose);
+        }
+        return pending[referencedUri];
     }
 
     static init(): void {
