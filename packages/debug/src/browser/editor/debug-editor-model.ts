@@ -240,20 +240,13 @@ export class DebugEditorModel implements Disposable {
         return breakpoints;
     }
 
-    protected _position: monaco.Position | undefined;
     get position(): monaco.Position {
-        return this._position || this.editor.getControl().getPosition();
+        return this.editor.getControl().getPosition()!;
     }
-    get breakpoint(): DebugBreakpoint | undefined {
-        return this.getBreakpoint();
-    }
-    protected getBreakpoint(position: monaco.Position = this.position) {
+    getBreakpoint(position: monaco.Position = this.position): DebugBreakpoint | undefined {
         return this.sessions.getBreakpoint(this.uri, position.lineNumber);
     }
-    toggleBreakpoint(): void {
-        this.doToggleBreakpoint();
-    }
-    protected doToggleBreakpoint(position: monaco.Position = this.position) {
+    toggleBreakpoint(position: monaco.Position = this.position): void {
         const breakpoint = this.getBreakpoint(position);
         if (breakpoint) {
             breakpoint.remove();
@@ -285,12 +278,16 @@ export class DebugEditorModel implements Disposable {
     protected handleMouseDown(event: monaco.editor.IEditorMouseEvent): void {
         if (event.target && event.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN) {
             if (event.event.rightButton) {
-                this._position = event.target.position;
-                this.contextMenu.render(DebugEditorModel.CONTEXT_MENU, event.event.browserEvent, () =>
-                    setTimeout(() => this._position = undefined)
-                );
+                this.editor.focus();
+                setTimeout(() => {
+                    this.contextMenu.render({
+                        menuPath: DebugEditorModel.CONTEXT_MENU,
+                        anchor: event.event.browserEvent,
+                        args: [event.target.position!]
+                    });
+                });
             } else {
-                this.doToggleBreakpoint(event.target.position);
+                this.toggleBreakpoint(event.target.position!);
             }
         }
         this.hintBreakpoint(event);

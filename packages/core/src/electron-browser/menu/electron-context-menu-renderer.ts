@@ -32,7 +32,7 @@ export class ElectronContextMenuRenderer implements ContextMenuRenderer {
         const menu = this.menuFactory.createContextMenu(menuPath, args);
         menu.popup({});
         if (onHide) {
-            onHide();
+            menu.once('menu-will-close', () => onHide());
         }
     }
 

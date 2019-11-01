@@ -743,60 +743,61 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isVisible: () => !!this.selectedVariable && this.selectedVariable.supportCopyAsExpression
         });
 
+        // Debug context menu commands
         registry.registerCommand(DebugEditorContextCommands.ADD_BREAKPOINT, {
-            execute: () => this.editors.toggleBreakpoint(),
-            isEnabled: () => !this.editors.anyBreakpoint,
-            isVisible: () => !this.editors.anyBreakpoint
+            execute: position => this.isPosition(position) && this.editors.toggleBreakpoint(position),
+            isEnabled: position => this.isPosition(position) && !this.editors.anyBreakpoint(position),
+            isVisible: position => this.isPosition(position) && !this.editors.anyBreakpoint(position)
         });
         registry.registerCommand(DebugEditorContextCommands.ADD_CONDITIONAL_BREAKPOINT, {
-            execute: () => this.editors.addBreakpoint('condition'),
-            isEnabled: () => !this.editors.anyBreakpoint,
-            isVisible: () => !this.editors.anyBreakpoint
+            execute: position => this.isPosition(position) && this.editors.addBreakpoint('condition', position),
+            isEnabled: position => this.isPosition(position) && !this.editors.anyBreakpoint(position),
+            isVisible: position => this.isPosition(position) && !this.editors.anyBreakpoint(position)
         });
         registry.registerCommand(DebugEditorContextCommands.ADD_LOGPOINT, {
-            execute: () => this.editors.addBreakpoint('logMessage'),
-            isEnabled: () => !this.editors.anyBreakpoint,
-            isVisible: () => !this.editors.anyBreakpoint
+            execute: position => this.isPosition(position) && this.editors.addBreakpoint('logMessage', position),
+            isEnabled: position => this.isPosition(position) && !this.editors.anyBreakpoint(position),
+            isVisible: position => this.isPosition(position) && !this.editors.anyBreakpoint(position)
         });
         registry.registerCommand(DebugEditorContextCommands.REMOVE_BREAKPOINT, {
-            execute: () => this.editors.toggleBreakpoint(),
-            isEnabled: () => !!this.editors.breakpoint,
-            isVisible: () => !!this.editors.breakpoint
+            execute: position => this.isPosition(position) && this.editors.toggleBreakpoint(position),
+            isEnabled: position => this.isPosition(position) && !!this.editors.getBreakpoint(position),
+            isVisible: position => this.isPosition(position) && !!this.editors.getBreakpoint(position)
         });
         registry.registerCommand(DebugEditorContextCommands.EDIT_BREAKPOINT, {
-            execute: () => this.editors.editBreakpoint(),
-            isEnabled: () => !!this.editors.breakpoint,
-            isVisible: () => !!this.editors.breakpoint
+            execute: position => this.isPosition(position) && this.editors.editBreakpoint(position),
+            isEnabled: position => this.isPosition(position) && !!this.editors.getBreakpoint(position),
+            isVisible: position => this.isPosition(position) && !!this.editors.getBreakpoint(position)
         });
         registry.registerCommand(DebugEditorContextCommands.ENABLE_BREAKPOINT, {
-            execute: () => this.editors.setBreakpointEnabled(true),
-            isEnabled: () => this.editors.breakpointEnabled === false,
-            isVisible: () => this.editors.breakpointEnabled === false
+            execute: position => this.isPosition(position) && this.editors.setBreakpointEnabled(position, true),
+            isEnabled: position => this.isPosition(position) && this.editors.getBreakpointEnabled(position) === false,
+            isVisible: position => this.isPosition(position) && this.editors.getBreakpointEnabled(position) === false
         });
         registry.registerCommand(DebugEditorContextCommands.DISABLE_BREAKPOINT, {
-            execute: () => this.editors.setBreakpointEnabled(false),
-            isEnabled: () => !!this.editors.breakpointEnabled,
-            isVisible: () => !!this.editors.breakpointEnabled
+            execute: position => this.isPosition(position) && this.editors.setBreakpointEnabled(position, false),
+            isEnabled: position => this.isPosition(position) && !!this.editors.getBreakpointEnabled(position),
+            isVisible: position => this.isPosition(position) && !!this.editors.getBreakpointEnabled(position)
         });
         registry.registerCommand(DebugEditorContextCommands.REMOVE_LOGPOINT, {
-            execute: () => this.editors.toggleBreakpoint(),
-            isEnabled: () => !!this.editors.logpoint,
-            isVisible: () => !!this.editors.logpoint
+            execute: position => this.isPosition(position) && this.editors.toggleBreakpoint(position),
+            isEnabled: position => this.isPosition(position) && !!this.editors.getLogpoint(position),
+            isVisible: position => this.isPosition(position) && !!this.editors.getLogpoint(position)
         });
         registry.registerCommand(DebugEditorContextCommands.EDIT_LOGPOINT, {
-            execute: () => this.editors.editBreakpoint(),
-            isEnabled: () => !!this.editors.logpoint,
-            isVisible: () => !!this.editors.logpoint
+            execute: position => this.isPosition(position) && this.editors.editBreakpoint(position),
+            isEnabled: position => this.isPosition(position) && !!this.editors.getLogpoint(position),
+            isVisible: position => this.isPosition(position) && !!this.editors.getLogpoint(position)
         });
         registry.registerCommand(DebugEditorContextCommands.ENABLE_LOGPOINT, {
-            execute: () => this.editors.setBreakpointEnabled(true),
-            isEnabled: () => this.editors.logpointEnabled === false,
-            isVisible: () => this.editors.logpointEnabled === false
+            execute: position => this.isPosition(position) && this.editors.setBreakpointEnabled(position, true),
+            isEnabled: position => this.isPosition(position) && this.editors.getLogpointEnabled(position) === false,
+            isVisible: position => this.isPosition(position) && this.editors.getLogpointEnabled(position) === false
         });
         registry.registerCommand(DebugEditorContextCommands.DISABLE_LOGPOINT, {
-            execute: () => this.editors.setBreakpointEnabled(false),
-            isEnabled: () => !!this.editors.logpointEnabled,
-            isVisible: () => !!this.editors.logpointEnabled
+            execute: position => this.isPosition(position) && this.editors.setBreakpointEnabled(position, false),
+            isEnabled: position => this.isPosition(position) && !!this.editors.getLogpointEnabled(position),
+            isVisible: position => this.isPosition(position) && !!this.editors.getLogpointEnabled(position)
         });
 
         registry.registerCommand(DebugBreakpointWidgetCommands.ACCEPT, {
@@ -979,4 +980,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         return variables && variables.selectedElement instanceof DebugVariable && variables.selectedElement || undefined;
     }
 
+    protected isPosition(position: monaco.Position): boolean {
+        return (position instanceof monaco.Position);
+    }
 }
