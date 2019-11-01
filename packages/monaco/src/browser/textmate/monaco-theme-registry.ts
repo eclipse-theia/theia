@@ -29,6 +29,12 @@ export class MonacoThemeRegistry {
         return this.themes.get(name);
     }
 
+    setTheme(name: string, data: ThemeMix): void {
+        // monaco auto refrehes a theme with new data
+        monaco.editor.defineTheme(name, data);
+        this.themes.set(name, data);
+    }
+
     /**
      * Register VS Code compatible themes
      */
@@ -42,10 +48,6 @@ export class MonacoThemeRegistry {
             rules: [],
             settings: []
         };
-        if (this.themes.has(name)) {
-            return this.themes.get(name)!;
-        }
-        this.themes.set(name, result);
         if (typeof json.include !== 'undefined') {
             if (!includes || !includes[json.include]) {
                 console.error(`Couldn't resolve includes theme ${json.include}.`);
@@ -80,7 +82,7 @@ export class MonacoThemeRegistry {
             if (result.colors && result.colors['editor.background']) {
                 result.encodedTokensColors[2] = result.colors['editor.background'];
             }
-            monaco.editor.defineTheme(givenName, result);
+            this.setTheme(givenName, result);
         }
         return result;
     }

@@ -22,7 +22,7 @@ import { ThemeService, BuiltinThemeProvider } from '@theia/core/lib/browser/them
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
-import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
+import { MonacoThemeRegistry, ThemeMix } from './textmate/monaco-theme-registry';
 
 export interface MonacoTheme {
     id?: string;
@@ -34,6 +34,8 @@ export interface MonacoTheme {
 
 @injectable()
 export class MonacoThemingService {
+
+    static monacoThemes = new Map<string, MonacoThemingService.MonacoThemeState>();
 
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
@@ -62,23 +64,9 @@ export class MonacoThemingService {
             const uiTheme = theme.uiTheme || 'vs-dark';
             const label = theme.label || new URI(theme.uri).path.base;
             const id = theme.id || label;
-            const cssSelector = this.toCssSelector(id);
-            const editorTheme = MonacoThemeRegistry.SINGLETON.register(json, includes, cssSelector, uiTheme).name!;
-            const type = uiTheme === 'vs' ? 'light' : uiTheme === 'vs-dark' ? 'dark' : 'hc';
-            const builtInTheme = uiTheme === 'vs' ? BuiltinThemeProvider.lightCss : BuiltinThemeProvider.darkCss;
-            toDispose.push(ThemeService.get().register({
-                type,
-                id,
-                label,
-                description: theme.description,
-                editorTheme,
-                activate(): void {
-                    builtInTheme.use();
-                },
-                deactivate(): void {
-                    builtInTheme.unuse();
-                }
-            }));
+            const cssSelector = MonacoThemingService.toCssSelector(id);
+            const data = MonacoThemeRegistry.SINGLETON.register(json, includes, cssSelector, uiTheme);
+            toDispose.push(MonacoThemingService.doRegister({ id, label, description: theme.description, uiTheme, data }));
         } catch (e) {
             console.error('Failed to load theme from ' + theme.uri, e);
         }
@@ -109,8 +97,54 @@ export class MonacoThemingService {
         return json;
     }
 
+    static init(): void {
+        ThemeService.get().onThemeChange(e =>
+            MonacoThemingService.store(MonacoThemingService.monacoThemes.get(e.newTheme.id))
+        );
+        try {
+            const value = window.localStorage.getItem('monacoTheme');
+            if (value) {
+                const state: MonacoThemingService.MonacoThemeState = JSON.parse(value);
+                MonacoThemeRegistry.SINGLETON.setTheme(state.data.name!, state.data);
+                MonacoThemingService.doRegister(state);
+            }
+        } catch (e) {
+            console.error('Failed to restore monaco theme', e);
+        }
+    }
+
+    static store(state: MonacoThemingService.MonacoThemeState | undefined): void {
+        if (state) {
+            window.localStorage.setItem('monacoTheme', JSON.stringify(state));
+        } else {
+            window.localStorage.removeItem('monacoTheme');
+        }
+    }
+
+    static doRegister(state: MonacoThemingService.MonacoThemeState): Disposable {
+        const { id, label, description, uiTheme, data } = state;
+        const type = uiTheme === 'vs' ? 'light' : uiTheme === 'vs-dark' ? 'dark' : 'hc';
+        const builtInTheme = uiTheme === 'vs' ? BuiltinThemeProvider.lightCss : BuiltinThemeProvider.darkCss;
+        const toDispose = new DisposableCollection(ThemeService.get().register({
+            type,
+            id,
+            label,
+            description: description,
+            editorTheme: data.name!,
+            activate(): void {
+                builtInTheme.use();
+            },
+            deactivate(): void {
+                builtInTheme.unuse();
+            }
+        }));
+        MonacoThemingService.monacoThemes.set(id, state);
+        toDispose.push(Disposable.create(() => MonacoThemingService.monacoThemes.delete(id)));
+        return toDispose;
+    }
+
     /* remove all characters that are not allowed in css */
-    protected toCssSelector(str: string): string {
+    static toCssSelector(str: string): string {
         str = str.replace(/[^\-a-zA-Z0-9]/g, '-');
         if (str.charAt(0).match(/[0-9\-]/)) {
             str = '-' + str;
@@ -118,4 +152,13 @@ export class MonacoThemingService {
         return str;
     }
 
+}
+export namespace MonacoThemingService {
+    export interface MonacoThemeState {
+        id: string,
+        label: string,
+        description?: string,
+        uiTheme: MonacoTheme['uiTheme']
+        data: ThemeMix
+    }
 }
