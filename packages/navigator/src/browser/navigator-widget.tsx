@@ -249,7 +249,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
     protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         const modifierKeyCombined: boolean = isOSX ? (event.shiftKey || event.metaKey) : (event.shiftKey || event.ctrlKey);
-        if (!modifierKeyCombined && node && this.corePreferences['list.openMode'] === 'singleClick') {
+        if (!modifierKeyCombined && node && this.corePreferences['workbench.list.openMode'] === 'singleClick') {
             this.model.previewNode(node);
         }
         super.handleClickEvent(node, event);
