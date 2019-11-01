@@ -68,14 +68,26 @@ export class ThemeService {
         for (const theme of themes) {
             this.themes[theme.id] = theme;
         }
+        this.validateActiveTheme();
         return Disposable.create(() => {
             for (const theme of themes) {
                 delete this.themes[theme.id];
             }
-            if (this.activeTheme && !this.themes[this.activeTheme.id]) {
-                this.startupTheme();
-            }
+            this.validateActiveTheme();
         });
+    }
+
+    protected validateActiveTheme(): void {
+        if (!this.activeTheme) {
+            return;
+        }
+        const theme = this.themes[this.activeTheme.id];
+        if (!theme) {
+            this.loadUserTheme();
+        } else if (theme !== this.activeTheme) {
+            this.activeTheme = undefined;
+            this.setCurrentTheme(theme.id);
+        }
     }
 
     getThemes(): Theme[] {
