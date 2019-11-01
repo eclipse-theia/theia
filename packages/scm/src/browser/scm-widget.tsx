@@ -28,7 +28,7 @@ import { MenuModelRegistry, ActionMenuNode, CompositeMenuNode, MenuPath } from '
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import {
     ContextMenuRenderer, SELECTED_CLASS, StorageService,
-    ReactWidget, Key, LabelProvider, DiffUris, KeybindingRegistry, Widget, StatefulWidget
+    ReactWidget, Key, LabelProvider, DiffUris, KeybindingRegistry, Widget, StatefulWidget, CorePreferences
 } from '@theia/core/lib/browser';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { EditorManager, DiffNavigatorProvider, EditorWidget } from '@theia/editor/lib/browser';
@@ -51,6 +51,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
     static RESOURCE_INLINE_MENU = ['RESOURCE_INLINE_MENU'];
     static RESOURCE_CONTEXT_MENU = ['RESOURCE_CONTEXT_MENU'];
 
+    @inject(CorePreferences) protected readonly corePreferences: CorePreferences;
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
@@ -165,6 +166,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
                 labelProvider={this.labelProvider}
                 addScmListKeyListeners={this.addScmListKeyListeners}
                 contextMenuRenderer={this.contextMenuRenderer}
+                corePreferences={this.corePreferences}
             />
             {amendSupport && <ScmAmendComponent
                 key={`amend:${repository.provider.rootUri}`}
@@ -378,7 +380,8 @@ export namespace ScmWidget {
         menus: MenuModelRegistry;
         contextKeys: ScmContextKeyService;
         labelProvider: LabelProvider;
-        contextMenuRenderer: ContextMenuRenderer
+        contextMenuRenderer: ContextMenuRenderer;
+        corePreferences?: CorePreferences;
     }
 
 }
@@ -454,8 +457,8 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
             onMouseEnter={this.showHover}
             onMouseLeave={this.hideHover}
             ref={this.detectHover}
-            onClick={this.selectChange}
-            onDoubleClick={this.open}>
+            onClick={this.handleClick}
+            onDoubleClick={this.handleDoubleClick} >
             <div className='noWrapInfo' >
                 <span className={icon + ' file-icon'} />
                 <span className='name'>{name}</span>
@@ -485,6 +488,29 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
         return [this.props.resource];  // TODO support multiselection
     }
 
+    /**
+     * Handle the single clicking of nodes present in the widget.
+     */
+    protected handleClick = () => {
+        // Determine the behavior based on the preference value.
+        const isSingle = this.props.corePreferences && this.props.corePreferences['workbench.list.openMode'] === 'singleClick';
+        this.selectChange();
+        if (isSingle) {
+            this.open();
+        }
+    }
+
+    /**
+     * Handle the double clicking of nodes present in the widget.
+     */
+    protected handleDoubleClick = () => {
+        // Determine the behavior based on the preference value.
+        const isDouble = this.props.corePreferences && this.props.corePreferences['workbench.list.openMode'] === 'doubleClick';
+        // Nodes should only be opened through double clicking if the correct preference is set.
+        if (isDouble) {
+            this.open();
+        }
+    }
 }
 export namespace ScmResourceComponent {
     export interface Props extends ScmElement.Props {
@@ -522,7 +548,8 @@ export class ScmResourceGroupsContainer extends React.Component<ScmResourceGroup
             commands={this.props.commands}
             menus={this.props.menus}
             contextKeys={this.props.contextKeys}
-            labelProvider={this.props.labelProvider} />;
+            labelProvider={this.props.labelProvider}
+            corePreferences={this.props.corePreferences} />;
     }
 
     componentDidMount(): void {

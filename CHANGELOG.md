@@ -2,8 +2,10 @@
 
 ## v0.13.0
 
-Breaking changes:
+- [scm] added handling when opening diff-editors to respect preference `workbench.list.openMode` [#6481](https://github.com/eclipse-theia/theia/pull/6481)
 
+Breaking changes:
+- [core] renamed preference `list.openMode` to `workbench.list.openMode` [#6481](https://github.com/eclipse-theia/theia/pull/6481)
 - [task] changed `TaskSchemaUpdater.update()` from asynchronous to synchronous [#6483](https://github.com/eclipse-theia/theia/pull/6483)
 - [monaco] monaco prefix has been removed from commands [#5590](https://github.com/eclipse-theia/theia/pull/5590)
 
