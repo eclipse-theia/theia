@@ -11,6 +11,7 @@
     "@theia/outline-view": "^0.14.0",
     "@theia/workspace": "^0.14.0",
     "deepmerge": "2.0.1",
+    "fast-plist": "^0.1.2",
     "jsonc-parser": "^2.0.2",
     "monaco-css": "^2.5.0",
     "monaco-html": "^2.5.2",
