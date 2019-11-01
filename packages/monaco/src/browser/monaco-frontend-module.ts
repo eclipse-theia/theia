@@ -68,6 +68,8 @@ decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
 decorate(injectable(), monaco.contextKeyService.ContextKeyService);
 
+MonacoThemingService.init();
+
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoThemingService).toSelf().inSingletonScope();
 
