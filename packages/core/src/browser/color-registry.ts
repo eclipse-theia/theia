@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { Disposable } from '../common/disposable';
+import { DisposableCollection, Disposable } from '../common/disposable';
+import { Emitter } from '../common/event';
 
 export interface ColorDefaults {
     light?: string
@@ -23,9 +24,15 @@ export interface ColorDefaults {
     hc?: string
 }
 
-export interface ColorOptions {
+export interface ColorDefinition {
+    id: string
     defaults?: ColorDefaults
     description: string
+}
+
+export interface ColorCssVariable {
+    name: string
+    value: string
 }
 
 /**
@@ -34,13 +41,38 @@ export interface ColorOptions {
 @injectable()
 export class ColorRegistry {
 
+    protected readonly onDidChangeEmitter = new Emitter<void>();
+    readonly onDidChange = this.onDidChangeEmitter.event;
+    protected fireDidChange(): void {
+        this.onDidChangeEmitter.fire(undefined);
+    }
+
     *getColors(): IterableIterator<string> { }
+
+    getCurrentCssVariable(id: string): ColorCssVariable | undefined {
+        const value = this.getCurrentColor(id);
+        if (!value) {
+            return undefined;
+        }
+        const name = this.toCssVariableName(id);
+        return { name, value };
+    }
+
+    toCssVariableName(id: string, prefix = 'theia'): string {
+        return `--${prefix}-${id.replace('.', '-')}`;
+    }
 
     getCurrentColor(id: string): string | undefined {
         return undefined;
     }
 
-    register(id: string, options: ColorOptions): Disposable {
+    register(...definitions: ColorDefinition[]): Disposable {
+        const result = new DisposableCollection(...definitions.map(definition => this.doRegister(definition)));
+        this.fireDidChange();
+        return result;
+    }
+
+    protected doRegister(definition: ColorDefinition): Disposable {
         return Disposable.NULL;
     }
 

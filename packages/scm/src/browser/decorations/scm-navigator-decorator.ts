@@ -23,6 +23,7 @@ import { DepthFirstTreeIterator } from '@theia/core/lib/browser';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { DecorationData, ScmDecorationsService } from './scm-decorations-service';
 import URI from '@theia/core/lib/common/uri';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 
 @injectable()
 export class ScmNavigatorDecorator implements TreeDecorator {
@@ -31,6 +32,9 @@ export class ScmNavigatorDecorator implements TreeDecorator {
     private decorationsMap: Map<string, DecorationData> | undefined;
 
     @inject(ILogger) protected readonly logger: ILogger;
+
+    @inject(ColorRegistry)
+    protected readonly colors: ColorRegistry;
 
     constructor(@inject(ScmDecorationsService) protected readonly decorationsService: ScmDecorationsService) {
         this.decorationsService.onNavigatorDecorationsChanged(data => {
@@ -58,12 +62,13 @@ export class ScmNavigatorDecorator implements TreeDecorator {
     }
 
     protected toDecorator(change: DecorationData): TreeDecoration.Data {
+        const colorVariable = change.color && this.colors.toCssVariableName(change.color.id);
         return {
             tailDecorations: [
                 {
                     data: change.letter ? change.letter : '',
                     fontData: {
-                        color: change.color ? ScmNavigatorDecorator.getDecorationColor(change.color.id) : '',
+                        color: colorVariable && `var(${colorVariable})`
                     },
                     tooltip: change.title ? change.title : ''
                 }
@@ -109,14 +114,4 @@ export class ScmNavigatorDecorator implements TreeDecorator {
         this.emitter.fire(event);
     }
 
-    static getDecorationColor(colorId: string | undefined): string | undefined {
-        switch (colorId) {
-            case 'gitDecoration.addedResourceForeground': return 'var(--theia-success-color0)';
-            case 'gitDecoration.ignoredResourceForeground': // Fall through.
-            case 'gitDecoration.untrackedResourceForeground': // Fall through.
-            case 'gitDecoration.modifiedResourceForeground': return 'var(--theia-brand-color0)';
-            case 'gitDecoration.deletedResourceForeground': return 'var(--theia-warn-color0)';
-            case 'gitDecoration.conflictingResourceForeground': return 'var(--theia-error-color0)';
-        }
-    }
 }

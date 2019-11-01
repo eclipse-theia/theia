@@ -32,6 +32,7 @@ import { TaskDefinitionRegistry, ProblemMatcherRegistry, ProblemPatternRegistry 
 import { PluginDebugService } from './debug/plugin-debug-service';
 import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-updater';
 import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-service';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 
 @injectable()
 export class PluginContributionHandler {
@@ -82,6 +83,9 @@ export class PluginContributionHandler {
 
     @inject(MonacoThemingService)
     protected readonly monacoThemingService: MonacoThemingService;
+
+    @inject(ColorRegistry)
+    protected readonly colors: ColorRegistry;
 
     protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
 
@@ -239,6 +243,10 @@ export class PluginContributionHandler {
             for (const theme of contributions.themes) {
                 pushContribution(`themes.${theme.uri}`, () => this.monacoThemingService.register(theme, includes));
             }
+        }
+
+        if (contributions.colors) {
+            pushContribution('colors', () => this.colors.register(...contributions.colors));
         }
 
         if (contributions.taskDefinitions) {
