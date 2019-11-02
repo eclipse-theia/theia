@@ -19,13 +19,14 @@ import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceService, PreferenceScope } from '@theia/core/lib/browser';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { TaskConfigurationModel } from './task-configuration-model';
+import { TaskTemplateSelector } from './task-templates';
 import { TaskCustomization, TaskConfiguration } from '../common/task-protocol';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
-import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
+import { FileSystem, FileSystemError /*, FileStat */ } from '@theia/filesystem/lib/common';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 
@@ -53,6 +54,9 @@ export class TaskConfigurationManager {
     @inject(WorkspaceVariableContribution)
     protected readonly workspaceVariables: WorkspaceVariableContribution;
 
+    @inject(TaskTemplateSelector)
+    protected readonly taskTemplateSelector: TaskTemplateSelector;
+
     protected readonly onDidChangeTaskConfigEmitter = new Emitter<FileChange>();
     readonly onDidChangeTaskConfig: Event<FileChange> = this.onDidChangeTaskConfigEmitter.event;
 
@@ -63,6 +67,9 @@ export class TaskConfigurationManager {
             if (e.preferenceName === 'tasks') {
                 this.updateModels();
             }
+        });
+        this.workspaceService.onWorkspaceChanged(() => {
+            this.updateModels();
         });
     }
 
@@ -142,50 +149,54 @@ export class TaskConfigurationManager {
         }
     }
 
-    protected async doOpen(model: TaskConfigurationModel): Promise<EditorWidget> {
+    protected async doOpen(model: TaskConfigurationModel): Promise<EditorWidget | undefined> {
         let uri = model.uri;
         if (!uri) {
             uri = await this.doCreate(model);
         }
-        return this.editorManager.open(uri, {
-            mode: 'activate'
-        });
+        if (uri) {
+            return this.editorManager.open(uri, {
+                mode: 'activate'
+            });
+        }
     }
 
-    protected async doCreate(model: TaskConfigurationModel): Promise<URI> {
-        await this.preferences.set('tasks', {}); // create dummy tasks.json in the correct place
-        const { configUri } = this.preferences.resolve('tasks'); // get uri to write content to it
-        let uri: URI;
-        if (configUri && configUri.path.base === 'tasks.json') {
-            uri = configUri;
-        } else { // fallback
-            uri = new URI(model.workspaceFolderUri).resolve(`${this.preferenceConfigurations.getPaths()[0]}/tasks.json`);
-        }
-        const content = this.getInitialConfigurationContent();
-        const fileStat = await this.filesystem.getFileStat(uri.toString());
-        if (!fileStat) {
-            throw new Error(`file not found: ${uri.toString()}`);
-        }
-        try {
-            await this.filesystem.setContent(fileStat, content);
-        } catch (e) {
-            if (!FileSystemError.FileExists.is(e)) {
-                throw e;
+    protected async doCreate(model: TaskConfigurationModel): Promise<URI | undefined> {
+        const content = await this.getInitialConfigurationContent();
+        if (content) {
+            await this.preferences.set('tasks', {}, PreferenceScope.Folder, model.workspaceFolderUri); // create dummy tasks.json in the correct place
+            const { configUri } = this.preferences.resolve('tasks', [], model.workspaceFolderUri); // get uri to write content to it
+
+            let uri: URI;
+            if (configUri && configUri.path.base === 'tasks.json') {
+                uri = configUri;
+            } else { // fallback
+                uri = new URI(model.workspaceFolderUri).resolve(`${this.preferenceConfigurations.getPaths()[0]}/tasks.json`);
             }
+
+            const fileStat = await this.filesystem.getFileStat(uri.toString());
+            if (!fileStat) {
+                throw new Error(`file not found: ${uri.toString()}`);
+            }
+            try {
+                this.filesystem.setContent(fileStat, content);
+            } catch (e) {
+                if (!FileSystemError.FileExists.is(e)) {
+                    throw e;
+                }
+            }
+            return uri;
         }
-        return uri;
     }
 
-    protected getInitialConfigurationContent(): string {
-        return `{
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  "version": "2.0.0",
-  "tasks": ${JSON.stringify([], undefined, '  ').split('\n').map(line => '  ' + line).join('\n').trim()}
-}
-`;
+    protected async getInitialConfigurationContent(): Promise<string | undefined> {
+        const selected = await this.quickPick.show(this.taskTemplateSelector.selectTemplates(), {
+            placeholder: 'Select a Task Template'
+        });
+        if (selected) {
+            return selected.content;
+        }
     }
-
 }
 
 export namespace TaskConfigurationManager {
