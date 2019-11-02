@@ -23,6 +23,7 @@ import { PreferenceService } from '@theia/core/lib/browser';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { TaskConfigurationModel } from './task-configuration-model';
+import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskCustomization, TaskConfiguration } from '../common/task-protocol';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
 import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
@@ -52,6 +53,9 @@ export class TaskConfigurationManager {
 
     @inject(WorkspaceVariableContribution)
     protected readonly workspaceVariables: WorkspaceVariableContribution;
+
+    @inject(TaskSchemaUpdater)
+    protected readonly schemaUpdater: TaskSchemaUpdater;
 
     protected readonly onDidChangeTaskConfigEmitter = new Emitter<FileChange>();
     readonly onDidChangeTaskConfig: Event<FileChange> = this.onDidChangeTaskConfigEmitter.event;

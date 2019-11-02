@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as Ajv from 'ajv';
 import { ApplicationShell, FrontendApplication, WidgetManager } from '@theia/core/lib/browser';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { ILogger } from '@theia/core/lib/common';
