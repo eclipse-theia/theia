@@ -37,6 +37,18 @@ export class TaskDefinitionRegistry {
     }
 
     /**
+     * Returns all task definitions that are registered
+     * @return the task definitions that are registered
+     */
+    getAll(): TaskDefinition[] {
+        const all: TaskDefinition[] = [];
+        for (const definitions of this.definitions.values()) {
+            all.push(...definitions);
+        }
+        return all;
+    }
+
+    /**
      * Finds the task definition(s) from the registry with the given `taskType`.
      *
      * @param taskType the type of the task

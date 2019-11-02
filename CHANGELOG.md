@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.13.0
+
+Breaking changes:
+
+- [task] changed `TaskSchemaUpdater.update()` from asynchronous to synchronous [#6483](https://github.com/eclipse-theia/theia/pull/6483)
+
 ## v0.12.0
 
 - [cli] added explicit `yargs` dependency [#6443](https://github.com/eclipse-theia/theia/pull/6443)
