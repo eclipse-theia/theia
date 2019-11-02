@@ -19,8 +19,9 @@ import { InMemoryResources, deepClone } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 import URI from '@theia/core/lib/common/uri';
-import { TaskService } from './task-service';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
+import { TaskDefinitionRegistry } from './task-definition-registry';
+import { TaskServer } from '../common';
 
 export const taskSchemaId = 'vscode://schemas/tasks';
 
@@ -32,22 +33,29 @@ export class TaskSchemaUpdater {
     @inject(InMemoryResources)
     protected readonly inmemoryResources: InMemoryResources;
 
-    @inject(TaskService)
-    protected readonly taskService: TaskService;
-
     @inject(ProblemMatcherRegistry)
     protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+
+    @inject(TaskServer)
+    protected readonly taskServer: TaskServer;
 
     @postConstruct()
     protected init(): void {
         this.updateProblemMatcherNames();
+        this.updateSupportedTaskTypes();
         // update problem matcher names in the task schema every time a problem matcher is added or disposed
         this.problemMatcherRegistry.onDidChangeProblemMatcher(() => this.updateProblemMatcherNames());
+        // update supported task types in the task schema every time a task definition is registered or removed
+        this.taskDefinitionRegistry.onDidRegisterTaskDefinition(() => this.updateSupportedTaskTypes());
+        this.taskDefinitionRegistry.onDidUnregisterTaskDefinition(() => this.updateSupportedTaskTypes());
     }
 
-    async update(): Promise<void> {
+    update(): void {
         const taskSchemaUri = new URI(taskSchemaId);
-        const schemaContent = await this.getTaskSchema();
+        const schemaContent = this.getStrigifiedTaskSchema();
         try {
             this.inmemoryResources.update(taskSchemaUri, schemaContent);
         } catch (e) {
@@ -59,8 +67,17 @@ export class TaskSchemaUpdater {
         }
     }
 
-    private async getTaskSchema(): Promise<string> {
-        const taskSchema = {
+    /** Returns an array of task types that are registered, including the default types */
+    async getRegisteredTaskTypes(): Promise<string[]> {
+        const serverSupportedTypes = await this.taskServer.getRegisteredTaskTypes();
+        const browserSupportedTypes = this.taskDefinitionRegistry.getAll().map(def => def.taskType);
+        const allTypes = new Set([...serverSupportedTypes, ...browserSupportedTypes]);
+        return Array.from(allTypes.values()).sort();
+    }
+
+    /** Returns the task's JSON schema */
+    getTaskSchema(): IJSONSchema {
+        return {
             properties: {
                 tasks: {
                     type: 'array',
@@ -71,9 +88,11 @@ export class TaskSchemaUpdater {
                 inputs: inputsSchema.definitions!.inputs
             }
         };
-        const taskTypes = await this.taskService.getRegisteredTaskTypes();
-        taskSchema.properties.tasks.items.oneOf![0].allOf![0].properties!.type.enum = taskTypes;
-        return JSON.stringify(taskSchema);
+    }
+
+    /** Returns the task's JSON schema as a string */
+    private getStrigifiedTaskSchema(): string {
+        return JSON.stringify(this.getTaskSchema());
     }
 
     /** Gets the most up-to-date names of problem matchers from the registry and update the task schema */
@@ -81,6 +100,14 @@ export class TaskSchemaUpdater {
         const matcherNames = this.problemMatcherRegistry.getAll().map(m => m.name.startsWith('$') ? m.name : `$${m.name}`);
         problemMatcherNames.length = 0;
         problemMatcherNames.push(...matcherNames);
+        this.update();
+    }
+
+    /** Gets the most up-to-date names of task types Theia supports from the registry and update the task schema */
+    private async updateSupportedTaskTypes(): Promise<void> {
+        const allTypes = await this.getRegisteredTaskTypes();
+        supportedTaskTypes.length = 0;
+        supportedTaskTypes.push(...allTypes);
         this.update();
     }
 }
@@ -133,6 +160,8 @@ const commandOptionsSchema: IJSONSchema = {
 };
 
 const problemMatcherNames: string[] = [];
+const defaultTaskTypes = ['shell', 'process'];
+const supportedTaskTypes = [...defaultTaskTypes];
 const taskConfigurationSchema: IJSONSchema = {
     $id: taskSchemaId,
     oneOf: [
@@ -148,7 +177,7 @@ const taskConfigurationSchema: IJSONSchema = {
                         },
                         type: {
                             type: 'string',
-                            enum: ['shell', 'process'],
+                            enum: supportedTaskTypes,
                             default: 'shell',
                             description: 'Determines what type of process will be used to execute the task. Only shell types will have output shown on the user interface'
                         },
