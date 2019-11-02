@@ -49,6 +49,7 @@ import { TaskProviderRegistry, TaskResolverRegistry } from './task-contribution'
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskNameResolver } from './task-name-resolver';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
+import { TaskSchemaUpdater } from './task-schema-updater';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -127,6 +128,9 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(TaskNameResolver)
     protected readonly taskNameResolver: TaskNameResolver;
+
+    @inject(TaskSchemaUpdater)
+    protected readonly taskSchemaUpdater: TaskSchemaUpdater;
 
     /**
      * @deprecated To be removed in 0.5.0
@@ -281,7 +285,7 @@ export class TaskService implements TaskConfigurationClient {
 
     /** Returns an array of task types that are registered, including the default types */
     getRegisteredTaskTypes(): Promise<string[]> {
-        return this.taskServer.getRegisteredTaskTypes();
+        return this.taskSchemaUpdater.getRegisteredTaskTypes();
     }
 
     /**
