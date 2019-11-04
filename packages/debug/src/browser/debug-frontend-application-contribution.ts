@@ -42,6 +42,7 @@ import { DebugService } from '../common/debug-service';
 import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugPreferences } from './debug-preferences';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { DebugSessionOptions } from './debug-session-options';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -512,10 +513,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(DebugCommands.START, {
-            execute: () => this.start()
+            execute: (config?: DebugSessionOptions) => this.start(false, config)
         });
         registry.registerCommand(DebugCommands.START_NO_DEBUG, {
-            execute: () => this.start(true)
+            execute: (config?: DebugSessionOptions) => this.start(true, config)
         });
         registry.registerCommand(DebugCommands.STOP, {
             execute: () => this.manager.currentSession && this.manager.currentSession.terminate(),
@@ -946,8 +947,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         return widget;
     }
 
-    async start(noDebug?: boolean): Promise<void> {
-        let { current } = this.configurations;
+    async start(noDebug?: boolean, debugSessionOptions?: DebugSessionOptions): Promise<void> {
+        let current = debugSessionOptions ? debugSessionOptions : this.configurations.current;
+        // If no configurations are currently present, create the `launch.json` and prompt users to select the config.
+        if (!current) {
+            await this.configurations.addConfiguration();
+            return;
+        }
         if (current) {
             if (noDebug !== undefined) {
                 current = {

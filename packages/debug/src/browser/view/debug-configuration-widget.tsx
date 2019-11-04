@@ -26,9 +26,14 @@ import { DebugSessionManager } from '../debug-session-manager';
 import { DebugAction } from './debug-action';
 import { DebugViewModel } from './debug-view-model';
 import { DebugSessionOptions } from '../debug-session-options';
+import { DebugCommands } from '../debug-frontend-application-contribution';
+import { CommandRegistry } from '@theia/core/lib/common';
 
 @injectable()
 export class DebugConfigurationWidget extends ReactWidget {
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
 
     @inject(DebugViewModel)
     protected readonly viewModel: DebugViewModel;
@@ -118,11 +123,7 @@ export class DebugConfigurationWidget extends ReactWidget {
 
     protected readonly start = () => {
         const configuration = this.manager.current;
-        if (configuration) {
-            this.sessionManager.start(configuration);
-        } else {
-            this.manager.addConfiguration();
-        }
+        this.commandRegistry.executeCommand(DebugCommands.START.id, configuration);
     }
 
     protected readonly openConfiguration = () => this.manager.openConfiguration();
