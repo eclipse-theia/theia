@@ -32,6 +32,7 @@ import { Path as TheiaPath } from '@theia/core';
 import { relative } from 'path';
 import { HgPromptServerImpl } from './hg-prompt';
 import { HgPrompt } from '../common/hg-prompt';
+import URI from '@theia/core/lib/common/uri';
 
 /**
  * Hg implementation.
@@ -185,11 +186,8 @@ export class HgImpl implements Hg {
             const dataChunk = outputChunks[index++];
 
             const name = dataChunk.slice(0, dataChunk.length - 1); // remove trailing newline
-            const uri = `${repository.localUri}/${name}`;
-            const change: HgFileChange = {
-                uri,
-                status,
-            };
+            const uri = new URI(repository.localUri).resolve(name).toString();
+            const change: HgFileChange = { uri, status, };
             changes.push(change);
         }
 
