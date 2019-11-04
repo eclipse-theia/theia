@@ -192,3 +192,7 @@
     background-color: var(--theia-layout-color2);
     cursor: pointer;
 }
+
+.gravatar {
+    padding-bottom: 10px;
+}

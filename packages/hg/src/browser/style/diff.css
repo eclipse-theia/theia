@@ -23,13 +23,6 @@
     mask: url('hg-diff.svg');
 }
 
-.theia-hg .hg-diff-container {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    height: 100%;
-}
-
 .theia-hg .revision .row-title {
     width: 35px;
     display: inline-block;

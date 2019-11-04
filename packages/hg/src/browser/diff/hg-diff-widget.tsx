@@ -58,6 +58,8 @@ export class HgDiffWidget extends ScmNavigableListWidget<HgFileChangeNode> imple
         this.title.iconClass = 'theia-hg-diff-icon';
 
         this.addClass('theia-hg');
+        this.addClass('theia-git');
+        this.addClass('theia-scm');
     }
 
     @postConstruct()
@@ -139,7 +141,7 @@ export class HgDiffWidget extends ScmNavigableListWidget<HgFileChangeNode> imple
         this.scmNodes = this.fileChangeNodes;
         const commitishBar = this.renderDiffListHeader();
         const fileChangeList = this.renderFileChangeList();
-        return <div className='hg-diff-container'>{commitishBar}{fileChangeList}</div>;
+        return <div className='scm-diff-container'>{commitishBar}{fileChangeList}</div>;
     }
 
     protected renderDiffListHeader(): React.ReactNode {
@@ -253,7 +255,7 @@ export class HgDiffWidget extends ScmNavigableListWidget<HgFileChangeNode> imple
     }
 
     protected renderHgItem(change: HgFileChangeNode): React.ReactNode {
-        return <div key={change.uri.toString()} className={`hgItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}`}>
+        return <div key={change.uri.toString()} className={`gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}`}>
             <div
                 title={change.caption}
                 className='noWrapInfo'
