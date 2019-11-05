@@ -75,9 +75,41 @@ export class TaskSchemaUpdater {
         return Array.from(allTypes.values()).sort();
     }
 
+    private updateSchemasForRegisteredTasks(): void {
+        customizedDetectedTasks.length = 0;
+        const definitions = this.taskDefinitionRegistry.getAll();
+        definitions.forEach(def => {
+            const customizedDetectedTask = {
+                type: 'object',
+                required: ['type'],
+                properties: {}
+            } as IJSONSchema;
+            const taskType = {
+                ...defaultTaskType,
+                enum: [def.taskType],
+                default: def.taskType,
+                description: 'The task type to customize'
+            };
+            customizedDetectedTask.properties!.type = taskType;
+            def.properties.all.forEach(taskProp => {
+                if (!!def.properties.required.find(requiredProp => requiredProp === taskProp)) { // property is mandatory
+                    customizedDetectedTask.required!.push(taskProp);
+                }
+                customizedDetectedTask.properties![taskProp] = { ...def.properties.schema.properties![taskProp] };
+            });
+            customizedDetectedTask.properties!.problemMatcher = problemMatcher;
+            customizedDetectedTask.properties!.options = commandOptionsSchema;
+            customizedDetectedTasks.push(customizedDetectedTask);
+        });
+
+        taskConfigurationSchema.oneOf!.length = 1;
+        taskConfigurationSchema.oneOf!.push(...customizedDetectedTasks);
+    }
+
     /** Returns the task's JSON schema */
     getTaskSchema(): IJSONSchema {
         return {
+            type: 'object',
             properties: {
                 tasks: {
                     type: 'array',
@@ -103,11 +135,8 @@ export class TaskSchemaUpdater {
         this.update();
     }
 
-    /** Gets the most up-to-date names of task types Theia supports from the registry and update the task schema */
     private async updateSupportedTaskTypes(): Promise<void> {
-        const allTypes = await this.getRegisteredTaskTypes();
-        supportedTaskTypes.length = 0;
-        supportedTaskTypes.push(...allTypes);
+        this.updateSchemasForRegisteredTasks();
         this.update();
     }
 }
@@ -160,80 +189,74 @@ const commandOptionsSchema: IJSONSchema = {
 };
 
 const problemMatcherNames: string[] = [];
-const supportedTaskTypes = ['shell', 'process']; // default types that Theia supports
-const taskConfigurationSchema: IJSONSchema = {
-    $id: taskSchemaId,
+const defaultTaskTypes = ['shell', 'process'];
+const supportedTaskTypes = [...defaultTaskTypes];
+const taskLabel = {
+    type: 'string',
+    description: 'A unique string that identifies the task that is also used as task\'s user interface label'
+};
+const defaultTaskType = {
+    type: 'string',
+    enum: supportedTaskTypes,
+    default: defaultTaskTypes[0],
+    description: 'Determines what type of process will be used to execute the task. Only shell types will have output shown on the user interface'
+};
+const commandAndArgs = {
+    command: commandSchema,
+    args: commandArgSchema,
+    options: commandOptionsSchema
+};
+const problemMatcher = {
     oneOf: [
         {
-            allOf: [
-                {
-                    type: 'object',
-                    required: ['type'],
-                    properties: {
-                        label: {
-                            type: 'string',
-                            description: 'A unique string that identifies the task that is also used as task\'s user interface label'
-                        },
-                        type: {
-                            type: 'string',
-                            enum: supportedTaskTypes,
-                            default: 'shell',
-                            description: 'Determines what type of process will be used to execute the task. Only shell types will have output shown on the user interface'
-                        },
-                        command: commandSchema,
-                        args: commandArgSchema,
-                        options: commandOptionsSchema,
-                        windows: {
-                            type: 'object',
-                            description: 'Windows specific command configuration that overrides the command, args, and options',
-                            properties: {
-                                command: commandSchema,
-                                args: commandArgSchema,
-                                options: commandOptionsSchema
-                            }
-                        },
-                        osx: {
-                            type: 'object',
-                            description: 'MacOS specific command configuration that overrides the command, args, and options',
-                            properties: {
-                                command: commandSchema,
-                                args: commandArgSchema,
-                                options: commandOptionsSchema
-                            }
-                        },
-                        linux: {
-                            type: 'object',
-                            description: 'Linux specific command configuration that overrides the default command, args, and options',
-                            properties: {
-                                command: commandSchema,
-                                args: commandArgSchema,
-                                options: commandOptionsSchema
-                            }
-                        },
-                        problemMatcher: {
-                            oneOf: [
-                                {
-                                    type: 'string',
-                                    description: 'Name of the problem matcher to parse the output of the task',
-                                    enum: problemMatcherNames
-                                },
-                                {
-                                    type: 'object',
-                                    description: 'User defined problem matcher(s) to parse the output of the task',
-                                },
-                                {
-                                    type: 'array',
-                                    description: 'Name(s) of the problem matcher(s) to parse the output of the task',
-                                    items: {
-                                        type: 'string',
-                                        enum: problemMatcherNames
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }
-            ]
+            type: 'string',
+            description: 'Name of the problem matcher to parse the output of the task',
+            enum: problemMatcherNames
+        },
+        {
+            type: 'object',
+            description: 'User defined problem matcher(s) to parse the output of the task',
+        },
+        {
+            type: 'array',
+            description: 'Name(s) of the problem matcher(s) to parse the output of the task',
+            items: {
+                type: 'string',
+                enum: problemMatcherNames
+            }
         }
     ]
+};
+
+const processTaskConfigurationSchema: IJSONSchema = {
+    type: 'object',
+    required: ['type', 'label', 'command'],
+    properties: {
+        label: taskLabel,
+        type: defaultTaskType,
+        ...commandAndArgs,
+        windows: {
+            type: 'object',
+            description: 'Windows specific command configuration that overrides the command, args, and options',
+            properties: commandAndArgs
+        },
+        osx: {
+            type: 'object',
+            description: 'MacOS specific command configuration that overrides the command, args, and options',
+            properties: commandAndArgs
+        },
+        linux: {
+            type: 'object',
+            description: 'Linux specific command configuration that overrides the default command, args, and options',
+            properties: commandAndArgs
+        },
+        problemMatcher
+    }
+};
+
+const customizedDetectedTasks: IJSONSchema[] = [];
+
+const taskConfigurationSchema: IJSONSchema = {
+    $id: taskSchemaId,
+    oneOf: [processTaskConfigurationSchema, ...customizedDetectedTasks]
 };

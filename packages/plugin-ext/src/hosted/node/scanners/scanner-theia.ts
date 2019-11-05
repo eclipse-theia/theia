@@ -450,7 +450,8 @@ export class TheiaPluginScanner implements PluginScanner {
             source: pluginName,
             properties: {
                 required: definitionContribution.required,
-                all: propertyKeys
+                all: propertyKeys,
+                schema: definitionContribution
             }
         };
     }

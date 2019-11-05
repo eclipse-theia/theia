@@ -174,7 +174,16 @@ export class CppTaskProvider implements TaskContribution, TaskProvider, TaskReso
             source: 'cpp',
             properties: {
                 required: ['label'],
-                all: ['label']
+                all: ['label'],
+                schema: {
+                    type: CPP_BUILD_TASK_TYPE_KEY,
+                    required: ['label'],
+                    properties: {
+                        label: {
+                            type: 'string'
+                        }
+                    }
+                }
             }
         });
     }
