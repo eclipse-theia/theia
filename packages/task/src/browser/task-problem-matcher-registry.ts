@@ -23,10 +23,11 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { Event, Emitter } from '@theia/core/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
-    ApplyToKind, FileLocationKind, NamedProblemMatcher, Severity,
+    ApplyToKind, FileLocationKind, NamedProblemMatcher,
     ProblemPattern, ProblemMatcher, ProblemMatcherContribution, WatchingMatcher
 } from '../common';
 import { ProblemPatternRegistry } from './task-problem-pattern-registry';
+import { Severity } from '@theia/core/lib/common/severity';
 
 @injectable()
 export class ProblemMatcherRegistry {

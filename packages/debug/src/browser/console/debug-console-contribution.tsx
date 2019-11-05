@@ -14,13 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces, injectable } from 'inversify';
-import { AbstractViewContribution, bindViewContribution, WidgetFactory, Widget } from '@theia/core/lib/browser';
-import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
-import { ConsoleWidget, ConsoleOptions } from '@theia/console/lib/browser/console-widget';
-import { DebugConsoleSession } from './debug-console-session';
-import { Command, CommandRegistry } from '@theia/core/lib/common/command';
+import { ConsoleOptions, ConsoleWidget } from '@theia/console/lib/browser/console-widget';
+import { AbstractViewContribution, bindViewContribution, Widget, WidgetFactory } from '@theia/core/lib/browser';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { Command, CommandRegistry } from '@theia/core/lib/common/command';
+import { Severity } from '@theia/core/lib/common/severity';
+import { inject, injectable, interfaces } from 'inversify';
+import * as React from 'react';
+import { DebugConsoleSession } from './debug-console-session';
 
 export type InDebugReplContextKey = ContextKey<boolean>;
 export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
@@ -37,6 +39,9 @@ export namespace DebugConsoleCommands {
 
 @injectable()
 export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWidget> implements TabBarToolbarContribution {
+
+    @inject(DebugConsoleSession)
+    protected debugConsoleSession: DebugConsoleSession;
 
     constructor() {
         super({
@@ -61,7 +66,14 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         });
     }
 
-    registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): void {
+    async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
+        toolbarRegistry.registerItem({
+            id: 'debug-console-severity',
+            render: widget => this.renderSeveritySelector(widget),
+            isVisible: widget => this.withWidget(widget, () => true),
+            onDidChange: this.debugConsoleSession.onSelectionChange
+        });
+
         toolbarRegistry.registerItem({
             id: DebugConsoleCommands.CLEAR.id,
             command: DebugConsoleCommands.CLEAR.id,
@@ -112,6 +124,25 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             id: DebugConsoleContribution.options.id,
             createWidget: () => DebugConsoleContribution.create(container)
         }));
+    }
+
+    protected renderSeveritySelector(widget: Widget | undefined): React.ReactNode {
+        const severityElements: React.ReactNode[] = [];
+        Severity.toArray().forEach(s => severityElements.push(<option value={s} key={s}>{s}</option>));
+        const selectedValue = Severity.toString(this.debugConsoleSession.severity || Severity.Ignore);
+
+        return <select
+            id={'debugConsoleSeverity'}
+            key={'debugConsoleSeverity'}
+            value={selectedValue}
+            onChange={this.changeSeverity}
+        >
+            {severityElements}
+        </select>;
+    }
+
+    protected changeSeverity = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        this.debugConsoleSession.severity = Severity.fromValue(event.target.value);
     }
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), fn: (widget: ConsoleWidget) => T): T | false {

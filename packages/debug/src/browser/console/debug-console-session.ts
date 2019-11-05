@@ -17,7 +17,6 @@
 import throttle = require('lodash.throttle');
 import { injectable, inject, postConstruct } from 'inversify';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
-import { MessageType } from '@theia/core/lib/common';
 import { ConsoleSession, ConsoleItem } from '@theia/console/lib/browser/console-session';
 import { AnsiConsoleItem } from '@theia/console/lib/browser/ansi-console-item';
 import { DebugSession } from '../debug-session';
@@ -25,6 +24,7 @@ import { DebugSessionManager } from '../debug-session-manager';
 import { Languages, CompletionItem, CompletionItemKind, Position, Range, TextEdit, Workspace, TextDocument, CompletionParams } from '@theia/languages/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { ExpressionContainer, ExpressionItem } from './debug-console-items';
+import { Severity } from '@theia/core/lib/common/severity';
 
 @injectable()
 export class DebugConsoleSession extends ConsoleSession {
@@ -83,7 +83,7 @@ export class DebugConsoleSession extends ConsoleSession {
     }
 
     getElements(): IterableIterator<ConsoleItem> {
-        return this.items[Symbol.iterator]();
+        return this.items.filter(e => !this.severity || e.severity === this.severity)[Symbol.iterator]();
     }
 
     protected async completions({ textDocument: { uri }, position }: CompletionParams): Promise<CompletionItem[]> {
@@ -142,12 +142,12 @@ export class DebugConsoleSession extends ConsoleSession {
             this.uncompletedItemContent = value;
         }
 
-        this.items.push(new AnsiConsoleItem(this.uncompletedItemContent, MessageType.Info));
+        this.items.push(new AnsiConsoleItem(this.uncompletedItemContent, Severity.Info));
         this.fireDidChange();
     }
 
     appendLine(value: string): void {
-        this.items.push(new AnsiConsoleItem(value, MessageType.Info));
+        this.items.push(new AnsiConsoleItem(value, Severity.Info));
         this.fireDidChange();
     }
 
@@ -158,7 +158,7 @@ export class DebugConsoleSession extends ConsoleSession {
             console.debug(`telemetry/${event.body.output}`, event.body.data);
             return;
         }
-        const severity = category === 'stderr' ? MessageType.Error : event.body.category === 'console' ? MessageType.Warning : MessageType.Info;
+        const severity = category === 'stderr' ? Severity.Error : event.body.category === 'console' ? Severity.Warning : Severity.Info;
         if (variablesReference) {
             const items = await new ExpressionContainer({ session, variablesReference }).getElements();
             this.items.push(...items);
