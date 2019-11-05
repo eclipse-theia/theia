@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { ProblemMatcher, ProblemMatch, WatchingPattern } from './problem-matcher-protocol';
 
 export const taskPath = '/services/task';
@@ -133,6 +134,7 @@ export interface TaskDefinition {
     properties: {
         required: string[];
         all: string[];
+        schema: IJSONSchema;
     }
 }
 
