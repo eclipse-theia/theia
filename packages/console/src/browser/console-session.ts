@@ -16,11 +16,12 @@
 
 import { injectable } from 'inversify';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { MessageType } from '@theia/core/lib/common/message-service-protocol';
 import { TreeSource, TreeElement, CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
+import { Emitter } from '@theia/core/lib/common/event';
+import { Severity } from '@theia/core/lib/common/severity';
 
 export interface ConsoleItem extends TreeElement {
-    readonly severity?: MessageType
+    readonly severity?: Severity;
 }
 export namespace ConsoleItem {
     export const errorClassName = 'theia-console-error';
@@ -35,6 +36,24 @@ export interface CompositeConsoleItem extends ConsoleItem, CompositeTreeElement 
 
 @injectable()
 export abstract class ConsoleSession extends TreeSource {
+    protected selectedSeverity?: Severity;
+    protected readonly selectionEmitter: Emitter<void> = new Emitter<void>();
+    readonly onSelectionChange = this.selectionEmitter.event;
+
+    get severity(): Severity | undefined {
+        return this.selectedSeverity;
+    }
+
+    set severity(severity: Severity | undefined) {
+        if (severity === this.selectedSeverity) {
+            return;
+        }
+
+        this.selectedSeverity = severity;
+        this.selectionEmitter.fire(undefined);
+        this.fireDidChange();
+    }
+
     abstract getElements(): MaybePromise<IterableIterator<ConsoleItem>>;
     abstract execute(value: string): MaybePromise<void>;
     abstract clear(): MaybePromise<void>;

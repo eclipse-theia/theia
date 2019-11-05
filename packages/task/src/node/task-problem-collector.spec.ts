@@ -17,7 +17,8 @@
 import { expect } from 'chai';
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import { ProblemCollector } from './task-problem-collector';
-import { ApplyToKind, FileLocationKind, ProblemLocationKind, ProblemMatch, ProblemMatchData, ProblemMatcher, Severity } from '../common/problem-matcher-protocol';
+import { ApplyToKind, FileLocationKind, ProblemLocationKind, ProblemMatch, ProblemMatchData, ProblemMatcher } from '../common/problem-matcher-protocol';
+import { Severity } from '@theia/core/lib/common/severity';
 
 const startStopMatcher1: ProblemMatcher = {
     owner: 'test1',

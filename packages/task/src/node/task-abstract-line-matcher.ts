@@ -23,10 +23,11 @@ import { isWindows } from '@theia/core/lib/common/os';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import {
     FileLocationKind, ProblemMatcher, ProblemPattern,
-    ProblemMatch, ProblemMatchData, ProblemLocationKind, Severity
+    ProblemMatch, ProblemMatchData, ProblemLocationKind
 } from '../common/problem-matcher-protocol';
 import URI from '@theia/core/lib/common/uri';
 import vscodeURI from 'vscode-uri/lib/umd';
+import { Severity } from '@theia/core/lib/common/severity';
 
 const endOfLine: string = isWindows ? '\r\n' : '\n';
 
