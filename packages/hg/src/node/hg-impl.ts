@@ -214,11 +214,7 @@ export class HgImpl implements Hg {
         await this.runCommand(repository, ['forget', ...paths]);
     }
 
-    async branch(repository: Repository, options: { type: 'current' }): Promise<Branch | undefined>;
-    async branch(repository: Repository, options: { type: 'local' | 'remote' | 'all' }): Promise<Branch[]>;
-    async branch(repository: Repository, options: Hg.Options.BranchCommand.Create | Hg.Options.BranchCommand.Rename | Hg.Options.BranchCommand.Delete): Promise<void>;
-    // tslint:disable-next-line:no-any
-    async branch(repository: any, options: any): Promise<void | undefined | Branch | Branch[]> {
+    async branches(repository: Repository): Promise<Branch[]> {
         const repo = await this.getHgRepo(repository);
 
         const output = await repo.runCommand(['branches']);
@@ -249,6 +245,24 @@ export class HgImpl implements Hg {
         } while (i < output.length);
 
         return branches;
+
+    }
+
+    async currentBranch(repository: Repository): Promise<Branch | undefined> {
+        const repo = await this.getHgRepo(repository);
+
+        const branches = await this.branches(repository);
+
+        const branchCmdOutput = await repo.runCommand(['branch']);
+
+        const branchName = branchCmdOutput[0].trim();
+        const currentBranch = branches.find(b => b.name === branchName);
+        return  currentBranch;
+
+    }
+
+    async createBranch(repository: Repository, branchName: string, branchStartPoint?: string): Promise<void> {
+        throw Error('not implemented yet');
     }
 
     async checkout(repository: Repository, options: Hg.Options.Checkout.CheckoutBranch | Hg.Options.Checkout.WorkingTreeFile): Promise<void> {

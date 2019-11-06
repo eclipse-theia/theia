@@ -610,29 +610,26 @@ export interface Hg extends Disposable {
     /**
      * Returns with the currently active branch, or `undefined` if the current branch is in detached mode.
      *
-     * @param the repository where the current branch has to be queried.
-     * @param options the type of the branch, which is always the `current`.
+     * @param repository the repository where the current branch has to be queried.
      */
-    branch(repository: Repository, options: { type: 'current' }): Promise<Branch | undefined>;
+    currentBranch(repository: Repository): Promise<Branch | undefined>;
 
     /**
      * Returns with an array of branches.
      *
-     * @param the repository where the branches has to be queried.
-     * @param options the type of the branch, which is either the `local`, the `remote`, or `all` of them.
+     * @param repository the repository where the branches has to be queried.
      */
-    branch(repository: Repository, options: { type: 'local' | 'remote' | 'all' }): Promise<Branch[]>;
+    branches(repository: Repository): Promise<Branch[]>;
 
     /**
      * Creates, renames, and deletes a branch.
      *
      * @param the repository where the branch modification has to be performed.
-     * @param options further Hg command refinements for the branch modification.
+     * @param branchName The desired name of the new branch.
+     * @param branchStartPoint The new branch head will point to this commit. It may be given as a branch name, a commit-id, or a tag.
+     * If this parameter is omitted, the current `HEAD` will be used instead.
      */
-    branch(repository: Repository, options:
-        Hg.Options.BranchCommand.Create |
-        Hg.Options.BranchCommand.Rename |
-        Hg.Options.BranchCommand.Delete): Promise<void>;
+    createBranch(repository: Repository, branchName: string, branchStartPoint?: string): Promise<void>
 
     /**
      * Switches branches or restores working tree files.

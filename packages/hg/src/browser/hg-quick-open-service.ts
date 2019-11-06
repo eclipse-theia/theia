@@ -147,7 +147,7 @@ export class HgQuickOpenService {
             }
 
             if (!useBookmarks) {
-                const currentBranch = await this.hg.branch(repository, { type: 'current' });
+                const currentBranch = await this.hg.currentBranch(repository);
                 if (!currentBranch) {
                     return;
                 }
@@ -213,7 +213,7 @@ export class HgQuickOpenService {
 
     private async doMerge(repository: Repository, otherRevision: string, otherBranchName?: string): Promise<string | undefined> {
         const mergeResults = await this.hg.merge(repository, otherRevision);
-        const currentBranch = await this.hg.branch(repository, { type: 'current' });
+        const currentBranch = await this.getCurrentBranch(repository);
 
         if (mergeResults.unresolvedCount > 0) {
             const fileOrFiles = mergeResults.unresolvedCount === 1 ? 'file' : 'files';
@@ -235,12 +235,8 @@ export class HgQuickOpenService {
     async checkout(): Promise<void> {
         const repository = this.getRepository();
         if (repository) {
-            const [branches, currentBranch] = await Promise.all([this.getBranches(), this.getCurrentBranch()]);
-            if (currentBranch) {
-                // We do not show the current branch.
-                const index = branches.findIndex(branch => branch && branch.name === currentBranch.name);
-                branches.splice(index, 1);
-            }
+            const branches = await this.getBranches();
+
             const switchBranch = async (item: HgQuickOpenItem<Branch>) => {
                 try {
                     await this.hg.checkout(repository, { branch: item.ref.nameWithoutRemote });
@@ -272,7 +268,7 @@ export class HgQuickOpenService {
                                 `Create a new local branch with name: ${lookFor}. ${suffix}`,
                                 async () => {
                                     try {
-                                        await hgQuickOpenService.hg.branch(repository, { toCreate: lookFor });
+                                        await hgQuickOpenService.hg.createBranch(repository, lookFor);
                                         await hgQuickOpenService.hg.checkout(repository, { branch: lookFor });
                                     } catch (error) {
                                         hgQuickOpenService.hgErrorHandler.handleError(error);
@@ -386,11 +382,7 @@ export class HgQuickOpenService {
             return [];
         }
         try {
-            const [local, remote] = await Promise.all([
-                this.hg.branch(repository, { type: 'local' }),
-                this.hg.branch(repository, { type: 'remote' })
-            ]);
-            return [...local, ...remote];
+            return await this.hg.branches(repository);
         } catch (error) {
             this.hgErrorHandler.handleError(error);
             return [];
@@ -402,7 +394,7 @@ export class HgQuickOpenService {
             return undefined;
         }
         try {
-            return await this.hg.branch(repository, { type: 'current' });
+            return await this.hg.currentBranch(repository);
         } catch (error) {
             this.hgErrorHandler.handleError(error);
             return undefined;
