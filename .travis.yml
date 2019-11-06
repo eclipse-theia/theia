@@ -20,7 +20,6 @@ cache:
   - packages/callhierarchy/node_modules
   - packages/console/node_modules
   - packages/core/node_modules
-  - packages/cpp/node_modules
   - packages/debug-nodejs/node_modules
   - packages/debug/node_modules
   - packages/editor-preview/node_modules
@@ -131,7 +130,7 @@ jobs:
     script:
       - travis_retry yarn test:theia
   - os: windows
-    env: 
+    env:
     - CXX=c++
     - YARN_GPG=no
     before_script: skip
