@@ -49,9 +49,6 @@
       "@theia/monaco/lib/*": [
         "packages/monaco/src/*"
       ],
-      "@theia/cpp/lib/*": [
-        "packages/cpp/src/*"
-      ],
       "@theia/java/lib/*": [
         "packages/java/src/*"
       ],
