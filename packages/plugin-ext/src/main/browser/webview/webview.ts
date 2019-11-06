@@ -139,10 +139,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     viewType: string;
     options: WebviewPanelOptions = {};
 
-    protected readonly ready = new Deferred<void>();
+    protected ready = new Deferred<void>();
 
     protected readonly onMessageEmitter = new Emitter<any>();
     readonly onMessage = this.onMessageEmitter.event;
+
+    protected readonly toHide = new DisposableCollection();
 
     @postConstruct()
     protected init(): void {
@@ -168,6 +170,34 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
                 this.transparentOverlay.style.display = 'none';
             }
         }));
+    }
+
+    protected onBeforeAttach(msg: Message): void {
+        super.onBeforeAttach(msg);
+        this.doShow();
+    }
+
+    protected onBeforeShow(msg: Message): void {
+        super.onBeforeShow(msg);
+        this.doShow();
+    }
+
+    protected onAfterHide(msg: Message): void {
+        super.onAfterHide(msg);
+        this.doHide();
+    }
+
+    protected doHide(): void {
+        if (this.options.retainContextWhenHidden !== true) {
+            this.toHide.dispose();
+        }
+    }
+
+    protected doShow(): void {
+        if (!this.toHide.disposed) {
+            return;
+        }
+        this.toDispose.push(this.toHide);
 
         const element = document.createElement('iframe');
         element.className = 'webview';
@@ -178,38 +208,44 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         element.style.height = '100%';
         this.element = element;
         this.node.appendChild(this.element);
-        this.toDispose.push(Disposable.create(() => {
+        this.toHide.push(Disposable.create(() => {
             if (this.element) {
                 this.element.remove();
                 this.element = undefined;
             }
         }));
 
+        const oldReady = this.ready;
+        const ready = new Deferred<void>();
+        ready.promise.then(() => oldReady.resolve());
+        this.ready = ready;
+        this.doUpdateContent();
         const subscription = this.on(WebviewMessageChannels.webviewReady, () => {
             subscription.dispose();
-            this.ready.resolve();
+            ready.resolve();
         });
-        this.toDispose.push(subscription);
-        this.toDispose.push(this.on(WebviewMessageChannels.onmessage, (data: any) => this.onMessageEmitter.fire(data)));
-        this.toDispose.push(this.on(WebviewMessageChannels.didClickLink, (uri: string) => this.openLink(new URI(uri))));
-        this.toDispose.push(this.on(WebviewMessageChannels.doUpdateState, (state: any) => {
+        this.toHide.push(subscription);
+
+        this.toHide.push(this.on(WebviewMessageChannels.onmessage, (data: any) => this.onMessageEmitter.fire(data)));
+        this.toHide.push(this.on(WebviewMessageChannels.didClickLink, (uri: string) => this.openLink(new URI(uri))));
+        this.toHide.push(this.on(WebviewMessageChannels.doUpdateState, (state: any) => {
             this._state = state;
         }));
-        this.toDispose.push(this.on(WebviewMessageChannels.didFocus, () =>
+        this.toHide.push(this.on(WebviewMessageChannels.didFocus, () =>
             // emulate the webview focus without actually changing focus
             this.node.dispatchEvent(new FocusEvent('focus'))
         ));
-        this.toDispose.push(this.on(WebviewMessageChannels.didBlur, () => {
+        this.toHide.push(this.on(WebviewMessageChannels.didBlur, () => {
             /* no-op: webview loses focus only if another element gains focus in the main window */
         }));
-        this.toDispose.push(this.on(WebviewMessageChannels.doReload, () => this.reload()));
-        this.toDispose.push(this.on(WebviewMessageChannels.loadResource, (entry: any) => {
+        this.toHide.push(this.on(WebviewMessageChannels.doReload, () => this.reload()));
+        this.toHide.push(this.on(WebviewMessageChannels.loadResource, (entry: any) => {
             const rawPath = entry.path;
             const normalizedPath = decodeURIComponent(rawPath);
             const uri = new URI(normalizedPath.replace(/^\/(\w+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
             this.loadResource(rawPath, uri);
         }));
-        this.toDispose.push(this.on(WebviewMessageChannels.didKeydown, (data: KeyboardEvent) => {
+        this.toHide.push(this.on(WebviewMessageChannels.didKeydown, (data: KeyboardEvent) => {
             // Electron: workaround for https://github.com/electron/electron/issues/14258
             // We have to detect keyboard events in the <webview> and dispatch them to our
             // keybinding service because these events do not bubble to the parent window anymore.
@@ -217,7 +253,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         }));
 
         this.style();
-        this.toDispose.push(this.themeDataProvider.onDidChangeThemeData(() => this.style()));
+        this.toHide.push(this.themeDataProvider.onDidChangeThemeData(() => this.style()));
     }
 
     setContentOptions(contentOptions: WebviewContentOptions): void {
@@ -268,11 +304,11 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.node.focus();
         this.focus();
     }
 
     focus(): void {
+        this.node.focus();
         if (this.element) {
             this.doSend('focus');
         }
