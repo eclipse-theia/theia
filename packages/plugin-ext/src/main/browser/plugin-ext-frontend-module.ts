@@ -20,7 +20,7 @@ import '../../../src/main/browser/style/index.css';
 import { ContainerModule } from 'inversify';
 import {
     FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution,
-    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, OpenHandler
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -66,6 +66,7 @@ import { InPluginFileSystemWatcherManager } from './in-plugin-filesystem-watcher
 import { WebviewWidget, WebviewWidgetIdentifier, WebviewWidgetExternalEndpoint } from './webview/webview';
 import { WebviewEnvironment } from './webview/webview-environment';
 import { WebviewThemeDataProvider } from './webview/webview-theme-data-provider';
+import { PluginCommandOpenHandler } from './plugin-command-open-handler';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -148,6 +149,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
             return child.get(TreeWidget);
         }
     })).inSingletonScope();
+
+    bind(PluginCommandOpenHandler).toSelf().inSingletonScope();
+    bind(OpenHandler).toService(PluginCommandOpenHandler);
 
     bind(WebviewEnvironment).toSelf().inSingletonScope();
     bind(WebviewThemeDataProvider).toSelf().inSingletonScope();
