@@ -508,6 +508,9 @@ export function createAPIFactory(
             },
             openExternal(uri: theia.Uri): PromiseLike<boolean> {
                 return windowStateExt.openUri(uri);
+            },
+            asExternalUri(target: theia.Uri): PromiseLike<theia.Uri> {
+                return windowStateExt.asExternalUri(target);
             }
         });
 

@@ -85,6 +85,7 @@ import { ContextMenuContext } from './menu/context-menu-context';
 import { bindResourceProvider, bindMessageService, bindPreferenceService } from './frontend-application-bindings';
 import { ColorRegistry } from './color-registry';
 import { ColorContribution, ColorApplicationContribution } from './color-application-contribution';
+import { ExternalUriService } from './external-uri-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -138,6 +139,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();
     bind(OpenerService).toService(DefaultOpenerService);
+
+    bind(ExternalUriService).toSelf().inSingletonScope();
     bind(HttpOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(HttpOpenHandler);
 

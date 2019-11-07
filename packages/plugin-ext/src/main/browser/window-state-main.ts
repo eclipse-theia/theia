@@ -15,24 +15,29 @@
  ********************************************************************************/
 
 import URI from 'vscode-uri';
+import CoreURI from '@theia/core/lib/common/uri';
 import { interfaces } from 'inversify';
 import { WindowStateExt, MAIN_RPC_CONTEXT, WindowMain } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
+import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
 
 export class WindowStateMain implements WindowMain, Disposable {
 
     private readonly proxy: WindowStateExt;
 
-    private readonly windowService: WindowService;
+    private readonly openerService: OpenerService;
+
+    private readonly externalUriService: ExternalUriService;
 
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT);
-        this.windowService = container.get(WindowService);
+        this.openerService = container.get(OpenerService);
+        this.externalUriService = container.get(ExternalUriService);
 
         const fireDidFocus = () => this.onFocusChanged(true);
         window.addEventListener('focus', fireDidFocus);
@@ -53,13 +58,19 @@ export class WindowStateMain implements WindowMain, Disposable {
 
     async $openUri(uriComponent: UriComponents): Promise<boolean> {
         const uri = URI.revive(uriComponent);
-        const url = encodeURI(uri.toString(true));
+        const url = new CoreURI(encodeURI(uri.toString(true)));
         try {
-            this.windowService.openNewWindow(url, { external: true });
+            await open(this.openerService, url);
             return true;
         } catch (e) {
             return false;
         }
+    }
+
+    async $asExternalUri(uriComponents: UriComponents): Promise<UriComponents> {
+        const uri = URI.revive(uriComponents);
+        const resolved = await this.externalUriService.resolve(new CoreURI(uri));
+        return URI.parse(resolved.toString());
     }
 
 }

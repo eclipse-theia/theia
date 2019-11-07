@@ -561,6 +561,7 @@ export enum TreeViewItemCollapsibleState {
 
 export interface WindowMain {
     $openUri(uri: UriComponents): Promise<boolean>;
+    $asExternalUri(uri: UriComponents): Promise<UriComponents>;
 }
 
 export interface WindowStateExt {
