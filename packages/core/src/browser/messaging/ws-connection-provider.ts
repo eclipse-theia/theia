@@ -19,7 +19,7 @@ import { createWebSocketConnection, Logger, ConsoleLogger } from 'vscode-ws-json
 import { ConnectionHandler, JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event } from '../../common';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { Endpoint } from '../endpoint';
-const ReconnectingWebSocket = require('reconnecting-websocket');
+import ReconnectingWebSocket from 'reconnecting-websocket';
 
 decorate(injectable(), JsonRpcProxyFactory);
 decorate(unmanaged(), JsonRpcProxyFactory, 0);
@@ -52,7 +52,7 @@ export class WebSocketConnectionProvider {
     }
 
     protected channelIdSeq = 0;
-    protected readonly socket: WebSocket;
+    protected readonly socket: ReconnectingWebSocket;
     protected readonly channels = new Map<number, WebSocketChannel>();
 
     protected readonly onIncomingMessageActivityEmitter: Emitter<void> = new Emitter();
@@ -166,7 +166,7 @@ export class WebSocketConnectionProvider {
     /**
      * Creates a web socket for the given url
      */
-    protected createWebSocket(url: string): WebSocket {
+    protected createWebSocket(url: string): ReconnectingWebSocket {
         return new ReconnectingWebSocket(url, undefined, {
             maxReconnectionDelay: 10000,
             minReconnectionDelay: 1000,

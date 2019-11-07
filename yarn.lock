@@ -9209,9 +9209,10 @@ rechoir@^0.6.2:
   dependencies:
     resolve "^1.1.6"
 
-reconnecting-websocket@^3.0.7:
-  version "3.2.2"
-  resolved "https://registry.yarnpkg.com/reconnecting-websocket/-/reconnecting-websocket-3.2.2.tgz#8097514e926e9855e03c39e76efa2e3d1f371bee"
+reconnecting-websocket@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/reconnecting-websocket/-/reconnecting-websocket-4.2.0.tgz#2395f84b5d0acee439ff5df34c3fd0853d11be7c"
+  integrity sha512-HMD8A0sv40xhkHf/T4qxktyOvHx7K3d2A9i1QG2wRIYdMecxQJMhTIBH4aQ8KfQLfQW4UOqNSfxTgv0C+MbPIA==
 
 redent@^1.0.0:
   version "1.0.0"
