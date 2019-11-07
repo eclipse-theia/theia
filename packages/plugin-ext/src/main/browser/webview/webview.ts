@@ -43,6 +43,7 @@ import { Schemes } from '../../../common/uri-components';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 import { WebviewThemeDataProvider } from './webview-theme-data-provider';
+import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
 
 // tslint:disable:no-any
 
@@ -54,6 +55,7 @@ export const enum WebviewMessageChannels {
     doUpdateState = 'do-update-state',
     doReload = 'do-reload',
     loadResource = 'load-resource',
+    loadLocalhost = 'load-localhost',
     webviewReady = 'webview-ready',
     didKeydown = 'did-keydown'
 }
@@ -117,6 +119,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     @inject(WebviewThemeDataProvider)
     protected readonly themeDataProvider: WebviewThemeDataProvider;
+
+    @inject(ExternalUriService)
+    protected readonly externalUriService: ExternalUriService;
 
     viewState: WebviewPanelViewState = {
         visible: false,
@@ -245,6 +250,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             const uri = new URI(normalizedPath.replace(/^\/(\w+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
             this.loadResource(rawPath, uri);
         }));
+        this.toHide.push(this.on(WebviewMessageChannels.loadLocalhost, (entry: any) =>
+            this.loadLocalhost(entry.origin)
+        ));
         this.toHide.push(this.on(WebviewMessageChannels.didKeydown, (data: KeyboardEvent) => {
             // Electron: workaround for https://github.com/electron/electron/issues/14258
             // We have to detect keyboard events in the <webview> and dispatch them to our
@@ -254,6 +262,42 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
         this.style();
         this.toHide.push(this.themeDataProvider.onDidChangeThemeData(() => this.style()));
+    }
+
+    protected async loadLocalhost(origin: string): Promise<void> {
+        const redirect = await this.getRedirect(origin);
+        return this.doSend('did-load-localhost', { origin, location: redirect });
+    }
+
+    protected async getRedirect(url: string): Promise<string | undefined> {
+        const uri = new URI(url);
+        const localhost = this.externalUriService.parseLocalhost(uri);
+        if (!localhost) {
+            return undefined;
+        }
+
+        if (this._contentOptions.portMapping) {
+            for (const mapping of this._contentOptions.portMapping) {
+                if (mapping.webviewPort === localhost.port) {
+                    if (mapping.webviewPort !== mapping.extensionHostPort) {
+                        return this.toRemoteUrl(
+                            uri.withAuthority(`${localhost.address}:${mapping.extensionHostPort}`)
+                        );
+                    }
+                }
+            }
+        }
+
+        return this.toRemoteUrl(uri);
+    }
+
+    protected async toRemoteUrl(localUri: URI): Promise<string> {
+        const remoteUri = await this.externalUriService.resolve(localUri);
+        const remoteUrl = remoteUri.toString();
+        if (remoteUrl[remoteUrl.length - 1] === '/') {
+            return remoteUrl.slice(0, remoteUrl.length - 1);
+        }
+        return remoteUrl;
     }
 
     setContentOptions(contentOptions: WebviewContentOptions): void {
