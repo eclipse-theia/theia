@@ -315,9 +315,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             if (currentTitle && currentTitle.owner instanceof EditorWidget) {
                 const widget = currentTitle.owner;
                 const fileNodes = this.getFileNodesByUri(widget.editor.uri);
-                fileNodes.forEach(node => {
-                    this.decorateEditor(node, widget);
-                });
+                if (fileNodes.length > 0) {
+                    fileNodes.forEach(node => {
+                        this.decorateEditor(node, widget);
+                    });
+                } else {
+                    this.decorateEditor(undefined, widget);
+                }
             }
         });
 
