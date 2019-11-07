@@ -65,18 +65,6 @@
     margin-bottom: 5px;
 }
 
-.p-TabBar-toolbar .item .refresh {
-    background: var(--theia-icon-refresh) no-repeat;
-}
-
-.p-TabBar-toolbar .item .collapse-all {
-    background: var(--theia-icon-collapse-all) no-repeat;
-}
-
-.p-TabBar-toolbar .item .clear-all {
-    background: var(--theia-icon-clear) no-repeat;
-}
-
 .t-siw-search-container .searchHeader .search-field-container {
     background: var(--theia-layout-color2);
     border-style: solid;
