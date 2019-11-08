@@ -107,7 +107,7 @@ export class WebviewsExtImpl implements WebviewsExt {
         }
         const webviewShowOptions = toWebviewPanelShowOptions(showOptions);
         const viewId = v4();
-        this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, options);
+        this.proxy.$createWebviewPanel(viewId, viewType, title, webviewShowOptions, WebviewImpl.toWebviewOptions(options, this.workspace, plugin));
 
         const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin);
         const panel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, webviewShowOptions, options, webview);
@@ -204,13 +204,7 @@ export class WebviewImpl implements theia.Webview {
 
     set options(newOptions: theia.WebviewOptions) {
         this.checkIsDisposed();
-        this.proxy.$setOptions(this.viewId, {
-            ...newOptions,
-            localResourceRoots: newOptions.localResourceRoots || [
-                ...(this.workspace.workspaceFolders || []).map(x => x.uri),
-                URI.file(this.plugin.pluginPath)
-            ]
-        });
+        this.proxy.$setOptions(this.viewId, WebviewImpl.toWebviewOptions(newOptions, this.workspace, this.plugin));
         this._options = newOptions;
     }
 
@@ -224,6 +218,16 @@ export class WebviewImpl implements theia.Webview {
         if (this.isDisposed) {
             throw new Error('This Webview is disposed!');
         }
+    }
+
+    static toWebviewOptions(options: theia.WebviewOptions, workspace: WorkspaceExtImpl, plugin: Plugin): theia.WebviewOptions {
+        return {
+            ...options,
+            localResourceRoots: options.localResourceRoots || [
+                ...(workspace.workspaceFolders || []).map(x => x.uri),
+                URI.file(plugin.pluginFolder)
+            ]
+        };
     }
 }
 

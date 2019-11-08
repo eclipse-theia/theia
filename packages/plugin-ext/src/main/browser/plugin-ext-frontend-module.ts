@@ -67,6 +67,8 @@ import { WebviewWidget, WebviewWidgetIdentifier, WebviewWidgetExternalEndpoint }
 import { WebviewEnvironment } from './webview/webview-environment';
 import { WebviewThemeDataProvider } from './webview/webview-theme-data-provider';
 import { PluginCommandOpenHandler } from './plugin-command-open-handler';
+import { bindWebviewPreferences } from './webview/webview-preferences';
+import { WebviewResourceLoader, WebviewResourceLoaderPath } from '../common/webview-protocol';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -153,8 +155,12 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(PluginCommandOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(PluginCommandOpenHandler);
 
+    bindWebviewPreferences(bind);
     bind(WebviewEnvironment).toSelf().inSingletonScope();
     bind(WebviewThemeDataProvider).toSelf().inSingletonScope();
+    bind(WebviewResourceLoader).toDynamicValue(ctx =>
+        WebSocketConnectionProvider.createProxy(ctx.container, WebviewResourceLoaderPath)
+    ).inSingletonScope();
     bind(WebviewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: WebviewWidget.FACTORY_ID,
