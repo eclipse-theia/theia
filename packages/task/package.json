@@ -13,6 +13,7 @@
     "@theia/terminal": "^0.12.0",
     "@theia/variable-resolver": "^0.12.0",
     "@theia/workspace": "^0.12.0",
+    "ajv": "^6.5.3",
     "jsonc-parser": "^2.0.2",
     "p-debounce": "^2.1.0",
     "vscode-uri": "^1.0.8"

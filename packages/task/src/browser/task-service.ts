@@ -14,9 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as Ajv from 'ajv';
 import { ApplicationShell, FrontendApplication, WidgetManager } from '@theia/core/lib/browser';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
-import { ILogger } from '@theia/core/lib/common';
+import { ILogger, CommandService } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { QuickPickItem, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
@@ -50,6 +51,8 @@ import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskNameResolver } from './task-name-resolver';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { TaskSchemaUpdater } from './task-schema-updater';
+import { TaskConfigurationManager } from './task-configuration-manager';
+import { PROBLEMS_WIDGET_ID, ProblemWidget } from '@theia/markers/lib/browser/problem/problem-widget';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -131,6 +134,12 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(TaskSchemaUpdater)
     protected readonly taskSchemaUpdater: TaskSchemaUpdater;
+
+    @inject(TaskConfigurationManager)
+    protected readonly taskConfigurationManager: TaskConfigurationManager;
+
+    @inject(CommandService)
+    protected readonly commands: CommandService;
 
     /**
      * @deprecated To be removed in 0.5.0
@@ -233,9 +242,56 @@ export class TaskService implements TaskConfigurationClient {
         return [...configuredTasks, ...notCustomizedProvidedTasks];
     }
 
-    /** Returns an array of the task configurations which are configured in tasks.json files */
-    getConfiguredTasks(): Promise<TaskConfiguration[]> {
-        return this.taskConfigurations.getTasks();
+    /** Returns an array of the valid task configurations which are configured in tasks.json files */
+    async getConfiguredTasks(): Promise<TaskConfiguration[]> {
+        const taskConfigs = await this.taskConfigurations.getTasks();
+        let invalidTaskConfig: TaskConfiguration | undefined;
+        const validTaskConfigs = taskConfigs.filter(t => {
+            const isValid = this.isTaskConfigValid(t);
+            if (!isValid) {
+                invalidTaskConfig = t;
+            }
+            return isValid;
+        });
+        if (invalidTaskConfig) {
+            const widget = <ProblemWidget>await this.widgetManager.getOrCreateWidget(PROBLEMS_WIDGET_ID);
+            const isProblemsWidgetVisible = widget && widget.isVisible;
+            const currentEditorUri = this.editorManager.currentEditor && this.editorManager.currentEditor.editor.getResourceUri();
+            let isInvalidTaskConfigFileOpen = false;
+            if (currentEditorUri) {
+                const folderUri = this.workspaceService.getWorkspaceRootUri(currentEditorUri);
+                if (folderUri && folderUri.toString() === invalidTaskConfig._scope) {
+                    isInvalidTaskConfigFileOpen = true;
+                }
+            }
+            const warningMessage = 'Invalid task configurations are found. Open tasks.json and find details in the Problems view.';
+            if (!isProblemsWidgetVisible || !isInvalidTaskConfigFileOpen) {
+                this.messageService.warn(warningMessage, 'Open').then(actionOpen => {
+                    if (actionOpen) {
+                        if (invalidTaskConfig && invalidTaskConfig._scope) {
+                            this.taskConfigurationManager.openConfiguration(invalidTaskConfig._scope);
+                        }
+                        if (!isProblemsWidgetVisible) {
+                            this.commands.executeCommand('problemsView:toggle');
+                        }
+                    }
+                });
+            } else {
+                this.messageService.warn(warningMessage);
+            }
+        }
+        return validTaskConfigs;
+    }
+
+    /**
+     * Returns `true` if the given task configuration is valid as per the task schema defined in Theia
+     * or contributed by Theia extensions and plugins, `false` otherwise.
+     */
+    isTaskConfigValid(task: TaskConfiguration): boolean {
+        const schema = this.taskSchemaUpdater.getTaskSchema();
+        const ajv = new Ajv();
+        const validateSchema = ajv.compile(schema);
+        return !!validateSchema({ tasks: [task] });
     }
 
     /** Returns an array of the task configurations which are provided by the extensions. */
