@@ -72,7 +72,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
             localResourceRoots: localResourceRoots && localResourceRoots.map(root => root.toString()),
             ...contentOptions
         });
-        this.addOrReattachWidget(panelId, showOptions);
+        this.addOrReattachWidget(view, showOptions);
     }
 
     protected hookWebview(view: WebviewWidget): void {
@@ -86,11 +86,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         });
     }
 
-    private async addOrReattachWidget(handle: string, showOptions: WebviewPanelShowOptions): Promise<void> {
-        const widget = await this.tryGetWebview(handle);
-        if (!widget) {
-            return;
-        }
+    private addOrReattachWidget(widget: WebviewWidget, showOptions: WebviewPanelShowOptions): void {
         const widgetOptions: ApplicationShell.WidgetOptions = { area: showOptions.area ? showOptions.area : 'main' };
 
         let mode = 'open-to-right';
@@ -123,8 +119,6 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         } else {
             this.shell.activateWidget(widget.id);
         }
-        this.updateViewState(widget, showOptions.viewColumn);
-        this.updateViewStates();
     }
 
     async $disposeWebview(handle: string): Promise<void> {
@@ -144,7 +138,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
             const columnIds = showOptions.viewColumn ? this.viewColumnService.getViewColumnIds(showOptions.viewColumn) : [];
             const area = this.shell.getAreaFor(widget);
             if (columnIds.indexOf(widget.id) === -1 || area !== showOptions.area) {
-                this.addOrReattachWidget(widget.identifier.id, showOptions);
+                this.addOrReattachWidget(widget, showOptions);
                 return;
             }
         }

@@ -35,7 +35,6 @@ import { IconUrl } from '../../../common/plugin-protocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WebviewEnvironment } from './webview-environment';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { Emitter } from '@theia/core/lib/common/event';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
@@ -44,6 +43,9 @@ import { PluginSharedStyle } from '../plugin-shared-style';
 import { BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 import { WebviewThemeDataProvider } from './webview-theme-data-provider';
 import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
+import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
+import { WebviewPreferences } from './webview-preferences';
+import { WebviewResourceLoader } from '../../common/webview-protocol';
 
 // tslint:disable:no-any
 
@@ -105,9 +107,6 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     @inject(WebviewEnvironment)
     protected readonly environment: WebviewEnvironment;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
-
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
@@ -122,6 +121,15 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     @inject(ExternalUriService)
     protected readonly externalUriService: ExternalUriService;
+
+    @inject(OutputChannelManager)
+    protected readonly outputManager: OutputChannelManager;
+
+    @inject(WebviewPreferences)
+    protected readonly preferences: WebviewPreferences;
+
+    @inject(WebviewResourceLoader)
+    protected readonly resourceLoader: WebviewResourceLoader;
 
     viewState: WebviewPanelViewState = {
         visible: false,
@@ -148,8 +156,10 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected readonly onMessageEmitter = new Emitter<any>();
     readonly onMessage = this.onMessageEmitter.event;
+    protected readonly pendingMessages: any[] = [];
 
     protected readonly toHide = new DisposableCollection();
+    protected hideTimeout: any | number | undefined;
 
     @postConstruct()
     protected init(): void {
@@ -180,6 +190,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     protected onBeforeAttach(msg: Message): void {
         super.onBeforeAttach(msg);
         this.doShow();
+        // iframe has to be reloaded when moved to another DOM element
+        this.toDisposeOnDetach.push(Disposable.create(() => this.forceHide()));
     }
 
     protected onBeforeShow(msg: Message): void {
@@ -194,11 +206,22 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected doHide(): void {
         if (this.options.retainContextWhenHidden !== true) {
-            this.toHide.dispose();
+            if (this.hideTimeout === undefined) {
+                // avoid removing iframe if a widget moved quickly
+                this.hideTimeout = setTimeout(() => this.forceHide(), 50);
+            }
         }
     }
 
+    protected forceHide(): void {
+        clearTimeout(this.hideTimeout);
+        this.hideTimeout = undefined;
+        this.toHide.dispose();
+    }
+
     protected doShow(): void {
+        clearTimeout(this.hideTimeout);
+        this.hideTimeout = undefined;
         if (!this.toHide.disposed) {
             return;
         }
@@ -224,7 +247,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         const ready = new Deferred<void>();
         ready.promise.then(() => oldReady.resolve());
         this.ready = ready;
-        this.doUpdateContent();
+        this.toHide.push(Disposable.create(() => this.ready = new Deferred<void>()));
         const subscription = this.on(WebviewMessageChannels.webviewReady, () => {
             subscription.dispose();
             ready.resolve();
@@ -262,6 +285,11 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
         this.style();
         this.toHide.push(this.themeDataProvider.onDidChangeThemeData(() => this.style()));
+
+        this.doUpdateContent();
+        while (this.pendingMessages.length) {
+            this.sendMessage(this.pendingMessages.shift());
+        }
     }
 
     protected async loadLocalhost(origin: string): Promise<void> {
@@ -400,12 +428,12 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
                     if (!new URI(root).path.isEqualOrParent(normalizedUri.path)) {
                         continue;
                     }
-                    const { content } = await this.fileSystem.resolveContent(normalizedUri.toString());
+                    const { buffer } = await this.resourceLoader.load({ uri: normalizedUri.toString() });
                     return this.doSend('did-load-resource', {
                         status: 200,
                         path: requestPath,
                         mime: mime.getType(normalizedUri.path.toString()) || 'application/octet-stream',
-                        data: content
+                        data: new Uint8Array(buffer)
                     });
                 }
             }
@@ -435,7 +463,11 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     sendMessage(data: any): void {
-        this.doSend('message', data);
+        if (this.element) {
+            this.doSend('message', data);
+        } else {
+            this.pendingMessages.push(data);
+        }
     }
 
     protected doUpdateContent(): void {
@@ -468,6 +500,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected async doSend(channel: string, data?: any): Promise<void> {
+        if (!this.element) {
+            return;
+        }
         try {
             await this.ready.promise;
             this.postMessage(channel, data);
@@ -478,6 +513,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected postMessage(channel: string, data?: any): void {
         if (this.element) {
+            this.trace('out', channel, data);
             this.element.contentWindow!.postMessage({ channel, args: data }, '*');
         }
     }
@@ -488,6 +524,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
                 return;
             }
             if (e.data.channel === channel) {
+                this.trace('in', e.data.channel, e.data.data);
                 handler(e.data.data);
             }
         };
@@ -495,6 +532,22 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         return Disposable.create(() =>
             window.removeEventListener('message', listener)
         );
+    }
+
+    protected trace(kind: 'in' | 'out', channel: string, data?: any): void {
+        const value = this.preferences['webview.trace'];
+        if (value === 'off') {
+            return;
+        }
+        const output = this.outputManager.getChannel('webviews');
+        output.append('\n' + this.identifier.id);
+        output.append(kind === 'out' ? ' => ' : ' <= ');
+        output.append(channel);
+        if (value === 'verbose') {
+            if (data) {
+                output.append('\n' + JSON.stringify(data, undefined, 2));
+            }
+        }
     }
 
 }

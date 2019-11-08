@@ -25,3 +25,17 @@ export namespace WebviewExternalEndpoint {
     export const pattern = 'THEIA_WEBVIEW_EXTERNAL_ENDPOINT';
     export const defaultPattern = '{{uuid}}.webview.{{hostname}}';
 }
+
+export interface LoadWebviewResourceParams {
+    uri: string
+}
+
+export interface LoadWebviewResourceResult {
+    buffer: number[]
+}
+
+export const WebviewResourceLoader = Symbol('WebviewResourceLoader');
+export interface WebviewResourceLoader {
+    load(params: LoadWebviewResourceParams): Promise<LoadWebviewResourceResult>
+}
+export const WebviewResourceLoaderPath = '/services/webview-resource-loader';
