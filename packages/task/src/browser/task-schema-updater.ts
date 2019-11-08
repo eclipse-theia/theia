@@ -100,6 +100,7 @@ export class TaskSchemaUpdater {
             customizedDetectedTask.properties!.problemMatcher = problemMatcher;
             customizedDetectedTask.properties!.options = commandOptionsSchema;
             customizedDetectedTask.properties!.group = group;
+            customizedDetectedTask.additionalProperties = true;
             customizedDetectedTasks.push(customizedDetectedTask);
         });
 
@@ -112,6 +113,9 @@ export class TaskSchemaUpdater {
         return {
             type: 'object',
             properties: {
+                version: {
+                    type: 'string'
+                },
                 tasks: {
                     type: 'array',
                     items: {
@@ -119,7 +123,8 @@ export class TaskSchemaUpdater {
                     }
                 },
                 inputs: inputsSchema.definitions!.inputs
-            }
+            },
+            additionalProperties: false
         };
     }
 
@@ -291,7 +296,8 @@ const processTaskConfigurationSchema: IJSONSchema = {
         },
         group,
         problemMatcher
-    }
+    },
+    additionalProperties: true
 };
 
 const customizedDetectedTasks: IJSONSchema[] = [];
