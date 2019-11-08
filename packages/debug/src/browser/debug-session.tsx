@@ -36,7 +36,7 @@ import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-sessio
 import { DebugConfiguration } from '../common/debug-common';
 import { SourceBreakpoint } from './breakpoint/breakpoint-marker';
 import { FileSystem } from '@theia/filesystem/lib/common';
-import { TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 
 export enum DebugState {
     Inactive,
@@ -368,14 +368,19 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     protected async runInTerminal({ arguments: { title, cwd, args, env } }: DebugProtocol.RunInTerminalRequest): Promise<DebugProtocol.RunInTerminalResponse['body']> {
-        return this.doRunInTerminal({ title, cwd, shellPath: args[0], shellArgs: args.slice(1), env });
+        const terminal = await this.doCreateTerminal({ title, cwd, env });
+        terminal.sendText(args.join(' ') + '\n');
+        return { processId: await terminal.processId };
     }
 
-    protected async doRunInTerminal(options: TerminalWidgetOptions): Promise<DebugProtocol.RunInTerminalResponse['body']> {
-        const terminal = await this.terminalServer.newTerminal(options);
-        this.terminalServer.activateTerminal(terminal);
-        const processId = await terminal.start();
-        return { processId };
+    protected async doCreateTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
+        let terminal = this.terminalServer.all.find(t => t.title.label === options.title);
+        if (!terminal) {
+            terminal = await this.terminalServer.newTerminal(options);
+            await terminal.start();
+        }
+        this.terminalServer.open(terminal);
+        return terminal;
     }
 
     protected clearThreads(): void {
