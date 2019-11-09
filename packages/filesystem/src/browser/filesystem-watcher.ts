@@ -88,7 +88,7 @@ export class FileSystemWatcher implements Disposable {
     protected readonly toRestartAll = new DisposableCollection();
 
     protected readonly onFileChangedEmitter = new Emitter<FileChangeEvent>();
-    readonly onFilesChanged: Event<FileChangeEvent> = this.onFileChangedEmitter.event;
+    readonly onFilesChanged: Event<FileChangeEvent> = Object.assign(this.onFileChangedEmitter.event, { maxListeners: 200 });
 
     protected readonly onDidMoveEmitter = new Emitter<FileMoveEvent>();
     readonly onDidMove: Event<FileMoveEvent> = this.onDidMoveEmitter.event;
