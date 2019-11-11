@@ -14,11 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
 import { ChildProcess, spawn } from 'child_process';
-import { ILogger } from '@theia/core/lib/common/logger';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { MessageService } from '@theia/core';
 
 /**
  * Initializer hook for Hg.
@@ -45,14 +43,6 @@ export interface HgInit extends Disposable {
 export class DefaultHgInit implements HgInit {
 
     protected readonly toDispose = new DisposableCollection();
-
-    @inject(ILogger)
-    protected readonly logger: ILogger;
-
-    @inject(MessageService)
-    protected readonly messages: MessageService;
-
-    protected envPath: string;
 
     async startCommandServer(repositoryPath: string): Promise<ChildProcess> {
         const options = ['--config', 'ui.interactive=True', '--config', 'ui.merge=internal:fail', 'serve', '--cmdserver', 'pipe', '--cwd', repositoryPath];
