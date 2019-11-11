@@ -17,8 +17,13 @@
 import { ChildProcess } from 'child_process';
 import { Disposable } from '@theia/core';
 import {
-    Repository, Branch, HgResult,
-    HgFileChange, CommitWithChanges, Remote, MergeResult
+    Repository,
+    Branch,
+    HgResult,
+    CommitWithChanges,
+    Remote,
+    MergeResult,
+    WorkingDirectoryStatus,
 } from './hg-model';
 
 /**
@@ -586,7 +591,7 @@ export interface Hg extends Disposable {
      *
      * @param repository the repository to get the changeset status from.
      */
-    status(repository: Repository, options?: Hg.Options.Status): Promise<HgFileChange[]>;
+    status(repository: Repository, options?: Hg.Options.Status): Promise<WorkingDirectoryStatus>;
 
     /**
      * Stages the given file or files in the working clone. The invocation will be rejected if

@@ -45,7 +45,7 @@ export class HgDecorator implements TreeDecorator {
 
     @postConstruct()
     protected init(): void {
-        this.repositories.onHgEvent(event => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree, event ? event.status : [])));
+        this.repositories.onHgEvent(event => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree, event ? event.status.changes : [])));
         this.preferences.onPreferenceChanged(event => this.handlePreferenceChange(event));
         this.enabled = this.preferences['hg.decorations.enabled'];
         this.showColors = this.preferences['hg.decorations.colors'];

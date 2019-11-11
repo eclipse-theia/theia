@@ -70,11 +70,7 @@ export class HgSyncService {
         this.setSyncing(true);
         try {
             await this.hg.pull(repository);
-            let changes = await this.hg.status(repository);
-            let status: WorkingDirectoryStatus = {
-                changes,
-                exists: true
-            };
+            let status = await this.hg.status(repository);
             this.setSyncing(false);
 
             const method = await this.getSyncMethod(status);
@@ -87,11 +83,7 @@ export class HgSyncService {
                     update: method === 'pull-push',
                     rebase: method === 'rebase-push'
                 });
-                changes = await this.hg.status(repository);
-                status = {
-                    changes,
-                    exists: true
-                };
+                status = await this.hg.status(repository);
             }
             if (this.shouldPush(status)) {
                 await this.hg.push(repository, {

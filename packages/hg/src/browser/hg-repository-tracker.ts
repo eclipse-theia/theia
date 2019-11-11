@@ -66,15 +66,15 @@ export class HgRepositoryTracker {
     }, 50);
 
     protected async setStatus(event: HgStatusChangeEvent | undefined, token: CancellationToken): Promise<void> {
-        const changes = event ? event.status : [];
+        const status = event && event.status;
         const scmProvider = this.repositoryProvider.selectedScmProvider;
         if (scmProvider) {
-            await scmProvider.setStatus(changes, token);
+            await scmProvider.setStatus(status, token);
         }
         if (token.isCancellationRequested) {
             return;
         }
-        this.workingDirectoryChanges = changes;
+        this.workingDirectoryChanges = status ? status.changes : [];
         this.onHgEventEmitter.fire(event);
     }
 

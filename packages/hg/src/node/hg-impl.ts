@@ -19,7 +19,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { ILogger } from '@theia/core';
 import {
     Hg, HgUtils, Repository, HgFileChange, HgFileStatus, Branch, Commit,
-    CommitIdentity, HgResult, CommitWithChanges, Remote, BranchType, MergeResult
+    CommitIdentity, HgResult, CommitWithChanges, Remote, BranchType, MergeResult, WorkingDirectoryStatus
 } from '../common';
 import { HgRepositoryManager } from './hg-repository-manager';
 import { HgLocator } from './hg-locator/hg-locator-protocol';
@@ -127,7 +127,7 @@ export class HgImpl implements Hg {
         return this.filesystem.exists(directoryPath.join('.hg').toString());
     }
 
-    async status(repository: Repository, options?: Hg.Options.Status): Promise<HgFileChange[]> {
+    async status(repository: Repository, options?: Hg.Options.Status): Promise<WorkingDirectoryStatus> {
         const repo = await this.getHgRepo(repository);
 
         const args = ['status'];
@@ -191,12 +191,20 @@ export class HgImpl implements Hg {
             changes.push(change);
         }
 
-        return changes;
+        const branch = await this.currentBranch(repository);
+        return {
+            changes,
+            exists: true,
+            branch: branch ? branch.name : undefined,
+        };
     }
 
     async add(repository: Repository, uris: string[]): Promise<void> {
-        const paths = uris.map(uri => FileUri.fsPath(uri));
-        await this.runCommand(repository, ['add', ...paths]);
+        const op = async () => {
+            const paths = uris.map(uri => FileUri.fsPath(uri));
+            await this.runCommand(repository, ['add', ...paths]);
+        };
+        return this.manager.run(repository, () => op());
     }
 
     protected async runCommand(repository: Repository, args: string | string[], responseProvider?: (promptKey: string) => Promise<string>): Promise<string[]> {
@@ -266,13 +274,16 @@ export class HgImpl implements Hg {
     }
 
     async checkout(repository: Repository, options: Hg.Options.Checkout.CheckoutBranch | Hg.Options.Checkout.WorkingTreeFile): Promise<void> {
-        const repo = await this.getHgRepo(repository);
+        const op = async () => {
+            const repo = await this.getHgRepo(repository);
 
-        if (HgUtils.isBranchCheckout(options)) {
-            await repo.runCommand(['checkout', options.branch]);
-        } else {
-            return Promise.reject(new Error('Mbed Studio does not provide support for checkout of a working tree of a Mercurial project.'));
-        }
+            if (HgUtils.isBranchCheckout(options)) {
+                await repo.runCommand(['checkout', options.branch]);
+            } else {
+                return Promise.reject(new Error('Mbed Studio does not provide support for checkout of a working tree of a Mercurial project.'));
+            }
+        };
+        return this.manager.run(repository, () => op());
     }
 
     async commit(repository: Repository, message?: string, options?: Hg.Options.Commit): Promise<void> {
@@ -383,8 +394,8 @@ export class HgImpl implements Hg {
         // If the working tree is dirty then we commit the changes first.
         // This enables us to maintain the state of the working tree by reverting to this
         // new commit afterwards.
-        const changes = await this.status(repository);
-        const changesToCommit = changes.some(change => change.status !== HgFileStatus.Untracked);
+        const status = await this.status(repository);
+        const changesToCommit = status.changes.some(change => change.status !== HgFileStatus.Untracked);
         if (changesToCommit) {
             await this.commit(repository, 'working directory', { secret: true });
         }

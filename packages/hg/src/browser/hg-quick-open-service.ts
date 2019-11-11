@@ -202,8 +202,8 @@ export class HgQuickOpenService {
     }
 
     private async isClean(repository: Repository) {
-        const changes = await this.hg.status(repository);
-        return changes.length === 0;
+        const status = await this.hg.status(repository);
+        return status.changes.length === 0;
     }
 
     async getOtherHeads(repository: Repository, options?: { branch?: string }): Promise<CommitWithChanges[]> {

@@ -137,19 +137,18 @@ export class HgScmProvider implements ScmProvider {
         return this.state.mergeChanges;
     }
 
-    getStatus(): WorkingDirectoryStatus {
-        return {
-            changes: this.state.changes,
-            exists: true
-        };
+    getStatus(): WorkingDirectoryStatus | undefined {
+        return this.state.status;
     }
-    async setStatus(changes: HgFileChange[], token: CancellationToken): Promise<void> {
-        const state = HgScmProvider.initState();
-        for (const change of changes) {
-            if (change.status === HgFileStatus.Untracked) {
-                state.untrackedChanges.push(change);
-            } else {
-                state.changes.push(change);
+    async setStatus(status: WorkingDirectoryStatus | undefined, token: CancellationToken): Promise<void> {
+        const state = HgScmProvider.initState(status);
+        if (status) {
+            for (const change of status.changes) {
+                if (change.status === HgFileStatus.Untracked) {
+                    state.untrackedChanges.push(change);
+                } else {
+                    state.changes.push(change);
+                }
             }
         }
 
@@ -299,8 +298,8 @@ export class HgScmProvider implements ScmProvider {
     }
     async discard(uri: string): Promise<void> {
         const { repository } = this;
-        const changes = this.getStatus().changes;
-        if (!changes.some(change => change.uri === uri)) {
+        const status = this.getStatus();
+        if (!(status && status.changes.some(change => change.uri === uri))) {
             return;
         }
         // Allow deletion, only iff the same file is not managed by Hg.
@@ -393,13 +392,15 @@ export namespace HgScmProvider {
     export const HG_COMMIT_DETAIL = 'hg-commit-detail-widget';
 
     export interface State {
+        status?: WorkingDirectoryStatus
         changes: HgFileChange[]
         untrackedChanges: HgFileChange[]
         mergeChanges: HgFileChange[],
         groups: ScmResourceGroup[]
     }
-    export function initState(): HgScmProvider.State {
+    export function initState(status?: WorkingDirectoryStatus): HgScmProvider.State {
         return {
+            status,
             changes: [],
             untrackedChanges: [],
             mergeChanges: [],
