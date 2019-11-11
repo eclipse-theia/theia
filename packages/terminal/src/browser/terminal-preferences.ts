@@ -75,6 +75,11 @@ export const TerminalConfigSchema: PreferenceSchema = {
             type: 'string',
             enum: ['canvas', 'dom'],
             default: 'canvas'
+        },
+        'terminal.integrated.copyOnSelection': {
+            description: 'Controls whether text selected in the terminal will be copied to the clipboard.',
+            type: 'boolean', 
+            default: false,
         }
     }
 };
@@ -89,7 +94,8 @@ export interface TerminalConfiguration {
     'terminal.integrated.letterSpacing': number
     'terminal.integrated.lineHeight': number,
     'terminal.integrated.scrollback': number,
-    'terminal.integrated.rendererType': TerminalRendererType
+    'terminal.integrated.rendererType': TerminalRendererType,
+    'terminal.integrated.copyOnSelection': boolean,
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';

@@ -196,6 +196,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.toDispose.push(this.onTermDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
+        this.toDispose.push(this.term.onSelectionChange(() => this.copyOnSelectionHander()));
 
         for (const contribution of this.terminalContributionProvider.getContributions()) {
             contribution.onCreate(this);
@@ -532,6 +533,85 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         return true;
     }
+
+    protected get copyOnSelection(): boolean {
+        return this.preferences['terminal.integrated.copyOnSelection'];
+    }
+
+    protected async copyOnSelectionHander(): Promise<void> {
+        if (!this.copyOnSelection) {
+            return;
+        }
+
+        const text = this.term.getSelection();
+
+        // todo check on the https...
+        const executeCommandCopy = async () => {
+            const copyHelper: HTMLPreElement = document.createElement('pre');
+            // todo hide element
+            document.body.appendChild(copyHelper);
+            copyHelper.innerText = text;
+            copyHelper.focus();
+
+            // copy styles
+            copyHelper.style.webkitUserSelect = 'all';
+            copyHelper.style.userSelect = 'all';
+            // make helper invisible
+            copyHelper.style.zIndex = '999';
+            copyHelper.style.display = 'none';
+            copyHelper.id = 'neverGiveUp';
+
+            console.log(copyHelper.innerText);
+            try {
+                document.execCommand('copy');
+            } catch (e) {
+                // Give up.
+            } finally {
+                document.body.removeChild(copyHelper);
+            }
+        };
+
+        const writeToClipBoard = async () => {
+            // tslint:disable-next-line:no-any
+            const clipboard = (navigator as any).clipboard;
+
+            if (!clipboard) {
+                executeCommandCopy();
+                return
+            }
+
+            try {
+                await clipboard.writeText(text);
+            } catch (e) {
+                executeCommandCopy();
+            }
+        };
+
+        // tslint:disable-next-line:no-any
+        const permissions = (navigator as any).permissions;
+
+        const isGranted = async (): Promise<boolean> => {
+            // Unfortunately Firefox doesn't support permission check `clipboard-write`, so let try to copy anyway,
+            if (isFirefox) {
+                return true;
+            }
+            try {
+                const { state } = await permissions.query({name: 'clipboard-write'});
+                if (state === 'granted') {
+                    return true;
+                }
+            } catch (e) {}
+
+            return false;
+        };
+
+        if (permissions && permissions.query && await isGranted()) {
+            await writeToClipBoard();
+        } else {
+            await executeCommandCopy();
+        }
+    }
+
     protected attachCustomKeyEventHandler(): void {
         this.term.attachCustomKeyEventHandler(e => this.customKeyHandler(e));
     }
