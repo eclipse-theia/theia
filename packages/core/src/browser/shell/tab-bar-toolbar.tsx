@@ -27,6 +27,7 @@ import { ContextKeyService } from '../context-key-service';
 import { Event, Emitter } from '../../common/event';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { MenuModelRegistry } from '../../common/menu';
+import { MouseEventHandler } from 'react';
 
 /**
  * Factory for instantiating tab-bar toolbars.
@@ -106,7 +107,7 @@ export class TabBarToolbar extends ReactWidget {
     protected render(): React.ReactNode {
         return <React.Fragment>
             {this.renderMore()}
-            {[...this.inline.values()].map(item => TabBarToolbarItem.is(item) ? this.renderItem(item) : item.render(this.current))}
+            {[... this.inline.values()].map(item => TabBarToolbarItem.is(item) ? this.renderItem(item) : item.render(this.current))}
         </React.Fragment>;
     }
 
@@ -116,8 +117,8 @@ export class TabBarToolbar extends ReactWidget {
         if (item.text) {
             for (const labelPart of this.labelParser.parse(item.text)) {
                 if (typeof labelPart !== 'string' && LabelIcon.is(labelPart)) {
-                    const className = `fa fa-${labelPart.name}${labelPart.animation ? ' fa-' + labelPart.animation : ''}`;
-                    classNames.push(...className.split(' '));
+                    const className = `fa fa-${labelPart.name}${labelPart.animation ? ' fa-' + labelPart.animation :    ''}`;
+                    classNames.push(... className.split(' '));
                 } else {
                     innerText = labelPart;
                 }
@@ -128,7 +129,7 @@ export class TabBarToolbar extends ReactWidget {
         if (iconClass) {
             classNames.push(iconClass);
         }
-        return <div key={item.id} className={`${TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM}${command && this.commandIsEnabled(command.id) ? ' enabled' : ''}`}
+        return <div key={item.id} className={`${TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM}${command && this.commandIsEnabled(command.id) ? ' enabled' :   ''}`}
             onMouseDown={this.onMouseDownEvent} onMouseUp={this.onMouseUpEvent} onMouseOut={this.onMouseUpEvent} >
             <div id={item.id} className={classNames.join(' ')} onClick={this.executeCommand} title={item.tooltip}>{innerText}</div>
         </div>;
@@ -147,7 +148,7 @@ export class TabBarToolbar extends ReactWidget {
         const menuPath = ['TAB_BAR_TOOLBAR_CONTEXT_MENU'];
         const toDisposeOnHide = new DisposableCollection();
         for (const [, item] of this.more) {
-            toDisposeOnHide.push(this.menus.registerMenuAction([...menuPath, item.group!], {
+            toDisposeOnHide.push(this.menus.registerMenuAction([... menuPath, item.group!], {
                 label: item.tooltip,
                 commandId: item.id,
                 when: item.when
@@ -169,7 +170,7 @@ export class TabBarToolbar extends ReactWidget {
         return this.commands.isEnabled(command, this.current);
     }
 
-    protected executeCommand = (e: React.MouseEvent<HTMLElement>) => {
+    protected executeCommand: MouseEventHandler = e => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -179,13 +180,13 @@ export class TabBarToolbar extends ReactWidget {
         }
     }
 
-    protected onMouseDownEvent = (e: React.MouseEvent<HTMLElement>) => {
+    protected onMouseDownEvent: React.MouseEventHandler = e => {
         if (e.button === 0) {
             e.currentTarget.classList.add('active');
         }
     }
 
-    protected onMouseUpEvent = (e: React.MouseEvent<HTMLElement>) => {
+    protected onMouseUpEvent: MouseEventHandler = e => {
         e.currentTarget.classList.remove('active');
     }
 
