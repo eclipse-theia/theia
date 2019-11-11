@@ -172,7 +172,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
                 id={this.scrollContainer}
                 repository={repository}
                 scmAmendSupport={amendSupport}
-                setCommitMessage={this.setInputValue}
+                setCommitMessage={this.setInputValue as (e: string) => void}
                 avatarService={this.avatarService}
                 storageService={this.storageService}
             />}
@@ -202,7 +202,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
                 autoFocus={true}
                 tabIndex={1}
                 value={input.value}
-                onChange={this.setInputValue}
+                onChange={this.setInputValue as React.FormEventHandler}
                 ref={this.inputRef}
                 rows={1}
                 maxRows={6} /* from VS Code */>
@@ -224,7 +224,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         }
     }
 
-    protected setInputValue = (event: React.ChangeEvent<HTMLTextAreaElement> | string) => {
+    protected setInputValue: ((event: string) => void) | React.FormEventHandler = (event: string | React.FormEvent<HTMLInputElement>) => {
         const repository = this.scmService.selectedRepository;
         if (repository) {
             repository.input.value = typeof event === 'string' ? event : event.currentTarget.value;
