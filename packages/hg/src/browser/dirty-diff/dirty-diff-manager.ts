@@ -57,7 +57,7 @@ export class DirtyDiffManager {
     protected async initialize(): Promise<void> {
         this.editorManager.onCreated(async e => this.handleEditorCreated(e));
         this.repositoryTracker.onHgEvent(throttle(async (event: HgStatusChangeEvent | undefined) =>
-            this.handleHgStatusUpdate(event && event.source, event ? event.status : []), 500));
+            this.handleHgStatusUpdate(event && event.source, event ? event.status.changes : []), 500));
         const hgStatus = this.repositoryTracker.selectedRepositoryStatus;
         const repository = this.repositoryTracker.selectedRepository;
         if (hgStatus && repository) {

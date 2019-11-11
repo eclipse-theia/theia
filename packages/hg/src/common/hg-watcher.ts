@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { JsonRpcServer, JsonRpcProxy } from '@theia/core';
-import { Repository, HgFileChange } from './hg-model';
+import { Repository, WorkingDirectoryStatus } from './hg-model';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 
 /**
@@ -32,12 +32,12 @@ export interface HgStatusChangeEvent {
     /**
      * The new working directory state.
      */
-    readonly status: HgFileChange[];
+    readonly status: WorkingDirectoryStatus;
 
     /**
      * The previous working directory state, if any.
      */
-    readonly oldStatus?: HgFileChange[];
+    readonly oldStatus?: WorkingDirectoryStatus;
 
 }
 

@@ -85,9 +85,9 @@ export class HgDiffWidget extends ScmNavigableListWidget<HgFileChangeNode> imple
         if (scmRepository && scmRepository.provider.id === 'hg') {
             const provider = scmRepository.provider as HgScmProvider;
             const repository = { localUri: scmRepository.provider.rootUri };
-            const fileChanges: HgFileChange[] = await this.hg.status(repository, options);
+            const status = await this.hg.status(repository, options);
             const fileChangeNodes: HgFileChangeNode[] = [];
-            for (const fileChange of fileChanges) {
+            for (const fileChange of status.changes) {
                 const fileChangeUri = new URI(fileChange.uri);
                 const [icon, label, description] = await Promise.all([
                     this.labelProvider.getIcon(fileChangeUri),

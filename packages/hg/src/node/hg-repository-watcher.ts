@@ -150,15 +150,11 @@ export class HgRepositoryWatcher implements Disposable {
     protected async syncStatus(initial: boolean = false): Promise<void> {
         try {
             const source = this.options.repository;
-            // TODO fill this properly
-            const newStatus = {
-                changes: await this.hg.status(source),
-                exists: true
-            };
+            const newStatus = await this.hg.status(source);
             const oldStatus = this.status;
             if (initial || !WorkingDirectoryStatus.equals(newStatus, oldStatus)) {
                 this.status = newStatus;
-                this.onStatusChangedEmitter.fire({ source, status: newStatus.changes, oldStatus: oldStatus ? oldStatus.changes : [] });
+                this.onStatusChangedEmitter.fire({ source, status: newStatus, oldStatus });
             }
         } catch (error) {
             if (HgUtils.isRepositoryDoesNotExistError(error)) {
