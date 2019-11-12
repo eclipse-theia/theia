@@ -58,7 +58,7 @@ export interface FrontendApplicationContribution {
     /**
      * Called when an application is stopped or unloaded.
      *
-     * Note that this is implemented using `window.unload` which doesn't allow any asynchronous code anymore.
+     * Note that this is implemented using `window.beforeunload` which doesn't allow any asynchronous code anymore.
      * I.e. this is the last tick.
      */
     onStop?(app: FrontendApplication): void;
@@ -161,7 +161,7 @@ export class FrontendApplication {
      * Register global event listeners.
      */
     protected registerEventListeners(): void {
-        window.addEventListener('unload', () => {
+        window.addEventListener('beforeunload', () => {
             this.stateService.state = 'closing_window';
             this.layoutRestorer.storeLayout(this);
             this.stopContributions();
@@ -320,6 +320,7 @@ export class FrontendApplication {
      * Stop the frontend application contributions. This is called when the window is unloaded.
      */
     protected stopContributions(): void {
+        this.logger.info('>>> Stopping contributions....');
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onStop) {
                 try {
@@ -329,6 +330,7 @@ export class FrontendApplication {
                 }
             }
         }
+        this.logger.info('<<< All contributions have been stopped.');
     }
 
     protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {
