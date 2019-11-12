@@ -150,7 +150,7 @@ export class WebviewImpl implements theia.Webview {
         this.checkIsDisposed();
         // replace theia-resource: content in the given message
         const decoded = JSON.stringify(message);
-        let newMessage = decoded.replace(new RegExp('theia-resource:/', 'g'), '/webview/');
+        let newMessage = decoded.replace(new RegExp('theia-resource:/', 'g'), 'webview/');
         if (this._options && this._options.localResourceRoots) {
             newMessage = this.filterLocalRoots(newMessage, this._options.localResourceRoots);
         }
@@ -158,7 +158,7 @@ export class WebviewImpl implements theia.Webview {
     }
 
     protected filterLocalRoots(content: string, localResourceRoots: ReadonlyArray<theia.Uri>): string {
-        const webViewsRegExp = /"(\/webview\/.*?)\"/g;
+        const webViewsRegExp = /"(webview\/.*?)\"/g;
         let m;
         while ((m = webViewsRegExp.exec(content)) !== null) {
             if (m.index === webViewsRegExp.lastIndex) {
@@ -166,9 +166,9 @@ export class WebviewImpl implements theia.Webview {
             }
             // take group 1 which is webview URL
             const url = m[1];
-            const isIncluded = localResourceRoots.some((uri): boolean => url.substring('/webview'.length).startsWith(uri.fsPath));
+            const isIncluded = localResourceRoots.some((uri): boolean => url.substring('webview'.length).startsWith(uri.fsPath));
             if (!isIncluded) {
-                content = content.replace(url, url.replace('/webview', '/webview-disallowed-localroot'));
+                content = content.replace(url, url.replace('webview', 'webview-disallowed-localroot'));
             }
         }
         return content;
@@ -191,7 +191,7 @@ export class WebviewImpl implements theia.Webview {
     }
 
     set html(html: string) {
-        let newHtml = html.replace(new RegExp('theia-resource:/', 'g'), '/webview/');
+        let newHtml = html.replace(new RegExp('theia-resource:/', 'g'), 'webview/');
         if (this._options && this._options.localResourceRoots) {
             newHtml = this.filterLocalRoots(newHtml, this._options.localResourceRoots);
         }
