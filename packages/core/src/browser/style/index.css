@@ -248,3 +248,4 @@ button.secondary[disabled], .theia-button.secondary[disabled] {
 @import './widget.css';
 @import './quick-title-bar.css';
 @import './progress-bar.css';
+@import './breadcrumbs.css';

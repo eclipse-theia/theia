@@ -106,6 +106,7 @@ import { QuickAccessContribution } from './quick-input/quick-access';
 import { QuickCommandService } from './quick-input/quick-command-service';
 import { SidebarBottomMenuWidget } from './shell/sidebar-bottom-menu-widget';
 import { WindowContribution } from './window-contribution';
+import { BreadcrumbsContribution, BreadcrumbsService } from './breadcrumbs';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -361,4 +362,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     for (const contribution of [CommandContribution, KeybindingContribution, MenuContribution]) {
         bind(contribution).toService(WindowContribution);
     }
+    bindContributionProvider(bind, BreadcrumbsContribution);
+    bind(BreadcrumbsService).toSelf().inSingletonScope();
 });

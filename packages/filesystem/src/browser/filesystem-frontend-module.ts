@@ -36,6 +36,9 @@ import { bindContributionProvider } from '@theia/core/lib/common/contribution-pr
 import { RemoteFileServiceContribution } from './remote-file-service-contribution';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { UTF8 } from '@theia/core/lib/common/encodings';
+import { FilepathBreadcrumbsContribution } from './breadcrumbs/filepath-breadcrumbs-contribution';
+import { BreadcrumbsContribution } from '@theia/core/lib/browser/breadcrumbs/breadcrumbs-contribution';
+import { BreadcrumbsFileTreeWidget, createFileTreeBreadcrumbsWidget } from './breadcrumbs/filepath-breadcrumbs-container';
 
 export default new ContainerModule(bind => {
     bindFileSystemPreferences(bind);
@@ -217,6 +220,11 @@ export default new ContainerModule(bind => {
 
     bind(FileTreeLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(FileTreeLabelProvider);
+    bind(BreadcrumbsFileTreeWidget).toDynamicValue(ctx =>
+        createFileTreeBreadcrumbsWidget(ctx.container)
+    );
+    bind(FilepathBreadcrumbsContribution).toSelf().inSingletonScope();
+    bind(BreadcrumbsContribution).toService(FilepathBreadcrumbsContribution);
 });
 
 export function bindFileResource(bind: interfaces.Bind): void {

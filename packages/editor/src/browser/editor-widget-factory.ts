@@ -20,6 +20,7 @@ import { SelectionService } from '@theia/core/lib/common';
 import { NavigatableWidgetOptions, WidgetFactory, LabelProvider } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { TextEditorProvider } from './editor';
+import { BreadcrumbsRendererFactory } from '@theia/core/lib/browser/breadcrumbs';
 
 @injectable()
 export class EditorWidgetFactory implements WidgetFactory {
@@ -42,6 +43,9 @@ export class EditorWidgetFactory implements WidgetFactory {
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
+
+    @inject(BreadcrumbsRendererFactory)
+    protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory;
 
     createWidget(options: NavigatableWidgetOptions): Promise<EditorWidget> {
         const uri = new URI(options.uri);
@@ -67,7 +71,8 @@ export class EditorWidgetFactory implements WidgetFactory {
 
     protected async constructEditor(uri: URI): Promise<EditorWidget> {
         const textEditor = await this.editorProvider(uri);
-        return new EditorWidget(textEditor, this.selectionService);
+        const breadcrumbsRenderer = this.breadcrumbsRendererFactory(uri);
+        return new EditorWidget(textEditor, breadcrumbsRenderer, this.selectionService);
     }
 
     private setLabels(editor: EditorWidget, uri: URI): void {

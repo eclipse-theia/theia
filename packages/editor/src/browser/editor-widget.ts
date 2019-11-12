@@ -18,14 +18,19 @@ import { Disposable, SelectionService, Event } from '@theia/core/lib/common';
 import { Widget, BaseWidget, Message, Saveable, SaveableSource, Navigatable, StatefulWidget } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { TextEditor } from './editor';
+import { BreadcrumbsRenderer } from '@theia/core/lib/browser/breadcrumbs';
 
 export class EditorWidget extends BaseWidget implements SaveableSource, Navigatable, StatefulWidget {
 
     constructor(
         readonly editor: TextEditor,
+        readonly breadcrumbsRenderer: BreadcrumbsRenderer,
         protected readonly selectionService: SelectionService
     ) {
-        super(editor);
+        super(EditorWidget.createParentNode(editor, breadcrumbsRenderer));
+
+        this.toDispose.push(this.breadcrumbsRenderer);
+
         this.addClass('theia-editor');
         this.toDispose.push(this.editor);
         this.toDispose.push(this.editor.onSelectionChanged(() => this.setSelection()));
@@ -41,6 +46,13 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         if (this.editor.isFocused() && this.selectionService.selection !== this.editor) {
             this.selectionService.selection = this.editor;
         }
+    }
+
+    static createParentNode(editor: TextEditor, breadcrumbsWidget: BreadcrumbsRenderer): Widget.IOptions {
+        const div = document.createElement('div');
+        div.appendChild(breadcrumbsWidget.host);
+        div.appendChild(editor.node);
+        return { node: div };
     }
 
     get saveable(): Saveable {
@@ -64,12 +76,14 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         super.onAfterAttach(msg);
         if (this.isVisible) {
             this.editor.refresh();
+            this.breadcrumbsRenderer.refresh();
         }
     }
 
     protected onAfterShow(msg: Message): void {
         super.onAfterShow(msg);
         this.editor.refresh();
+        this.breadcrumbsRenderer.refresh();
     }
 
     protected onResize(msg: Widget.ResizeMessage): void {
