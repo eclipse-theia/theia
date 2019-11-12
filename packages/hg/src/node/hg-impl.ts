@@ -196,6 +196,7 @@ export class HgImpl implements Hg {
             changes,
             exists: true,
             branch: branch ? branch.name : undefined,
+            currentHead: branch ? branch.tip.sha : undefined,
         };
     }
 
