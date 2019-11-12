@@ -111,17 +111,22 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         );
 
         this.actionProvider = this.items.length ? this.taskActionProvider : undefined;
-
-        if (!this.items.length) {
-            this.items.push(new QuickOpenItem({
-                label: 'No tasks found',
-                run: (mode: QuickOpenMode): boolean => false
-            }));
-        }
     }
 
     async open(): Promise<void> {
         await this.init();
+        if (!this.items.length) {
+            this.items.push(new QuickOpenItem({
+                label: 'No task to run found. Configure Tasks...',
+                run: (mode: QuickOpenMode): boolean => {
+                    if (mode !== QuickOpenMode.OPEN) {
+                        return false;
+                    }
+                    this.configure();
+                    return true;
+                }
+            }));
+        }
         this.quickOpenService.open(this, {
             placeholder: 'Select the task to run',
             fuzzyMatchLabel: true,
@@ -290,7 +295,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
             } else { // no build / test tasks, display an action item to configure the build / test task
                 this.items = [new QuickOpenItem({
-                    label: `No ${buildOrTestType} task to run found. Configure ${buildOrTestType} task...`,
+                    label: `No ${buildOrTestType} task to run found. Configure ${buildOrTestType.charAt(0).toUpperCase() + buildOrTestType.slice(1)} Task...`,
                     run: (mode: QuickOpenMode): boolean => {
                         if (mode !== QuickOpenMode.OPEN) {
                             return false;
@@ -322,6 +327,19 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                     }
                 })];
             }
+        } else { // no tasks are currently present, prompt users if they'd like to configure a task.
+            this.items = [
+                new QuickOpenItem({
+                    label: `No ${buildOrTestType} task to run found. Configure ${buildOrTestType.charAt(0).toUpperCase() + buildOrTestType.slice(1)} Task...`,
+                    run: (mode: QuickOpenMode): boolean => {
+                        if (mode !== QuickOpenMode.OPEN) {
+                            return false;
+                        }
+                        this.configure();
+                        return true;
+                    }
+                })
+            ];
         }
 
         this.quickOpenService.open(this, {
