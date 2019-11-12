@@ -18,7 +18,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Command, CommandContribution, CommandRegistry, DisposableCollection, MenuContribution, MenuModelRegistry, Mutable, MenuAction } from '@theia/core';
 import { DiffUris, Widget } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { EDITOR_CONTEXT_MENU, EditorContextMenu, EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
+import { EditorContextMenu, EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import { Git, GitFileChange, GitFileStatus } from '../common';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitAction, GitQuickOpenService } from './git-quick-open-service';
@@ -29,8 +29,6 @@ import { GitErrorHandler } from '../browser/git-error-handler';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmResource, ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
-
-export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
 export namespace GIT_COMMANDS {
     export const CLONE = {
@@ -477,12 +475,18 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             const id = '__git.tabbar.toolbar.' + commandId;
             const command = this.commands.getCommand(commandId);
             this.commands.registerCommand({ id, iconClass: command && command.iconClass }, {
+<<<<<<< HEAD
                 execute: (widget, ...args) => widget instanceof ScmWidget && this.commands.executeCommand(commandId, ...args),
                 isEnabled: (widget, ...args) => widget instanceof ScmWidget && this.commands.isEnabled(commandId, ...args),
                 isVisible: (widget, ...args) =>
                     widget instanceof ScmWidget &&
                     this.commands.isVisible(commandId, ...args) &&
                     !!this.repositoryProvider.selectedRepository
+=======
+                execute: (widget, ...args) => widget instanceof ScmWidget && !!this.repositoryProvider.selectedScmRepository && this.commands.executeCommand(commandId, ...args),
+                isEnabled: (widget, ...args) => widget instanceof ScmWidget && !!this.repositoryProvider.selectedScmRepository && this.commands.isEnabled(commandId, ...args),
+                isVisible: (widget, ...args) => widget instanceof ScmWidget && !!this.repositoryProvider.selectedScmRepository && this.commands.isVisible(commandId, ...args),
+>>>>>>> 67045e80709496cf93bc426281c83d1a9ffcda0b
             });
             item.command = id;
             registry.registerItem(item);

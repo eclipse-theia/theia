@@ -221,7 +221,10 @@ app.on('ready', () => {
         newWindow.on('resize', saveWindowStateDelayed);
         newWindow.on('move', saveWindowStateDelayed);
 
+<<<<<<< HEAD
         // Fired when a beforeunload handler tries to prevent the page unloading
+=======
+>>>>>>> 67045e80709496cf93bc426281c83d1a9ffcda0b
         newWindow.webContents.on('will-prevent-unload', event => {
             const preventStop = 0 !== dialog.showMessageBox(newWindow, {
                 type: 'question',
@@ -232,7 +235,10 @@ app.on('ready', () => {
             });
 
             if (!preventStop) {
+<<<<<<< HEAD
                 // This ignores the beforeunload callback, allowing the page to unload
+=======
+>>>>>>> 67045e80709496cf93bc426281c83d1a9ffcda0b
                 event.preventDefault();
             }
         });
@@ -325,7 +331,10 @@ app.on('ready', () => {
             // See: https://github.com/eclipse-theia/theia/issues/835
             process.kill(cp.pid);
         });
-    }
+        }${
+            this.pck.backendElectronMasterModules.size > 0 ?
+                `
+        require('../backend/electron-master.js');` : ''}
 });
 `;
     }

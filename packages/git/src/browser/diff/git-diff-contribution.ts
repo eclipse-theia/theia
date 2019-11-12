@@ -19,6 +19,7 @@ import { FrontendApplication, AbstractViewContribution } from '@theia/core/lib/b
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { injectable, inject } from 'inversify';
 import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
+import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { NavigatorContextMenu, FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
@@ -27,11 +28,15 @@ import { FileSystem } from '@theia/filesystem/lib/common';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import URI from '@theia/core/lib/common/uri';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
+<<<<<<< HEAD
 import { Git } from '../../common';
 import { GitRepositoryProvider } from '../git-repository-provider';
 import { WorkspaceRootUriAwareCommandHandler } from '@theia/workspace/lib/browser/workspace-commands';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+=======
+import { Git, Repository } from '../../common';
+>>>>>>> 67045e80709496cf93bc426281c83d1a9ffcda0b
 
 export namespace GitDiffCommands {
     export const OPEN_FILE_DIFF: Command = {
@@ -65,7 +70,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(OpenerService) protected openerService: OpenerService,
         @inject(MessageService) protected readonly notifications: MessageService,
-        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider
+        @inject(ScmService) protected readonly scmService: ScmService
     ) {
         super({
             widgetId: GIT_DIFF,
@@ -84,9 +89,15 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
     }
 
     registerCommands(commands: CommandRegistry): void {
+<<<<<<< HEAD
         commands.registerCommand(GitDiffCommands.OPEN_FILE_DIFF, this.newWorkspaceRootUriAwareCommandHandler({
             isVisible: uri => !!this.repositoryProvider.findRepository(uri),
             isEnabled: uri => !!this.repositoryProvider.findRepository(uri),
+=======
+        commands.registerCommand(GitDiffCommands.OPEN_FILE_DIFF, this.newUriAwareCommandHandler({
+            isVisible: uri => !!this.findGitRepository(uri),
+            isEnabled: uri => !!this.findGitRepository(uri),
+>>>>>>> 67045e80709496cf93bc426281c83d1a9ffcda0b
             execute: async fileUri => {
                 await this.quickOpenService.chooseTagsAndBranches(
                     async (fromRevision, toRevision) => {
@@ -112,11 +123,12 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                                 }
                             }
                         }
-                    }, this.repositoryProvider.findRepository(fileUri));
+                    }, this.findGitRepository(fileUri));
             }
         }));
     }
 
+<<<<<<< HEAD
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
         this.fileNavigatorContribution.registerMoreToolbarItem({
             id: GitDiffCommands.OPEN_FILE_DIFF.id,
@@ -124,6 +136,14 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
             tooltip: GitDiffCommands.OPEN_FILE_DIFF.label,
             group: ScmNavigatorMoreToolbarGroups.SCM,
         });
+=======
+    protected findGitRepository(uri: URI): Repository | undefined {
+        const repo = this.scmService.findRepository(uri);
+        if (repo && repo.provider.id === 'git') {
+            return { localUri: repo.provider.rootUri };
+        }
+        return undefined;
+>>>>>>> 67045e80709496cf93bc426281c83d1a9ffcda0b
     }
 
     async showWidget(options: Git.Options.Diff): Promise<GitDiffWidget> {

@@ -98,7 +98,7 @@ describe('GitRepositoryProvider', () => {
         testContainer.bind(FileSystemWatcher).toConstantValue(mockFileSystemWatcher);
         testContainer.bind(StorageService).toConstantValue(mockStorageService);
         testContainer.bind(ScmService).toSelf().inSingletonScope();
-        testContainer.bind(GitScmProvider.Factory).toFactory(GitScmProvider.createFactory);
+        testContainer.bind(GitScmProvider.ContainerFactory).toFactory(GitScmProvider.createFactory);
         testContainer.bind(ScmContextKeyService).toSelf().inSingletonScope();
         testContainer.bind(ContextKeyService).toSelf().inSingletonScope();
         testContainer.bind(GitCommitMessageValidator).toSelf().inSingletonScope();

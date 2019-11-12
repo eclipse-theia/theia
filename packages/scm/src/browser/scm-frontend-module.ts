@@ -24,6 +24,7 @@ import { ScmService } from './scm-service';
 import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID, SCM_VIEW_CONTAINER_TITLE_OPTIONS } from './scm-contribution';
 
 import { ScmWidget } from './scm-widget';
+import { bindScmHistoryModule } from './history/scm-history-frontend-module';
 import '../../src/browser/style/index.css';
 import { ScmQuickOpenService } from './scm-quick-open-service';
 import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
@@ -60,6 +61,8 @@ export default new ContainerModule(bind => {
         }
     })).inSingletonScope();
     bind(ApplicationShellLayoutMigration).to(ScmLayoutVersion3Migration).inSingletonScope();
+
+    bindScmHistoryModule(bind);
 
     bind(ScmQuickOpenService).toSelf().inSingletonScope();
     bindViewContribution(bind, ScmContribution);

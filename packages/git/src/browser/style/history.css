@@ -14,75 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-.theia-git .commitListContainer .commitList .commitListElement {
+.theia-git .commitListElement {
     margin: 3px 0;
-}
-
-.theia-git .commitListElement.first .containerHead{
-    border: none;
-}
-
-.theia-git .commitListElement .containerHead {
-    width: calc(100% - 5px);
-    height: 50px;
-    display: flex;
-    align-items: center;
-    border-top: 1px solid var(--theia-layout-color4);
-}
-
-.theia-git .commitListElement .containerHead:hover {
-    cursor: pointer;
-}
-
-.theia-git .commitListElement .containerHead .headContent {
-    display: flex;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0 8px 0 2px;
-}
-
-.theia-git .commitListElement .containerHead .headContent .image-container{
-    margin-right: 5px;
-}
-
-.theia-git .commitListElement .containerHead .headContent .image-container img{
-    width: 27px;
-}
-
-.theia-git .commitListElement .containerHead .headContent .headLabelContainer{
-    min-width: calc(100% - 93px);
-}
-
-.theia-git .commitListElement .containerHead .headContent .headLabelContainer.singleFileMode{
-    width: 100%;
-}
-
-.theia-git .commitListElement .containerHead .headContent .expansionToggle{
-    display: flex;
-    align-items: center;
-}
-
-.theia-git .commitListElement .containerHead .headContent .detailButton{
-    display: flex;
-    align-items: center;
-    visibility: hidden;
-    margin: 0 5px;
-}
-
-.theia-git .commitListElement .containerHead:hover .headContent .detailButton {
-    visibility: visible;
-}
-
-.theia-git .commitListElement .containerHead .headContent .expansionToggle > .toggle{
-    display: flex;
-    background: var(--theia-ui-expand-button-color);
-    padding: 5px;
-    border-radius: 7px;
-    margin-left: 5px;
-    align-items: center;
-    justify-content: flex-end;
-    min-width: 30px;
-    color: var(--theia-ui-expand-button-font-color);
 }
 
 .theia-git .commitBody {
@@ -93,6 +26,7 @@
     margin-top: 5px;
 }
 
+<<<<<<< HEAD
 .theia-git .commitTime {
     color: var(--theia-ui-font-color2);
     font-size: smaller;
@@ -174,6 +108,8 @@
     margin-top: 10px;
 }
 
+=======
+>>>>>>> 67045e80709496cf93bc426281c83d1a9ffcda0b
 .theia-git .commit-info .header-row {
     margin: 4px 0;
 }
@@ -193,15 +129,4 @@
 .tab-git-icon {
     width: 20px!important;
     height: 20px;
-}
-
-.theia-git .message-container {
-    height: 100%;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-}
-
-.git-history-tab-icon::before {
-    content: "\f1da"
 }

@@ -153,7 +153,7 @@ export interface GitFileChange {
     readonly oldUri?: string;
 
     /**
-     * `true` if the file is staged, otherwise `false`. If absent, it means, not staged.
+     * `true` if the file is staged or committed, `false` if not staged. If absent, it means not staged.
      */
     readonly staged?: boolean;
 
@@ -195,11 +195,10 @@ export namespace Repository {
     export function is(repository: Object | undefined): repository is Repository {
         return !!repository && 'localUri' in repository;
     }
-    export function relativePath(repository: Repository | URI | string, uri: URI | string): Path | undefined {
+    export function relativePath(repository: Repository | URI, uri: URI | string): Path | undefined {
         const repositoryUri = new URI(Repository.is(repository) ? repository.localUri : String(repository));
         return repositoryUri.relative(new URI(String(uri)));
     }
-    export const sortComparator = (ra: Repository, rb: Repository) => rb.localUri.length - ra.localUri.length;
 }
 
 /**
@@ -339,7 +338,7 @@ export interface CommitWithChanges extends Commit {
     readonly authorDateRelative: string;
 
     /**
-     * The number of file changes per commit.
+     * The file changes in the commit.
      */
     readonly fileChanges: GitFileChange[];
 }

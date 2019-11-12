@@ -19,6 +19,8 @@ import * as fileIcons from 'file-icons-js';
 import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Prioritizeable, MaybePromise } from '../common/types';
+import { Event, Emitter, Disposable, DisposableCollection } from '../common';
+import { FrontendApplicationContribution } from './frontend-application';
 
 export const FOLDER_ICON = 'fa fa-folder';
 export const FILE_ICON = 'fa fa-file';
@@ -48,6 +50,11 @@ export interface LabelProviderContribution {
      */
     getLongName?(element: object): string;
 
+    /**
+     * Emit when something has changed that may result in this label provider returning a different
+     * value for one or more properties (name, icon etc) for the emitted URI.
+     */
+    readonly onElementUpdated?: Event<URI>;
 }
 
 @injectable()
@@ -86,12 +93,33 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
 }
 
 @injectable()
-export class LabelProvider {
+export class LabelProvider implements Disposable, FrontendApplicationContribution {
+
+    private readonly toDispose: DisposableCollection = new DisposableCollection();
+
+    protected readonly onElementUpdatedEmitter = new Emitter<URI>();
 
     constructor(
         @inject(ContributionProvider) @named(LabelProviderContribution)
         protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>
-    ) { }
+    ) {
+        this.toDispose.push(this.onElementUpdatedEmitter);
+    }
+
+    public initialize(): void {
+        const contributions = this.contributionProvider.getContributions();
+        for (const contribution of contributions) {
+            if (contribution.onElementUpdated) {
+                this.toDispose.push(
+                    contribution.onElementUpdated(uri => this.onElementUpdatedEmitter.fire(uri))
+                );
+            }
+        }
+    }
+
+    get onElementUpdated(): Event<URI> {
+        return this.onElementUpdatedEmitter.event;
+    }
 
     async getIcon(element: object): Promise<string> {
         const contribs = this.findContribution(element);
@@ -117,7 +145,7 @@ export class LabelProvider {
         if (!contrib) {
             return '';
         }
-        return contrib!.getLongName!(element);
+        return contrib.getLongName!(element);
     }
 
     protected findContribution(element: object): LabelProviderContribution[] {
@@ -127,4 +155,7 @@ export class LabelProvider {
         return prioritized.map(c => c.value);
     }
 
+    dispose(): void {
+        this.toDispose.dispose();
+    }
 }

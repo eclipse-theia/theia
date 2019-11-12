@@ -293,7 +293,11 @@ export interface TabBarToolbarItem {
  */
 export interface ReactTabBarToolbarItem {
     readonly id: string;
+<<<<<<< HEAD
     render(widget?: Widget): React.ReactNode;
+=======
+    render(widget: Widget | undefined): React.ReactNode;
+>>>>>>> 67045e80709496cf93bc426281c83d1a9ffcda0b
 
     readonly onDidChange?: Event<void>;
 

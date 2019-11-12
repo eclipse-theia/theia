@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
 import { FileSystem, FileStat } from '../../common';
@@ -27,6 +27,30 @@ export class FileTree extends TreeImpl {
 
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+
+    @postConstruct()
+    protected initFileTree(): void {
+        this.toDispose.push(
+            this.labelProvider.onElementUpdated((uri: URI) => this.doUpdateElement(uri))
+        );
+    }
+
+    protected doUpdateElement(uri: URI): void {
+        const nodePath = uri.path.toString();
+        if (this.root && CompositeTreeNode.is(this.root)) {
+            for (const workspaceRoot of this.root.children) {
+                if (CompositeTreeNode.is(workspaceRoot)
+                    && nodePath.startsWith(workspaceRoot.id + '/')) {
+                    const id = this.toNodeId(uri, workspaceRoot);
+                    const node = this.getNode(id);
+                    if (node) {
+                        delete this.nodes[id];
+                        this.fireChanged();
+                    }
+                }
+            }
+        }
+    }
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (FileStatNode.is(parent)) {
