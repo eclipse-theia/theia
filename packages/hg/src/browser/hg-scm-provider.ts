@@ -26,7 +26,7 @@ import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { EditorOpenerOptions, EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
-import { Repository, Hg, CommitWithChanges, HgFileChange, HgFileStatus, WorkingDirectoryStatus } from '../common';
+import { Repository, Hg, CommitWithChanges, HgFileChange, HgFileStatus, WorkingDirectoryStatus, CommitIdentity } from '../common';
 import { HG_RESOURCE_SCHEME } from './hg-resource';
 import { HgErrorHandler } from './hg-error-handler';
 import { EditorWidget } from '@theia/editor/lib/browser';
@@ -346,13 +346,15 @@ export class HgScmProvider implements ScmProvider {
             toRevision: hgCommit.sha
         };
 
+        const { name: authorName, email: authorEmail } = this.extractNameAndEmail(hgCommit.author);
+
         const scmCommit: HgScmCommit = {
             id: hgCommit.sha,
             commitDetailUri: this.toCommitDetailUri(hgCommit.sha),
             summary: hgCommit.summary,
             messageBody: hgCommit.body,
-            authorName: hgCommit.author.name,
-            authorEmail: hgCommit.author.email,
+            authorName,
+            authorEmail,
             authorTimestamp: new Date(hgCommit.author.timestamp * 1000).toISOString(),
             authorDateRelative: hgCommit.authorDateRelative,
             scmProvider: this,
@@ -365,14 +367,21 @@ export class HgScmProvider implements ScmProvider {
                     sha: hgCommit.sha,
                     summary: hgCommit.summary,
                     messageBody: hgCommit.body,
-                    authorName: hgCommit.author.name,
-                    authorEmail: hgCommit.author.email,
+                    authorName: this.authorName,
+                    authorEmail: this.authorEmail,
                     authorTimestamp: new Date(hgCommit.author.timestamp * 1000).toISOString(),
                     authorDateRelative: hgCommit.authorDateRelative,
                 };
             }
         };
         return scmCommit;
+    }
+
+    private extractNameAndEmail(identity: CommitIdentity): { name: string, email: string } {
+        const match = identity.nameAndEmail.match(/^(.*) <(.*)>$/);
+        const name = match ? match[1] : identity.nameAndEmail;
+        const email = match ? match[2] : '';
+        return { name, email };
     }
 
     public relativePath(uri: string): string {

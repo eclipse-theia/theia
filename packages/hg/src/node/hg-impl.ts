@@ -238,8 +238,7 @@ export class HgImpl implements Hg {
             const revisionId = output[i++].trim();
             i += 1;
             const author = {
-                name: 'unknown',
-                email: 'unknown',
+                nameAndEmail: 'unknown <unknown>',
                 timestamp: 0
             } as CommitIdentity;
             const tip = {
@@ -508,12 +507,6 @@ export class HgImpl implements Hg {
         };
     }
 
-    private extractFiles(files: string): string[] {
-        // TODO investigate what Mercurial gives us back if there is a space in the file name.
-        // This code probably won't cope.
-        return files === '' ? [] : files.split(' ');
-    }
-
     async log(repository: Repository, options: Hg.Options.Log = {}): Promise<CommitWithChanges[]> {
         const repo = await this.getHgRepo(repository);
 
@@ -537,24 +530,13 @@ export class HgImpl implements Hg {
         const outputChunks = await repo.runCommand(args);
 
         return outputChunks.map(chunk => {
-            /*
-             * Note that 'desc' is not output in json format.  This is because the 'desc'
-             * field may contain characters that would need to be escaped to make valid parsable
-             * json, yet there is no way to get Mercurial to do this escaping, nor is there any easy
-             * way for us to modify the text to do the escaping.  Therefore the template puts
-             * the 'desc' field at the end with a separator that is not likely to appear in
-             * the data.
-             */
-            const lines = chunk.split('end-json-start-desc');
-            const commitLine = JSON.parse(lines[0]);
+            const commitLine = JSON.parse(chunk);
 
             const timestamp: number = commitLine.timestamp.split(' ')[0];
-
-            const addedFiles = this.extractFiles(commitLine.added);
-            const modifiedFiles = this.extractFiles(commitLine.modified);
-            const deletedFiles = this.extractFiles(commitLine.deleted);
-
-            const summary: string = lines[1];
+            const addedFiles = commitLine.added;
+            const modifiedFiles = commitLine.modified;
+            const deletedFiles = commitLine.deleted;
+            const summary = commitLine.desc;
 
             const fileChanges: HgFileChange[] = [];
             for (const filename of addedFiles) {
@@ -568,10 +550,10 @@ export class HgImpl implements Hg {
             }
 
             const sha = commitLine.node;
-            const name = commitLine.author;
+            const nameAndEmail = commitLine.author;
             const authorDateRelative = this.getAuthorDateRelative(timestamp);
 
-            const author: CommitIdentity = { name, email: 'unknown', timestamp };
+            const author: CommitIdentity = { nameAndEmail, timestamp };
             return { sha, summary, author, authorDateRelative, fileChanges };
         });
     }
@@ -709,12 +691,12 @@ export class HgImpl implements Hg {
  */
 const logTemplate: string =
     '\\{ "node": "{node}",\\n' +
-    '  "author": "{author}",\\n' +
+    '  "author": {json(author)},\\n' +
     '  "timestamp": "{date|hgdate}",\\n' +
-    '  "added": "{file_adds}",\\n' +
-    '  "modified": "{file_mods}",\\n' +
-    '  "deleted": "{file_dels}"\n}' +
-    'end-json-start-desc{desc}';
+    '  "added": {json(file_adds)},\\n' +
+    '  "modified": {json(file_mods)},\\n' +
+    '  "deleted": {json(file_dels)},\\n' +
+    '  "desc": {json(desc)}\n}';
 
 /**
  * This template outputs data in JSON format so the output from the 'parent' command is easily parsed.

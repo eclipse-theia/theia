@@ -349,14 +349,9 @@ export interface CommitWithChanges extends Commit {
 export interface CommitIdentity {
 
     /**
-     * The name for the commit.
+     * The name and email address for the user who did the commit.
      */
-    readonly name: string;
-
-    /**
-     * The email address for the user who did the commit.
-     */
-    readonly email: string;
+    readonly nameAndEmail: string;
 
     /**
      * The time of the commit (seconds since 1970).
