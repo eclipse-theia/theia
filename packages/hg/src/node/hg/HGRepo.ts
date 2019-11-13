@@ -82,76 +82,90 @@ const commandServers: Map<string, HGRepo> = new Map();
 export const getHgRepo = async (hgInit: HgInit, localUri: string): Promise<HGRepo> => {
     const repo = commandServers.get(localUri);
     if (repo) {
-        delayedClose(localUri, repo);
         return repo;
     }
 
-    const newRepo = new HGRepo(path => hgInit.startCommandServer(path), FileUri.fsPath(localUri));
+    const newRepo = new HGRepo(path => hgInit.startCommandServer(path), localUri);
     await newRepo.start();
     commandServers.set(localUri, newRepo);
-    delayedClose(localUri, newRepo);
     return newRepo;
 };
 
 /**
- * Shuts down the command server 10 seconds after the last operation started.
+ * Note that the Mercurial Command Server is blocking and will only process one command
+ * at a time.  That means commands will complete in the same order as they were submitted.
+ * Thus if our command finishes and the command counter has not been incremented since we
+ * started our command then we are free to shut down the command server.
  */
-const delayedClose = async (localUri: string, repo: HGRepo) => {
-    repo.latestCommandCounter++;
-    const thisCommandCounter = repo.latestCommandCounter;
-    setTimeout(() => {
-        if (thisCommandCounter === repo.latestCommandCounter) {
-            // Note that a new command may arrive before the command server shutdown
-            // has completed.  We can only assume that Mercurial handles this correctly.
-            commandServers.delete(localUri);
-            repo.dispose();
-        }
-    }, 10000);
-};
-
 export class HGRepo implements Disposable {
 
     protected server = new HgCommandServer();
 
     protected queue: Promise<void> = Promise.resolve();
 
-    public latestCommandCounter: number = 0;
+    protected latestCommandCounter: number = 0;
 
     /*
      * Create a new HGRepo with a path defined by the passed in path.
      */
-    constructor(private readonly startCommandServer: (path: string) => Promise<ChildProcess>, private readonly path: string) { }
+    constructor(private readonly startCommandServer: (path: string) => Promise<ChildProcess>, private readonly localUri: string) { }
 
     public async start(): Promise<void> {
-        await this.server.start(this.startCommandServer, this.path);
+        const path = FileUri.fsPath(this.localUri);
+        await this.server.start(this.startCommandServer, path);
     }
 
     public dispose(): void {
         this.server.stop();
     }
 
+    /**
+     * Shuts down the command server 10 seconds after the last operation finished.
+     */
+    protected release(commandCounterForCompletedOperation: number) {
+        setTimeout(() => {
+            if (commandCounterForCompletedOperation === this.latestCommandCounter) {
+                // Note that a new command may arrive before the command server shutdown
+                // has completed.  We can only assume that Mercurial handles this correctly.
+                commandServers.delete(this.localUri);
+                this.dispose();
+            }
+        }, 10000);
+    }
+
     /*
      * Execute server command, throwing any errors
      */
     public async runCommand(args: string | string[], responseProvider?: (promptKey: string) => Promise<string>): Promise<string[]> {
-        const argsArray: string[] = typeof args === 'string' ? [args] : args;
-        const q: Promise<CommandResults> = this.queue.then(() => this.server.runCommand(argsArray, undefined, responseProvider));
-        this.queue = q.then(() => { });
-        const commandResults = await q;
-        if (commandResults.resultCode !== 0) {
-            throw new Error(`"hg ${argsArray.join(' ')}" failed: ${commandResults.outputChunks.join('\n')} ${commandResults.errorChunks.join()}`);
+        const counterForThisCommand = ++this.latestCommandCounter;
+        try {
+            const argsArray: string[] = typeof args === 'string' ? [args] : args;
+            const q: Promise<CommandResults> = this.queue.then(() => this.server.runCommand(argsArray, undefined, responseProvider));
+            // tslint:disable:no-console
+            this.queue = q.then(() => { }).catch(e => { this.queue = Promise.resolve(); console.error(e); });
+            const commandResults = await q;
+            if (commandResults.resultCode !== 0) {
+                throw new Error(`"hg ${argsArray.join(' ')}" failed: ${commandResults.outputChunks.join('\n')} ${commandResults.errorChunks.join()}`);
+            }
+            return commandResults.outputChunks;
+        } finally {
+            this.release(counterForThisCommand);
         }
-        return commandResults.outputChunks;
     }
 
     /*
      * Execute server command, returning errors in result
      */
     public async runCommandReturningErrors(args: string | string[], responseProvider?: (promptKey: string) => Promise<string>): Promise<CommandResults> {
-        const argsArray: string[] = typeof args === 'string' ? [args] : args;
-        const q: Promise<CommandResults> = this.queue.then(() => this.server.runCommand(argsArray, undefined, responseProvider));
-        this.queue = q.then(() => { });
-        const commandResults = await q;
-        return commandResults;
+        const counterForThisCommand = ++this.latestCommandCounter;
+        try {
+            const argsArray: string[] = typeof args === 'string' ? [args] : args;
+            const q: Promise<CommandResults> = this.queue.then(() => this.server.runCommand(argsArray, undefined, responseProvider));
+            this.queue = q.then(() => { });
+            const commandResults = await q;
+            return commandResults;
+        } finally {
+            this.release(counterForThisCommand);
+        }
     }
 }
