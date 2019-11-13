@@ -340,18 +340,13 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
             return '';
         }
 
-        const canAmend: boolean = true;
         return <div className={ScmAmendComponent.Styles.COMMIT_AND_BUTTON} style={{ flexGrow: 0, flexShrink: 0 }} key={this.state.lastCommit.commit.id}>
             {this.renderLastCommitNoButton(this.state.lastCommit)}
-            {
-                canAmend
-                    ? <div className={ScmAmendComponent.Styles.FLEX_CENTER}>
-                        <button className='theia-button' title='Amend last commit' onClick={this.amend}>
-                            Amend
-                        </button>
-                    </div>
-                    : ''
-            }
+            <div className={ScmAmendComponent.Styles.FLEX_CENTER}>
+                <button className='theia-button' title='Amend last commit' onClick={this.amend}>
+                    Amend
+                </button>
+            </div>
         </div>;
     }
 

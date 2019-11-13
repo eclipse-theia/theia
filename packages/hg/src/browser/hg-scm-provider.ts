@@ -90,7 +90,8 @@ export class HgScmProvider implements ScmProvider {
 
     @postConstruct()
     protected init(): void {
-        this._amendSupport = new HgAmendSupport(this, this.repository, this.hg);
+        // Amend is temporarily disabled for Mercurial.
+        // this._amendSupport = new HgAmendSupport(this, this.repository, this.hg);
     }
 
     get repository(): Repository {
@@ -100,8 +101,8 @@ export class HgScmProvider implements ScmProvider {
         return this.repository.localUri;
     }
 
-    protected _amendSupport: HgAmendSupport;
-    get amendSupport(): HgAmendSupport {
+    protected _amendSupport?: HgAmendSupport;
+    get amendSupport(): HgAmendSupport | undefined {
         return this._amendSupport;
     }
 
