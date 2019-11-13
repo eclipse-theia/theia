@@ -270,8 +270,8 @@ export class HgImpl implements Hg {
 
     }
 
-    async createBranch(repository: Repository, branchName: string, branchStartPoint?: string): Promise<void> {
-        throw Error('not implemented yet');
+    async createBranch(repository: Repository, branchName: string): Promise<void> {
+        await this.runCommand(repository, ['branch', branchName]);
     }
 
     async checkout(repository: Repository, options: Hg.Options.Checkout.CheckoutBranch | Hg.Options.Checkout.WorkingTreeFile): Promise<void> {
