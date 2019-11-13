@@ -23,7 +23,7 @@ import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contributio
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { SingleTextInputDialog, ConfirmDialog } from '@theia/core/lib/browser/dialogs';
-import { OpenerService, OpenHandler, open, FrontendApplication } from '@theia/core/lib/browser';
+import { OpenerService, OpenHandler, open, FrontendApplication, LabelProvider } from '@theia/core/lib/browser';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -34,6 +34,7 @@ import { FileSystemUtils } from '@theia/filesystem/lib/common';
 import { WorkspaceCompareHandler } from './workspace-compare-handler';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
+import { WorkspaceInputDialog } from './workspace-input-dialog';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -171,6 +172,7 @@ export class EditMenuContribution implements MenuContribution {
 @injectable()
 export class WorkspaceCommandContribution implements CommandContribution {
 
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
@@ -201,11 +203,12 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const { fileName, fileExtension } = this.getDefaultFileConfig();
                     const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, fileName, fileExtension);
 
-                    const dialog = new SingleTextInputDialog({
+                    const dialog = new WorkspaceInputDialog({
                         title: 'New File',
+                        parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent, true)
-                    });
+                    }, this.labelProvider);
 
                     dialog.open().then(name => {
                         if (name) {
@@ -223,11 +226,12 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 if (parent) {
                     const parentUri = new URI(parent.uri);
                     const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, 'Untitled');
-                    const dialog = new SingleTextInputDialog({
+                    const dialog = new WorkspaceInputDialog({
                         title: 'New Folder',
+                        parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent, true)
-                    });
+                    }, this.labelProvider);
                     dialog.open().then(name => {
                         if (name) {
                             this.fileSystem.createFolder(parentUri.resolve(name).toString());
