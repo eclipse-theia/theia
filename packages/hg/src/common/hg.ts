@@ -631,10 +631,8 @@ export interface Hg extends Disposable {
      *
      * @param the repository where the branch modification has to be performed.
      * @param branchName The desired name of the new branch.
-     * @param branchStartPoint The new branch head will point to this commit. It may be given as a branch name, a commit-id, or a tag.
-     * If this parameter is omitted, the current `HEAD` will be used instead.
      */
-    createBranch(repository: Repository, branchName: string, branchStartPoint?: string): Promise<void>
+    createBranch(repository: Repository, branchName: string): Promise<void>
 
     /**
      * Switches branches or restores working tree files.
