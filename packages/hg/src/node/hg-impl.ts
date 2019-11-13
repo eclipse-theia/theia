@@ -219,8 +219,11 @@ export class HgImpl implements Hg {
     }
 
     async forget(repository: Repository, uris: string[]): Promise<void> {
-        const paths = uris.map(uri => FileUri.fsPath(uri));
-        await this.runCommand(repository, ['forget', ...paths]);
+        const op = async () => {
+            const paths = uris.map(uri => FileUri.fsPath(uri));
+            await this.runCommand(repository, ['forget', ...paths]);
+        };
+        return this.manager.run(repository, () => op());
     }
 
     async branches(repository: Repository): Promise<Branch[]> {
@@ -662,6 +665,7 @@ export class HgImpl implements Hg {
      */
     async revert(repository: Repository, options: Hg.Options.Revert): Promise<void> {
         const args = ['revert'];
+        args.push('--no-backup');
         if (options.revision) {
             args.push('-r');
             args.push(options.revision);

@@ -187,14 +187,19 @@ export class HgContribution implements CommandContribution, MenuContribution, Ta
             commandId: HG_COMMANDS.TRACK.id,
             when: 'scmProvider == hg && scmResourceGroup == untracked'
         });
+        registerResourceAction('1_modification', {
+            commandId: HG_COMMANDS.DISCARD.id,
+            when: 'scmProvider == hg && scmResourceGroup == changed'
+        });
 
         registerResourceAction('navigation', {
             commandId: HG_COMMANDS.OPEN_CHANGED_FILE.id,
             when: 'scmProvider == hg && scmResourceGroup == changed'
         });
+        // currently not shown
         registerResourceAction('1_modification', {
             commandId: HG_COMMANDS.UNTRACK.id,
-            when: 'scmProvider == hg && scmResourceGroup == changed'
+            when: 'scmProvider == hg && false'
         });
 
         registerResourceAction('navigation', {
