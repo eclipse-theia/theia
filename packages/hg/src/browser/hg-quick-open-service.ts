@@ -269,7 +269,6 @@ export class HgQuickOpenService {
                                 async () => {
                                     try {
                                         await hgQuickOpenService.hg.createBranch(repository, lookFor);
-                                        await hgQuickOpenService.hg.checkout(repository, { branch: lookFor });
                                     } catch (error) {
                                         hgQuickOpenService.hgErrorHandler.handleError(error);
                                     }
