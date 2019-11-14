@@ -17,7 +17,10 @@
 import * as React from 'react';
 import { ConsoleItem } from './console-session';
 import { Severity } from '@theia/core/lib/common/severity';
-import Anser from 'anser';
+
+// TODO: Remove this workaround once issue is fixed by anser.
+// REF: https://github.com/IonicaBizau/anser/issues/52
+const { ansiToHtml } = (require('anser') as import('anser').default);
 
 export class AnsiConsoleItem implements ConsoleItem {
 
@@ -27,7 +30,7 @@ export class AnsiConsoleItem implements ConsoleItem {
         public readonly content: string,
         public readonly severity?: Severity
     ) {
-        this.htmlContent = Anser.ansiToHtml(this.content, {
+        this.htmlContent = ansiToHtml(this.content, {
             use_classes: true,
             remove_empty: true
         });
