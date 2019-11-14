@@ -18,6 +18,7 @@ import { find, toArray, ArrayExt } from '@phosphor/algorithm';
 import { TabBar, Widget, DockPanel, Title, DockLayout } from '@phosphor/widgets';
 import { Signal } from '@phosphor/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
+import { MessageLoop } from '../widgets';
 
 const MAXIMIZED_CLASS = 'theia-maximized';
 
@@ -140,14 +141,28 @@ export class TheiaDockPanel extends DockPanel {
             this.toDisposeOnToggleMaximized.dispose();
             return;
         }
+        if (this.isAttached) {
+            MessageLoop.sendMessage(this, Widget.Msg.BeforeDetach);
+            this.node.remove();
+            MessageLoop.sendMessage(this, Widget.Msg.AfterDetach);
+        }
         maximizedElement.style.display = 'block';
         this.addClass(MAXIMIZED_CLASS);
+        MessageLoop.sendMessage(this, Widget.Msg.BeforeAttach);
         maximizedElement.appendChild(this.node);
+        MessageLoop.sendMessage(this, Widget.Msg.AfterAttach);
         this.fit();
         this.toDisposeOnToggleMaximized.push(Disposable.create(() => {
             maximizedElement.style.display = 'none';
             this.removeClass(MAXIMIZED_CLASS);
+            if (this.isAttached) {
+                MessageLoop.sendMessage(this, Widget.Msg.BeforeDetach);
+                this.node.remove();
+                MessageLoop.sendMessage(this, Widget.Msg.AfterDetach);
+            }
+            MessageLoop.sendMessage(this, Widget.Msg.BeforeAttach);
             areaContainer.appendChild(this.node);
+            MessageLoop.sendMessage(this, Widget.Msg.AfterAttach);
             this.fit();
         }));
 
