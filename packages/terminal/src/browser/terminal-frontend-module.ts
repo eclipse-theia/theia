@@ -37,6 +37,7 @@ import { TerminalQuickOpenService, TerminalQuickOpenContribution } from './termi
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
+import { TerminalCopyOnSelectionHander } from './terminal-copy-on-selection-handler';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -67,6 +68,7 @@ export default new ContainerModule(bind => {
     }));
 
     bind(TerminalQuickOpenService).toSelf().inSingletonScope();
+    bind(TerminalCopyOnSelectionHander).toSelf().inSingletonScope();
 
     bind(TerminalQuickOpenContribution).toSelf().inSingletonScope();
     for (const identifier of [CommandContribution, QuickOpenContribution]) {
