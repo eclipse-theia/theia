@@ -10,6 +10,29 @@ Breaking changes:
 - [core] renamed preference `list.openMode` to `workbench.list.openMode` [#6481](https://github.com/eclipse-theia/theia/pull/6481)
 - [task] changed `TaskSchemaUpdater.update()` from asynchronous to synchronous [#6483](https://github.com/eclipse-theia/theia/pull/6483)
 - [monaco] monaco prefix has been removed from commands [#5590](https://github.com/eclipse-theia/theia/pull/5590)
+- [plugin] webviews are reimplemented to align with [VS Code browser implementation](https://blog.mattbierner.com/vscode-webview-web-learnings/) [#6465](https://github.com/eclipse-theia/theia/pull/6465)
+  - Security: `vscode.previewHTML` is removed, see https://code.visualstudio.com/updates/v1_33#_removing-the-vscodepreviewhtml-command
+  - Security: Before all webviews were deployed on [the same origin](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy)
+  allowing them to break out and manipulate shared data as cookies, local storage or even start service workers
+  for the main window as well as for each other. Now each webview will be deployed on own origin by default.
+    - Webview origin pattern can be configured with `THEIA_WEBVIEW_EXTERNAL_ENDPOINT` env variable. The default value is `{{uuid}}.webview.{{hostname}}`.
+  Here `{{uuid}}` and `{{hostname}}` are placeholders which get replaced at runtime with proper webview uuid 
+  and [hostname](https://developer.mozilla.org/en-US/docs/Web/API/HTMLHyperlinkElementUtils/hostname) correspondingly.
+    - To switch to unsecure mode as before configure `THEIA_WEBVIEW_EXTERNAL_ENDPOINT` with `{{hostname}}` as a value.
+    You can also drop `{{uuid}}.` prefix, in this case, webviews still will be able to access each other but not the main window.
+  - Remote: Local URIs are resolved by default to the host serving Theia.
+  If you want to resolve to another host or change how remote URIs are constructed then
+  implement [ExternalUriService.resolve](./packages/core/src/browser/external-uri-service.ts) in a frontend module.
+  - Content loading: Webview HTTP endpoint is removed. Content loaded via [WebviewResourceLoader](./packages/plugin-ext/src/main/common/webview-protocol.ts) JSON-RPC service
+  with properly preserved resource URIs. Content is only loaded if it's allowed by WebviewOptions.localResourceRoots, otherwise, the service won't be called.
+  If you want to customize content loading then implement [WebviewResourceLoaderImpl](packages/plugin-ext/src/main/node/webview-resource-loader-impl.ts) in a backend module.
+  - Theming: Theia styles are not applied to webviews anymore
+   instead [VS Code way of styling](https://code.visualstudio.com/api/extension-guides/webview#theming-webview-content) should be used.
+   VS Code color variables also available with `--theia` prefix.
+  - Testing: Webview can work only in secure context because they rely on service workers to load local content and redirect local to remote requests.
+  Most browsers define a page as served from secure context if its url has `https` scheme. For local testing `localhost` is treated as a secure context as well.
+  Unfortunately, it does not work nicely in FireFox, since it does not treat subdomains of localhost as secure as well, compare to Chrome.
+  If you want to test with FireFox you can configure it as described [here](https://github.com/eclipse-theia/theia/pull/6465#issuecomment-556443218).
 
 ## v0.12.0
 
