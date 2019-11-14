@@ -151,7 +151,7 @@ export class ElectronMainMenuFactory {
                     label: node.label,
                     type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
                     checked: this.commandRegistry.isToggled(commandId, ...args),
-                    enabled: true, // https://github.com/eclipse-theia/theia/issues/446
+                    enabled: this.commandRegistry.isEnabled(commandId, ...args), // https://github.com/eclipse-theia/theia/issues/446
                     visible: true,
                     click: () => this.execute(commandId, args),
                     accelerator
