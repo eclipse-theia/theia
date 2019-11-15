@@ -37,7 +37,7 @@ import {
 import { injectable, inject } from 'inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider, RelatedInformation,
-    MarkerSeverity, DocumentLink, WorkspaceSymbolParams
+    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
@@ -672,12 +672,14 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     protected async provideCodeActions(handle: number, model: monaco.editor.ITextModel,
         rangeOrSelection: Range, context: monaco.languages.CodeActionContext,
         token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | monaco.languages.CodeActionList> {
-        const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, context, token);
+        const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, {
+            ...context
+        }, token);
         if (!actions) {
             return undefined!;
         }
         return {
-            actions,
+            actions: actions.map(a => toMonacoAction(a)),
             dispose: () => {
                 // TODO this.proxy.$releaseCodeActions(handle, cacheId);
             }
@@ -795,6 +797,30 @@ function reviveOnEnterRules(onEnterRules?: SerializedOnEnterRule[]): monaco.lang
         return undefined;
     }
     return onEnterRules.map(reviveOnEnterRule);
+}
+
+function toMonacoAction(action: CodeAction): monaco.languages.CodeAction {
+    return {
+        ...action,
+        diagnostics: action.diagnostics ? action.diagnostics.map(m => toMonacoMarkerData(m)) : undefined,
+        edit: action.edit ? toMonacoWorkspaceEdit(action.edit) : undefined
+    };
+}
+
+function toMonacoMarkerData(marker: MarkerData): monaco.editor.IMarkerData {
+    return {
+        ...marker,
+        relatedInformation: marker.relatedInformation
+            ? marker.relatedInformation.map(i => toMonacoRelatedInformation(i))
+            : undefined
+    };
+}
+
+function toMonacoRelatedInformation(relatedInfo: RelatedInformation): monaco.editor.IRelatedInformation {
+    return {
+        ...relatedInfo,
+        resource: monaco.Uri.parse(relatedInfo.resource)
+    };
 }
 
 export function toMonacoWorkspaceEdit(data: WorkspaceEditDto | undefined): monaco.languages.WorkspaceEdit {

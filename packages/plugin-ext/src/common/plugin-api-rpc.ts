@@ -61,7 +61,11 @@ import {
     RenameLocation,
     FileMoveEvent,
     FileWillMoveEvent,
-    SignatureHelpContext
+    SignatureHelpContext,
+    CodeAction,
+    CodeActionContext,
+    FoldingContext,
+    FoldingRange
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1155,18 +1159,18 @@ export interface LanguagesExt {
         handle: number,
         resource: UriComponents,
         rangeOrSelection: Range | Selection,
-        context: monaco.languages.CodeActionContext,
+        context: CodeActionContext,
         token: CancellationToken
-    ): Promise<monaco.languages.CodeAction[] | undefined>;
+    ): Promise<CodeAction[] | undefined>;
     $provideDocumentSymbols(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentSymbol[] | undefined>;
     $provideWorkspaceSymbols(handle: number, query: string, token: CancellationToken): PromiseLike<SymbolInformation[]>;
     $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: CancellationToken): PromiseLike<SymbolInformation>;
     $provideFoldingRange(
         handle: number,
         resource: UriComponents,
-        context: monaco.languages.FoldingContext,
+        context: FoldingContext,
         token: CancellationToken
-    ): PromiseLike<monaco.languages.FoldingRange[] | undefined>;
+    ): PromiseLike<FoldingRange[] | undefined>;
     $provideDocumentColors(handle: number, resource: UriComponents, token: CancellationToken): PromiseLike<RawColorInfo[]>;
     $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo, token: CancellationToken): PromiseLike<ColorPresentation[]>;
     $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string, token: CancellationToken): PromiseLike<WorkspaceEditDto | undefined>;
