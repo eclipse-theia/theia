@@ -102,13 +102,13 @@ export class RawProcess extends Process {
             if (this.isForkOptions(options)) {
                 this.process = fork(
                     options.modulePath,
-                    options.args,
-                    options.options);
+                    options.args || [],
+                    options.options || {});
             } else {
                 this.process = spawn(
                     options.command,
-                    options.args,
-                    options.options);
+                    options.args || [],
+                    options.options || {});
             }
 
             this.process.on('error', (error: NodeJS.ErrnoException) => {
