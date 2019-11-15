@@ -88,7 +88,12 @@ export class QuickOpenExtImpl implements QuickOpenExt {
 
                 return widgetPromise.then(handle => {
                     if (typeof handle === 'number') {
-                        return items[handle];
+                        if (options && options.canPickMany) {
+                            return Array.of(items[handle]);
+                        } else {
+                            return items[handle];
+                        }
+
                     } else if (Array.isArray(handle)) {
                         return handle.map(h => items[h]);
                     }
