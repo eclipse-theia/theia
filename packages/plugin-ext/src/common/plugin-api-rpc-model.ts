@@ -353,14 +353,8 @@ export interface CodeAction {
     kind?: string;
 }
 
-export enum CodeActionTrigger {
-    Automatic = 1,
-    Manual = 2,
-}
-
 export interface CodeActionContext {
     only?: string;
-    trigger: CodeActionTrigger;
 }
 
 export interface CodeActionProvider {
