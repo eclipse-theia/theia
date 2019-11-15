@@ -13,8 +13,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { PLUGIN_RPC_CONTEXT as Ext, OpenDialogOptionsMain, DialogsMain, SaveDialogOptionsMain } from '../common/plugin-api-rpc';
-import { OpenDialogOptions, SaveDialogOptions } from '@theia/plugin';
+import { PLUGIN_RPC_CONTEXT as Ext, OpenDialogOptionsMain, DialogsMain, SaveDialogOptionsMain, UploadDialogOptionsMain } from '../common/plugin-api-rpc';
+import { OpenDialogOptions, SaveDialogOptions, UploadDialogOptions } from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import Uri from 'vscode-uri';
 
@@ -64,6 +64,24 @@ export class DialogsExtImpl {
             this.proxy.$showSaveDialog(optionsMain).then(result => {
                 if (result) {
                     resolve(Uri.parse('file://' + result));
+                } else {
+                    resolve(undefined);
+                }
+            }).catch(reason => {
+                reject(reason);
+            });
+        });
+    }
+
+    showUploadDialog(options: UploadDialogOptions): PromiseLike<Uri[] | undefined> {
+        const optionsMain = {
+            defaultUri: options.defaultUri ? options.defaultUri.path : undefined
+        } as UploadDialogOptionsMain;
+
+        return new Promise((resolve, reject) => {
+            this.proxy.$showUploadDialog(optionsMain).then(result => {
+                if (result) {
+                    resolve(result.map(uri => Uri.parse(uri)));
                 } else {
                     resolve(undefined);
                 }

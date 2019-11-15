@@ -399,6 +399,20 @@ export interface SaveDialogOptionsMain {
 }
 
 /**
+ * Options to configure the behaviour of a file upload dialog.
+ */
+export interface UploadDialogOptionsMain {
+    /**
+     * The resource, where files should be uploaded.
+     */
+    defaultUri?: string;
+}
+
+export interface FileUploadResultMain {
+    uploaded: string[]
+}
+
+/**
  * Options to configure the behaviour of the [workspace folder](#WorkspaceFolder) pick UI.
  */
 export interface WorkspaceFolderPickOptionsMain {
@@ -484,6 +498,7 @@ export interface WorkspaceExt {
 export interface DialogsMain {
     $showOpenDialog(options: OpenDialogOptionsMain): Promise<string[] | undefined>;
     $showSaveDialog(options: SaveDialogOptionsMain): Promise<string | undefined>;
+    $showUploadDialog(options: UploadDialogOptionsMain): Promise<string[] | undefined>;
 }
 
 export interface TreeViewsMain {
