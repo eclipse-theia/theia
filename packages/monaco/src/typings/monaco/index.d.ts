@@ -512,6 +512,10 @@ declare module monaco.services {
         set<T>(id: any, instanceOrDescriptor: T): T;
     }
 
+    export interface IMarkerService {
+        read(filter?: { owner?: string; resource?: monaco.Uri; severities?: number, take?: number; }): editor.IMarkerData[];
+    }
+
     export module StaticServices {
         export function init(overrides: monaco.editor.IEditorOverrideServices): [ServiceCollection, monaco.instantiation.IInstantiationService];
         export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
@@ -520,6 +524,7 @@ declare module monaco.services {
         export const configurationService: LazyStaticService<IConfigurationService>;
         export const resourcePropertiesService: LazyStaticService<ITextResourcePropertiesService>;
         export const instantiationService: LazyStaticService<monaco.instantiation.IInstantiationService>;
+        export const markerService: LazyStaticService<IMarkerService>;
     }
 }
 
@@ -844,6 +849,8 @@ declare module monaco.modes {
     export const DocumentSymbolProviderRegistry: LanguageFeatureRegistry<monaco.languages.DocumentSymbolProvider>;
 
     export const CompletionProviderRegistry: LanguageFeatureRegistry<monaco.languages.CompletionItemProvider>;
+
+    export const CodeActionProviderRegistry: LanguageFeatureRegistry<monaco.languages.CodeActionProvider & { providedCodeActionKinds?: string[] }>;
 }
 
 declare module monaco.suggest {

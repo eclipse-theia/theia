@@ -656,21 +656,22 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }, token);
     }
 
-    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void {
+    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[]): void {
         const languageSelector = fromLanguageSelector(selector);
-        const quickFixProvider = this.createQuickFixProvider(handle, codeActionKinds);
-        this.register(handle, monaco.languages.registerCodeActionProvider(languageSelector, quickFixProvider));
-    }
-
-    protected createQuickFixProvider(handle: number, providedCodeActionKinds?: string[]): monaco.languages.CodeActionProvider {
-        return {
-            provideCodeActions: async (model, rangeOrSelection, monacoContext, token) => this.provideCodeActions(handle, model, rangeOrSelection, monacoContext, token)
+        const quickFixProvider = {
+            provideCodeActions: (model: monaco.editor.ITextModel, range: monaco.Range,
+                context: monaco.languages.CodeActionContext, token: monaco.CancellationToken): monaco.languages.CodeActionList | Promise<monaco.languages.CodeActionList> => {
+                const markers = monaco.services.StaticServices.markerService.get().read({ resource: model.uri }).filter(m => monaco.Range.areIntersectingOrTouching(m, range));
+                return this.provideCodeActions(handle, model, range, { markers, only: context.only }, token);
+            },
+            providedCodeActionKinds
         };
+        this.register(handle, monaco.modes.CodeActionProviderRegistry.register(languageSelector, quickFixProvider));
     }
 
     protected async provideCodeActions(handle: number, model: monaco.editor.ITextModel,
         rangeOrSelection: Range, context: monaco.languages.CodeActionContext,
-        token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | Promise<monaco.languages.CodeActionList>> {
+        token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | monaco.languages.CodeActionList> {
         const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, context, token);
         if (!actions) {
             return undefined!;

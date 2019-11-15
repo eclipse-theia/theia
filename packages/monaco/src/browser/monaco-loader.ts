@@ -69,6 +69,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/configuration/common/configurationModels',
                 'vs/editor/browser/services/codeEditorService',
                 'vs/editor/browser/services/codeEditorServiceImpl',
+                'vs/platform/markers/common/markerService',
                 'vs/platform/contextkey/common/contextkey',
                 'vs/platform/contextkey/browser/contextKeyService',
                 'vs/base/common/errors'
@@ -78,13 +79,15 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 filters: any, styler: any, platform: any, modes: any, suggest: any, snippetParser: any,
                 configuration: any, configurationModels: any,
                 codeEditorService: any, codeEditorServiceImpl: any,
+                markerService: any,
                 contextKey: any, contextKeyService: any,
                 error: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
                     global.monaco.actions = actions;
                     global.monaco.keybindings = Object.assign({}, keybindingsRegistry, keybindingResolver, resolvedKeybinding, keybindingLabels, keyCodes);
-                    global.monaco.services = Object.assign({}, simpleServices, standaloneServices, configuration, configurationModels, codeEditorService, codeEditorServiceImpl);
+                    global.monaco.services = Object.assign({}, simpleServices, standaloneServices, configuration, configurationModels,
+                        codeEditorService, codeEditorServiceImpl, markerService);
                     global.monaco.quickOpen = Object.assign({}, quickOpenWidget, quickOpenModel);
                     global.monaco.filters = filters;
                     global.monaco.theme = styler;
