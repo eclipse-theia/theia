@@ -191,6 +191,7 @@ export class DebugVariable extends ExpressionContainer {
             this.variablesReference = response.body.variablesReference || 0;
             this.namedVariables = response.body.namedVariables;
             this.indexedVariables = response.body.indexedVariables;
+            this.elements = undefined;
             this.session['fireDidChange']();
         } catch (error) {
             console.error(error);
