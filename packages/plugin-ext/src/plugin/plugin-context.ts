@@ -316,6 +316,9 @@ export function createAPIFactory(
             showSaveDialog(options: theia.SaveDialogOptions): PromiseLike<Uri | undefined> {
                 return dialogsExt.showSaveDialog(options);
             },
+            showUploadDialog(options: theia.UploadDialogOptions): PromiseLike<Uri[] | undefined> {
+                return dialogsExt.showUploadDialog(options);
+            },
             // tslint:disable-next-line:no-any
             setStatusBarMessage(text: string, arg?: number | PromiseLike<any>): Disposable {
                 return statusBarMessageRegistryExt.setStatusBarMessage(text, arg);

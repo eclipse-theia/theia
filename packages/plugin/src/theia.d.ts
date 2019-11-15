@@ -2546,6 +2546,17 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Options to configure the behaviour of a file upload dialog.
+     */
+    export interface UploadDialogOptions {
+
+        /**
+         * The resource, where files should be uploaded.
+         */
+        defaultUri?: Uri;
+    }
+
+    /**
      * Definition of the terminal emulator.
      */
     export interface Terminal {
@@ -3322,6 +3333,15 @@ declare module '@theia/plugin' {
          * @returns A promise that resolves to the selected resource or `undefined`.
          */
         export function showSaveDialog(options: SaveDialogOptions): PromiseLike<Uri | undefined>;
+
+        /**
+         * Shows a file upload dialog to the user which allows to upload files
+         * for various purposes.
+         * 
+         * @param options Options, that control the dialog.
+         * @returns A promise that resolves the paths of uploaded files or `undefined`.
+         */
+        export function showUploadDialog(options: UploadDialogOptions): PromiseLike<Uri[] | undefined>;
 
         /**
          * Create and show a new webview panel.
