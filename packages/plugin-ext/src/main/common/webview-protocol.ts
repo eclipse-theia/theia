@@ -28,14 +28,21 @@ export namespace WebviewExternalEndpoint {
 
 export interface LoadWebviewResourceParams {
     uri: string
+    eTag?: string
 }
 
 export interface LoadWebviewResourceResult {
     buffer: number[]
+    eTag: string
 }
 
 export const WebviewResourceLoader = Symbol('WebviewResourceLoader');
 export interface WebviewResourceLoader {
-    load(params: LoadWebviewResourceParams): Promise<LoadWebviewResourceResult>
+    /**
+     * Loads initial webview resource data.
+     * Returns `undefined` if a resource has not beed modified.
+     * Throws if a resource cannot be loaded.
+     */
+    load(params: LoadWebviewResourceParams): Promise<LoadWebviewResourceResult | undefined>
 }
 export const WebviewResourceLoaderPath = '/services/webview-resource-loader';

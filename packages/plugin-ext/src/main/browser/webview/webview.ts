@@ -46,6 +46,8 @@ import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service
 import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
 import { WebviewPreferences } from './webview-preferences';
 import { WebviewResourceLoader } from '../../common/webview-protocol';
+import { WebviewResourceCache } from './webview-resource-cache';
+import { Endpoint } from '@theia/core/lib/browser/endpoint';
 
 // tslint:disable:no-any
 
@@ -130,6 +132,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     @inject(WebviewResourceLoader)
     protected readonly resourceLoader: WebviewResourceLoader;
+
+    @inject(WebviewResourceCache)
+    protected readonly resourceCache: WebviewResourceCache;
 
     viewState: WebviewPanelViewState = {
         visible: false,
@@ -420,27 +425,39 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected async loadResource(requestPath: string, uri: URI): Promise<void> {
-        try {
-            const normalizedUri = this.normalizeRequestUri(uri);
+        const normalizedUri = this.normalizeRequestUri(uri);
+        // browser cache does not suppot file scheme, normalize to current endpoint scheme and host
+        const cacheUrl = new Endpoint({ path: normalizedUri.path.toString() }).getRestUrl().toString();
 
+        try {
             if (this.contentOptions.localResourceRoots) {
                 for (const root of this.contentOptions.localResourceRoots) {
                     if (!new URI(root).path.isEqualOrParent(normalizedUri.path)) {
                         continue;
                     }
-                    const { buffer } = await this.resourceLoader.load({ uri: normalizedUri.toString() });
-                    return this.doSend('did-load-resource', {
-                        status: 200,
-                        path: requestPath,
-                        mime: mime.getType(normalizedUri.path.toString()) || 'application/octet-stream',
-                        data: new Uint8Array(buffer)
-                    });
+                    let cached = await this.resourceCache.match(cacheUrl);
+                    const response = await this.resourceLoader.load({ uri: normalizedUri.toString(), eTag: cached && cached.eTag });
+                    if (response) {
+                        const { buffer, eTag } = response;
+                        cached = { body: () => new Uint8Array(buffer), eTag: eTag };
+                        this.resourceCache.put(cacheUrl, cached);
+                    }
+                    if (cached) {
+                        const data = await cached.body();
+                        return this.doSend('did-load-resource', {
+                            status: 200,
+                            path: requestPath,
+                            mime: mime.getType(normalizedUri.path.toString()) || 'application/octet-stream',
+                            data
+                        });
+                    }
                 }
             }
         } catch {
             // no-op
         }
 
+        this.resourceCache.delete(cacheUrl);
         return this.doSend('did-load-resource', {
             status: 404,
             path: requestPath

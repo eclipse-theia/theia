@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import * as fs from 'fs-extra';
+import * as crypto from 'crypto';
 import { injectable } from 'inversify';
 import { WebviewResourceLoader, LoadWebviewResourceParams, LoadWebviewResourceResult } from '../common/webview-protocol';
 import { FileUri } from '@theia/core/lib/node/file-uri';
@@ -22,9 +23,21 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 @injectable()
 export class WebviewResourceLoaderImpl implements WebviewResourceLoader {
 
-    async load(params: LoadWebviewResourceParams): Promise<LoadWebviewResourceResult> {
+    async load(params: LoadWebviewResourceParams): Promise<LoadWebviewResourceResult | undefined> {
+        const fsPath = FileUri.fsPath(params.uri);
+        const stat = await fs.stat(fsPath);
+        const eTag = this.compileETag(fsPath, stat);
+        if ('eTag' in params && params.eTag === eTag) {
+            return undefined;
+        }
         const buffer = await fs.readFile(FileUri.fsPath(params.uri));
-        return { buffer: buffer.toJSON().data };
+        return { buffer: buffer.toJSON().data, eTag };
+    }
+
+    protected compileETag(fsPath: string, stat: fs.Stats): string {
+        return crypto.createHash('md5')
+            .update(fsPath + stat.mtime.getTime() + stat.size, 'utf8')
+            .digest('base64');
     }
 
 }
