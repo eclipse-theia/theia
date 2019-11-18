@@ -193,7 +193,7 @@ export class LanguagesMainPluginMetrics extends LanguagesMainImpl {
 
     protected async provideCodeActions(handle: number, model: monaco.editor.ITextModel,
         rangeOrSelection: Range, context: monaco.languages.CodeActionContext,
-        token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | Promise<monaco.languages.CodeActionList>> {
+        token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | monaco.languages.CodeActionList> {
         return this.pluginMetricsResolver.resolveRequest(this.handleToExtensionName(handle),
             vst.CodeActionRequest.type.method,
             super.provideCodeActions(handle, model, rangeOrSelection, context, token));
