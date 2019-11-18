@@ -32,7 +32,7 @@ export class HttpOpenHandler implements OpenHandler {
     protected readonly externalUriService: ExternalUriService;
 
     canHandle(uri: URI): number {
-        return uri.scheme.startsWith('http') ? 500 : 0;
+        return (uri.scheme.startsWith('http') || uri.scheme.startsWith('mailto')) ? 500 : 0;
     }
 
     async open(uri: URI): Promise<Window | undefined> {
