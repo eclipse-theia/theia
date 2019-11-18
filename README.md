@@ -11,6 +11,7 @@
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/help%20wanted)
   [![Spectrum](https://img.shields.io/badge/Chat-on%20Spectrum-blue.svg)](https://spectrum.chat/theia)
   [![Build Status](https://travis-ci.com/eclipse-theia/theia.svg?branch=master)](https://travis-ci.com/eclipse-theia/theia)
+  [![Publish VS Code Built-in Extensions](https://github.com/theia-ide/vscode-builtin-extensions/workflows/publish-vscode-built-in-extensions/badge.svg)](https://github.com/theia-ide/vscode-builtin-extensions/actions)
   [![Open questions](https://img.shields.io/badge/Open-questions-blue.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/question)
   [![Open bugs](https://img.shields.io/badge/Open-bugs-red.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/bug)
 
