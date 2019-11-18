@@ -55,6 +55,9 @@ export class TaskSchemaUpdater {
 
     update(): void {
         const taskSchemaUri = new URI(taskSchemaId);
+
+        taskConfigurationSchema.oneOf = [processTaskConfigurationSchema, ...customizedDetectedTasks, ...customSchemas];
+
         const schemaContent = this.getStrigifiedTaskSchema();
         try {
             this.inmemoryResources.update(taskSchemaUri, schemaContent);
@@ -65,6 +68,50 @@ export class TaskSchemaUpdater {
                 url: taskSchemaUri.toString()
             });
         }
+    }
+
+    /**
+     * Adds given task schema to `taskConfigurationSchema` as `oneOf` subschema.
+     * Replaces existed subschema by given schema if the corrresponding `$id` properties are equal.
+     *
+     * Note: please provide `$id` property for subschema to have ability remove/replace it.
+     * @param schema subschema for adding to `taskConfigurationSchema`
+     */
+    addSubschema(schema: IJSONSchema): void {
+        const schemaId = schema.$id;
+        if (schemaId) {
+            this.doRemoveSubschema(schemaId);
+        }
+
+        customSchemas.push(schema);
+        this.update();
+    }
+
+    /**
+     * Removes task subschema from `taskConfigurationSchema`.
+     *
+     * @param arg `$id` property of subschema
+     */
+    removeSubschema(arg: string): void {
+        const isRemoved = this.doRemoveSubschema(arg);
+        if (isRemoved) {
+            this.update();
+        }
+    }
+
+    /**
+     * Removes task subschema from `customSchemas`, use `update()` to apply the changes for `taskConfigurationSchema`.
+     *
+     * @param arg `$id` property of subschema
+     * @returns `true` if subschema was removed, `false` otherwise
+     */
+    protected doRemoveSubschema(arg: string): boolean {
+        const index = customSchemas.findIndex(existed => !!existed.$id && existed.$id === arg);
+        if (index > -1) {
+            customSchemas.splice(index, 1);
+            return true;
+        }
+        return false;
     }
 
     /** Returns an array of task types that are registered, including the default types */
@@ -103,9 +150,6 @@ export class TaskSchemaUpdater {
             customizedDetectedTask.additionalProperties = true;
             customizedDetectedTasks.push(customizedDetectedTask);
         });
-
-        taskConfigurationSchema.oneOf!.length = 1;
-        taskConfigurationSchema.oneOf!.push(...customizedDetectedTasks);
     }
 
     /** Returns the task's JSON schema */
@@ -301,8 +345,9 @@ const processTaskConfigurationSchema: IJSONSchema = {
 };
 
 const customizedDetectedTasks: IJSONSchema[] = [];
+const customSchemas: IJSONSchema[] = [];
 
 const taskConfigurationSchema: IJSONSchema = {
     $id: taskSchemaId,
-    oneOf: [processTaskConfigurationSchema, ...customizedDetectedTasks]
+    oneOf: [processTaskConfigurationSchema, ...customizedDetectedTasks, ...customSchemas]
 };
