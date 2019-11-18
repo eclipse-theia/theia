@@ -199,11 +199,16 @@ export class WebviewWidget extends BaseWidget {
     }
 
     protected onBeforeHide(msg: Message): void {
+        console.log('onBeforeHide');
         // persist scrolling
-        if (this.iframe.contentWindow) {
-            this.scrollY = this.iframe.contentWindow.scrollY;
+        try {
+            if (this.iframe.contentWindow) {
+                this.scrollY = this.iframe.contentWindow.scrollY;
+            }
+            super.onBeforeHide(msg);
+        } catch (e) {
+            console.log('onBeforeHide caused exception!!!', e);
         }
-        super.onBeforeHide(msg);
     }
 
     public reloadFrame(): void {
