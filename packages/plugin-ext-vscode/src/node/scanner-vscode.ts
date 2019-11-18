@@ -28,11 +28,6 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
     }
 
     getModel(plugin: PluginPackage): PluginModel {
-        // translate vscode builtins, as they are published with a prefix. See https://github.com/theia-ide/vscode-builtin-extensions/blob/master/src/republish.js#L50
-        const built_prefix = '@theia/vscode-builtin-';
-        if (plugin && plugin.name && plugin.name.startsWith(built_prefix)) {
-            plugin.name = plugin.name.substr(built_prefix.length);
-        }
         const result: PluginModel = {
             packagePath: plugin.packagePath,
             // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
