@@ -54,33 +54,6 @@ export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIF
         return registerCommand(command, handler, thisArg);
     };
 
-    // replace createWebviewPanel API for override html setter
-    const createWebviewPanel = vscode.window.createWebviewPanel;
-    vscode.window.createWebviewPanel = function (viewType: string, title: string, showOptions: any, options: any | undefined): any {
-        const panel = createWebviewPanel(viewType, title, showOptions, options);
-        // redefine property
-        Object.defineProperty(panel.webview, 'html', {
-            set: function (html: string): void {
-                const newHtml = html.replace(new RegExp('vscode-resource:/', 'g'), 'theia-resource:/');
-                this.checkIsDisposed();
-                if (this._html !== newHtml) {
-                    this._html = newHtml;
-                    this.proxy.$setHtml(this.viewId, newHtml);
-                }
-            }
-        });
-
-        // override postMessage method to replace vscode-resource:
-        const originalPostMessage = panel.webview.postMessage;
-        panel.webview.postMessage = (message: any): PromiseLike<boolean> => {
-            const decoded = JSON.stringify(message);
-            const newMessage = decoded.replace(new RegExp('vscode-resource:/', 'g'), 'theia-resource:/');
-            return originalPostMessage.call(panel.webview, JSON.parse(newMessage));
-        };
-
-        return panel;
-    };
-
     // use Theia plugin api instead vscode extensions
     (<any>vscode).extensions = {
         get all(): any[] {
