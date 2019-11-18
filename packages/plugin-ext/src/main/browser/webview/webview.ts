@@ -371,7 +371,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected preprocessHtml(value: string): string {
         return value
-            .replace(/(["'])theia-resource:(\/\/([^\s\/'"]+?)(?=\/))?([^\s'"]+?)(["'])/gi, (_, startQuote, _1, scheme, path, endQuote) => {
+            .replace(/(["'])(?:vscode|theia)-resource:(\/\/([^\s\/'"]+?)(?=\/))?([^\s'"]+?)(["'])/gi, (_, startQuote, _1, scheme, path, endQuote) => {
                 if (scheme) {
                     return `${startQuote}${this.externalEndpoint}/theia-resource/${scheme}${path}${endQuote}`;
                 }
@@ -465,7 +465,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected normalizeRequestUri(requestUri: URI): URI {
-        if (requestUri.scheme !== 'theia-resource') {
+        if (requestUri.scheme !== 'theia-resource' && requestUri.scheme !== 'vscode-resource') {
             return requestUri;
         }
 

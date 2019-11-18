@@ -18,6 +18,7 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/ba40bd16433d5a817bfae15f3b4350e18f144af4/src/vs/workbench/contrib/webview/browser/pre/service-worker.js
+// @ts-check
 const VERSION = 1;
 
 const rootPath = self.location.pathname.replace(/\/service-worker.js$/, '');
@@ -25,7 +26,7 @@ const rootPath = self.location.pathname.replace(/\/service-worker.js$/, '');
 /**
  * Root path for resources
  */
-const resourceRoot = rootPath + '/theia-resource';
+const resourceRoots = [rootPath + '/theia-resource', rootPath + '/vscode-resource'];
 
 const resolveTimeout = 30000;
 
@@ -170,9 +171,11 @@ self.addEventListener('message', async (event) => {
 self.addEventListener('fetch', (event) => {
     const requestUrl = new URL(event.request.url);
 
-    // See if it's a resource request
-    if (requestUrl.origin === self.origin && requestUrl.pathname.startsWith(resourceRoot + '/')) {
-        return event.respondWith(processResourceRequest(event, requestUrl));
+    for (const resourceRoot of resourceRoots) {
+        // See if it's a resource request
+        if (requestUrl.origin === self.origin && requestUrl.pathname.startsWith(resourceRoot + '/')) {
+            return event.respondWith(processResourceRequest(event, requestUrl, resourceRoot));
+        }
     }
 
     // See if it's a localhost request
@@ -189,7 +192,7 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(self.clients.claim()); // Become available to all pages
 });
 
-async function processResourceRequest(event, requestUrl) {
+async function processResourceRequest(event, requestUrl, resourceRoot) {
     const client = await self.clients.get(event.clientId);
     if (!client) {
         console.error('Could not find inner client for request');
