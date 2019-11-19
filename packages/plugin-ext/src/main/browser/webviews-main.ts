@@ -77,6 +77,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
     protected hookWebview(view: WebviewWidget): void {
         const handle = view.identifier.id;
+        this.toDispose.push(view.onDidChangeVisibility(() => this.updateViewState(view)));
         this.toDispose.push(view.onMessage(data => this.proxy.$onMessage(handle, data)));
         view.disposed.connect(() => {
             if (this.toDispose.disposed) {
@@ -206,9 +207,8 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
         const options = widget.options;
         const { allowScripts, localResourceRoots, ...contentOptions } = widget.contentOptions;
-        this.viewColumnService.updateViewColumns();
-        const position = this.viewColumnService.getViewColumn(widget.id) || 0;
-        await this.proxy.$deserializeWebviewPanel(handle, widget.viewType, title, state, position, {
+        this.updateViewState(widget);
+        await this.proxy.$deserializeWebviewPanel(handle, widget.viewType, title, state, widget.viewState, {
             enableScripts: allowScripts,
             localResourceRoots: localResourceRoots && localResourceRoots.map(root => URI.parse(root)),
             ...contentOptions,
@@ -224,7 +224,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         }
     }, 100);
 
-    private async updateViewState(widget: WebviewWidget, viewColumn?: number | undefined): Promise<void> {
+    private updateViewState(widget: WebviewWidget, viewColumn?: number | undefined): void {
         const viewState: Mutable<WebviewPanelViewState> = {
             active: this.shell.activeWidget === widget,
             visible: !widget.isHidden,

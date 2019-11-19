@@ -1239,7 +1239,7 @@ export interface WebviewsExt {
         viewType: string,
         title: string,
         state: any,
-        position: number,
+        viewState: WebviewPanelViewState,
         options: theia.WebviewOptions & theia.WebviewPanelOptions): PromiseLike<void>;
 }
 

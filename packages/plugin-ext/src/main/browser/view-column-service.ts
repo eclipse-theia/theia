@@ -18,6 +18,7 @@ import { injectable, inject } from 'inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { toArray } from '@phosphor/algorithm';
+import { TabBar, Widget } from '@phosphor/widgets';
 
 @injectable()
 export class ViewColumnService {
@@ -51,26 +52,59 @@ export class ViewColumnService {
     }
 
     updateViewColumns(): void {
-        const positionIds = new Map<number, string[]>();
-        toArray(this.shell.mainPanel.tabBars()).forEach(tabBar => {
-            if (!tabBar.node.style.left) {
-                return;
-            }
-            const position = parseInt(tabBar.node.style.left);
-            const viewColumnIds = tabBar.titles.map(title => title.owner.id);
-            positionIds.set(position, viewColumnIds);
-        });
         this.columnValues.clear();
         this.viewColumnIds.clear();
-        [...positionIds.keys()].sort((a, b) => a - b).forEach((key: number, viewColumn: number) => {
-            positionIds.get(key)!.forEach((id: string) => {
-                this.columnValues.set(id, viewColumn);
-                if (!this.viewColumnIds.has(viewColumn)) {
-                    this.viewColumnIds.set(viewColumn, []);
+
+        const rows = new Map<number, Set<number>>();
+        const columns = new Map<number, Map<number, TabBar<Widget>>>();
+        for (const tabBar of toArray(this.shell.mainPanel.tabBars())) {
+            if (!tabBar.node.style.top || !tabBar.node.style.left) {
+                continue;
+            }
+            const top = parseInt(tabBar.node.style.top);
+            const left = parseInt(tabBar.node.style.left);
+
+            const row = rows.get(top) || new Set<number>();
+            row.add(left);
+            rows.set(top, row);
+
+            const column = columns.get(left) || new Map<number, TabBar<Widget>>();
+            column.set(top, tabBar);
+            columns.set(left, column);
+        }
+        const firstRow = rows.get([...rows.keys()].sort()[0]);
+        if (!firstRow) {
+            return;
+        }
+        const lefts = [...firstRow.keys()].sort();
+        for (let i = 0; i < lefts.length; i++) {
+            const column = columns.get(lefts[i]);
+            if (!column) {
+                break;
+            }
+            const cellIndexes = [...column.keys()].sort();
+            let viewColumn = Math.min(i, 2);
+            for (let j = 0; j < cellIndexes.length; j++) {
+                const cell = column.get(cellIndexes[j]);
+                if (!cell) {
+                    break;
                 }
-                this.viewColumnIds.get(viewColumn)!.push(id);
-            });
-        });
+                this.setViewColumn(cell, viewColumn);
+                if (viewColumn < 7) {
+                    viewColumn += 3;
+                }
+            }
+        }
+    }
+
+    protected setViewColumn(tabBar: TabBar<Widget>, viewColumn: number): void {
+        const ids = [];
+        for (const title of tabBar.titles) {
+            const id = title.owner.id;
+            ids.push(id);
+            this.columnValues.set(id, viewColumn);
+        }
+        this.viewColumnIds.set(viewColumn, ids);
     }
 
     getViewColumnIds(viewColumn: number): string[] {
