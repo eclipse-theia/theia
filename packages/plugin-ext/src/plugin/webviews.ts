@@ -78,7 +78,7 @@ export class WebviewsExtImpl implements WebviewsExt {
         title: string,
         // tslint:disable-next-line:no-any
         state: any,
-        position: number,
+        viewState: WebviewPanelViewState,
         options: theia.WebviewOptions & theia.WebviewPanelOptions): PromiseLike<void> {
         if (!this.initData) {
             return Promise.reject(new Error('Webviews are not initialized'));
@@ -90,7 +90,9 @@ export class WebviewsExtImpl implements WebviewsExt {
         const { serializer, plugin } = entry;
 
         const webview = new WebviewImpl(viewId, this.proxy, options, this.initData, this.workspace, plugin);
-        const revivedPanel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, toViewColumn(position)!, options, webview);
+        const revivedPanel = new WebviewPanelImpl(viewId, this.proxy, viewType, title, toViewColumn(viewState.position)!, options, webview);
+        revivedPanel.setActive(viewState.active);
+        revivedPanel.setVisible(viewState.visible);
         this.webviewPanels.set(viewId, revivedPanel);
         return serializer.deserializeWebviewPanel(revivedPanel, state);
     }
@@ -254,7 +256,6 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         private readonly _webview: WebviewImpl
     ) {
         this._showOptions = typeof showOptions === 'object' ? showOptions : { viewColumn: showOptions as theia.ViewColumn };
-        this.setViewColumn(undefined);
     }
 
     dispose(): void {
