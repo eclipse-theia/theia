@@ -272,12 +272,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             /* no-op: webview loses focus only if another element gains focus in the main window */
         }));
         this.toHide.push(this.on(WebviewMessageChannels.doReload, () => this.reload()));
-        this.toHide.push(this.on(WebviewMessageChannels.loadResource, (entry: any) => {
-            const rawPath = entry.path;
-            const normalizedPath = decodeURIComponent(rawPath);
-            const uri = new URI(normalizedPath.replace(/^\/(\w+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
-            this.loadResource(rawPath, uri);
-        }));
+        this.toHide.push(this.on(WebviewMessageChannels.loadResource, (entry: any) => this.loadResource(entry.path)));
         this.toHide.push(this.on(WebviewMessageChannels.loadLocalhost, (entry: any) =>
             this.loadLocalhost(entry.origin)
         ));
@@ -412,20 +407,30 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected openLink(link: URI): void {
-        if (this.isSupportedLink(link)) {
-            open(this.openerService, link);
+        const supported = this.toSupportedLink(link);
+        if (supported) {
+            open(this.openerService, supported);
         }
     }
 
-    protected isSupportedLink(link: URI): boolean {
+    protected toSupportedLink(link: URI): URI | undefined {
         if (WebviewWidget.standardSupportedLinkSchemes.has(link.scheme)) {
-            return true;
+            const linkAsString = link.toString();
+            for (const resourceRoot of [this.externalEndpoint + '/theia-resource', this.externalEndpoint + '/vscode-resource']) {
+                if (linkAsString.startsWith(resourceRoot + '/')) {
+                    return this.normalizeRequestUri(linkAsString.substr(resourceRoot.length));
+                }
+            }
+            return link;
         }
-        return !!this.contentOptions.enableCommandUris && link.scheme === Schemes.COMMAND;
+        if (!!this.contentOptions.enableCommandUris && link.scheme === Schemes.COMMAND) {
+            return link;
+        }
+        return undefined;
     }
 
-    protected async loadResource(requestPath: string, uri: URI): Promise<void> {
-        const normalizedUri = this.normalizeRequestUri(uri);
+    protected async loadResource(requestPath: string): Promise<void> {
+        const normalizedUri = this.normalizeRequestUri(requestPath);
         // browser cache does not suppot file scheme, normalize to current endpoint scheme and host
         const cacheUrl = new Endpoint({ path: normalizedUri.path.toString() }).getRestUrl().toString();
 
@@ -464,7 +469,9 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         });
     }
 
-    protected normalizeRequestUri(requestUri: URI): URI {
+    protected normalizeRequestUri(requestPath: string): URI {
+        const normalizedPath = decodeURIComponent(requestPath);
+        const requestUri = new URI(normalizedPath.replace(/^\/(\w+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
         if (requestUri.scheme !== 'theia-resource' && requestUri.scheme !== 'vscode-resource') {
             return requestUri;
         }
