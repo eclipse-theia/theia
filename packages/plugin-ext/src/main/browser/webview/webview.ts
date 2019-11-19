@@ -33,7 +33,7 @@ export interface WebviewEvents {
 
 export class WebviewWidget extends BaseWidget {
     private static readonly ID = new IdGenerator('webview-widget-');
-    private iframe: HTMLIFrameElement;
+    private iframe: HTMLIFrameElement | undefined;
     private state: { [key: string]: any } | undefined = undefined;
     private loadTimeout: number | undefined;
     private scrollY: number;
@@ -60,12 +60,12 @@ export class WebviewWidget extends BaseWidget {
         this.node.appendChild(this.transparentOverlay);
 
         this.toDispose.push(this.mouseTracker.onMousedown(e => {
-            if (this.iframe.style.display !== 'none') {
+            if (this.iframe!.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'block';
             }
         }));
         this.toDispose.push(this.mouseTracker.onMouseup(e => {
-            if (this.iframe.style.display !== 'none') {
+            if (this.iframe!.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'none';
             }
         }));
@@ -84,7 +84,7 @@ export class WebviewWidget extends BaseWidget {
     async postMessage(message: any): Promise<void> {
         // wait message can be delivered
         await this.waitReadyToReceiveMessage();
-        this.iframe.contentWindow!.postMessage(message, '*');
+        this.iframe!.contentWindow!.postMessage(message, '*');
     }
 
     setOptions(options: WebviewWidgetOptions): void {
@@ -186,7 +186,7 @@ export class WebviewWidget extends BaseWidget {
         super.onActivateRequest(msg);
         // restore scrolling if there was one
         if (this.scrollY > 0) {
-            this.iframe.contentWindow!.scrollTo({ top: this.scrollY });
+            this.iframe!.contentWindow!.scrollTo({ top: this.scrollY });
         }
         this.node.focus();
         // unblock messages
@@ -200,7 +200,7 @@ export class WebviewWidget extends BaseWidget {
 
     protected onBeforeHide(msg: Message): void {
         // persist scrolling
-        if (this.iframe.contentWindow) {
+        if (this.iframe && this.iframe.contentWindow) {
             this.scrollY = this.iframe.contentWindow.scrollY;
         }
         super.onBeforeHide(msg);
