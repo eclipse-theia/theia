@@ -26,7 +26,7 @@ export class PluginMetricsCreator {
 
     private _extensionIDAnalytics: MetricsMap;
 
-    private NODE_BASED_REGEX = /(?<=Request)(.*?)(?=failed)/;
+    private NODE_BASED_REGEX = /Request(.*?)failed/;
 
     constructor() {
         this.setPluginMetrics();
@@ -182,9 +182,8 @@ export class PluginMetricsCreator {
         }
         const matches = errorContents.match(this.NODE_BASED_REGEX);
         if (matches) {
-            return matches[0].trim();
+            return matches[1].trim();
         }
         return undefined;
     }
-
 }
