@@ -30,12 +30,6 @@
     display: flex;
 }
 
-.noWrapInfo {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 .row {
     width: 100%;
 }

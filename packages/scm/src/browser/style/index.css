@@ -32,10 +32,7 @@
 
 .theia-scm .noWrapInfo {
     width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
     align-items: center;
-    text-overflow: ellipsis;
 }
 
 .theia-scm .space-between {
