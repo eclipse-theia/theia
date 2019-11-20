@@ -263,10 +263,7 @@
     background: var(--theia-word-highlight-replace-color0);
 }
 
-.noWrapInfo {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.t-siw-search-container .noWrapInfo {
     width: 100%;
 }
 
