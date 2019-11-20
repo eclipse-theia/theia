@@ -455,6 +455,10 @@ export class KeybindingWidget extends ReactWidget {
         const items: KeybindingItem[] = [];
         // Build the keybinding items.
         for (let i = 0; i < commands.length; i++) {
+            // Skip internal commands prefixed by `_`.
+            if (commands[i].id.startsWith('_')) {
+                continue;
+            }
             // Obtain the keybinding for the given command.
             const keybindings = this.keybindingRegistry.getKeybindingsForCommand(commands[i].id);
             const item: KeybindingItem = {
