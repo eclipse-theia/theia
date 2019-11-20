@@ -85,6 +85,7 @@ export abstract class Process {
     readonly id: number;
     protected readonly startEmitter: Emitter<IProcessStartEvent> = new Emitter<IProcessStartEvent>();
     protected readonly exitEmitter: Emitter<IProcessExitEvent> = new Emitter<IProcessExitEvent>();
+    protected readonly closeEmitter: Emitter<IProcessExitEvent> = new Emitter<IProcessExitEvent>();
     protected readonly errorEmitter: Emitter<ProcessErrorEvent> = new Emitter<ProcessErrorEvent>();
     protected _killed = false;
 
@@ -128,12 +129,22 @@ export abstract class Process {
         return this.startEmitter.event;
     }
 
+    /**
+     * Wait for the process to exit, streams can still emit data.
+     */
     get onExit(): Event<IProcessExitEvent> {
         return this.exitEmitter.event;
     }
 
     get onError(): Event<ProcessErrorEvent> {
         return this.errorEmitter.event;
+    }
+
+    /**
+     * Waits for both process exit and for all the streams to be closed.
+     */
+    get onClose(): Event<IProcessExitEvent> {
+        return this.closeEmitter.event;
     }
 
     protected emitOnStarted(): void {
@@ -148,6 +159,14 @@ export abstract class Process {
         const exitEvent: IProcessExitEvent = { code, signal };
         this.handleOnExit(exitEvent);
         this.exitEmitter.fire(exitEvent);
+    }
+
+    /**
+     * Emit the onClose event for this process.  Only one of code and signal
+     * should be defined.
+     */
+    protected emitOnClose(code?: number, signal?: string): void {
+        this.closeEmitter.fire({ code, signal });
     }
 
     protected handleOnExit(event: IProcessExitEvent): void {

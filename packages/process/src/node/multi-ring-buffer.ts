@@ -44,6 +44,14 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
         this.deq(size);
     }
 
+    _destroy(err: Error | undefined, callback: (err?: Error) => void): void {
+        this.ringBuffer.closeStream(this);
+        this.ringBuffer.closeReader(this.reader);
+        this.disposed = true;
+        this.removeAllListeners();
+        callback(err);
+    }
+
     onData(): void {
         if (this.more === true) {
             this.deq(-1);
@@ -66,10 +74,7 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
     }
 
     dispose(): void {
-        this.ringBuffer.closeStream(this);
-        this.ringBuffer.closeReader(this.reader);
-        this.disposed = true;
-        this.removeAllListeners();
+        this.destroy();
     }
 }
 
@@ -82,7 +87,7 @@ export interface MultiRingBufferOptions {
 export interface WrappedPosition { newPos: number, wrap: boolean }
 
 @injectable()
-export class MultiRingBuffer {
+export class MultiRingBuffer implements Disposable {
 
     protected readonly buffer: Buffer;
     protected head: number = -1;
@@ -274,6 +279,15 @@ export class MultiRingBuffer {
 
     readersSize(): number {
         return this.readers.size;
+    }
+
+    /**
+     * Dispose all the attached readers/streams.
+     */
+    dispose(): void {
+        for (const astream of this.streams.keys()) {
+            astream.dispose();
+        }
     }
 
     /* Position should be incremented if it goes pass end.  */

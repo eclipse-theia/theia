@@ -115,18 +115,29 @@ export class RawProcess extends Process {
                 error.code = error.code || 'Unknown error';
                 this.emitOnError(error as ProcessErrorEvent);
             });
-            this.process.on('exit', (exitCode: number, signal: string) => {
+
+            // When no stdio option is passed, it is null by default.
+            this.outputStream = this.process.stdout || new DevNullStream({ autoDestroy: true });
+            this.inputStream = this.process.stdin || new DevNullStream({ autoDestroy: true });
+            this.errorStream = this.process.stderr || new DevNullStream({ autoDestroy: true });
+
+            this.process.on('exit', (exitCode, signal) => {
                 // node's child_process exit sets the unused parameter to null,
                 // but we want it to be undefined instead.
                 this.emitOnExit(
-                    exitCode !== null ? exitCode : undefined,
-                    signal !== null ? signal : undefined,
+                    typeof exitCode === 'number' ? exitCode : undefined,
+                    typeof signal === 'string' ? signal : undefined,
                 );
             });
 
-            this.outputStream = this.process.stdout || new DevNullStream();
-            this.inputStream = this.process.stdin || new DevNullStream();
-            this.errorStream = this.process.stderr || new DevNullStream();
+            this.process.on('close', (exitCode, signal) => {
+                // node's child_process exit sets the unused parameter to null,
+                // but we want it to be undefined instead.
+                this.emitOnClose(
+                    typeof exitCode === 'number' ? exitCode : undefined,
+                    typeof signal === 'string' ? signal : undefined,
+                );
+            });
 
             if (this.process.pid !== undefined) {
                 process.nextTick(this.emitOnStarted.bind(this));
@@ -134,9 +145,9 @@ export class RawProcess extends Process {
         } catch (error) {
             /* When an error is thrown, set up some fake streams, so the client
                code doesn't break because these field are undefined.  */
-            this.outputStream = new DevNullStream();
-            this.inputStream = new DevNullStream();
-            this.errorStream = new DevNullStream();
+            this.outputStream = new DevNullStream({ autoDestroy: true });
+            this.inputStream = new DevNullStream({ autoDestroy: true });
+            this.errorStream = new DevNullStream({ autoDestroy: true });
 
             /* Call the client error handler, but first give them a chance to register it.  */
             this.emitOnErrorAsync(error);

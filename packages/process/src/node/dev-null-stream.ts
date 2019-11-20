@@ -22,6 +22,19 @@ import stream = require('stream');
  * Writing goes to a black hole, reading returns `EOF`.
  */
 export class DevNullStream extends stream.Duplex {
+
+    constructor(options: {
+        /**
+         * Makes this stream call `destroy` on itself, emitting the `close` event.
+         */
+        autoDestroy?: boolean,
+    } = {}) {
+        super();
+        if (options.autoDestroy) {
+            this.destroy();
+        }
+    }
+
     // tslint:disable-next-line:no-any
     _write(chunk: any, encoding: string, callback: (err?: Error) => void): void {
         callback();

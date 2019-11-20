@@ -64,7 +64,7 @@ export class ProcessTask extends Task {
     ) {
         super(taskManager, logger, options);
 
-        const toDispose = this.process.onExit(async event => {
+        const toDispose = this.process.onClose(async event => {
             toDispose.dispose();
             this.fireTaskExited(await this.getTaskExitedEvent(event));
         });
@@ -100,7 +100,7 @@ export class ProcessTask extends Task {
             if (this.process.killed) {
                 resolve();
             } else {
-                const toDispose = this.process.onExit(event => {
+                const toDispose = this.process.onClose(event => {
                     toDispose.dispose();
                     resolve();
                 });
