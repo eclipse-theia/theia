@@ -21,6 +21,8 @@ import * as chai from 'chai';
 const expect = chai.expect;
 let commandRegistry: CommandRegistry;
 
+/* tslint:disable:no-unused-expression */
+
 describe('Commands', () => {
 
     beforeEach(() => {
@@ -120,6 +122,25 @@ describe('Commands', () => {
         commandRegistry.clearCommandHistory();
         expect(commandRegistry.recent.length).equal(0);
     });
+
+    it('should return with an empty array of handlers if the command is not registered', () => {
+        expect(commandRegistry.getCommand('missing')).to.be.undefined;
+        expect(commandRegistry.getAllHandlers('missing')).to.be.empty;
+    });
+
+    it('should return with an empty array of handlers if the command has no registered handlers', () => {
+        commandRegistry.registerCommand({ id: 'id' });
+        expect(commandRegistry.getCommand('id')).to.be.not.undefined;
+        expect(commandRegistry.getAllHandlers('id')).to.be.empty;
+    });
+
+    it('should return all handlers including the non active ones', () => {
+        commandRegistry.registerCommand({ id: 'id' });
+        commandRegistry.registerHandler('id', new StubCommandHandler());
+        commandRegistry.registerHandler('id', new NeverActiveStubCommandHandler());
+        expect(commandRegistry.getAllHandlers('id').length).to.be.equal(2);
+    });
+
 });
 
 class EmptyContributionProvider implements ContributionProvider<CommandContribution> {
@@ -140,4 +161,8 @@ class ConcatCommandHandler implements CommandHandler {
 
 class StubCommandHandler implements CommandHandler {
     execute(...args: string[]): undefined { return undefined; }
+}
+
+class NeverActiveStubCommandHandler extends StubCommandHandler {
+    isEnabled(): boolean { return false; }
 }

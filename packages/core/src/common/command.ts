@@ -136,7 +136,7 @@ export interface CommandService {
     // tslint:disable-next-line:no-any
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
     /**
-     * An event is emmited when a command is about to be executed.
+     * An event is emitted when a command is about to be executed.
      *
      * It can be used to install or activate a command handler.
      */
@@ -346,6 +346,15 @@ export class CommandRegistry implements CommandService {
             }
         }
         return undefined;
+    }
+
+    /**
+     * Returns with all handlers for the given command. If the command does not have any handlers,
+     * or the command is not registered, returns an empty array.
+     */
+    getAllHandlers(commandId: string): CommandHandler[] {
+        const handlers = this._handlers[commandId];
+        return handlers ? handlers.slice() : [];
     }
 
     /**
