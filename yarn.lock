@@ -1075,15 +1075,10 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-12.12.7.tgz#01e4ea724d9e3bd50d90c11fd5980ba317d8fa11"
   integrity sha512-E6Zn0rffhgd130zbCbAr/JdXfXkoOUFAKNs/rF8qnafSJ8KYaA/j3oz7dcwal+lYjLA7xvdd5J4wdYpCTlP8+w==
 
-"@types/node@^10.12.18":
+"@types/node@^10.12.18", "@types/node@^10.14.22":
   version "10.17.5"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.17.5.tgz#c1920150f7b90708a7d0f3add12a06bc9123c055"
   integrity sha512-RElZIr/7JreF1eY6oD5RF3kpmdcreuQPjg5ri4oQ5g9sq7YWU8HkfB3eH8GwAwxf5OaCh0VPi7r4N/yoTGelrA==
-
-"@types/node@^8.0.26":
-  version "8.10.59"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.10.59.tgz#9e34261f30183f9777017a13d185dfac6b899e04"
-  integrity sha512-8RkBivJrDCyPpBXhVZcjh7cQxVBSmRk9QM7hOketZzp6Tg79c0N8kkpAIito9bnJ3HCVCHVYz+KHTEbfQNfeVQ==
 
 "@types/node@~10.3.6":
   version "10.3.6"
@@ -1237,6 +1232,11 @@
   integrity sha512-AfSQM1xTO9Ax+u9uSQPDuw69DQ0qA2RMoKHn86jCgWNcwKVUjGMSP4sfSl3JOfcZN8X/gWvn7znVPp2/g9zcJA==
   dependencies:
     "@types/node" "*"
+
+"@types/which@^1.3.2":
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/@types/which/-/which-1.3.2.tgz#9c246fc0c93ded311c8512df2891fb41f6227fdf"
+  integrity sha512-8oDqyLC7eD4HM307boe2QWKyuzdzWBj56xI/imSl2cpL+U3tCMaTAkMJ4ee5JBZ/FsOJlvRGeIShiZDAl1qERA==
 
 "@types/write-json-file@^2.2.1":
   version "2.2.1"
@@ -4603,14 +4603,14 @@ dtrace-provider@~0.8:
   dependencies:
     nan "^2.14.0"
 
-dugite-extra@0.1.11:
-  version "0.1.11"
-  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.11.tgz#b0cc8c94990c1658240659efdcfc1b03669f1ce9"
-  integrity sha512-X3jmKopZrTGG00FefniFSptcAIH3sgB7DtOpdlqnG9Z1SZ+gjAvB4eeTdTNzz59ekcwUQjM67s86kl7dkG1nKw==
+dugite-extra@0.1.12:
+  version "0.1.12"
+  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.1.12.tgz#fc2f5e2fb288e688aaec7a770a24a21293831175"
+  integrity sha512-bYcOoa1l1HqD23lfUJIctrL/DSYIdj1JUD9gNdQB+Y3albl67G1HZsGQueoT/sNE7ijr7pGxOI7NmKtoe5zJjA==
   dependencies:
     byline "^5.0.0"
     dugite-no-gpl "1.69.0"
-    find-git-exec "0.0.1-alpha.2"
+    find-git-exec "^0.0.2"
     upath "^1.0.0"
 
 dugite-no-gpl@1.69.0:
@@ -5451,12 +5451,14 @@ find-cache-dir@^3.0.0:
     make-dir "^3.0.0"
     pkg-dir "^4.1.0"
 
-find-git-exec@0.0.1-alpha.2, find-git-exec@^0.0.1-alpha.2:
-  version "0.0.1-alpha.2"
-  resolved "https://registry.yarnpkg.com/find-git-exec/-/find-git-exec-0.0.1-alpha.2.tgz#02c266b3be6e411c19aa5fd6f813c96a73286fac"
-  integrity sha1-AsJms75uQRwZql/W+BPJanMob6w=
+find-git-exec@^0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/find-git-exec/-/find-git-exec-0.0.2.tgz#be97e5fd2b1d6f9a3d0528dae9eb1687de255a7a"
+  integrity sha512-QspUJn996F9UyKDSG4C+G5/epoAZw9p/j2RPIcg8L8izxFccwjJtMd545TWGO0GqJFe+hW1NJKa/1ij3rM/ynw==
   dependencies:
-    "@types/node" "^8.0.26"
+    "@types/node" "^10.14.22"
+    "@types/which" "^1.3.2"
+    which "^2.0.1"
 
 find-git-repositories@^0.1.0:
   version "0.1.1"
@@ -12934,6 +12936,13 @@ which@1, which@^1.1.1, which@^1.2.14, which@^1.2.8, which@^1.2.9, which@^1.3.0, 
   version "1.3.1"
   resolved "https://registry.yarnpkg.com/which/-/which-1.3.1.tgz#a45043d54f5805316da8d62f9f50918d3da70b0a"
   integrity sha512-HxJdYWq1MTIQbJ3nw0cqssHoTNU267KlrDuGZ1WYlxDStUtKUhOaJmh112/TZmHxxUfuJqPXSOm7tDyas0OSIQ==
+  dependencies:
+    isexe "^2.0.0"
+
+which@^2.0.1:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/which/-/which-2.0.2.tgz#7c6a8dd0a636a0327e10b59c9286eee93f3f51b1"
+  integrity sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==
   dependencies:
     isexe "^2.0.0"
 
