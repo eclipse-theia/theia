@@ -226,6 +226,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bindContributionProvider(bind, LabelProviderContribution);
     bind(LabelProvider).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(LabelProvider);
     bind(LabelProviderContribution).to(DefaultUriLabelProviderContribution).inSingletonScope();
     bind(LabelProviderContribution).to(DiffUriLabelProviderContribution).inSingletonScope();
 
