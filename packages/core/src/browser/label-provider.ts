@@ -20,6 +20,7 @@ import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Prioritizeable, MaybePromise } from '../common/types';
 import { Event, Emitter } from '../common';
+import { FrontendApplicationContribution } from './frontend-application';
 
 export const FOLDER_ICON = 'fa fa-folder';
 export const FILE_ICON = 'fa fa-file';
@@ -98,14 +99,20 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
 }
 
 @injectable()
-export class LabelProvider {
+export class LabelProvider implements FrontendApplicationContribution {
 
     protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
 
-    constructor(
-        @inject(ContributionProvider) @named(LabelProviderContribution)
-        protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>
-    ) {
+    @inject(ContributionProvider) @named(LabelProviderContribution)
+    protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>;
+
+    /**
+     * Start listening to contributions.
+     *
+     * Don't call this method directly!
+     * It's called by the frontend application during initialization.
+     */
+    initialize(): void {
         const contributions = this.contributionProvider.getContributions();
         for (const contribution of contributions) {
             if (contribution.onDidChange) {
