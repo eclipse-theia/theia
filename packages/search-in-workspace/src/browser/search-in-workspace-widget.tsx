@@ -127,7 +127,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             includeIgnored: false,
             include: [],
             exclude: [],
-            maxResults: 2000
+            maxResults: 1000,
+            shortenLineText: {
+                before: 20,
+                after: 40
+            }
         };
         this.toDispose.push(this.resultTreeWidget.onChange(r => {
             this.hasResults = r.size > 0;
@@ -355,6 +359,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.update();
     }
 
+    protected previousSearchTerm = '';
     protected readonly search = (e: React.KeyboardEvent) => this.doSearch(e);
     protected doSearch(e: React.KeyboardEvent): void {
         if (e.target) {
@@ -362,7 +367,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 this.resultTreeWidget.focusFirstResult();
             } else {
                 this.searchTerm = (e.target as HTMLInputElement).value;
-                this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
+                if (this.previousSearchTerm !== this.searchTerm) {
+                    this.previousSearchTerm = this.searchTerm;
+                    this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
+                }
             }
         }
     }
@@ -401,7 +409,6 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         if (e.target) {
             this.replaceTerm = (e.target as HTMLInputElement).value;
             this.resultTreeWidget.replaceTerm = this.replaceTerm;
-            this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
             this.update();
         }
     }

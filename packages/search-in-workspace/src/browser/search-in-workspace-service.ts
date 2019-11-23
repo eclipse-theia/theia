@@ -29,8 +29,8 @@ import { ILogger } from '@theia/core';
 export class SearchInWorkspaceClientImpl implements SearchInWorkspaceClient {
     private service: SearchInWorkspaceClient;
 
-    onResult(searchId: number, result: SearchInWorkspaceResult): void {
-        this.service.onResult(searchId, result);
+    onResult(searchId: number, results: SearchInWorkspaceResult[]): void {
+        this.service.onResult(searchId, results);
     }
     onDone(searchId: number, error?: string): void {
         this.service.onDone(searchId, error);
@@ -78,11 +78,11 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
         return this.workspaceService.opened;
     }
 
-    onResult(searchId: number, result: SearchInWorkspaceResult): void {
+    onResult(searchId: number, results: SearchInWorkspaceResult[]): void {
         const callbacks = this.pendingSearches.get(searchId);
 
         if (callbacks) {
-            callbacks.onResult(searchId, result);
+            callbacks.onResult(searchId, results);
         }
     }
 

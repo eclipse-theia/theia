@@ -211,37 +211,40 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
         const progress = await this.progressService.showProgress({ text: `search: ${searchTerm}`, options: { location: 'search' } });
         const searchId = await this.searchService.search(searchTerm, {
-            onResult: (aSearchId: number, result: SearchInWorkspaceResult) => {
+            onResult: (aSearchId: number, results: SearchInWorkspaceResult[]) => {
                 if (token.isCancellationRequested || aSearchId !== searchId) {
                     return;
                 }
-                const { name, path } = this.filenameAndPath(result.root, result.fileUri);
-                const tree = this.resultTree;
-                const rootFolderNode = tree.get(result.root);
+                for (const result of results) {
 
-                if (rootFolderNode) {
-                    const fileNode = rootFolderNode.children.find(f => f.fileUri === result.fileUri);
-                    if (fileNode) {
-                        const line = this.createResultLineNode(result, fileNode);
-                        if (fileNode.children.findIndex(lineNode => lineNode.id === line.id) < 0) {
-                            fileNode.children.push(line);
+                    const { name, path } = this.filenameAndPath(result.root, result.fileUri);
+                    const tree = this.resultTree;
+                    const rootFolderNode = tree.get(result.root);
+
+                    if (rootFolderNode) {
+                        const fileNode = rootFolderNode.children.find(f => f.fileUri === result.fileUri);
+                        if (fileNode) {
+                            const line = this.createResultLineNode(result, fileNode);
+                            if (fileNode.children.findIndex(lineNode => lineNode.id === line.id) < 0) {
+                                fileNode.children.push(line);
+                            }
+                            this.collapseFileNode(fileNode, collapseValue);
+                        } else {
+                            const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, rootFolderNode);
+                            this.collapseFileNode(newFileNode, collapseValue);
+                            const line = this.createResultLineNode(result, newFileNode);
+                            newFileNode.children.push(line);
+                            rootFolderNode.children.push(newFileNode);
                         }
-                        this.collapseFileNode(fileNode, collapseValue);
                     } else {
-                        const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, rootFolderNode);
+                        const newRootFolderNode = this.createRootFolderNode(result.root);
+                        tree.set(result.root, newRootFolderNode);
+                        const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, newRootFolderNode);
                         this.collapseFileNode(newFileNode, collapseValue);
-                        const line = this.createResultLineNode(result, newFileNode);
-                        newFileNode.children.push(line);
-                        rootFolderNode.children.push(newFileNode);
+                        newFileNode.children.push(this.createResultLineNode(result, newFileNode));
+                        newRootFolderNode.children.push(newFileNode);
                     }
-
-                } else {
-                    const newRootFolderNode = this.createRootFolderNode(result.root);
-                    tree.set(result.root, newRootFolderNode);
-                    const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, newRootFolderNode);
-                    this.collapseFileNode(newFileNode, collapseValue);
-                    newFileNode.children.push(this.createResultLineNode(result, newFileNode));
-                    newRootFolderNode.children.push(newFileNode);
+                    this.refreshModelChildren();
                 }
             },
             onDone: () => {
@@ -249,14 +252,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 if (token.isCancellationRequested) {
                     return;
                 }
-                // Sort the result map by folder URI.
-                this.resultTree = new Map([...this.resultTree]
-                    .sort((a: [string, SearchInWorkspaceRootFolderNode], b: [string, SearchInWorkspaceRootFolderNode]) => this.compare(a[1].folderUri, b[1].folderUri)));
-                // Update the list of children nodes, sorting them by their file URI.
-                Array.from(this.resultTree.values())
-                    .forEach((folder: SearchInWorkspaceRootFolderNode) => {
-                        folder.children = folder.children.sort((a: SearchInWorkspaceFileNode, b: SearchInWorkspaceFileNode) => this.compare(a.fileUri, b.fileUri));
-                    });
                 this.refreshModelChildren();
             }
         }, searchOptions).catch(e => { return; });
@@ -641,26 +636,21 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderResultLineNode(node: SearchInWorkspaceResultLineNode): React.ReactNode {
-        const prefix = node.character > 26 ? '... ' : '';
+        const offset = (node.significantLineCharacter || node.character);
+        const replaceTerm = this._replaceTerm !== '' && this._showReplaceButtons ? <span className='replace-term'>{this._replaceTerm}</span> : '';
         return <div className={`resultLine noWrapInfo ${node.selected ? 'selected' : ''}`} title={node.lineText.trim()}>
             {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
             <span>
-                {prefix + node.lineText.substr(0, node.character - 1).substr(-25)}
+                {node.lineText.substr(0, offset)}
             </span>
-            {this.renderMatchLinePart(node)}
+            <span className={`match${this._showReplaceButtons ? ' strike-through' : ''}`}>
+                {node.lineText.substr(offset, node.length)}
+            </span>
+            {replaceTerm}
             <span>
-                {node.lineText.substr(node.character - 1 + node.length, 75)}
+                {node.lineText.substr(offset + node.length, 75)}
             </span>
         </div>;
-    }
-
-    protected renderMatchLinePart(node: SearchInWorkspaceResultLineNode): React.ReactNode {
-        const replaceTerm = this._replaceTerm !== '' && this._showReplaceButtons ? <span className='replace-term'>{this._replaceTerm}</span> : '';
-        const className = `match${this._showReplaceButtons ? ' strike-through' : ''}`;
-        return <React.Fragment>
-            <span className={className}>{node.lineText.substr(node.character - 1, node.length)}</span>
-            {replaceTerm}
-        </React.Fragment>;
     }
 
     /**
@@ -765,18 +755,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             });
         }
         return decorations;
-    }
-
-    /**
-     * Compare two normalized strings.
-     *
-     * @param a {string} the first string.
-     * @param b {string} the second string.
-     */
-    private compare(a: string, b: string): number {
-        const itemA: string = a.toLowerCase().trim();
-        const itemB: string = b.toLowerCase().trim();
-        return itemA.localeCompare(itemB);
     }
 
 }

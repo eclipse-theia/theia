@@ -54,8 +54,8 @@ class ResultAccumulator implements SearchInWorkspaceClient {
         this.onDoneCallback = onDoneCallback;
     }
 
-    onResult(searchId: number, result: SearchInWorkspaceResult): void {
-        this.results.push(result);
+    onResult(searchId: number, results: SearchInWorkspaceResult[]): void {
+        this.results.push(...results);
     }
 
     onDone(searchId: number): void {
@@ -751,7 +751,7 @@ describe('ripgrep-search-in-workspace-server', function (): void {
             const rgServer = createInstance('/non-existent/rg');
 
             rgServer.setClient({
-                onResult: (searchId: number, result: SearchInWorkspaceResult): void => {
+                onResult: (searchId: number, results: SearchInWorkspaceResult[]): void => {
                     reject();
                 },
                 onDone: (searchId: number, error?: string): void => {
@@ -775,7 +775,7 @@ describe('ripgrep-search-in-workspace-server', function (): void {
             const rgServer = createInstance(rg.path);
 
             rgServer.setClient({
-                onResult: (searchId: number, result: SearchInWorkspaceResult): void => {
+                onResult: (searchId: number, results: SearchInWorkspaceResult[]): void => {
                     reject();
                 },
                 onDone: (searchId: number, error?: string): void => {

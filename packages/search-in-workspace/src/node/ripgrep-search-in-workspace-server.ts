@@ -82,7 +82,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     protected getArgs(options?: SearchInWorkspaceOptions): string[] {
-        const args = ['--json', '--max-count=100'];
+        const args = ['--json', '--max-count=100', '--sort-files'];
         args.push(options && options.matchCase ? '--case-sensitive' : '--ignore-case');
         if (options && options.includeIgnored) {
             args.push('-uu');
@@ -128,10 +128,10 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 what = what + '\\b';
             }
         }
-
+        const allArgs = [...args, what].concat(rootUris.map(root => FileUri.fsPath(root)));
         const processOptions: RawProcessOptions = {
             command: this.rgPath,
-            args: [...args, what].concat(rootUris.map(root => FileUri.fsPath(root)))
+            args: allArgs
         };
 
         // TODO: Use child_process directly instead of rawProcessFactory?
@@ -159,14 +159,44 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         // Buffer to accumulate incoming output.
         let databuf: string = '';
 
+        let resultBuffer: SearchInWorkspaceResult[] = [];
+        const bufferSize = opts && opts.maxResultsPerMessage || 50;
+        let sendingQueue = Promise.resolve();
+        const acceptResult = (searchResult: SearchInWorkspaceResult) => {
+            resultBuffer.push(searchResult);
+            if (resultBuffer.length >= bufferSize) {
+                const toSend = resultBuffer;
+                sendingQueue = sendingQueue.then(() =>
+                    this.client!.onResult(searchId, toSend)
+                ).then(
+                    // adding a bit of timeout to give other things a few cycles.
+                    async () => new Promise<void>(resolve => setTimeout(() => resolve(), bufferSize * 10))
+                );
+                resultBuffer = [];
+            }
+        };
+        const shorten = opts && opts.shortenLineText;
+        let isDone = false;
+        const onDone = () => {
+            sendingQueue = sendingQueue.then(() => {
+                if (isDone) {
+                    return;
+                }
+                isDone = true;
+                if (resultBuffer.length !== 0) {
+                    this.client!.onResult(searchId, resultBuffer);
+                    resultBuffer = [];
+                }
+                this.wrapUpSearch(searchId);
+            });
+        };
+
+        rgProcess.outputStream.on('end', () => {
+            onDone();
+        });
+
         rgProcess.outputStream.on('data', (chunk: string) => {
-            // We might have already reached the max number of
-            // results, sent a TERM signal to rg, but we still get
-            // the data that was already output in the mean time.
-            // It's not necessary to return early here (the check
-            // for maxResults below would avoid sending extra
-            // results), but it avoids doing unnecessary work.
-            if (opts && opts.maxResults && numResults >= opts.maxResults) {
+            if (isDone) {
                 return;
             }
 
@@ -189,18 +219,28 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                     const data = obj['data'];
                     const file = (<RipGrepArbitraryData>data['path']).text;
                     const line = data['line_number'];
-                    const lineText = (<RipGrepArbitraryData>data['lines']).text;
+                    const fullLineText = (<RipGrepArbitraryData>data['lines']).text;
 
-                    if (file === undefined || lineText === undefined) {
+                    if (file === undefined || fullLineText === undefined) {
                         continue;
                     }
 
                     for (const submatch of data['submatches']) {
                         const startByte = submatch['start'];
                         const endByte = submatch['end'];
-                        const character = byteRangeLengthToCharacterLength(lineText, 0, startByte);
-                        const length = byteRangeLengthToCharacterLength(lineText, character, endByte - startByte);
+                        const character = byteRangeLengthToCharacterLength(fullLineText, 0, startByte);
+                        const length = byteRangeLengthToCharacterLength(fullLineText, character, endByte - startByte);
 
+                        let lineText = fullLineText;
+                        let significantLineCharacter;
+                        if (shorten) {
+                            const relevantStart = Math.max(0, character - shorten.before);
+                            const relevantEnd = Math.min(lineText.length, character + length + shorten.after);
+                            const prefix = relevantStart !== 0 ? '...' : '';
+                            const postfix = relevantEnd !== lineText.length ? '...' : '';
+                            lineText = prefix + lineText.substr(relevantStart, relevantEnd) + postfix;
+                            significantLineCharacter = character - relevantStart + prefix.length;
+                        }
                         const result: SearchInWorkspaceResult = {
                             fileUri: FileUri.create(file).toString(),
                             root: this.getRoot(file, rootUris).toString(),
@@ -209,32 +249,22 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                             length,
                             lineText: lineText.replace(/[\r\n]+$/, ''),
                         };
+                        if (significantLineCharacter) {
+                            result.significantLineCharacter = significantLineCharacter;
+                        }
 
                         numResults++;
-                        if (this.client) {
-                            this.client.onResult(searchId, result);
-                        }
+                        acceptResult(result);
 
                         // Did we reach the maximum number of results?
                         if (opts && opts.maxResults && numResults >= opts.maxResults) {
                             rgProcess.kill();
-                            this.wrapUpSearch(searchId);
+                            onDone();
                             break;
                         }
                     }
                 }
             }
-        });
-
-        rgProcess.outputStream.on('end', () => {
-            // If we reached maxResults, we should have already
-            // wrapped up the search.  Returning early avoids
-            // logging a warning message in wrapUpSearch.
-            if (opts && opts.maxResults && numResults >= opts.maxResults) {
-                return;
-            }
-
-            this.wrapUpSearch(searchId);
         });
 
         return Promise.resolve(searchId);

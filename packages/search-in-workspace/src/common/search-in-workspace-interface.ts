@@ -22,6 +22,15 @@ export interface SearchInWorkspaceOptions {
      */
     maxResults?: number;
     /**
+     * Maximum number of results per message.  Defaults to 20.
+     */
+    maxResultsPerMessage?: number;
+    /**
+     * If provided, the `lineText` will be shortened around the match,
+     * based on the given before and after values.
+     */
+    shortenLineText?: { before: number, after: number };
+    /**
      * Search case sensitively if true.
      */
     matchCase?: boolean;
@@ -76,7 +85,13 @@ export interface SearchInWorkspaceResult {
     length: number;
 
     /**
-     * The text of the line containing the result.
+     * The character offset of the match in `significantLineText`.
+     * If `undefine` the `significantLineText` starts at 0, hence `character` denotes the offset.
+     */
+    significantLineCharacter?: number;
+
+    /**
+     * The text of the line around the result. If `significantLineCharacter` is defined this might not be the full line.
      */
     lineText: string;
 }
@@ -106,9 +121,9 @@ export namespace SearchInWorkspaceResult {
 export const SearchInWorkspaceClient = Symbol('SearchInWorkspaceClient');
 export interface SearchInWorkspaceClient {
     /**
-     * Called by the server for every search match.
+     * Called by the server for found search matches.
      */
-    onResult(searchId: number, result: SearchInWorkspaceResult): void;
+    onResult(searchId: number, results: SearchInWorkspaceResult[]): void;
 
     /**
      * Called when no more search matches will come.
