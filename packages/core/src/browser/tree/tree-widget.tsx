@@ -163,10 +163,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
     ) {
         super();
-        this.scrollOptions = {
-            suppressScrollX: true,
-            minScrollbarLength: 35
-        };
         this.addClass(TREE_CLASS);
         this.node.tabIndex = 0;
     }
@@ -953,7 +949,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.addKeyListener(this.node, down, event => this.handleDown(event));
         this.addKeyListener(this.node, Key.ENTER, event => this.handleEnter(event));
         // tslint:disable-next-line:no-any
-        this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
+        this.addEventListener<any>(this.node, 'scroll', (e: Event & { target: { scrollTop: number } }) => {
             if (this.view && this.view.list && this.view.list.Grid) {
                 const { scrollTop } = e.target;
                 this.view.list.Grid.handleScrollEvent({ scrollTop });

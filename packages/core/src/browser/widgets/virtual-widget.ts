@@ -28,21 +28,12 @@ export class VirtualWidget extends BaseWidget {
 
     protected readonly onRender = new DisposableCollection();
     protected childContainer?: HTMLElement;
-    protected scrollOptions = {
-        suppressScrollX: true
-    };
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         const child = this.render();
         if (!this.childContainer) {
-            // if we are adding scrolling, we need to wrap the contents in its own div, to not conflict with the virtual dom algo.
-            if (this.scrollOptions) {
-                this.childContainer = this.createChildContainer();
-                this.node.appendChild(this.childContainer);
-            } else {
-                this.childContainer = this.node;
-            }
+            this.childContainer = this.node;
         }
         VirtualRenderer.render(child, this.childContainer);
         this.onRender.dispose();

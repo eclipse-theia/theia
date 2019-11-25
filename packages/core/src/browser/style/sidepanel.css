@@ -144,33 +144,6 @@
   background-color: var(--theia-layout-color1);
 }
 
-
-/*-----------------------------------------------------------------------------
-| Perfect scrollbar
-|----------------------------------------------------------------------------*/
-
-.p-TabBar.theia-app-sides > .ps__rail-y {
-  width: var(--theia-private-sidebar-scrollbar-rail-width);
-  z-index: 1000;
-}
-
-.p-TabBar.theia-app-sides > .ps__rail-y  >.ps__thumb-y {
-  width: var(--theia-private-sidebar-scrollbar-width);
-  right: calc((var(--theia-private-sidebar-scrollbar-rail-width) - var(--theia-private-sidebar-scrollbar-width)) / 2);
-}
-
-.p-TabBar.theia-app-sides > .ps__rail-y:hover,
-.p-TabBar.theia-app-sides > .ps__rail-y:focus {
-  width: var(--theia-private-sidebar-scrollbar-rail-width);
-}
-
-.p-TabBar.theia-app-sides > .ps__rail-y:hover > .ps__thumb-y,
-.p-TabBar.theia-app-sides > .ps__rail-y:focus > .ps__thumb-y {
-  width: var(--theia-private-sidebar-scrollbar-width);
-  right: calc((var(--theia-private-sidebar-scrollbar-rail-width) - var(--theia-private-sidebar-scrollbar-width)) / 2);
-}
-
-
 /*-----------------------------------------------------------------------------
 | Bottom content panel
 |----------------------------------------------------------------------------*/

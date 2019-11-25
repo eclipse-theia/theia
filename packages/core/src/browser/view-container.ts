@@ -707,10 +707,6 @@ export class ViewContainerPart extends BaseWidget {
             // focus event does not bubble, capture it
             addEventListener(this.node, 'focus', () => this.onDidFocusEmitter.fire(this), true)
         ]);
-        this.scrollOptions = {
-            suppressScrollX: true,
-            minScrollbarLength: 35
-        };
         this.collapsed = !!options.initiallyCollapsed;
         if (options.initiallyHidden && this.canHide) {
             this.hide();

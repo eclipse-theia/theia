@@ -129,12 +129,7 @@ export class SidePanelHandler {
             removeBehavior: 'select-previous-tab',
             allowDeselect: false,
             tabsMovable: true,
-            renderer: tabBarRenderer,
-            // Scroll bar options
-            handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
-            useBothWheelAxes: true,
-            scrollYMarginOffset: 8,
-            suppressScrollX: true
+            renderer: tabBarRenderer
         });
         tabBarRenderer.tabBar = sideBar;
         tabBarRenderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;

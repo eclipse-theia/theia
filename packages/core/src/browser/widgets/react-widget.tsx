@@ -27,10 +27,6 @@ export abstract class ReactWidget extends BaseWidget {
 
     constructor() {
         super();
-        this.scrollOptions = {
-            suppressScrollX: true,
-            minScrollbarLength: 35,
-        };
         this.toDispose.push(Disposable.create(() => {
             ReactDOM.unmountComponentAtNode(this.node);
         }));

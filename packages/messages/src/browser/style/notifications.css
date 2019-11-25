@@ -266,24 +266,3 @@
     background-color: var(--theia-brand-color0);
     width: 66%;
 }
-
-/* Perfect scrollbar */
-
-.theia-notification-list-scroll-container .ps__rail-y {
-    width: var(--theia-scrollbar-rail-width);
-    background: var(--theia-scrollbar-rail-color);
-}
-
-.theia-notification-list-scroll-container .ps__rail-y:hover > .ps__thumb-y,
-.theia-notification-list-scroll-container .ps__rail-y:focus > .ps__thumb-y,
-.theia-notification-list-scroll-container .ps__rail-y.ps--clicking .ps__thumb-y {
-    right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
-    width: var(--theia-scrollbar-width);
-}
-
-.theia-notification-list-scroll-container .ps__rail-y > .ps__thumb-y {
-    width: var(--theia-scrollbar-width);
-    right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
-    background: var(--theia-scrollbar-thumb-color);
-    border-radius: 0px;
-}

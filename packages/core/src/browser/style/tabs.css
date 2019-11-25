@@ -42,6 +42,21 @@
   min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
 }
 
+/* the default overflow for all browsers */
+.p-TabBar:hover {
+    overflow-x: auto;
+}
+
+.p-TabBar[data-orientation='horizontal']:hover {
+    /* use overlay, which only works in webkit browsers. IF not supported will fall back to the value set above (i.e. auto) */
+    overflow-x: overlay;
+    scrollbar-width: none;
+}
+
+.p-TabBar[data-orientation='horizontal']:hover::-webkit-scrollbar {
+    height: 5px;
+}
+
 .p-TabBar .p-TabBar-content {
   cursor: pointer;
 }
@@ -192,32 +207,6 @@
 .p-TabBar.theia-app-centers .p-TabBar-tab > .p-TabBar-tabIcon.no-icon {
   display: none;
 }
-
-/*-----------------------------------------------------------------------------
-| Perfect scrollbar
-|----------------------------------------------------------------------------*/
-
-.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x {
-  height: var(--theia-private-horizontal-tab-scrollbar-rail-height);
-  z-index: 1000;
-}
-
-.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x  > .ps__thumb-x {
-  height: var(--theia-private-horizontal-tab-scrollbar-height) !important;
-  bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
-}
-
-.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:hover,
-.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:focus {
-  height: var(--theia-private-horizontal-tab-scrollbar-rail-height) !important;
-}
-
-.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:hover > .ps__thumb-x,
-.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content-container > .ps__rail-x:focus > .ps__thumb-x {
-  height: calc(var(--theia-private-horizontal-tab-scrollbar-height) / 2) !important;
-  bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
-}
-
 
 /*-----------------------------------------------------------------------------
 | Dragged tabs

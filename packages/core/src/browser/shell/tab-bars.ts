@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
 import { Disposable, DisposableCollection, MenuPath, notEmpty } from '../../common';
@@ -433,45 +432,16 @@ export class TabBarRenderer extends TabBar.Renderer {
  */
 export class ScrollableTabBar extends TabBar<Widget> {
 
-    protected scrollBar?: PerfectScrollbar;
-
-    private scrollBarFactory: () => PerfectScrollbar;
     private pendingReveal?: Promise<void>;
 
-    constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
+    constructor(options?: TabBar.IOptions<Widget>) {
         super(options);
-        this.scrollBarFactory = () => new PerfectScrollbar(this.scrollbarHost, options);
-    }
-
-    protected onAfterAttach(msg: Message): void {
-        if (!this.scrollBar) {
-            this.scrollBar = this.scrollBarFactory();
-        }
-        super.onAfterAttach(msg);
-    }
-
-    protected onBeforeDetach(msg: Message): void {
-        super.onBeforeDetach(msg);
-        if (this.scrollBar) {
-            this.scrollBar.destroy();
-            this.scrollBar = undefined;
-        }
-    }
-
-    protected onUpdateRequest(msg: Message): void {
-        super.onUpdateRequest(msg);
-        if (this.scrollBar) {
-            this.scrollBar.update();
-        }
     }
 
     protected onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
-        if (this.scrollBar) {
-            if (this.currentIndex >= 0) {
-                this.revealTab(this.currentIndex);
-            }
-            this.scrollBar.update();
+        if (this.currentIndex >= 0) {
+            this.revealTab(this.currentIndex);
         }
     }
 
@@ -488,7 +458,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
             window.requestAnimationFrame(() => {
                 const tab = this.contentNode.children[index] as HTMLElement;
                 if (tab && this.isVisible) {
-                    const parent = this.scrollbarHost;
+                    const parent = this.node;
                     if (this.orientation === 'horizontal') {
                         const scroll = parent.scrollLeft;
                         const left = tab.offsetLeft;
@@ -523,10 +493,6 @@ export class ScrollableTabBar extends TabBar<Widget> {
         return result;
     }
 
-    protected get scrollbarHost(): HTMLElement {
-        return this.node;
-    }
-
 }
 
 /**
@@ -537,7 +503,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
  * |[TAB_0][TAB_1][TAB_2][TAB|
  * +-------------Scrollable--+
  *
- * There is a dedicated HTML element for toolbar which does **not** contained in the scrollable element.
+ * There is a dedicated HTML element for toolbar which is **not** contained in the scrollable element.
  *
  * +-------------------------+-----------------+
  * |[TAB_0][TAB_1][TAB_2][TAB|         Toolbar |
@@ -552,7 +518,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
     constructor(
         protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
         protected readonly tabBarToolbarFactory: () => TabBarToolbar,
-        protected readonly options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
+        protected readonly options?: TabBar.IOptions<Widget>) {
 
         super(options);
         this.rewireDOM();
@@ -564,13 +530,6 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
      */
     get contentNode(): HTMLUListElement {
         return this.tabBarContainer.getElementsByClassName(ToolbarAwareTabBar.Styles.TAB_BAR_CONTENT)[0] as HTMLUListElement;
-    }
-
-    /**
-     * Overrides the scrollable host from the parent class.
-     */
-    protected get scrollbarHost(): HTMLElement {
-        return this.tabBarContainer;
     }
 
     protected get tabBarContainer(): HTMLElement {
@@ -673,7 +632,7 @@ export class SideTabBar extends ScrollableTabBar {
         mouseDownTabIndex: number
     };
 
-    constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
+    constructor(options?: TabBar.IOptions<Widget>) {
         super(options);
 
         // Create the hidden content node (see `hiddenContentNode` for explanation)
@@ -709,9 +668,6 @@ export class SideTabBar extends ScrollableTabBar {
 
     protected onUpdateRequest(msg: Message): void {
         this.renderTabBar();
-        if (this.scrollBar) {
-            this.scrollBar.update();
-        }
     }
 
     /**

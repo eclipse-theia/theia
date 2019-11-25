@@ -80,12 +80,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
     createTabBar(): TabBar<Widget> {
         const renderer = this.tabBarRendererFactory();
         const tabBar = new ToolbarAwareTabBar(this.tabBarToolbarRegistry, this.tabBarToolbarFactory, {
-            renderer,
-            // Scroll bar options
-            handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
-            useBothWheelAxes: true,
-            scrollXMarginOffset: 4,
-            suppressScrollY: true
+            renderer
         });
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;

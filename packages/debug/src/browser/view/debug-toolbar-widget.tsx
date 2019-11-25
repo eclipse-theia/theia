@@ -34,7 +34,6 @@ export class DebugToolBar extends ReactWidget {
         this.addClass('debug-toolbar');
         this.toDispose.push(this.model);
         this.toDispose.push(this.model.onDidChange(() => this.update()));
-        this.scrollOptions = undefined;
         this.update();
     }
 

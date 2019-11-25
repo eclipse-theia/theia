@@ -19,8 +19,6 @@ import { DisposableCollection } from '@theia/core';
 import { NotificationManager, NotificationUpdateEvent } from './notifications-manager';
 import { NotificationComponent } from './notification-component';
 
-const PerfectScrollbar = require('react-perfect-scrollbar');
-
 export interface NotificationCenterComponentProps {
     readonly manager: NotificationManager;
 }
@@ -67,13 +65,11 @@ export class NotificationCenterComponent extends React.Component<NotificationCen
                         </ul>
                     </div>
                 </div>
-                <PerfectScrollbar className='theia-notification-list-scroll-container'>
-                    <div className='theia-notification-list'>
-                        {this.state.notifications.map(notification =>
-                            <NotificationComponent key={notification.messageId} notification={notification} manager={this.props.manager} />
-                        )}
-                    </div>
-                </PerfectScrollbar>
+                <div className='theia-notification-list'>
+                    {this.state.notifications.map(notification =>
+                        <NotificationComponent key={notification.messageId} notification={notification} manager={this.props.manager} />
+                    )}
+                </div>
             </div>
         );
     }

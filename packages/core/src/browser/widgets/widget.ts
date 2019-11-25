@@ -19,10 +19,8 @@
 import { injectable, decorate, unmanaged } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
-import { Emitter, Event, Disposable, DisposableCollection, MaybePromise } from '../../common';
+import { Emitter, Event, Disposable, DisposableCollection } from '../../common';
 import { KeyCode, KeysOrKeyCodes } from '../keyboard/keys';
-
-import PerfectScrollbar from 'perfect-scrollbar';
 
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
@@ -52,8 +50,6 @@ export class BaseWidget extends Widget {
         this.onDidChangeVisibilityEmitter
     );
     protected readonly toDisposeOnDetach = new DisposableCollection();
-    protected scrollBar?: PerfectScrollbar;
-    protected scrollOptions?: PerfectScrollbar.Options;
 
     dispose(): void {
         if (this.isDisposed) {
@@ -85,49 +81,6 @@ export class BaseWidget extends Widget {
     protected onBeforeDetach(msg: Message): void {
         this.toDisposeOnDetach.dispose();
         super.onBeforeDetach(msg);
-    }
-
-    protected onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-        if (this.scrollOptions) {
-            (async () => {
-                const container = await this.getScrollContainer();
-                container.style.overflow = 'hidden';
-                this.scrollBar = new PerfectScrollbar(container, this.scrollOptions);
-                this.disableScrollBarFocus(container);
-                this.toDisposeOnDetach.push(addEventListener(container, <any>'ps-y-reach-end', () => { this.onScrollYReachEndEmitter.fire(undefined); }));
-                this.toDisposeOnDetach.push(addEventListener(container, <any>'ps-scroll-up', () => { this.onScrollUpEmitter.fire(undefined); }));
-                this.toDisposeOnDetach.push(Disposable.create(() => {
-                    if (this.scrollBar) {
-                        this.scrollBar.destroy();
-                        this.scrollBar = undefined;
-                    }
-                    container.style.overflow = 'initial';
-                }));
-            })();
-        }
-    }
-
-    protected getScrollContainer(): MaybePromise<HTMLElement> {
-        return this.node;
-    }
-
-    protected disableScrollBarFocus(scrollContainer: HTMLElement): void {
-        for (const thumbs of [scrollContainer.getElementsByClassName('ps__thumb-x'), scrollContainer.getElementsByClassName('ps__thumb-y')]) {
-            for (let i = 0; i < thumbs.length; i++) {
-                const element = thumbs.item(i);
-                if (element) {
-                    element.removeAttribute('tabIndex');
-                }
-            }
-        }
-    }
-
-    protected onUpdateRequest(msg: Message): void {
-        super.onUpdateRequest(msg);
-        if (this.scrollBar) {
-            this.scrollBar.update();
-        }
     }
 
     protected addUpdateListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, useCapture?: boolean): void {

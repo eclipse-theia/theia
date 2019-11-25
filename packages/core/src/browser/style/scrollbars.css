@@ -14,12 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-@import url('~perfect-scrollbar/css/perfect-scrollbar.css');
-
 ::-webkit-scrollbar {
     height: var(--theia-scrollbar-width);
     width: var(--theia-scrollbar-width);
-    background: var(--theia-scrollbar-rail-color);
+    background: transparent;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -38,98 +40,10 @@
     background: transparent;
 }
 
-
-/*-----------------------------------------------------------------------------
-| Perfect scrollbar
-|----------------------------------------------------------------------------*/
-
-#theia-app-shell .ps__rail-x,
-#theia-dialog-shell .ps__rail-x {
-    height: var(--theia-scrollbar-rail-width);
-    background: var(--theia-scrollbar-rail-color);
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--theia-scrollbar-rail-color) var(--theia-scrollbar-thumb-color);
 }
-
-#theia-app-shell .ps__rail-x > .ps__thumb-x,
-#theia-dialog-shell .ps__rail-x > .ps__thumb-x {
-    height: var(--theia-scrollbar-width);
-    bottom: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
-    background: var(--theia-scrollbar-thumb-color);
-    border-radius: 0px;
-}
-
-#theia-app-shell .ps__rail-x:hover,
-#theia-app-shell .ps__rail-x:focus,
-#theia-dialog-shell .ps__rail-x:hover,
-#theia-dialog-shell .ps__rail-x:focus {
-    height: var(--theia-scrollbar-rail-width);
-}
-
-#theia-app-shell .ps__rail-x:hover > .ps__thumb-x,
-#theia-app-shell .ps__rail-x:focus > .ps__thumb-x,
-#theia-app-shell .ps__rail-x.ps--clicking .ps__thumb-x,
-#theia-dialog-shell .ps__rail-x:hover > .ps__thumb-x,
-#theia-dialog-shell .ps__rail-x:focus > .ps__thumb-x,
-#theia-dialog-shell .ps__rail-x.ps--clicking .ps__thumb-x  {
-    height: var(--theia-scrollbar-width);
-}
-
-#theia-app-shell .ps__rail-y,
-#theia-dialog-shell .ps__rail-y {
-    width: var(--theia-scrollbar-rail-width);
-    background: var(--theia-scrollbar-rail-color);
-}
-
-#theia-app-shell .ps__rail-y > .ps__thumb-y,
-#theia-dialog-shell .ps__rail-y > .ps__thumb-y {
-    width: var(--theia-scrollbar-width);
-    right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
-    background: var(--theia-scrollbar-thumb-color);
-    border-radius: 0px;
-}
-
-#theia-app-shell .ps__rail-y:hover,
-#theia-app-shell .ps__rail-y:focus,
-#theia-dialog-shell .ps__rail-y:hover,
-#theia-dialog-shell .ps__rail-y:focus {
-    width: var(--theia-scrollbar-rail-width);
-}
-
-#theia-app-shell .ps__rail-y:hover > .ps__thumb-y,
-#theia-app-shell .ps__rail-y:focus > .ps__thumb-y,
-#theia-app-shell .ps__rail-y.ps--clicking .ps__thumb-y,
-#theia-dialog-shell .ps__rail-y:hover > .ps__thumb-y,
-#theia-dialog-shell .ps__rail-y:focus > .ps__thumb-y,
-#theia-dialog-shell .ps__rail-y.ps--clicking .ps__thumb-y  {
-    right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
-    width: var(--theia-scrollbar-width);
-}
-
-#theia-app-shell .ps [class^='ps__rail']:hover,
-#theia-app-shell .ps [class^='ps__rail']:focus,
-#theia-app-shell .ps [class^='ps__rail'].ps--clicking,
-#theia-dialog-shell .ps [class^='ps__rail']:hover,
-#theia-dialog-shell .ps [class^='ps__rail']:focus,
-#theia-dialog-shell .ps [class^='ps__rail'].ps--clicking {
-    background-color: var(--theia-scrollbar-active-rail-color);
-}
-
-#theia-app-shell .ps [class^='ps__rail']:hover > [class^='ps__thumb'],
-#theia-app-shell .ps [class^='ps__rail']:focus > [class^='ps__thumb'],
-#theia-dialog-shell .ps [class^='ps__rail']:hover > [class^='ps__thumb'],
-#theia-dialog-shell .ps [class^='ps__rail']:focus > [class^='ps__thumb']
- {
-    background: var(--theia-scrollbar-active-thumb-color);
-}
-
-#theia-app-shell .ps:hover > [class^='ps__rail'],
-#theia-app-shell .ps--focus > [class^='ps__rail'],
-#theia-app-shell .ps--scrolling-y > [class^='ps__rail'],
-#theia-dialog-shell .ps:hover > [class^='ps__rail'],
-#theia-dialog-shell .ps--focus > [class^='ps__rail'],
-#theia-dialog-shell .ps--scrolling-y > [class^='ps__rail'] {
-    opacity: 1;
-}
-
 
 /*-----------------------------------------------------------------------------
 | Monaco

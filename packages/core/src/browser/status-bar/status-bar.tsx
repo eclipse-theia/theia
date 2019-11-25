@@ -81,7 +81,6 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService
     ) {
         super();
-        delete this.scrollOptions;
         this.id = 'theia-statusBar';
         this.addClass('noselect');
     }

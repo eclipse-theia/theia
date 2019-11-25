@@ -118,7 +118,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         super.onAfterAttach(msg);
         this.addGitListNavigationKeyListeners(this.node);
         // tslint:disable-next-line:no-any
-        this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
+        this.addEventListener<any>(this.node, 'scroll', (e: Event & { target: { scrollTop: number } }) => {
             if (this.listView && this.listView.list && this.listView.list.Grid) {
                 const { scrollTop } = e.target;
                 this.listView.list.Grid.handleScrollEvent({ scrollTop });

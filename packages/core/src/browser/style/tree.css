@@ -22,6 +22,10 @@
     position: relative;
 }
 
+.theia-Tree:hover {
+    overflow-y: auto;
+}
+
 .theia-Tree:focus .theia-TreeContainer.empty {
     outline-width: 1px;
     outline-style: solid;
