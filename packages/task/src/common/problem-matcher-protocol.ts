@@ -167,9 +167,9 @@ export namespace ProblemPattern {
             message: value.message,
             location: value.location,
             line: value.line,
-            character: value.character,
+            character: value.column || value.character,
             endLine: value.endLine,
-            endCharacter: value.endCharacter,
+            endCharacter: value.endColumn || value.endCharacter,
             code: value.code,
             severity: value.severity,
             loop: value.loop

@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as Ajv from 'ajv';
 import { ApplicationShell, FrontendApplication, WidgetManager } from '@theia/core/lib/browser';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { ILogger, CommandService } from '@theia/core/lib/common';
@@ -244,15 +243,7 @@ export class TaskService implements TaskConfigurationClient {
 
     /** Returns an array of the valid task configurations which are configured in tasks.json files */
     async getConfiguredTasks(): Promise<TaskConfiguration[]> {
-        const taskConfigs = await this.taskConfigurations.getTasks();
-        let invalidTaskConfig: TaskConfiguration | undefined;
-        const validTaskConfigs = taskConfigs.filter(t => {
-            const isValid = this.isTaskConfigValid(t);
-            if (!isValid) {
-                invalidTaskConfig = t;
-            }
-            return isValid;
-        });
+        const invalidTaskConfig = this.taskConfigurations.getInvalidTaskConfigurations()[0];
         if (invalidTaskConfig) {
             const widget = <ProblemWidget>await this.widgetManager.getOrCreateWidget(PROBLEMS_WIDGET_ID);
             const isProblemsWidgetVisible = widget && widget.isVisible;
@@ -280,18 +271,9 @@ export class TaskService implements TaskConfigurationClient {
                 this.messageService.warn(warningMessage);
             }
         }
-        return validTaskConfigs;
-    }
 
-    /**
-     * Returns `true` if the given task configuration is valid as per the task schema defined in Theia
-     * or contributed by Theia extensions and plugins, `false` otherwise.
-     */
-    isTaskConfigValid(task: TaskConfiguration): boolean {
-        const schema = this.taskSchemaUpdater.getTaskSchema();
-        const ajv = new Ajv();
-        const validateSchema = ajv.compile(schema);
-        return !!validateSchema({ tasks: [task] });
+        const validTaskConfigs = await this.taskConfigurations.getTasks();
+        return validTaskConfigs;
     }
 
     /** Returns an array of the task configurations which are provided by the extensions. */

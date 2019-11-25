@@ -14,11 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as Ajv from 'ajv';
 import { inject, injectable, postConstruct } from 'inversify';
 import { ContributedTaskConfiguration, TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskConfigurationManager } from './task-configuration-manager';
+import { TaskSchemaUpdater } from './task-schema-updater';
 import { Disposable, DisposableCollection, ResourceProvider } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
@@ -81,6 +83,9 @@ export class TaskConfigurations implements Disposable {
     @inject(TaskConfigurationManager)
     protected readonly taskConfigurationManager: TaskConfigurationManager;
 
+    @inject(TaskSchemaUpdater)
+    protected readonly taskSchemaUpdater: TaskSchemaUpdater;
+
     constructor() {
         this.toDispose.push(Disposable.create(() => {
             this.tasksMap.clear();
@@ -125,9 +130,11 @@ export class TaskConfigurations implements Disposable {
     }
 
     /**
-     * returns the list of known tasks, which includes:
+     * returns a collection of known tasks, which includes:
      * - all the configured tasks in `tasks.json`, and
-     * - the customized detected tasks
+     * - the customized detected tasks.
+     *
+     * The invalid task configs are not returned.
      */
     async getTasks(): Promise<TaskConfiguration[]> {
         const configuredTasks = Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as TaskConfiguration[]);
@@ -141,6 +148,22 @@ export class TaskConfigurations implements Disposable {
             }
         }
         return [...configuredTasks, ...detectedTasksAsConfigured];
+    }
+
+    /**
+     * returns a collection of invalid task configs as per the task schema defined in Theia.
+     */
+    getInvalidTaskConfigurations(): (TaskCustomization | TaskConfiguration)[] {
+        const invalidTaskConfigs: (TaskCustomization | TaskConfiguration)[] = [];
+        for (const taskConfigs of this.rawTaskConfigurations.values()) {
+            for (const taskConfig of taskConfigs) {
+                const isValid = this.isTaskConfigValid(taskConfig);
+                if (!isValid) {
+                    invalidTaskConfigs.push(taskConfig);
+                }
+            }
+        }
+        return invalidTaskConfigs;
     }
 
     /** returns the task configuration for a given label or undefined if none */
@@ -358,6 +381,10 @@ export class TaskConfigurations implements Disposable {
 
         for (const [rootFolder, taskConfigs] of this.rawTaskConfigurations.entries()) {
             for (const taskConfig of taskConfigs) {
+                const isValid = this.isTaskConfigValid(taskConfig);
+                if (!isValid) {
+                    continue;
+                }
                 if (this.isDetectedTask(taskConfig)) {
                     addCustomization(rootFolder, taskConfig);
                 } else {
@@ -368,6 +395,17 @@ export class TaskConfigurations implements Disposable {
 
         this.taskCustomizationMap = newTaskCustomizationMap;
         this.tasksMap = newTaskMap;
+    }
+
+    /**
+     * Returns `true` if the given task configuration is valid as per the task schema defined in Theia
+     * or contributed by Theia extensions and plugins, `false` otherwise.
+     */
+    private isTaskConfigValid(task: TaskCustomization): boolean {
+        const schema = this.taskSchemaUpdater.getTaskSchema();
+        const ajv = new Ajv();
+        const validateSchema = ajv.compile(schema);
+        return !!validateSchema({ tasks: [task] });
     }
 
     /**

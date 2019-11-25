@@ -189,8 +189,10 @@ export interface ProblemPatternContribution {
     location?: number;
     line?: number;
     character?: number;
+    column?: number;
     endLine?: number;
     endCharacter?: number;
+    endColumn?: number;
     code?: number;
     severity?: number;
     loop?: boolean;

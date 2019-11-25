@@ -13,6 +13,13 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+// This file is inspired by VSCode and partially copied from https://github.com/Microsoft/vscode/blob/1.33.1/src/vs/workbench/contrib/tasks/common/problemMatcher.ts
+// 'problemMatcher.ts' copyright:
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
 import { injectable, inject, postConstruct } from 'inversify';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources, deepClone } from '@theia/core/lib/common';
@@ -56,7 +63,7 @@ export class TaskSchemaUpdater {
     update(): void {
         const taskSchemaUri = new URI(taskSchemaId);
 
-        taskConfigurationSchema.oneOf = [processTaskConfigurationSchema, ...customizedDetectedTasks, ...customSchemas];
+        taskConfigurationSchema.anyOf = [processTaskConfigurationSchema, ...customizedDetectedTasks, ...customSchemas];
 
         const schemaContent = this.getStrigifiedTaskSchema();
         try {
@@ -256,27 +263,7 @@ const commandAndArgs = {
     args: commandArgSchema,
     options: commandOptionsSchema
 };
-const problemMatcher = {
-    oneOf: [
-        {
-            type: 'string',
-            description: 'Name of the problem matcher to parse the output of the task',
-            enum: problemMatcherNames
-        },
-        {
-            type: 'object',
-            description: 'User defined problem matcher(s) to parse the output of the task',
-        },
-        {
-            type: 'array',
-            description: 'Name(s) of the problem matcher(s) to parse the output of the task',
-            items: {
-                type: 'string',
-                enum: problemMatcherNames
-            }
-        }
-    ]
-};
+
 const group = {
     oneOf: [
         {
@@ -316,6 +303,225 @@ const group = {
     description: 'Defines to which execution group this task belongs to. It supports "build" to add it to the build group and "test" to add it to the test group.'
 };
 
+const problemPattern: IJSONSchema = {
+    default: {
+        regexp: '^([^\\\\s].*)\\\\((\\\\d+,\\\\d+)\\\\):\\\\s*(.*)$',
+        file: 1,
+        location: 2,
+        message: 3
+    },
+    type: 'object',
+    properties: {
+        regexp: {
+            type: 'string',
+            description: 'The regular expression to find an error, warning or info in the output.'
+        },
+        kind: {
+            type: 'string',
+            description: 'whether the pattern matches a location (file and line) or only a file.'
+        },
+        file: {
+            type: 'integer',
+            description: 'The match group index of the filename. If omitted 1 is used.'
+        },
+        location: {
+            type: 'integer',
+            description: 'The match group index of the problem\'s location. Valid location patterns are: (line), (line,column) and (startLine,startColumn,endLine,endColumn). If omitted (line,column) is assumed.'
+        },
+        line: {
+            type: 'integer',
+            description: 'The match group index of the problem\'s line. Defaults to 2'
+        },
+        column: {
+            type: 'integer',
+            description: 'The match group index of the problem\'s line character. Defaults to 3'
+        },
+        endLine: {
+            type: 'integer',
+            description: 'The match group index of the problem\'s end line. Defaults to undefined'
+        },
+        endColumn: {
+            type: 'integer',
+            description: 'The match group index of the problem\'s end line character. Defaults to undefined'
+        },
+        severity: {
+            type: 'integer',
+            description: 'The match group index of the problem\'s severity. Defaults to undefined'
+        },
+        code: {
+            type: 'integer',
+            description: 'The match group index of the problem\'s code. Defaults to undefined'
+        },
+        message: {
+            type: 'integer',
+            description: 'The match group index of the message. If omitted it defaults to 4 if location is specified. Otherwise it defaults to 5.'
+        },
+        loop: {
+            type: 'boolean',
+            description: 'In a multi line matcher loop indicated whether this pattern is executed in a loop as long as it matches. Can only specified on a last pattern in a multi line pattern.'
+        }
+    }
+};
+
+const multiLineProblemPattern: IJSONSchema = {
+    type: 'array',
+    items: problemPattern
+};
+
+const watchingPattern: IJSONSchema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+        regexp: {
+            type: 'string',
+            description: 'The regular expression to detect the begin or end of a background task.'
+        },
+        file: {
+            type: 'integer',
+            description: 'The match group index of the filename. Can be omitted.'
+        },
+    }
+};
+
+const patternType: IJSONSchema = {
+    anyOf: [
+        {
+            type: 'string',
+            description: 'The name of a contributed or predefined pattern'
+        },
+        problemPattern,
+        multiLineProblemPattern
+    ],
+    description: 'A problem pattern or the name of a contributed or predefined problem pattern. Can be omitted if base is specified.'
+};
+
+const problemMatcherObject: IJSONSchema = {
+    type: 'object',
+    properties: {
+        base: {
+            type: 'string',
+            description: 'The name of a base problem matcher to use.'
+        },
+        owner: {
+            type: 'string',
+            description: 'The owner of the problem inside Code. Can be omitted if base is specified. Defaults to \'external\' if omitted and base is not specified.'
+        },
+        source: {
+            type: 'string',
+            description: 'A human-readable string describing the source of this diagnostic, e.g. \'typescript\' or \'super lint\'.'
+        },
+        severity: {
+            type: 'string',
+            enum: ['error', 'warning', 'info'],
+            description: 'The default severity for captures problems. Is used if the pattern doesn\'t define a match group for severity.'
+        },
+        applyTo: {
+            type: 'string',
+            enum: ['allDocuments', 'openDocuments', 'closedDocuments'],
+            description: 'Controls if a problem reported on a text document is applied only to open, closed or all documents.'
+        },
+        pattern: patternType,
+        fileLocation: {
+            oneOf: [
+                {
+                    type: 'string',
+                    enum: ['absolute', 'relative', 'autoDetect']
+                },
+                {
+                    type: 'array',
+                    items: {
+                        type: 'string'
+                    }
+                }
+            ],
+            description: 'Defines how file names reported in a problem pattern should be interpreted.'
+        },
+        background: {
+            type: 'object',
+            additionalProperties: false,
+            description: 'Patterns to track the begin and end of a matcher active on a background task.',
+            properties: {
+                activeOnStart: {
+                    type: 'boolean',
+                    description: 'If set to true the background monitor is in active mode when the task starts. This is equals of issuing a line that matches the beginsPattern'
+                },
+                beginsPattern: {
+                    oneOf: [
+                        {
+                            type: 'string'
+                        },
+                        watchingPattern
+                    ],
+                    description: 'If matched in the output the start of a background task is signaled.'
+                },
+                endsPattern: {
+                    oneOf: [
+                        {
+                            type: 'string'
+                        },
+                        watchingPattern
+                    ],
+                    description: 'If matched in the output the end of a background task is signaled.'
+                }
+            }
+        },
+        watching: {
+            type: 'object',
+            additionalProperties: false,
+            deprecationMessage: 'The watching property is deprecated. Use background instead.',
+            description: 'Patterns to track the begin and end of a watching matcher.',
+            properties: {
+                activeOnStart: {
+                    type: 'boolean',
+                    description: 'If set to true the watcher is in active mode when the task starts. This is equals of issuing a line that matches the beginPattern'
+                },
+                beginsPattern: {
+                    oneOf: [
+                        {
+                            type: 'string'
+                        },
+                        watchingPattern
+                    ],
+                    description: 'If matched in the output the start of a watching task is signaled.'
+                },
+                endsPattern: {
+                    oneOf: [
+                        {
+                            type: 'string'
+                        },
+                        watchingPattern
+                    ],
+                    description: 'If matched in the output the end of a watching task is signaled.'
+                }
+            }
+        }
+    }
+};
+
+const problemMatcher = {
+    anyOf: [
+        {
+            type: 'string',
+            description: 'Name of the problem matcher to parse the output of the task',
+            enum: problemMatcherNames
+        },
+        {
+            type: 'array',
+            description: 'Name(s) of the problem matcher(s) to parse the output of the task',
+            items: {
+                type: 'string',
+                enum: problemMatcherNames
+            }
+        },
+        problemMatcherObject,
+        {
+            type: 'array',
+            description: 'User defined problem matcher(s) to parse the output of the task',
+            items: problemMatcherObject
+        }
+    ]
+};
+
 const processTaskConfigurationSchema: IJSONSchema = {
     type: 'object',
     required: ['type', 'label', 'command'],
@@ -349,5 +555,5 @@ const customSchemas: IJSONSchema[] = [];
 
 const taskConfigurationSchema: IJSONSchema = {
     $id: taskSchemaId,
-    oneOf: [processTaskConfigurationSchema, ...customizedDetectedTasks, ...customSchemas]
+    anyOf: [processTaskConfigurationSchema, ...customizedDetectedTasks, ...customSchemas]
 };
