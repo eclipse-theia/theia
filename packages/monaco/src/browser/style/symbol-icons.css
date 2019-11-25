@@ -2,8 +2,8 @@
     background-image: url(symbol-sprite.svg);
     background-repeat: no-repeat;
     overflow: hidden;
-    min-width: 16px;
-    height: 16px;
+    min-width: var(--theia-icon-size);
+    height: var(--theia-icon-size);
     margin-right: 4px;
 }
 

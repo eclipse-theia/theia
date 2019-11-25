@@ -60,11 +60,13 @@ export class QuickOpenWorkspace implements QuickOpenModel {
             if (tempWorkspaceFile && uri.toString() === tempWorkspaceFile.toString()) {
                 continue; // skip the temporary workspace files
             }
+            const icon = this.labelProvider.getIcon(stat);
+            const iconClass = icon === '' ? undefined : icon + ' file-icon';
             this.items.push(new QuickOpenGroupItem({
                 label: uri.path.base,
                 description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
                 groupLabel: `last modified ${moment(stat.lastModification).fromNow()}`,
-                iconClass: await this.labelProvider.getIcon(stat) + ' file-icon',
+                iconClass,
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
                         return false;

@@ -18,12 +18,31 @@ import { inject, injectable, named } from 'inversify';
 import * as fileIcons from 'file-icons-js';
 import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
-import { Prioritizeable, MaybePromise } from '../common/types';
+import { Prioritizeable } from '../common/types';
 import { Event, Emitter } from '../common';
 import { FrontendApplicationContribution } from './frontend-application';
 
-export const FOLDER_ICON = 'fa fa-folder';
-export const FILE_ICON = 'fa fa-file';
+/**
+ * @internal don't export it, use `LabelProvider.folderIcon` instead.
+ */
+const DEFAULT_FOLDER_ICON = 'fa fa-folder';
+/**
+ * @internal don't export it, use `LabelProvider.fileIcon` instead.
+ */
+const DEFAULT_FILE_ICON = 'fa fa-file';
+
+/**
+ * Internal folder icon class for the default (File Icons) theme.
+ *
+ * @deprecated Use `LabelProvider.folderIcon` to get a folder icon class for the current icon theme.
+ */
+export const FOLDER_ICON = DEFAULT_FOLDER_ICON;
+/**
+ * Internal file icon class for the default (File Icons) theme.
+ *
+ * @deprecated Use `LabelProvider.fileIcon` to get a file icon class for the current icon theme.
+ */
+export const FILE_ICON = DEFAULT_FILE_ICON;
 
 export const LabelProviderContribution = Symbol('LabelProviderContribution');
 export interface LabelProviderContribution {
@@ -38,17 +57,17 @@ export interface LabelProviderContribution {
     /**
      * returns an icon class for the given element.
      */
-    getIcon?(element: object): MaybePromise<string>;
+    getIcon?(element: object): string | undefined;
 
     /**
      * returns a short name for the given element.
      */
-    getName?(element: object): string;
+    getName?(element: object): string | undefined;
 
     /**
      * returns a long name for the given element.
      */
-    getLongName?(element: object): string;
+    getLongName?(element: object): string | undefined;
 
     /**
      * Emit when something has changed that may result in this label provider returning a different
@@ -56,7 +75,13 @@ export interface LabelProviderContribution {
      */
     readonly onDidChange?: Event<DidChangeLabelEvent>;
 
-    readonly getConstituentUris?: (compositeElement: object) => URI[];
+    /**
+     * Check whether the given element is affected by the given change event.
+     * Contributions delegating to the label provider can use this hook
+     * to perfrom a recursive check.
+     */
+    affects?(element: object, event: DidChangeLabelEvent): boolean;
+
 }
 
 export interface DidChangeLabelEvent {
@@ -73,20 +98,32 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
         return 0;
     }
 
-    getIcon(uri: URI): MaybePromise<string> {
+    getIcon(uri: URI): string {
         const iconClass = this.getFileIcon(uri);
         if (!iconClass) {
             if (uri.displayName.indexOf('.') === -1) {
-                return FOLDER_ICON;
+                return this.defaultFolderIcon;
             } else {
-                return FILE_ICON;
+                return this.defaultFileIcon;
             }
         }
         return iconClass;
     }
 
+    get defaultFolderIcon(): string {
+        return DEFAULT_FOLDER_ICON;
+    }
+
+    get defaultFileIcon(): string {
+        return DEFAULT_FILE_ICON;
+    }
+
     protected getFileIcon(uri: URI): string | undefined {
-        return fileIcons.getClassWithColor(uri.displayName);
+        const fileIcon = fileIcons.getClassWithColor(uri.displayName);
+        if (!fileIcon) {
+            return undefined;
+        }
+        return fileIcon + ' theia-file-icons-js';
     }
 
     getName(uri: URI): string {
@@ -114,52 +151,25 @@ export class LabelProvider implements FrontendApplicationContribution {
      */
     initialize(): void {
         const contributions = this.contributionProvider.getContributions();
-        for (const contribution of contributions) {
-            if (contribution.onDidChange) {
-                contribution.onDidChange(event => {
-                    const affects = (uri: URI) => this.affects(uri, event, contribution);
-                    this.onDidChangeEmitter.fire({ affects });
+        for (const eventContribution of contributions) {
+            if (eventContribution.onDidChange) {
+                eventContribution.onDidChange(event => {
+                    this.onDidChangeEmitter.fire({
+                        // TODO check eventContribution.canHandle as well
+                        affects: element => this.affects(element, event)
+                    });
                 });
             }
         }
     }
 
-    /**
-     * When the given event occurs, determine if the given URI could in any
-     * way be affected.
-     *
-     * If the event directly indicates that it affects the URI then of course we
-     * return `true`.  However there may be label provider contributions that delegate
-     * back to the label provider.  These contributors do not, and should not, listen for
-     * label provider events because that would cause infinite recursion.
-     *
-     * @param uri
-     * @param event
-     */
-    protected affects(element: object, event: DidChangeLabelEvent, originatingContribution: LabelProviderContribution): boolean {
-
-        const contribs = this.findContribution(element);
-        const possibleContribsWithDups = [
-            contribs.find(c => c.getIcon !== undefined),
-            contribs.find(c => c.getName !== undefined),
-            contribs.find(c => c.getLongName !== undefined),
-        ];
-        const possibleContribsWithoutDups = [...new Set(possibleContribsWithDups)];
-        for (const possibleContrib of possibleContribsWithoutDups) {
-            if (possibleContrib) {
-                if (possibleContrib === originatingContribution) {
-                    if (event.affects(element)) {
-                        return true;
-                    }
-                }
-                if (possibleContrib.getConstituentUris) {
-                    const constituentUris: URI[] = possibleContrib.getConstituentUris(element);
-                    for (const constituentUri of constituentUris) {
-                        if (this.affects(constituentUri, event, originatingContribution)) {
-                            return true;
-                        }
-                    }
-                }
+    protected affects(element: object, event: DidChangeLabelEvent): boolean {
+        if (event.affects(element)) {
+            return true;
+        }
+        for (const contribution of this.findContribution(element)) {
+            if (contribution.affects && contribution.affects(element, event)) {
+                return true;
             }
         }
         return false;
@@ -169,31 +179,54 @@ export class LabelProvider implements FrontendApplicationContribution {
         return this.onDidChangeEmitter.event;
     }
 
-    async getIcon(element: object): Promise<string> {
-        const contribs = this.findContribution(element);
-        const contrib = contribs.find(c => c.getIcon !== undefined);
-        if (!contrib) {
-            return '';
+    /**
+     * Return a default file icon for the current icon theme.
+     */
+    get fileIcon(): string {
+        return this.getIcon(new URI('file:///foo/foo.txt'));
+    }
+
+    /**
+     * Return a default folder icon for the current icon theme.
+     */
+    get folderIcon(): string {
+        return this.getIcon(new URI('file:///foo'));
+    }
+
+    getIcon(element: object): string {
+        const contributions = this.findContribution(element);
+        for (const contribution of contributions) {
+            const value = contribution.getIcon && contribution.getIcon(element);
+            if (value === undefined) {
+                continue;
+            }
+            return value;
         }
-        return contrib.getIcon!(element);
+        return '';
     }
 
     getName(element: object): string {
-        const contribs = this.findContribution(element);
-        const contrib = contribs.find(c => c.getName !== undefined);
-        if (!contrib) {
-            return '<unknown>';
+        const contributions = this.findContribution(element);
+        for (const contribution of contributions) {
+            const value = contribution.getName && contribution.getName(element);
+            if (value === undefined) {
+                continue;
+            }
+            return value;
         }
-        return contrib.getName!(element);
+        return '<unknown>';
     }
 
     getLongName(element: object): string {
-        const contribs = this.findContribution(element);
-        const contrib = contribs.find(c => c.getLongName !== undefined);
-        if (!contrib) {
-            return '';
+        const contributions = this.findContribution(element);
+        for (const contribution of contributions) {
+            const value = contribution.getLongName && contribution.getLongName(element);
+            if (value === undefined) {
+                continue;
+            }
+            return value;
         }
-        return contrib.getLongName!(element);
+        return '';
     }
 
     protected findContribution(element: object): LabelProviderContribution[] {

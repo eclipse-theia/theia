@@ -19,7 +19,7 @@ import '../../src/browser/styles/index.css';
 import { ContainerModule, interfaces } from 'inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-in-workspace-service';
 import { SearchInWorkspaceServer, SIW_WS_PATH } from '../common/search-in-workspace-interface';
-import { WebSocketConnectionProvider, WidgetFactory, createTreeContainer, TreeWidget, bindViewContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, WidgetFactory, createTreeContainer, TreeWidget, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { ResourceResolver } from '@theia/core';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
@@ -28,6 +28,7 @@ import { InMemoryTextResourceResolver } from './in-memory-text-resource';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { bindSearchInWorkspacePreferences } from './search-in-workspace-preferences';
+import { SearchInWorkspaceLabelProvider } from './search-in-workspace-label-provider';
 
 export default new ContainerModule(bind => {
     bind(SearchInWorkspaceContextKeyService).toSelf().inSingletonScope();
@@ -58,6 +59,9 @@ export default new ContainerModule(bind => {
     bind(ResourceResolver).toService(InMemoryTextResourceResolver);
 
     bindSearchInWorkspacePreferences(bind);
+
+    bind(SearchInWorkspaceLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(SearchInWorkspaceLabelProvider);
 });
 
 export function createSearchTreeWidget(parent: interfaces.Container): SearchInWorkspaceResultTreeWidget {

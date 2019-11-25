@@ -61,7 +61,7 @@
 }
 
 .t-siw-search-container .searchHeader .controls.button-container {
-    height: 22px;
+    height: var(--theia-content-line-height);
     margin-bottom: 5px;
 }
 
@@ -232,7 +232,8 @@
     width: 7px;
 }
 
-.t-siw-search-container .result .result-head .file-icon {
+.t-siw-search-container .result .result-head .fa,
+.t-siw-search-container .result .result-head .theia-file-icons-js {
     margin: 0 3px;
 }
 
@@ -267,7 +268,8 @@
     width: 100%;
 }
 
-.result-head-info {
+.t-siw-search-container .result-head-info {
+    display: inline-flex;
     align-items: center;
 }
 

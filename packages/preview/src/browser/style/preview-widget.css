@@ -20,7 +20,7 @@
 }
 
 .theia-preview-widget .scrollBeyondLastLine {
-	margin-bottom: calc(100vh - 22px);
+	margin-bottom: calc(100vh - var(--theia-content-line-height));
 }
 
 .theia-preview-widget:focus {

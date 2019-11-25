@@ -20,7 +20,7 @@ import { ContainerModule } from 'inversify';
 import { ProblemWidget, PROBLEMS_WIDGET_ID } from './problem-widget';
 import { ProblemContribution } from './problem-contribution';
 import { createProblemWidget } from './problem-container';
-import { FrontendApplicationContribution, bindViewContribution, ApplicationShellLayoutMigration } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, bindViewContribution, ApplicationShellLayoutMigration, LabelProviderContribution } from '@theia/core/lib/browser';
 import { ProblemManager } from './problem-manager';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser/navigator-decorator-service';
@@ -30,6 +30,7 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { ProblemLayoutVersion3Migration } from './problem-layout-migrations';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { bindProblemPreferences } from './problem-preferences';
+import { MarkerTreeLabelProvider } from '../marker-tree-label-provider';
 
 export default new ContainerModule(bind => {
     bindProblemPreferences(bind);
@@ -53,4 +54,7 @@ export default new ContainerModule(bind => {
     bind(NavigatorTreeDecorator).toService(ProblemDecorator);
     bind(ProblemTabBarDecorator).toSelf().inSingletonScope();
     bind(TabBarDecorator).toService(ProblemTabBarDecorator);
+
+    bind(MarkerTreeLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(MarkerTreeLabelProvider);
 });

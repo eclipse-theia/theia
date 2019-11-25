@@ -86,6 +86,9 @@ import { bindResourceProvider, bindMessageService, bindPreferenceService } from 
 import { ColorRegistry } from './color-registry';
 import { ColorContribution, ColorApplicationContribution } from './color-application-contribution';
 import { ExternalUriService } from './external-uri-service';
+import { IconThemeService, NoneIconTheme } from './icon-theme-service';
+import { IconThemeApplicationContribution, IconThemeContribution, DefaultFileIconThemeContribution } from './icon-theme-contribution';
+import { TreeLabelProvider } from './tree/tree-label-provider';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -93,6 +96,15 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     const themeService = ThemeService.get();
     themeService.register(...BuiltinThemeProvider.themes);
     themeService.startupTheme();
+
+    bind(NoneIconTheme).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(NoneIconTheme);
+    bind(IconThemeService).toSelf().inSingletonScope();
+    bindContributionProvider(bind, IconThemeContribution);
+    bind(DefaultFileIconThemeContribution).toSelf().inSingletonScope();
+    bind(IconThemeContribution).toService(DefaultFileIconThemeContribution);
+    bind(IconThemeApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(IconThemeApplicationContribution);
 
     bind(ColorRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, ColorContribution);
@@ -130,7 +142,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(TabBarRendererFactory).toFactory(context => () => {
         const contextMenuRenderer = context.container.get<ContextMenuRenderer>(ContextMenuRenderer);
         const decoratorService = context.container.get<TabBarDecoratorService>(TabBarDecoratorService);
-        return new TabBarRenderer(contextMenuRenderer, decoratorService);
+        const iconThemeService = context.container.get<IconThemeService>(IconThemeService);
+        return new TabBarRenderer(contextMenuRenderer, decoratorService, iconThemeService);
     });
 
     bindContributionProvider(bind, TabBarDecorator);
@@ -229,6 +242,9 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(FrontendApplicationContribution).toService(LabelProvider);
     bind(LabelProviderContribution).to(DefaultUriLabelProviderContribution).inSingletonScope();
     bind(LabelProviderContribution).to(DiffUriLabelProviderContribution).inSingletonScope();
+
+    bind(TreeLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(TreeLabelProvider);
 
     bindPreferenceService(bind);
     bind(FrontendApplicationContribution).toService(PreferenceService);

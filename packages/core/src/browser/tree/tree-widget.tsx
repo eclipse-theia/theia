@@ -37,6 +37,7 @@ import { TreeSearch } from './tree-search';
 import { ElementExt } from '@phosphor/domutils';
 import { TreeWidgetSelection } from './tree-widget-selection';
 import { MaybePromise } from '../../common/types';
+import { LabelProvider } from '../label-provider';
 
 const debounce = require('lodash.debounce');
 
@@ -69,6 +70,8 @@ export interface TreeProps {
      * the padding for the children will be calculated as `leftPadding * hierarchyDepth` and so on.
      */
     readonly leftPadding: number;
+
+    readonly expansionTogglePadding: number;
 
     /**
      * `true` if the tree widget support multi-selection. Otherwise, `false`. Defaults to `false`.
@@ -112,7 +115,8 @@ export interface NodeProps {
  * The default tree properties.
  */
 export const defaultTreeProps: TreeProps = {
-    leftPadding: 8
+    leftPadding: 8,
+    expansionTogglePadding: 18
 };
 
 export namespace TreeWidget {
@@ -154,6 +158,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
+
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
 
     protected shouldScrollToRow = true;
 
@@ -214,7 +221,15 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.model.onNodeRefreshed(() => this.updateDecorations()),
             this.model.onExpansionChanged(() => this.updateDecorations()),
             this.decoratorService,
-            this.decoratorService.onDidChangeDecorations(() => this.updateDecorations())
+            this.decoratorService.onDidChangeDecorations(() => this.updateDecorations()),
+            this.labelProvider.onDidChange(e => {
+                for (const row of this.rows.values()) {
+                    if (e.affects(row)) {
+                        this.forceUpdate();
+                        return;
+                    }
+                }
+            })
         ]);
         setTimeout(() => {
             this.updateRows();
@@ -510,7 +525,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return <div
             data-node-id={node.id}
             className={className}
-            style={{ paddingLeft: '4px', paddingRight: '4px' }}
             onClick={this.toggle}>
         </div>;
     }
@@ -537,7 +551,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             };
         }
         const children: React.ReactNode[] = [];
-        const caption = node.name;
+        const caption = this.toNodeName(node);
         const highlight = this.getDecorationData(node, 'highlight')[0];
         if (highlight) {
             children.push(this.toReactNode(caption, highlight));
@@ -825,11 +839,20 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @returns the CSS properties if available.
      */
     protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
-        // If the node is a composite, a toggle will be rendered. Otherwise we need to add the width and the left, right padding => 18px
-        const paddingLeft = `${props.depth * this.props.leftPadding + (this.isExpandable(node) ? 0 : 18)}px`;
-        return {
-            paddingLeft
-        };
+        const paddingLeft = this.getPaddingLeft(node, props) + 'px';
+        return { paddingLeft };
+    }
+
+    protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
+        return props.depth * this.props.leftPadding + (this.needsExpansionTogglePadding(node) ? this.props.expansionTogglePadding : 0);
+    }
+
+    /**
+     * If the node is a composite, a toggle will be rendered.
+     * Otherwise we need to add the width and the left, right padding => 18px
+     */
+    protected needsExpansionTogglePadding(node: TreeNode): boolean {
+        return !this.isExpandable(node);
     }
 
     /**
@@ -1211,6 +1234,18 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (model) {
             this.model.restoreState(model);
         }
+    }
+
+    protected toNodeIcon(node: TreeNode): string {
+        return this.labelProvider.getIcon(node);
+    }
+
+    protected toNodeName(node: TreeNode): string {
+        return this.labelProvider.getName(node);
+    }
+
+    protected toNodeDescription(node: TreeNode): string {
+        return this.labelProvider.getLongName(node);
     }
 
 }

@@ -15,19 +15,11 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
-import { Container } from 'inversify';
-import { TreeSearch } from './tree-search';
-import { FuzzySearch } from './fuzzy-search';
-import { Tree, TreeImpl } from './tree';
-import { ILogger } from '../../common/logger';
-import { MockLogger } from '../../common/test/mock-logger';
 import { MockTreeModel } from './test/mock-tree-model';
 import { TreeSelectionState } from './tree-selection-state';
-import { TreeNavigationService } from './tree-navigation';
-import { TreeModel, TreeModelImpl } from './tree-model';
-import { TreeSelectionServiceImpl } from './tree-selection-impl';
-import { TreeExpansionService, TreeExpansionServiceImpl } from './tree-expansion';
-import { TreeSelection, TreeSelectionService, SelectableTreeNode } from './tree-selection';
+import { createTreeTestContainer } from './test/tree-test-container';
+import { SelectableTreeNode, TreeSelection } from './tree-selection';
+import { TreeModel } from './tree-model';
 
 // tslint:disable:no-unused-expression
 
@@ -439,21 +431,7 @@ describe('tree-selection-state', () => {
     }
 
     function createTreeModel(): TreeModel {
-        const container = new Container({ defaultScope: 'Singleton' });
-        container.bind(TreeImpl).toSelf();
-        container.bind(Tree).toService(TreeImpl);
-        container.bind(TreeSelectionServiceImpl).toSelf();
-        container.bind(TreeSelectionService).toService(TreeSelectionServiceImpl);
-        container.bind(TreeExpansionServiceImpl).toSelf();
-        container.bind(TreeExpansionService).toService(TreeExpansionServiceImpl);
-        container.bind(TreeNavigationService).toSelf();
-        container.bind(TreeModelImpl).toSelf();
-        container.bind(TreeModel).toService(TreeModelImpl);
-        container.bind(TreeSearch).toSelf();
-        container.bind(FuzzySearch).toSelf();
-        container.bind(MockLogger).toSelf();
-        container.bind(ILogger).to(MockLogger).inSingletonScope();
-        return container.get(TreeModel);
+        return createTreeTestContainer().get(TreeModel);
     }
 
 });

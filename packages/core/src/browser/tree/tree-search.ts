@@ -21,6 +21,7 @@ import { Tree, TreeNode } from './tree';
 import { TreeDecoration } from './tree-decorator';
 import { FuzzySearch } from './fuzzy-search';
 import { TopDownTreeIterator } from './tree-iterator';
+import { LabelProvider } from '../label-provider';
 
 @injectable()
 export class TreeSearch implements Disposable {
@@ -31,6 +32,9 @@ export class TreeSearch implements Disposable {
     @inject(FuzzySearch)
     protected readonly fuzzySearch: FuzzySearch;
 
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
     protected readonly disposables = new DisposableCollection();
     protected readonly filteredNodesEmitter = new Emitter<ReadonlyArray<Readonly<TreeNode>>>();
 
@@ -38,7 +42,7 @@ export class TreeSearch implements Disposable {
     protected _filteredNodes: ReadonlyArray<Readonly<TreeNode>> = [];
 
     @postConstruct()
-    init(): void {
+    protected init(): void {
         this.disposables.push(this.filteredNodesEmitter);
     }
 
@@ -58,7 +62,7 @@ export class TreeSearch implements Disposable {
             return [];
         }
         const items = [...new TopDownTreeIterator(root, { pruneCollapsed: true })];
-        const transform = (node: TreeNode) => node.name;
+        const transform = (node: TreeNode) => this.labelProvider.getName(node);
         this._filterResult = await this.fuzzySearch.filter({
             items,
             pattern,

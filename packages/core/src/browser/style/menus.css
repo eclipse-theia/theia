@@ -150,7 +150,7 @@
 
 
 .p-Menu-itemSubmenuIcon {
-  width: 16px;
+  width: var(--theia-icon-size);
   padding: 0px 4px 0px 0px;
 }
 

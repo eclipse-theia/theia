@@ -17,16 +17,11 @@
 import { GitFileChange } from '../common/git-model';
 
 export interface GitFileChangeNode extends GitFileChange {
-    readonly icon: string;
-    readonly label: string;
-    readonly description: string;
-    readonly caption?: string;
-    readonly extraIconClassName?: string;
     readonly commitSha?: string;
     selected?: boolean;
 }
 export namespace GitFileChangeNode {
     export function is(node: Object | undefined): node is GitFileChangeNode {
-        return !!node && 'uri' in node && 'status' in node && 'description' in node && 'label' in node && 'icon' in node;
+        return !!node && 'uri' in node && 'status' in node;
     }
 }

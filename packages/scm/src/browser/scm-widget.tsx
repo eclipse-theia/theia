@@ -88,7 +88,12 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
     protected init(): void {
         this.refresh();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refresh()));
-        this.toDispose.push(this.labelProvider.onDidChange(() => this.update()));
+        this.toDispose.push(this.labelProvider.onDidChange(e => {
+            const repository = this.scmService.selectedRepository;
+            if (repository && repository.resources.some(resource => e.affects(resource.sourceUri))) {
+                this.update();
+            }
+        }));
     }
 
     protected readonly toDisposeOnRefresh = new DisposableCollection();
@@ -446,7 +451,7 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
             return undefined;
         }
         const decorations = resource.decorations;
-        const icon = decorations && decorations.icon || '';
+        const icon = labelProvider.getIcon(resource.sourceUri);
         const color = decorations && decorations.color || '';
         const letter = decorations && decorations.letter || '';
         const tooltip = decorations && decorations.tooltip || '';
@@ -460,8 +465,8 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
             ref={this.detectHover}
             onClick={this.handleClick}
             onDoubleClick={this.handleDoubleClick} >
+            <span className={icon + ' file-icon'} />
             <div className='noWrapInfo' >
-                <span className={icon + ' file-icon'} />
                 <span className='name'>{name}</span>
                 <span className='path'>{path}</span>
             </div>

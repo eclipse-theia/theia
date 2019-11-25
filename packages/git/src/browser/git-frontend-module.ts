@@ -42,6 +42,7 @@ import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitSyncService } from './git-sync-service';
 import { GitErrorHandler } from './git-error-handler';
 import { GitScmProvider } from './git-scm-provider';
+import { GitFileChangeLabelProvider } from './git-file-change-label-provider';
 
 export default new ContainerModule(bind => {
     bindGitPreferences(bind);
@@ -75,4 +76,7 @@ export default new ContainerModule(bind => {
 
     bind(GitSyncService).toSelf().inSingletonScope();
     bind(GitErrorHandler).toSelf().inSingletonScope();
+
+    bind(GitFileChangeLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(GitFileChangeLabelProvider);
 });

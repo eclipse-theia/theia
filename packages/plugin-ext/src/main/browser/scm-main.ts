@@ -31,14 +31,12 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import URI from '@theia/core/lib/common/uri';
-import { LabelProvider } from '@theia/core/lib/browser';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 
 export class ScmMainImpl implements ScmMain, Disposable {
     private readonly proxy: ScmExt;
     private readonly scmService: ScmService;
     private readonly scmRepositoryMap = new Map<number, ScmRepository>();
-    private readonly labelProvider: LabelProvider;
     private readonly colors: ColorRegistry;
     private lastSelectedSourceControlHandle: number | undefined;
 
@@ -47,7 +45,6 @@ export class ScmMainImpl implements ScmMain, Disposable {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.SCM_EXT);
         this.scmService = container.get(ScmService);
-        this.labelProvider = container.get(LabelProvider);
         this.colors = container.get(ColorRegistry);
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(repository => this.updateSelectedRepository(repository)));
     }
@@ -75,7 +72,7 @@ export class ScmMainImpl implements ScmMain, Disposable {
     }
 
     async $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri: string): Promise<void> {
-        const provider = new PluginScmProvider(this.proxy, sourceControlHandle, id, label, rootUri, this.labelProvider, this.colors);
+        const provider = new PluginScmProvider(this.proxy, sourceControlHandle, id, label, rootUri, this.colors);
         const repository = this.scmService.registerScmProvider(provider);
         repository.input.onDidChange(() =>
             this.proxy.$updateInputBox(sourceControlHandle, repository.input.value)
@@ -171,7 +168,6 @@ export class PluginScmProvider implements ScmProvider {
         readonly id: string,
         readonly label: string,
         readonly rootUri: string,
-        protected readonly labelProvider: LabelProvider,
         protected readonly colors: ColorRegistry
     ) {
         this.disposableCollection.push(this.onDidChangeEmitter);
@@ -312,9 +308,7 @@ export class PluginScmProvider implements ScmProvider {
                 const decorations = resource.decorations;
                 if (decorations) {
                     const colorVariable = resource.colorId && this.colors.toCssVariableName(resource.colorId);
-                    const icon = decorations.iconPath ? decorations.iconPath : await this.labelProvider.getIcon(new URI(resource.resourceUri));
                     scmDecorations = {
-                        icon,
                         tooltip: decorations.tooltip,
                         letter: resource.letter,
                         color: colorVariable && `var(${colorVariable})`
