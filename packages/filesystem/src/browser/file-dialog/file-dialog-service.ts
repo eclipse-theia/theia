@@ -76,11 +76,9 @@ export class DefaultFileDialogService {
         if (folder) {
             const folderUri = new URI(folder.uri);
             const rootUri = folder.isDirectory ? folderUri : folderUri.parent;
-            const name = this.labelProvider.getName(rootUri);
             const rootStat = await this.fileSystem.getFileStat(rootUri.toString());
             if (rootStat) {
-                const label = await this.labelProvider.getIcon(rootStat);
-                return DirNode.createRoot(rootStat, name, label);
+                return DirNode.createRoot(rootStat);
             }
         }
         return undefined;

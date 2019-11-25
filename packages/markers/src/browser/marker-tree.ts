@@ -20,7 +20,6 @@ import { MarkerManager } from './marker-manager';
 import { Marker } from '../common/marker';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import URI from '@theia/core/lib/common/uri';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { ProblemSelection } from './problem/problem-selection';
 
 export const MarkerOptions = Symbol('MarkerOptions');
@@ -33,30 +32,11 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
 
     constructor(
         protected readonly markerManager: MarkerManager<T>,
-        protected readonly markerOptions: MarkerOptions,
-        protected readonly labelProvider: LabelProvider
+        protected readonly markerOptions: MarkerOptions
     ) {
         super();
 
         this.toDispose.push(markerManager.onDidChangeMarkers(uri => this.refreshMarkerInfo(uri)));
-        this.toDispose.push(labelProvider.onDidChange(async event => {
-            let isAnyAffectedNodes = false;
-            for (const nodeId of Object.keys(this.nodes)) {
-                const node = this.nodes[nodeId];
-                const markerInfoNode = node;
-                if (node && MarkerInfoNode.is(markerInfoNode)) {
-                    const uri = markerInfoNode.uri;
-                    if (event.affects(uri)) {
-                        node.name = this.labelProvider.getName(uri);
-                        node.icon = await this.labelProvider.getIcon(uri);
-                        isAnyAffectedNodes = true;
-                    }
-                }
-            }
-            if (isAnyAffectedNodes) {
-                this.fireChanged();
-            }
-        }));
 
         this.root = <MarkerRootNode>{
             visible: false,
@@ -80,7 +60,7 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
             }
             return;
         }
-        const node = MarkerInfoNode.is(existing) ? existing : await this.createMarkerInfo(id, uri);
+        const node = MarkerInfoNode.is(existing) ? existing : this.createMarkerInfo(id, uri);
         CompositeTreeNode.addChild(node.parent, node);
         const children = this.getMarkerNodes(node, markers);
         node.numberOfMarkers = markers.length;
@@ -94,7 +74,7 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
                 const uri = new URI(id);
                 const existing = this.getNode(id);
                 const markers = this.markerManager.findMarkers({ uri });
-                const node = MarkerInfoNode.is(existing) ? existing : await this.createMarkerInfo(id, uri);
+                const node = MarkerInfoNode.is(existing) ? existing : this.createMarkerInfo(id, uri);
                 node.children = this.getMarkerNodes(node, markers);
                 node.numberOfMarkers = node.children.length;
                 nodes.push(node);
@@ -104,18 +84,12 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
         return super.resolveChildren(parent);
     }
 
-    protected async createMarkerInfo(id: string, uri: URI): Promise<MarkerInfoNode> {
-        const label = await this.labelProvider.getName(uri);
-        const icon = await this.labelProvider.getIcon(uri);
-        const description = await this.labelProvider.getLongName(uri.parent);
+    protected createMarkerInfo(id: string, uri: URI): MarkerInfoNode {
         return {
             children: [],
             expanded: true,
             uri,
             id,
-            name: label,
-            icon,
-            description,
             parent: this.root as MarkerRootNode,
             selected: false,
             numberOfMarkers: 0
@@ -159,7 +133,7 @@ export interface MarkerInfoNode extends UriSelection, SelectableTreeNode, Expand
     numberOfMarkers: number;
 }
 export namespace MarkerInfoNode {
-    export function is(node: TreeNode | undefined): node is MarkerInfoNode {
+    export function is(node: Object | undefined): node is MarkerInfoNode {
         return ExpandableTreeNode.is(node) && UriSelection.is(node);
     }
 }

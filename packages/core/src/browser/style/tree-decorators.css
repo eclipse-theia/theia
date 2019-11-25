@@ -33,7 +33,7 @@
 .theia-icon-wrapper {
     top: 0px !important;
     position: relative;
-    display: inline-block
+    display: inline-flex;
 }
 
 .theia-decorator-size {

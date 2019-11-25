@@ -69,14 +69,20 @@ export interface TreeNode {
     readonly id: string;
     /**
      * A human-readable name of this tree node.
+     *
+     * @deprecated use `LabelProvider.getName` instead or move this property to your tree node type
      */
-    readonly name: string;
+    readonly name?: string;
     /**
      * A css string for this tree node icon.
+     *
+     * @deprecated use `LabelProvider.getIcon` instead or move this property to your tree node type
      */
     readonly icon?: string;
     /**
      * A human-readable description of this tree node.
+     *
+     * @deprecated use `LabelProvider.getLongName` instead or move this property to your tree node type
      */
     readonly description?: string;
     /**
@@ -100,6 +106,10 @@ export interface TreeNode {
 }
 
 export namespace TreeNode {
+    export function is(node: Object | undefined): node is TreeNode {
+        return !!node && typeof node === 'object' && 'id' in node && 'parent' in node;
+    }
+
     export function equals(left: TreeNode | undefined, right: TreeNode | undefined): boolean {
         return left === right || (!!left && !!right && left.id === right.id);
     }

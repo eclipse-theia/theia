@@ -49,7 +49,7 @@
 }
 
 .kb table tr {
-    min-height: 16px;
+    min-height: var(--theia-icon-size);
 }
 
 .th-action, .th-keybinding,

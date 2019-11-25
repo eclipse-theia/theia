@@ -27,6 +27,7 @@ import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';
 import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel';
 import { WidgetDecoration } from '../widget-decoration';
 import { TabBarDecoratorService } from './tab-bar-decorator';
+import { IconThemeService } from '../icon-theme-service';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -75,7 +76,8 @@ export class TabBarRenderer extends TabBar.Renderer {
     // right now it is mess: (1) client logic belong to renderer, (2) cyclic dependencies between renderes and clients
     constructor(
         protected readonly contextMenuRenderer?: ContextMenuRenderer,
-        protected readonly decoratorService?: TabBarDecoratorService
+        protected readonly decoratorService?: TabBarDecoratorService,
+        protected readonly iconThemeService?: IconThemeService
     ) {
         super();
         if (this.decoratorService) {
@@ -128,8 +130,11 @@ export class TabBarRenderer extends TabBar.Renderer {
                 oncontextmenu: this.handleContextMenuEvent,
                 ondblclick: this.handleDblClickEvent
             },
-            this.renderIcon(data, isInSidePanel),
-            this.renderLabel(data, isInSidePanel),
+            h.div(
+                { className: 'theia-tab-icon-label' },
+                this.renderIcon(data, isInSidePanel),
+                this.renderLabel(data, isInSidePanel)
+            ),
             this.renderCloseIcon(data)
         );
     }
@@ -348,6 +353,9 @@ export class TabBarRenderer extends TabBar.Renderer {
      * @param {boolean} isInSidePanel An optional check which determines if the tab is in the side-panel.
      */
     renderIcon(data: SideBarRenderData, inSidePanel?: boolean): VirtualElement {
+        if (!inSidePanel && this.iconThemeService && this.iconThemeService.current === 'none') {
+            return h.div();
+        }
         let top: string | undefined;
         if (data.paddingTop) {
             top = `${data.paddingTop || 0}px`;

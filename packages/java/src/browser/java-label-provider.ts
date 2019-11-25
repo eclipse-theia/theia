@@ -17,7 +17,6 @@
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { JAVA_SCHEME } from '../common/index';
-import { MaybePromise } from '@theia/core/lib/common';
 import { injectable } from 'inversify';
 
 @injectable()
@@ -34,7 +33,7 @@ export class JavaLabelProviderContribution implements LabelProviderContribution 
     /**
      * returns an icon class for the given element.
      */
-    getIcon(element: URI): MaybePromise<string> {
+    getIcon(element: URI): string {
         return 'java-icon';
     }
 

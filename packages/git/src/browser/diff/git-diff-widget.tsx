@@ -16,12 +16,12 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { StatefulWidget, SELECTED_CLASS, DiffUris, Message } from '@theia/core/lib/browser';
+import { StatefulWidget, DiffUris, Message } from '@theia/core/lib/browser';
 import { EditorManager, EditorOpenerOptions, EditorWidget, DiffNavigatorProvider, DiffNavigator } from '@theia/editor/lib/browser';
 import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
 import { GitWatcher } from '../../common';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
-import { GitNavigableListWidget } from '../git-navigable-list-widget';
+import { GitNavigableListWidget, GitItemComponent } from '../git-navigable-list-widget';
 import { GitFileChangeNode } from '../git-file-change-node';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as React from 'react';
@@ -96,21 +96,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                 range: options.range,
                 uri: options.uri
             });
-            const fileChangeNodes: GitFileChangeNode[] = [];
-            for (const fileChange of fileChanges) {
-                const fileChangeUri = new URI(fileChange.uri);
-                const [icon, label, description] = await Promise.all([
-                    this.labelProvider.getIcon(fileChangeUri),
-                    this.labelProvider.getName(fileChangeUri),
-                    this.relativePath(fileChangeUri.parent)
-                ]);
-
-                const caption = this.computeCaption(fileChange);
-                fileChangeNodes.push({
-                    ...fileChange, icon, label, description, caption
-                });
-            }
-            this.fileChangeNodes = fileChangeNodes;
+            this.fileChangeNodes = fileChanges;
             this.update();
         }
     }
@@ -173,7 +159,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
     protected renderPath(): React.ReactNode {
         if (this.options.uri) {
-            const path = this.relativePath(this.options.uri);
+            const path = this.gitLabelProvider.relativePath(this.options.uri);
             if (path.length > 0) {
                 return '/' + path;
             } else {
@@ -260,32 +246,13 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
 
     protected renderGitItem(change: GitFileChangeNode): React.ReactNode {
-        return <div key={change.uri.toString()} className={`gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}`}>
-            <div
-                title={change.caption}
-                className='noWrapInfo'
-                onDoubleClick={() => {
-                    this.revealChange(change);
-                }}
-                onClick={() => {
-                    this.selectNode(change);
-                }}>
-                <span className={change.icon + ' file-icon'}></span>
-                <span className='name'>{change.label + ' '}</span>
-                <span className='path'>{change.description}</span>
-            </div>
-            {
-                change.extraIconClassName ? <div
-                    title={change.caption}
-                    className={change.extraIconClassName}></div>
-                    : ''
-            }
-            <div
-                title={change.caption}
-                className={'status staged ' + GitFileStatus[change.status].toLowerCase()}>
-                {this.getStatusCaption(change.status, true).charAt(0)}
-            </div>
-        </div>;
+        return <GitItemComponent key={change.uri.toString()} {...{
+            labelProvider: this.labelProvider,
+            gitLabelProvider: this.gitLabelProvider,
+            change,
+            revealChange: () => this.revealChange(change),
+            selectNode: () => this.selectNode(change)
+        }} />;
     }
 
     protected navigateRight(): void {

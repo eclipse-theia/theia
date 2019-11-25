@@ -77,6 +77,7 @@ export interface PluginPackageContribution {
     debuggers?: PluginPackageDebuggersContribution[];
     snippets: PluginPackageSnippetsContribution[];
     themes?: PluginThemeContribution[];
+    iconThemes?: PluginIconThemeContribution[];
     colors?: PluginColorContribution[];
     taskDefinitions?: PluginTaskDefinitionContribution[];
     problemMatchers?: PluginProblemMatcherContribution[];
@@ -142,12 +143,22 @@ export interface PluginColorContribution {
     defaults?: { light?: string, dark?: string, highContrast?: string };
 }
 
+export type PluginUiTheme = 'vs' | 'vs-dark' | 'hc-black';
+
 export interface PluginThemeContribution {
     id?: string;
     label?: string;
     description?: string;
     path?: string;
-    uiTheme?: 'vs' | 'vs-dark' | 'hc-black';
+    uiTheme?: PluginUiTheme;
+}
+
+export interface PluginIconThemeContribution {
+    id?: string;
+    label?: string;
+    description?: string;
+    path?: string;
+    uiTheme?: PluginUiTheme;
 }
 
 export interface PlatformSpecificAdapterContribution {
@@ -425,6 +436,7 @@ export interface PluginContribution {
     debuggers?: DebuggerContribution[];
     snippets?: SnippetContribution[];
     themes?: ThemeContribution[];
+    iconThemes?: IconThemeContribution[];
     colors?: ColorDefinition[];
     taskDefinitions?: TaskDefinition[];
     problemMatchers?: ProblemMatcherContribution[];
@@ -437,12 +449,22 @@ export interface SnippetContribution {
     language?: string
 }
 
+export type UiTheme = 'vs' | 'vs-dark' | 'hc-black';
+
 export interface ThemeContribution {
     id?: string;
     label?: string;
     description?: string;
     uri: string;
-    uiTheme?: 'vs' | 'vs-dark' | 'hc-black';
+    uiTheme?: UiTheme;
+}
+
+export interface IconThemeContribution {
+    id: string;
+    label?: string;
+    description?: string;
+    uri: string;
+    uiTheme?: UiTheme;
 }
 
 export interface GrammarsContribution {

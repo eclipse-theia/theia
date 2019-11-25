@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import URI from '../common/uri';
-import { LabelProviderContribution, LabelProvider } from './label-provider';
+import { LabelProviderContribution, LabelProvider, DidChangeLabelEvent } from './label-provider';
 
 export namespace DiffUris {
 
@@ -103,8 +103,13 @@ export class DiffUriLabelProviderContribution implements LabelProviderContributi
         return 'fa fa-columns';
     }
 
-    getConstituentUris(uri: URI): URI[] {
-        return DiffUris.decode(uri);
+    affects(diffUri: URI, event: DidChangeLabelEvent): boolean {
+        for (const uri of DiffUris.decode(diffUri)) {
+            if (event.affects(uri)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

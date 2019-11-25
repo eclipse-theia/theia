@@ -36,8 +36,9 @@ import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
 import { Navigatable } from './navigatable';
 import { QuickViewService } from './quick-view-service';
-import { PrefixQuickOpenService } from './quick-open';
+import { PrefixQuickOpenService, QuickOpenItem, QuickOpenMode, QuickOpenService } from './quick-open';
 import { environment } from '@theia/application-package/lib/environment';
+import { IconThemeService } from './icon-theme-service';
 
 export namespace CommonMenus {
 
@@ -198,6 +199,12 @@ export namespace CommonCommands {
         label: 'Open Preferences',
     };
 
+    export const SELECT_ICON_THEME: Command = {
+        id: 'workbench.action.selectIconTheme',
+        label: 'File Icon Theme',
+        category: 'Preferences'
+    };
+
 }
 
 export const supportCut = browser.isNative || document.queryCommandSupported('cut');
@@ -237,6 +244,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(PrefixQuickOpenService)
     protected readonly quickOpen: PrefixQuickOpenService;
+
+    @inject(IconThemeService)
+    protected readonly iconThemes: IconThemeService;
+
+    @inject(QuickOpenService)
+    protected readonly quickOpenService: QuickOpenService;
 
     @postConstruct()
     protected init(): void {
@@ -508,6 +521,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.OPEN_VIEW, {
             execute: () => this.quickOpen.open(this.quickView.prefix)
         });
+
+        commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
+            execute: () => this.selectIconTheme()
+        });
     }
 
     private findTabBar(event?: Event): TabBar<Widget> | undefined {
@@ -678,5 +695,42 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         } finally {
             this.shouldPreventClose = false;
         }
+    }
+
+    protected selectIconTheme(): void {
+        let resetTo: string | undefined = this.iconThemes.current;
+        let items: (QuickOpenItem & { id: string })[] = [];
+        for (const iconTheme of this.iconThemes.definitions) {
+            const item = Object.assign(new QuickOpenItem({
+                label: iconTheme.label,
+                description: iconTheme.description,
+                run: (mode: QuickOpenMode) => {
+                    if (mode === QuickOpenMode.OPEN) {
+                        resetTo = undefined;
+                    }
+                    this.iconThemes.current = iconTheme.id;
+                    return true;
+                }
+            }), { id: iconTheme.id });
+            items.push(item);
+        }
+        items = items.sort((a, b) => {
+            if (a.id === 'none') {
+                return -1;
+            }
+            return a.getLabel()!.localeCompare(b.getLabel()!);
+        });
+        this.quickOpenService.open({
+            onType: (_, accept) => accept(items)
+        }, {
+                placeholder: 'Select File Icon Theme',
+                fuzzyMatchLabel: true,
+                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+                onClose: () => {
+                    if (resetTo) {
+                        this.iconThemes.current = resetTo;
+                    }
+                }
+            });
     }
 }

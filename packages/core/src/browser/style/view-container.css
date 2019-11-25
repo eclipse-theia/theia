@@ -15,7 +15,7 @@
  ********************************************************************************/
 
  :root {
-    --theia-view-container-title-height: 22px;
+    --theia-view-container-title-height: var(--theia-content-line-height);
     --theia-view-container-content-height: calc(100% - var(--theia-view-container-title-height));
 }
 
@@ -33,7 +33,7 @@
 
 .theia-view-container > .p-SplitPanel > .p-SplitPanel-child {
     min-width: 50px;
-    min-height: 22px;
+    min-height: var(--theia-content-line-height);
 }
 
 .theia-view-container > .p-SplitPanel > .p-SplitPanel-handle:after {
@@ -104,7 +104,7 @@
 
 .theia-view-container-drag-image {
     background: var(--theia-menu-color0);
-    line-height: 22px;
+    line-height: var(--theia-content-line-height);
     position: absolute;
     color: var(--theia-ui-font-color1);
     text-transform: uppercase;
@@ -119,8 +119,8 @@
 }
 
 .theia-view-container-part-title .item > div {
-    height: 16px;
-    width: 16px;
-    background-size: 16px;
-    line-height: 16px;
+    height: var(--theia-icon-size);
+    width: var(--theia-icon-size);
+    background-size: var(--theia-icon-size);
+    line-height: var(--theia-icon-size);
 }

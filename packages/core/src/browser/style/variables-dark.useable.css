@@ -65,7 +65,7 @@ is not optimized for dense, information rich UIs.
   */
 
   --theia-content-font-size: 13px;
-  --theia-content-line-height: 1.5;
+  --theia-content-line-height: 22px;
   --theia-content-font-color0: white;
   --theia-content-font-color1: white;
   --theia-content-font-color2: var(--md-grey-500);
@@ -191,6 +191,7 @@ is not optimized for dense, information rich UIs.
   --theia-icon-open-change: url(../icons/open-change-dark.svg);
   --theia-icon-preview: url(../icons/preview-dark.svg);
   --theia-icon-open-json: url(../icons/edit-json-dark.svg);
+  --theia-icon-size: 16px;
 
   /* Scrollbars */
   --theia-scrollbar-width: 10px;

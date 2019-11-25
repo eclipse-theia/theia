@@ -34,7 +34,7 @@ import {
     TransferQuickPick
 } from '../../common/plugin-api-rpc';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
-import { QuickInputService, FOLDER_ICON, FILE_ICON } from '@theia/core/lib/browser';
+import { QuickInputService, LabelProvider } from '@theia/core/lib/browser';
 import { PluginSharedStyle } from './plugin-shared-style';
 import URI from 'vscode-uri';
 import { ThemeIcon, QuickInputButton } from '../../plugin/types-impl';
@@ -54,7 +54,8 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
     private acceptor: ((items: QuickOpenItem[]) => void) | undefined;
     private items: QuickOpenItem[] | undefined;
 
-    private sharedStyle: PluginSharedStyle;
+    private readonly sharedStyle: PluginSharedStyle;
+    private readonly labelProvider: LabelProvider;
 
     private activeElement: HTMLElement | undefined;
 
@@ -67,6 +68,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
         this.quickTitleBar = container.get(QuickTitleBar);
         this.quickPick = container.get(QuickPickService);
         this.sharedStyle = container.get(PluginSharedStyle);
+        this.labelProvider = container.get(LabelProvider);
     }
 
     dispose(): void {
@@ -196,10 +198,10 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
     private resolveIconClassFromThemeIcon(themeIconID: ThemeIcon): string {
         switch (themeIconID.id) {
             case 'folder': {
-                return FOLDER_ICON;
+                return this.labelProvider.folderIcon;
             }
             case 'file': {
-                return FILE_ICON;
+                return this.labelProvider.fileIcon;
             }
             case 'Back': {
                 return 'fa fa-arrow-left';

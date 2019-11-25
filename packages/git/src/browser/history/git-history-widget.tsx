@@ -29,11 +29,10 @@ import { GitDiffContribution } from '../diff/git-diff-contribution';
 import { ScmAvatarService } from '@theia/scm/lib/browser/scm-avatar-service';
 import { GitCommitDetailUri, GitCommitDetailOpenerOptions, GitCommitDetailOpenHandler } from './git-commit-detail-open-handler';
 import { GitCommitDetails } from './git-commit-detail-widget';
-import { GitNavigableListWidget } from '../git-navigable-list-widget';
+import { GitNavigableListWidget, GitItemComponent } from '../git-navigable-list-widget';
 import { GitFileChangeNode } from '../git-file-change-node';
 import * as React from 'react';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
-import { DidChangeLabelEvent } from '@theia/core/lib/browser/label-provider';
 
 export interface GitCommitNode extends GitCommitDetails {
     fileChanges?: GitFileChange[];
@@ -92,26 +91,11 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.labelProvider.onDidChange(event => this.refreshLabels(event)));
-    }
-
-    protected async refreshLabels(event: DidChangeLabelEvent): Promise<void> {
-        let isAnyAffectedNodes = false;
-        for (let i = 0; i < this.gitNodes.length; i++) {
-            const gitNode = this.gitNodes[i];
-            if (GitFileChangeNode.is(gitNode)) {
-                const uri = new URI(gitNode.uri);
-                if (event.affects(uri)) {
-                    const label = this.labelProvider.getName(uri);
-                    const icon = await this.labelProvider.getIcon(uri);
-                    this.gitNodes[i] = { ...gitNode, label, icon };
-                    isAnyAffectedNodes = true;
-                }
+        this.toDispose.push(this.labelProvider.onDidChange(event => {
+            if (this.gitNodes.some(node => GitFileChangeNode.is(node) && event.affects(new URI(node.uri)))) {
+                this.update();
             }
-        }
-        if (isAnyAffectedNodes) {
-            this.update();
-        }
+        }));
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -229,18 +213,9 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
     protected async addFileChangeNodes(commit: GitCommitNode, gitNodesArrayIndex: number): Promise<void> {
         if (commit.fileChanges) {
-            const fileChangeNodes: GitFileChangeNode[] = [];
-            await Promise.all(commit.fileChanges.map(async fileChange => {
-                const fileChangeUri = new URI(fileChange.uri);
-                const icon = await this.labelProvider.getIcon(fileChangeUri);
-                const label = this.labelProvider.getName(fileChangeUri);
-                const description = this.relativePath(fileChangeUri.parent);
-                const caption = this.computeCaption(fileChange);
-                fileChangeNodes.push({
-                    ...fileChange, icon, label, description, caption, commitSha: commit.commitSha
-                });
-            }));
-            this.gitNodes.splice(gitNodesArrayIndex + 1, 0, ...fileChangeNodes);
+            this.gitNodes.splice(gitNodesArrayIndex + 1, 0, ...commit.fileChanges.map(fileChange =>
+                Object.assign(fileChange, { commitSha: commit.commitSha })
+            ));
         }
     }
 
@@ -287,7 +262,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 let reason: React.ReactNode;
                 reason = this.status.errorMessage;
                 if (this.options.uri) {
-                    const relPathEncoded = this.relativePath(this.options.uri);
+                    const relPathEncoded = this.gitLabelProvider.relativePath(this.options.uri);
                     const relPath = relPathEncoded ? `${decodeURIComponent(relPathEncoded)}` : '';
 
                     const repo = this.repositoryProvider.findRepository(new URI(this.options.uri));
@@ -316,7 +291,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
     protected renderHistoryHeader(): React.ReactNode {
         if (this.options.uri) {
-            const path = this.relativePath(this.options.uri);
+            const path = this.gitLabelProvider.relativePath(this.options.uri);
             const fileName = path.split('/').pop();
             return <div className='diff-header'>
                 {
@@ -440,32 +415,13 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     }
 
     protected renderGitItem(change: GitFileChangeNode, commitSha: string): React.ReactNode {
-        return <div key={change.uri.toString()} className={`gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}`}>
-            <div
-                title={change.caption}
-                className='noWrapInfo'
-                onDoubleClick={() => {
-                    this.openFile(change, commitSha);
-                }}
-                onClick={() => {
-                    this.selectNode(change);
-                }}>
-                <span className={change.icon + ' file-icon'}></span>
-                <span className='name'>{change.label + ' '}</span>
-                <span className='path'>{change.description}</span>
-            </div>
-            {
-                change.extraIconClassName ? <div
-                    title={change.caption}
-                    className={change.extraIconClassName}></div>
-                    : ''
-            }
-            <div
-                title={change.caption}
-                className={'status staged ' + GitFileStatus[change.status].toLowerCase()}>
-                {this.getStatusCaption(change.status, true).charAt(0)}
-            </div>
-        </div>;
+        return <GitItemComponent key={change.uri.toString()} {...{
+            labelProvider: this.labelProvider,
+            gitLabelProvider: this.gitLabelProvider,
+            change,
+            revealChange: () => this.openFile(change, commitSha),
+            selectNode: () => this.selectNode(change)
+        }} />;
     }
 
     protected navigateLeft(): void {

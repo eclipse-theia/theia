@@ -262,9 +262,7 @@ export class HostedPluginManagerClient {
             throw new Error('Unable to find the root');
         }
 
-        const name = this.labelProvider.getName(workspaceFolder);
-        const label = await this.labelProvider.getIcon(workspaceFolder);
-        const rootNode = DirNode.createRoot(workspaceFolder, name, label);
+        const rootNode = DirNode.createRoot(workspaceFolder);
 
         const dialog = this.openFileDialogFactory({
             title: HostedPluginCommands.SELECT_PATH.label!,

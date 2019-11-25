@@ -527,7 +527,7 @@ export interface TreeViewItem {
 
     label: string;
 
-    description?: string;
+    description?: string | boolean;
 
     /* font-awesome icon for compatibility */
     icon?: string;

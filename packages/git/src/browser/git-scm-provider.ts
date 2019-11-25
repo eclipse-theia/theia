@@ -18,10 +18,8 @@ import { injectable, inject, postConstruct, interfaces } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { Emitter } from '@theia/core/lib/common/event';
-import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandService } from '@theia/core/lib/common/command';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { EditorOpenerOptions, EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { FileSystem } from '@theia/filesystem/lib/common';
@@ -68,9 +66,6 @@ export class GitScmProvider implements ScmProvider {
 
     @inject(CommandService)
     protected readonly commands: CommandService;
-
-    @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
 
     @inject(GitScmProviderOptions)
     protected readonly options: GitScmProviderOptions;
@@ -134,7 +129,7 @@ export class GitScmProvider implements ScmProvider {
     getStatus(): WorkingDirectoryStatus | undefined {
         return this.state.status;
     }
-    async setStatus(status: WorkingDirectoryStatus | undefined, token: CancellationToken): Promise<void> {
+    setStatus(status: WorkingDirectoryStatus | undefined): void {
         const state = GitScmProvider.initState(status);
         if (status) {
             for (const change of status.changes) {
@@ -151,23 +146,14 @@ export class GitScmProvider implements ScmProvider {
                 }
             }
         }
-        state.groups.push(await this.createGroup('merge', 'Merge Changes', state.mergeChanges, true));
-        if (token.isCancellationRequested) {
-            return;
-        }
-        state.groups.push(await this.createGroup('index', 'Staged changes', state.stagedChanges, true));
-        if (token.isCancellationRequested) {
-            return;
-        }
-        state.groups.push(await this.createGroup('workingTree', 'Changes', state.unstagedChanges, false));
-        if (token.isCancellationRequested) {
-            return;
-        }
+        state.groups.push(this.createGroup('merge', 'Merge Changes', state.mergeChanges, true));
+        state.groups.push(this.createGroup('index', 'Staged changes', state.stagedChanges, true));
+        state.groups.push(this.createGroup('workingTree', 'Changes', state.unstagedChanges, false));
         this.state = state;
         this.fireDidChange();
     }
 
-    protected async createGroup(id: string, label: string, changes: GitFileChange[], hideWhenEmpty?: boolean): Promise<ScmResourceGroup> {
+    protected createGroup(id: string, label: string, changes: GitFileChange[], hideWhenEmpty?: boolean): ScmResourceGroup {
         const group: ScmResourceGroup = {
             id,
             label,
@@ -176,22 +162,18 @@ export class GitScmProvider implements ScmProvider {
             resources: [],
             dispose: () => { }
         };
-        const creatingResources: Promise<void>[] = [];
         for (const change of changes) {
-            creatingResources.push(this.addScmResource(group, change));
+            this.addScmResource(group, change);
         }
-        await Promise.all(creatingResources);
         return group;
     }
 
-    protected async addScmResource(group: ScmResourceGroup, change: GitFileChange): Promise<void> {
+    protected addScmResource(group: ScmResourceGroup, change: GitFileChange): void {
         const sourceUri = new URI(change.uri);
-        const icon = await this.labelProvider.getIcon(sourceUri);
         group.resources.push({
             group,
             sourceUri,
             decorations: {
-                icon,
                 letter: GitFileStatus.toAbbreviation(change.status, change.staged),
                 color: GitFileStatus.getColor(change.status, change.staged),
                 tooltip: GitFileStatus.toString(change.status)

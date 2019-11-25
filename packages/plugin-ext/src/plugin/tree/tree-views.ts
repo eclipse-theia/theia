@@ -242,23 +242,19 @@ class TreeViewExtImpl<T> implements Disposable {
                     label = treeItem.label;
                 }
 
+                let idLabel = label;
                 // Use resource URI if label is not set
-                if (label === undefined && treeItem.resourceUri) {
-                    label = treeItem.resourceUri.path.toString();
-                    label = decodeURIComponent(label);
-                    if (label.indexOf('/') >= 0) {
-                        label = label.substring(label.lastIndexOf('/') + 1);
+                if (idLabel === undefined && treeItem.resourceUri) {
+                    idLabel = treeItem.resourceUri.path.toString();
+                    idLabel = decodeURIComponent(idLabel);
+                    if (idLabel.indexOf('/') >= 0) {
+                        idLabel = idLabel.substring(idLabel.lastIndexOf('/') + 1);
                     }
                 }
 
                 // Generate the ID
                 // ID is used for caching the element
-                const id = treeItem.id || `${parentId}/${index}:${label}`;
-
-                // Use item ID if item label is still not set
-                if (label === undefined) {
-                    label = treeItem.id;
-                }
+                const id = treeItem.id || `${parentId}/${index}:${idLabel}`;
 
                 const toDisposeElement = new DisposableCollection();
                 const node: TreeExtNode<T> = {
