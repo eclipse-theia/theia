@@ -437,7 +437,7 @@ export class GitDiffListContainer extends React.Component<GitDiffListContainer.P
 
     focus(): void {
         if (this.listContainer) {
-            this.listContainer.focus();
+            this.listContainer.focus({ preventScroll: true });
         }
     }
 }
