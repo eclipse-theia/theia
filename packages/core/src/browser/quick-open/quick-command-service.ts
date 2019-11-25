@@ -246,7 +246,7 @@ export class CommandQuickOpenItem extends QuickOpenGroupItem {
         // allow the quick open widget to close itself
         setTimeout(() => {
             // reset focus on the previously active element.
-            this.activeElement.focus();
+            this.activeElement.focus({ preventScroll: true });
             this.commands.executeCommand(this.command.id);
         }, 50);
         return true;

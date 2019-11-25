@@ -173,7 +173,7 @@ class DynamicMenuWidget extends MenuWidget {
         // we want to restore the focus after the menu closes.
         const previouslyActive = window.document.activeElement as HTMLElement;
         const cb = () => {
-            previouslyActive.focus();
+            previouslyActive.focus({ preventScroll: true });
             this.aboutToClose.disconnect(cb);
         };
         this.aboutToClose.connect(cb);

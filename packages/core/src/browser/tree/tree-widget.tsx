@@ -331,7 +331,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.node.focus();
+        this.node.focus({ preventScroll: true });
     }
 
     /**

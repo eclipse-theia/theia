@@ -528,7 +528,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         if (this.currentPart) {
             this.currentPart.activate();
         } else {
-            this.panel.node.focus();
+            this.panel.node.focus({ preventScroll: true });
         }
     }
 

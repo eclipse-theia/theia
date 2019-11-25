@@ -219,7 +219,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
             },
             onCancel: () => {
                 if (this.previousActiveElement instanceof HTMLElement) {
-                    this.previousActiveElement.focus();
+                    this.previousActiveElement.focus({ preventScroll: true });
                 }
                 this.previousActiveElement = undefined;
                 this.contextKeyService.activeContext = undefined;
