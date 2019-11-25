@@ -6,8 +6,9 @@
     "yarn": "1.0.x || >=1.2.1",
     "node": ">=10.11.0 <12"
   },
-  "resolution": {
-    "**/@types/node": "~10.3.6"
+  "resolutions": {
+    "**/@types/node": "~10.3.6",
+    "**/vscode-json-languageserver/**/vscode-languageserver": "6.0.0-next.1"
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
