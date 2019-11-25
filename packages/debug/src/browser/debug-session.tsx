@@ -419,8 +419,17 @@ export class DebugSession implements CompositeTreeElement {
             const thread = existing.get(id) || new DebugThread(this);
             this._threads.set(id, thread);
             const data: Partial<Mutable<DebugThreadData>> = { raw };
-            if (stoppedDetails && (stoppedDetails.allThreadsStopped || stoppedDetails.threadId === id)) {
-                data.stoppedDetails = stoppedDetails;
+            if (stoppedDetails) {
+                if (stoppedDetails.threadId === id) {
+                    data.stoppedDetails = stoppedDetails;
+                } else if (stoppedDetails.allThreadsStopped) {
+                    data.stoppedDetails = {
+                        // When a debug adapter notifies us that all threads are stopped,
+                        // we do not know why the others are stopped, so we should default
+                        // to something generic.
+                        reason: '',
+                    };
+                }
             }
             thread.update(data);
         }
