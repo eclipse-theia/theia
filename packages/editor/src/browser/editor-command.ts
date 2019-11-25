@@ -191,9 +191,9 @@ export class EditorCommandContribution implements CommandContribution {
         const items: QuickPickItem<'autoDetect' | Language>[] = [
             { label: 'Auto Detect', value: 'autoDetect' },
             { type: 'separator', label: 'languages (identifier)' },
-            ... (await Promise.all(this.languages.languages.map(
+            ... (this.languages.languages.map(
                 language => this.toQuickPickLanguage(language, current)
-            ))).sort((e, e2) => e.label.localeCompare(e2.label))
+            )).sort((e, e2) => e.label.localeCompare(e2.label))
         ];
         const selected = await this.quickPick.show(items, {
             placeholder: 'Select Language Mode'
@@ -275,9 +275,10 @@ export class EditorCommandContribution implements CommandContribution {
         }
     }
 
-    protected async toQuickPickLanguage(value: Language, current: string): Promise<QuickPickValue<Language>> {
+    protected toQuickPickLanguage(value: Language, current: string): QuickPickValue<Language> {
         const languageUri = this.toLanguageUri(value);
-        const iconClass = await this.labelProvider.getIcon(languageUri) + ' file-icon';
+        const icon = this.labelProvider.getIcon(languageUri);
+        const iconClass = icon !== '' ? icon + ' file-icon' : undefined;
         return {
             value,
             label: value.name,

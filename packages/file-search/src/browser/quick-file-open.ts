@@ -159,10 +159,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         for (const location of locations) {
             const uriString = location.uri.toString();
             if (location.uri.scheme === 'file' && !alreadyCollected.has(uriString) && fuzzy.test(lookFor, uriString)) {
-                const item = await this.toItem(location.uri, { groupLabel: recentlyUsedItems.length === 0 ? 'recently opened' : undefined, showBorder: false });
-                if (token.isCancellationRequested) {
-                    return;
-                }
+                const item = this.toItem(location.uri, { groupLabel: recentlyUsedItems.length === 0 ? 'recently opened' : undefined, showBorder: false });
                 recentlyUsedItems.push(item);
                 alreadyCollected.add(uriString);
             }
@@ -175,10 +172,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 const fileSearchResultItems: QuickOpenItem[] = [];
                 for (const fileUri of results) {
                     if (!alreadyCollected.has(fileUri)) {
-                        const item = await this.toItem(fileUri);
-                        if (token.isCancellationRequested) {
-                            return;
-                        }
+                        const item = this.toItem(fileUri);
                         fileSearchResultItems.push(item);
                         alreadyCollected.add(fileUri);
                     }
@@ -192,10 +186,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 const first = sortedResults[0];
                 sortedResults.shift();
                 if (first) {
-                    const item = await this.toItem(first.getUri()!, { groupLabel: 'file results', showBorder: !!recentlyUsedItems.length });
-                    if (token.isCancellationRequested) {
-                        return;
-                    }
+                    const item = this.toItem(first.getUri()!, { groupLabel: 'file results', showBorder: !!recentlyUsedItems.length });
                     sortedResults.unshift(item);
                 }
                 // Return the recently used items, followed by the search results.
@@ -316,7 +307,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
             .catch(error => this.messageService.error(error));
     }
 
-    private async toItem(uriOrString: URI | string, group?: QuickOpenGroupItemOptions): Promise<QuickOpenItem<QuickOpenItemOptions>> {
+    private toItem(uriOrString: URI | string, group?: QuickOpenGroupItemOptions): QuickOpenItem<QuickOpenItemOptions> {
         const uri = uriOrString instanceof URI ? uriOrString : new URI(uriOrString);
         let description = this.labelProvider.getLongName(uri.parent);
         if (this.workspaceService.isMultiRootWorkspaceOpened) {
@@ -325,9 +316,11 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 description = `${rootUri.displayName} • ${description}`;
             }
         }
+        const icon = this.labelProvider.getIcon(uri);
+        const iconClass = icon === '' ? undefined : icon + ' file-icon';
         const options: QuickOpenItemOptions = {
             label: this.labelProvider.getName(uri),
-            iconClass: await this.labelProvider.getIcon(uri) + ' file-icon',
+            iconClass,
             description,
             tooltip: this.labelProvider.getLongName(uri),
             uri: uri,

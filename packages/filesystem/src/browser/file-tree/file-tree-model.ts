@@ -49,9 +49,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         if (uri) {
             this.fileSystem.getFileStat(uri.toString()).then(async fileStat => {
                 if (fileStat) {
-                    const label = this.labelProvider.getName(uri);
-                    const icon = await this.labelProvider.getIcon(fileStat);
-                    const node = DirNode.createRoot(fileStat, label, icon);
+                    const node = DirNode.createRoot(fileStat);
                     this.navigateTo(node);
                 }
             });
@@ -167,10 +165,11 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
             if (target.uri.toString() === sourceUri) { /*  Folder on itself */
                 return;
             }
-            const targetUri = target.uri.resolve(source.name).toString();
+            const name = source.uri.displayName;
+            const targetUri = target.uri.resolve(name).toString();
             if (sourceUri !== targetUri) { /*  File not on itself */
                 const fileExistsInTarget = await this.fileSystem.exists(targetUri);
-                if (!fileExistsInTarget || await this.shouldReplace(source.name)) {
+                if (!fileExistsInTarget || await this.shouldReplace(name)) {
                     await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
                 }
             }

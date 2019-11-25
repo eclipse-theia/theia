@@ -23,6 +23,7 @@ import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget, Compos
 import { FileUploadService } from '../file-upload-service';
 import { DirNode, FileStatNode } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
+import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
@@ -36,6 +37,9 @@ export class FileTreeWidget extends TreeWidget {
 
     @inject(FileUploadService)
     protected readonly uploadService: FileUploadService;
+
+    @inject(IconThemeService)
+    protected readonly iconThemeService: IconThemeService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -59,8 +63,9 @@ export class FileTreeWidget extends TreeWidget {
     }
 
     protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
-        if (FileStatNode.is(node)) {
-            return <div className={(node.icon || '') + ' file-icon'}></div>;
+        const icon = this.toNodeIcon(node);
+        if (icon) {
+            return <div className={icon + ' file-icon'}></div>;
         }
         // tslint:disable-next-line:no-null-keyword
         return null;
@@ -108,7 +113,7 @@ export class FileTreeWidget extends TreeWidget {
         if (event.dataTransfer) {
             let label: string;
             if (selectedNodes.length === 1) {
-                label = node.name;
+                label = this.toNodeName(node);
             } else {
                 label = String(selectedNodes.length);
             }
@@ -208,4 +213,34 @@ export class FileTreeWidget extends TreeWidget {
         const ids: string[] = JSON.parse(resources);
         return ids.map(id => this.model.getNode(id)).filter(node => node !== undefined) as TreeNode[];
     }
+
+    protected get hidesExplorerArrows(): boolean {
+        const theme = this.iconThemeService.getDefinition(this.iconThemeService.current);
+        return !!theme && !!theme.hidesExplorerArrows;
+    }
+
+    protected renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
+        if (this.hidesExplorerArrows) {
+            // tslint:disable-next-line:no-null-keyword
+            return null;
+        }
+        return super.renderExpansionToggle(node, props);
+    }
+
+    protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
+        if (this.hidesExplorerArrows) {
+            // aditional left padding instead of top-level expansion toggle
+            return super.getPaddingLeft(node, props) + this.props.leftPadding;
+        }
+        return super.getPaddingLeft(node, props);
+    }
+
+    protected needsExpansionTogglePadding(node: TreeNode): boolean {
+        const theme = this.iconThemeService.getDefinition(this.iconThemeService.current);
+        if (theme && (theme.hidesExplorerArrows || (theme.hasFileIcons && !theme.hasFolderIcons))) {
+            return false;
+        }
+        return super.needsExpansionTogglePadding(node);
+    }
+
 }

@@ -180,11 +180,13 @@
 }
 
 .theia-scm .scmItem {
-    margin: 1px 0 1px 0;
-    padding: 2px 5px 2px 5px;
     font-size: var(--theia-ui-font-size1);
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    height: var(--theia-content-line-height);
+    line-height: var(--theia-content-line-height);
+    padding: 0px calc(var(--theia-ui-padding)/2);
 }
 
 .theia-scm .scmItem .file-icon {
@@ -214,7 +216,7 @@
 }
 
 .scm-theia-header {
-    padding: 5px;
+    padding: calc(var(--theia-ui-padding)/2);
     display: flex;
 }
 
@@ -250,7 +252,7 @@
 }
 
 .theia-scm-inline-action .open-file {
-    height: 16px;
+    height: var(--theia-icon-size);
     width: 12px;
     background: var(--theia-icon-open-file) no-repeat center center;
 }

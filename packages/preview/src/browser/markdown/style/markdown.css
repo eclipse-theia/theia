@@ -23,7 +23,7 @@
 	font-family: var(--theia-ui-font-family);
 	font-size: 14px;
 	padding: 0 26px;
-	line-height: 22px;
+	line-height: var(--theia-content-line-height);
 	word-wrap: break-word;
 }
 

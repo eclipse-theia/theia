@@ -138,8 +138,8 @@
     pointer-events: all;
     padding-left: var(--theia-ui-padding);
     padding-right: var(--theia-ui-padding);
-    min-width: 16px;
-    min-height: 16px;
+    min-width: var(--theia-icon-size);
+    min-height: var(--theia-icon-size);
 }
 
 .debug-toolbar .debug-action:not(:focus) {

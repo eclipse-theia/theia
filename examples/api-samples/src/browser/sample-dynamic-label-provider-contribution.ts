@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { DefaultUriLabelProviderContribution, DidChangeLabelEvent, FILE_ICON } from '@theia/core/lib/browser/label-provider';
+import { DefaultUriLabelProviderContribution, DidChangeLabelEvent } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { injectable } from 'inversify';
 import { Emitter, Event } from '@theia/core';
@@ -58,11 +58,11 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
         return new URI(element.toString());
     }
 
-    async getIcon(element: URI): Promise<string> {
+    getIcon(element: URI): string {
         const uri = this.getUri(element);
         const icon = super.getFileIcon(uri);
         if (!icon) {
-            return FILE_ICON;
+            return this.defaultFileIcon;
         }
         return icon;
     }

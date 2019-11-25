@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 :root {
-    --theia-private-mini-browser-height: 22px;
+    --theia-private-mini-browser-height: var(--theia-content-line-height);
 }
 
 .theia-mini-browser {

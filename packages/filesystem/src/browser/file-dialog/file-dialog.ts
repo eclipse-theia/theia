@@ -17,7 +17,7 @@
 import { injectable, inject } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import { Disposable, MaybeArray } from '@theia/core/lib/common';
-import { Key } from '@theia/core/lib/browser';
+import { Key, LabelProvider } from '@theia/core/lib/browser';
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from '@theia/core/lib/browser';
 import { FileStatNode } from '../file-tree';
 import { LocationListRenderer } from '../location';
@@ -283,6 +283,9 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
 
     protected fileNameField: HTMLInputElement | undefined;
 
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
     constructor(
         @inject(SaveFileDialogProps) readonly props: SaveFileDialogProps,
         @inject(FileDialogWidget) readonly widget: FileDialogWidget
@@ -299,9 +302,9 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
         // Update file name field when changing a selection
         if (this.fileNameField) {
             if (this.widget.model.selectedFileStatNodes.length === 1) {
-                const fileStat = this.widget.model.selectedFileStatNodes[0];
-                if (!fileStat.fileStat.isDirectory) {
-                    this.fileNameField.value = fileStat.name;
+                const node = this.widget.model.selectedFileStatNodes[0];
+                if (!node.fileStat.isDirectory) {
+                    this.fileNameField.value = this.labelProvider.getName(node);
                 }
             } else {
                 this.fileNameField.value = '';

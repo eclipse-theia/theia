@@ -20,7 +20,7 @@ import '../../../src/main/browser/style/index.css';
 import { ContainerModule } from 'inversify';
 import {
     FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution,
-    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, OpenHandler
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, OpenHandler, LabelProviderContribution
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -70,6 +70,8 @@ import { PluginCommandOpenHandler } from './plugin-command-open-handler';
 import { bindWebviewPreferences } from './webview/webview-preferences';
 import { WebviewResourceLoader, WebviewResourceLoaderPath } from '../common/webview-protocol';
 import { WebviewResourceCache } from './webview/webview-resource-cache';
+import { PluginIconThemeService, PluginIconThemeFactory, PluginIconThemeDefinition, PluginIconTheme } from './plugin-icon-theme-service';
+import { PluginTreeViewNodeLabelProvider } from './view/plugin-tree-view-node-label-provider';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -135,6 +137,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(ViewContextKeyService).toSelf().inSingletonScope();
 
+    bind(PluginTreeViewNodeLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(PluginTreeViewNodeLabelProvider);
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: PLUGIN_VIEW_DATA_FACTORY_ID,
         createWidget: (identifier: TreeViewWidgetIdentifier) => {
@@ -198,10 +202,18 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(PluginSharedStyle).toSelf().inSingletonScope();
     bind(PluginViewRegistry).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(PluginViewRegistry);
+
+    bind(PluginIconThemeFactory).toFactory<PluginIconTheme>(({ container }) => (definition: PluginIconThemeDefinition) => {
+        const child = container.createChild();
+        child.bind(PluginIconThemeDefinition).toConstantValue(definition);
+        child.bind(PluginIconTheme).toSelf().inSingletonScope();
+        return child.get(PluginIconTheme);
+    });
+    bind(PluginIconThemeService).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(PluginIconThemeService);
+
     bind(MenusContributionPointHandler).toSelf().inSingletonScope();
-
     bind(KeybindingsContributionPointHandler).toSelf().inSingletonScope();
-
     bind(PluginContributionHandler).toSelf().inSingletonScope();
 
     bind(InPluginFileSystemWatcherManager).toSelf().inSingletonScope();

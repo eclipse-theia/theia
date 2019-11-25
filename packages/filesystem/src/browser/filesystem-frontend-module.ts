@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 
 import { ContainerModule, interfaces } from 'inversify';
 import { ResourceResolver, CommandContribution } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, FrontendApplicationContribution, ConfirmDialog } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, FrontendApplicationContribution, ConfirmDialog, LabelProviderContribution } from '@theia/core/lib/browser';
 import { FileSystem, fileSystemPath, FileShouldOverwrite, FileStat } from '../common';
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
@@ -30,6 +30,7 @@ import { FileSystemWatcher } from './filesystem-watcher';
 import { FileSystemFrontendContribution } from './filesystem-frontend-contribution';
 import { FileSystemProxyFactory } from './filesystem-proxy-factory';
 import { FileUploadService } from './file-upload-service';
+import { FileTreeLabelProvider } from './file-tree/file-tree-label-provider';
 
 export default new ContainerModule(bind => {
     bindFileSystemPreferences(bind);
@@ -62,6 +63,9 @@ export default new ContainerModule(bind => {
     bind(FileSystemFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(FileSystemFrontendContribution);
     bind(FrontendApplicationContribution).toService(FileSystemFrontendContribution);
+
+    bind(FileTreeLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(FileTreeLabelProvider);
 });
 
 export function bindFileResource(bind: interfaces.Bind): void {

@@ -42,7 +42,7 @@
 }
 
 .theia-TreeNode {
-    line-height: 22px;
+    line-height: var(--theia-content-line-height);
     display: flex;
 }
 
@@ -53,15 +53,16 @@
 
 .theia-TreeNodeContent {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     width: calc(100% - var(--theia-scrollbar-rail-width));
 }
 
 .theia-ExpansionToggle {
-    padding-right: var(--theia-ui-padding);
     min-width: 10px;
     display: flex;
     justify-content: center;
+    padding-left: calc(var(--theia-ui-padding)*2/3);
+    padding-right: calc(var(--theia-ui-padding)*2/3);
 }
 
 .theia-ExpansionToggle:hover {

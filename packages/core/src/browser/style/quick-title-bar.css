@@ -37,8 +37,8 @@
 }
 
 .theia-quick-title-button {
-    width: 16px;
-    height: 16px;
+    width: var(--theia-icon-size);
+    height: var(--theia-icon-size);
     display: flex;
     align-items: center;
     cursor: pointer;

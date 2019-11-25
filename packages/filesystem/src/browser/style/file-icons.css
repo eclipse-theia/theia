@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
- .file-icon {
+ .theia-file-icons-js {
     /*
     Here, the `line-height` ensures that FontAwesome and `file-icons-js` container has the same height.
     Ideally, it would be 1 em, but since we set the max height above (and other places too) with 0.8
@@ -23,18 +23,23 @@
     line-height: 0.8em;
 }
 
-.file-icon:before {
+.theia-file-icons-js:before {
     font-size: calc(var(--theia-content-font-size) * 0.8);
+}
+
+.fa-file:before,
+.fa-folder:before,
+.theia-file-icons-js:before {
     text-align: center;
     margin-right: 4px;
 }
 
-.theia-app-sides .file-icon {
+.theia-app-sides .theia-file-icons-js {
     max-height: none;
     line-height: inherit;
 }
 
-.theia-app-sides .file-icon:before {
+.theia-app-sides .theia-file-icons-js:before {
     font-size: var(--theia-private-sidebar-icon-size);
     margin-right: 0px;
 }

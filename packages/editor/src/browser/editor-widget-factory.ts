@@ -46,9 +46,9 @@ export class EditorWidgetFactory implements WidgetFactory {
         const textEditor = await this.editorProvider(uri);
         const newEditor = new EditorWidget(textEditor, this.selectionService);
 
-        await this.setLabels(newEditor, uri);
-        const labelListener = this.labelProvider.onDidChange(async event => {
-            if (uri && event.affects(uri)) {
+        this.setLabels(newEditor, uri);
+        const labelListener = this.labelProvider.onDidChange(event => {
+            if (event.affects(uri)) {
                 this.setLabels(newEditor, uri);
             }
         });
@@ -60,8 +60,8 @@ export class EditorWidgetFactory implements WidgetFactory {
         return newEditor;
     }
 
-    private async setLabels(editor: EditorWidget, uri: URI): Promise<void> {
-        const icon = await this.labelProvider.getIcon(uri);
+    private setLabels(editor: EditorWidget, uri: URI): void {
+        const icon = this.labelProvider.getIcon(uri);
         editor.title.label = this.labelProvider.getName(uri);
         editor.title.iconClass = icon + ' file-icon';
 

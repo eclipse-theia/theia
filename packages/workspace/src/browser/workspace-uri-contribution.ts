@@ -14,18 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { DefaultUriLabelProviderContribution, FOLDER_ICON, FILE_ICON } from '@theia/core/lib/browser/label-provider';
+import { DefaultUriLabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from 'inversify';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import { MaybePromise } from '@theia/core';
+import { FileStat } from '@theia/filesystem/lib/common';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 
 @injectable()
 export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
-
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
 
     @inject(WorkspaceVariableContribution)
     protected readonly workspaceVariable: WorkspaceVariableContribution;
@@ -49,28 +45,15 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         return new URI(element.toString());
     }
 
-    private getStat(element: URI | FileStat): MaybePromise<FileStat | undefined> {
-        if (FileStat.is(element)) {
-            return element;
+    getIcon(element: URI | FileStat): string {
+        if (!FileStat.is(element)) {
+            return super.getIcon(element);
         }
-        return this.fileSystem.getFileStat(element.toString());
-    }
-
-    async getIcon(element: URI | FileStat): Promise<string> {
-        if (FileStat.is(element) && element.isDirectory) {
-            return FOLDER_ICON;
+        if (element.isDirectory) {
+            return this.defaultFolderIcon;
         }
-        const uri = this.getUri(element);
-        const icon = super.getFileIcon(uri);
-        if (!icon) {
-            try {
-                const stat = await this.getStat(element);
-                return stat && stat.isDirectory ? FOLDER_ICON : FILE_ICON;
-            } catch (err) {
-                return FILE_ICON;
-            }
-        }
-        return icon;
+        const icon = super.getFileIcon(new URI(element.uri));
+        return icon || this.defaultFileIcon;
     }
 
     getName(element: URI | FileStat): string {

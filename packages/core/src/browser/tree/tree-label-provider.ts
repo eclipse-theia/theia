@@ -14,26 +14,27 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-.theia-open-change-icon {
-    width: var(--theia-icon-size);
-    height: var(--theia-icon-size);
-    background: var(--theia-icon-open-change) no-repeat;
-}
+import { injectable } from 'inversify';
+import { LabelProviderContribution } from '../label-provider';
+import { TreeNode } from './tree';
 
-.theia-open-file-icon {
-    width: var(--theia-icon-size);
-    height: var(--theia-icon-size);
-    background: var(--theia-icon-open-file) no-repeat;
-}
+@injectable()
+export class TreeLabelProvider implements LabelProviderContribution {
 
-.theia-open-preview-icon {
-    width: var(--theia-icon-size);
-    height: var(--theia-icon-size);
-    background: var(--theia-icon-preview) no-repeat;
-}
+    canHandle(element: object): number {
+        return TreeNode.is(element) ? 50 : 0;
+    }
 
-.theia-open-json-icon {
-    width: var(--theia-icon-size);
-    height: var(--theia-icon-size);
-    background: var(--theia-icon-open-json) no-repeat;
+    getIcon(node: TreeNode): string | undefined {
+        return node.icon;
+    }
+
+    getName(node: TreeNode): string | undefined {
+        return node.name;
+    }
+
+    getLongName(node: TreeNode): string | undefined {
+        return node.description;
+    }
+
 }

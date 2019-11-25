@@ -25,13 +25,10 @@ import {
     TreeModel,
     TreeNode,
     NodeProps,
-    LabelProvider,
     TreeProps,
     TreeExpansionService,
     ApplicationShell,
-    DiffUris,
-    FOLDER_ICON,
-    FILE_ICON
+    DiffUris
 } from '@theia/core/lib/browser';
 import { CancellationTokenSource, Emitter, Event } from '@theia/core';
 import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation, EditorOpenerOptions } from '@theia/editor/lib/browser';
@@ -53,10 +50,12 @@ export interface SearchInWorkspaceRoot extends CompositeTreeNode {
 export namespace SearchInWorkspaceRoot {
     // tslint:disable-next-line:no-any
     export function is(node: any): node is SearchInWorkspaceRoot {
-        return CompositeTreeNode.is(node) && node.id === ROOT_ID && node.name === ROOT_ID;
+        return CompositeTreeNode.is(node) && node.id === ROOT_ID;
     }
 }
 export interface SearchInWorkspaceRootFolderNode extends ExpandableTreeNode, SelectableTreeNode { // root folder node
+    name?: undefined
+    icon?: undefined
     children: SearchInWorkspaceFileNode[];
     parent: SearchInWorkspaceRoot;
     path: string;
@@ -70,11 +69,12 @@ export namespace SearchInWorkspaceRootFolderNode {
 }
 
 export interface SearchInWorkspaceFileNode extends ExpandableTreeNode, SelectableTreeNode { // file node
+    name?: undefined
+    icon?: undefined
     children: SearchInWorkspaceResultLineNode[];
     parent: SearchInWorkspaceRootFolderNode;
     path: string;
     fileUri: string;
-    icon?: string;
 }
 export namespace SearchInWorkspaceFileNode {
     // tslint:disable-next-line:no-any
@@ -114,7 +114,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(FileResourceResolver) protected readonly fileResourceResolver: FileResourceResolver;
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
     @inject(SearchInWorkspacePreferences) protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
@@ -129,7 +128,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
         model.root = {
             id: ROOT_ID,
-            name: ROOT_ID,
             parent: undefined,
             visible: false,
             children: []
@@ -215,7 +213,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 if (token.isCancellationRequested || aSearchId !== searchId) {
                     return;
                 }
-                const { name, path } = this.filenameAndPath(result.root, result.fileUri);
+                const { path } = this.filenameAndPath(result.root, result.fileUri);
                 const tree = this.resultTree;
                 const rootFolderNode = tree.get(result.root);
 
@@ -228,7 +226,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                         }
                         this.collapseFileNode(fileNode, collapseValue);
                     } else {
-                        const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, rootFolderNode);
+                        const newFileNode = this.createFileNode(result.root, path, result.fileUri, rootFolderNode);
                         this.collapseFileNode(newFileNode, collapseValue);
                         const line = this.createResultLineNode(result, newFileNode);
                         newFileNode.children.push(line);
@@ -238,7 +236,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 } else {
                     const newRootFolderNode = this.createRootFolderNode(result.root);
                     tree.set(result.root, newRootFolderNode);
-                    const newFileNode = this.createFileNode(result.root, name, path, result.fileUri, newRootFolderNode);
+                    const newFileNode = this.createFileNode(result.root, path, result.fileUri, newRootFolderNode);
                     this.collapseFileNode(newFileNode, collapseValue);
                     newFileNode.children.push(this.createResultLineNode(result, newFileNode));
                     newRootFolderNode.children.push(newFileNode);
@@ -302,7 +300,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected async refreshModelChildren(): Promise<void> {
         if (SearchInWorkspaceRoot.is(this.model.root)) {
-            await this.updateFileIcons();
             this.model.root.children = Array.from(this.resultTree.values());
             this.model.refresh();
             this.updateCurrentEditorDecorations();
@@ -338,38 +335,26 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const uri = new URI(rootUri);
         return {
             selected: false,
-            name: uri.displayName,
             path: uri.path.toString(),
             folderUri: rootUri,
             children: [],
             expanded: true,
             id: rootUri,
             parent: this.model.root as SearchInWorkspaceRoot,
-            icon: FOLDER_ICON,
             visible: this.workspaceService.isMultiRootWorkspaceOpened
         };
     }
 
-    protected createFileNode(rootUri: string, name: string, path: string, fileUri: string, parent: SearchInWorkspaceRootFolderNode): SearchInWorkspaceFileNode {
+    protected createFileNode(rootUri: string, path: string, fileUri: string, parent: SearchInWorkspaceRootFolderNode): SearchInWorkspaceFileNode {
         return {
             selected: false,
-            name,
             path,
             children: [],
             expanded: true,
             id: `${rootUri}::${fileUri}`,
             parent,
-            icon: FILE_ICON, // placeholder. updateFileIcons() will replace the placeholders with icons used in the tree rendering
             fileUri
         };
-    }
-
-    protected async updateFileIcons(): Promise<void> {
-        for (const folderNode of this.resultTree.values()) {
-            for (const fileNode of folderNode.children) {
-                fileNode.icon = await this.labelProvider.getIcon(new URI(fileNode.fileUri).withScheme('file'));
-            }
-        }
     }
 
     protected createResultLineNode(result: SearchInWorkspaceResult, fileNode: SearchInWorkspaceFileNode): SearchInWorkspaceResultLineNode {
@@ -596,17 +581,18 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderRootFolderNode(node: SearchInWorkspaceRootFolderNode): React.ReactNode {
-        const icon = node.icon;
         return <div className='result'>
             <div className='result-head'>
                 <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}>
-                    <span className={`file-icon ${icon || ''}`}></span>
-                    <span className={'file-name'}>
-                        {node.name}
-                    </span>
-                    <span className={'file-path'}>
-                        {node.path}
-                    </span>
+                    <span className={`file-icon ${this.toNodeIcon(node) || ''}`}></span>
+                    <div className='noWrapInfo'>
+                        <span className={'file-name'}>
+                            {this.toNodeName(node)}
+                        </span>
+                        <span className={'file-path'}>
+                            {node.path}
+                        </span>
+                    </div>
                 </div>
                 <span className='notification-count-container highlighted-count-container'>
                     <span className='notification-count'>
@@ -618,18 +604,19 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderFileNode(node: SearchInWorkspaceFileNode): React.ReactNode {
-        const icon = node.icon;
         return <div className='result'>
             <div className='result-head'>
                 <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}
                     title={new URI(node.fileUri).path.toString()}>
-                    <span className={`file-icon ${icon || ''}`}></span>
-                    <span className={'file-name'}>
-                        {node.name}
-                    </span>
-                    <span className={'file-path'}>
-                        {node.path}
-                    </span>
+                    <span className={`file-icon ${this.toNodeIcon(node)}`}></span>
+                    <div className='noWrapInfo'>
+                        <span className={'file-name'}>
+                            {this.toNodeName(node)}
+                        </span>
+                        <span className={'file-path'}>
+                            {node.path}
+                        </span>
+                    </div>
                 </div>
                 <span className='notification-count-container'>
                     <span className='notification-count'>

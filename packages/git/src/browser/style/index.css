@@ -39,11 +39,15 @@
 }
 
 .theia-git .gitItem {
-    margin: 1px 0 1px 3px;
-    padding: 2px;
     font-size: var(--theia-ui-font-size1);
-    display: flex;
+    display: inline-flex;
     justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: var(--theia-content-line-height);
+    line-height: var(--theia-content-line-height);
+    padding: 0px;
+    padding-right: var(--theia-ui-padding);
 }
 
 .theia-git .gitItem .file-icon {

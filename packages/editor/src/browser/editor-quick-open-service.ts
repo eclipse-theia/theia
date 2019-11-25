@@ -22,7 +22,6 @@ import {
 } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { CancellationTokenSource } from '@theia/core/lib/common';
 import { EditorManager } from './editor-manager';
 import { EditorWidget } from './editor-widget';
 
@@ -58,9 +57,6 @@ export class EditorQuickOpenService implements QuickOpenModel, QuickOpenHandler 
             },
             fuzzyMatchDescription: {
                 enableSeparateSubstringMatching: true
-            },
-            onClose: () => {
-                this.cancelIndicator.cancel();
             }
         };
     }
@@ -69,13 +65,7 @@ export class EditorQuickOpenService implements QuickOpenModel, QuickOpenHandler 
         this.prefixQuickOpenService.open(this.prefix);
     }
 
-    private cancelIndicator = new CancellationTokenSource();
-
-    public async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
-        this.cancelIndicator.cancel();
-        this.cancelIndicator = new CancellationTokenSource();
-        const token = this.cancelIndicator.token;
-
+    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
         const editorItems: QuickOpenItem[] = [];
 
         // Get the alphabetically sorted list of URIs of all currently opened editor widgets.
@@ -93,22 +83,21 @@ export class EditorQuickOpenService implements QuickOpenModel, QuickOpenHandler 
         }
 
         for (const uri of widgets) {
-            const item = await this.toItem(uri);
-            if (!!token.isCancellationRequested) {
-                return;
-            }
+            const item = this.toItem(uri);
             editorItems.push(item);
             acceptor(editorItems);
         }
         return;
     }
 
-    protected async toItem(uri: URI): Promise<QuickOpenItem<QuickOpenItemOptions>> {
+    protected toItem(uri: URI): QuickOpenItem<QuickOpenItemOptions> {
         const description = this.labelProvider.getLongName(uri.parent);
+        const icon = this.labelProvider.getIcon(uri);
+        const iconClass = icon === '' ? undefined : icon + ' file-icon';
 
         const options: QuickOpenItemOptions = {
             label: this.labelProvider.getName(uri),
-            iconClass: await this.labelProvider.getIcon(uri) + ' file-icon',
+            iconClass,
             description: description,
             tooltip: uri.path.toString(),
             uri: uri,

@@ -44,7 +44,8 @@ import {
     PluginPackageCommand,
     PluginCommand,
     IconUrl,
-    ThemeContribution
+    ThemeContribution,
+    IconThemeContribution
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -283,6 +284,12 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         try {
+            contributions.iconThemes = this.readIconThemes(rawPlugin);
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'iconThemes'.`, rawPlugin.contributes.iconThemes, err);
+        }
+
+        try {
             contributions.colors = this.readColors(rawPlugin);
         } catch (err) {
             console.error(`Could not read '${rawPlugin.name}' contribution 'colors'.`, rawPlugin.contributes.colors, err);
@@ -360,6 +367,31 @@ export class TheiaPluginScanner implements PluginScanner {
                     uiTheme: contribution.uiTheme
                 });
             }
+        }
+        return result;
+    }
+
+    protected readIconThemes(pck: PluginPackage): IconThemeContribution[] | undefined {
+        if (!pck.contributes || !pck.contributes.iconThemes) {
+            return undefined;
+        }
+        const result: IconThemeContribution[] = [];
+        for (const contribution of pck.contributes.iconThemes) {
+            if (typeof contribution.id !== 'string') {
+                console.error('Expected string in `contributes.iconThemes.id`. Provided value:', contribution.id);
+                continue;
+            }
+            if (typeof contribution.path !== 'string') {
+                console.error('Expected string in `contributes.iconThemes.path`. Provided value:', contribution.path);
+                continue;
+            }
+            result.push({
+                id: contribution.id,
+                uri: FileUri.create(path.join(pck.packagePath, contribution.path)).toString(),
+                description: contribution.description,
+                label: contribution.label,
+                uiTheme: contribution.uiTheme
+            });
         }
         return result;
     }

@@ -15,10 +15,9 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { LabelProviderContribution, LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { LabelProviderContribution, LabelProvider, DidChangeLabelEvent } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
-import { MaybePromise } from '@theia/core';
 
 @injectable()
 export class GitUriLabelProviderContribution implements LabelProviderContribution {
@@ -41,16 +40,13 @@ export class GitUriLabelProviderContribution implements LabelProviderContributio
         return this.labelProvider.getName(this.toFileUri(uri)) + this.getTagSuffix(uri);
     }
 
-    getIcon(uri: URI): MaybePromise<string> {
+    getIcon(uri: URI): string {
         return this.labelProvider.getIcon(this.toFileUri(uri));
     }
 
-    getConstituentUris(element: URI): URI[] {
-        const fileUri = this.toFileUri(element);
-        return [
-            fileUri,
-            fileUri.withoutQuery().withoutFragment(),
-        ];
+    affects(uri: URI, event: DidChangeLabelEvent): boolean {
+        const fileUri = this.toFileUri(uri);
+        return event.affects(fileUri) || event.affects(fileUri.withoutQuery().withoutFragment());
     }
 
     protected toFileUri(uri: URI): URI {
