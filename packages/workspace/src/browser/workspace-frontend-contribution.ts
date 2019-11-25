@@ -161,7 +161,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         });
         keybindings.registerKeybinding({
             command: WorkspaceCommands.SAVE_AS.id,
-            keybinding: 'ctrl+shift+s',
+            keybinding: 'ctrlcmd+shift+s',
         });
     }
 

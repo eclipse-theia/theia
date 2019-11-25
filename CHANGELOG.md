@@ -4,7 +4,7 @@
 
 - [core] Switched the frontend application's shutdown hook from `window.unload` to `window.beforeunload`. [#6530](https://github.com/eclipse-theia/theia/issues/6530)
 - [core] label providers can now notify that element labels and icons may have changed and should be refreshed [#5884](https://github.com/theia-ide/theia/pull/5884)
-- [core] added <kbd>cmd</kbd> + <kbd>,</kbd> as default keybinding for 'Open Preferences' on Mac to align with VS Code [#6620](https://github.com/eclipse-theia/theia/pull/6620)
+- [core] aligned 'Open Preferences' and 'Save As' keybindings with VS Code on Mac OS [#6620](https://github.com/eclipse-theia/theia/pull/6620)
 - [scm] added handling when opening diff-editors to respect preference `workbench.list.openMode` [#6481](https://github.com/eclipse-theia/theia/pull/6481)
 
 Breaking changes:
