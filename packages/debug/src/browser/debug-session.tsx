@@ -374,7 +374,7 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     protected async doCreateTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
-        let terminal = this.terminalServer.all.find(t => t.title.label === options.title);
+        let terminal = this.terminalServer.all.find(t => t.title.label === options.title || t.title.caption === options.title);
         if (!terminal) {
             terminal = await this.terminalServer.newTerminal(options);
             await terminal.start();
