@@ -142,6 +142,10 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
+            command: WorkspaceCommands.NEW_FILE.id,
+            keybinding: this.isElectron() ? 'ctrlcmd+n' : 'alt+n',
+        });
+        keybindings.registerKeybinding({
             command: isOSX || !this.isElectron() ? WorkspaceCommands.OPEN.id : WorkspaceCommands.OPEN_FILE.id,
             keybinding: 'ctrlcmd+alt+o',
         });
