@@ -18,7 +18,7 @@ import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
-    isOSX, MenuModelRegistry, MenuContribution, Disposable
+    isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable
 } from '../../common';
 import { KeybindingContribution, KeybindingRegistry } from '../../browser';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
@@ -196,7 +196,7 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
             },
             {
                 command: ElectronCommands.CLOSE_WINDOW.id,
-                keybinding: 'ctrlcmd+shift+w'
+                keybinding: (isOSX ? 'cmd+shift+w' : (isWindows ? 'ctrl+w' : /* Linux */ 'ctrl+q'))
             }
         );
     }
