@@ -12,6 +12,7 @@
 - [core] updated handling when access is denied to the clipboard [#6516](https://github.com/eclipse-theia/theia/pull/6516)
 - [core] updated scrolling of widgets when re-setting their focus [#6621](https://github.com/eclipse-theia/theia/pull/6621)
 - [core] upgraded `reconnecting-websocket` to latest version [#6512](https://github.com/eclipse-theia/theia/pull/6512)
+- [core] aligned `New File`, `Close Editor` and `Close Window` keybindings with VS Code across OSes [#6635](https://github.com/eclipse-theia/theia/pull/6635)
 - [cpp] moved the `cpp` extension to the [`theia-cpp-extensions`](https://github.com/eclipse-theia/theia-cpp-extensions) repo [#6505](https://github.com/eclipse-theia/theia/pull/6505)
 - [debug] added ability to re-use the terminal based on label and caption [#6619](https://github.com/eclipse-theia/theia/pull/6619)
 - [debug] added reloading of child variable nodes on `setValue` call [#6555](https://github.com/eclipse-theia/theia/pull/6555)
