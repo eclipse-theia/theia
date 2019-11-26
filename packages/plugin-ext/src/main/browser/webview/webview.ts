@@ -26,8 +26,6 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { WebviewPanelOptions, WebviewPortMapping } from '@theia/plugin';
 import { BaseWidget, Message } from '@theia/core/lib/browser/widgets/widget';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-// TODO: get rid of dependencies to the mini browser
-import { MiniBrowserContentStyle } from '@theia/mini-browser/lib/browser/mini-browser-content-style';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { WebviewPanelViewState } from '../../../common/plugin-api-rpc';
@@ -48,6 +46,9 @@ import { WebviewPreferences } from './webview-preferences';
 import { WebviewResourceLoader } from '../../common/webview-protocol';
 import { WebviewResourceCache } from './webview-resource-cache';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+
+// Style from core
+const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
 
 // tslint:disable:no-any
 
@@ -176,7 +177,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this.toDispose.push(this.onMessageEmitter);
 
         this.transparentOverlay = document.createElement('div');
-        this.transparentOverlay.classList.add(MiniBrowserContentStyle.TRANSPARENT_OVERLAY);
+        this.transparentOverlay.classList.add(TRANSPARENT_OVERLAY_STYLE);
         this.transparentOverlay.style.display = 'none';
         this.node.appendChild(this.transparentOverlay);
 

@@ -13,7 +13,6 @@
     "@theia/languages": "^0.12.0",
     "@theia/markers": "^0.12.0",
     "@theia/messages": "^0.12.0",
-    "@theia/mini-browser": "^0.12.0",
     "@theia/monaco": "^0.12.0",
     "@theia/navigator": "^0.12.0",
     "@theia/output": "^0.12.0",
