@@ -26,7 +26,7 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { parseCssTime, Key, KeyCode } from '@theia/core/lib/browser';
 import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import { BaseWidget, addEventListener} from '@theia/core/lib/browser/widgets/widget';
+import { BaseWidget, addEventListener } from '@theia/core/lib/browser/widgets/widget';
 import { LocationMapperService } from './location-mapper-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
@@ -647,7 +647,7 @@ export namespace MiniBrowserContent {
         export const OPEN = 'theia-mini-browser-open';
         export const BUTTON = 'theia-mini-browser-button';
         export const DISABLED = 'theia-mini-browser-button-disabled';
-        export const TRANSPARENT_OVERLAY = 'theia-mini-browser-transparent-overlay';
+        export const TRANSPARENT_OVERLAY = 'theia-transparent-overlay';
         export const ERROR_BAR = 'theia-mini-browser-error-bar';
 
     }

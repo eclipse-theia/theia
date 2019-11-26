@@ -175,6 +175,16 @@ textarea {
   font-family: var(--theia-ui-font-family);
 }
 
+.theia-transparent-overlay {
+    background-color: transparent;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 999;
+}
+
 /*-----------------------------------------------------------------------------
 | Import children style files
 |----------------------------------------------------------------------------*/
