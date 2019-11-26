@@ -30,13 +30,14 @@ import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
 import { ContextKeyService } from './context-key-service';
-import { OS, isOSX } from '../common/os';
+import { OS, isOSX, isWindows } from '../common/os';
 import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
 import { Navigatable } from './navigatable';
 import { QuickViewService } from './quick-view-service';
 import { PrefixQuickOpenService } from './quick-open';
+import { environment } from '@theia/application-package/lib/environment';
 
 export namespace CommonMenus {
 
@@ -543,6 +544,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         return tabBar.currentTitle || undefined;
     }
 
+    private isElectron(): boolean {
+        return environment.electron.is();
+    }
+
     registerKeybindings(registry: KeybindingRegistry): void {
         if (supportCut) {
             registry.registerKeybinding({
@@ -599,7 +604,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 command: CommonCommands.CLOSE_TAB.id,
-                keybinding: 'alt+w'
+                keybinding: (!this.isElectron() ? 'alt+w' : (isWindows ? 'ctrl+f4' : 'ctrlcmd+w'))
             },
             {
                 command: CommonCommands.CLOSE_OTHER_TABS.id,
