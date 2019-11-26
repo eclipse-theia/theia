@@ -100,6 +100,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
 
     // tslint:disable:no-any
     executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
+        args = args.map(arg => this.argumentProcessors.reduce((r, p) => p.processArgument(r), arg));
         if (this.handlers.has(id)) {
             return this.executeLocalCommand(id, ...args);
         } else if (KnownCommands.mapped(id)) {
