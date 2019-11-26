@@ -86,6 +86,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                 await this.doFind(rootUri, rootOptions, candidate => {
                     // Convert OS-native candidate path to a file URI string
                     const fileUri = FileUri.create(path.resolve(rootPath, candidate)).toString();
+                    // Skip results that have already been matched.
                     if (exactMatches.has(fileUri) || fuzzyMatches.has(fileUri)) {
                         return;
                     }
@@ -94,7 +95,8 @@ export class FileSearchServiceImpl implements FileSearchService {
                     } else if (opts.fuzzyMatch && fuzzy.test(searchPattern, candidate)) {
                         fuzzyMatches.add(fileUri);
                     }
-                    if (exactMatches.size + fuzzyMatches.size === opts.limit) {
+                    // Preemptively terminate the search when the list of exact matches reaches the limit.
+                    if (exactMatches.size === opts.limit) {
                         cancellationSource.cancel();
                     }
                 }, token);
@@ -105,7 +107,8 @@ export class FileSearchServiceImpl implements FileSearchService {
         if (clientToken && clientToken.isCancellationRequested) {
             return [];
         }
-        return [...exactMatches, ...fuzzyMatches];
+        // Return the list of results limited by the search limit.
+        return [...exactMatches, ...fuzzyMatches].slice(0, opts.limit);
     }
 
     private doFind(rootUri: URI, options: FileSearchService.BaseOptions,
