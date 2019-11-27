@@ -17,7 +17,6 @@ cache:
   - examples/browser/node_modules
   - examples/electron/node_modules
   - node_modules
-  - packages/bunyan/node_modules
   - packages/callhierarchy/node_modules
   - packages/console/node_modules
   - packages/core/node_modules

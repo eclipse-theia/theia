@@ -97,9 +97,6 @@
       "@theia/editorconfig/lib/*": [
         "packages/editorconfig/src/*"
       ],
-      "@theia/bunyan/lib/*": [
-        "packages/bunyan/src/*"
-      ],
       "@theia/console/lib/*": [
         "packages/console/src/*"
       ],
