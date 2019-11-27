@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as assert from 'assert';
-import { KnownCommands } from '../common/known-commands';
+import { KnownCommands } from './known-commands';
 import URI from 'vscode-uri';
 import { Position } from './types-impl';
 import { fromPosition } from './type-converters';

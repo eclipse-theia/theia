@@ -3904,6 +3904,18 @@ declare module '@theia/plugin' {
         readonly onDidChangeVisibility: Event<TreeViewVisibilityChangeEvent>;
 
         /**
+         * An optional human-readable message that will be rendered in the view.
+         * Setting the message to null, undefined, or empty string will remove the message from the view.
+         */
+        message?: string;
+
+        /**
+         * The tree view title is initially taken from the extension package.json
+         * Changes to the title property will be properly reflected in the UI in the title of the view.
+         */
+        title?: string;
+
+        /**
          * Reveal an element. By default revealed element is selected.
          *
          * In order to not to select, set the option `select` to `false`.

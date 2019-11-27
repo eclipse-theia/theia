@@ -30,7 +30,13 @@ import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { CodeEditorWidget } from '@theia/plugin-ext/lib/main/browser/menus/menus-contribution-handler';
-import { TextDocumentShowOptions } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
+import {
+    TextDocumentShowOptions,
+    Location,
+    CallHierarchyItem,
+    CallHierarchyIncomingCall,
+    CallHierarchyOutgoingCall
+} from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import { createUntitledURI } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
 import { toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
@@ -40,6 +46,7 @@ import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/w
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { inject, injectable } from 'inversify';
+import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import URI from 'vscode-uri';
 
 export namespace VscodeCommands {
@@ -374,8 +381,68 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 })
             }
         );
+
         // TODO register other `vscode.execute...` commands.
         // see https://github.com/microsoft/vscode/blob/master/src/vs/workbench/api/common/extHostApiCommands.ts
+        commands.registerCommand(
+            {
+                id: 'vscode.executeReferenceProvider'
+            },
+            {
+                execute: ((resource: URI, position: Position) => {
+                    const args = {
+                        resource: monaco.Uri.from(resource),
+                        position: position
+                    };
+                    return commands.executeCommand<Location[]>('_executeReferenceProvider', args);
+                })
+            }
+        );
+        commands.registerCommand(
+            {
+                id: 'vscode.executeImplementationProvider'
+            },
+            {
+                execute: ((resource: URI, position: Position) => {
+                    const args = {
+                        resource: monaco.Uri.from(resource),
+                        position: position
+                    };
+                    return commands.executeCommand<Location[]>('_executeImplementationProvider', args);
+                })
+            }
+        );
+        commands.registerCommand(
+            {
+                id: 'vscode.prepareCallHierarchy'
+            },
+            {
+                execute: ((resource: URI, position: Position) => {
+                    const args = {
+                        resource: monaco.Uri.from(resource),
+                        position: position
+                    };
+                    return commands.executeCommand<CallHierarchyItem[]>('_executePrepareCallHierarchy', args);
+                })
+            }
+        );
+        commands.registerCommand(
+            {
+                id: 'vscode.provideIncomingCalls'
+            },
+            {
+                execute: ((item: CallHierarchyItem) =>
+                    commands.executeCommand<CallHierarchyIncomingCall[]>('_executeProvideIncomingCalls', { item }))
+            }
+        );
+        commands.registerCommand(
+            {
+                id: 'vscode.provideOutgoingCalls'
+            },
+            {
+                execute: ((item: CallHierarchyItem) =>
+                    commands.executeCommand<CallHierarchyOutgoingCall[]>('_executeProvideOutgoingCalls', { item }))
+            }
+        );
     }
-
 }

@@ -371,4 +371,25 @@ export class TreeViewWidget extends TreeWidget {
             }
         }
     }
+
+    private _message: string | undefined;
+    get message(): string | undefined {
+        return this._message;
+    }
+
+    set message(message: string | undefined) {
+        this._message = message;
+        this.update();
+    }
+
+    protected render(): React.ReactNode {
+        return React.createElement('div', this.createContainerAttributes(), this.renderSearchInfo(), this.renderTree(this.model));
+    }
+
+    protected renderSearchInfo(): React.ReactNode {
+        if (this._message) {
+            return <div className='theia-TreeViewInfo'>{this._message}</div>;
+        }
+        return undefined;
+    }
 }

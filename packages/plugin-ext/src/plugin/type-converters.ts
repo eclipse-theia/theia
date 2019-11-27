@@ -27,6 +27,7 @@ import { LanguageFilter, LanguageSelector, RelativePattern } from '@theia/langua
 import { isMarkdownString, MarkdownString } from './markdown-string';
 import { Item } from './quick-open';
 import * as types from './types-impl';
+import { UriComponents } from '../common/uri-components';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
@@ -583,6 +584,98 @@ export function toDocumentSymbol(symbol: model.DocumentSymbol): theia.DocumentSy
         children: symbol.children ? symbol.children.map(toDocumentSymbol) : [],
         kind: SymbolKind.toSymbolKind(symbol.kind)
     };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isModelLocation(thing: any): thing is model.Location {
+    if (!thing) {
+        return false;
+    }
+    return isModelRange((<model.Location>thing).range) &&
+        isUriComponents((<model.Location>thing).uri);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isModelRange(thing: any): thing is model.Range {
+    if (!thing) {
+        return false;
+    }
+    return (('startLineNumber' in thing) && typeof thing.startLineNumber === 'number') &&
+        (('startColumn' in thing) && typeof thing.startColumn === 'number') &&
+        (('endLineNumber' in thing) && typeof thing.endLineNumber === 'number') &&
+        (('endColumn' in thing) && typeof thing.endColumn === 'number');
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isUriComponents(thing: any): thing is UriComponents {
+    if (!thing) {
+        return false;
+    }
+    return (('scheme' in thing) && typeof thing.scheme === 'string') &&
+        (('path' in thing) && typeof thing.path === 'string') &&
+        (('query' in thing) && typeof thing.query === 'string') &&
+        (('fragment' in thing) && typeof thing.fragment === 'string');
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isModelCallHierarchyItem(thing: any): thing is model.CallHierarchyItem {
+    if (!thing) {
+        return false;
+    }
+    return false;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isModelCallHierarchyIncomingCall(thing: any): thing is model.CallHierarchyIncomingCall {
+    if (!thing) {
+        return false;
+    }
+    return false;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function isModelCallHierarchyOutgoingCall(thing: any): thing is model.CallHierarchyOutgoingCall {
+    if (!thing) {
+        return false;
+    }
+    return false;
+}
+
+export function toLocation(value: model.Location): types.Location {
+    return new types.Location(URI.revive(value.uri), toRange(value.range));
+}
+
+export function fromCallHierarchyItem(item: theia.CallHierarchyItem): model.CallHierarchyItem {
+    return <model.CallHierarchyItem>{
+        kind: SymbolKind.fromSymbolKind(item.kind),
+        name: item.name,
+        detail: item.detail,
+        uri: item.uri,
+        range: fromRange(item.range),
+        selectionRange: fromRange(item.selectionRange)
+    };
+}
+
+export function toCallHierarchyItem(value: model.CallHierarchyItem): types.CallHierarchyItem {
+    return new types.CallHierarchyItem(
+        SymbolKind.toSymbolKind(value.kind),
+        value.name,
+        value.detail ? value.detail : '',
+        URI.revive(value.uri),
+        toRange(value.range),
+        toRange(value.selectionRange));
+}
+
+export function toCallHierarchyIncomingCall(value: model.CallHierarchyIncomingCall): types.CallHierarchyIncomingCall {
+    return new types.CallHierarchyIncomingCall(
+        toCallHierarchyItem(value.from),
+        value.fromRanges && value.fromRanges.map(toRange));
+}
+
+export function toCallHierarchyOutgoingCall(value: model.CallHierarchyOutgoingCall): types.CallHierarchyOutgoingCall {
+    return new types.CallHierarchyOutgoingCall(
+        toCallHierarchyItem(value.to),
+        value.fromRanges && value.fromRanges.map(toRange));
 }
 
 export function toWorkspaceFolder(folder: model.WorkspaceFolder): theia.WorkspaceFolder {
