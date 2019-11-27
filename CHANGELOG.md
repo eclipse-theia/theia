@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.14.0
+
+- [bunyan] removed [`@theia/bunyan`](https://github.com/eclipse-theia/theia/tree/b92a5673de1e9d1bdc85e6200486b92394200579/packages/bunyan) extension [#6651](https://github.com/eclipse-theia/theia/pull/6651)
+
 ## v0.13.0
 
 - [console] added filtering support based on severity [#6486](https://github.com/eclipse-theia/theia/pull/6486)
@@ -68,7 +72,7 @@ Breaking changes:
   allowing them to break out and manipulate shared data as cookies, local storage or even start service workers
   for the main window as well as for each other. Now each webview will be deployed on own origin by default.
     - Webview origin pattern can be configured with `THEIA_WEBVIEW_EXTERNAL_ENDPOINT` env variable. The default value is `{{uuid}}.webview.{{hostname}}`.
-  Here `{{uuid}}` and `{{hostname}}` are placeholders which get replaced at runtime with proper webview uuid 
+  Here `{{uuid}}` and `{{hostname}}` are placeholders which get replaced at runtime with proper webview uuid
   and [hostname](https://developer.mozilla.org/en-US/docs/Web/API/HTMLHyperlinkElementUtils/hostname) correspondingly.
     - To switch to un-secure mode as before configure `THEIA_WEBVIEW_EXTERNAL_ENDPOINT` with `{{hostname}}` as a value.
     You can also drop `{{uuid}}.` prefix, in this case, webviews still will be able to access each other but not the main window.
