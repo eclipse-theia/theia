@@ -514,6 +514,8 @@ export interface TreeViewsMain {
     $unregisterTreeDataProvider(treeViewId: string): void;
     $refresh(treeViewId: string): void;
     $reveal(treeViewId: string, treeItemId: string): Promise<any>;
+    $setMessage(treeViewId: string, message: string): void;
+    $setTitle(treeViewId: string, title: string): void;
 }
 
 export interface TreeViewsExt {

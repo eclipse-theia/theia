@@ -268,6 +268,23 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 }
             }
         }));
+
+        toDispose.push(this.commands.registerCommand({
+            id: `${view.id}.focus`
+        }, {
+            execute: async () => {
+                const widget = await this.openView(view.id);
+                if (widget) {
+                    const data = this.views.get(view.id);
+                    if (data) {
+                        const [containerId] = data;
+                        const identifier = this.toViewContainerIdentifier(containerId);
+                        this.shell.activateWidget(identifier.id);
+                    }
+                }
+            }
+        }));
+
         return toDispose;
     }
 

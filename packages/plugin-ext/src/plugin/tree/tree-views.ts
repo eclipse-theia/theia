@@ -88,6 +88,18 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             get onDidChangeVisibility() {
                 return treeView.onDidChangeVisibility;
             },
+            get message(): string {
+                return treeView.message;
+            },
+            set message(message: string) {
+                treeView.message = message;
+            },
+            get title(): string {
+                return treeView.title;
+            },
+            set title(title: string) {
+                treeView.title = title;
+            },
             // tslint:enable:typedef
             reveal: (element: T, selectionOptions: { select?: boolean }): Thenable<void> =>
                 treeView.reveal(element, selectionOptions),
@@ -202,6 +214,26 @@ class TreeViewExtImpl<T> implements Disposable {
         if (elementId) {
             return this.proxy.$reveal(this.treeViewId, elementId);
         }
+    }
+
+    private _message: string = '';
+    get message(): string {
+        return this._message;
+    }
+
+    set message(message: string) {
+        this._message = message;
+        this.proxy.$setMessage(this.treeViewId, this._message);
+    }
+
+    private _title: string = '';
+    get title(): string {
+        return this._title;
+    }
+
+    set title(title: string) {
+        this._title = title;
+        this.proxy.$setTitle(this.treeViewId, title);
     }
 
     getTreeItem(treeItemId: string): T | undefined {

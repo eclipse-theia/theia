@@ -21,6 +21,7 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { ViewContextKeyService } from './view-context-key-service';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { Message } from '@phosphor/messaging';
+import { TreeViewWidget } from './tree-view-widget';
 
 @injectable()
 export class PluginViewWidgetIdentifier {
@@ -59,6 +60,7 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
         const widget = this.widgets[0];
         if (widget) {
             widget.activate();
+            this.updateWidgetMessage();
         } else {
             this.node.focus();
         }
@@ -67,12 +69,14 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
     storeState(): PluginViewWidget.State {
         return {
             label: this.title.label,
+            message: this.message,
             widgets: this.widgets
         };
     }
 
     restoreState(state: PluginViewWidget.State): void {
         this.title.label = state.label;
+        this.message = state.message;
         for (const widget of state.widgets) {
             this.addWidget(widget);
         }
@@ -96,10 +100,39 @@ export class PluginViewWidget extends Panel implements StatefulWidget {
         }
     }
 
+    private _message: string | undefined;
+    get message(): string | undefined {
+        return this._message;
+    }
+
+    set message(message: string | undefined) {
+        this._message = message;
+        this.updateWidgetMessage();
+    }
+
+    private updateWidgetMessage(): void {
+        const widget = this.widgets[0];
+        if (widget) {
+            if (widget instanceof TreeViewWidget) {
+                widget.message = this._message;
+            }
+        }
+    }
+
+    addWidget(widget: Widget): void {
+        super.addWidget(widget);
+        this.updateWidgetMessage();
+    }
+
+    insertWidget(index: number, widget: Widget): void {
+        super.insertWidget(index, widget);
+        this.updateWidgetMessage();
+    }
 }
 export namespace PluginViewWidget {
     export interface State {
         label: string
+        message?: string;
         widgets: ReadonlyArray<Widget>
     }
 }

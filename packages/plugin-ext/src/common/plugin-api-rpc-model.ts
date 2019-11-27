@@ -519,3 +519,25 @@ export interface CallHierarchyReference {
     callerDefinition: CallHierarchyDefinition,
     references: Range[]
 }
+
+export interface CallHierarchyItem {
+    _sessionId?: string;
+    _itemId?: string;
+
+    kind: SymbolKind;
+    name: string;
+    detail?: string;
+    uri: UriComponents;
+    range: Range;
+    selectionRange: Range;
+}
+
+export interface CallHierarchyIncomingCall {
+    from: CallHierarchyItem;
+    fromRanges: Range[];
+}
+
+export interface CallHierarchyOutgoingCall {
+    to: CallHierarchyItem;
+    fromRanges: Range[];
+}

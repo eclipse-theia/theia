@@ -24,7 +24,7 @@ import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } fr
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Disposable } from './types-impl';
 import { DisposableCollection } from '@theia/core';
-import { KnownCommands } from '../common/known-commands';
+import { KnownCommands } from './known-commands';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T | undefined>;
@@ -100,8 +100,19 @@ export class CommandRegistryImpl implements CommandRegistryExt {
             return this.executeLocalCommand(id, ...args);
         } else if (KnownCommands.mapped(id)) {
             // Using the KnownCommand exclusions, convert the commands manually
-            return KnownCommands.map(id, args, (mappedId: string, mappedArgs: any[] | undefined) =>
-                this.proxy.$executeCommand(mappedId, ...mappedArgs));
+            return KnownCommands.map(id, args, (mappedId: string, mappedArgs: any[] | undefined, mappedResult: KnownCommands.ConversionFunction) => {
+                const mr: KnownCommands.ConversionFunction = mappedResult;
+                return this.proxy.$executeCommand(mappedId, ...mappedArgs).then((result: any) => {
+                    if (!result) {
+                        return undefined;
+                    }
+                    if (!mr) {
+                        return result;
+                    }
+                    return mr(result);
+                });
+            }
+            );
         } else {
             return this.proxy.$executeCommand(id, ...args);
         }

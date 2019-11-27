@@ -22,6 +22,7 @@ import { SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode, WidgetManage
 import { ViewContextKeyService } from './view-context-key-service';
 import { Disposable, DisposableCollection } from '@theia/core';
 import { TreeViewWidget, TreeViewNode } from './tree-view-widget';
+import { PluginViewWidget } from './plugin-view-widget';
 
 export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
 
@@ -105,6 +106,20 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
             if (treeNode && SelectableTreeNode.is(treeNode)) {
                 widget.model.selectNode(treeNode);
             }
+        }
+    }
+
+    async $setMessage(treeViewId: string, message: string): Promise<void> {
+        const viewPanel = await this.viewRegistry.getView(treeViewId);
+        if (viewPanel instanceof PluginViewWidget) {
+            viewPanel.message = message;
+        }
+    }
+
+    async $setTitle(treeViewId: string, title: string): Promise<void> {
+        const viewPanel = await this.viewRegistry.getView(treeViewId);
+        if (viewPanel) {
+            viewPanel.title.label = title;
         }
     }
 

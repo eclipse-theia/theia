@@ -2012,6 +2012,9 @@ export enum WebviewPanelTargetArea {
     Bottom = 'bottom'
 }
 export class CallHierarchyItem {
+    _sessionId?: string;
+    _itemId?: string;
+
     kind: SymbolKind;
     name: string;
     detail?: string;
@@ -2027,6 +2030,20 @@ export class CallHierarchyItem {
         this.range = range;
         this.selectionRange = selectionRange;
     }
+
+    static isCallHierarchyItem(thing: {}): thing is theia.CallHierarchyItem {
+        if (thing instanceof CallHierarchyItem) {
+            return true;
+        }
+        if (!thing) {
+            return false;
+        }
+        return typeof (<CallHierarchyItem>thing).kind === 'number' &&
+            typeof (<CallHierarchyItem>thing).name === 'string' &&
+            URI.isUri((<CallHierarchyItem>thing).uri) &&
+            Range.isRange((<CallHierarchyItem>thing).range) &&
+            Range.isRange((<CallHierarchyItem>thing).selectionRange);
+    }
 }
 
 export class CallHierarchyIncomingCall {
@@ -2039,6 +2056,7 @@ export class CallHierarchyIncomingCall {
         this.from = item;
     }
 }
+
 export class CallHierarchyOutgoingCall {
 
     to: theia.CallHierarchyItem;
