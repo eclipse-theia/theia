@@ -76,6 +76,8 @@ Breaking changes:
   `webpack.config.js` is generated only once. It can be edited by users to custoimze bundling,
   but should be based on `gen-webpack.config.js` to pick any changes in the generated config.
   If it does not have a reference to `gen-webpack.config.js` then it will be regenerated.
+- [debug] removed `@theia/json` dependency. Applications should explicitly depend on `@theia/json` instead [#6647](https://github.com/eclipse-theia/theia/pull/6647)
+- [preferences] removed `@theia/json` dependency. Applications should explicitly depend on `@theia/json` instead [#6647](https://github.com/eclipse-theia/theia/pull/6647)
 
 ## v0.14.0
 
