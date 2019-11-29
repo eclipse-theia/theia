@@ -4871,6 +4871,11 @@ declare module '@theia/plugin' {
         export const language: string;
 
         /**
+         * The detected default shell for the extension host.
+         */
+        export const shell: string;
+
+        /**
          * The system clipboard.
          */
         export const clipboard: Clipboard;

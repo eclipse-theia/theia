@@ -18,6 +18,7 @@ import { inject, injectable, named } from 'inversify';
 import { ILogger, DisposableCollection } from '@theia/core/lib/common';
 import { IBaseTerminalServer, IBaseTerminalServerOptions, IBaseTerminalClient } from '../common/base-terminal-protocol';
 import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
+import { ShellProcess } from './shell-process';
 
 @injectable()
 export abstract class BaseTerminalServer implements IBaseTerminalServer {
@@ -72,6 +73,10 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         if (term instanceof TerminalProcess) {
             term.kill();
         }
+    }
+
+    async getDefaultShell(): Promise<string> {
+        return ShellProcess.getShellExecutablePath();
     }
 
     dispose(): void {

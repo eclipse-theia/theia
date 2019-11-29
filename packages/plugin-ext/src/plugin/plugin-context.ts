@@ -496,6 +496,7 @@ export function createAPIFactory(
             get machineId(): string { return envExt.machineId; },
             get sessionId(): string { return envExt.sessionId; },
             get uriScheme(): string { return envExt.uriScheme; },
+            get shell(): string { return envExt.shell; },
             clipboard,
             getEnvVariable(envVarName: string): PromiseLike<string | undefined> {
                 return envExt.getEnvVariable(envVarName);

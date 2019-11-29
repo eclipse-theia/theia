@@ -99,6 +99,7 @@ export interface ConfigStorage {
 export interface EnvInit {
     queryParams: QueryParameters;
     language: string;
+    shell: string;
 }
 
 export interface PluginAPI {
