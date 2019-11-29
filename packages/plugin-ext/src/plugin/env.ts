@@ -24,6 +24,7 @@ export abstract class EnvExtImpl {
     private proxy: EnvMain;
     private queryParameters: QueryParameters;
     private lang: string;
+    private defaultShell: string;
     private envMachineId: string;
     private envSessionId: string;
 
@@ -60,6 +61,10 @@ export abstract class EnvExtImpl {
         this.lang = lang;
     }
 
+    setShell(shell: string): void {
+        this.defaultShell = shell;
+    }
+
     getClientOperatingSystem(): Promise<theia.OperatingSystem> {
         return this.proxy.$getClientOperatingSystem();
     }
@@ -81,5 +86,8 @@ export abstract class EnvExtImpl {
     }
     get uriScheme(): string {
         return 'theia';
+    }
+    get shell(): string {
+        return this.defaultShell;
     }
 }

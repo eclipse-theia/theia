@@ -56,6 +56,7 @@ import { TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/brow
 import { WebviewEnvironment } from '../../main/browser/webview/webview-environment';
 import { WebviewWidget } from '../../main/browser/webview/webview';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -135,6 +136,9 @@ export class HostedPluginSupport {
 
     @inject(WidgetManager)
     protected readonly widgets: WidgetManager;
+
+    @inject(TerminalService)
+    protected readonly terminalService: TerminalService;
 
     private theiaReadyPromise: Promise<any>;
 
@@ -386,7 +390,7 @@ export class HostedPluginSupport {
             this.managers.set(host, manager);
             toDisconnect.push(Disposable.create(() => this.managers.delete(host)));
 
-            const [extApi, globalState, workspaceState, webviewResourceRoot, webviewCspSource] = await Promise.all([
+            const [extApi, globalState, workspaceState, webviewResourceRoot, webviewCspSource, defaultShell] = await Promise.all([
                 this.server.getExtPluginAPI(),
                 this.pluginServer.getAllStorageValues(undefined),
                 this.pluginServer.getAllStorageValues({
@@ -394,7 +398,8 @@ export class HostedPluginSupport {
                     roots: this.workspaceService.tryGetRoots()
                 }),
                 this.webviewEnvironment.resourceRoot(),
-                this.webviewEnvironment.cspSource()
+                this.webviewEnvironment.cspSource(),
+                this.terminalService.getDefaultShell()
             ]);
             if (toDisconnect.disposed) {
                 return undefined;
@@ -404,7 +409,11 @@ export class HostedPluginSupport {
                 preferences: getPreferences(this.preferenceProviderProvider, this.workspaceService.tryGetRoots()),
                 globalState,
                 workspaceState,
-                env: { queryParams: getQueryParameters(), language: navigator.language },
+                env: {
+                    queryParams: getQueryParameters(),
+                    language: navigator.language,
+                    shell: defaultShell
+                },
                 extApi,
                 webview: {
                     webviewResourceRoot,
