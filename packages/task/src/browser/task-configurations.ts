@@ -110,10 +110,7 @@ export class TaskConfigurations implements Disposable {
             })
         );
         this.reorgnizeTasks();
-        this.toDispose.pushAll([
-            this.taskDefinitionRegistry.onDidRegisterTaskDefinition(() => this.reorgnizeTasks()),
-            this.taskDefinitionRegistry.onDidUnregisterTaskDefinition(() => this.reorgnizeTasks())
-        ]);
+        this.toDispose.push(this.taskSchemaUpdater.onDidChangeTaskSchema(() => this.reorgnizeTasks()));
     }
 
     setClient(client: TaskConfigurationClient): void {
