@@ -22,7 +22,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
-import { InMemoryResources, deepClone } from '@theia/core/lib/common';
+import { InMemoryResources, deepClone, Emitter } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 import URI from '@theia/core/lib/common/uri';
@@ -49,8 +49,18 @@ export class TaskSchemaUpdater {
     @inject(TaskServer)
     protected readonly taskServer: TaskServer;
 
+    protected readonly onDidChangeTaskSchemaEmitter = new Emitter<void>();
+    readonly onDidChangeTaskSchema = this.onDidChangeTaskSchemaEmitter.event;
+
     @postConstruct()
     protected init(): void {
+        const taskSchemaUri = new URI(taskSchemaId);
+        this.jsonSchemaStore.onDidChangeSchema(uri => {
+            if (uri.toString() === taskSchemaUri.toString()) {
+                this.onDidChangeTaskSchemaEmitter.fire(undefined);
+            }
+        });
+
         this.updateProblemMatcherNames();
         this.updateSupportedTaskTypes();
         // update problem matcher names in the task schema every time a problem matcher is added or disposed
