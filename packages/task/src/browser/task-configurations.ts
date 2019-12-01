@@ -21,6 +21,7 @@ import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskConfigurationManager } from './task-configuration-manager';
 import { TaskSchemaUpdater } from './task-schema-updater';
+import { TaskSourceResolver } from './task-source-resolver';
 import { Disposable, DisposableCollection, ResourceProvider } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
@@ -85,6 +86,9 @@ export class TaskConfigurations implements Disposable {
 
     @inject(TaskSchemaUpdater)
     protected readonly taskSchemaUpdater: TaskSchemaUpdater;
+
+    @inject(TaskSourceResolver)
+    protected readonly taskSourceResolver: TaskSourceResolver;
 
     constructor() {
         this.toDispose.push(Disposable.create(() => {
@@ -292,7 +296,7 @@ export class TaskConfigurations implements Disposable {
             return;
         }
 
-        const sourceFolderUri: string | undefined = this.getSourceFolderUriFromTask(task);
+        const sourceFolderUri: string | undefined = this.taskSourceResolver.resolve(task);
         if (!sourceFolderUri) {
             console.error('Global task cannot be customized');
             return;
@@ -414,7 +418,7 @@ export class TaskConfigurations implements Disposable {
      */
     // tslint:disable-next-line:no-any
     async updateTaskConfig(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
-        const sourceFolderUri: string | undefined = this.getSourceFolderUriFromTask(task);
+        const sourceFolderUri: string | undefined = this.taskSourceResolver.resolve(task);
         if (!sourceFolderUri) {
             console.error('Global task cannot be customized');
             return;
@@ -463,16 +467,5 @@ export class TaskConfigurations implements Disposable {
             ...task,
             type: task.taskType || task.type
         });
-    }
-
-    private getSourceFolderUriFromTask(task: TaskConfiguration): string | undefined {
-        const isDetectedTask = this.isDetectedTask(task);
-        let sourceFolderUri: string | undefined;
-        if (isDetectedTask) {
-            sourceFolderUri = task._scope;
-        } else {
-            sourceFolderUri = task._source;
-        }
-        return sourceFolderUri;
     }
 }

@@ -20,6 +20,7 @@ import { ILogger, CommandService } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { QuickPickItem, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
@@ -48,6 +49,7 @@ import { TaskConfigurationClient, TaskConfigurations } from './task-configuratio
 import { TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskNameResolver } from './task-name-resolver';
+import { TaskSourceResolver } from './task-source-resolver';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskConfigurationManager } from './task-configuration-manager';
@@ -131,6 +133,9 @@ export class TaskService implements TaskConfigurationClient {
     @inject(TaskNameResolver)
     protected readonly taskNameResolver: TaskNameResolver;
 
+    @inject(TaskSourceResolver)
+    protected readonly taskSourceResolver: TaskSourceResolver;
+
     @inject(TaskSchemaUpdater)
     protected readonly taskSchemaUpdater: TaskSchemaUpdater;
 
@@ -140,6 +145,8 @@ export class TaskService implements TaskConfigurationClient {
     @inject(CommandService)
     protected readonly commands: CommandService;
 
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
     /**
      * @deprecated To be removed in 0.5.0
      */
@@ -161,12 +168,9 @@ export class TaskService implements TaskConfigurationClient {
                 return;
             }
             this.runningTasks.set(event.taskId, { exitCode: new Deferred<number | undefined>(), terminateSignal: new Deferred<string | undefined>() });
-            const task = event.config;
-            let taskIdentifier = event.taskId.toString();
-            if (task) {
-                taskIdentifier = this.taskNameResolver.resolve(task);
-            }
-            this.messageService.info(`Task ${taskIdentifier} has been started`);
+            const taskConfig = event.config;
+            const taskIdentifier = taskConfig ? this.getTaskIdentifier(taskConfig) : event.taskId.toString();
+            this.messageService.info(`Task '${taskIdentifier}' has been started.`);
         });
 
         this.taskWatcher.onOutputProcessed((event: TaskOutputProcessedEvent) => {
@@ -210,25 +214,27 @@ export class TaskService implements TaskConfigurationClient {
             this.runningTasks.get(event.taskId)!.terminateSignal.resolve(event.signal);
             setTimeout(() => this.runningTasks.delete(event.taskId), 60 * 1000);
 
-            const taskConfiguration = event.config;
-            let taskIdentifier = event.taskId.toString();
-            if (taskConfiguration) {
-                taskIdentifier = this.taskNameResolver.resolve(taskConfiguration);
-            }
-
+            const taskConfig = event.config;
+            const taskIdentifier = taskConfig ? this.getTaskIdentifier(taskConfig) : event.taskId.toString();
             if (event.code !== undefined) {
-                const message = `Task ${taskIdentifier} has exited with code ${event.code}.`;
+                const message = `Task '${taskIdentifier}' has exited with code ${event.code}.`;
                 if (event.code === 0) {
                     this.messageService.info(message);
                 } else {
                     this.messageService.error(message);
                 }
             } else if (event.signal !== undefined) {
-                this.messageService.info(`Task ${taskIdentifier} was terminated by signal ${event.signal}.`);
+                this.messageService.info(`Task '${taskIdentifier}' was terminated by signal ${event.signal}.`);
             } else {
                 console.error('Invalid TaskExitedEvent received, neither code nor signal is set.');
             }
         });
+    }
+
+    private getTaskIdentifier(taskConfig: TaskConfiguration): string {
+        const taskName = this.taskNameResolver.resolve(taskConfig);
+        const sourceStrUri = this.taskSourceResolver.resolve(taskConfig);
+        return `${taskName} (${this.labelProvider.getName(new URI(sourceStrUri))})`;
     }
 
     /** Returns an array of the task configurations configured in tasks.json and provided by the extensions. */
@@ -409,6 +415,52 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        const runningTasksInfo: TaskInfo[] = await this.getRunningTasks();
+
+        // check if the task is active
+        const matchedRunningTaskInfo = runningTasksInfo.find(taskInfo => {
+            const taskConfig = taskInfo.config;
+            return this.taskDefinitionRegistry.compareTasks(taskConfig, task);
+        });
+        if (matchedRunningTaskInfo) { // the task is active
+            const taskName = this.taskNameResolver.resolve(task);
+            const terminalId = matchedRunningTaskInfo.terminalId;
+            if (terminalId) {
+                const terminal = this.terminalService.getById(this.getTerminalWidgetId(terminalId));
+                if (terminal) {
+                    this.shell.activateWidget(terminal.id); // make the terminal visible and assign focus
+                }
+            }
+            const selectedAction = await this.messageService.info(`The task '${taskName}' is already active`, 'Terminate Task', 'Restart Task');
+            if (selectedAction === 'Terminate Task') {
+                await this.terminateTask(matchedRunningTaskInfo);
+            } else if (selectedAction === 'Restart Task') {
+                return this.restartTask(matchedRunningTaskInfo, option);
+            }
+        } else { // run task as the task is not active
+            return this.doRunTask(task, option);
+        }
+    }
+
+    /**
+     * Terminates a task that is actively running.
+     * @param activeTaskInfo the TaskInfo of the task that is actively running
+     */
+    protected async terminateTask(activeTaskInfo: TaskInfo): Promise<void> {
+        const taskId = activeTaskInfo.taskId;
+        return this.kill(taskId);
+    }
+
+    /**
+     * Terminates a task that is actively running, and restarts it.
+     * @param activeTaskInfo the TaskInfo of the task that is actively running
+     */
+    protected async restartTask(activeTaskInfo: TaskInfo, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        await this.terminateTask(activeTaskInfo);
+        return this.doRunTask(activeTaskInfo.config, option);
+    }
+
+    protected async doRunTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
         if (option && option.customization) {
             const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
             if (taskDefinition) { // use the customization object to override the task config
@@ -648,7 +700,7 @@ export class TaskService implements TaskConfigurationClient {
             TERMINAL_WIDGET_FACTORY_ID,
             <TerminalWidgetFactoryOptions>{
                 created: new Date().toString(),
-                id: 'terminal-' + processId,
+                id: this.getTerminalWidgetId(processId),
                 title: taskInfo
                     ? `Task: ${taskInfo.config.label}`
                     : `Task: #${taskId}`,
@@ -658,6 +710,10 @@ export class TaskService implements TaskConfigurationClient {
         this.shell.addWidget(widget, { area: 'bottom' });
         this.shell.activateWidget(widget.id);
         widget.start(processId);
+    }
+
+    private getTerminalWidgetId(terminalId: number): string {
+        return `${TERMINAL_WIDGET_FACTORY_ID}-${terminalId}`;
     }
 
     async configure(task: TaskConfiguration): Promise<void> {
