@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { ApplicationShell, FrontendApplication, WidgetManager } from '@theia/core/lib/browser';
+import { BOTTOM_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
 import { ILogger, CommandService } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -409,6 +410,46 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        const runningTasksInfo: TaskInfo[] = await this.getRunningTasks();
+
+        // check if the task is active
+        const matchedRunningTaskInfo = runningTasksInfo.find(taskInfo => {
+            const taskConfig = taskInfo.config;
+            return this.taskDefinitionRegistry.compareTasks(taskConfig, task);
+        });
+        if (matchedRunningTaskInfo) { // the task is active
+            const taskName = this.taskNameResolver.resolve(task);
+            const taskId = matchedRunningTaskInfo.taskId;
+            const terminalId = matchedRunningTaskInfo.terminalId;
+            let terminal: TerminalWidget | undefined;
+            if (terminalId) {
+                terminal = this.terminalService.getById(this.getTerminalWidgetId(terminalId));
+                if (terminal) {
+                    terminal.show(); // bring the terminal to the top
+                }
+            }
+            this.messageService.info(`The task \'${taskName}\' is already active`, 'Terminate Task', 'Restart Task').then(async actionTask => {
+                if (actionTask) {
+                    await this.kill(taskId);
+                    if (terminal) {
+                        const parent = terminal.parent;
+                        terminal.close();
+                        if (actionTask === 'Terminate Task' && parent && parent.id === BOTTOM_AREA_ID) {
+                            parent.hide();
+                        }
+                    }
+                    if (actionTask === 'Restart Task') {
+                        this.doRunTask(task, option);
+                    }
+                }
+            });
+            return;
+        } else { // run task as the task is not active
+            return this.doRunTask(task, option);
+        }
+    }
+
+    protected async doRunTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
         if (option && option.customization) {
             const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
             if (taskDefinition) { // use the customization object to override the task config
@@ -648,7 +689,7 @@ export class TaskService implements TaskConfigurationClient {
             TERMINAL_WIDGET_FACTORY_ID,
             <TerminalWidgetFactoryOptions>{
                 created: new Date().toString(),
-                id: 'terminal-' + processId,
+                id: this.getTerminalWidgetId(processId),
                 title: taskInfo
                     ? `Task: ${taskInfo.config.label}`
                     : `Task: #${taskId}`,
@@ -658,6 +699,10 @@ export class TaskService implements TaskConfigurationClient {
         this.shell.addWidget(widget, { area: 'bottom' });
         this.shell.activateWidget(widget.id);
         widget.start(processId);
+    }
+
+    private getTerminalWidgetId(terminalId: number): string {
+        return `${TERMINAL_WIDGET_FACTORY_ID}-${terminalId}`;
     }
 
     async configure(task: TaskConfiguration): Promise<void> {
