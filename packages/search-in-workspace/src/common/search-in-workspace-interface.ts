@@ -116,6 +116,7 @@ export interface SearchInWorkspaceClient {
     onDone(searchId: number, error?: string): void;
 }
 
+export const SIW_WS_PATH = '/services/search-in-workspace';
 export const SearchInWorkspaceServer = Symbol('SearchInWorkspaceServer');
 export interface SearchInWorkspaceServer extends JsonRpcServer<SearchInWorkspaceClient> {
     /**

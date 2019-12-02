@@ -79,6 +79,10 @@ export class WebSocketChannel implements IWebSocket {
     }
 
     close(code: number = 1000, reason: string = ''): void {
+        if (this.closing) {
+            // Do not try to close the channel if it is already closing.
+            return;
+        }
         this.checkNotDisposed();
         this.doSend(JSON.stringify(<WebSocketChannel.CloseMessage>{
             kind: 'close',
