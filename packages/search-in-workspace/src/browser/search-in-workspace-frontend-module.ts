@@ -18,7 +18,7 @@ import '../../src/browser/styles/index.css';
 
 import { ContainerModule, interfaces } from 'inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-in-workspace-service';
-import { SearchInWorkspaceServer } from '../common/search-in-workspace-interface';
+import { SearchInWorkspaceServer, SIW_WS_PATH } from '../common/search-in-workspace-interface';
 import { WebSocketConnectionProvider, WidgetFactory, createTreeContainer, TreeWidget, bindViewContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ResourceResolver } from '@theia/core';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
@@ -51,7 +51,7 @@ export default new ContainerModule(bind => {
     // The object to call methods on the backend.
     bind(SearchInWorkspaceServer).toDynamicValue(ctx => {
         const client = ctx.container.get(SearchInWorkspaceClientImpl);
-        return WebSocketConnectionProvider.createProxy(ctx.container, '/search-in-workspace', client);
+        return WebSocketConnectionProvider.createProxy(ctx.container, SIW_WS_PATH, client);
     }).inSingletonScope();
 
     bind(InMemoryTextResourceResolver).toSelf().inSingletonScope();
