@@ -41,12 +41,9 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
         });
     }
 
-    openNewWindow(url: string): Window | undefined {
-        const newWindow = window.open(url);
-        if (newWindow === null) {
-            throw new Error('Cannot open a new window for URL: ' + url);
-        }
-        return newWindow;
+    openNewWindow(url: string): undefined {
+        window.open(url, undefined, 'noopener');
+        return undefined;
     }
 
     canUnload(): boolean {

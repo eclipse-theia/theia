@@ -35,7 +35,7 @@ export class HttpOpenHandler implements OpenHandler {
         return (uri.scheme.startsWith('http') || uri.scheme.startsWith('mailto')) ? 500 : 0;
     }
 
-    async open(uri: URI): Promise<Window | undefined> {
+    async open(uri: URI): Promise<undefined> {
         const resolvedUri = await this.externalUriService.resolve(uri);
         return this.windowService.openNewWindow(resolvedUri.toString(true), { external: true });
     }

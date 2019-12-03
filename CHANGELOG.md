@@ -4,6 +4,10 @@
 
 - [bunyan] removed [`@theia/bunyan`](https://github.com/eclipse-theia/theia/tree/b92a5673de1e9d1bdc85e6200486b92394200579/packages/bunyan) extension [#6651](https://github.com/eclipse-theia/theia/pull/6651)
 
+Breaking changes:
+
+- [core] new browser windows spawned through opener-service have noopener set, preventing them from accessing window.opener and giveing them their own event loop. openNewWindow will no longer return a Window as a result.
+
 ## v0.13.0
 
 - [console] added filtering support based on severity [#6486](https://github.com/eclipse-theia/theia/pull/6486)
