@@ -15,19 +15,11 @@
  ********************************************************************************/
 
 import * as assert from 'assert';
-import { TreeNode, CompositeTreeNode, TreeImpl, Tree } from './tree';
-import { TreeModel, TreeModelImpl } from './tree-model';
+import { TreeNode, CompositeTreeNode } from './tree';
+import { TreeModel } from './tree-model';
 import { MockTreeModel } from './test/mock-tree-model';
 import { expect } from 'chai';
-import { Container } from 'inversify';
-import { TreeSelectionServiceImpl } from './tree-selection-impl';
-import { TreeSelectionService } from './tree-selection';
-import { TreeExpansionServiceImpl, TreeExpansionService } from './tree-expansion';
-import { TreeNavigationService } from './tree-navigation';
-import { TreeSearch } from './tree-search';
-import { FuzzySearch } from './fuzzy-search';
-import { MockLogger } from '../../common/test/mock-logger';
-import { ILogger } from '../../common';
+import { createTreeTestContainer } from './test/tree-test-container';
 
 // tslint:disable:no-unused-expression
 describe('Tree', () => {
@@ -230,7 +222,7 @@ describe('Tree', () => {
 
     function assertTreeNode(expectation: string, node: TreeNode): void {
         // tslint:disable-next-line:no-any
-        assert.deepEqual(expectation, JSON.stringify(node, (key: keyof CompositeTreeNode, value: any) => {
+        assert.deepStrictEqual(expectation, JSON.stringify(node, (key: keyof CompositeTreeNode, value: any) => {
             if (key === 'parent' || key === 'previousSibling' || key === 'nextSibling') {
                 return value && value.id;
             }
@@ -239,20 +231,7 @@ describe('Tree', () => {
     }
 
     function createTreeModel(): TreeModel {
-        const container = new Container({ defaultScope: 'Singleton' });
-        container.bind(TreeImpl).toSelf();
-        container.bind(Tree).toService(TreeImpl);
-        container.bind(TreeSelectionServiceImpl).toSelf();
-        container.bind(TreeSelectionService).toService(TreeSelectionServiceImpl);
-        container.bind(TreeExpansionServiceImpl).toSelf();
-        container.bind(TreeExpansionService).toService(TreeExpansionServiceImpl);
-        container.bind(TreeNavigationService).toSelf();
-        container.bind(TreeModelImpl).toSelf();
-        container.bind(TreeModel).toService(TreeModelImpl);
-        container.bind(TreeSearch).toSelf();
-        container.bind(FuzzySearch).toSelf();
-        container.bind(MockLogger).toSelf();
-        container.bind(ILogger).to(MockLogger).inSingletonScope();
+        const container = createTreeTestContainer();
         return container.get(TreeModel);
     }
     function retrieveNode<T extends TreeNode>(id: string): Readonly<T> {
