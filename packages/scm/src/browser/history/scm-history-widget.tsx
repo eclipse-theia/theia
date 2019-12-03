@@ -98,8 +98,6 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         errorMessage: React.ReactNode
     };
 
-    protected readonly toDisposeOnRepositoryChange = new DisposableCollection();
-
     protected historySupport: ScmHistorySupport | undefined;
 
     constructor(
@@ -124,33 +122,23 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
 
     @postConstruct()
     protected init(): void {
-        this.refreshOnRepositoryChange();
+        this.initWithRepository();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refreshOnRepositoryChange()));
     }
 
+    protected readonly toDisposeOnRepositoryChange = new DisposableCollection();
     protected refreshOnRepositoryChange() {
         this.toDisposeOnRepositoryChange.dispose();
-
-        const repository = this.scmService.selectedRepository;
-        if (repository) {
-            this.historySupport = repository.input.get<ScmHistorySupport>(ScmHistorySupport);
-            if (this.historySupport) {
-                this.toDisposeOnRepositoryChange.push(this.historySupport.onDidChangeHistory(() => this.setContent(this.options)));
-            }
-        } else {
-            this.historySupport = undefined;
-        }
 
         // If switching repository, discard options because they are specific to a repository
         this.options = {};
 
-        this.refresh();
+        this.initWithRepository();
+        this.setContent(this.options);
+        this.update();
     }
 
-    protected readonly toDisposeOnRefresh = new DisposableCollection();
-    protected refresh(): void {
-        this.toDisposeOnRefresh.dispose();
-        this.toDispose.push(this.toDisposeOnRefresh);
+    protected initWithRepository(): void {
         const repository = this.scmService.selectedRepository;
         this.title.label = SCM_HISTORY_LABEL;
         if (repository) {
@@ -162,13 +150,19 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         } else if (area === 'right') {
             this.shell.rightPanelHandler.refresh();
         }
-        this.update();
 
         if (repository) {
-            this.toDisposeOnRefresh.push(repository.onDidChange(() => this.update()));
+            this.toDisposeOnRepositoryChange.push(repository.onDidChange(() => this.update()));
             // render synchronously to avoid cursor jumping
             // see https://stackoverflow.com/questions/28922275/in-reactjs-why-does-setstate-behave-differently-when-called-synchronously/28922465#28922465
-            this.toDisposeOnRefresh.push(repository.input.onDidChange(() => this.setContent(this.options)));
+            this.toDisposeOnRepositoryChange.push(repository.input.onDidChange(() => this.setContent(this.options)));
+
+            this.historySupport = repository.input.get<ScmHistorySupport>(ScmHistorySupport);
+            if (this.historySupport) {
+                this.toDisposeOnRepositoryChange.push(this.historySupport.onDidChangeHistory(() => this.setContent(this.options)));
+            }
+        } else {
+            this.historySupport = undefined;
         }
     }
 
