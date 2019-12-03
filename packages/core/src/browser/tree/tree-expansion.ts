@@ -29,12 +29,12 @@ export interface TreeExpansionService extends Disposable {
      */
     readonly onExpansionChanged: Event<Readonly<ExpandableTreeNode>>;
     /**
-     * If the given node is valid and collapsed then expand it.
+     * Expand a node for the given node id if it is valid and collapsed.
      * Expanding a node refreshes all its children.
      *
-     * Return true if a node has been expanded; otherwise false.
+     * Return a valid expanded refreshed node or `undefined` if such does not exist.
      */
-    expandNode(node: Readonly<ExpandableTreeNode>): Promise<boolean>;
+    expandNode(node: Readonly<ExpandableTreeNode>): Promise<Readonly<ExpandableTreeNode> | undefined>;
     /**
      * If the given node is valid and expanded then collapse it.
      *
@@ -107,19 +107,22 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
         this.onExpansionChangedEmitter.fire(node);
     }
 
-    async expandNode(raw: ExpandableTreeNode): Promise<boolean> {
+    async expandNode(raw: ExpandableTreeNode): Promise<ExpandableTreeNode | undefined> {
         const node = this.tree.validateNode(raw);
         if (ExpandableTreeNode.isCollapsed(node)) {
-            return await this.doExpandNode(node);
+            return this.doExpandNode(node);
         }
-        return false;
+        return undefined;
     }
 
-    protected async doExpandNode(node: ExpandableTreeNode): Promise<boolean> {
+    protected async doExpandNode(node: ExpandableTreeNode): Promise<ExpandableTreeNode | undefined> {
         node.expanded = true;
-        await this.tree.refresh(node);
-        this.fireExpansionChanged(node);
-        return true;
+        const refreshed = await this.tree.refresh(node);
+        if (ExpandableTreeNode.isExpanded(refreshed)) {
+            this.fireExpansionChanged(refreshed);
+            return refreshed;
+        }
+        return undefined;
     }
 
     async collapseNode(raw: ExpandableTreeNode): Promise<boolean> {
