@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
-import { OpenerService, open, TreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
+import { OpenerService, open, TreeNode, ExpandableTreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
 import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -32,17 +32,32 @@ export class FileNavigatorModel extends FileTreeModel {
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(
-            this.workspaceService.onWorkspaceChanged(event => {
-                this.updateRoot();
-            })
-        );
-        this.toDispose.push(
-            this.workspaceService.onWorkspaceLocationChanged(() => {
-                this.updateRoot();
-            })
-        );
         super.init();
+        this.initializeRoot();
+    }
+
+    protected async initializeRoot(): Promise<void> {
+        await Promise.all([
+            this.applicationState.reachedState('initialized_layout'),
+            this.workspaceService.roots
+        ]);
+        await this.updateRoot();
+        if (this.toDispose.disposed) {
+            return;
+        }
+        this.toDispose.push(this.workspaceService.onWorkspaceChanged(() => this.updateRoot()));
+        this.toDispose.push(this.workspaceService.onWorkspaceLocationChanged(() => this.updateRoot()));
+        if (this.selectedNodes.length) {
+            return;
+        }
+        const root = this.root;
+        if (CompositeTreeNode.is(root) && root.children.length === 1) {
+            const child = root.children[0];
+            if (SelectableTreeNode.is(child) && !child.selected && ExpandableTreeNode.is(child)) {
+                this.selectNode(child);
+                this.expandNode(child);
+            }
+        }
     }
 
     previewNode(node: TreeNode): void {
@@ -72,8 +87,7 @@ export class FileNavigatorModel extends FileTreeModel {
         }
     }
 
-    async updateRoot(): Promise<void> {
-        await this.applicationState.reachedState('initialized_layout');
+    protected async updateRoot(): Promise<void> {
         this.root = await this.createRoot();
     }
 

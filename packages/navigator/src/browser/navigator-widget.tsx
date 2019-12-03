@@ -21,8 +21,7 @@ import { CommandService, SelectionService } from '@theia/core/lib/common';
 import { CommonCommands, CorePreferences, LabelProvider, ViewContainerTitleOptions, Key } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
-    TreeProps, TreeModel, TreeNode,
-    SelectableTreeNode, CompositeTreeNode
+    TreeProps, TreeModel, TreeNode
 } from '@theia/core/lib/browser';
 import { FileTreeWidget, FileNode, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -68,7 +67,6 @@ export class FileNavigatorWidget extends FileTreeWidget {
         super(props, model, contextMenuRenderer);
         this.id = FILE_NAVIGATOR_ID;
         this.addClass(CLASS);
-        this.initialize();
     }
 
     @postConstruct()
@@ -89,21 +87,6 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
             })
         ]);
-    }
-
-    protected async initialize(): Promise<void> {
-        await this.model.updateRoot();
-        if (this.model.selectedNodes.length) {
-            return;
-        }
-        const root = this.model.root;
-        if (CompositeTreeNode.is(root) && root.children.length === 1) {
-            const child = root.children[0];
-            if (SelectableTreeNode.is(child) && !child.selected && ExpandableTreeNode.is(child)) {
-                this.model.selectNode(child);
-                this.model.expandNode(child);
-            }
-        }
     }
 
     protected doUpdateRows(): void {
