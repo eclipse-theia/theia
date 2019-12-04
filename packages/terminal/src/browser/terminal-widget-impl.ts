@@ -33,7 +33,7 @@ import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFA
 import { TerminalContribution } from './terminal-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
-import { TerminalCopyOnSelectionHander } from './terminal-copy-on-selection-handler';
+import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -76,7 +76,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
     @inject(TerminalService) protected readonly terminalService: TerminalService;
-    @inject(TerminalCopyOnSelectionHander) protected readonly copyOnSelectionHandler: TerminalCopyOnSelectionHander;
+    @inject(TerminalCopyOnSelectionHandler) protected readonly copyOnSelectionHandler: TerminalCopyOnSelectionHandler;
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;

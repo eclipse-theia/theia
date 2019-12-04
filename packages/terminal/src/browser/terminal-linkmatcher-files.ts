@@ -131,7 +131,7 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
     }
 }
 
-// below reg exps are taken from
+// The following regular expressions are taken from:
 // https://github.com/microsoft/vscode/blob/fbbc1aa80332189aa0d3006cb2159b79a9eba480/src/vs/workbench/contrib/terminal/browser/terminalLinkHandler.ts
 
 /*---------------------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
 const pathPrefix = '(\\.\\.?|\\~)';
 const pathSeparatorClause = '\\/';
 // '":; are allowed in paths but they are often separators so ignore them
-// Also disallow \\ to prevent a catastropic backtracking case #24798
+// Also disallow \\ to prevent a catastrophic backtracking case #24798
 const excludedPathCharactersClause = '[^\\0\\s!$`&*()\\[\\]+\'":;\\\\]';
 /** A regex that matches paths in the form /foo, ~/foo, ./foo, ../foo, foo/bar */
 const unixLocalLinkClause = '((' + pathPrefix + '|(' + excludedPathCharactersClause + ')+)?(' + pathSeparatorClause + '(' + excludedPathCharactersClause + ')+)+)';
@@ -154,7 +154,7 @@ const winExcludedPathCharactersClause = '[^\\0<>\\?\\|\\/\\s!$`&*()\\[\\]+\'":;]
 /** A regex that matches paths in the form c:\foo, ~\foo, .\foo, ..\foo, foo\bar */
 const winLocalLinkClause = '((' + winPathPrefix + '|(' + winExcludedPathCharactersClause + ')+)?(' + winPathSeparatorClause + '(' + winExcludedPathCharactersClause + ')+)+)';
 
-/** As xterm reads from DOM, space in that case is nonbreaking char ASCII code - 160, replacing space with nonBreakningSpace or space ASCII code - 32. */
+/** As xterm reads from DOM, space in that case is non-breaking char ASCII code - 160, replacing space with nonBreakingSpace or space ASCII code - 32. */
 const lineAndColumnClause = [
     // "(file path)", line 45 [see #40468]
     '((\\S*)", line ((\\d+)( column (\\d+))?))',

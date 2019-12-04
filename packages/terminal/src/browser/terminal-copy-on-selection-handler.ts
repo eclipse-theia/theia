@@ -18,7 +18,7 @@ import { injectable, postConstruct } from 'inversify';
 import { isFirefox } from '@theia/core/lib/browser';
 
 @injectable()
-export class TerminalCopyOnSelectionHander {
+export class TerminalCopyOnSelectionHandler {
 
     private textToCopy: string;
     private interceptCopy: boolean;
@@ -36,18 +36,18 @@ export class TerminalCopyOnSelectionHander {
     }
 
     private async clipBoardCopyIsGranted(): Promise<boolean> {
-          // Unfortunately Firefox doesn't support permission check `clipboard-write`, so let try to copy anyway,
-          if (isFirefox) {
+        // Unfortunately Firefox doesn't support permission check `clipboard-write`, so let try to copy anyway,
+        if (isFirefox) {
             return true;
         }
         try {
             // tslint:disable-next-line:no-any
             const permissions = (navigator as any).permissions;
-            const { state } = await permissions.query({name: 'clipboard-write'});
+            const { state } = await permissions.query({ name: 'clipboard-write' });
             if (state === 'granted') {
                 return true;
             }
-        } catch (e) {}
+        } catch (e) { }
 
         return false;
     }
