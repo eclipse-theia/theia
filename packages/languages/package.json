@@ -3,6 +3,7 @@
   "version": "0.13.0",
   "description": "Theia - Languages Extension",
   "dependencies": {
+    "@theia/application-package": "^0.13.0",
     "@theia/core": "^0.13.0",
     "@theia/output": "^0.13.0",
     "@theia/process": "^0.13.0",
