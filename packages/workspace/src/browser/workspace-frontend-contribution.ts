@@ -147,7 +147,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         });
         keybindings.registerKeybinding({
             command: isOSX || !this.isElectron() ? WorkspaceCommands.OPEN.id : WorkspaceCommands.OPEN_FILE.id,
-            keybinding: 'ctrlcmd+alt+o',
+            keybinding: this.isElectron() ? 'ctrlcmd+o' : 'ctrlcmd+alt+o',
         });
         if (!isOSX && this.isElectron()) {
             keybindings.registerKeybinding({
