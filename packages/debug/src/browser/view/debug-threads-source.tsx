@@ -36,7 +36,7 @@ export class DebugThreadsSource extends TreeSource {
         this.toDispose.push(this.model.onDidChange(() => this.fireDidChange()));
     }
 
-    get multiSesssion(): boolean {
+    get multiSession(): boolean {
         return this.model.sessionCount > 1;
     }
 

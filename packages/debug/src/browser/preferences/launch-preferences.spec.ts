@@ -489,7 +489,7 @@ describe('Launch Preferences', () => {
                 assert.deepStrictEqual(JSON.parse(JSON.stringify(config)), expectation);
             });
 
-            testIt('get from undefind', () => {
+            testIt('get from undefined', () => {
                 const config = preferences.get('launch', undefined, undefined);
                 assert.deepStrictEqual(JSON.parse(JSON.stringify(config)), expectation);
             });
