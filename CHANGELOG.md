@@ -8,6 +8,9 @@ Breaking changes:
 
 - [core] new browser windows spawned through opener-service have noopener set, preventing them from accessing window.opener and giving them their own event loop. openNewWindow will no longer return a Window as a result.
 - [terminal] renamed `TerminalCopyOnSelectionHander` to `TerminalCopyOnSelectionHandler` [#6692](https://github.com/eclipse-theia/theia/pull/6692)
+- [debug] renamed command `COPY_VARAIBLE_AS_EXPRESSION` to `COPY_VARIABLE_AS_EXPRESSION` [#6698](https://github.com/eclipse-theia/theia/pull/6698)
+- [debug] renamed command `COPY_VARAIBLE_VALUE` to `COPY_VARIABLE_VALUE` [#6698](https://github.com/eclipse-theia/theia/pull/6698)
+- [debug] renamed getter method `multiSesssion` to `multiSession` [#6698](https://github.com/eclipse-theia/theia/pull/6698)
 
 ## v0.13.0
 
