@@ -268,16 +268,12 @@ export class DebugEditorModel implements Disposable {
         return this.editor.getControl().getPosition()!;
     }
     getBreakpoint(position: monaco.Position = this.position): DebugSourceBreakpoint | undefined {
-return this.inlineBreakpoint || this.getLineBreakpoints()[0];
+        return this.getInlineBreakpoint(position) || this.getLineBreakpoints(position)[0];
     }
 
-get inlineBreakpoint(): DebugSourceBreakpoint | undefined {
-return this.getInlineBreakpoint();
-}
-
-protected getInlineBreakpoint(position: monaco.Position = this.position): DebugSourceBreakpoint | undefined {
-return this.sessions.getInlineBreakpoint(this.uri, position.lineNumber, position.column);
-}
+    getInlineBreakpoint(position: monaco.Position = this.position): DebugSourceBreakpoint | undefined {
+        return this.sessions.getInlineBreakpoint(this.uri, position.lineNumber, position.column);
+    }
 
     protected getLineBreakpoints(position: monaco.Position = this.position): DebugSourceBreakpoint[] {
         return this.sessions.getLineBreakpoints(this.uri, position.lineNumber);
