@@ -14,6 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable no-unused-expressions */
+
+// tslint:disable-next-line:no-implicit-dependencies
+import 'reflect-metadata';
 import { createTaskTestContainer } from './test/task-test-container';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
 import { TaskExitedEvent, TaskInfo, TaskServer, TaskWatcher, TaskConfiguration } from '../common';
@@ -27,10 +31,6 @@ import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
 import { TestWebSocketChannel } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
 import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
-
-/**
- * Globals
- */
 
 // test scripts that we bundle with tasks
 const commandShortRunning = './task';
@@ -46,6 +46,13 @@ const bogusCommand = 'thisisnotavalidcommand';
 const commandUnixNoop = 'true';
 const commandWindowsNoop = 'rundll32.exe';
 
+/** Expects argv to be ['a', 'b', 'c'] */
+const script0 = './test-arguments-0.js';
+/** Expects argv to be ['a', 'b', '   c'] */
+const script1 = './test-arguments-1.js';
+/** Expects argv to be ['a', 'b', 'c"'] */
+const script2 = './test-arguments-2.js';
+
 // we use test-resources subfolder ('<theia>/packages/task/test-resources/'),
 // as workspace root, for these tests
 const wsRootUri: URI = FileUri.create(__dirname).resolve('../../test-resources');
@@ -54,24 +61,30 @@ const wsRoot: string = FileUri.fsPath(wsRootUri);
 describe('Task server / back-end', function (): void {
     this.timeout(10000);
 
+    let backend: BackendApplication;
     let server: http.Server | https.Server;
     let taskServer: TaskServer;
     let taskWatcher: TaskWatcher;
 
     beforeEach(async () => {
+        delete process.env['THEIA_TASK_TEST_DEBUG'];
         const testContainer = createTaskTestContainer();
         taskWatcher = testContainer.get(TaskWatcher);
         taskServer = testContainer.get(TaskServer);
         taskServer.setClient(taskWatcher.getTaskClient());
-        server = await testContainer.get(BackendApplication).start();
+        backend = testContainer.get(BackendApplication);
+        server = await backend.start();
     });
 
     afterEach(async () => {
+        const _backend = backend;
+        const _server = server;
+        backend = undefined!;
         taskServer = undefined!;
         taskWatcher = undefined!;
-        const s = server;
         server = undefined!;
-        s.close();
+        _backend['onStop']();
+        _server.close();
     });
 
     it('task running in terminal - expected data is received from the terminal ws server', async function (): Promise<void> {
@@ -114,7 +127,7 @@ describe('Task server / back-end', function (): void {
         // create task using raw process
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', executable, [someString]), wsRoot);
 
-        const p = new Promise((resolve, reject) => {
+        await new Promise((resolve, reject) => {
             const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
                 if (event.taskId === taskInfo.taskId && event.code === 0) {
                     if (typeof taskInfo.terminalId === 'number') {
@@ -126,37 +139,26 @@ describe('Task server / back-end', function (): void {
                 }
             });
         });
-
-        await p;
     });
 
     it('task is executed successfully with cwd as a file URI', async function (): Promise<void> {
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
-        const config = createProcessTaskConfig('shell', command, [], FileUri.create(wsRoot).toString());
+        const config = createProcessTaskConfig('shell', command, undefined, FileUri.create(wsRoot).toString());
         const taskInfo: TaskInfo = await taskServer.run(config, wsRoot);
-
-        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
-
-        await p;
+        await checkSuccessfulProcessExit(taskInfo, taskWatcher);
     });
 
     it('task is executed successfully using terminal process', async function (): Promise<void> {
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
-        const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', command, []), wsRoot);
-
-        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
-
-        await p;
+        const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', command, undefined), wsRoot);
+        await checkSuccessfulProcessExit(taskInfo, taskWatcher);
     });
 
     it('task is executed successfully using raw process', async function (): Promise<void> {
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const executable = FileUri.fsPath(wsRootUri.resolve(command));
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', executable, []));
-
-        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
-
-        await p;
+        await checkSuccessfulProcessExit(taskInfo, taskWatcher);
     });
 
     it('task without a specific runner is executed successfully using as a process', async function (): Promise<void> {
@@ -165,99 +167,59 @@ describe('Task server / back-end', function (): void {
         // there's no runner registered for the 'npm' task type
         const taskConfig: TaskConfiguration = createTaskConfig('npm', command, []);
         const taskInfo: TaskInfo = await taskServer.run(taskConfig, wsRoot);
-
-        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
-
-        await p;
+        await checkSuccessfulProcessExit(taskInfo, taskWatcher);
     });
 
     it('task can successfully execute command found in system path using a terminal process', async function (): Promise<void> {
         const command = isWindows ? commandWindowsNoop : commandUnixNoop;
-
         const opts: TaskConfiguration = createProcessTaskConfig('shell', command, []);
         const taskInfo: TaskInfo = await taskServer.run(opts, wsRoot);
-
-        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
-
-        await p;
+        await checkSuccessfulProcessExit(taskInfo, taskWatcher);
     });
 
     it('task can successfully execute command found in system path using a raw process', async function (): Promise<void> {
         const command = isWindows ? commandWindowsNoop : commandUnixNoop;
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', command, []), wsRoot);
-
-        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
-
-        await p;
+        await checkSuccessfulProcessExit(taskInfo, taskWatcher);
     });
 
-    it('task using type "terminal" can be killed', async function (): Promise<void> {
+    it('task using type "shell" can be killed', async function (): Promise<void> {
         const taskInfo: TaskInfo = await taskServer.run(createTaskConfigTaskLongRunning('shell'), wsRoot);
 
-        const p = new Promise<string | number>((resolve, reject) => {
-            taskWatcher.onTaskExit((event: TaskExitedEvent) => {
-                if (isWindows) {
-                    if (event.taskId !== taskInfo.taskId || event.code === undefined) {
-                        reject(new Error(JSON.stringify(event)));
-                    }
-                    resolve(event.code);
-                } else {
-                    if (event.taskId !== taskInfo.taskId || event.signal === undefined) {
-                        reject(new Error(JSON.stringify(event)));
-                    }
-                    resolve(event.signal);
-                }
-            });
-
-            taskServer.kill(taskInfo.taskId);
-        });
+        const exitStatusPromise = getExitStatus(taskInfo, taskWatcher);
+        taskServer.kill(taskInfo.taskId);
+        const exitStatus = await exitStatusPromise;
 
         // node-pty reports different things on Linux/macOS vs Windows when
         // killing a process.  This is not ideal, but that's how things are
         // currently.  Ideally, its behavior should be aligned as much as
         // possible on what node's child_process module does.
-        const signalOrCode = await p;
         if (isWindows) {
             // On Windows, node-pty just reports an exit code of 0.
-            expect(signalOrCode).equals(0);
+            expect(exitStatus).equals(0);
         } else {
             // On Linux/macOS, node-pty sends SIGHUP by default, for some reason.
-            expect(signalOrCode).equals('SIGHUP');
+            expect(exitStatus).equals('SIGHUP');
         }
     });
 
     it('task using type "process" can be killed', async function (): Promise<void> {
         const taskInfo: TaskInfo = await taskServer.run(createTaskConfigTaskLongRunning('process'), wsRoot);
 
-        const p = new Promise<string | number>((resolve, reject) => {
-            taskWatcher.onTaskExit((event: TaskExitedEvent) => {
-                if (isWindows) {
-                    if (event.taskId !== taskInfo.taskId || event.code === undefined) {
-                        reject(new Error(JSON.stringify(event)));
-                    }
-                    resolve(event.code);
-                } else {
-                    if (event.taskId !== taskInfo.taskId || event.signal === undefined) {
-                        reject(new Error(JSON.stringify(event)));
-                    }
-                    resolve(event.signal);
-                }
-            });
-
-            taskServer.kill(taskInfo.taskId);
-        });
+        const exitStatusPromise = getExitStatus(taskInfo, taskWatcher);
+        taskServer.kill(taskInfo.taskId);
+        const exitStatus = await exitStatusPromise;
 
         // node-pty reports different things on Linux/macOS vs Windows when
         // killing a process.  This is not ideal, but that's how things are
         // currently.  Ideally, its behavior should be aligned as much as
         // possible on what node's child_process module does.
-        const signalOrCode = await p;
         if (isWindows) {
             // On Windows, node-pty just reports an exit code of 0.
-            expect(signalOrCode).equals(0);
+            expect(exitStatus).equals(0);
         } else {
             // On Linux/macOS, node-pty sends SIGHUP by default, for some reason.
-            expect(signalOrCode).equals('SIGHUP');
+            expect(exitStatus).equals('SIGHUP');
         }
     });
 
@@ -266,8 +228,7 @@ describe('Task server / back-end', function (): void {
      */
     it('task using terminal process can handle command that does not exist', async function (): Promise<void> {
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig2('shell', bogusCommand, []), wsRoot);
-
-        const p = new Promise<number>((resolve, reject) => {
+        const code = await new Promise<number>((resolve, reject) => {
             taskWatcher.onTaskExit((event: TaskExitedEvent) => {
                 if (event.taskId !== taskInfo.taskId || event.code === undefined) {
                     reject(new Error(JSON.stringify(event)));
@@ -275,12 +236,10 @@ describe('Task server / back-end', function (): void {
                 resolve(event.code);
             });
         });
-
         // node-pty reports different things on Linux/macOS vs Windows when
         // killing a process.  This is not ideal, but that's how things are
         // currently.  Ideally, its behavior should be aligned as much as
         // possible on what node's child_process module does.
-        const code = await p;
         if (isWindows) {
             expect(code).equals(1);
         } else {
@@ -355,6 +314,48 @@ describe('Task server / back-end', function (): void {
 
     });
 
+    it('shell task should execute the command as a whole if not arguments are specified', async function (): Promise<void> {
+        const taskInfo = await taskServer.run(createProcessTaskConfig2('shell', `node ${script0} debug-hint:0a a b c`));
+        const exitStatus = await getExitStatus(taskInfo, taskWatcher);
+        expect(exitStatus).eq(0);
+    });
+
+    it('shell task should fail if user defines a full command line and arguments', async function (): Promise<void> {
+        const taskInfo = await taskServer.run(createProcessTaskConfig2('shell', `node ${script0} debug-hint:0b a b c`, []));
+        const exitStatus = await getExitStatus(taskInfo, taskWatcher);
+        expect(exitStatus).not.eq(0);
+    });
+
+    it('shell task should be able to exec using simple arguments', async function (): Promise<void> {
+        const taskInfo = await taskServer.run(createProcessTaskConfig2('shell', 'node', [script0, 'debug-hint:0c', 'a', 'b', 'c']));
+        const exitStatus = await getExitStatus(taskInfo, taskWatcher);
+        expect(exitStatus).eq(0);
+    });
+
+    it('shell task should be able to run using arguments containing whitespace', async function (): Promise<void> {
+        const taskInfo = await taskServer.run(createProcessTaskConfig2('shell', 'node', [script1, 'debug-hint:1', 'a', 'b', '   c']));
+        const exitStatus = await getExitStatus(taskInfo, taskWatcher);
+        expect(exitStatus).eq(0);
+    });
+
+    it('shell task will fail if user specify problematic arguments', async function (): Promise<void> {
+        const taskInfo = await taskServer.run(createProcessTaskConfig2('shell', 'node', [script2, 'debug-hint:2a', 'a', 'b', 'c"']));
+        const exitStatus = await getExitStatus(taskInfo, taskWatcher);
+        expect(exitStatus).not.eq(0);
+    });
+
+    it('shell task should be able to run using arguments specifying which quoting method to use', async function (): Promise<void> {
+        const taskInfo = await taskServer.run(createProcessTaskConfig2('shell', 'node', [script2, 'debug-hint:2b', 'a', 'b', { value: 'c"', quoting: 'escape' }]));
+        const exitStatus = await getExitStatus(taskInfo, taskWatcher);
+        expect(exitStatus).eq(0);
+    });
+
+    it('shell task should be able to run using arguments with forbidden characters but no whitespace', async function (): Promise<void> {
+        const taskInfo = await taskServer.run(createProcessTaskConfig2('shell', 'node', ['-e', 'setTimeout(console.log,1000,1+2)']));
+        const exitStatus = await getExitStatus(taskInfo, taskWatcher);
+        expect(exitStatus).eq(0);
+    });
+
 });
 
 function createTaskConfig(taskType: string, command: string, args: string[]): TaskConfiguration {
@@ -378,11 +379,12 @@ function createProcessTaskConfig(processType: ProcessType, command: string, args
         _scope: '/source/folder',
         command,
         args,
-        options: { cwd: wsRoot },
+        options: { cwd },
     };
 }
 
-function createProcessTaskConfig2(processType: ProcessType, command: string, args?: string[]): TaskConfiguration {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function createProcessTaskConfig2(processType: ProcessType, command: string, args?: any[]): TaskConfiguration {
     return <ProcessTaskConfiguration>{
         label: 'test task',
         type: processType,
@@ -400,10 +402,8 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
         _scope: '/source/folder',
         options: { cwd: wsRoot },
         command: commandLongRunning,
-        args: [],
         windows: {
             command: FileUri.fsPath(wsRootUri.resolve(commandLongRunningWindows)),
-            args: [],
             options: { cwd: wsRoot }
         },
         osx: {
@@ -413,7 +413,7 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
 }
 
 function checkSuccessfulProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatcher): Promise<object> {
-    const p = new Promise<object>((resolve, reject) => {
+    return new Promise<object>((resolve, reject) => {
         const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
             if (event.taskId === taskInfo.taskId && event.code === 0) {
                 toDispose.dispose();
@@ -421,6 +421,20 @@ function checkSuccessfulProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatcher
             }
         });
     });
+}
 
-    return p;
+function getExitStatus(taskInfo: TaskInfo, taskWatcher: TaskWatcher): Promise<string | number> {
+    return new Promise<string | number>((resolve, reject) => {
+        taskWatcher.onTaskExit((event: TaskExitedEvent) => {
+            if (event.taskId === taskInfo.taskId) {
+                if (typeof event.signal === 'string') {
+                    resolve(event.signal);
+                } else if (typeof event.code === 'number') {
+                    resolve(event.code);
+                } else {
+                    reject(new Error('no code nor signal'));
+                }
+            }
+        });
+    });
 }

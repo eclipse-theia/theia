@@ -17,7 +17,7 @@ import * as chai from 'chai';
 import * as process from 'process';
 import * as stream from 'stream';
 import { createProcessTestContainer } from './test/process-test-container';
-import { TerminalProcessFactory, TerminalProcess } from './terminal-process';
+import { TerminalProcessFactory } from './terminal-process';
 import { IProcessExitEvent, ProcessErrorEvent } from './process';
 import { isWindows } from '@theia/core/lib/common/os';
 
@@ -102,76 +102,3 @@ describe('TerminalProcess', function (): void {
     });
 
 });
-
-/**
- * @FIXME
- *
- * For some reason, we get a lot of garbage on `stdout` when on Windows.
- * Tested manually `example-browser` and `example-electron`, it seems like
- * the terminals are behaving correctly, meaning that it is only a problem
- * here in the tests.
- */
-if (process.platform !== 'win32' || process.env.THEIA_PROCESS_TEST_OVERRIDE) {
-
-    describe('TerminalProcess { shell: true }', function (): void {
-
-        this.timeout(20_000);
-
-        interface ProcessExit extends IProcessExitEvent {
-            output: string;
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        async function checkOutput(proc: TerminalProcess, pattern?: RegExp): Promise<ProcessExit> {
-            return new Promise<ProcessExit>((resolve, reject) => {
-                let output = '';
-                proc.outputStream.on('data', chunk => output += chunk);
-                proc.onExit(async exit => {
-                    if (pattern) {
-                        expect(output).match(pattern, output);
-                    }
-                    resolve({ ...exit, output });
-                });
-                proc.onError(reject);
-            });
-        }
-
-        it('should execute the command as a whole if not arguments are specified', async function (): Promise<void> {
-            const proc = terminalProcessFactory({ command: 'echo a b c', options: { shell: true } });
-            const exit = await checkOutput(proc, /^a b c/);
-            expect(exit.code).eq(0);
-        });
-
-        it('should fail if user defines a full command line and arguments', async function (): Promise<void> {
-            const proc = terminalProcessFactory({ command: 'echo a b c', args: [], options: { shell: true } });
-            const exit = await checkOutput(proc);
-            expect(exit.code).not.eq(0);
-        });
-
-        it('should be able to exec using simple arguments', async function (): Promise<void> {
-            const proc = terminalProcessFactory({ command: 'echo', args: ['a', 'b', 'c'], options: { shell: true } });
-            const exit = await checkOutput(proc, /^a b c/);
-            expect(exit.code).eq(0);
-        });
-
-        it('should be able to run using arguments containing whitespace', async function (): Promise<void> {
-            const proc = terminalProcessFactory({ command: 'echo', args: ['a', 'b', '   c'], options: { shell: true } });
-            const exit = await checkOutput(proc, /^a b    c/);
-            expect(exit.code).eq(0);
-        });
-
-        it('will fail if user specify problematic arguments', async function (): Promise<void> {
-            const proc = terminalProcessFactory({ command: 'echo', args: ['a', 'b', 'c"'], options: { shell: true } });
-            const exit = await checkOutput(proc);
-            expect(exit.code).not.eq(0);
-        });
-
-        it('should be able to run using arguments specifying which quoting method to use', async function (): Promise<void> {
-            const proc = terminalProcessFactory({ command: 'echo', args: ['a', 'b', { value: 'c"', quoting: 'escaped' }], options: { shell: true } });
-            const exit = await checkOutput(proc, /^a b c"/);
-            expect(exit.code).eq(0);
-        });
-
-    });
-
-}

@@ -56,9 +56,9 @@ export enum ProcessType {
  *
  *   https://nodejs.org/api/child_process.html#child_process_child_process_spawn_command_args_options
  */
-export interface ProcessOptions<T = string> {
+export interface ProcessOptions {
     readonly command: string,
-    args?: T[],
+    args?: string[],
     options?: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         [key: string]: any

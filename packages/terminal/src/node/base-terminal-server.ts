@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from 'inversify';
 import { ILogger, DisposableCollection } from '@theia/core/lib/common';
-import { IBaseTerminalServer, IBaseTerminalServerOptions, IBaseTerminalClient } from '../common/base-terminal-protocol';
+import { IBaseTerminalServer, IBaseTerminalServerOptions, IBaseTerminalClient, TerminalProcessInfo } from '../common/base-terminal-protocol';
 import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
 import { ShellProcess } from './shell-process';
 
@@ -57,6 +57,17 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
             throw new Error(`terminal "${id}" does not exist`);
         }
         return terminal.pid;
+    }
+
+    async getProcessInfo(id: number): Promise<TerminalProcessInfo> {
+        const terminal = this.processManager.get(id);
+        if (!(terminal instanceof TerminalProcess)) {
+            throw new Error(`terminal "${id}" does not exist`);
+        }
+        return {
+            executable: terminal.executable,
+            arguments: terminal.arguments,
+        };
     }
 
     async getCwdURI(id: number): Promise<string> {
