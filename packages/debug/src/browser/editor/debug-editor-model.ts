@@ -154,7 +154,7 @@ export class DebugEditorModel implements Disposable {
         const { currentFrame } = this.sessions;
         if (!currentFrame ||
             !currentFrame.source || currentFrame.source.uri.toString() !== this.uri.toString() ||
-            !currentFrame.raw.line || !currentFrame.raw.column) {
+            currentFrame.raw.line === undefined || currentFrame.raw.column === undefined) {
             this.exceptionWidget.hide();
             return;
         }
