@@ -23,6 +23,7 @@ import filesystemBackendModule from '@theia/filesystem/lib/node/filesystem-backe
 import workspaceServer from '@theia/workspace/lib/node/workspace-backend-module';
 import { messagingBackendModule } from '@theia/core/lib/node/messaging/messaging-backend-module';
 import { ApplicationPackage } from '@theia/application-package/lib/application-package';
+import { TerminalProcess } from '@theia/process/lib/node';
 
 export function createTaskTestContainer(): Container {
     const testContainer = new Container();
@@ -38,5 +39,20 @@ export function createTaskTestContainer(): Container {
     testContainer.load(workspaceServer);
     testContainer.load(terminalBackendModule);
 
+    // Make it easier to debug processes.
+    testContainer.rebind(TerminalProcess).to(TestTerminalProcess);
+
     return testContainer;
+}
+
+class TestTerminalProcess extends TerminalProcess {
+
+    protected emitOnStarted(): void {
+        if (process.env['THEIA_TASK_TEST_DEBUG']) {
+            console.log(`START ${this.id} ${JSON.stringify([this.executable, this.options.commandLine, ...this.arguments])}`);
+            this.outputStream.on('data', data => console.debug(`${this.id} OUTPUT: ${data.toString().trim()}`));
+        }
+        super.emitOnStarted();
+    }
+
 }

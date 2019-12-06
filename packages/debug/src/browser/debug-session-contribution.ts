@@ -124,7 +124,6 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
                 }, { reconnecting: false })
             ),
             this.getTraceOutputChannel());
-
         return new DebugSession(
             sessionId,
             options,

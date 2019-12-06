@@ -4,13 +4,17 @@
   "description": "Theia process support.",
   "dependencies": {
     "@theia/core": "^1.0.0",
-    "@theia/node-pty": "0.7.8-theia004",
+    "@theia/node-pty": "0.9.0-theia.6",
     "string-argv": "^0.1.1"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
+    {
+      "backend": "lib/common/process-common-module",
+      "frontend": "lib/common/process-common-module"
+    },
     {
       "backend": "lib/node/process-backend-module"
     }

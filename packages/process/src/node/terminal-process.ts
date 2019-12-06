@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
+import { isWindows } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType, ProcessOptions, ProcessErrorEvent } from './process';
-import { RawProcessOptions } from './raw-process';
 import { ProcessManager } from './process-manager';
 import { IPty, spawn } from '@theia/node-pty';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
@@ -25,53 +25,12 @@ import { DevNullStream } from './dev-null-stream';
 import { signame } from './utils';
 import { Writable } from 'stream';
 
-export type QuotingType = 'escaped' | 'strong' | 'weak';
-
-/**
- * A `RuntimeQuotingType` represents the different ways to quote
- * and escape a value in a given runtime (`sh`, `cmd`, etc...).
- */
-export type RuntimeQuotingTypes = { [key in QuotingType]: string } & { shouldBeEscaped?: string[] };
-export const ShellQuoting = <RuntimeQuotingTypes>{
-    strong: "'",
-    weak: '"',
-    escaped: '\\',
-    shouldBeEscaped: ['$', ' ', '<', '>', '|', '{', '}', '(', ')', '\'', '"', '`'],
-};
-
-/**
- * Map of `Runtime (string) -> ShellQuoting`, trying to cover the
- * different ways in which each runtime manages quoting and escaping.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const RuntimeQuotingMap: { [key in string]: RuntimeQuotingTypes | undefined } = {
-    'bash': ShellQuoting,
-    'sh': ShellQuoting,
-    'cmd.exe': {
-        strong: '"',
-        weak: '"',
-        escaped: '^',
-        shouldBeEscaped: ['%', '<', '>', '{', '}', '"'],
-    }
-};
-
-/**
- * Struct describing how a string should be quoted.
- * To be used when sanitizing arguments for a shell task.
- */
-export interface QuotedString {
-    value: string;
-    quoting: QuotingType
-}
-
 export const TerminalProcessOptions = Symbol('TerminalProcessOptions');
-export interface TerminalProcessOptions extends ProcessOptions<string | QuotedString> {
-    options?: {
-        shell?: {
-            executable: string
-            args: string[]
-        } | boolean;
-    }
+export interface TerminalProcessOptions extends ProcessOptions {
+    /**
+     * Windows only. Allow passing complex command lines already escaped for CommandLineToArgvW.
+     */
+    commandLine?: string
 }
 
 export const TerminalProcessFactory = Symbol('TerminalProcessFactory');
@@ -79,101 +38,13 @@ export interface TerminalProcessFactory {
     (options: TerminalProcessOptions): TerminalProcess;
 }
 
+/**
+ * Run arbitrary processes inside pseudo-terminals (PTY).
+ *
+ * Note: a PTY is not a shell process (bash/pwsh/cmd...)
+ */
 @injectable()
 export class TerminalProcess extends Process {
-
-    /**
-     * Resolve the exec options based on type (shell/process).
-     *
-     * @param options
-     */
-    protected static resolveExecOptions(options: TerminalProcessOptions): RawProcessOptions {
-        return options.options && options.options.shell ?
-            this.createShellOptions(options) : this.normalizeProcessOptions(options);
-    }
-
-    /**
-     * Terminal options accept a special argument format when executing in a shell:
-     * Arguments can be of the form: { value: string, quoting: string }, specifying
-     * how the arg should be quoted/escaped in the shell command.
-     *
-     * @param options
-     */
-    protected static normalizeProcessOptions(options: TerminalProcessOptions): RawProcessOptions {
-        return {
-            ...options,
-            args: options.args && options.args.map(
-                arg => typeof arg === 'string' ? arg : arg.value),
-        };
-    }
-
-    /**
-     * Build the shell execution options (`runtime ...exec-argv "command ...argv"`).
-     *
-     * @param options
-     */
-    protected static createShellOptions(options: TerminalProcessOptions): RawProcessOptions {
-        const windows = process.platform === 'win32';
-        let runtime: string | undefined;
-        let execArgs: string[] | undefined;
-        let command = options.command;
-
-        // Extract user defined runtime, if any:
-        if (options.options && typeof options.options.shell === 'object') {
-            runtime = options.options.shell.executable;
-            execArgs = options.options.shell.args;
-        }
-
-        // Apply fallback values in case no specific runtime was specified:
-        runtime = runtime || windows ?
-            process.env['COMSPEC'] || 'cmd.exe' :
-            process.env['SHELL'] || 'sh';
-        execArgs = execArgs || windows ?
-            ['/c'] : ['-c'];
-
-        // Quote function, based on the selected runtime:
-        const quoteCharacters = RuntimeQuotingMap[runtime] || ShellQuoting;
-        function quote(string: string, quoting: QuotingType): string {
-
-            if (quoting === 'escaped') {
-                // Escaping most characters (https://stackoverflow.com/a/17606289/7983255)
-                for (const reservedSymbol of quoteCharacters.shouldBeEscaped || []) {
-                    string = string.split(reservedSymbol).join(quoteCharacters.escaped + reservedSymbol);
-                }
-
-            } else {
-                // Add quotes around the argument
-                const q = quoteCharacters[quoting];
-                string = q + string + q;
-            }
-
-            return string;
-        }
-
-        function quoteIfWhitespace(string: string): string {
-            return /\s/.test(string) ?
-                quote(string, 'strong') :
-                string;
-        }
-
-        // See VS Code behavior: https://code.visualstudio.com/docs/editor/tasks#_custom-tasks
-        // Basically, when `task.type === 'shell` && `task.args.length > 0`, `task.command`
-        // is only the executable to run in a shell, followed by the correctly escaped `args`.
-        // Else just run `task.command`.
-        if (options.args) {
-            command = quoteIfWhitespace(command);
-            for (const arg of options.args) {
-                command += ' ' + (typeof arg === 'string' ?
-                    quoteIfWhitespace(arg) : quote(arg.value, arg.quoting));
-            }
-        }
-
-        return <RawProcessOptions>{
-            ...options,
-            command: runtime,
-            args: [...execArgs, command],
-        };
-    }
 
     protected readonly terminal: IPty | undefined;
 
@@ -182,12 +53,12 @@ export class TerminalProcess extends Process {
     readonly inputStream: Writable;
 
     constructor( // eslint-disable-next-line @typescript-eslint/indent
-        @inject(TerminalProcessOptions) options: TerminalProcessOptions,
+        @inject(TerminalProcessOptions) protected readonly options: TerminalProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,
         @inject(ILogger) @named('process') logger: ILogger
     ) {
-        super(processManager, logger, ProcessType.Terminal, TerminalProcess.resolveExecOptions(options));
+        super(processManager, logger, ProcessType.Terminal, options);
 
         if (this.isForkOptions(this.options)) {
             throw new Error('terminal processes cannot be forked as of today');
@@ -196,9 +67,9 @@ export class TerminalProcess extends Process {
 
         try {
             this.terminal = spawn(
-                this.options.command,
-                this.options.args || [],
-                this.options.options || {});
+                options.command,
+                (isWindows && options.commandLine) || options.args || [],
+                options.options || {});
 
             this.terminal.on('exec', (reason: string | undefined) => {
                 if (reason === undefined) {
@@ -272,6 +143,14 @@ export class TerminalProcess extends Process {
     get pid(): number {
         this.checkTerminal();
         return this.terminal!.pid;
+    }
+
+    get executable(): string {
+        return (this.options as ProcessOptions).command;
+    }
+
+    get arguments(): string[] {
+        return this.options.args || [];
     }
 
     kill(signal?: string): void {

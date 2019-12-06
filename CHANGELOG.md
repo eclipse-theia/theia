@@ -6,6 +6,8 @@ Breaking changes:
 
 - [plugin] removed `configStorage` argument from `PluginManager.registerPlugin`.
 Use `PluginManager.configStorage` property instead. [#7265](https://github.com/eclipse-theia/theia/pull/7265#discussion_r399956070)
+- [process] `TerminalProcess` doesn't handle shell quoting, the shell process arguments must be prepared from the caller. Removed all methods related to shell escaping inside this class. You should use functions located in `@theia/process/lib/common/shell-quoting.ts` in order to process arguments for shells.
+- [process/terminal] Moved shell escaping utilities into `@theia/process/lib/common/shell-quoting` and `@theia/process/lib/common/shell-command-builder` for creating shell inputs.
 
 ## v1.0.0
 
@@ -288,6 +290,7 @@ Breaking changes:
     - One can resolve a current color value programmatically with `ColorRegistry.getCurrentColor`.
     - One can load a new color theme:
       - in the frontend module to enable it on startup
+
         ```ts
             MonacoThemingService.register({
                 id: 'myDarkTheme',
@@ -299,7 +302,9 @@ Breaking changes:
                 }
             });
         ```
+
       - later from a file:
+
         ```ts
             @inject(MonacoThemingService)
             protected readonly monacoThemeService: MonacoThemingService;
@@ -311,6 +316,7 @@ Breaking changes:
                 uri: 'file:///absolute/path/to/my_theme.json'
             });
         ```
+
       - or install from a VS Code extension.
     - One should not introduce css color variables anymore or hardcode colors in css.
     - One can contribute new colors by implementing `ColorContribution` contribution point and calling `ColorRegistry.register`.
