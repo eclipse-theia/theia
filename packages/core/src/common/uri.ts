@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { setUriThrowOnMissingScheme } from 'vscode-uri';
-import Uri from 'vscode-uri';
+import { URI as Uri } from 'vscode-uri';
 import { Path } from './path';
 
 // TODO: disable it because of #4487

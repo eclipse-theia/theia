@@ -35,7 +35,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { WorkspaceRootsChangeEvent, FileChangeEvent, FileMoveEvent, FileWillMoveEvent } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { InPluginFileSystemWatcherProxy } from './in-plugin-filesystem-watcher-proxy';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { FileStat } from '@theia/filesystem/lib/common';
 import { normalize } from '../common/paths';
 import { relative } from '../common/paths-util';

@@ -23,7 +23,7 @@ import { EditorModelService } from './text-editor-model-service';
 import { createUntitledResource } from './editor/untitled-resource';
 import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import CodeURI from 'vscode-uri';
+import { URI as CodeURI } from 'vscode-uri';
 import { ApplicationShell, Saveable } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { Range } from 'vscode-languageserver-types';

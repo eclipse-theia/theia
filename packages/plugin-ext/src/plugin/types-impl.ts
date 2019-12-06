@@ -23,7 +23,7 @@ import { UUID } from '@phosphor/coreutils/lib/uuid';
 import { illegalArgument } from '../common/errors';
 import * as theia from '@theia/plugin';
 import * as crypto from 'crypto';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { relative } from '../common/paths-util';
 import { startsWithIgnoreCase } from '../common/strings';
 import { MarkdownString, isMarkdownString } from './markdown-string';

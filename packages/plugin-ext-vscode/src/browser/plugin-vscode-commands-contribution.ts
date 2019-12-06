@@ -29,7 +29,7 @@ import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 import { inject, injectable } from 'inversify';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {

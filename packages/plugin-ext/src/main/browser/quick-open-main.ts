@@ -36,7 +36,7 @@ import {
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
 import { QuickInputService, FOLDER_ICON, FILE_ICON } from '@theia/core/lib/browser';
 import { PluginSharedStyle } from './plugin-shared-style';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { ThemeIcon, QuickInputButton } from '../../plugin/types-impl';
 import { QuickPickService, QuickPickItem, QuickPickValue } from '@theia/core/lib/common/quick-pick-service';
 import { QuickTitleBar } from '@theia/core/lib/browser/quick-open/quick-title-bar';

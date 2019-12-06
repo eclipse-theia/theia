@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { interfaces, injectable } from 'inversify';
-import Uri from 'vscode-uri';
+import { URI as Uri } from 'vscode-uri';
 import { Disposable, ResourceResolver, DisposableCollection } from '@theia/core';
 import { Resource } from '@theia/core/lib/common/resource';
 import URI from '@theia/core/lib/common/uri';

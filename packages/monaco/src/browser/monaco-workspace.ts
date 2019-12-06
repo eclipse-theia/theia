@@ -16,7 +16,7 @@
 
 // tslint:disable:no-null-keyword
 
-import Uri from 'vscode-uri';
+import { URI as Uri } from 'vscode-uri';
 import { injectable, inject, postConstruct } from 'inversify';
 import { ProtocolToMonacoConverter, MonacoToProtocolConverter, testGlob } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';

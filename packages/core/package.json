@@ -40,7 +40,7 @@
     "reflect-metadata": "^0.1.10",
     "route-parser": "^0.0.5",
     "vscode-languageserver-types": "^3.15.0-next",
-    "vscode-uri": "^1.0.8",
+    "vscode-uri": "^2.1.1",
     "vscode-ws-jsonrpc": "^0.1.1",
     "ws": "^7.1.2",
     "yargs": "^11.1.0"

@@ -23,7 +23,7 @@
 
 import { Severity } from '@theia/core/lib/common/severity';
 import { Diagnostic } from 'vscode-languageserver-types';
-import vscodeURI from 'vscode-uri/lib/umd';
+import { URI as vscodeURI } from 'vscode-uri';
 import { ProblemPatternContribution, WatchingMatcherContribution } from './task-protocol';
 
 export enum ApplyToKind {

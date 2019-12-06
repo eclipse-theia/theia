@@ -16,7 +16,7 @@
 
 // tslint:disable:no-any
 
-import CodeUri from 'vscode-uri';
+import { URI as CodeUri } from 'vscode-uri';
 import { injectable, inject } from 'inversify';
 import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler, Disposable, DisposableCollection } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';

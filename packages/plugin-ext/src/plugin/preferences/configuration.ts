@@ -17,7 +17,7 @@
 import { WorkspaceExtImpl } from '../workspace';
 import { isObject } from '../../common/types';
 import cloneDeep = require('lodash.clonedeep');
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 
 /* tslint:disable:no-any */
 

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import CoreURI from '@theia/core/lib/common/uri';
 import { interfaces } from 'inversify';
 import { WindowStateExt, MAIN_RPC_CONTEXT, WindowMain } from '../../common/plugin-api-rpc';

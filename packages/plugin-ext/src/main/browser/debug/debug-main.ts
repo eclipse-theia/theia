@@ -29,7 +29,7 @@ import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 import { DebugBreakpoint } from '@theia/debug/lib/browser/model/debug-breakpoint';
-import Uri from 'vscode-uri';
+import { URI as Uri } from 'vscode-uri';
 import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-console-session';
 import { SourceBreakpoint } from '@theia/debug/lib/browser/breakpoint/breakpoint-marker';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';

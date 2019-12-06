@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import debounce = require('lodash.debounce');
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { interfaces } from 'inversify';
 import { WebviewsMain, MAIN_RPC_CONTEXT, WebviewsExt, WebviewPanelViewState } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';

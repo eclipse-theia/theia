@@ -33,7 +33,7 @@ import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
 import { isMarkdownString, MarkdownString } from './markdown-string';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;

@@ -33,7 +33,7 @@ import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from './documents';
 import { PluginModel } from '../common/plugin-protocol';
 import { Disposable } from './types-impl';
-import URI from 'vscode-uri/lib/umd';
+import { URI } from 'vscode-uri';
 import { match as matchGlobPattern } from '../common/glob';
 import { UriComponents } from '../common/uri-components';
 import {

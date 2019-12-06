@@ -26,7 +26,7 @@ import {
     ProblemMatch, ProblemMatchData, ProblemLocationKind
 } from '../common/problem-matcher-protocol';
 import URI from '@theia/core/lib/common/uri';
-import vscodeURI from 'vscode-uri/lib/umd';
+import { URI as vscodeURI } from 'vscode-uri';
 import { Severity } from '@theia/core/lib/common/severity';
 
 const endOfLine: string = isWindows ? '\r\n' : '\n';

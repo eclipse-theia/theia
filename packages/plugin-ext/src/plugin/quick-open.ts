@@ -22,7 +22,7 @@ import { hookCancellationToken } from '../common/async-util';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { QuickInputButtons, QuickInputButton, ThemeIcon } from './types-impl';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import * as path from 'path';
 import { quickPickItemToPickOpenItem } from './type-converters';
 import { QuickOpenItem, QuickOpenItemOptions } from '@theia/core/lib/browser/quick-open/quick-open-model';
