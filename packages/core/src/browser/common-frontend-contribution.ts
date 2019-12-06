@@ -612,7 +612,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 command: CommonCommands.CLOSE_ALL_TABS.id,
-                keybinding: 'alt+shift+w'
+                keybinding: this.isElectron() ? 'ctrlCmd+k ctrlCmd+w' : 'alt+shift+w'
             },
             // Panels
             {
