@@ -77,7 +77,7 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
 
     async open(): Promise<void> {
         const input = new SingleTextInputDialog({
-            title: 'Edit Function Breakpoint',
+            title: 'Add Function Breakpoint',
             initialValue: this.name
         });
         const newValue = await input.open();
