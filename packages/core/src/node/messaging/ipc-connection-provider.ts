@@ -109,6 +109,10 @@ export class IPCConnectionProvider {
         this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC started`);
         childProcess.once('exit', () => this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC exited`));
 
+        process.on('exit', () => childProcess.kill());
+        process.on('SIGINT', () => childProcess.kill());
+        process.on('SIGTERM', () => childProcess.kill());
+
         return childProcess;
     }
 

@@ -139,6 +139,10 @@ export class RawProcess extends Process {
                 );
             });
 
+            process.on('exit', () => this.kill());
+            process.on('SIGINT', () => this.kill());
+            process.on('SIGTERM', () => this.kill());
+
             if (this.process.pid !== undefined) {
                 process.nextTick(this.emitOnStarted.bind(this));
             }

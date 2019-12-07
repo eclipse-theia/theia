@@ -86,13 +86,13 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
      * Otherwise, the backend cannot notify the client if the LS has failed at start-up.
      */
     protected createProcessStreamConnection(command: string, args?: string[], options?: cp.SpawnOptions): IConnection {
-        const process = this.spawnProcess(command, args, options);
-        return createStreamConnection(process.output, process.input, () => process.kill());
+        const childProcess = this.spawnProcess(command, args, options);
+        return createStreamConnection(childProcess.output, childProcess.input, () => childProcess.kill());
     }
 
     protected async createProcessStreamConnectionAsync(command: string, args?: string[], options?: cp.SpawnOptions): Promise<IConnection> {
-        const process = await this.spawnProcessAsync(command, args, options);
-        return createStreamConnection(process.outputStream, process.inputStream, () => process.kill());
+        const childProcess = await this.spawnProcessAsync(command, args, options);
+        return createStreamConnection(childProcess.outputStream, childProcess.inputStream, () => childProcess.kill());
     }
 
     /**

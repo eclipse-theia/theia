@@ -85,7 +85,10 @@ export class ApplicationPackageManager {
 
     async startBrowser(args: string[]): Promise<void> {
         const { mainArgs, options } = this.adjustArgs(args);
-        this.__process.fork(this.pck.backend('main.js'), mainArgs, options);
+        const child = this.__process.fork(this.pck.backend('main.js'), mainArgs, options);
+        process.on('exit', () => child.kill());
+        process.on('SIGINT', () => child.kill());
+        process.on('SIGTERM', () => child.kill());
     }
 
     private adjustArgs(args: string[], forkOptions: cp.ForkOptions = {}): Readonly<{ mainArgs: string[]; options: cp.ForkOptions }> {
