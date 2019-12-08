@@ -25,9 +25,10 @@ export class ProvidedTaskConfigurations {
 
     /**
      * Map of source (name of extension, or path of root folder that the task config comes from) and `task config map`.
-     * For the inner map (i.e., `task config map`), the key is task label and value TaskConfiguration
+     * For the second level of inner map, the key is task label.
+     * For the third level of inner map, the key is the task scope and value TaskConfiguration.
      */
-    protected tasksMap = new Map<string, Map<string, TaskConfiguration>>();
+    protected tasksMap = new Map<string, Map<string, Map<string | undefined, TaskConfiguration>>>();
 
     @inject(TaskProviderRegistry)
     protected readonly taskProviderRegistry: TaskProviderRegistry;
@@ -45,13 +46,13 @@ export class ProvidedTaskConfigurations {
     }
 
     /** returns the task configuration for a given source and label or undefined if none */
-    async getTask(source: string, taskLabel: string): Promise<TaskConfiguration | undefined> {
-        const task = this.getCachedTask(source, taskLabel);
+    async getTask(source: string, taskLabel: string, scope?: string): Promise<TaskConfiguration | undefined> {
+        const task = this.getCachedTask(source, taskLabel, scope);
         if (task) {
             return task;
         } else {
             await this.getTasks();
-            return this.getCachedTask(source, taskLabel);
+            return this.getCachedTask(source, taskLabel, scope);
         }
     }
 
@@ -100,10 +101,13 @@ export class ProvidedTaskConfigurations {
         return matchedTask;
     }
 
-    protected getCachedTask(source: string, taskLabel: string): TaskConfiguration | undefined {
+    protected getCachedTask(source: string, taskLabel: string, scope?: string): TaskConfiguration | undefined {
         const labelConfigMap = this.tasksMap.get(source);
         if (labelConfigMap) {
-            return labelConfigMap.get(taskLabel);
+            const scopeConfigMap = labelConfigMap.get(taskLabel);
+            if (scopeConfigMap) {
+                return scopeConfigMap.get(scope);
+            }
         }
     }
 
@@ -111,12 +115,22 @@ export class ProvidedTaskConfigurations {
         for (const task of tasks) {
             const label = task.label;
             const source = task._source;
+            const scope = task._scope;
             if (this.tasksMap.has(source)) {
-                this.tasksMap.get(source)!.set(label, task);
+                const labelConfigMap = this.tasksMap.get(source)!;
+                if (labelConfigMap.has(label)) {
+                    labelConfigMap.get(label)!.set(scope, task);
+                } else {
+                    const newScopeConfigMap = new Map<undefined | string, TaskConfiguration>();
+                    newScopeConfigMap.set(scope, task);
+                    labelConfigMap.set(label, newScopeConfigMap);
+                }
             } else {
-                const labelTaskMap = new Map<string, TaskConfiguration>();
-                labelTaskMap.set(label, task);
-                this.tasksMap.set(source, labelTaskMap);
+                const newLabelConfigMap = new Map<string, Map<undefined | string, TaskConfiguration>>();
+                const newScopeConfigMap = new Map<undefined | string, TaskConfiguration>();
+                newScopeConfigMap.set(scope, task);
+                newLabelConfigMap.set(label, newScopeConfigMap);
+                this.tasksMap.set(source, newLabelConfigMap);
             }
         }
     }
