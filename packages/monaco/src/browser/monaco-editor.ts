@@ -322,6 +322,11 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         this.toDispose.dispose();
     }
 
+    // tslint:disable-next-line:no-any
+    trigger(source: string, handlerId: string, payload: any): void {
+        this.editor.trigger(source, handlerId, payload);
+    }
+
     getControl(): IStandaloneCodeEditor {
         return this.editor;
     }

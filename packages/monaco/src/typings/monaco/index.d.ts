@@ -47,6 +47,7 @@ declare module monaco.editor {
     export interface IStandaloneCodeEditor extends CommonCodeEditor {
         setDecorations(decorationTypeKey: string, ranges: IDecorationOptions[]): void;
         setDecorationsFast(decorationTypeKey: string, ranges: IRange[]): void;
+        trigger(source: string, handlerId: string, payload: any): void
     }
 
     // https://github.com/TypeFox/vscode/blob/monaco/0.18.0/src/vs/editor/browser/widget/codeEditorWidget.ts#L107

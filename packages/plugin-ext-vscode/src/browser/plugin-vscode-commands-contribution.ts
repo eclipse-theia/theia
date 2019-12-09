@@ -28,6 +28,7 @@ import { fromViewColumn, toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/t
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { inject, injectable } from 'inversify';
 import URI from 'vscode-uri';
 
@@ -136,6 +137,14 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.files.openFolder' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.OPEN_FOLDER.id)
+        });
+        commands.registerCommand({ id: 'default:type' }, {
+            execute: args => {
+                const editor = MonacoEditor.getCurrent(this.editorManager);
+                if (editor) {
+                    editor.trigger('keyboard', 'type', args);
+                }
+            }
         });
         commands.registerCommand({ id: 'workbench.action.files.save', }, {
             execute: (uri?: monaco.Uri) => {

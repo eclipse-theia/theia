@@ -281,7 +281,7 @@ export class CommandRegistry implements CommandService {
             return result;
         }
         const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';
-        throw new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.${argsMessage}`);
+        throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.${argsMessage}`), { code: 'NO_ACTIVE_HANDLER' });
     }
 
     protected async fireWillExecuteCommand(commandId: string): Promise<void> {
