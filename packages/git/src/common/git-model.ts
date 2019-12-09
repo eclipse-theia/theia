@@ -119,14 +119,22 @@ export namespace GitFileStatus {
      */
     export const toAbbreviation = (status: GitFileStatus, staged?: boolean): string => GitFileStatus.toString(status, staged).charAt(0);
 
+    /**
+     * It should be aligned with https://github.com/microsoft/vscode/blob/0dfa355b3ad185a6289ba28a99c141ab9e72d2be/extensions/git/src/repository.ts#L197
+     */
     export function getColor(status: GitFileStatus, staged?: boolean): string {
         switch (status) {
-            case GitFileStatus.New: return 'var(--theia-success-color0)';
-            case GitFileStatus.Renamed: // Fall through.
+            case GitFileStatus.New: {
+                if (!staged) {
+                    return 'var(--theia-gitDecoration-untrackedResourceForeground)';
+                }
+                return 'var(--theia-gitDecoration-addedResourceForeground)';
+            }
+            case GitFileStatus.Renamed: return 'var(--theia-gitDecoration-untrackedResourceForeground)';
             case GitFileStatus.Copied: // Fall through.
-            case GitFileStatus.Modified: return 'var(--theia-brand-color0)';
-            case GitFileStatus.Deleted: return 'var(--theia-warn-color0)';
-            case GitFileStatus.Conflicted: return 'var(--theia-error-color0)';
+            case GitFileStatus.Modified: return 'var(--theia-gitDecoration-modifiedResourceForeground)';
+            case GitFileStatus.Deleted: return 'var(--theia-gitDecoration-deletedResourceForeground)';
+            case GitFileStatus.Conflicted: return 'var(--theia-gitDecoration-conflictingResourceForeground)';
         }
     }
 
