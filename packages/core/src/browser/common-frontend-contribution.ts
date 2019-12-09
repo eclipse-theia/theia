@@ -39,6 +39,8 @@ import { QuickViewService } from './quick-view-service';
 import { PrefixQuickOpenService, QuickOpenItem, QuickOpenMode, QuickOpenService } from './quick-open';
 import { environment } from '@theia/application-package/lib/environment';
 import { IconThemeService } from './icon-theme-service';
+import { ColorContribution } from './color-application-contribution';
+import { ColorRegistry } from './color-registry';
 
 export namespace CommonMenus {
 
@@ -217,7 +219,7 @@ export const supportPaste = browser.isNative || (!browser.isChrome && document.q
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 
 @injectable()
-export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution {
+export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
@@ -723,14 +725,30 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-                placeholder: 'Select File Icon Theme',
-                fuzzyMatchLabel: true,
-                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-                onClose: () => {
-                    if (resetTo) {
-                        this.iconThemes.current = resetTo;
-                    }
+            placeholder: 'Select File Icon Theme',
+            fuzzyMatchLabel: true,
+            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+            onClose: () => {
+                if (resetTo) {
+                    this.iconThemes.current = resetTo;
                 }
-            });
+            }
+        });
+    }
+
+    registerColors(colors: ColorRegistry): void {
+        colors.register(
+            // Base Colors
+            { id: 'selection.background', defaults: { dark: '#217daf', light: '#c0dbf1' }, description: 'Overall border color for focused elements. This color is only used if not overridden by a component.' },
+            { id: 'icon.foreground', defaults: { dark: '#C5C5C5', light: '#424242', hc: '#FFFFFF' }, description: 'The default color for icons in the workbench.' },
+
+            // Activity Bar
+            { id: 'activityBar.background', defaults: { dark: '#333333', light: '#2C2C2C', hc: '#000000' }, description: 'Activity bar background color. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
+            { id: 'activityBar.border', defaults: { hc: '#6FC3DF' }, description: 'Activity bar border color separating to the side bar. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
+            { id: 'activityBar.activeBorder', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar border color for the active item. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
+            { id: 'activityBar.foreground', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar item foreground color when it is active. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
+            { id: 'activityBar.inactiveForeground', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar item foreground color when it is active. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
+            // { id: '', defaults: { dark: '', light: '', hc: '' }, description: '' },
+        );
     }
 }

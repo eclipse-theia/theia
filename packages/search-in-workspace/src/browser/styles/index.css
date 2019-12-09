@@ -73,7 +73,7 @@
 }
 
 .t-siw-search-container .searchHeader .search-field-container.focused {
-    border-color: var(--theia-accent-color3);
+    border-color: var(--theia-focusBorder);
 }
 
 .t-siw-search-container .searchHeader .search-field {

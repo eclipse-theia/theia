@@ -111,11 +111,11 @@ body {
     outline-style: solid;
     outline-offset: -1px;
     opacity: 1 !important;
-    outline-color: var(--theia-accent-color3);
+    outline-color: var(--theia-focusBorder);
 }
 
 ::selection {
-    background: var(--theia-selected-text-background);
+    background: var(--theia-selection-background);
 }
 
 .p-Widget:focus {
