@@ -203,7 +203,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(ResourceContextKey).toSelf().inSingletonScope();
     bind(CommonFrontendContribution).toSelf().inSingletonScope();
-    [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
+    [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, ColorContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(CommonFrontendContribution)
     );
 
