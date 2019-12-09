@@ -142,8 +142,14 @@
 }
 
 .theia-side-panel {
-  background-color: var(--theia-layout-color1);
+  background-color: var(--theia-sideBar-background);
 }
+
+.p-Widget.theia-side-panel .p-Widget,
+.p-Widget .theia-sidepanel-toolbar {
+    color: var(--theia-sideBar-foreground);
+}
+
 
 
 /*-----------------------------------------------------------------------------
@@ -212,7 +218,7 @@
     display: flex;
     padding-left: 5px;
     align-items: center;
-    background-color: var(--theia-layout-color1);
+    background-color: var(--theia-sideBar-background);
 }
 
 .theia-sidepanel-toolbar .theia-sidepanel-title {
