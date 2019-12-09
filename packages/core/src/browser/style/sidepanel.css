@@ -34,7 +34,7 @@
 .p-TabBar.theia-app-sides {
   display: block;
   color: var(--theia-tab-font-color);
-  background: var(--theia-layout-color2);
+  background: var(--theia-activityBar-background);
   font-size: var(--theia-ui-font-size1);
   min-width: var(--theia-private-sidebar-tab-width);
   max-width: var(--theia-private-sidebar-tab-width);
@@ -47,7 +47,7 @@
 .p-TabBar.theia-app-sides .p-TabBar-tab {
   position: relative;
   padding: 11px 10px;
-  background: var(--theia-layout-color2);
+  background: var(--theia-activityBar-background);
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -56,12 +56,12 @@
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tab {
-  border-left: var(--theia-panel-border-width) solid var(--theia-layout-color2);
+  border-left: var(--theia-panel-border-width) solid var(--theia-activityBar-border);
   margin-right: var(--theia-panel-border-width);
 }
 
 .p-TabBar.theia-app-right .p-TabBar-tab {
-  border-right: var(--theia-panel-border-width) solid var(--theia-layout-color2);
+  border-right: var(--theia-panel-border-width) solid var(--theia-activityBar-border);
   margin-left: var(--theia-panel-border-width);
 }
 
@@ -74,13 +74,13 @@
   border-top: none;
 }
 
-.p-TabBar.theia-app-left .p-TabBar-tab.p-mod-current.theia-mod-active {
-  border-left-color: var(--theia-accent-color2);
+.p-TabBar.theia-app-left .p-TabBar-tab.p-mod-current {
+  border-left: var(--theia-panel-border-width) solid var(--theia-activityBar-activeBorder);
   border-top-color: transparent;
 }
 
-.p-TabBar.theia-app-right .p-TabBar-tab.p-mod-current.theia-mod-active {
-  border-right-color: var(--theia-accent-color2);
+.p-TabBar.theia-app-right .p-TabBar-tab.p-mod-current {
+  border-right-color: var(--theia-panel-border-width) solid var(--theia-activityBar-activeBorder);
   border-top-color: transparent;
 }
 
@@ -92,7 +92,7 @@
 .p-TabBar.theia-app-sides .p-TabBar-tabIcon {
   width: var(--theia-private-sidebar-icon-size);
   height: var(--theia-private-sidebar-icon-size);
-  background-color: var(--theia-tab-icon-color);
+  background-color: var(--theia-activityBar-inactiveForeground);
   opacity: 0.6;
   mask-repeat: no-repeat;
   -webkit-mask-repeat: no-repeat;
@@ -105,6 +105,7 @@
 .p-TabBar.theia-app-sides .p-mod-current .file-icon.p-TabBar-tabIcon,
 .p-TabBar.theia-app-sides .fa.p-TabBar-tabIcon:hover,
 .p-TabBar.theia-app-sides .p-mod-current .fa.p-TabBar-tabIcon {
+  background-color: var(--theia-activityBar-foreground);
   opacity: 1.0;
   background: none;
 }
