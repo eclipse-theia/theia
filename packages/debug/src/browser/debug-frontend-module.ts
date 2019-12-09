@@ -51,6 +51,7 @@ import { bindLaunchPreferences } from './preferences/launch-preferences';
 import { DebugPrefixConfiguration } from './debug-prefix-configuration';
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
@@ -89,6 +90,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bindViewContribution(bind, DebugFrontendApplicationContribution);
     bind(FrontendApplicationContribution).toService(DebugFrontendApplicationContribution);
     bind(TabBarToolbarContribution).toService(DebugFrontendApplicationContribution);
+    bind(ColorContribution).toService(DebugFrontendApplicationContribution);
 
     bind(DebugSessionContributionRegistryImpl).toSelf().inSingletonScope();
     bind(DebugSessionContributionRegistry).toService(DebugSessionContributionRegistryImpl);

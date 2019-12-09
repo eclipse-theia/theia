@@ -254,10 +254,7 @@
 	background: url('current-and-breakpoint.svg') center center no-repeat;
 }
 .monaco-editor .view-overlays .theia-debug-top-stack-frame-line {
-    background: #ffff6673;
-}
-.monaco-editor.vs-dark .view-overlays .theia-debug-top-stack-frame-line {
-    background: #ffff0033;
+    background: var(--theia-editor-stackFrameHighlightBackground);
 }
 
 .monaco-editor .theia-debug-focused-stack-frame {
@@ -267,11 +264,8 @@
 	background: url('stackframe-and-breakpoint.svg') center center no-repeat;
 }
 .monaco-editor .view-overlays .theia-debug-focused-stack-frame-line {
-    background: #cee7ce73;
- }
-.monaco-editor.vs-dark .view-overlays .theia-debug-focused-stack-frame-line {
-    background: #7abd7a4d;
- }
+    background: var(--theia-editor-focusedStackFrameHighlightBackground);
+}
 
 /** Toolbars */
 
