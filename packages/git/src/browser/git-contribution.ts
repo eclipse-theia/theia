@@ -30,6 +30,8 @@ import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmResource, ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { GitPreferences } from './git-preferences';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 
 export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
@@ -191,7 +193,7 @@ export namespace GIT_COMMANDS {
 }
 
 @injectable()
-export class GitContribution implements CommandContribution, MenuContribution, TabBarToolbarContribution {
+export class GitContribution implements CommandContribution, MenuContribution, TabBarToolbarContribution, ColorContribution {
 
     static GIT_CHECKOUT = 'git.checkout';
     static GIT_SYNC_STATUS = 'git-sync-status';
@@ -729,6 +731,58 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             };
         }
 
+    }
+
+    /**
+     * It should be aligned with https://code.visualstudio.com/api/references/theme-color#git-colors
+     */
+    registerColors(colors: ColorRegistry): void {
+        colors.register({
+            'id': 'gitDecoration.addedResourceForeground',
+            'description': 'Color for added resources.',
+            'defaults': {
+                'light': '#587c0c',
+                'dark': '#81b88b',
+                'hc': '#1b5225'
+            }
+        },
+            {
+                'id': 'gitDecoration.modifiedResourceForeground',
+                'description': 'Color for modified resources.',
+                'defaults': {
+                    'light': '#895503',
+                    'dark': '#E2C08D',
+                    'hc': '#E2C08D'
+                }
+            },
+            {
+                'id': 'gitDecoration.deletedResourceForeground',
+                'description': 'Color for deleted resources.',
+                'defaults': {
+                    'light': '#ad0707',
+                    'dark': '#c74e39',
+                    'hc': '#c74e39'
+                }
+            },
+            {
+                'id': 'gitDecoration.untrackedResourceForeground',
+                'description': 'Color for untracked resources.',
+                'defaults': {
+                    'light': '#007100',
+                    'dark': '#73C991',
+                    'hc': '#73C991'
+                }
+            },
+            {
+                'id': 'gitDecoration.conflictingResourceForeground',
+                'description': 'Color for resources with conflicts.',
+                'defaults': {
+                    'light': '#6c6cc4',
+                    'dark': '#6c6cc4',
+                    'hc': '#6c6cc4'
+                }
+            }
+        );
     }
 }
 export interface GitOpenFileOptions {
