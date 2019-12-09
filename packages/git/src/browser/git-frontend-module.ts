@@ -43,6 +43,7 @@ import { GitSyncService } from './git-sync-service';
 import { GitErrorHandler } from './git-error-handler';
 import { GitScmProvider } from './git-scm-provider';
 import { GitFileChangeLabelProvider } from './git-file-change-label-provider';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 
 export default new ContainerModule(bind => {
     bindGitPreferences(bind);
@@ -61,6 +62,7 @@ export default new ContainerModule(bind => {
     bind(MenuContribution).toService(GitContribution);
     bind(FrontendApplicationContribution).toService(GitContribution);
     bind(TabBarToolbarContribution).toService(GitContribution);
+    bind(ColorContribution).toService(GitContribution);
 
     bind(GitResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(GitResourceResolver);
