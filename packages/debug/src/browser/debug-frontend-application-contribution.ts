@@ -43,6 +43,8 @@ import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugPreferences } from './debug-preferences';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DebugSessionOptions } from './debug-session-options';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -323,7 +325,7 @@ updateTheme();
 ThemeService.get().onThemeChange(() => updateTheme());
 
 @injectable()
-export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> implements TabBarToolbarContribution {
+export class DebugFrontendApplicationContribution extends AbstractViewContribution<DebugWidget> implements TabBarToolbarContribution, ColorContribution {
 
     @inject(DebugService)
     protected readonly debug: DebugService;
@@ -1019,4 +1021,19 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     protected isPosition(position: monaco.Position): boolean {
         return (position instanceof monaco.Position);
     }
+
+    registerColors(colors: ColorRegistry): void {
+        colors.register(
+            {
+                id: 'editor.stackFrameHighlightBackground',
+                defaults: { dark: '#ffff0033', light: '#ffff6673', hc: '#fff600' },
+                description: 'Background color for the highlight of line at the top stack frame position.'
+            }, {
+                id: 'editor.focusedStackFrameHighlightBackground',
+                defaults: { dark: '#7abd7a4d', light: '#cee7ce73', hc: '#cee7ce' },
+                description: 'Background color for the highlight of line at focused stack frame position.'
+            }
+        );
+    }
+
 }
