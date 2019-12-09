@@ -106,7 +106,7 @@ export class DebugEditorService {
         return this.model && this.model.getBreakpoint(position);
     }
 
-    inlineBreakpoint(position?: monaco.Position): DebugSourceBreakpoint | undefined {
+    getInlineBreakpoint(position?: monaco.Position): DebugSourceBreakpoint | undefined {
         return this.model && this.model.getInlineBreakpoint(position);
     }
 

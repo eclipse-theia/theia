@@ -738,7 +738,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugCommands.INLINE_BREAKPOINT, {
             execute: () => this.editors.addInlineBreakpoint(),
-            isEnabled: () => !!this.editors.model && !this.editors.inlineBreakpoint()
+            isEnabled: () => !!this.editors.model && !this.editors.getInlineBreakpoint()
         });
         registry.registerCommand(DebugCommands.ADD_CONDITIONAL_BREAKPOINT, {
             execute: () => this.editors.addBreakpoint('condition'),
