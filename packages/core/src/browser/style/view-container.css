@@ -37,13 +37,13 @@
 }
 
 .theia-view-container > .p-SplitPanel > .p-SplitPanel-handle:after {
-    background-color: var(--theia-menu-color0);
+    background-color: var(--theia-sideBarSectionHeader-border);
     min-height: 2px;
     min-width: 2px
 }
 
 .theia-view-container > .p-SplitPanel > .p-SplitPanel-handle {
-    background-color: var(--theia-menu-color0);
+    background-color: var(--theia-sideBarSectionHeader-border);
 }
 
 .theia-view-container .part {
@@ -54,9 +54,10 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    background: var(--theia-menu-color0);
+    background: var(--theia-sideBarSectionHeader-background);
     line-height: var(--theia-view-container-title-height);
     z-index: 10;
+    color: var(--theia-sideBarSectionHeader-foreground);
 }
 
 .theia-view-container .part > .header .theia-ExpansionToggle {
