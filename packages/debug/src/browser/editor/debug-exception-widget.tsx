@@ -56,10 +56,12 @@ export class DebugExceptionWidget implements Disposable {
         this.zone.containerNode.style.fontSize = `${fontInfo.fontSize}px`;
         this.zone.containerNode.style.lineHeight = `${fontInfo.lineHeight}px`;
 
-        const afterLineNumber = lineNumber;
-        const afterColumn = column;
-        const heightInLines = 0;
-        this.zone.show({ showFrame: true, afterLineNumber, afterColumn, heightInLines, frameWidth: 1 });
+        if (lineNumber !== undefined && column !== undefined) {
+            const afterLineNumber = lineNumber;
+            const afterColumn = column;
+            const heightInLines = 0;
+            this.zone.show({ showFrame: true, afterLineNumber, afterColumn, heightInLines, frameWidth: 1 });
+        }
     }
 
     hide(): void {
