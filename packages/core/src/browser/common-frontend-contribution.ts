@@ -40,7 +40,7 @@ import { PrefixQuickOpenService, QuickOpenItem, QuickOpenMode, QuickOpenService 
 import { environment } from '@theia/application-package/lib/environment';
 import { IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
-import { ColorRegistry } from './color-registry';
+import { ColorRegistry, Color } from './color-registry';
 
 export namespace CommonMenus {
 
@@ -725,24 +725,25 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-            placeholder: 'Select File Icon Theme',
-            fuzzyMatchLabel: true,
-            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-            onClose: () => {
-                if (resetTo) {
-                    this.iconThemes.current = resetTo;
+                placeholder: 'Select File Icon Theme',
+                fuzzyMatchLabel: true,
+                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+                onClose: () => {
+                    if (resetTo) {
+                        this.iconThemes.current = resetTo;
+                    }
                 }
-            }
-        });
+            });
     }
 
     registerColors(colors: ColorRegistry): void {
         colors.register(
-            // Base Colors
+            // Base Colors should be aligned with https://code.visualstudio.com/api/references/theme-color#base-colors
+            // if not yet contributed by Monaco, check runtime css variables to learn
             { id: 'selection.background', defaults: { dark: '#217daf', light: '#c0dbf1' }, description: 'Overall border color for focused elements. This color is only used if not overridden by a component.' },
             { id: 'icon.foreground', defaults: { dark: '#C5C5C5', light: '#424242', hc: '#FFFFFF' }, description: 'The default color for icons in the workbench.' },
 
-            // Activity Bar
+            // Activity Bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#activity-bar
             { id: 'activityBar.background', defaults: { dark: '#333333', light: '#2C2C2C', hc: '#000000' }, description: 'Activity bar background color. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
             { id: 'activityBar.border', defaults: { hc: '#6FC3DF' }, description: 'Activity bar border color separating to the side bar. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
             { id: 'activityBar.activeBorder', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar border color for the active item. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
@@ -765,6 +766,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'list.hoverBackground', defaults: { dark: '#2A2D2E', light: '#F0F0F0' }, description: 'List/Tree background when hovering over items using the mouse.' },
             { id: 'list.hoverForeground', description: 'List/Tree foreground when hovering over items using the mouse.' },
             // { id: '', defaults: { dark: '', light: '', hc: '' }, description: '' },
+
+            // Welcome Page colors should be aligned with https://code.visualstudio.com/api/references/theme-color#welcome-page
+            { id: 'welcomePage.background', description: 'Background color for the Welcome page.' },
+            { id: 'welcomePage.buttonBackground', defaults: { dark: Color.rgba(0, 0, 0, .2), light: Color.rgba(0, 0, 0, .04), hc: Color.black }, description: 'Background color for the buttons on the Welcome page.' },
+            { id: 'welcomePage.buttonHoverBackground', defaults: { dark: Color.rgba(200, 235, 255, .072), light: Color.rgba(0, 0, 0, .10) }, description: 'Hover background color for the buttons on the Welcome page.' },
+            { id: 'walkThrough.embeddedEditorBackground', defaults: { dark: Color.rgba(0, 0, 0, .4), light: '#f4f4f4' }, description: 'Background color for the embedded editors on the Interactive Playground.' },
         );
     }
 }

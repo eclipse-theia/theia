@@ -539,13 +539,22 @@ declare module monaco.theme {
 }
 
 declare module monaco.color {
+    export class RGBA {
+        constructor(r: number, g: number, b: number, a?: number);
+    }
+    export class HSLA {
+        constructor(h: number, s: number, l: number, a: number);
+    }
+    export class Color {
+        constructor(arg: RGBA | HSLA);
+    }
     export interface ColorContribution {
         readonly id: string;
     }
     export interface ColorDefaults {
-        light?: string;
-        dark?: string;
-        hc?: string;
+        light?: string | Color;
+        dark?: string | Color;
+        hc?: string | Color;
     }
     export interface IColorRegistry {
         getColors(): ColorContribution[];

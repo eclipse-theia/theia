@@ -18,10 +18,64 @@ import { injectable } from 'inversify';
 import { DisposableCollection, Disposable } from '../common/disposable';
 import { Emitter } from '../common/event';
 
+/**
+ * Either be a reference to an existing color or a color value as a hex string, rgba, or hsla.
+ */
+export type Color = string | RGBA | HSLA;
+export namespace Color {
+    export function rgba(r: number, g: number, b: number, a: number = 1): Color {
+        return { r, g, b, a };
+    }
+    export function hsla(h: number, s: number, l: number, a: number = 1): Color {
+        return { h, s, l, a };
+    }
+    export const white = rgba(255, 255, 255, 1);
+    export const black = rgba(0, 0, 0, 1);
+}
+export interface RGBA {
+    /**
+     * Red: integer in [0-255]
+     */
+    readonly r: number;
+
+    /**
+     * Green: integer in [0-255]
+     */
+    readonly g: number;
+
+    /**
+     * Blue: integer in [0-255]
+     */
+    readonly b: number;
+
+    /**
+     * Alpha: float in [0-1]
+     */
+    readonly a: number;
+}
+export interface HSLA {
+    /**
+     * Hue: integer in [0, 360]
+     */
+    readonly h: number;
+    /**
+     * Saturation: float in [0, 1]
+     */
+    readonly s: number;
+    /**
+     * Luminosity: float in [0, 1]
+     */
+    readonly l: number;
+    /**
+     * Alpha: float in [0, 1]
+     */
+    readonly a: number;
+}
+
 export interface ColorDefaults {
-    light?: string
-    dark?: string
-    hc?: string
+    light?: Color
+    dark?: Color
+    hc?: Color
 }
 
 export interface ColorDefinition {
