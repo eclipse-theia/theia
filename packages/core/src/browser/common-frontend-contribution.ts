@@ -748,6 +748,13 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'activityBar.activeBorder', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar border color for the active item. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
             { id: 'activityBar.foreground', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar item foreground color when it is active. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
             { id: 'activityBar.inactiveForeground', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar item foreground color when it is active. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
+
+            // Side Bar
+            { id: 'sideBar.background', defaults: { dark: '#252526', light: '#F3F3F3', hc: '#000000' }, description: 'Side bar background color. The side bar is the container for views like explorer and search.' },
+            { id: 'sideBar.foreground', description: 'Side bar foreground color. The side bar is the container for views like explorer and search.' },
+            { id: 'sideBarSectionHeader.background', defaults: { dark: '#80808033', light: '#80808033' }, description: 'Side bar section header background color. The side bar is the container for views like explorer and search.' },
+            { id: 'sideBarSectionHeader.foreground', description: 'Side bar foreground color. The side bar is the container for views like explorer and search.' },
+            { id: 'sideBarSectionHeader.border', defaults: { hc: '#6FC3DF' }, description: 'Side bar section header border color. The side bar is the container for views like explorer and search.' },
             // { id: '', defaults: { dark: '', light: '', hc: '' }, description: '' },
         );
     }
