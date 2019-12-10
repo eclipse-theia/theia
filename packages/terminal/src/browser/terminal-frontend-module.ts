@@ -14,6 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import '../../src/browser/terminal.css';
+import 'xterm/lib/xterm.css';
+
 import { ContainerModule, Container } from 'inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { bindContributionProvider } from '@theia/core';
@@ -34,10 +37,9 @@ import { TerminalContribution } from './terminal-contribution';
 import { TerminalLinkmatcherFiles } from './terminal-linkmatcher-files';
 import { TerminalLinkmatcherDiffPre, TerminalLinkmatcherDiffPost } from './terminal-linkmatcher-diff';
 import { TerminalQuickOpenService, TerminalQuickOpenContribution } from './terminal-quick-open-service';
-
-import '../../src/browser/terminal.css';
-import 'xterm/lib/xterm.css';
 import { TerminalCopyOnSelectionHander } from './terminal-copy-on-selection-handler';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { TerminalThemeService } from './terminal-theme-service';
 
 export default new ContainerModule(bind => {
     bindTerminalPreferences(bind);
@@ -75,9 +77,10 @@ export default new ContainerModule(bind => {
         bind(identifier).toService(TerminalQuickOpenContribution);
     }
 
+    bind(TerminalThemeService).toSelf().inSingletonScope();
     bind(TerminalFrontendContribution).toSelf().inSingletonScope();
     bind(TerminalService).toService(TerminalFrontendContribution);
-    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution]) {
+    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution, ColorContribution]) {
         bind(identifier).toService(TerminalFrontendContribution);
     }
 

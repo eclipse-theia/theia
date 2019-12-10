@@ -25,7 +25,6 @@ import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { ThemeService } from '@theia/core/lib/browser/theming';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -34,23 +33,13 @@ import { TerminalContribution } from './terminal-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
 import { TerminalCopyOnSelectionHander } from './terminal-copy-on-selection-handler';
+import { TerminalThemeService } from './terminal-theme-service';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
 export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
     /* a unique string per terminal */
     created: string
-}
-
-interface TerminalCSSProperties {
-    /* The text color, as a CSS color string.  */
-    foreground: string;
-
-    /* The background color, as a CSS color string.  */
-    background: string;
-
-    /* The color of selections. */
-    selection: string;
 }
 
 @injectable()
@@ -70,13 +59,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
-    @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
     @inject('terminal-dom-id') public readonly id: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
     @inject(TerminalService) protected readonly terminalService: TerminalService;
     @inject(TerminalCopyOnSelectionHander) protected readonly copyOnSelectionHandler: TerminalCopyOnSelectionHander;
+    @inject(TerminalThemeService) protected readonly themeService: TerminalThemeService;
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
@@ -98,9 +87,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.title.closable = true;
         this.addClass('terminal-container');
 
-        /* Read CSS properties from the page and apply them to the terminal.  */
-        const cssProps = this.getCSSPropertiesFromPage();
-
         this.term = new Xterm.Terminal({
             experimentalCharAtlas: 'dynamic',
             cursorBlink: false,
@@ -112,12 +98,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             lineHeight: this.preferences['terminal.integrated.lineHeight'],
             scrollback: this.preferences['terminal.integrated.scrollback'],
             rendererType: this.getTerminalRendererType(this.preferences['terminal.integrated.rendererType']),
-            theme: {
-                foreground: cssProps.foreground,
-                background: cssProps.background,
-                cursor: cssProps.foreground,
-                selection: cssProps.selection
-            },
+            theme: this.themeService.theme
         });
 
         this.hoverMessage = document.createElement('div');
@@ -156,15 +137,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             }
         }));
 
-        this.toDispose.push(this.themeService.onThemeChange(c => {
-            const changedProps = this.getCSSPropertiesFromPage();
-            this.term.setOption('theme', {
-                foreground: changedProps.foreground,
-                background: changedProps.background,
-                cursor: changedProps.foreground,
-                selection: cssProps.selection
-            });
-        }));
+        this.toDispose.push(this.themeService.onDidChange(() => this.term.setOption('theme', this.themeService.theme)));
         this.attachCustomKeyEventHandler();
         const titleChangeListenerDispose = this.term.onTitleChange((title: string) => {
             if (this.options.useServerTitle) {
@@ -276,46 +249,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.title.label = state.titleLabel;
             this.start(state.terminalId);
         }
-    }
-
-    /* Get the font family and size from the CSS custom properties defined in
-       the root element.  */
-    private getCSSPropertiesFromPage(): TerminalCSSProperties {
-        /* Helper to look up a CSS property value and throw an error if it's
-           not defined.  */
-        function lookup(props: CSSStyleDeclaration, name: string): string {
-            /* There is sometimes an extra space in the front, remove it.  */
-            const value = props.getPropertyValue(name).trim();
-            if (!value) {
-                throw new Error(`Couldn\'t find value of ${name}`);
-            }
-
-            return value;
-        }
-
-        /* Get the CSS properties of <html> (aka :root in css).  */
-        const htmlElementProps = getComputedStyle(document.documentElement!);
-
-        const foreground = lookup(htmlElementProps, '--theia-ui-font-color1');
-        const background = lookup(htmlElementProps, '--theia-layout-color0');
-        const selection = lookup(htmlElementProps, '--theia-transparent-accent-color2');
-
-        /* xterm.js expects #XXX of #XXXXXX for colors.  */
-        const colorRe = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
-
-        if (!foreground.match(colorRe)) {
-            throw new Error(`Unexpected format for --theia-ui-font-color1 (${foreground})`);
-        }
-
-        if (!background.match(colorRe)) {
-            throw new Error(`Unexpected format for --theia-layout-color0 (${background})`);
-        }
-
-        return {
-            foreground,
-            background,
-            selection
-        };
     }
 
     /**
