@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import { isOSX } from '../common/os';
 import { FrontendApplication } from '../browser';
 import { ElectronMenuContribution } from './menu/electron-menu-contribution';
 
@@ -25,28 +26,21 @@ export class ElectronFrontendApplication extends FrontendApplication {
     protected readonly electroMenuContribution: ElectronMenuContribution;
 
     protected registerEventListeners(): void {
-        const { addEventListener: delegate } = EventTarget.prototype;
-        // Intercepting `addEventListener` to be able to capture all events. Based on: https://css-tricks.com/capturing-all-events/
-        EventTarget.prototype.addEventListener = (eventName: string, handler: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions) => {
-            delegate.call(this, eventName, options, ((event: Event) => {
-                if (handler) {
-                    if (this.isEventListenerObject(handler)) {
-                        console.info(`handling with event listener object: ${event} for event type: ${eventName}`);
-                        handler.handleEvent(event);
-                    } else {
-                        console.info(`handling with event listener: ${event} for event type: ${eventName}`);
-                        handler(event);
-                    }
-                } else {
-                    console.warn(`handler was null for event type: ${eventName}.`);
-                }
-            }).bind(this));
-        };
-        super.registerEventListeners();
-    }
+        document.addEventListener('click', () => {
+            console.log('clicked');
+            this.electroMenuContribution.refresh();
+        }, true);
+        if (isOSX) {
+            document.addEventListener('mouseleave', () => {
+                console.log('mouse left');
+                this.electroMenuContribution.refresh();
+            }, true);
+        } else {
+            document.addEventListener('mousemove', event => {
 
-    protected isEventListenerObject(handler: EventListenerOrEventListenerObject & { handleEvent?(evt: Event): void }): handler is EventListenerObject {
-        return typeof handler.handleEvent === 'function';
+            }, true);
+        }
+        super.registerEventListeners();
     }
 
 }
