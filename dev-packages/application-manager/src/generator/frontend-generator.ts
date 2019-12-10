@@ -68,7 +68,7 @@ ${this.ifBrowser("require('es6-promise/auto');")}
 require('reflect-metadata');
 const { Container } = require('inversify');
 const { FrontendApplication } = require('@theia/core/lib/browser');
-const { frontendApplicationModule } = require('@theia/core/lib/${this.pck.isBrowser() ? 'browser/frontend-application-module' : 'electron-browser/electron-frontend-application'}');
+const { frontendApplicationModule } = require('@theia/core/lib/${this.pck.isBrowser() ? 'browser/frontend-application-module' : 'electron-browser/electron-frontend-application-module'}');
 const { messagingFrontendModule } = require('@theia/core/lib/${this.pck.isBrowser() ? 'browser/messaging/messaging-frontend-module' : 'electron-browser/messaging/electron-messaging-frontend-module'}');
 const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
 const { ThemeService } = require('@theia/core/lib/browser/theming');

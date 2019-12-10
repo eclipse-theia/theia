@@ -28,7 +28,7 @@ export class ElectronFrontendApplication extends FrontendApplication {
         const { addEventListener: delegate } = EventTarget.prototype;
         // Intercepting `addEventListener` to be able to capture all events. Based on: https://css-tricks.com/capturing-all-events/
         EventTarget.prototype.addEventListener = (eventName: string, handler: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions) => {
-            delegate.call(this, eventName, options, (event: Event) => {
+            delegate.call(this, eventName, options, ((event: Event) => {
                 if (handler) {
                     if (this.isEventListenerObject(handler)) {
                         console.info(`handling with event listener object: ${event} for event type: ${eventName}`);
@@ -40,9 +40,8 @@ export class ElectronFrontendApplication extends FrontendApplication {
                 } else {
                     console.warn(`handler was null for event type: ${eventName}.`);
                 }
-            });
+            }).bind(this));
         };
-        console.log('this.electroMenuContribution', this.electroMenuContribution);
         super.registerEventListeners();
     }
 

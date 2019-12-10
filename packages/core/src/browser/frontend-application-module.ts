@@ -19,7 +19,7 @@ require('../../src/browser/style/materialcolors.css').use();
 import 'font-awesome/css/font-awesome.min.css';
 import 'file-icons-js/css/style.css';
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule, interfaces } from 'inversify';
 import {
     bindContributionProvider,
     SelectionService,
@@ -89,7 +89,7 @@ import { ExternalUriService } from './external-uri-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
-export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
+export const frontendApplicationContainerModuleCallback = (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     const themeService = ThemeService.get();
     themeService.register(...BuiltinThemeProvider.themes);
     themeService.startupTheme();
@@ -297,4 +297,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ProgressService).toSelf().inSingletonScope();
 
     bind(ContextMenuContext).toSelf().inSingletonScope();
-});
+};
+
+export const frontendApplicationModule = new ContainerModule(frontendApplicationContainerModuleCallback);
