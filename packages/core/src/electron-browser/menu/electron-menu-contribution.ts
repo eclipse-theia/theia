@@ -101,6 +101,13 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     }
 
     /**
+     * Synchronously recreates and sets the application menu from scratch.
+     */
+    refresh(): void {
+        this.setMenu();
+    }
+
+    /**
      * Makes the `theia-top-panel` hidden as it is unused for the electron-based application.
      * The `theia-top-panel` is used as the container of the main, application menu-bar for the
      * browser. Electron has it's own.
