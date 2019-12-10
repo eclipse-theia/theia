@@ -37,7 +37,7 @@ type DiagnosticMap = Map<string, Diagnostic[]>;
 /**
  * Folders to skip inside the `node_modules` when checking the hoisted dependencies. Such as the `.bin` and `.cache` folders.
  */
-const toSkip = ['.bin', '.cache'];
+const toSkip = ['.bin', '.cache', '.DS_Store'];
 
 function collectIssues(): DiagnosticMap {
     console.log('🔍  Analyzing hoisted dependencies in the Theia extensions...');
