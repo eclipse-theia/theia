@@ -19,23 +19,6 @@
   font-size: var(--theia-ui-font-size1);
 }
 
-.p-TabBar[data-orientation='horizontal'].theia-app-bottom {
-  background: var(--theia-layout-color0);
-}
-
-.p-TabBar[data-orientation='horizontal'].theia-app-bottom .p-TabBar-tab {
-  background: var(--theia-layout-color0);
-}
-
-.p-TabBar[data-orientation='horizontal'].theia-app-bottom .p-TabBar-tab.p-mod-current {
-  background: var(--theia-layout-color0);
-  border-top: var(--theia-border-width) solid var(--theia-ui-font-color2);
-}
-
-.p-TabBar[data-orientation='horizontal'].theia-app-bottom .p-TabBar-tab.p-mod-current.theia-mod-active {
-  border-top-color: var(--theia-accent-color2);
-}
-
 .p-TabBar[data-orientation='horizontal'] {
   overflow-x: hidden;
   overflow-y: hidden;
@@ -46,12 +29,6 @@
   cursor: pointer;
 }
 
-.p-TabBar[data-orientation='horizontal'] .p-TabBar-content {
-  flex: none;
-  align-items: flex-end;
-  z-index: 1;
-}
-
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab {
   flex: none;
   height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
@@ -60,10 +37,6 @@
   padding: 0px 8px;
   background: var(--theia-layout-color2);
   align-items: center;
-}
-
-.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab:last-child {
-  border-right: var(--theia-border-width) solid var(--theia-border-color0);
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab .theia-tab-icon-label {

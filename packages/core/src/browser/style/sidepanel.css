@@ -183,9 +183,44 @@
 |----------------------------------------------------------------------------*/
 
 #theia-bottom-content-panel {
-  border-top: var(--theia-panel-border-width) solid var(--theia-border-color1);
+    background: var(--theia-panel-background);
 }
 
+#theia-bottom-content-panel input {
+    border-color: var(--theia-panelInput-border);
+}
+
+#theia-bottom-content-panel .p-DockPanel-handle,
+#theia-bottom-content-panel .p-DockPanel-handle::after {
+    background: none;
+    border: none;
+}
+
+#theia-bottom-content-panel .p-DockPanel-handle[data-orientation='horizontal'] {
+    border-left: var(--theia-border-width) solid var(--theia-panel-border);
+}
+
+#theia-bottom-content-panel .p-TabBar {
+    border-top: var(--theia-border-width) solid var(--theia-panel-border);
+    background: inherit;
+}
+
+#theia-bottom-content-panel .p-TabBar-tab {
+    background: inherit;
+}
+
+#theia-bottom-content-panel .p-TabBar-tab:not(.p-mod-current) {
+    color: var(--theia-panelTitle-inactiveForeground);
+}
+
+#theia-bottom-content-panel .p-TabBar-tab.p-mod-current {
+    color: var(--theia-panelTitle-activeForeground);
+    border-top: var(--theia-border-width) solid var(--theia-panelTitle-activeBorder);
+}
+
+#theia-bottom-content-panel .p-TabBar-tab.p-mod-current.theia-mod-active {
+    border-top-color: var(--theia-accent-color2);
+}
 
 /*-----------------------------------------------------------------------------
 | Hidden tab bars used for rendering vertical side bars

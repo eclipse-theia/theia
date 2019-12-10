@@ -57,3 +57,7 @@
 .p-DockPanel-overlay.p-mod-root-center {
   border-width: 2px;
 }
+
+.p-DockPanel-overlay.p-mod-root-bottom {
+    background: var(--theia-panel-dropBackground);
+}
