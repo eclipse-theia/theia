@@ -91,24 +91,33 @@ export abstract class DefaultFrontendApplicationContribution implements Frontend
 @injectable()
 export class FrontendApplication {
 
+    @inject(ApplicationShell)
+    readonly shell: ApplicationShell;
+
     @inject(CorePreferences)
     protected readonly corePreferences: CorePreferences;
 
-    constructor(
-        @inject(CommandRegistry) protected readonly commands: CommandRegistry,
-        @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry,
-        @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry,
-        @inject(ILogger) protected readonly logger: ILogger,
-        @inject(ShellLayoutRestorer) protected readonly layoutRestorer: ShellLayoutRestorer,
-        @inject(ContributionProvider) @named(FrontendApplicationContribution)
-        protected readonly contributions: ContributionProvider<FrontendApplicationContribution>,
-        @inject(ApplicationShell) protected readonly _shell: ApplicationShell,
-        @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService
-    ) { }
+    @inject(CommandRegistry)
+    protected readonly commands: CommandRegistry;
 
-    get shell(): ApplicationShell {
-        return this._shell;
-    }
+    @inject(MenuModelRegistry)
+    protected readonly menus: MenuModelRegistry;
+
+    @inject(KeybindingRegistry)
+    protected readonly keybindings: KeybindingRegistry;
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
+    @inject(ShellLayoutRestorer)
+    protected readonly layoutRestorer: ShellLayoutRestorer;
+
+    @inject(ContributionProvider)
+    @named(FrontendApplicationContribution)
+    protected readonly contributions: ContributionProvider<FrontendApplicationContribution>;
+
+    @inject(FrontendApplicationStateService)
+    protected readonly stateService: FrontendApplicationStateService;
 
     /**
      * Start the frontend application.
