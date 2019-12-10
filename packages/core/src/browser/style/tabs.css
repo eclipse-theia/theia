@@ -68,7 +68,7 @@
 
 /* This is the main application level active tab: only 1 exists. */
 .p-TabBar .p-TabBar-tab.p-mod-current.theia-mod-active {
-  border-top-color: var(--theia-accent-color2);
+  border-top-color: var(--theia-focusBorder);
 }
 
 .p-TabBar.theia-app-centers .p-TabBar-tabIcon,

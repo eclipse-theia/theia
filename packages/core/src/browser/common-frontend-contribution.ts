@@ -725,15 +725,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-                placeholder: 'Select File Icon Theme',
-                fuzzyMatchLabel: true,
-                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-                onClose: () => {
-                    if (resetTo) {
-                        this.iconThemes.current = resetTo;
-                    }
+            placeholder: 'Select File Icon Theme',
+            fuzzyMatchLabel: true,
+            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+            onClose: () => {
+                if (resetTo) {
+                    this.iconThemes.current = resetTo;
                 }
-            });
+            }
+        });
     }
 
     registerColors(colors: ColorRegistry): void {
@@ -757,15 +757,17 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'sideBarSectionHeader.foreground', description: 'Side bar foreground color. The side bar is the container for views like explorer and search.' },
             { id: 'sideBarSectionHeader.border', defaults: { hc: '#6FC3DF' }, description: 'Side bar section header border color. The side bar is the container for views like explorer and search.' },
 
-            // Lists and Trees
+            // Lists and Trees colors should be aligned with https://code.visualstudio.com/api/references/theme-color#lists-and-trees
+            // if not yet contributed by Monaco, check runtime css variables to learn
+            // not yet supported/no respective elements in theia
+            // list.focusBackground, list.focusForeground, list.inactiveFocusBackground, list.filterMatchBorder, list.dropBackground, listFilterWidget.outline, listFilterWidget.noMatchesOutline, tree.indentGuidesStroke
             { id: 'list.activeSelectionBackground', defaults: { dark: '#094771', light: '#0074E8' }, description: 'List/Tree background color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.activeSelectionForeground', defaults: { dark: '#FFF', light: '#FFF' }, description: 'List/Tree foreground color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.inactiveSelectionBackground', defaults: { dark: '#37373D', light: '#E4E6F1' }, description: 'List/Tree background color for the selected item when the list/tree is inactive. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.inactiveSelectionForeground', description: 'List/Tree foreground color for the selected item when the list/tree is inactive. An active list/tree has keyboard focus, an inactive does not.' },
-
             { id: 'list.hoverBackground', defaults: { dark: '#2A2D2E', light: '#F0F0F0' }, description: 'List/Tree background when hovering over items using the mouse.' },
             { id: 'list.hoverForeground', description: 'List/Tree foreground when hovering over items using the mouse.' },
-            // { id: '', defaults: { dark: '', light: '', hc: '' }, description: '' },
+            { id: 'list.filterMatchBackground', defaults: { dark: 'editor.findMatchHighlightBackground', light: 'editor.findMatchHighlightBackground' }, description: 'Background color of the filtered match.' },
 
             // Panel colors should be aligned with https://code.visualstudio.com/api/references/theme-color#panel-colors
             {
