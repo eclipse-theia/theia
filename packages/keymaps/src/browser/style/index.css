@@ -27,7 +27,7 @@
 
 .fuzzy-match {
     font-weight: 600;
-    color: var(--theia-brand-color1);
+    color: var(--theia-list-highlightForeground);
 }
 
 .kb-actions {
