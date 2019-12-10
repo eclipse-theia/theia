@@ -14,31 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import {
-    EditorPosition,
-    Selection,
-    Position,
-    DecorationOptions,
-    WorkspaceEditDto,
-    ResourceTextEditDto,
-    ResourceFileEditDto,
-    TaskDto,
-    ProcessTaskDto,
-    PickOpenItem,
-    Plugin
-} from '../common/plugin-api-rpc';
-import * as rpc from '../common/plugin-api-rpc';
-import * as model from '../common/plugin-api-rpc-model';
 import * as theia from '@theia/plugin';
-import * as types from './types-impl';
-import { LanguageSelector, LanguageFilter, RelativePattern } from './languages';
-import { isMarkdownString, MarkdownString } from './markdown-string';
+import { Position as P, Range as R, SymbolInformation, SymbolKind as S } from 'vscode-languageserver-types';
 import URI from 'vscode-uri';
+import * as rpc from '../common/plugin-api-rpc';
+import { DecorationOptions, EditorPosition, PickOpenItem, Plugin, Position, ResourceFileEditDto, ResourceTextEditDto, Selection, TaskDto, WorkspaceEditDto } from '../common/plugin-api-rpc';
+import * as model from '../common/plugin-api-rpc-model';
+import { LanguageFilter, LanguageSelector, RelativePattern } from './languages';
+import { isMarkdownString, MarkdownString } from './markdown-string';
+import { Item } from './quick-open';
+import * as types from './types-impl';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
-import { SymbolInformation, Range as R, Position as P, SymbolKind as S } from 'vscode-languageserver-types';
-import { Item } from './quick-open';
 
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
@@ -631,16 +619,15 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         return taskDto;
     }
 
-    const processTaskDto = taskDto as ProcessTaskDto;
     if (taskDefinition.type === 'shell' || types.ShellExecution.is(execution)) {
-        return fromShellExecution(execution, processTaskDto);
+        return fromShellExecution(<theia.ShellExecution>execution, taskDto);
     }
 
     if (taskDefinition.type === 'process' || types.ProcessExecution.is(execution)) {
-        return fromProcessExecution(<theia.ProcessExecution>execution, processTaskDto);
+        return fromProcessExecution(<theia.ProcessExecution>execution, taskDto);
     }
 
-    return processTaskDto;
+    return taskDto;
 }
 
 export function toTask(taskDto: TaskDto): theia.Task {
@@ -669,12 +656,12 @@ export function toTask(taskDto: TaskDto): theia.Task {
     result.definition = taskDefinition;
 
     if (taskType === 'process') {
-        result.execution = getProcessExecution(taskDto as ProcessTaskDto);
+        result.execution = getProcessExecution(taskDto);
     }
 
     const execution = { command, args, options };
     if (taskType === 'shell' || types.ShellExecution.is(execution)) {
-        result.execution = getShellExecution(taskDto as ProcessTaskDto);
+        result.execution = getShellExecution(taskDto);
     }
 
     if (!properties) {
@@ -690,70 +677,56 @@ export function toTask(taskDto: TaskDto): theia.Task {
     return result;
 }
 
-export function fromProcessExecution(execution: theia.ProcessExecution, processTaskDto: ProcessTaskDto): ProcessTaskDto {
-    processTaskDto.command = execution.process;
-    processTaskDto.args = execution.args;
+export function fromProcessExecution(execution: theia.ProcessExecution, taskDto: TaskDto): TaskDto {
+    taskDto.command = execution.process;
+    taskDto.args = execution.args;
 
     const options = execution.options;
     if (options) {
-        processTaskDto.options = options;
+        taskDto.options = options;
     }
-    return processTaskDto;
+    return taskDto;
 }
 
-export function fromShellExecution(execution: theia.ShellExecution, processTaskDto: ProcessTaskDto): ProcessTaskDto {
+export function fromShellExecution(execution: theia.ShellExecution, taskDto: TaskDto): TaskDto {
     const options = execution.options;
     if (options) {
-        processTaskDto.options = getShellExecutionOptions(options);
+        taskDto.options = getShellExecutionOptions(options);
     }
 
     const commandLine = execution.commandLine;
     if (commandLine) {
-        const args = commandLine.split(' ');
-        const taskCommand = args.shift();
-
-        if (taskCommand) {
-            processTaskDto.command = taskCommand;
-        }
-
-        processTaskDto.args = args;
-        return processTaskDto;
+        taskDto.command = commandLine;
+        return taskDto;
     }
 
     const command = execution.command;
     if (typeof command === 'string') {
-        processTaskDto.command = command;
-        processTaskDto.args = getShellArgs(execution.args);
-        return processTaskDto;
+        taskDto.command = command;
+        taskDto.args = getShellArgs(execution.args);
+        return taskDto;
     } else {
         throw new Error('Converting ShellQuotedString command is not implemented');
     }
 }
 
-export function getProcessExecution(processTaskDto: ProcessTaskDto): theia.ProcessExecution {
-    const execution = {} as theia.ProcessExecution;
-
-    execution.process = processTaskDto.command;
-
-    const processArgs = processTaskDto.args;
-    execution.args = processArgs ? processArgs : [];
-
-    const options = processTaskDto.options;
-    execution.options = options ? options : {};
-
-    return execution;
+export function getProcessExecution(taskDto: TaskDto): theia.ProcessExecution {
+    return new types.ProcessExecution(
+        taskDto.command,
+        taskDto.args || [],
+        taskDto.options || {});
 }
 
-export function getShellExecution(processTaskDto: ProcessTaskDto): theia.ShellExecution {
-    const execution = {} as theia.ShellExecution;
-
-    const options = processTaskDto.options;
-    execution.options = options ? options : {};
-    execution.args = processTaskDto.args;
-
-    execution.command = processTaskDto.command;
-
-    return execution;
+export function getShellExecution(taskDto: TaskDto): theia.ShellExecution {
+    if (taskDto.command && Array.isArray(taskDto.args) && taskDto.args.length !== 0) {
+        return new types.ShellExecution(
+            taskDto.command,
+            taskDto.args,
+            taskDto.options || {});
+    }
+    return new types.ShellExecution(
+        taskDto.command || taskDto.commandLine,
+        taskDto.options || {});
 }
 
 export function getShellArgs(args: undefined | (string | theia.ShellQuotedString)[]): string[] {

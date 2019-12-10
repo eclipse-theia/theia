@@ -20,7 +20,7 @@ import * as theia from '@theia/plugin';
 import * as types from './types-impl';
 import * as model from '../common/plugin-api-rpc-model';
 import { MarkdownString, isMarkdownString } from './markdown-string';
-import { ProcessTaskDto, TaskDto } from '../common/plugin-api-rpc';
+import { TaskDto } from '../common/plugin-api-rpc';
 
 describe('Type converters:', () => {
 
@@ -179,13 +179,23 @@ describe('Type converters:', () => {
         const cwd = '/projects/theia';
         const additionalProperty = 'some property';
 
-        const shellTaskDto: ProcessTaskDto = {
+        const shellTaskDto: TaskDto = {
             type: shellType,
             label,
             source,
             scope: undefined,
             command,
             args,
+            options: { cwd },
+            additionalProperty
+        };
+
+        const shellTaskDtoWithCommandLine: TaskDto = {
+            type: shellType,
+            label,
+            source,
+            scope: undefined,
+            command: commandLine,
             options: { cwd },
             additionalProperty
         };
@@ -221,7 +231,9 @@ describe('Type converters:', () => {
             }
         };
 
-        const customTaskDto: ProcessTaskDto = { ...shellTaskDto, type: customType };
+        const customTaskDto: TaskDto = { ...shellTaskDto, type: customType };
+
+        const customTaskDtoWithCommandLine: TaskDto = { ...shellTaskDtoWithCommandLine, type: customType };
 
         const customPluginTask: theia.Task = {
             ...shellPluginTask, definition: {
@@ -258,6 +270,18 @@ describe('Type converters:', () => {
             // when
             const result: theia.Task = Converter.toTask(shellTaskDto);
 
+            assert.strictEqual(result.execution instanceof types.ShellExecution, true);
+
+            if (result.execution instanceof types.ShellExecution) {
+                assert.strictEqual(result.execution.commandLine, undefined);
+
+                result.execution = {
+                    args: result.execution.args,
+                    options: result.execution.options,
+                    command: result.execution.command
+                };
+            }
+
             // then
             assert.notEqual(result, undefined);
             assert.deepEqual(result, shellPluginTask);
@@ -269,7 +293,7 @@ describe('Type converters:', () => {
 
             // then
             assert.notEqual(result, undefined);
-            assert.deepEqual(result, shellTaskDto);
+            assert.deepEqual(result, shellTaskDtoWithCommandLine);
         });
 
         it('should convert task with custom type to dto', () => {
@@ -285,8 +309,19 @@ describe('Type converters:', () => {
             // when
             const result: theia.Task = Converter.toTask(customTaskDto);
 
+            assert.strictEqual(result.execution instanceof types.ShellExecution, true);
+
+            if (result.execution instanceof types.ShellExecution) {
+                assert.strictEqual(result.execution.commandLine, undefined);
+
+                result.execution = {
+                    args: result.execution.args,
+                    options: result.execution.options,
+                    command: result.execution.command
+                };
+            }
+
             // then
-            assert.notEqual(result, undefined);
             assert.deepEqual(result, customPluginTask);
         });
 
@@ -296,7 +331,7 @@ describe('Type converters:', () => {
 
             // then
             assert.notEqual(result, undefined);
-            assert.deepEqual(result, customTaskDto);
+            assert.deepEqual(result, customTaskDtoWithCommandLine);
         });
     });
 
