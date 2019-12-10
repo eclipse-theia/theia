@@ -767,6 +767,47 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'list.hoverForeground', description: 'List/Tree foreground when hovering over items using the mouse.' },
             // { id: '', defaults: { dark: '', light: '', hc: '' }, description: '' },
 
+            // Panel colors should be aligned with https://code.visualstudio.com/api/references/theme-color#panel-colors
+            {
+                id: 'panel.background', defaults: {
+                    dark: 'editor.background', light: 'editor.background', hc: 'editor.background'
+                }, description: 'Panel background color. Panels are shown below the editor area and contain views like output and integrated terminal.'
+            },
+            {
+                id: 'panel.border', defaults: {
+                    dark: Color.rgba(128, 128, 128, 0.35), light: Color.rgba(128, 128, 128, 0.35), hc: 'contrastBorder'
+                }, description: 'Panel border color to separate the panel from the editor. Panels are shown below the editor area and contain views like output and integrated terminal.'
+            },
+            {
+                id: 'panel.dropBackground', defaults: {
+                    dark: Color.rgba(255, 255, 255, 0.12), light: Color.rgba(38, 119, 203, 0.18), hc: Color.rgba(255, 255, 255, 0.12)
+                }, description: 'Drag and drop feedback color for the panel title items. The color should have transparency so that the panel entries can still shine through. Panels are shown below the editor area and contain views like output and integrated terminal.'
+            },
+            {
+                id: 'panelTitle.activeForeground', defaults: {
+                    dark: '#E7E7E7', light: '#424242', hc: Color.white
+                }, description: 'Title color for the active panel. Panels are shown below the editor area and contain views like output and integrated terminal.'
+            },
+            {
+                id: 'panelTitle.inactiveForeground', defaults: {
+                    dark: Color.rgba(231, 231, 231, 0.6), light: Color.rgba(66, 66, 66, 0.75), hc: Color.white
+                }, description: 'Title color for the inactive panel. Panels are shown below the editor area and contain views like output and integrated terminal.'
+            },
+            {
+                id: 'panelTitle.activeBorder', defaults: {
+                    dark: Color.rgba(231, 231, 231, 0.6), light: Color.rgba(66, 66, 66, 0.75), hc: 'contrastBorder'
+                }, description: 'Border color for the active panel title. Panels are shown below the editor area and contain views like output and integrated terminal.'
+            },
+            {
+                id: 'panelInput.border', defaults: { light: '#ddd' },
+                description: 'Input box border for inputs in the panel.'
+            },
+            {
+                id: 'imagePreview.border', defaults: {
+                    dark: Color.rgba(128, 128, 128, 0.35), light: Color.rgba(128, 128, 128, 0.35), hc: 'contrastBorder'
+                }, description: 'Border color for image in image preview.'
+            },
+
             // Welcome Page colors should be aligned with https://code.visualstudio.com/api/references/theme-color#welcome-page
             { id: 'welcomePage.background', description: 'Background color for the Welcome page.' },
             { id: 'welcomePage.buttonBackground', defaults: { dark: Color.rgba(0, 0, 0, .2), light: Color.rgba(0, 0, 0, .04), hc: Color.black }, description: 'Background color for the buttons on the Welcome page.' },
