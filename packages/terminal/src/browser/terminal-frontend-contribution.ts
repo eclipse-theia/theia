@@ -43,6 +43,9 @@ import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { terminalAnsiColorMap } from './terminal-theme-service';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -91,7 +94,7 @@ export namespace TerminalCommands {
 }
 
 @injectable()
-export class TerminalFrontendContribution implements TerminalService, CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution {
+export class TerminalFrontendContribution implements TerminalService, CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution, ColorContribution {
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
@@ -393,4 +396,65 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         termWidget.start();
         this.open(termWidget, { widgetOptions: options });
     }
+
+    /**
+     * It should be aligned with https://code.visualstudio.com/api/references/theme-color#integrated-terminal-colors
+     */
+    registerColors(colors: ColorRegistry): void {
+        colors.register({
+            id: 'terminal.background',
+            defaults: {
+                dark: 'panel.background',
+                light: 'panel.background',
+                hc: 'panel.background'
+            },
+            description: 'The background color of the terminal, this allows coloring the terminal differently to the panel.'
+        });
+        colors.register({
+            id: 'terminal.foreground',
+            defaults: {
+                light: '#333333',
+                dark: '#CCCCCC',
+                hc: '#FFFFFF'
+            },
+            description: 'The foreground color of the terminal.'
+        });
+        colors.register({
+            id: 'terminalCursor.foreground',
+            description: 'The foreground color of the terminal cursor.'
+        });
+        colors.register({
+            id: 'terminalCursor.background',
+            description: 'The background color of the terminal cursor. Allows customizing the color of a character overlapped by a block cursor.'
+        });
+        colors.register({
+            id: 'terminal.selectionBackground',
+            defaults: {
+                light: '#00000040',
+                dark: '#FFFFFF40',
+                hc: '#FFFFFF80'
+            },
+            description: 'The selection background color of the terminal.'
+        });
+        colors.register({
+            id: 'terminal.border',
+            defaults: {
+                light: 'panel.border',
+                dark: 'panel.border',
+                hc: 'panel.border'
+            },
+            description: 'The color of the border that separates split panes within the terminal. This defaults to panel.border.'
+        });
+        // tslint:disable-next-line:forin
+        for (const id in terminalAnsiColorMap) {
+            const entry = terminalAnsiColorMap[id];
+            const colorName = id.substring(13);
+            colors.register({
+                id,
+                defaults: entry.defaults,
+                description: `'${colorName}'  ANSI color in the terminal.`
+            });
+        }
+    }
+
 }
