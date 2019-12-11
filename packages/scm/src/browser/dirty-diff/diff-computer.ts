@@ -110,7 +110,7 @@ export interface DiffResult {
 
 export interface DirtyDiff {
     /**
-     * Lines added by comparision to previous revision.
+     * Lines added by comparison to previous revision.
      */
     readonly added: LineRange[];
     /**
