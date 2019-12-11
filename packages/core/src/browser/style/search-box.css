@@ -23,7 +23,7 @@
     align-items: baseline;
     box-shadow: var(--theia-border-width) var(--theia-border-width) var(--theia-border-color0);
     line-height: var(--theia-private-horizontal-tab-height);
-    background-color: var(--theia-listFilterWidget-background);
+    background-color: var(--theia-editorWidget-background);
     z-index: 1;
 }
   
@@ -31,7 +31,7 @@
     flex-grow: 1;
     line-height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
     max-width: 6rem;
-    background-color: var(--theia-listFilterWidget-background);
+    background-color: var(--theia-input-background);
 }
   
 .theia-search-button {
