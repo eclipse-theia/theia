@@ -30,7 +30,7 @@ html, body {
 
 .gs-action-container {
     line-height: 20px;
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-foreground);
 }
 
 .gs-action-details {
@@ -43,7 +43,7 @@ html, body {
 }
 
 .gs-header h1 {
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-foreground);
     flex: 1;
     font-weight: 600;
 }
@@ -71,7 +71,7 @@ html, body {
 }
 
 .gs-section-header {
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-foreground);
     font-size: var(--theia-ui-font-size2);
     font-weight: 600;
     margin-bottom: 5px;

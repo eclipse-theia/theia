@@ -43,10 +43,11 @@ is not optimized for dense, information rich UIs.
   --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
   --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
-  --theia-ui-font-color0: var(--md-grey-100);
+  /* deprecated ui font colors */
+  --theia-ui-font-color0: var(--theia-foreground);
   --theia-ui-font-color1: var(--md-grey-300);
   --theia-ui-font-color2: var(--md-grey-500);
-  --theia-ui-font-color3: var(--md-grey-700);
+  --theia-ui-font-color3: var(--theia-badge-background);
 
   /* Special font colors */
 
