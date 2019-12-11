@@ -772,10 +772,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'sideBarSectionHeader.border', defaults: { hc: '#6FC3DF' }, description: 'Side bar section header border color. The side bar is the container for views like explorer and search.' },
 
             // Lists and Trees colors should be aligned with https://code.visualstudio.com/api/references/theme-color#lists-and-trees
-            // if not yet contributed by Monaco, check runtime css variables to learn
-            // not yet supported/no respective elements in theia
+            // if not yet contributed by Monaco, check runtime css variables to learn.
+            // TODO: Following are not yet supported/no respective elements in theia:
             // list.focusBackground, list.focusForeground, list.inactiveFocusBackground, list.filterMatchBorder,
             // list.dropBackground, listFilterWidget.outline, listFilterWidget.noMatchesOutline, tree.indentGuidesStroke
+            // list.invalidItemForeground,
+            // list.warningForeground, list.errorForeground => tree node needs an respective class
             { id: 'list.activeSelectionBackground', defaults: { dark: '#094771', light: '#0074E8' }, description: 'List/Tree background color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.activeSelectionForeground', defaults: { dark: '#FFF', light: '#FFF' }, description: 'List/Tree foreground color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.inactiveSelectionBackground', defaults: { dark: '#37373D', light: '#E4E6F1' }, description: 'List/Tree background color for the selected item when the list/tree is inactive. An active list/tree has keyboard focus, an inactive does not.' },
@@ -949,6 +951,62 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: Color.transparent('tab.inactiveModifiedBorder', 0.5),
                     hc: Color.white
                 }, description: 'Border on the top of modified (dirty) inactive tabs in an unfocused group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+
+            // Status bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#status-bar-colors
+            // Not yet supported:
+            // statusBarItem.prominentForeground, statusBarItem.prominentBackground, statusBarItem.prominentHoverBackground
+            {
+                id: 'statusBar.foreground', defaults: {
+                    dark: '#FFFFFF',
+                    light: '#FFFFFF',
+                    hc: '#FFFFFF'
+                }, description: 'Status bar foreground color when a workspace is opened. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBar.background', defaults: {
+                    dark: '#007ACC',
+                    light: '#007ACC'
+                }, description: 'Status bar background color when a workspace is opened. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBar.noFolderForeground', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hc: 'statusBar.foreground'
+                }, description: 'Status bar foreground color when no folder is opened. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBar.noFolderBackground', defaults: {
+                    dark: '#68217A',
+                    light: '#68217A'
+                }, description: 'Status bar background color when no folder is opened. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBar.border', defaults: {
+                    hc: 'contrastBorder'
+                }, description: 'Status bar border color separating to the sidebar and editor. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBar.noFolderBorder', defaults: {
+                    dark: 'statusBar.border',
+                    light: 'statusBar.border',
+                    hc: 'statusBar.border'
+                }, description: 'Status bar border color separating to the sidebar and editor when no folder is opened. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.activeBackground', defaults: {
+                    dark: Color.rgba(255, 255, 255, 0.18),
+                    light: Color.rgba(255, 255, 255, 0.18),
+                    hc: Color.rgba(255, 255, 255, 0.18)
+                }, description: 'Status bar item background color when clicking. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.hoverBackground', defaults: {
+                    dark: Color.rgba(255, 255, 255, 0.12),
+                    light: Color.rgba(255, 255, 255, 0.12),
+                    hc: Color.rgba(255, 255, 255, 0.12)
+                }, description: 'Status bar item background color when hovering. The status bar is shown in the bottom of the window.'
             },
 
             // Panel colors should be aligned with https://code.visualstudio.com/api/references/theme-color#panel-colors

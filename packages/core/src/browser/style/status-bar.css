@@ -19,10 +19,17 @@
 }
 
 #theia-statusBar {
-    background: var(--theia-statusbar-color);
+    background: var(--theia-statusBar-background);
     display: flex;
     min-height: var(--theia-statusBar-height);
     white-space: nowrap;
+    border-top: var(--theia-border-width) solid var(--theia-statusBar-border);
+}
+
+body.theia-no-open-workspace #theia-statusBar{
+    background: var(--theia-statusBar-noFolderBackground);
+    color: var(--theia-statusBar-noFolderForeground);
+    border-top: var(--theia-border-width) solid var(--theia-statusBar-noFolderBorder);
 }
 
 #theia-statusBar .area {
@@ -42,7 +49,7 @@
 }
 
 #theia-statusBar .area .element {
-    color: var(--theia-statusBar-font-color);
+    color: var(--theia-statusBar-foreground);
     display: flex;
     align-items: center;
     font-size: var(--theia-statusBar-font-size);
@@ -57,8 +64,12 @@
 }
 
 #theia-statusBar .area .element.hasCommand:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: var(--theia-statusBarItem-hoverBackground);
     cursor: pointer;
+}
+
+#theia-statusBar .area .element.hasCommand:active {
+    background-color: var(--theia-statusBarItem-activeBackground);
 }
 
 #theia-statusBar .area.left .element {
