@@ -781,6 +781,33 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                     'dark': '#6c6cc4',
                     'hc': '#6c6cc4'
                 }
+            },
+            {
+                'id': 'gitlens.gutterBackgroundColor',
+                'description': 'Specifies the background color of the gutter blame annotations',
+                'defaults': {
+                    'dark': '#FFFFFF13',
+                    'light': '#0000000C',
+                    'hc': '#FFFFFF13'
+                }
+            },
+            {
+                'id': 'gitlens.gutterForegroundColor',
+                'description': 'Specifies the foreground color of the gutter blame annotations',
+                'defaults': {
+                    'dark': '#BEBEBE',
+                    'light': '#747474',
+                    'hc': '#BEBEBE'
+                }
+            },
+            {
+                'id': 'gitlens.lineHighlightBackgroundColor',
+                'description': 'Specifies the background color of the associated line highlights in blame annotations',
+                'defaults': {
+                    'dark': '#00BCF233',
+                    'light': '#00BCF233',
+                    'hc': '#00BCF233'
+                }
             }
         );
     }

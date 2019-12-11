@@ -20,9 +20,9 @@
 
 .notification-count-container {
     align-self: center;
-    background-color: var(--theia-ui-font-color3);
+    background-color: var(--theia-badge-background);
     border-radius: 20px;
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-badge-foreground);
     display: flex;
     font-size: calc(var(--theia-ui-font-size0) * 0.8);
     font-weight: 500;
