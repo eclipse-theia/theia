@@ -16,23 +16,35 @@
 
 @import 'dirty-diff-decorator.css';
 
-.dirty-diff-added-line {
-	border-left: 3px solid var(--theia-added-color0);
+.monaco-editor .dirty-diff-added-line {
+	border-left: 3px solid var(--theia-editorGutter-addedBackground);
+	transition: opacity 0.5s;
 }
-.dirty-diff-added-line:before {
-	background: var(--theia-added-color0);
+.monaco-editor .dirty-diff-added-line:before {
+	background: var(--theia-editorGutter-addedBackground);
 }
-
-.dirty-diff-removed-line:after {
-	border-left: 4px solid var(--theia-removed-color0);
-}
-.dirty-diff-removed-line:before {
-	background: var(--theia-removed-color0);
+.monaco-editor .margin:hover .dirty-diff-added-line {
+    opacity: 1;
 }
 
-.dirty-diff-modified-line {
-	border-left: 3px solid var(--theia-modified-color0);
+.monaco-editor .dirty-diff-removed-line:after {
+	border-left: 4px solid var(--theia-editorGutter-deletedBackground);
+	transition: opacity 0.5s;
 }
-.dirty-diff-modified-line:before {
-	background: var(--theia-modified-color0);
+.monaco-editor .dirty-diff-removed-line:before {
+	background: var(--theia-editorGutter-deletedBackground);
+}
+.monaco-editor .margin:hover .dirty-diff-removed-line {
+    opacity: 1;
+}
+
+.monaco-editor .dirty-diff-modified-line {
+	border-left: 3px solid var(--theia-editorGutter-modifiedBackground);
+	transition: opacity 0.5s;
+}
+.monaco-editor .dirty-diff-modified-line:before {
+	background: var(--theia-editorGutter-modifiedBackground);
+}
+.monaco-editor .margin:hover .dirty-diff-modified-line {
+    opacity: 1;
 }

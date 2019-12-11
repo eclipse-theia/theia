@@ -22,7 +22,8 @@ import {
     EditorDecorationOptions,
     OverviewRulerLane,
     EditorDecorator,
-    TextEditor
+    TextEditor,
+    MinimapPosition
 } from '@theia/editor/lib/browser';
 import { DirtyDiff, LineRange } from './diff-computer';
 
@@ -35,25 +36,40 @@ export enum DirtyDiffDecorationType {
 const AddedLineDecoration = <EditorDecorationOptions>{
     linesDecorationsClassName: 'dirty-diff-glyph dirty-diff-added-line',
     overviewRuler: {
-        color: 'rgba(0, 255, 0, 0.8)',
+        color: 'editorOverviewRuler.addedForeground',
         position: OverviewRulerLane.Left,
-    }
+    },
+    minimap: {
+        color: 'minimapGutter.addedBackground',
+        position: MinimapPosition.Gutter
+    },
+    isWholeLine: true
 };
 
 const RemovedLineDecoration = <EditorDecorationOptions>{
     linesDecorationsClassName: 'dirty-diff-glyph dirty-diff-removed-line',
     overviewRuler: {
-        color: 'rgba(230, 0, 0, 0.8)',
+        color: 'editorOverviewRuler.deletedForeground',
         position: OverviewRulerLane.Left,
-    }
+    },
+    minimap: {
+        color: 'minimapGutter.deletedBackground',
+        position: MinimapPosition.Gutter
+    },
+    isWholeLine: false
 };
 
 const ModifiedLineDecoration = <EditorDecorationOptions>{
     linesDecorationsClassName: 'dirty-diff-glyph dirty-diff-modified-line',
     overviewRuler: {
-        color: 'rgba(0, 100, 150, 0.8)',
+        color: 'editorOverviewRuler.modifiedForeground',
         position: OverviewRulerLane.Left,
-    }
+    },
+    minimap: {
+        color: 'minimapGutter.modifiedBackground',
+        position: MinimapPosition.Gutter
+    },
+    isWholeLine: true
 };
 
 export interface DirtyDiffUpdate extends DirtyDiff {
