@@ -19,7 +19,7 @@
 }
 
 .no-outline {
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-foreground);
     text-align: left;
 }
 
