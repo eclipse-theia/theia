@@ -20,7 +20,7 @@
 }
 
 .theia-progress-bar {
-    background-color: var(--theia-brand-color0);
+    background-color: var(--theia-progressBar-background);
     height: 2px;
     width: 3%;
     animation: progress-animation 1.3s 0s infinite cubic-bezier(0.645, 0.045, 0.355, 1);
