@@ -58,7 +58,17 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const workspaceFolderCountKey = this.contextKeyService.createKey<number>('workspaceFolderCount', 0);
         const updateWorkspaceFolderCountKey = () => workspaceFolderCountKey.set(this.workspaceService.tryGetRoots().length);
         updateWorkspaceFolderCountKey();
-        this.workspaceService.onWorkspaceChanged(updateWorkspaceFolderCountKey);
+        this.workspaceService.onWorkspaceChanged(() => {
+            updateWorkspaceFolderCountKey();
+            this.updateStyles();
+        });
+    }
+
+    protected updateStyles(): void {
+        document.body.classList.remove('theia-no-open-workspace');
+        if (!this.workspaceService.tryGetRoots().length) {
+            document.body.classList.add('theia-no-open-workspace');
+        }
     }
 
     registerCommands(commands: CommandRegistry): void {
