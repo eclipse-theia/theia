@@ -20,7 +20,7 @@ import * as jsoncparser from 'jsonc-parser';
 import { JSONExt } from '@phosphor/coreutils/lib/json';
 import { inject, injectable, postConstruct } from 'inversify';
 import { MessageService, Resource, ResourceProvider, Disposable } from '@theia/core';
-import { PreferenceProvider, PreferenceSchemaProvider, PreferenceScope, PreferenceProviderDataChange } from '@theia/core/lib/browser';
+import { PreferenceProvider, PreferenceSchemaProvider, PreferenceScope, PreferenceProviderDataChange, PreferenceService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 
@@ -30,6 +30,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected preferences: { [key: string]: any } = {};
     protected resource: Promise<Resource>;
 
+    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
@@ -104,7 +105,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         try {
             let newContent = '';
             if (path.length || value !== undefined) {
-                const formattingOptions = { tabSize: 3, insertSpaces: true, eol: '' };
+                const formattingOptions = this.getFormattingOptions(resourceUri);
                 const edits = jsoncparser.modify(content, path, value, { formattingOptions });
                 newContent = jsoncparser.applyEdits(content, edits);
             }
@@ -219,6 +220,32 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         if (changes.length > 0) {
             this.emitPreferencesChangedEvent(changes);
         }
+    }
+
+    /**
+     * Get the formatting options to be used when calling `jsoncparser`.
+     * The formatting options are based on the corresponding preference values.
+     *
+     * The formatting options should attempt to obtain the preference values from JSONC,
+     * and if necessary fallback to JSON and the global values.
+     * @param uri the preference settings URI.
+     *
+     * @returns a tuple representing the tab indentation size, and if it is spaces.
+     */
+    protected getFormattingOptions(uri?: string): jsoncparser.FormattingOptions {
+        // Get the global formatting options for both `tabSize` and `insertSpaces`.
+        const globalTabSize = this.preferenceService.get('editor.tabSize', 2, uri);
+        const globalInsertSpaces = this.preferenceService.get('editor.insertSpaces', true, uri);
+
+        // Get the superset JSON formatting options for both `tabSize` and `insertSpaces`.
+        const jsonTabSize = this.preferenceService.get('[json].editor.tabSize', globalTabSize, uri);
+        const jsonInsertSpaces = this.preferenceService.get('[json].editor.insertSpaces', globalInsertSpaces, uri);
+
+        return {
+            tabSize: this.preferenceService.get('[jsonc].editor.tabSize', jsonTabSize, uri),
+            insertSpaces: this.preferenceService.get('[jsonc].editor.insertSpaces', jsonInsertSpaces, uri),
+            eol: ''
+        };
     }
 
 }

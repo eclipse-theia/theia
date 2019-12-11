@@ -70,7 +70,7 @@ export interface PreferenceService extends Disposable {
     readonly ready: Promise<void>;
     get<T>(preferenceName: string): T | undefined;
     get<T>(preferenceName: string, defaultValue: T): T;
-    get<T>(preferenceName: string, defaultValue: T, resourceUri: string): T;
+    get<T>(preferenceName: string, defaultValue: T, resourceUri?: string): T;
     get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined;
     set(preferenceName: string, value: any, scope?: PreferenceScope, resourceUri?: string): Promise<void>;
     onPreferenceChanged: Event<PreferenceChange>;
