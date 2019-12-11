@@ -15,7 +15,15 @@
  ********************************************************************************/
 
 import { Command, CommandContribution, CommandRegistry, ResourceProvider } from '@theia/core';
-import { ApplicationShell, NavigatableWidget, open, OpenerService, Saveable } from '@theia/core/lib/browser';
+import {
+    ApplicationShell,
+    CommonCommands,
+    NavigatableWidget,
+    open,
+    OpenerService,
+    PrefixQuickOpenService,
+    Saveable
+} from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { CommandService } from '@theia/core/lib/common/command';
@@ -64,6 +72,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly openerService: OpenerService;
     @inject(ApplicationShellMouseTracker)
     protected readonly mouseTracker: ApplicationShellMouseTracker;
+    @inject(PrefixQuickOpenService)
+    protected readonly quickOpen: PrefixQuickOpenService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -137,6 +147,21 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.files.openFolder' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.OPEN_FOLDER.id)
+        });
+        commands.registerCommand({ id: 'workbench.action.gotoLine' }, {
+            execute: () => commands.executeCommand('editor.action.gotoLine')
+        });
+        commands.registerCommand({ id: 'actions.find' }, {
+            execute: () => commands.executeCommand(CommonCommands.FIND.id)
+        });
+        commands.registerCommand({ id: 'undo' }, {
+            execute: () => commands.executeCommand(CommonCommands.UNDO.id)
+        });
+        commands.registerCommand({ id: 'editor.action.startFindReplaceAction' }, {
+            execute: () => commands.executeCommand(CommonCommands.REPLACE.id)
+        });
+        commands.registerCommand({ id: 'workbench.action.quickOpen' }, {
+            execute: () => this.quickOpen.open('')
         });
         commands.registerCommand({ id: 'default:type' }, {
             execute: args => {
