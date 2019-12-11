@@ -104,9 +104,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.hoverMessage = document.createElement('div');
         this.hoverMessage.textContent = 'Cmd + click to follow link';
         this.hoverMessage.style.position = 'fixed';
-        this.hoverMessage.style.color = 'var(--theia-ui-font-color1)';
-        this.hoverMessage.style.backgroundColor = 'var(--theia-layout-color1)';
-        this.hoverMessage.style.borderColor = 'var(--theia-layout-color3)';
+        // TODO use `var(--theia-editorHoverWidget-foreground) with a newer Monaco version
+        this.hoverMessage.style.color = 'var(--theia-editorWidget-foreground)';
+        this.hoverMessage.style.backgroundColor = 'var(--theia-editorHoverWidget-background)';
+        this.hoverMessage.style.borderColor = 'var(--theia-editorHoverWidget-border)';
         this.hoverMessage.style.borderWidth = '0.5px';
         this.hoverMessage.style.borderStyle = 'solid';
         this.hoverMessage.style.padding = '5px';
