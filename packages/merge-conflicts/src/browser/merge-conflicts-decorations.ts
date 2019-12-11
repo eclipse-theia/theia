@@ -59,7 +59,7 @@ export namespace MergeConflictsDecorations {
             className: 'merge-conflict-current-content',
             overviewRuler: {
                 position: OverviewRulerLane.Full,
-                color: 'rgba(0, 255, 0, 0.3)',
+                color: 'editorOverviewRuler.currentContentForeground',
             }
         },
         BaseMarker: <EditorDecorationOptions>{
@@ -71,7 +71,7 @@ export namespace MergeConflictsDecorations {
             className: 'merge-conflict-base-content',
             overviewRuler: {
                 position: OverviewRulerLane.Full,
-                color: 'rgba(125, 125, 125, 0.3)',
+                color: 'editorOverviewRuler.commonContentForeground',
             }
         },
         IncomingMarker: <EditorDecorationOptions>{
@@ -83,7 +83,7 @@ export namespace MergeConflictsDecorations {
             className: 'merge-conflict-incoming-content',
             overviewRuler: {
                 position: OverviewRulerLane.Full,
-                color: 'rgba(0, 0, 255, 0.3)',
+                color: 'editorOverviewRuler.incomingContentForeground',
             }
         },
     };
