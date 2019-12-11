@@ -29,6 +29,11 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 'singleClick',
             description: 'Controls how to open items in trees using the mouse.'
         },
+        'workbench.editor.highlightModifiedTabs': {
+            'type': 'boolean',
+            'description': 'Controls whether a top border is drawn on modified (dirty) editor tabs or not.',
+            'default': false
+        },
         'application.confirmExit': {
             type: 'string',
             enum: [
@@ -52,6 +57,7 @@ export interface CoreConfiguration {
     'application.confirmExit': 'never' | 'ifRequired' | 'always';
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
+    'workbench.editor.highlightModifiedTabs': boolean
 }
 
 export const CorePreferences = Symbol('CorePreferences');

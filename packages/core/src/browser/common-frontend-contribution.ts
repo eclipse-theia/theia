@@ -41,6 +41,7 @@ import { environment } from '@theia/application-package/lib/environment';
 import { IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
 import { ColorRegistry, Color } from './color-registry';
+import { CorePreferences } from './core-preferences';
 
 export namespace CommonMenus {
 
@@ -253,6 +254,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
 
+    @inject(CorePreferences)
+    protected readonly preferences: CorePreferences;
+
     @postConstruct()
     protected init(): void {
         this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);
@@ -261,6 +265,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         this.initResourceContextKeys();
         this.registerCtrlWHandling();
+
+        this.updateStyles();
+        this.preferences.onPreferenceChanged(() => this.updateStyles());
+    }
+
+    protected updateStyles(): void {
+        document.body.classList.remove('theia-editor-highlightModifiedTabs');
+        if (this.preferences['workbench.editor.highlightModifiedTabs']) {
+            document.body.classList.add('theia-editor-highlightModifiedTabs');
+        }
     }
 
     onStart(): void {
@@ -725,15 +739,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-            placeholder: 'Select File Icon Theme',
-            fuzzyMatchLabel: true,
-            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-            onClose: () => {
-                if (resetTo) {
-                    this.iconThemes.current = resetTo;
+                placeholder: 'Select File Icon Theme',
+                fuzzyMatchLabel: true,
+                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+                onClose: () => {
+                    if (resetTo) {
+                        this.iconThemes.current = resetTo;
+                    }
                 }
-            }
-        });
+            });
     }
 
     registerColors(colors: ColorRegistry): void {
@@ -760,7 +774,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // Lists and Trees colors should be aligned with https://code.visualstudio.com/api/references/theme-color#lists-and-trees
             // if not yet contributed by Monaco, check runtime css variables to learn
             // not yet supported/no respective elements in theia
-            // list.focusBackground, list.focusForeground, list.inactiveFocusBackground, list.filterMatchBorder, list.dropBackground, listFilterWidget.outline, listFilterWidget.noMatchesOutline, tree.indentGuidesStroke
+            // list.focusBackground, list.focusForeground, list.inactiveFocusBackground, list.filterMatchBorder,
+            // list.dropBackground, listFilterWidget.outline, listFilterWidget.noMatchesOutline, tree.indentGuidesStroke
             { id: 'list.activeSelectionBackground', defaults: { dark: '#094771', light: '#0074E8' }, description: 'List/Tree background color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.activeSelectionForeground', defaults: { dark: '#FFF', light: '#FFF' }, description: 'List/Tree foreground color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
             { id: 'list.inactiveSelectionBackground', defaults: { dark: '#37373D', light: '#E4E6F1' }, description: 'List/Tree background color for the selected item when the list/tree is inactive. An active list/tree has keyboard focus, an inactive does not.' },
@@ -768,6 +783,173 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'list.hoverBackground', defaults: { dark: '#2A2D2E', light: '#F0F0F0' }, description: 'List/Tree background when hovering over items using the mouse.' },
             { id: 'list.hoverForeground', description: 'List/Tree foreground when hovering over items using the mouse.' },
             { id: 'list.filterMatchBackground', defaults: { dark: 'editor.findMatchHighlightBackground', light: 'editor.findMatchHighlightBackground' }, description: 'Background color of the filtered match.' },
+
+            // Edito Group & Tabs colors should be aligned with https://code.visualstudio.com/api/references/theme-color#editor-groups-tabs
+            {
+                id: 'editorGroup.border',
+                defaults: {
+                    dark: '#444444',
+                    light: '#E7E7E7',
+                    hc: 'contrastBorder'
+                },
+                description: 'Color to separate multiple editor groups from each other. Editor groups are the containers of editors.'
+            },
+            {
+                id: 'editorGroup.dropBackground',
+                defaults: {
+                    dark: Color.transparent('#53595D', 0.5),
+                    light: Color.transparent('#2677CB', 0.18)
+                },
+                description: 'Background color when dragging editors around. The color should have transparency so that the editor contents can still shine through.'
+            },
+            {
+                id: 'editorGroupHeader.tabsBackground',
+                defaults: {
+                    dark: '#252526',
+                    light: '#F3F3F3'
+                },
+                description: 'Background color of the editor group title header when tabs are enabled. Editor groups are the containers of editors.'
+            },
+            {
+                id: 'editorGroupHeader.tabsBorder',
+                defaults: {
+                    hc: 'contrastBorder'
+                },
+                description: 'Border color of the editor group title header when tabs are enabled. Editor groups are the containers of editors.'
+            },
+            {
+                id: 'tab.activeBackground',
+                defaults: {
+                    dark: 'editor.background',
+                    light: 'editor.background',
+                    hc: 'editor.background'
+                },
+                description: 'Active tab background color. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.unfocusedActiveBackground',
+                defaults: {
+                    dark: 'tab.activeBackground',
+                    light: 'tab.activeBackground',
+                    hc: 'tab.activeBackground'
+                },
+                description: 'Active tab background color in an unfocused group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.inactiveBackground',
+                defaults: {
+                    dark: '#2D2D2D',
+                    light: '#ECECEC'
+                },
+                description: 'Inactive tab background color. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.activeForeground',
+                defaults: {
+                    dark: Color.white,
+                    light: '#333333',
+                    hc: Color.white
+                }, description: 'Active tab foreground color in an active group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.inactiveForeground', defaults: {
+                    dark: Color.transparent('tab.activeForeground', 0.5),
+                    light: Color.transparent('tab.activeForeground', 0.7),
+                    hc: Color.white
+                }, description: 'Inactive tab foreground color in an active group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.unfocusedActiveForeground', defaults: {
+                    dark: Color.transparent('tab.activeForeground', 0.5),
+                    light: Color.transparent('tab.activeForeground', 0.7),
+                    hc: Color.white
+                }, description: 'Active tab foreground color in an unfocused group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.unfocusedInactiveForeground', defaults: {
+                    dark: Color.transparent('tab.inactiveForeground', 0.5),
+                    light: Color.transparent('tab.inactiveForeground', 0.5),
+                    hc: Color.white
+                }, description: 'Inactive tab foreground color in an unfocused group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.border', defaults: {
+                    dark: '#252526',
+                    light: '#F3F3F3',
+                    hc: 'contrastBorder'
+                }, description: 'Border to separate tabs from each other. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.activeBorder',
+                description: 'Border on the bottom of an active tab. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.unfocusedActiveBorder',
+                defaults: {
+                    dark: Color.transparent('tab.activeBorder', 0.5),
+                    light: Color.transparent('tab.activeBorder', 0.7)
+                },
+                description: 'Border on the bottom of an active tab in an unfocused group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.activeBorderTop',
+                defaults: {
+                    dark: 'focusBorder',
+                    light: 'focusBorder'
+                },
+                description: 'Border to the top of an active tab. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.unfocusedActiveBorderTop', defaults: {
+                    dark: Color.transparent('tab.activeBorderTop', 0.5),
+                    light: Color.transparent('tab.activeBorderTop', 0.7)
+                }, description: 'Border to the top of an active tab in an unfocused group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.hoverBackground',
+                description: 'Tab background color when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            }, {
+                id: 'tab.unfocusedHoverBackground', defaults: {
+                    dark: Color.transparent('tab.hoverBackground', 0.5),
+                    light: Color.transparent('tab.hoverBackground', 0.7)
+                }, description: 'Tab background color in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.hoverBorder',
+                description: 'Border to highlight tabs when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            }, {
+                id: 'tab.unfocusedHoverBorder', defaults: {
+                    dark: Color.transparent('tab.hoverBorder', 0.5),
+                    light: Color.transparent('tab.hoverBorder', 0.7)
+                }, description: 'Border to highlight tabs in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.activeModifiedBorder', defaults: {
+                    dark: '#3399CC',
+                    light: '#33AAEE'
+                }, description: 'Border on the top of modified (dirty) active tabs in an active group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.inactiveModifiedBorder', defaults: {
+                    dark: Color.transparent('tab.activeModifiedBorder', 0.5),
+                    light: Color.transparent('tab.activeModifiedBorder', 0.5),
+                    hc: Color.white
+                }, description: 'Border on the top of modified (dirty) inactive tabs in an active group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.unfocusedActiveModifiedBorder', defaults: {
+                    dark: Color.transparent('tab.activeModifiedBorder', 0.5),
+                    light: Color.transparent('tab.activeModifiedBorder', 0.7),
+                    hc: Color.white
+                }, description: 'Border on the top of modified (dirty) active tabs in an unfocused group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
+            {
+                id: 'tab.unfocusedInactiveModifiedBorder', defaults: {
+                    dark: Color.transparent('tab.inactiveModifiedBorder', 0.5),
+                    light: Color.transparent('tab.inactiveModifiedBorder', 0.5),
+                    hc: Color.white
+                }, description: 'Border on the top of modified (dirty) inactive tabs in an unfocused group. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
 
             // Panel colors should be aligned with https://code.visualstudio.com/api/references/theme-color#panel-colors
             {
@@ -777,12 +959,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'panel.border', defaults: {
-                    dark: Color.rgba(128, 128, 128, 0.35), light: Color.rgba(128, 128, 128, 0.35), hc: 'contrastBorder'
+                    dark: Color.transparent('#808080', 0.35), light: Color.transparent('#808080', 0.35), hc: 'contrastBorder'
                 }, description: 'Panel border color to separate the panel from the editor. Panels are shown below the editor area and contain views like output and integrated terminal.'
             },
             {
                 id: 'panel.dropBackground', defaults: {
-                    dark: Color.rgba(255, 255, 255, 0.12), light: Color.rgba(38, 119, 203, 0.18), hc: Color.rgba(255, 255, 255, 0.12)
+                    dark: Color.rgba(255, 255, 255, 0.12), light: Color.transparent('#2677CB', 0.18), hc: Color.rgba(255, 255, 255, 0.12)
                 }, description: 'Drag and drop feedback color for the panel title items. The color should have transparency so that the panel entries can still shine through. Panels are shown below the editor area and contain views like output and integrated terminal.'
             },
             {
@@ -792,12 +974,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'panelTitle.inactiveForeground', defaults: {
-                    dark: Color.rgba(231, 231, 231, 0.6), light: Color.rgba(66, 66, 66, 0.75), hc: Color.white
+                    dark: Color.transparent('panelTitle.activeForeground', 0.6), light: Color.transparent('panelTitle.activeForeground', 0.75), hc: Color.white
                 }, description: 'Title color for the inactive panel. Panels are shown below the editor area and contain views like output and integrated terminal.'
             },
             {
                 id: 'panelTitle.activeBorder', defaults: {
-                    dark: Color.rgba(231, 231, 231, 0.6), light: Color.rgba(66, 66, 66, 0.75), hc: 'contrastBorder'
+                    dark: 'panelTitle.activeForeground', light: 'panelTitle.activeForeground', hc: 'contrastBorder'
                 }, description: 'Border color for the active panel title. Panels are shown below the editor area and contain views like output and integrated terminal.'
             },
             {
@@ -806,7 +988,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 id: 'imagePreview.border', defaults: {
-                    dark: Color.rgba(128, 128, 128, 0.35), light: Color.rgba(128, 128, 128, 0.35), hc: 'contrastBorder'
+                    dark: Color.transparent('#808080', 0.35), light: Color.transparent('#808080', 0.35), hc: 'contrastBorder'
                 }, description: 'Border color for image in image preview.'
             },
 

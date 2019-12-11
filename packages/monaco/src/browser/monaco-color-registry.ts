@@ -47,11 +47,13 @@ export class MonacoColorRegistry extends ColorRegistry {
         return Disposable.create(() => this.monacoColorRegistry.deregisterColor(identifier));
     }
 
-    protected toColor(value: Color | undefined): string | monaco.color.Color | undefined {
+    protected toColor(value: Color | undefined): monaco.color.ColorValue | undefined {
         if (!value || typeof value === 'string') {
             return value;
         }
-        if ('r' in value) {
+        if ('v' in value) {
+            return monaco.color.transparent(value.v, value.f);
+        } else if ('r' in value) {
             const { r, g, b, a } = value;
             return new monaco.color.Color(new monaco.color.RGBA(r, g, b, a));
         } else {
