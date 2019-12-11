@@ -38,7 +38,7 @@ export class DebugVariablesSource extends TreeSource {
         this.toDispose.push(this.model.onDidChange(() => this.refresh()));
     }
 
-    protected readonly refresh = debounce(() => this.fireDidChange(), 400);
+    protected readonly refresh = debounce(() => this.fireDidChange(), 1);
 
     async getElements(): Promise<IterableIterator<DebugScope>> {
         const { currentSession } = this.model;

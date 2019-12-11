@@ -16,6 +16,7 @@
 
 import { injectable } from 'inversify';
 import { Event, Emitter, Disposable, DisposableCollection, WaitUntilEvent, Mutable } from '../../common';
+import { ExpandableTreeNode } from './tree-expansion';
 
 export const Tree = Symbol('Tree');
 
@@ -53,6 +54,8 @@ export interface Tree extends Disposable {
      * Return a valid refreshed composite node or `undefined` if such does not exist.
      */
     refresh(parent: Readonly<CompositeTreeNode>): Promise<Readonly<CompositeTreeNode> | undefined>;
+
+    handleExpansion?(node: Readonly<ExpandableTreeNode>): void;
     /**
      * Emit when the children of the given node are refreshed.
      */

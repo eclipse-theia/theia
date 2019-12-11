@@ -15,12 +15,28 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
+import { Disposable } from '../../common/disposable';
 import { MaybePromise } from '../../common/types';
-import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTreeNode } from '../tree';
-import { TreeElement, CompositeTreeElement, TreeSource } from './tree-source';
+import { CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode, TreeImpl, TreeNode } from '../tree';
+import { CompositeTreeElement, TreeElement, TreeSource } from './tree-source';
 
 @injectable()
 export class SourceTree extends TreeImpl {
+
+    private readonly expanded = new Map<string, number>();
+
+    constructor() {
+        super();
+        this.toDispose.push(Disposable.create(() => this.expanded.clear()));
+
+        setInterval(() => {
+            this.expanded.forEach((value, key) => {
+                if (Date.now() > value + 60 * 1000) {
+                    this.expanded.delete(key);
+                }
+            });
+        }, 1000);
+    }
 
     async resolveChildren(parent: TreeElementNodeParent): Promise<TreeNode[]> {
         const elements = await this.resolveElements(parent);
@@ -28,10 +44,23 @@ export class SourceTree extends TreeImpl {
         let index = 0;
         for (const element of elements) {
             if (element.visible !== false) {
-                nodes.push(this.toNode(element, index++, parent));
+                const node = this.toNode(element, index++, parent);
+                if (this.expanded.has(node.id)) {
+                    Object.assign(node, { expanded: true });
+                    this.expanded.set(node.id, Date.now());
+                }
+                nodes.push(node);
             }
         }
         return nodes;
+    }
+
+    handleExpansion(node: Readonly<ExpandableTreeNode>): void {
+        if (node.expanded) {
+            this.expanded.set(node.id, Date.now());
+        } else {
+            this.expanded.delete(node.id);
+        }
     }
 
     protected resolveElements(parent: TreeElementNodeParent): MaybePromise<IterableIterator<TreeElement>> {
