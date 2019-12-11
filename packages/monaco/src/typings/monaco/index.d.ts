@@ -551,10 +551,12 @@ declare module monaco.color {
     export interface ColorContribution {
         readonly id: string;
     }
+    export type ColorFunction = () => string | Color;
+    export type ColorValue = string | Color | ColorFunction;
     export interface ColorDefaults {
-        light?: string | Color;
-        dark?: string | Color;
-        hc?: string | Color;
+        light?: ColorValue;
+        dark?: ColorValue;
+        hc?: ColorValue;
     }
     export interface IColorRegistry {
         getColors(): ColorContribution[];
@@ -562,6 +564,7 @@ declare module monaco.color {
         deregisterColor(id: string): void;
     }
     export function getColorRegistry(): IColorRegistry;
+    export function transparent(colorValue: ColorValue, factor: number): ColorFunction;
 }
 
 declare module monaco.referenceSearch {
