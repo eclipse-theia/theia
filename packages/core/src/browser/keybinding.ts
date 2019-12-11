@@ -29,6 +29,7 @@ import * as common from '../common/keybinding';
 
 export enum KeybindingScope {
     DEFAULT,
+    DEFAULT_OVERRIDING,
     USER,
     WORKSPACE,
     END
@@ -191,9 +192,10 @@ export class KeybindingRegistry {
      * Register a default keybinding to the registry.
      *
      * @param binding
+     * @param override Override existed keybinding
      */
-    registerKeybinding(binding: Keybinding): Disposable {
-        return this.doRegisterKeybinding(binding, KeybindingScope.DEFAULT);
+    registerKeybinding(binding: Keybinding, override?: boolean): Disposable {
+        return this.doRegisterKeybinding(binding, !!override ? KeybindingScope.DEFAULT_OVERRIDING : undefined);
     }
 
     /**
@@ -241,7 +243,7 @@ export class KeybindingRegistry {
     protected doRegisterKeybinding(binding: Keybinding, scope: KeybindingScope = KeybindingScope.DEFAULT): Disposable {
         try {
             this.resolveKeybinding(binding);
-            if (this.containsKeybinding(this.keymaps[scope], binding)) {
+            if (this.containsKeybinding(this.keymaps[scope], binding) && scope !== KeybindingScope.DEFAULT_OVERRIDING) {
                 throw new Error(`"${binding.keybinding}" is in collision with something else [scope:${scope}]`);
             }
             this.keymaps[scope].push(binding);
@@ -452,6 +454,10 @@ export class KeybindingRegistry {
             matches.partial = matches.partial.filter(
                 binding => this.getKeybindingCollisions(result.partial, binding).partial.length === 0);
 
+            if (scope === KeybindingScope.DEFAULT_OVERRIDING) {
+                matches.full.reverse();
+                matches.partial.reverse();
+            }
             result.merge(matches);
         }
         this.sortKeybindingsByPriority(result.full);
@@ -622,7 +628,7 @@ export class KeybindingRegistry {
         this.keySequence.push(keyCode);
         const bindings = this.getKeybindingsForKeySequence(this.keySequence);
 
-        if (this.tryKeybindingExecution(bindings.full, event)) {
+        if (bindings.partial.length === 0 && this.tryKeybindingExecution(bindings.full, event)) {
 
             this.keySequence = [];
             this.statusBar.removeElement('keybinding-status');
