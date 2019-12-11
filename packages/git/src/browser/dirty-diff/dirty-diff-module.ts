@@ -19,8 +19,6 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { DirtyDiffContribution } from './dirty-diff-contribution';
 import { DirtyDiffManager } from './dirty-diff-manager';
 
-import '../../../src/browser/style/dirty-diff.css';
-
 export function bindDirtyDiff(bind: interfaces.Bind): void {
     bind(DirtyDiffManager).toSelf().inSingletonScope();
     bind(DirtyDiffContribution).toSelf().inSingletonScope();

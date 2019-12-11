@@ -31,6 +31,8 @@ import { ScmWidget } from '../browser/scm-widget';
 import URI from '@theia/core/lib/common/uri';
 import { ScmQuickOpenService } from './scm-quick-open-service';
 import { ScmRepository } from './scm-repository';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
 
 export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
@@ -52,7 +54,7 @@ export namespace SCM_COMMANDS {
 }
 
 @injectable()
-export class ScmContribution extends AbstractViewContribution<ScmWidget> implements FrontendApplicationContribution {
+export class ScmContribution extends AbstractViewContribution<ScmWidget> implements FrontendApplicationContribution, ColorContribution {
 
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(ScmService) protected readonly scmService: ScmService;
@@ -178,6 +180,73 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
     protected setStatusBarEntry(id: string, entry: StatusBarEntry): void {
         this.statusBar.setElement(id, entry);
         this.statusBarDisposable.push(Disposable.create(() => this.statusBar.removeElement(id)));
+    }
+
+    /**
+     * It should be aligned with https://github.com/microsoft/vscode/blob/0dfa355b3ad185a6289ba28a99c141ab9e72d2be/src/vs/workbench/contrib/scm/browser/dirtydiffDecorator.ts#L808
+     */
+    registerColors(colors: ColorRegistry): void {
+        const overviewRulerDefault = Color.rgba(0, 122, 204, 0.6);
+        colors.register(
+            {
+                id: 'editorGutter.modifiedBackground', defaults: {
+                    dark: Color.rgba(12, 125, 157),
+                    light: Color.rgba(102, 175, 224),
+                    hc: Color.rgba(0, 155, 249)
+                }, description: 'Editor gutter background color for lines that are modified.'
+            },
+            {
+                id: 'editorGutter.addedBackground', defaults: {
+                    dark: Color.rgba(88, 124, 12),
+                    light: Color.rgba(129, 184, 139),
+                    hc: Color.rgba(51, 171, 78)
+                }, description: 'Editor gutter background color for lines that are added.'
+            },
+            {
+                id: 'editorGutter.deletedBackground', defaults: {
+                    dark: Color.rgba(148, 21, 27),
+                    light: Color.rgba(202, 75, 81),
+                    hc: Color.rgba(252, 93, 109)
+                }, description: 'Editor gutter background color for lines that are deleted.'
+            },
+            {
+                id: 'minimapGutter.modifiedBackground', defaults: {
+                    dark: Color.rgba(12, 125, 157),
+                    light: Color.rgba(102, 175, 224),
+                    hc: Color.rgba(0, 155, 249)
+                }, description: 'Minimap gutter background color for lines that are modified.'
+            },
+            {
+                id: 'minimapGutter.addedBackground',
+                defaults: {
+                    dark: Color.rgba(88, 124, 12),
+                    light: Color.rgba(129, 184, 139),
+                    hc: Color.rgba(51, 171, 78)
+                }, description: 'Minimap gutter background color for lines that are added.'
+            },
+            {
+                id: 'minimapGutter.deletedBackground', defaults: {
+                    dark: Color.rgba(148, 21, 27),
+                    light: Color.rgba(202, 75, 81),
+                    hc: Color.rgba(252, 93, 109)
+                }, description: 'Minimap gutter background color for lines that are deleted.'
+            },
+            {
+                id: 'editorOverviewRuler.modifiedForeground', defaults: {
+                    dark: overviewRulerDefault, light: overviewRulerDefault, hc: overviewRulerDefault
+                }, description: 'Overview ruler marker color for modified content.'
+            },
+            {
+                id: 'editorOverviewRuler.addedForeground', defaults: {
+                    dark: overviewRulerDefault, light: overviewRulerDefault, hc: overviewRulerDefault
+                }, description: 'Overview ruler marker color for added content.'
+            },
+            {
+                id: 'editorOverviewRuler.deletedForeground', defaults: {
+                    dark: overviewRulerDefault, light: overviewRulerDefault, hc: overviewRulerDefault
+                }, description: 'Overview ruler marker color for deleted content.'
+            }
+        );
     }
 
 }

@@ -77,14 +77,30 @@ export interface EditorDecorationOptions {
      * render this decoration in the overview ruler.
      */
     overviewRuler?: DecorationOverviewRulerOptions;
+    /**
+     * If set, render this decoration in the minimap.
+     */
+    minimap?: DecorationMinimapOptions;
 }
 
-export interface DecorationOverviewRulerOptions {
+export interface DecorationOptions {
     /**
      * color of the decoration in the overview ruler.
      * use `rgba` values to play well with other decorations.
      */
     color: string;
+}
+
+export enum MinimapPosition {
+    Inline = 1,
+    Gutter = 2
+}
+
+export interface DecorationMinimapOptions extends DecorationOptions {
+    position?: MinimapPosition;
+}
+
+export interface DecorationOverviewRulerOptions extends DecorationOptions {
     /**
      * position in the overview ruler.
      */

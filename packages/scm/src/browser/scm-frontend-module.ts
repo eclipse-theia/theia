@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import '../../src/browser/style/index.css';
+
 import { ContainerModule } from 'inversify';
 import {
     bindViewContribution, FrontendApplicationContribution,
@@ -22,9 +24,7 @@ import {
 } from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID, SCM_VIEW_CONTAINER_TITLE_OPTIONS } from './scm-contribution';
-
 import { ScmWidget } from './scm-widget';
-import '../../src/browser/style/index.css';
 import { ScmQuickOpenService } from './scm-quick-open-service';
 import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser';
@@ -33,6 +33,7 @@ import { ScmDecorationsService } from './decorations/scm-decorations-service';
 import { ScmAvatarService } from './scm-avatar-service';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { ScmLayoutVersion3Migration } from './scm-layout-migrations';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 
 export default new ContainerModule(bind => {
     bind(ScmContextKeyService).toSelf().inSingletonScope();
@@ -64,6 +65,7 @@ export default new ContainerModule(bind => {
     bind(ScmQuickOpenService).toSelf().inSingletonScope();
     bindViewContribution(bind, ScmContribution);
     bind(FrontendApplicationContribution).toService(ScmContribution);
+    bind(ColorContribution).toService(ScmContribution);
 
     bind(NavigatorTreeDecorator).to(ScmNavigatorDecorator).inSingletonScope();
     bind(ScmDecorationsService).toSelf().inSingletonScope();
