@@ -15,25 +15,25 @@
  ********************************************************************************/
 
 .merge-conflict-current-marker {
-     background-color: rgba(0, 255, 0, 0.1);
+     background-color: var(--theia-merge-currentHeaderBackground);
 }
 
 .merge-conflict-current-content {
-     background-color: rgba(0, 255, 0, 0.3);
+     background-color: var(--theia-merge-currentContentBackground);
 }
 
 .merge-conflict-base-marker {
-    background-color: rgba(125, 125, 125, 0.1);
+    background-color: var(--theia-merge-commonHeaderBackground);
 }
 
 .merge-conflict-base-content {
-    background-color: rgba(125, 125, 125, 0.3);
+    background-color: var(--theia-merge-commonContentBackground);
 }
 
 .merge-conflict-incoming-marker {
-    background-color: rgba(0, 0, 255, 0.1);
+    background-color: var(--theia-merge-incomingHeaderBackground);
 }
 
 .merge-conflict-incoming-content {
-    background-color: rgba(0, 0, 255, 0.3);
+    background-color: var(--theia-merge-incomingContentBackground);
 }
