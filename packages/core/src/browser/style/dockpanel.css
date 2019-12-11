@@ -29,21 +29,14 @@
 
 .p-DockPanel-handle[data-orientation='vertical'] {
   min-height: var(--theia-border-width);
-  border-top: var(--theia-border-width) solid var(--theia-border-color1);
 }
 
 .p-DockPanel-handle[data-orientation='horizontal'] {
   min-width: var(--theia-border-width);
-  border-left: var(--theia-border-width) solid var(--theia-border-color1);
-}
-
-.p-DockPanel-handle[data-orientation='horizontal']:after {
-  background-color: var(--theia-layout-color0);
-  border-left: var(--theia-border-width) solid var(--theia-border-color1);
 }
 
 .p-DockPanel-overlay {
-  background: rgba(33, 150, 243, 0.1);
+  background: var(--theia-editorGroup-dropBackground);
   border: var(--theia-border-width) dashed var(--theia-brand-color1);
   transition-property: top, left, right, bottom;
   transition-duration: 150ms;

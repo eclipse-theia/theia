@@ -198,12 +198,6 @@
     border-color: var(--theia-panelInput-border);
 }
 
-#theia-bottom-content-panel .p-DockPanel-handle,
-#theia-bottom-content-panel .p-DockPanel-handle::after {
-    background: none;
-    border: none;
-}
-
 #theia-bottom-content-panel .p-DockPanel-handle[data-orientation='horizontal'] {
     border-left: var(--theia-border-width) solid var(--theia-panel-border);
 }
@@ -227,7 +221,7 @@
 }
 
 #theia-bottom-content-panel .p-TabBar-tab.p-mod-current.theia-mod-active {
-    border-top-color: var(--theia-accent-color2);
+    border-top-color: var(--theia-focusBorder);
 }
 
 /*-----------------------------------------------------------------------------
