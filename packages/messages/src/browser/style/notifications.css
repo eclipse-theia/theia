@@ -38,22 +38,25 @@
 /* Toasts */
 
 .theia-notifications-container.theia-notification-toasts .theia-notification-list-item {
-    background-color: var(--theia-layout-color1);
-    box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.5);
+    background-color: var(--theia-notifications-background);
+    box-shadow: 0px 0px 4px 0px var(--theia-widget-shadow);
+    border: 1px solid var(--theia-notificationToast-border);
     margin-top: 6px;
 }
 
 /* Center */
 
 .theia-notifications-container.theia-notification-center {
-    background-color: var(--theia-layout-color1);
-    box-shadow: 0px 0px 6px 0px rgba(0, 0, 0, 0.5);
+    background-color: var(--theia-notifications-background);
+    border: 1px solid var(--theia-notificationCenter-border);
+    box-shadow: 0px 0px 6px 0px var(--theia-widget-shadow);
 }
 
 /* Center > Header */
 
 .theia-notification-center-header {
-    background-color: var(--theia-layout-color2);
+    color: var(--theia-notificationCenterHeader-foreground);
+    background-color: var(--theia-notificationCenterHeader-background);
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -63,18 +66,14 @@
 }
 
 .theia-notification-center-header-title {
-    color: var(--theia-ui-font-color0);
     font-size: calc(var(--theia-ui-font-size1) / 1.1);
     font-family: var(--theia-ui-font-family);
     margin: 8px;
-    /* padding: 4px; */
     flex-grow: 2;
 }
 
 .theia-notification-center-header-actions {
-    color: white;
     margin: 8px;
-    /* padding: 4px; */
 }
 
 /* List */
@@ -103,10 +102,10 @@
     justify-content: space-between;
 }
 .theia-notification-list-item:hover {
-    background-color: var(--theia-layout-color2);
+    background-color: var(--theia-list-hoverBackground);
 }
 .theia-notification-list > .theia-notification-list-item:not(:last-child) {
-    border-top: 1px var(--theia-layout-color2) solid;
+    border-top: 1px var(--theia-notifications-border) solid;
 }
 
 .theia-notification-list-item-content {
@@ -131,7 +130,6 @@
 }
 
 .theia-notification-message {
-    color: var(--theia-ui-font-color0);
     font-size: var(--theia-ui-font-size1);
     font-family: var(--theia-ui-font-family);
     overflow-wrap: break-word;
@@ -146,9 +144,12 @@
 
 .theia-notification-message a {
     border: none;
-    color: var(--theia-accent-color1);
+    color: var(--theia-notificationLink-foreground);
     outline: 0;
     text-decoration: none;
+}
+.theia-notification-message a:focus {
+    outline-color: var(--theia-focusBorder);
 }
 
 .theia-notification-icon {
@@ -162,17 +163,17 @@
 
 .theia-notification-icon-info:before {
     content: "\f05a";
-    color: var(--theia-accent-color0);
+    color: var(--theia-notificationsInfoIcon-foreground);
 }
 
 .theia-notification-icon-warning:before {
     content: "\f071";
-    color: darkorange;
+    color: var(--theia-notificationsWarningIcon-foreground);
 }
 
 .theia-notification-icon-error:before {
     content: "\f057";
-    color: tomato;
+    color: var(--theia-notificationsErrorIcon-foreground);
 }
 
 .theia-notification-actions {
@@ -230,7 +231,6 @@
 }
 
 .theia-notification-source {
-    color: var(--theia-ui-font-color3);
     font-size: var(--theia-ui-font-size0);
     font-family: var(--theia-ui-font-family);
     overflow-wrap: break-word;
@@ -263,7 +263,7 @@
 
 .theia-notification-item-progressbar {
     height: 2px;
-    background-color: var(--theia-brand-color0);
+    background-color: var(--theia-progressBar-background);
     width: 66%;
 }
 

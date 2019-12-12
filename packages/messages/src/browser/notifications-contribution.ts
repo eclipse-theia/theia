@@ -23,9 +23,11 @@ import { NotificationsCommands } from './notifications-commands';
 import { CommandContribution, CommandRegistry } from '@theia/core';
 import { NotificationManager } from './notifications-manager';
 import { NotificationsRenderer } from './notifications-renderer';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
 
 @injectable()
-export class NotificationsContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution {
+export class NotificationsContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, ColorContribution {
 
     protected readonly id = 'theia-notification-center';
 
@@ -55,7 +57,7 @@ export class NotificationsContribution implements FrontendApplicationContributio
         });
     }
     protected getStatusBarItemText(count: number): string {
-        return `$(bell) ${count ? ` ${count}` : '' }`;
+        return `$(bell) ${count ? ` ${count}` : ''}`;
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -78,6 +80,82 @@ export class NotificationsContribution implements FrontendApplicationContributio
             keybinding: 'esc'
         });
     }
+
+    registerColors(colors: ColorRegistry): void {
+        colors.register(
+            {
+                id: 'notificationCenter.border', defaults: {
+                    hc: 'contrastBorder'
+                }, description: 'Notifications center border color. Notifications slide in from the bottom right of the window.'
+            },
+            {
+                id: 'notificationToast.border', defaults: {
+                    hc: 'contrastBorder'
+                }, description: 'Notification toast border color. Notifications slide in from the bottom right of the window.'
+            },
+            {
+                id: 'notifications.foreground', defaults: {
+                    dark: 'editorWidget.foreground',
+                    light: 'editorWidget.foreground',
+                    hc: 'editorWidget.foreground'
+                }, description: 'Notifications foreground color. Notifications slide in from the bottom right of the window.'
+            },
+            {
+                id: 'notifications.background', defaults: {
+                    dark: 'editorWidget.background',
+                    light: 'editorWidget.background',
+                    hc: 'editorWidget.background'
+                }, description: 'Notifications background color. Notifications slide in from the bottom right of the window.'
+            },
+            {
+                id: 'notificationLink.foreground', defaults: {
+                    dark: 'textLink.foreground',
+                    light: 'textLink.foreground',
+                    hc: 'textLink.foreground'
+                }, description: 'Notification links foreground color. Notifications slide in from the bottom right of the window.'
+            },
+            {
+                id: 'notificationCenterHeader.foreground',
+                description: 'Notifications center header foreground color. Notifications slide in from the bottom right of the window.'
+            },
+            {
+                id: 'notificationCenterHeader.background', defaults: {
+                    dark: Color.lighten('notifications.background', 0.3),
+                    light: Color.darken('notifications.background', 0.05),
+                    hc: 'notifications.background'
+                }, description: 'Notifications center header background color. Notifications slide in from the bottom right of the window.'
+            },
+            {
+                id: 'notifications.border', defaults: {
+                    dark: 'notificationCenterHeader.background',
+                    light: 'notificationCenterHeader.background',
+                    hc: 'notificationCenterHeader.background'
+                }, description: 'Notifications border color separating from other notifications in the notifications center. Notifications slide in from the bottom right of the window.'
+            },
+            {
+                id: 'notificationsErrorIcon.foreground', defaults: {
+                    dark: 'editorError.foreground',
+                    light: 'editorError.foreground',
+                    hc: 'editorError.foreground'
+                }, description: 'The color used for the icon of error notifications. Notifications slide in from the bottom right of the window.'
+            },
+            {
+                id: 'notificationsWarningIcon.foreground', defaults: {
+                    dark: 'editorWarning.foreground',
+                    light: 'editorWarning.foreground',
+                    hc: 'editorWarning.foreground'
+                }, description: 'The color used for the icon of warning notifications. Notifications slide in from the bottom right of the window.'
+            },
+            {
+                id: 'notificationsInfoIcon.foreground', defaults: {
+                    dark: 'editorInfo.foreground',
+                    light: 'editorInfo.foreground',
+                    hc: 'editorInfo.foreground'
+                }, description: 'The color used for the icon of info notifications. Notifications slide in from the bottom right of the window.'
+            }
+        );
+    }
+
 }
 
 @injectable()
