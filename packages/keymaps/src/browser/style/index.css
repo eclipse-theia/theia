@@ -157,7 +157,7 @@
 }
 
 .no-kb {
-    border: 1px solid  var(--theia-warn-color0);
+    border: 1px solid  var(--theia-editorWarning-foreground);
 }
 
 #search-kb {

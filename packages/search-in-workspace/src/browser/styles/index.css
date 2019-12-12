@@ -121,7 +121,7 @@
     border-style: solid;
     border-width: var(--theia-border-width);
     margin: -1px;
-    border-color: var(--theia-warn-color0);
+    border-color: var(--theia-editorWarning-foreground);
 }
 
 .t-siw-search-container .searchHeader .search-field-container .search-notification {
@@ -136,13 +136,13 @@
 }
 
 .t-siw-search-container .searchHeader .search-notification div{
-    background-color: var(--theia-warn-color0);
+    background-color: var(--theia-editorWarning-foreground);
     width: calc(100% + 2px);
     margin-left: -1px;
     color: var(--theia-warn-font-color0);
     z-index: 1000;
     position: absolute;
-    border: 1px solid var(--theia-warn-color0);
+    border: 1px solid var(--theia-editorWarning-foreground);
     box-sizing: border-box;
     padding: 3px;
 }

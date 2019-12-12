@@ -16,7 +16,6 @@
 import * as theia from '@theia/plugin';
 import { ThemeColor, StatusBarAlignment } from '../types-impl';
 import { StatusBarMessageRegistryMain } from '../../common/plugin-api-rpc';
-import { VS_COLORS } from './vscolor-const';
 import { UUID } from '@phosphor/coreutils/lib/uuid';
 
 export class StatusBarItemImpl implements theia.StatusBarItem {
@@ -116,18 +115,10 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
             this._proxy.$setMessage(this.id, this.text,
                 this.priority,
                 this.alignment,
-                this.getColor(),
+                typeof this.color === 'string' ? this.color : this.color && this.color.id,
                 this.tooltip,
                 this.command);
         }, 0);
-    }
-
-    private getColor(): string | undefined {
-        if (typeof this.color !== 'string' && typeof this.color !== 'undefined') {
-            const colorId = (<ThemeColor>this.color).id;
-            return `var(${VS_COLORS[colorId] ? VS_COLORS[colorId] : colorId})`;
-        }
-        return this.color;
     }
 
     public dispose(): void {

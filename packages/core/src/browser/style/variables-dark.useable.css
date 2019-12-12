@@ -124,7 +124,6 @@ is not optimized for dense, information rich UIs.
   /* State colors (warn, error, success, info)
     ------------------------------------------ */
 
-  --theia-warn-color0: var(--md-amber-600);
   --theia-warn-color1: var(--md-amber-500);
   --theia-warn-color2: var(--md-amber-400);
   --theia-warn-color3: var(--md-amber-300);
@@ -132,7 +131,6 @@ is not optimized for dense, information rich UIs.
   --theia-warn-font-color0: var(--md-grey-900);
 
   --theia-error-color0: var(--md-red-700);
-  --theia-error-color1: var(--md-red-500);
   --theia-error-color2: var(--md-red-300);
   --theia-error-color3: var(--md-red-100);
 
@@ -232,8 +230,6 @@ is not optimized for dense, information rich UIs.
   /* Dialogs */
   --theia-ui-dialog-header-color: var(--theia-brand-color0);
   --theia-ui-dialog-header-font-color: var(--theia-ui-font-color1);
-  --theia-ui-dialog-color: var(--theia-layout-color4);
-  --theia-ui-dialog-font-color: var(--theia-ui-font-color1);
 
   /* Variables */
   --theia-variable-name-color: #C586C0;

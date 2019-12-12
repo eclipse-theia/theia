@@ -23,7 +23,8 @@
 .dialogContent .theia-ResponsiveFileDialog {
     height: 500px;
     width: 500px;
-    background-color: var(--theia-layout-color0);
+    border: 1px solid var(--theia-editorWidget-border);
+    background: var(--theia-dropdown-background);
 }
 
 
@@ -95,7 +96,6 @@
 .dialogContent .theia-LocationList {
     width: 427px;
     height: 21px;
-    background: var(--theia-layout-color2)!important;
 }
 
 /*
@@ -117,8 +117,7 @@
 
 .dialogContent .theia-FileTreeFiltersList {
     width: 427px;
-    height: 21px;
-    background: var(--theia-layout-color2)!important;
+    height: 21px;    
 }
 
 /*

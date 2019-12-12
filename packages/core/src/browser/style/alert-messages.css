@@ -40,7 +40,7 @@
 
 /* warning message */
 .theia-warning-alert {
-    background-color: var(--theia-warn-color0);
+    background-color: var(--theia-editorWarning-foreground);
     color: var(--theia-warn-font-color0);
     padding: 10px;
 }

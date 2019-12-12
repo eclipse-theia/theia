@@ -28,10 +28,10 @@
     position: relative;
     width: 100%;
     min-width: 200px;
-    background-color: var(--theia-ui-dialog-color);
+    background-color: var(--theia-editorWidget-background);
     min-height: 35px;
     margin-bottom: 1px;
-    color: var(--theia-ui-dialog-font-color);
+    color: var(--theia-editorWidget-foreground);
 }
 
 .modal-Notification .icon {
@@ -50,11 +50,11 @@
 }
 
 .modal-Notification .icon .error {
-    color: var(--theia-error-color1);
+    color: var(--theia-editorError-foreground);
 }
 
 .modal-Notification .icon .warning {
-    color: var(--theia-warn-color0);
+    color: var(--theia-editorWarning-foreground);
 }
 
 .modal-Notification .text {
