@@ -42,12 +42,9 @@
     padding: 3px 0 3px 4px;
 }
 
-.t-siw-search-container input[type="text"]:focus {
-    outline: none;
-}
-
 .t-siw-search-container #search-input-field:focus {
     border: none;
+    outline: none;
 }
 
 .t-siw-search-container #search-input-field {
@@ -66,10 +63,10 @@
 }
 
 .t-siw-search-container .searchHeader .search-field-container {
-    background: var(--theia-layout-color2);
+    background: var(--theia-input-background);
     border-style: solid;
     border-width: var(--theia-border-width);
-    border-color: var(--theia-border-color1);
+    border-color: var(--theia-input-background);
 }
 
 .t-siw-search-container .searchHeader .search-field-container.focused {
@@ -83,6 +80,7 @@
 
 .t-siw-search-container .searchHeader .search-field:focus {
     border: none;
+    outline: none;
 }
 
 .t-siw-search-container .searchHeader .search-field .option {
@@ -91,7 +89,8 @@
 }
 
 .t-siw-search-container .searchHeader .search-field .option.enabled {
-    border: var(--theia-border-width) var(--theia-accent-color3) solid;
+    border: var(--theia-border-width) var(--theia-inputOption-activeBorder) solid;
+    background-color: var(--theia-inputOption-activeBackground);
 }
 
 .t-siw-search-container .searchHeader .search-field .option:hover {

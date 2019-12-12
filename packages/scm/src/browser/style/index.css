@@ -90,9 +90,6 @@
 
 .theia-scm-input-message-container textarea {
     line-height: var(--theia-content-line-height);
-    font-size: var(--theia-ui-font-size1);
-    color: var(--theia-ui-font-color1);
-    background: var(--theia-layout-color2);
     resize: none;
     box-sizing: border-box;
     height: 26px;

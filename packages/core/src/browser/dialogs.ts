@@ -383,6 +383,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
 
         this.inputField = document.createElement('input');
         this.inputField.type = 'text';
+        this.inputField.className = 'theia-input';
         this.inputField.setAttribute('style', 'flex: 0;');
         this.inputField.value = props.initialValue || '';
         if (props.initialSelectionRange) {

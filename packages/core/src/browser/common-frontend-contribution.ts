@@ -739,15 +739,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-                placeholder: 'Select File Icon Theme',
-                fuzzyMatchLabel: true,
-                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-                onClose: () => {
-                    if (resetTo) {
-                        this.iconThemes.current = resetTo;
-                    }
+            placeholder: 'Select File Icon Theme',
+            fuzzyMatchLabel: true,
+            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+            onClose: () => {
+                if (resetTo) {
+                    this.iconThemes.current = resetTo;
                 }
-            });
+            }
+        });
     }
 
     registerColors(colors: ColorRegistry): void {
@@ -756,6 +756,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // if not yet contributed by Monaco, check runtime css variables to learn
             { id: 'selection.background', defaults: { dark: '#217daf', light: '#c0dbf1' }, description: 'Overall border color for focused elements. This color is only used if not overridden by a component.' },
             { id: 'icon.foreground', defaults: { dark: '#C5C5C5', light: '#424242', hc: '#FFFFFF' }, description: 'The default color for icons in the workbench.' },
+            { id: 'contrastBorder', defaults: { hc: '#6FC3DF' }, description: 'An extra border around elements to separate them from others for greater contrast.' },
 
             // Window border colors should be aligned with https://code.visualstudio.com/api/references/theme-color#window-border
             {
@@ -783,7 +784,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'activityBar.foreground', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar item foreground color when it is active. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
             { id: 'activityBar.inactiveForeground', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar item foreground color when it is active. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
 
-            // Side Bar
+            // Input control colors should be aligned with https://code.visualstudio.com/api/references/theme-color#input-control
+            // if not yet contributed by Monaco, check runtime css variables to learn
+            { id: 'input.border', defaults: { hc: 'contrastBorder' }, description: 'Input box border.' },
+            { id: 'inputValidation.errorForeground', defaults: { dark: 'errorForeground', light: 'errorForeground', hc: 'errorForeground' }, description: 'Input validation foreground color for error severity.' },
+            { id: 'inputValidation.infoForeground', description: 'Input validation foreground color for information severity.' },
+            { id: 'inputValidation.warningForeground', description: 'Input validation foreground color for warning severity.' },
+
+            // Side Bar should be aligned with https://code.visualstudio.com/api/references/theme-color#side-bar
+            // if not yet contributed by Monaco, check runtime css variables to learn
             { id: 'sideBar.background', defaults: { dark: '#252526', light: '#F3F3F3', hc: '#000000' }, description: 'Side bar background color. The side bar is the container for views like explorer and search.' },
             { id: 'sideBar.foreground', description: 'Side bar foreground color. The side bar is the container for views like explorer and search.' },
             { id: 'sideBarSectionHeader.background', defaults: { dark: '#80808033', light: '#80808033' }, description: 'Side bar section header background color. The side bar is the container for views like explorer and search.' },
@@ -930,20 +939,20 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 id: 'tab.hoverBackground',
                 description: 'Tab background color when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             }, {
-                id: 'tab.unfocusedHoverBackground', defaults: {
-                    dark: Color.transparent('tab.hoverBackground', 0.5),
-                    light: Color.transparent('tab.hoverBackground', 0.7)
-                }, description: 'Tab background color in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
-            },
+            id: 'tab.unfocusedHoverBackground', defaults: {
+                dark: Color.transparent('tab.hoverBackground', 0.5),
+                light: Color.transparent('tab.hoverBackground', 0.7)
+            }, description: 'Tab background color in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+        },
             {
                 id: 'tab.hoverBorder',
                 description: 'Border to highlight tabs when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             }, {
-                id: 'tab.unfocusedHoverBorder', defaults: {
-                    dark: Color.transparent('tab.hoverBorder', 0.5),
-                    light: Color.transparent('tab.hoverBorder', 0.7)
-                }, description: 'Border to highlight tabs in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
-            },
+            id: 'tab.unfocusedHoverBorder', defaults: {
+                dark: Color.transparent('tab.hoverBorder', 0.5),
+                light: Color.transparent('tab.hoverBorder', 0.7)
+            }, description: 'Border to highlight tabs in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+        },
             {
                 id: 'tab.activeModifiedBorder', defaults: {
                     dark: '#3399CC',
@@ -1100,21 +1109,21 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: Color.transparent('titleBar.activeForeground', 0.6)
                 }, description: 'Title bar foreground when the window is inactive. Note that this color is currently only supported on macOS.'
             }, {
-                id: 'titleBar.activeBackground', defaults: {
-                    dark: '#3C3C3C',
-                    light: '#DDDDDD',
-                    hc: '#000000'
-                }, description: 'Title bar background when the window is active. Note that this color is currently only supported on macOS.'
-            }, {
-                id: 'titleBar.inactiveBackground', defaults: {
-                    dark: Color.transparent('titleBar.activeBackground', 0.6),
-                    light: Color.transparent('titleBar.activeBackground', 0.6)
-                }, description: 'Title bar background when the window is inactive. Note that this color is currently only supported on macOS.'
-            }, {
-                id: 'titleBar.border', defaults: {
-                    hc: 'contrastBorder'
-                }, description: 'Title bar border color. Note that this color is currently only supported on macOS.'
-            },
+            id: 'titleBar.activeBackground', defaults: {
+                dark: '#3C3C3C',
+                light: '#DDDDDD',
+                hc: '#000000'
+            }, description: 'Title bar background when the window is active. Note that this color is currently only supported on macOS.'
+        }, {
+            id: 'titleBar.inactiveBackground', defaults: {
+                dark: Color.transparent('titleBar.activeBackground', 0.6),
+                light: Color.transparent('titleBar.activeBackground', 0.6)
+            }, description: 'Title bar background when the window is inactive. Note that this color is currently only supported on macOS.'
+        }, {
+            id: 'titleBar.border', defaults: {
+                hc: 'contrastBorder'
+            }, description: 'Title bar border color. Note that this color is currently only supported on macOS.'
+        },
 
             // Menu Bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#menu-bar-colors
             {
@@ -1124,33 +1133,33 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: 'titleBar.activeForeground'
                 }, description: 'Foreground color of the selected menu item in the menubar.'
             }, {
-                id: 'menubar.selectionBackground', defaults: {
-                    dark: Color.transparent('#ffffff', 0.1),
-                    light: Color.transparent('#000000', 0.1)
-                }, description: 'Background color of the selected menu item in the menubar.'
-            }, {
-                id: 'menubar.selectionBorder', defaults: {
-                    hc: 'activeContrastBorder'
-                }, description: 'Border color of the selected menu item in the menubar.'
-            },
+            id: 'menubar.selectionBackground', defaults: {
+                dark: Color.transparent('#ffffff', 0.1),
+                light: Color.transparent('#000000', 0.1)
+            }, description: 'Background color of the selected menu item in the menubar.'
+        }, {
+            id: 'menubar.selectionBorder', defaults: {
+                hc: 'activeContrastBorder'
+            }, description: 'Border color of the selected menu item in the menubar.'
+        },
             {
                 id: 'menu.border', defaults: {
                     hc: 'contrastBorder'
                 }, description: 'Border color of menus.'
             }, {
-                id: 'menu.foreground', defaults: {
-                    dark: 'dropdown.foreground', light: 'foreground', hc: 'dropdown.foreground'
-                },
-                description: 'Foreground color of menu items.'
-            }, {
-                id: 'menu.background', defaults: {
-                    dark: 'dropdown.background', light: 'dropdown.background', hc: 'dropdown.background'
-                }, description: 'Background color of menu items.'
-            }, {
-                id: 'menu.selectionForeground', defaults: {
-                    dark: 'list.activeSelectionForeground', light: 'list.activeSelectionForeground', hc: 'list.activeSelectionForeground'
-                }, description: 'Foreground color of the selected menu item in menus.'
+            id: 'menu.foreground', defaults: {
+                dark: 'dropdown.foreground', light: 'foreground', hc: 'dropdown.foreground'
             },
+            description: 'Foreground color of menu items.'
+        }, {
+            id: 'menu.background', defaults: {
+                dark: 'dropdown.background', light: 'dropdown.background', hc: 'dropdown.background'
+            }, description: 'Background color of menu items.'
+        }, {
+            id: 'menu.selectionForeground', defaults: {
+                dark: 'list.activeSelectionForeground', light: 'list.activeSelectionForeground', hc: 'list.activeSelectionForeground'
+            }, description: 'Foreground color of the selected menu item in menus.'
+        },
             {
                 id: 'menu.selectionBackground', defaults:
                     { dark: 'list.activeSelectionBackground', light: 'list.activeSelectionBackground', hc: 'list.activeSelectionBackground' },

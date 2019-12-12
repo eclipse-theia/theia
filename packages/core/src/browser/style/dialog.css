@@ -79,13 +79,10 @@
 }
 
 input {
-    font-size: var(--theia-ui-font-size1);
     line-height: var(--theia-content-line-height);
     border-width: 1px;
     border-style: solid;
     border-color: var(--theia-border-color1);
-    background: var(--theia-layout-color2);
-    color: var(--theia-ui-font-color1);
     padding-left: 5px;
 }
 
@@ -101,15 +98,15 @@ input {
     display: none;
 }
 .p-Widget.dialogOverlay .error {
-    color: var(--theia-editorError-foreground);
+    color: var(--theia-inputValidation-errorForeground);
 }
 .p-Widget.dialogOverlay .error.main {
-    color: var(--theia-editorError-foreground);
-    border-color: var(--theia-editorError-border);
+    color: var(--theia-inputValidation-errorForeground);
+    border-color: var(--theia-inputValidation-errorBorder);
 }
 .p-Widget.dialogOverlay .error > .theia-button.main {
-    background-color: var(--theia-editorError-foreground);
-    color: var(--theia-ui-font-color1);
+    background-color: var(--theia-inputValidation-errorBackground);
+    color: var(--theia-inputValidation-errorForeground);
 }
 .p-Widget.dialogOverlay .error > .dialogErrorMessage {
     margin-top: calc(var(--theia-ui-padding)*3);
