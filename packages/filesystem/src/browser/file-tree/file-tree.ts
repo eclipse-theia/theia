@@ -54,14 +54,14 @@ export class FileTree extends TreeImpl {
             return [];
         }
         const result = await Promise.all(fileStat.children.map(async child =>
-            await this.toNode(child, parent)
+            this.toNode(child, parent)
         ));
         return result.sort(DirNode.compare);
     }
 
     protected async toNode(fileStat: FileStat, parent: CompositeTreeNode): Promise<FileNode | DirNode> {
         const uri = new URI(fileStat.uri);
-        const name = await this.labelProvider.getName(uri);
+        const name = this.labelProvider.getName(uri);
         const icon = await this.labelProvider.getIcon(fileStat);
         const id = this.toNodeId(uri, parent);
         const node = this.getNode(id);
