@@ -565,6 +565,8 @@ declare module monaco.color {
         deregisterColor(id: string): void;
     }
     export function getColorRegistry(): IColorRegistry;
+    export function darken(colorValue: ColorValue, factor: number): ColorFunction;
+    export function lighten(colorValue: ColorValue, factor: number): ColorFunction;
     export function transparent(colorValue: ColorValue, factor: number): ColorFunction;
 }
 
