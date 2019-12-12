@@ -25,7 +25,6 @@ is not optimized for dense, information rich UIs.
   --theia-panel-border-width: 2px;
   --theia-border-color0: var(--md-grey-100);
   --theia-border-color1: var(--md-grey-200);
-  --theia-border-color2: var(--md-grey-300);
   --theia-border-color3: var(--md-grey-500);
 
 
@@ -222,10 +221,6 @@ is not optimized for dense, information rich UIs.
   --theia-ui-button-font-color-disabled: var(--theia-ui-font-color2);
   --theia-ui-button-color-secondary-disabled: var(--theia-disabled-color1);
   --theia-ui-button-font-color-secondary-disabled: var(--theia-ui-font-color2);
-
-  /* Expand/collapse element */
-  --theia-ui-expand-button-color: var(--theia-accent-color4);
-  --theia-ui-expand-button-font-color: var(--theia-ui-font-color1);
 
   /* Dialogs */
   --theia-ui-dialog-header-color: var(--theia-brand-color1);
