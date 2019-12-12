@@ -24,6 +24,7 @@ import { NotificationsRenderer } from './notifications-renderer';
 import { NotificationsContribution, NotificationsKeybindingContext } from './notifications-contribution';
 import { FrontendApplicationContribution, KeybindingContribution, KeybindingContext } from '@theia/core/lib/browser';
 import { CommandContribution } from '@theia/core';
+import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(NotificationsRenderer).toSelf().inSingletonScope();
@@ -31,6 +32,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplicationContribution).toService(NotificationsContribution);
     bind(CommandContribution).toService(NotificationsContribution);
     bind(KeybindingContribution).toService(NotificationsContribution);
+    bind(ColorContribution).toService(NotificationsContribution);
     bind(NotificationsKeybindingContext).toSelf().inSingletonScope();
     bind(KeybindingContext).toService(NotificationsKeybindingContext);
     bind(NotificationManager).toSelf().inSingletonScope();
