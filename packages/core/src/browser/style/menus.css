@@ -22,6 +22,7 @@
 :root {
   --theia-private-menubar-height: 32px;
   --theia-private-menu-item-height: 24px;
+  --theia-menu-z-index: 10000;
 }
 
 
@@ -32,8 +33,6 @@
 
 .p-Widget.p-MenuBar {
   padding-left: 5px;
-  background: var(--theia-menu-color0);
-  color: var(--theia-ui-bar-font-color1);
   font-size: var(--theia-ui-font-size1);
 }
 
@@ -45,30 +44,29 @@
 
 .p-MenuBar-item {
   padding: 0px 8px;
-  border-left: var(--theia-border-width) solid transparent;
-  border-right: var(--theia-border-width) solid transparent;
+  border-left: var(--theia-border-width) solid var(--theia-menu-border);
+  border-right: var(--theia-border-width) solid var(--theia-menu-border);
   line-height: var(--theia-private-menubar-height);
 }
 
 
 .p-MenuBar-item.p-mod-active {
-  background: var(--theia-menu-color2);
-  color: var(--theia-ui-bar-font-color0);
+  background: var(--theia-menubar-selectionBackground);
+  color: var(--theia-menubar-selectionForeground);
   opacity: 1;
 }
 
 
 .p-MenuBar.p-mod-active .p-MenuBar-item.p-mod-active {
-  z-index: 10001;
-  background: var(--theia-menu-color1);
-  border-left: var(--theia-border-width) solid var(--theia-border-color1);
-  border-right: var(--theia-border-width) solid var(--theia-border-color1);
-  box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.2);
+  z-index: calc(var(--theia-menu-z-index) - 1);
+  background: var(--theia-menubar-selectionBackground);
+  border-left: var(--theia-border-width) solid var(--theia-menubar-selectionBorder);
+  border-right: var(--theia-border-width) solid var(--theia-menubar-selectionBorder);
 }
 
 
 .p-MenuBar-item.p-mod-disabled {
-  opacity: var(--theia-mod-disabled-opacity);;
+  opacity: var(--theia-mod-disabled-opacity);
 }
 
 
@@ -76,7 +74,7 @@
   margin: 2px;
   padding: 0;
   border: none;
-  border-left: var(--theia-border-width) solid var(--theia-border-color2);
+  border-left: var(--theia-border-width) solid var(--theia-menu-separatorBackground);
 }
 
 
@@ -86,11 +84,17 @@
 
 
 #theia-top-panel {
-  background: var(--theia-menu-color0);
+  background: var(--theia-titleBar-activeBackground);
+  color: var(--theia-titleBar-activeForeground);
   display: flex;
   min-height: var(--theia-private-menubar-height);
+  border-bottom: 1px solid var(--theia-titleBar-border);
 }
-
+#theia-top-panel:window-inactive,
+#theia-top-panel:-moz-window-inactive {
+  background: var(--theia-titleBar-inactiveBackground);
+  color: var(--theia-titleBar-inactiveForeground);
+}
 
 /*-----------------------------------------------------------------------------
 | Menu
@@ -98,14 +102,14 @@
 
 
 .p-Menu {
-  z-index: 10000;
+  z-index: var(--theia-menu-z-index);
   padding: 4px 0px;
-  background: var(--theia-menu-color1);
-  color: var(--theia-ui-font-color1);
+  background: var(--theia-menu-background);
+  color: var(--theia-menu-foreground);
   font-size: var(--theia-ui-font-size1);
-  box-shadow: 0px 1px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: 0px 1px 6px var(--theia-widget-shadow);
+  border: 1px solid var(--theia-menu-border);
 }
-
 
 .p-Menu-item {
   min-height: var(--theia-private-menu-item-height);
@@ -116,14 +120,15 @@
 
 
 .p-Menu-item.p-mod-active {
-  background: var(--theia-menu-color2);
-  color: var(--theia-ui-bar-font-color0);
+  background: var(--theia-menu-selectionBackground);
+  color: var(--theia-menu-selectionForeground);
+  border: thin solid var(--theia-menu-selectionBorder);
   opacity: 1;
 }
 
 
 .p-Menu-item.p-mod-disabled {
-  opacity: var(--theia-mod-disabled-opacity);;
+  opacity: var(--theia-mod-disabled-opacity);
 }
 
 
@@ -166,7 +171,7 @@
   display: block;
   position: relative;
   top: 4px;
-  border-top: var(--theia-border-width) solid var(--theia-ui-font-color3);
+  border-top: var(--theia-border-width) solid var(--theia-menu-separatorBackground);
 }
 
 .p-Menu-itemIcon::before,

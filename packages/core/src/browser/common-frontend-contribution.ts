@@ -739,15 +739,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-            placeholder: 'Select File Icon Theme',
-            fuzzyMatchLabel: true,
-            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-            onClose: () => {
-                if (resetTo) {
-                    this.iconThemes.current = resetTo;
+                placeholder: 'Select File Icon Theme',
+                fuzzyMatchLabel: true,
+                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+                onClose: () => {
+                    if (resetTo) {
+                        this.iconThemes.current = resetTo;
+                    }
                 }
-            }
-        });
+            });
     }
 
     registerColors(colors: ColorRegistry): void {
@@ -916,20 +916,20 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 id: 'tab.hoverBackground',
                 description: 'Tab background color when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             }, {
-            id: 'tab.unfocusedHoverBackground', defaults: {
-                dark: Color.transparent('tab.hoverBackground', 0.5),
-                light: Color.transparent('tab.hoverBackground', 0.7)
-            }, description: 'Tab background color in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
-        },
+                id: 'tab.unfocusedHoverBackground', defaults: {
+                    dark: Color.transparent('tab.hoverBackground', 0.5),
+                    light: Color.transparent('tab.hoverBackground', 0.7)
+                }, description: 'Tab background color in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
             {
                 id: 'tab.hoverBorder',
                 description: 'Border to highlight tabs when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             }, {
-            id: 'tab.unfocusedHoverBorder', defaults: {
-                dark: Color.transparent('tab.hoverBorder', 0.5),
-                light: Color.transparent('tab.hoverBorder', 0.7)
-            }, description: 'Border to highlight tabs in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
-        },
+                id: 'tab.unfocusedHoverBorder', defaults: {
+                    dark: Color.transparent('tab.hoverBorder', 0.5),
+                    light: Color.transparent('tab.hoverBorder', 0.7)
+                }, description: 'Border to highlight tabs in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
             {
                 id: 'tab.activeModifiedBorder', defaults: {
                     dark: '#3399CC',
@@ -1070,6 +1070,88 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 id: 'imagePreview.border', defaults: {
                     dark: Color.transparent('#808080', 0.35), light: Color.transparent('#808080', 0.35), hc: 'contrastBorder'
                 }, description: 'Border color for image in image preview.'
+            },
+
+            // Title Bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#title-bar-colors
+            {
+                id: 'titleBar.activeForeground', defaults: {
+                    dark: '#CCCCCC',
+                    light: '#333333',
+                    hc: '#FFFFFF'
+                }, description: 'Title bar foreground when the window is active. Note that this color is currently only supported on macOS.'
+            },
+            {
+                id: 'titleBar.inactiveForeground', defaults: {
+                    dark: Color.transparent('titleBar.activeForeground', 0.6),
+                    light: Color.transparent('titleBar.activeForeground', 0.6)
+                }, description: 'Title bar foreground when the window is inactive. Note that this color is currently only supported on macOS.'
+            }, {
+                id: 'titleBar.activeBackground', defaults: {
+                    dark: '#3C3C3C',
+                    light: '#DDDDDD',
+                    hc: '#000000'
+                }, description: 'Title bar background when the window is active. Note that this color is currently only supported on macOS.'
+            }, {
+                id: 'titleBar.inactiveBackground', defaults: {
+                    dark: Color.transparent('titleBar.activeBackground', 0.6),
+                    light: Color.transparent('titleBar.activeBackground', 0.6)
+                }, description: 'Title bar background when the window is inactive. Note that this color is currently only supported on macOS.'
+            }, {
+                id: 'titleBar.border', defaults: {
+                    hc: 'contrastBorder'
+                }, description: 'Title bar border color. Note that this color is currently only supported on macOS.'
+            },
+
+            // Menu Bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#menu-bar-colors
+            {
+                id: 'menubar.selectionForeground', defaults: {
+                    dark: 'titleBar.activeForeground',
+                    light: 'titleBar.activeForeground',
+                    hc: 'titleBar.activeForeground'
+                }, description: 'Foreground color of the selected menu item in the menubar.'
+            }, {
+                id: 'menubar.selectionBackground', defaults: {
+                    dark: Color.transparent('#ffffff', 0.1),
+                    light: Color.transparent('#000000', 0.1)
+                }, description: 'Background color of the selected menu item in the menubar.'
+            }, {
+                id: 'menubar.selectionBorder', defaults: {
+                    hc: 'activeContrastBorder'
+                }, description: 'Border color of the selected menu item in the menubar.'
+            },
+            {
+                id: 'menu.border', defaults: {
+                    hc: 'contrastBorder'
+                }, description: 'Border color of menus.'
+            }, {
+                id: 'menu.foreground', defaults: {
+                    dark: 'dropdown.foreground', light: 'foreground', hc: 'dropdown.foreground'
+                },
+                description: 'Foreground color of menu items.'
+            }, {
+                id: 'menu.background', defaults: {
+                    dark: 'dropdown.background', light: 'dropdown.background', hc: 'dropdown.background'
+                }, description: 'Background color of menu items.'
+            }, {
+                id: 'menu.selectionForeground', defaults: {
+                    dark: 'list.activeSelectionForeground', light: 'list.activeSelectionForeground', hc: 'list.activeSelectionForeground'
+                }, description: 'Foreground color of the selected menu item in menus.'
+            },
+            {
+                id: 'menu.selectionBackground', defaults:
+                    { dark: 'list.activeSelectionBackground', light: 'list.activeSelectionBackground', hc: 'list.activeSelectionBackground' },
+                description: 'Background color of the selected menu item in menus.'
+            },
+            {
+                id: 'menu.selectionBorder', defaults: {
+                    hc: 'activeContrastBorder'
+                }, description: 'Border color of the selected menu item in menus.'
+            },
+            {
+                id: 'menu.separatorBackground', defaults: {
+                    dark: '#BBBBBB', light: '#888888', hc: 'contrastBorder'
+                },
+                description: 'Color of a separator menu item in menus.'
             },
 
             // Welcome Page colors should be aligned with https://code.visualstudio.com/api/references/theme-color#welcome-page
