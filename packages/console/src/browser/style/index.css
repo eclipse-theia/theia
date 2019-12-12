@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 .theia-console-content {
-    color: var(--theia-content-font-color0);
     font-size: var(--theia-code-font-size);
     line-height: var(--theia-code-line-height);
     font-family: var(--theia-code-font-family);
@@ -23,7 +22,7 @@
 
 .theia-console-input {
     padding-left: 20px;
-	border-top: var(--theia-panel-border-width) solid var(--theia-border-color1);
+	border-top: var(--theia-panel-border-width) solid var(--theia-panel-border);
 }
 
 .theia-console-input:before {
@@ -31,15 +30,14 @@
 	position: absolute;
     content: '\276f';
 	line-height: 18px;
-    color: var(--theia-ui-font-color1);
 }
 
 .theia-console-error {
-    color: var(--theia-error-color2);
+    color: var(--theia-errorForeground);
 }
 
 .theia-console-warning {
-    color: var(--theia-warn-color2);
+    color: var(--theia-editorWarning-foreground);
 }
 
 .theia-console-ansi-console-item {
