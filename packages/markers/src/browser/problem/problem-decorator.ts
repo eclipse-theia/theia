@@ -156,7 +156,7 @@ export class ProblemDecorator implements TreeDecorator {
         const { severity } = marker.data;
         switch (severity) {
             case 1: return 'var(--theia-error-color0)';
-            case 2: return 'var(--theia-warn-color0)';
+            case 2: return 'var(--theia-editorWarning-foreground)';
             case 3: return 'var(--theia-info-color0)';
             default: return 'var(--theia-success-color0)';
         }

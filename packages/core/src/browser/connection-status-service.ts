@@ -210,7 +210,7 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
             tooltip: 'Cannot connect to backend.',
             priority: 5000
         });
-        this.statusBar.setBackgroundColor('var(--theia-warn-color0)');
+        this.statusBar.setBackgroundColor('var(--theia-editorWarning-foreground)');
         this.statusBar.setColor('var(--theia-warn-font-color0)');
     }
 }

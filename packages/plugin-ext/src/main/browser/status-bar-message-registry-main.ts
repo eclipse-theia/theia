@@ -18,6 +18,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import * as types from '../../plugin/types-impl';
 import { StatusBarMessageRegistryMain } from '../../common/plugin-api-rpc';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar/status-bar';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 
 export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistryMain, Disposable {
     private readonly delegate: StatusBar;
@@ -26,8 +27,11 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         Disposable.create(() => { /* mark as not disposed */ })
     );
 
+    protected readonly colorRegistry: ColorRegistry;
+
     constructor(container: interfaces.Container) {
         this.delegate = container.get(StatusBar);
+        this.colorRegistry = container.get(ColorRegistry);
     }
 
     dispose(): void {
@@ -45,7 +49,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
             text: text || '',
             priority,
             alignment: alignment === types.StatusBarAlignment.Left ? StatusBarAlignment.LEFT : StatusBarAlignment.RIGHT,
-            color,
+            color: color && (this.colorRegistry.getCurrentColor(color) || color),
             tooltip,
             command
         };
