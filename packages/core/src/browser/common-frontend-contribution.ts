@@ -757,6 +757,19 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'selection.background', defaults: { dark: '#217daf', light: '#c0dbf1' }, description: 'Overall border color for focused elements. This color is only used if not overridden by a component.' },
             { id: 'icon.foreground', defaults: { dark: '#C5C5C5', light: '#424242', hc: '#FFFFFF' }, description: 'The default color for icons in the workbench.' },
 
+            // Window border colors should be aligned with https://code.visualstudio.com/api/references/theme-color#window-border
+            {
+                id: 'window.activeBorder', defaults: {
+                    hc: 'contrastBorder'
+                }, description: 'The color used for the border of the window when it is active.'
+            },
+            {
+                id: 'window.inactiveBorder', defaults: {
+                    hc: 'contrastBorder'
+                },
+                description: 'The color used for the border of the window when it is inactive.'
+            },
+
             // Buttons should be aligned with https://code.visualstudio.com/api/references/theme-color#button-control
             // if not yet contributed by Monaco, check runtime css variables to learn
             { id: 'button.foreground', defaults: { dark: Color.white, light: Color.white, hc: Color.white }, description: 'Button foreground color.' },

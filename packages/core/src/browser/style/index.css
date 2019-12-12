@@ -28,6 +28,11 @@ body {
   font-family: var(--theia-ui-font-family);
   background: var(--theia-layout-color0);
   color: var(--theia-foreground);
+  border: 1px solid var(--theia-window-activeBorder);
+}
+body:window-inactive,
+body:-moz-window-inactive {
+  border-color: var(--theia-window-inactiveBorder);
 }
 
 a {
