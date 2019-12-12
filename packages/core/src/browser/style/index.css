@@ -30,6 +30,23 @@ body {
   color: var(--theia-foreground);
 }
 
+a {
+    color: var(--theia-textLink-foreground);
+}
+
+a:active, a:hover {
+    color: var(--theia-textLink-activeForeground);
+}
+
+code {
+    color: var(--theia-textPreformat-foreground);
+}
+
+blockquote {
+    color: var(--theia-textBlockQuote-background);
+    border: var(--theia-border-width) solid var(--theia-textBlockQuote-border);
+}
+
 .theia-maximized {
     position: fixed !important;
     top: 0 !important;
@@ -90,7 +107,6 @@ body {
 
 .p-Widget {
   font-size: var(--theia-ui-font-size1);
-  color: var(--theia-ui-font-color1);
 }
 
 .p-Widget.p-mod-hidden {

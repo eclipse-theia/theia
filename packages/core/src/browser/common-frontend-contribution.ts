@@ -758,6 +758,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'icon.foreground', defaults: { dark: '#C5C5C5', light: '#424242', hc: '#FFFFFF' }, description: 'The default color for icons in the workbench.' },
 
             // Buttons should be aligned with https://code.visualstudio.com/api/references/theme-color#button-control
+            // if not yet contributed by Monaco, check runtime css variables to learn
             { id: 'button.foreground', defaults: { dark: Color.white, light: Color.white, hc: Color.white }, description: 'Button foreground color.' },
             { id: 'button.background', defaults: { dark: '#0E639C', light: '#007ACC' }, description: 'Button background color.' },
             { id: 'button.hoverBackground', defaults: { dark: Color.lighten('button.background', 0.2), light: Color.darken('button.background', 0.2) }, description: 'Button background color when hovering.' },
