@@ -52,6 +52,17 @@ blockquote {
     border: var(--theia-border-width) solid var(--theia-textBlockQuote-border);
 }
 
+.theia-input {
+    background: var(--theia-input-background);
+    color: var(--theia-input-foreground);
+    border: var(--theia-border-width) solid var(--theia-input-border);
+    font-family: var(--theia-ui-font-family);
+}
+
+.theia-input::placeholder {
+    color: var(--theia-input-placeholderForeground);
+}
+
 .theia-maximized {
     position: fixed !important;
     top: 0 !important;
@@ -112,6 +123,10 @@ blockquote {
 
 .p-Widget {
   font-size: var(--theia-ui-font-size1);
+}
+
+.p-Widget .error {
+    color: var(--theia-errorForeground);
 }
 
 .p-Widget.p-mod-hidden {
@@ -195,10 +210,6 @@ select {
 
 select option {
     background: var(--theia-dropdown-listBackground);
-}
-
-textarea {
-  font-family: var(--theia-ui-font-family);
 }
 
 .theia-transparent-overlay {

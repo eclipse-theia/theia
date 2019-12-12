@@ -176,6 +176,7 @@ export class SearchBox extends BaseWidget {
         input.type = 'text';
         input.onkeydown = ev => this.handle.bind(this)(ev);
         input.classList.add(
+            'theia-input',
             SearchBox.Styles.SEARCH_INPUT
         );
         this.node.appendChild(input);
