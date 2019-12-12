@@ -66,7 +66,7 @@ export class FileTree extends TreeImpl {
         const id = this.toNodeId(uri, parent);
         const node = this.getNode(id);
         if (fileStat.isDirectory) {
-            if (DirNode.is(node)) {
+            if (DirNode.is(node) && icon === node.icon && name === node.name) {
                 node.fileStat = fileStat;
                 return node;
             }
@@ -77,7 +77,7 @@ export class FileTree extends TreeImpl {
                 children: []
             };
         }
-        if (FileNode.is(node)) {
+        if (FileNode.is(node) && icon === node.icon && name === node.name) {
             node.fileStat = fileStat;
             return node;
         }
