@@ -174,5 +174,5 @@
 }
 
 .monaco-scrollable-element > .shadow.top {
-    box-shadow: var(--theia-scrollbar-box-shadow-color) 0px 6px 6px -6px inset !important;
+    box-shadow: var(--theia-widget-shadow) 0px 6px 6px -6px inset !important;
 }
