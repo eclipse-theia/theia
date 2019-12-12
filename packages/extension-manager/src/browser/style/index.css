@@ -70,7 +70,7 @@
 }
 
 .extensionButton.installed {
-    background-color: var(--theia-error-color1);
+    background-color: var(--theia-editorError-foreground);
 }
 
 .extensionButton.outdated {

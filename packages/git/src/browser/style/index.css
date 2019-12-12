@@ -83,7 +83,7 @@
 }
 
 .theia-git .gitItem .status.deleted {
-    color: var(--theia-warn-color0);
+    color: var(--theia-editorWarning-foreground);
 }
 
 .theia-git .gitItem .status.renamed {
@@ -141,7 +141,7 @@
 }
 
 .theia-git-commit-message-warning {
-    border-color: var(--theia-warn-color0);
+    border-color: var(--theia-editorWarning-foreground);
 }
 
 .theia-git-commit-message-error {
@@ -169,7 +169,7 @@
 
 .theia-git-message-warning,
 .theia-git-validation-message-warning {
-    background-color: var(--theia-warn-color0) !important;
+    background-color: var(--theia-editorWarning-foreground) !important;
     color: var(--theia-warn-font-color0);
 }
 
