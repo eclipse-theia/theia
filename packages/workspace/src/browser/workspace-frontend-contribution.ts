@@ -58,6 +58,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const workspaceFolderCountKey = this.contextKeyService.createKey<number>('workspaceFolderCount', 0);
         const updateWorkspaceFolderCountKey = () => workspaceFolderCountKey.set(this.workspaceService.tryGetRoots().length);
         updateWorkspaceFolderCountKey();
+        this.updateStyles();
         this.workspaceService.onWorkspaceChanged(() => {
             updateWorkspaceFolderCountKey();
             this.updateStyles();

@@ -27,6 +27,7 @@ body {
   overflow: hidden;
   font-family: var(--theia-ui-font-family);
   background: var(--theia-layout-color0);
+  color: var(--theia-foreground);
 }
 
 .theia-maximized {
@@ -125,8 +126,8 @@ body {
 
 button.theia-button, .theia-button {
     border: none;
-    color: var(--theia-ui-button-font-color);
-    background-color: var(--theia-ui-button-color);
+    color: var(--theia-button-foreground);
+    background-color: var(--theia-button-background);
     min-width: 65px;
     outline: none;
     cursor: pointer;
@@ -138,7 +139,7 @@ button.theia-button, .theia-button {
 }
 
 button.theia-button:hover, .theia-button:hover, .theia-button:focus {
-  background-color: var(--theia-ui-button-color-hover);
+  background-color: var(--theia-button-hoverBackground);
 }
 
 button.secondary, .theia-button.secondary {

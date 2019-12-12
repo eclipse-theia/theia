@@ -739,15 +739,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-                placeholder: 'Select File Icon Theme',
-                fuzzyMatchLabel: true,
-                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-                onClose: () => {
-                    if (resetTo) {
-                        this.iconThemes.current = resetTo;
-                    }
+            placeholder: 'Select File Icon Theme',
+            fuzzyMatchLabel: true,
+            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+            onClose: () => {
+                if (resetTo) {
+                    this.iconThemes.current = resetTo;
                 }
-            });
+            }
+        });
     }
 
     registerColors(colors: ColorRegistry): void {
@@ -756,6 +756,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // if not yet contributed by Monaco, check runtime css variables to learn
             { id: 'selection.background', defaults: { dark: '#217daf', light: '#c0dbf1' }, description: 'Overall border color for focused elements. This color is only used if not overridden by a component.' },
             { id: 'icon.foreground', defaults: { dark: '#C5C5C5', light: '#424242', hc: '#FFFFFF' }, description: 'The default color for icons in the workbench.' },
+
+            // Buttons should be aligned with https://code.visualstudio.com/api/references/theme-color#button-control
+            { id: 'button.foreground', defaults: { dark: Color.white, light: Color.white, hc: Color.white }, description: 'Button foreground color.' },
+            { id: 'button.background', defaults: { dark: '#0E639C', light: '#007ACC' }, description: 'Button background color.' },
+            { id: 'button.hoverBackground', defaults: { dark: Color.lighten('button.background', 0.2), light: Color.darken('button.background', 0.2) }, description: 'Button background color when hovering.' },
 
             // Activity Bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#activity-bar
             { id: 'activityBar.background', defaults: { dark: '#333333', light: '#2C2C2C', hc: '#000000' }, description: 'Activity bar background color. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
@@ -911,20 +916,20 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 id: 'tab.hoverBackground',
                 description: 'Tab background color when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             }, {
-                id: 'tab.unfocusedHoverBackground', defaults: {
-                    dark: Color.transparent('tab.hoverBackground', 0.5),
-                    light: Color.transparent('tab.hoverBackground', 0.7)
-                }, description: 'Tab background color in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
-            },
+            id: 'tab.unfocusedHoverBackground', defaults: {
+                dark: Color.transparent('tab.hoverBackground', 0.5),
+                light: Color.transparent('tab.hoverBackground', 0.7)
+            }, description: 'Tab background color in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+        },
             {
                 id: 'tab.hoverBorder',
                 description: 'Border to highlight tabs when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             }, {
-                id: 'tab.unfocusedHoverBorder', defaults: {
-                    dark: Color.transparent('tab.hoverBorder', 0.5),
-                    light: Color.transparent('tab.hoverBorder', 0.7)
-                }, description: 'Border to highlight tabs in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
-            },
+            id: 'tab.unfocusedHoverBorder', defaults: {
+                dark: Color.transparent('tab.hoverBorder', 0.5),
+                light: Color.transparent('tab.hoverBorder', 0.7)
+            }, description: 'Border to highlight tabs in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+        },
             {
                 id: 'tab.activeModifiedBorder', defaults: {
                     dark: '#3399CC',
@@ -1007,6 +1012,23 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: Color.rgba(255, 255, 255, 0.12),
                     hc: Color.rgba(255, 255, 255, 0.12)
                 }, description: 'Status bar item background color when hovering. The status bar is shown in the bottom of the window.'
+            },
+
+            // Quickinput colors should be aligned with https://code.visualstudio.com/api/references/theme-color#quick-picker
+            // if not yet contributed by Monaco, check runtime css variables to learn.
+            {
+                id: 'quickInput.background', defaults: {
+                    dark: 'sideBar.background',
+                    light: 'sideBar.background',
+                    hc: 'sideBar.background'
+                }, description: 'Quick Input background color. The Quick Input widget is the container for views like the color theme picker.'
+            },
+            {
+                id: 'quickInput.foreground', defaults: {
+                    dark: 'sideBar.foreground',
+                    light: 'sideBar.foreground',
+                    hc: 'sideBar.foreground'
+                }, description: 'Quick Input foreground color. The Quick Input widget is the container for views like the color theme picker.'
             },
 
             // Panel colors should be aligned with https://code.visualstudio.com/api/references/theme-color#panel-colors
