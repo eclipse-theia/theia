@@ -115,7 +115,7 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
     getEncoding(uri: string): Promise<string>;
 
     /**
-     * Guess encoding of a given file besed on its content.
+     * Guess encoding of a given file based on its content.
      */
     guessEncoding(uri: string): Promise<string | undefined>;
 
