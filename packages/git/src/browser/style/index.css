@@ -50,19 +50,39 @@
     padding-right: var(--theia-ui-padding);
 }
 
+.theia-git .gitItem:hover {
+    background-color: var(--theia-list-hoverBackground);
+    color: var(--theia-list-hoverForeground);
+    cursor: pointer;
+}
+
+.theia-git:focus-within .gitItem:focus {
+    background: var(--theia-list-focusBackground);
+    color: var(--theia-list-focusForeground);
+}
+
+.theia-git:not(:focus-within) .gitItem:not(:focus) {
+    background: var(--theia-list-inactiveFocusBackground);
+}
+
+.theia-git:focus-within .gitItem.theia-mod-selected {
+    background: var(--theia-list-activeSelectionBackground);
+    color: var(--theia-list-activeSelectionForeground);
+}
+
+.theia-git:not(:focus-within) .gitItem.theia-mod-selected {
+    background: var(--theia-list-inactiveSelectionBackground);
+    color: var(--theia-list-inactiveSelectionForeground);
+}
+
 .theia-git .gitItem .file-icon {
     display: initial;
 }
 
-.theia-git .gitItem:hover {
-    background-color: var(--theia-layout-color2);
-    cursor: pointer;
-}
-
 .theia-git .gitItem .path {
-    color: var(--theia-ui-font-color2);
     font-size: var(--theia-ui-font-size0);
     margin-left: 3px;
+    opacity: .7;
 }
 
 .theia-git .gitItem .status {
@@ -71,125 +91,29 @@
 }
 
 .theia-git .gitItem .status.new {
-    color: var(--theia-success-color0);
+    color: var(--theia-gitDecoration-untrackedResourceForeground);
 }
 
 .theia-git .gitItem .status.new.staged {
-    color: var(--theia-success-color0);
+    color: var(--theia-gitDecoration-addedResourceForeground);
 }
 
 .theia-git .gitItem .status.modified {
-    color: var(--theia-brand-color0);
+    color: var(--theia-gitDecoration-modifiedResourceForeground);
 }
 
 .theia-git .gitItem .status.deleted {
-    color: var(--theia-editorWarning-foreground);
+    color: var(--theia-gitDecoration-deletedResourceForeground);
 }
 
 .theia-git .gitItem .status.renamed {
-    color: var(--theia-brand-color0);
+    color: var(--theia-gitDecoration-untrackedResourceForeground);
 }
 
 .theia-git .gitItem .status.conflicted {
-    color: var(--theia-error-color0);
+    color: var(--theia-gitDecoration-conflictingResourceForeground);
 }
 
 .theia-git .gitItem .status.copied {
-    color: var(--theia-brand-color0);
-}
-
-.theia-git div:focus .theia-mod-selected{
-    background: var(--theia-accent-color3);
-}
-
-.theia-git .theia-mod-selected{
-    background: var(--theia-accent-color4);
-}
-
-.theia-git-main-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-.theia-git-commit-message-container textarea {
-    line-height: var(--theia-content-line-height);
-    font-size: var(--theia-ui-font-size1);
-    color: var(--theia-ui-font-color1);
-    background: var(--theia-layout-color2);
-    border-style: solid;
-    border-width: 1px;
-    resize: none;
-    box-sizing: border-box;
-    padding-left: 4px;
-}
-
-.theia-git-commit-message {
-    width: 100%;
-}
-
-.theia-git-commit-message-idle {
-    border-color: var(--theia-border-color0);
-}
-
-.theia-git-commit-message-info {
-    border-color: var(--theia-info-color0);
-}
-
-.theia-git-commit-message-success {
-    border-color: var(--theia-success-color0);
-}
-
-.theia-git-commit-message-warning {
-    border-color: var(--theia-editorWarning-foreground);
-}
-
-.theia-git-commit-message-error {
-    border-color: var(--theia-error-color0) !important;
-}
-
-.theia-git-message,
-.theia-git-commit-validation-message {
-    padding: 4px 4px 4px 4px;
-}
-
-.theia-git-validation-message-idle {
-    background-color: var(--theia-border-color0) !important;
-}
-
-.theia-git-validation-message-info {
-    background-color: var(--theia-info-color0) !important;
-    color: var(--theia-info-font-color0);
-}
-
-.theia-git-validation-message-success {
-    background-color: var(--theia-success-color0) !important;
-    color: var(--theia-success-font-color0);
-}
-
-.theia-git-message-warning,
-.theia-git-validation-message-warning {
-    background-color: var(--theia-editorWarning-foreground) !important;
-    color: var(--theia-warn-font-color0);
-}
-
-.theia-git-validation-message-error {
-    background-color: var(--theia-error-color0) !important;
-    color: var(--theia-error-font-color0);
-}
-
-.git-tab-icon {
-    -webkit-mask: url('git.svg');
-    mask: url('git.svg');
-}
-
-.git-theia-header {
-    padding: 5px;
-    display: flex;
-    justify-content: space-between;
-}
-
-.git-theia-header:hover {
-    background-color: var(--theia-layout-color2);
-    cursor: pointer;
+    color: var(--theia-gitDecoration-modifiedResourceForeground);
 }

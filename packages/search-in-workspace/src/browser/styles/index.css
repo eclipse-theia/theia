@@ -219,18 +219,6 @@
     display:flex;
 }
 
-.t-siw-search-container .result .result-head .result-no {
-    background: var(--theia-ui-expand-button-color);
-    padding: 3px 8px;
-    border-radius: 7px;
-    font-size: var(--theia-ui-font-size0);
-}
-
-.t-siw-search-container .result .result-head .expand-icon {
-    margin: 0 3px;
-    width: 7px;
-}
-
 .t-siw-search-container .result .result-head .fa,
 .t-siw-search-container .result .result-head .theia-file-icons-js {
     margin: 0 3px;
