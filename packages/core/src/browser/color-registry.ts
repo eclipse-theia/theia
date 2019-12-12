@@ -21,7 +21,7 @@ import { Emitter } from '../common/event';
 /**
  * Either be a reference to an existing color or a color value as a hex string, rgba, or hsla.
  */
-export type Color = string | RGBA | HSLA | TransparentColor;
+export type Color = string | RGBA | HSLA | ColorTransformation;
 export namespace Color {
     export function rgba(r: number, g: number, b: number, a: number = 1): Color {
         return { r, g, b, a };
@@ -31,11 +31,18 @@ export namespace Color {
     }
     export const white = rgba(255, 255, 255, 1);
     export const black = rgba(0, 0, 0, 1);
-    export function transparent(v: string, f: number): TransparentColor {
-        return { v, f };
+    export function transparent(v: string, f: number): ColorTransformation {
+        return { v, f, kind: 'transparent' };
+    }
+    export function lighten(v: string, f: number): ColorTransformation {
+        return { v, f, kind: 'lighten' };
+    }
+    export function darken(v: string, f: number): ColorTransformation {
+        return { v, f, kind: 'darken' };
     }
 }
-export interface TransparentColor {
+export interface ColorTransformation {
+    kind: 'transparent' | 'lighten' | 'darken'
     v: string
     f: number
 }

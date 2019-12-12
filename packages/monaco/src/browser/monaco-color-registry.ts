@@ -51,8 +51,8 @@ export class MonacoColorRegistry extends ColorRegistry {
         if (!value || typeof value === 'string') {
             return value;
         }
-        if ('v' in value) {
-            return monaco.color.transparent(value.v, value.f);
+        if ('kind' in value) {
+            return monaco.color[value.kind](value.v, value.f);
         } else if ('r' in value) {
             const { r, g, b, a } = value;
             return new monaco.color.Color(new monaco.color.RGBA(r, g, b, a));
