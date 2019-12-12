@@ -23,11 +23,16 @@ import { Readable, Writable } from 'stream';
 import { exec } from 'child_process';
 import * as fs from 'fs';
 
-export interface IProcessExitEvent {
-    // Exactly one of code and signal will be set.
-    readonly code?: number,
-    readonly signal?: string
-}
+/**
+ * Exactly one of `code` and `signal` will be set.
+ */
+export type IProcessExitEvent = {
+    readonly code: number
+    readonly signal: undefined
+} | {
+    readonly code: undefined
+    readonly signal: string
+};
 
 /**
  * Data emitted when a process has been successfully started.
@@ -39,7 +44,7 @@ export interface IProcessStartEvent {
  * Data emitted when a process has failed to start.
  */
 export interface ProcessErrorEvent extends Error {
-    /** An errno-like error string (e.g. ENOENT).  */
+    /** An errno-like error string (e.g. ENOENT). */
     code: string;
 }
 
@@ -155,7 +160,10 @@ export abstract class Process {
      * Emit the onExit event for this process.  Only one of code and signal
      * should be defined.
      */
-    protected emitOnExit(code?: number, signal?: string): void {
+    protected emitOnExit(code: number, signal: undefined): void;
+    protected emitOnExit(code: undefined, signal: string): void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected emitOnExit(code: any, signal: any): void {
         const exitEvent: IProcessExitEvent = { code, signal };
         this.handleOnExit(exitEvent);
         this.exitEmitter.fire(exitEvent);
@@ -165,7 +173,10 @@ export abstract class Process {
      * Emit the onClose event for this process.  Only one of code and signal
      * should be defined.
      */
-    protected emitOnClose(code?: number, signal?: string): void {
+    protected emitOnClose(code: number, signal: undefined): void;
+    protected emitOnClose(code: undefined, signal: string): void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected emitOnClose(code: any, signal: any): void {
         this.closeEmitter.fire({ code, signal });
     }
 

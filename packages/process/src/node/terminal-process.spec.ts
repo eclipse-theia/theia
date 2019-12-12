@@ -117,9 +117,9 @@ if (process.platform !== 'win32' || process.env.THEIA_PROCESS_TEST_OVERRIDE) {
 
         this.timeout(20_000);
 
-        interface ProcessExit extends IProcessExitEvent {
+        type ProcessExit = IProcessExitEvent & {
             output: string;
-        }
+        };
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async function checkOutput(proc: TerminalProcess, pattern?: RegExp): Promise<ProcessExit> {

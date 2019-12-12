@@ -124,19 +124,25 @@ export class RawProcess extends Process {
             this.process.on('exit', (exitCode, signal) => {
                 // node's child_process exit sets the unused parameter to null,
                 // but we want it to be undefined instead.
-                this.emitOnExit(
-                    typeof exitCode === 'number' ? exitCode : undefined,
-                    typeof signal === 'string' ? signal : undefined,
-                );
+                if (typeof exitCode === 'number') {
+                    this.emitOnClose(exitCode, undefined);
+                } else if (typeof signal === 'string') {
+                    this.emitOnClose(undefined, signal);
+                } else {
+                    throw new Error(`exit: nor exitCode(${typeof exitCode}) nor signal(${typeof signal}) has a valid type.`);
+                }
             });
 
             this.process.on('close', (exitCode, signal) => {
                 // node's child_process exit sets the unused parameter to null,
                 // but we want it to be undefined instead.
-                this.emitOnClose(
-                    typeof exitCode === 'number' ? exitCode : undefined,
-                    typeof signal === 'string' ? signal : undefined,
-                );
+                if (typeof exitCode === 'number') {
+                    this.emitOnExit(exitCode, undefined);
+                } else if (typeof signal === 'string') {
+                    this.emitOnExit(undefined, signal);
+                } else {
+                    throw new Error(`close: nor exitCode(${typeof exitCode}) nor signal(${typeof signal}) has a valid type.`);
+                }
             });
 
             if (this.process.pid !== undefined) {
