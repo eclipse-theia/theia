@@ -67,14 +67,6 @@
     background-color: var(--theia-error-color2) !important;
 }
 
-.theia-scm div:focus .theia-mod-selected {
-    background: var(--theia-accent-color3);
-}
-
-.theia-scm .theia-mod-selected{
-    background: var(--theia-accent-color4);
-}
-
 .theia-scm-main-container {
     display: flex;
     flex-direction: column;
@@ -186,19 +178,39 @@
     padding: 0px calc(var(--theia-ui-padding)/2);
 }
 
+.theia-scm .scmItem:hover {
+    background-color: var(--theia-list-hoverBackground);
+    color: var(--theia-list-hoverForeground);
+    cursor: pointer;
+}
+
+.theia-scm:focus-within .scmItem:focus {
+    background: var(--theia-list-focusBackground);
+    color: var(--theia-list-focusForeground);
+}
+
+.theia-scm:not(:focus-within) .scmItem:not(:focus) {
+    background: var(--theia-list-inactiveFocusBackground);
+}
+
+.theia-scm:focus-within .scmItem.theia-mod-selected {
+    background: var(--theia-list-activeSelectionBackground);
+    color: var(--theia-list-activeSelectionForeground);
+}
+
+.theia-scm:not(:focus-within) .scmItem.theia-mod-selected {
+    background: var(--theia-list-inactiveSelectionBackground);
+    color: var(--theia-list-inactiveSelectionForeground);
+}
+
 .theia-scm .scmItem .file-icon {
     display: initial;
 }
 
-.theia-scm .scmItem:hover {
-    background-color: var(--theia-layout-color2);
-    cursor: pointer;
-}
-
 .theia-scm .scmItem .path {
-    color: var(--theia-ui-font-color2);
     font-size: var(--theia-ui-font-size0);
     margin-left: var(--theia-ui-padding);
+    opacity: .7;
 }
 
 .theia-scm .scmItem .status {
@@ -218,7 +230,8 @@
 }
 
 .scm-theia-header:hover {
-    background-color: var(--theia-layout-color2);
+    background-color: var(--theia-list-hoverBackground);
+    color: var(--theia-list-hoverForeground);
     cursor: pointer;
 }
 

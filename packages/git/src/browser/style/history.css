@@ -18,7 +18,7 @@
     margin: 3px 0;
 }
 
-.theia-git .commitListElement.first .containerHead{
+.theia-git .commitListElement.first .containerHead {
     border: none;
 }
 
@@ -27,11 +27,22 @@
     height: 50px;
     display: flex;
     align-items: center;
-    border-top: 1px solid var(--theia-layout-color4);
+    border-top: 1px solid var(--theia-contrastBorder);
 }
 
 .theia-git .commitListElement .containerHead:hover {
+    background-color: var(--theia-list-hoverBackground);
+    color: var(--theia-list-hoverForeground);
     cursor: pointer;
+}
+
+.theia-git:focus-within .commitListElement .containerHead.theia-mod-selected {
+    background: var(--theia-list-focusBackground);
+    color: var(--theia-list-focusForeground);
+}
+
+.theia-git:not(:focus-within) .commitListElement .containerHead.theia-mod-selected {
+    background: var(--theia-list-inactiveFocusBackground);
 }
 
 .theia-git .commitListElement .containerHead .headContent {
@@ -73,16 +84,16 @@
     visibility: visible;
 }
 
-.theia-git .commitListElement .containerHead .headContent .expansionToggle > .toggle{
+.theia-git .commitListElement .containerHead .headContent .expansionToggle > .toggle {
     display: flex;
-    background: var(--theia-ui-expand-button-color);
+    background: var(--theia-list-focusBackground);
     padding: 5px;
     border-radius: 7px;
     margin-left: 5px;
     align-items: center;
     justify-content: flex-end;
     min-width: 30px;
-    color: var(--theia-ui-expand-button-font-color);
+    color: var(--theia-theia-list-focusForeground);
 }
 
 .theia-git .commitBody {
@@ -94,7 +105,7 @@
 }
 
 .theia-git .commitTime {
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-descriptionForeground);
     font-size: smaller;
 }
 
@@ -106,57 +117,6 @@
 .theia-git .git-diff-container .listContainer .commitList {
     height: 100%;
 }
-
-.theia-git .git-diff-container .history-lazy-loading {
-    position: absolute;
-    height: 50px;
-    width: 100%;
-    bottom: -80px;
-    opacity: 0;
-    font-weight: bold;
-    justify-content: center;
-    align-items: center;
-    display: flex;
-    background: var(--theia-layout-color4);
-    border: var(--theia-border-width) var(--theia-border-color2) solid;
-    box-sizing: border-box;
-}
-
-.theia-git .git-diff-container .history-lazy-loading.show {
-    bottom: 0px;
-    opacity:0;
-    animation: showFrames ease-out 0.2s forwards;
-    -webkit-animation: showFrames ease-out 0.2s forwards;
-  }
-
-  @keyframes showFrames{
-    0% {
-      opacity:0;
-      bottom:-80px  ;
-    }
-    100% {
-      opacity:1;
-      bottom:0px;
-    }
-  }
-
-.theia-git .git-diff-container .history-lazy-loading.hide {
-    bottom: 80px;
-    opacity:1;
-    animation: hideFrames ease-out 0.2s forwards;
-    -webkit-animation: hideFrames ease-out 0.2s forwards;
-  }
-
-  @keyframes hideFrames{
-    0% {
-      opacity:1;
-      bottom:  0px  ;
-    }
-    100% {
-      opacity:0;
-      bottom: -80px  ;
-    }
-  }
 
 .theia-git .git-diff-container .subject {
     font-size: var(--theia-ui-font-size2);
