@@ -23,8 +23,9 @@
     align-items: baseline;
     box-shadow: var(--theia-border-width) var(--theia-border-width) var(--theia-border-color0);
     line-height: var(--theia-private-horizontal-tab-height);
-    background-color: var(--theia-editorWidget-background);
+    background-color: var(--theia-editor-background);
     z-index: 1;
+    border: var(--theia-border-width) solid var(--theia-editor-background)
 }
   
 .theia-search-input {
