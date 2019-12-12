@@ -37,7 +37,8 @@
 }
 
 .monaco-quick-open-widget {
-    background-color: var(--theia-layout-color1) !important;
+    background-color: var(--theia-quickInput-background) !important;
+    color: var(--theia-quickInput-foreground) !important;
 }
 
 .quick-open-entry .quick-open-row .monaco-icon-label .monaco-icon-label-description-container .monaco-highlighted-label .highlight {
