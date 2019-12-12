@@ -370,6 +370,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderSearchField(): React.ReactNode {
         const input = <input
             id='search-input-field'
+            className='theia-input'
             title='Search'
             type='text'
             size={1}
@@ -411,6 +412,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         return <div className={`replace-field${this.showReplaceField ? '' : ' hidden'}`}>
             <input
                 id='replace-input-field'
+                className='theia-input'
                 title='Replace'
                 type='text'
                 size={1}
@@ -503,6 +505,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         return <div className='glob-field'>
             <div className='label'>{'files to ' + kind}</div>
             <input
+                className='theia-input'
                 type='text'
                 size={1}
                 defaultValue={value}

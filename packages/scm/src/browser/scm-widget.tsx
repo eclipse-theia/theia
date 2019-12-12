@@ -204,7 +204,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         const message = format(input.placeholder || '', keybinding);
         return <div className={ScmWidget.Styles.INPUT_MESSAGE_CONTAINER}>
             <TextareaAutosize
-                className={`${ScmWidget.Styles.INPUT_MESSAGE} theia-scm-input-message-${validationStatus}`}
+                className={`${ScmWidget.Styles.INPUT_MESSAGE} theia-input theia-scm-input-message-${validationStatus}`}
                 id={ScmWidget.Styles.INPUT_MESSAGE}
                 placeholder={message}
                 autoFocus={true}

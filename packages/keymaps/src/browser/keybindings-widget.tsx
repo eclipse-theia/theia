@@ -305,7 +305,7 @@ export class KeybindingWidget extends ReactWidget {
             <div className='search-kb-container'>
                 <input
                     id='search-kb'
-                    className={(this.items.length > 0) ? '' : 'no-kb'}
+                    className={`theia-input${(this.items.length > 0) ? '' : ' no-kb'}`}
                     type='text'
                     placeholder='Search keybindings'
                     autoComplete='off'

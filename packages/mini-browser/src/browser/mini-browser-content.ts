@@ -454,6 +454,7 @@ export class MiniBrowserContent extends BaseWidget {
     protected createInput(parent: HTMLElement): HTMLInputElement {
         const input = document.createElement('input');
         input.type = 'text';
+        input.classList.add('theia-input');
         this.toDispose.pushAll([
             addEventListener(input, 'keydown', this.handleInputChange.bind(this)),
             addEventListener(input, 'click', () => {

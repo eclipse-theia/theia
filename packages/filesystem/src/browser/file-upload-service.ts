@@ -61,9 +61,11 @@ export class FileUploadService {
         const targetInput = document.createElement('input');
         targetInput.type = 'text';
         targetInput.name = FileUploadService.TARGET;
+        targetInput.classList.add('theia-input');
 
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
+        fileInput.classList.add('theia-input');
         fileInput.name = FileUploadService.UPLOAD;
         fileInput.multiple = true;
 
