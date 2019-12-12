@@ -127,7 +127,7 @@ export class ColorRegistry {
     }
 
     toCssVariableName(id: string, prefix = 'theia'): string {
-        return `--${prefix}-${id.replace('.', '-')}`;
+        return `--${prefix}-${id.replace(/\./g, '-')}`;
     }
 
     getCurrentColor(id: string): string | undefined {

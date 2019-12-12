@@ -1173,6 +1173,180 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'welcomePage.buttonBackground', defaults: { dark: Color.rgba(0, 0, 0, .2), light: Color.rgba(0, 0, 0, .04), hc: Color.black }, description: 'Background color for the buttons on the Welcome page.' },
             { id: 'welcomePage.buttonHoverBackground', defaults: { dark: Color.rgba(200, 235, 255, .072), light: Color.rgba(0, 0, 0, .10) }, description: 'Hover background color for the buttons on the Welcome page.' },
             { id: 'walkThrough.embeddedEditorBackground', defaults: { dark: Color.rgba(0, 0, 0, .4), light: '#f4f4f4' }, description: 'Background color for the embedded editors on the Interactive Playground.' },
+
+            // Theia Variable colors
+            {
+                id: 'variable.name.color', defaults: {
+                    dark: '#C586C0',
+                    light: '#9B46B0',
+                    hc: '#C586C0'
+                },
+                description: 'Color of a variable name.'
+            },
+            {
+                id: 'variable.value.color', defaults: {
+                    dark: Color.rgba(204, 204, 204, 0.6),
+                    light: Color.rgba(108, 108, 108, 0.8),
+                    hc: Color.rgba(204, 204, 204, 0.6)
+                },
+                description: 'Color of a variable value.'
+            },
+            {
+                id: 'variable.number.variable.color', defaults: {
+                    dark: '#B5CEA8',
+                    light: '#09885A',
+                    hc: '#B5CEA8'
+                },
+                description: 'Value color of a number variable'
+            },
+            {
+                id: 'variable.boolean.variable.color', defaults: {
+                    dark: '#4E94CE',
+                    light: '#0000FF',
+                    hc: '#4E94CE'
+                },
+                description: 'Value color of a boolean variable'
+            },
+            {
+                id: 'variable.string.variable.color', defaults: {
+                    dark: '#CE9178',
+                    light: '#A31515',
+                    hc: '#CE9178'
+                },
+                description: 'Value color of a string variable'
+            },
+
+            // Theia ANSI colors
+            {
+                id: 'ansi.black.color', defaults: {
+                    dark: '#A0A0A0',
+                    light: Color.rgba(128, 128, 128),
+                    hc: '#A0A0A0'
+                },
+                description: 'ANSI black color'
+            },
+            {
+                id: 'ansi.red.color', defaults: {
+                    dark: '#A74747',
+                    light: '#BE1717',
+                    hc: '#A74747'
+                },
+                description: 'ANSI red color'
+            },
+            {
+                id: 'ansi.green.color', defaults: {
+                    dark: '#348F34',
+                    light: '#338A2F',
+                    hc: '#348F34'
+                },
+                description: 'ANSI green color'
+            },
+            {
+                id: 'ansi.yellow.color', defaults: {
+                    dark: '#5F4C29',
+                    light: '#BEB817',
+                    hc: '#5F4C29'
+                },
+                description: 'ANSI yellow color'
+            },
+            {
+                id: 'ansi.blue.color', defaults: {
+                    dark: '#6286BB',
+                    light: Color.rgba(0, 0, 139),
+                    hc: '#6286BB'
+                },
+                description: 'ANSI blue color'
+            },
+            {
+                id: 'ansi.magenta.color', defaults: {
+                    dark: '#914191',
+                    light: Color.rgba(139, 0, 139),
+                    hc: '#914191'
+                },
+                description: 'ANSI magenta color'
+            },
+            {
+                id: 'ansi.cyan.color', defaults: {
+                    dark: '#218D8D',
+                    light: Color.rgba(0, 139, 139),
+                    hc: '#218D8D'
+                },
+                description: 'ANSI cyan color'
+            },
+            {
+                id: 'ansi.white.color', defaults: {
+                    dark: '#707070',
+                    light: '#BDBDBD',
+                    hc: '#707070'
+                },
+                description: 'ANSI white color'
+            },
+
+            // Theia ANSI background colors
+            {
+                id: 'ansi.black.background.color', defaults: {
+                    dark: '#A0A0A0',
+                    light: Color.rgba(128, 128, 128),
+                    hc: '#A0A0A0'
+                },
+                description: 'ANSI black background color'
+            },
+            {
+                id: 'ansi.red.background.color', defaults: {
+                    dark: '#A74747',
+                    light: '#BE1717',
+                    hc: '#A74747'
+                },
+                description: 'ANSI red background color'
+            },
+            {
+                id: 'ansi.green.background.color', defaults: {
+                    dark: '#348F34',
+                    light: '#338A2F',
+                    hc: '#348F34'
+                },
+                description: 'ANSI green background color'
+            },
+            {
+                id: 'ansi.yellow.background.color', defaults: {
+                    dark: '#5F4C29',
+                    light: '#BEB817',
+                    hc: '#5F4C29'
+                },
+                description: 'ANSI yellow background color'
+            },
+            {
+                id: 'ansi.blue.background.color', defaults: {
+                    dark: '#6286BB',
+                    light: Color.rgba(0, 0, 139),
+                    hc: '#6286BB'
+                },
+                description: 'ANSI blue background color'
+            },
+            {
+                id: 'ansi.magenta.background.color', defaults: {
+                    dark: '#914191',
+                    light: Color.rgba(139, 0, 139),
+                    hc: '#914191'
+                },
+                description: 'ANSI magenta background color'
+            },
+            {
+                id: 'ansi.cyan.background.color', defaults: {
+                    dark: '#218D8D',
+                    light: Color.rgba(0, 139, 139),
+                    hc: '#218D8D'
+                },
+                description: 'ANSI cyan background color'
+            },
+            {
+                id: 'ansi.white.background.color', defaults: {
+                    dark: '#707070',
+                    light: '#BDBDBD',
+                    hc: '#707070'
+                },
+                description: 'ANSI white background color'
+            }
         );
     }
 }
