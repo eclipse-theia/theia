@@ -312,11 +312,11 @@ const darkCss = require('../../src/browser/style/debug-dark.useable.css');
 const lightCss = require('../../src/browser/style/debug-bright.useable.css');
 
 function updateTheme(): void {
-    const theme = ThemeService.get().getCurrentTheme().id;
-    if (theme === 'dark') {
+    const themeType = ThemeService.get().getCurrentTheme().type;
+    if (themeType === 'dark' || themeType === 'hc' ) {
         lightCss.unuse();
         darkCss.use();
-    } else if (theme === 'light') {
+    } else if (themeType === 'light') {
         darkCss.unuse();
         lightCss.use();
     }
