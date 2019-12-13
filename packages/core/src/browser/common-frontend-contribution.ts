@@ -756,7 +756,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // if not yet contributed by Monaco, check runtime css variables to learn
             { id: 'selection.background', defaults: { dark: '#217daf', light: '#c0dbf1' }, description: 'Overall border color for focused elements. This color is only used if not overridden by a component.' },
             { id: 'icon.foreground', defaults: { dark: '#C5C5C5', light: '#424242', hc: '#FFFFFF' }, description: 'The default color for icons in the workbench.' },
-            { id: 'contrastBorder', defaults: { hc: '#6FC3DF' }, description: 'An extra border around elements to separate them from others for greater contrast.' },
 
             // Window border colors should be aligned with https://code.visualstudio.com/api/references/theme-color#window-border
             {
@@ -1360,44 +1359,44 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // Theia defaults
             // Buttons
             {
-                id: 'button.secondary.foreground',
+                id: 'secondaryButton.foreground',
                 defaults: {
-                    dark: Color.white,
-                    light: Color.white,
-                    hc: Color.white
+                    dark: 'button.foreground',
+                    light: 'button.foreground',
+                    hc: 'button.foreground'
                 }, description: 'Foreground color of secondary buttons.'
             },
             {
-                id: 'button.secondary.disabled.foreground',
+                id: 'secondaryButton.disabledForeground',
                 defaults: {
-                    dark: Color.white,
-                    light: Color.white,
-                    hc: Color.white
+                    dark: Color.transparent('secondaryButton.foreground', 0.5),
+                    light: Color.transparent('secondaryButton.foreground', 0.5),
+                    hc: Color.transparent('secondaryButton.foreground', 0.5),
                 }, description: 'Foreground color of secondary buttons.'
             },
             {
-                id: 'button.secondary.background',
+                id: 'secondaryButton.background',
                 defaults: {
                     dark: Color.lighten('button.background', 0.5),
                     light: Color.lighten('button.background', 0.5)
                 }, description: 'Background color of secondary buttons.'
             },
             {
-                id: 'button.secondary.hoverBackground',
+                id: 'secondaryButton.hoverBackground',
                 defaults: {
-                    dark: Color.lighten('button.secondary.background', 0.2),
-                    light: Color.lighten('button.secondary.background', 0.2)
+                    dark: Color.lighten('secondaryButton.background', 0.2),
+                    light: Color.lighten('secondaryButton.background', 0.2)
                 }, description: 'Background color when hovering secondary buttons.'
             },
             {
-                id: 'button.secondary.disabled.background',
+                id: 'secondaryButton.disabledBackground',
                 defaults: {
-                    dark: Color.transparent('button.secondary.background', 0.6),
-                    light: Color.transparent('button.secondary.background', 0.6)
+                    dark: Color.transparent('secondaryButton.background', 0.6),
+                    light: Color.transparent('secondaryButton.background', 0.6)
                 }, description: 'Background color when hovering secondary buttons.'
             },
             {
-                id: 'button.disabled.foreground',
+                id: 'button.disabledForeground',
                 defaults: {
                     dark: Color.transparent('button.foreground', 0.5),
                     light: Color.transparent('button.foreground', 0.5),
@@ -1405,7 +1404,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }, description: 'Foreground color of secondary buttons.'
             },
             {
-                id: 'button.disabled.background',
+                id: 'button.disabledBackground',
                 defaults: {
                     dark: Color.transparent('button.background', 0.5),
                     light: Color.transparent('button.background', 0.5)

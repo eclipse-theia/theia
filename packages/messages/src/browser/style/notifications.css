@@ -271,7 +271,6 @@
 
 .theia-notification-list-scroll-container .ps__rail-y {
     width: var(--theia-scrollbar-rail-width);
-    background: var(--theia-scrollbar-rail-color);
 }
 
 .theia-notification-list-scroll-container .ps__rail-y:hover > .ps__thumb-y,
@@ -284,6 +283,6 @@
 .theia-notification-list-scroll-container .ps__rail-y > .ps__thumb-y {
     width: var(--theia-scrollbar-width);
     right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
-    background: var(--theia-scrollbar-thumb-color);
+    background: var(--theia-scrollbarSlider-background);
     border-radius: 0px;
 }

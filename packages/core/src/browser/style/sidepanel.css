@@ -183,7 +183,7 @@
   z-index: 1000;
 }
 
-.p-TabBar.theia-app-sides > .ps__rail-y  >.ps__thumb-y {
+#theia-app-shell .p-TabBar.theia-app-sides > .ps__rail-y  >.ps__thumb-y {
   width: var(--theia-private-sidebar-scrollbar-width);
   right: calc((var(--theia-private-sidebar-scrollbar-rail-width) - var(--theia-private-sidebar-scrollbar-width)) / 2);
 }
