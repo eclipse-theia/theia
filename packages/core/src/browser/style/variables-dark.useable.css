@@ -194,28 +194,9 @@ is not optimized for dense, information rich UIs.
   /* Scrollbars */
   --theia-scrollbar-width: 10px;
   --theia-scrollbar-rail-width: 10px;
-  --theia-scrollbar-thumb-color: hsla(0,0%,39%,.4);
-  --theia-scrollbar-rail-color: transparent;
-  --theia-scrollbar-active-thumb-color: hsla(0,0%,61%,.4);
-  --theia-scrollbar-active-rail-color: transparent;
-  --theia-scrollbar-box-shadow-color: #000;
-
-  /* Menu */
-  --theia-menu-color0: var(--theia-layout-color4);
-  --theia-menu-color1: var(--theia-layout-color4);
-  --theia-menu-color2: var(--theia-layout-color1);
 
   /* Statusbar */
-  --theia-statusbar-color: var(--theia-brand-color0);
-  --theia-statusBar-font-color: var(--theia-ui-font-color0);
   --theia-statusBar-font-size: 12px;
-
-  /* Dialogs */
-  --theia-ui-dialog-header-color: var(--theia-brand-color0);
-  --theia-ui-dialog-header-font-color: var(--theia-ui-font-color1);
-
-  /* Output */
-  --theia-output-font-color: var(--theia-ui-font-color1);
 
   /* Opacity for disabled mod  */
   --theia-mod-disabled-opacity: 0.4;
