@@ -33,7 +33,7 @@
 
 .p-TabBar.theia-app-sides {
   display: block;
-  color: var(--theia-tab-font-color);
+  color: var(--theia-activityBar-foreground);
   background: var(--theia-activityBar-background);
   font-size: var(--theia-ui-font-size1);
   min-width: var(--theia-private-sidebar-tab-width);
@@ -72,7 +72,7 @@
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tab.p-mod-current {
-  color: var(--theia-tab-font-color);
+  color: var(--theia-activityBar-foreground);
   opacity: 1.0;
   background: none;
   min-height: var(--theia-private-sidebar-tab-height);

@@ -221,7 +221,7 @@
 }
 
 .t-siw-search-container .result .result-head .file-path {
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-descriptionForeground);
     font-size: var(--theia-ui-font-size0);
     margin-left: 3px;
 }
@@ -378,11 +378,11 @@
 }
 
 .t-siw-search-container .searchHeader .search-info {
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-descriptionForeground);
     margin-left: 17px;
 }
 
 .theia-siw-lineNumber {
-    color:  var(--theia-ui-font-color2);
+    color:  var(--theia-descriptionForeground);
     padding-right: 4px;
 }

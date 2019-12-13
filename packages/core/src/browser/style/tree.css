@@ -94,7 +94,7 @@
 }
 
 .theia-TreeNode.theia-mod-not-selectable {
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-descriptionForeground);
 }
 .theia-TreeNode.theia-mod-not-selectable:hover {
     background: none;

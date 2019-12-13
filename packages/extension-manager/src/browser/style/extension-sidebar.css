@@ -41,7 +41,6 @@
     line-height: var(--theia-content-line-height);
     border-width: 1px;
     border-style: solid;
-    border-color: var(--theia-border-color1);
     background: var(--theia-layout-color2);
     padding-left: 5px;
 }

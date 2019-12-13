@@ -58,7 +58,7 @@ export class PreferencesDecorator implements TreeDecorator {
                     },
                     {
                         data: ' ' + description,
-                        fontData: { color: 'var(--theia-ui-font-color2)' }
+                        fontData: { color: 'var(--theia-descriptionForeground)' }
                     }]
             }] as [string, TreeDecoration.Data];
         }));

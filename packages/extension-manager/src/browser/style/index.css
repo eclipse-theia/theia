@@ -44,7 +44,6 @@
     background-color: var(--theia-success-color1);
     padding: 2px;
     box-sizing: border-box;
-    color: var(--theia-ui-icon-font-color);
     width: 65px;
     text-align: center;
     font-size: var(--theia-ui-font-size0);

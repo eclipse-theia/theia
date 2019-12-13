@@ -23,9 +23,6 @@ is not optimized for dense, information rich UIs.
 
   --theia-border-width: 1px;
   --theia-panel-border-width: 2px;
-  --theia-border-color0: var(--md-grey-900);
-  --theia-border-color1: var(--md-grey-800);
-  --theia-border-color3: var(--md-grey-400);
 
 
   /* UI fonts: Family, size and color (bright to dark)
@@ -42,30 +39,12 @@ is not optimized for dense, information rich UIs.
   --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
   --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
-  /* deprecated ui font colors */
-  --theia-ui-font-color2: var(--md-grey-500);
-  --theia-ui-font-color3: var(--theia-badge-background);
-
-  /* Special font colors */
-
-  --theia-ui-icon-font-color: #d4d4d4;
-
-  /* Use the inverse UI colors against the brand/accent/warn/error colors. */
-
-  --theia-inverse-ui-font-color0: rgba(0,0,0,1.0);
-  --theia-inverse-ui-font-color2: rgba(0,0,0,0.7);
-  --theia-inverse-ui-font-color3: rgba(0,0,0,0.5);
-
   /* Content fonts: Family, size and color (bright to dark)
      Content font variables are used for typography of user-generated content.
   */
 
   --theia-content-font-size: 13px;
   --theia-content-line-height: 22px;
-  --theia-content-font-color0: white;
-  --theia-content-font-color1: white;
-  --theia-content-font-color2: var(--md-grey-500);
-  --theia-content-font-color3: var(--md-grey-700);
 
   --theia-code-font-size: 13px;
   --theia-code-line-height: 17px;
@@ -73,9 +52,6 @@ is not optimized for dense, information rich UIs.
   --theia-code-font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
   --theia-terminal-font-family: monospace;
   --theia-ui-padding: 6px;
-
-  /* Tab Colors */
-  --theia-tab-font-color: #FFF;
 
   /* Main layout colors (dark to bright)
     ------------------------------------ */

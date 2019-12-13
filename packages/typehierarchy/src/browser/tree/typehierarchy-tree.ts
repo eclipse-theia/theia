@@ -161,7 +161,7 @@ export namespace TypeHierarchyTree {
             const captionSuffixes: TreeDecoration.CaptionAffix[] = [{
                 data: new URI(item.uri).displayName,
                 fontData: {
-                    color: 'var(--theia-ui-font-color2)',
+                    color: 'var(--theia-descriptionForeground)',
                 }
             }];
             if (item.detail) {

@@ -53,7 +53,7 @@
 
 .theia-source-breakpoint .path {
     font-size: var(--theia-ui-font-size0);
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-descriptionForeground);
 }
 
 .theia-source-breakpoint .line-info {
@@ -65,8 +65,8 @@
 
 .theia-source-breakpoint .line,
 .theia-debug-stack-frame .line {
-    background: var(--theia-ui-font-color2);
-    color: var(--theia-inverse-ui-font-color0);
+    background: var(--theia-descriptionForeground);
+    color: var(--theia-editor-background);
     padding: calc(var(--theia-ui-padding)/3);
     font-size: var(--theia-ui-font-size0);
     line-height: calc(var(--theia-private-horizontal-tab-height)/2);
