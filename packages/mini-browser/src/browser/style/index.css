@@ -69,7 +69,7 @@
 }
 
 .theia-mini-browser-toolbar-read-only .theia-input:hover {
-    color: var(--theia-ui-button-color-hover);
+    color: var(--theia-button-hoverBackground);
 }
 
 .theia-mini-browser-button {
