@@ -89,8 +89,8 @@
 }
 
 .modal-Notification .buttons > button {
-    background-color: var(--theia-ui-button-color);
-    color: var(--theia-ui-button-font-color);
+    background-color: var(--theia-button-background);
+    color: var(--theia-button-foreground);
     border: none;
     border-radius: 0;
     text-align: center;
@@ -104,5 +104,5 @@
 }
 
 .modal-Notification .buttons > button:hover {
-    background-color: var(--theia-accent-color1);
+    background-color: var(--theia-button-hoverBackground);
 }

@@ -1355,6 +1355,61 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: '#707070'
                 },
                 description: 'ANSI white background color'
+            },
+
+            // Theia defaults
+            // Buttons
+            {
+                id: 'button.secondary.foreground',
+                defaults: {
+                    dark: Color.white,
+                    light: Color.white,
+                    hc: Color.white
+                }, description: 'Foreground color of secondary buttons.'
+            },
+            {
+                id: 'button.secondary.disabled.foreground',
+                defaults: {
+                    dark: Color.white,
+                    light: Color.white,
+                    hc: Color.white
+                }, description: 'Foreground color of secondary buttons.'
+            },
+            {
+                id: 'button.secondary.background',
+                defaults: {
+                    dark: Color.lighten('button.background', 0.5),
+                    light: Color.lighten('button.background', 0.5)
+                }, description: 'Background color of secondary buttons.'
+            },
+            {
+                id: 'button.secondary.hoverBackground',
+                defaults: {
+                    dark: Color.lighten('button.secondary.background', 0.2),
+                    light: Color.lighten('button.secondary.background', 0.2)
+                }, description: 'Background color when hovering secondary buttons.'
+            },
+            {
+                id: 'button.secondary.disabled.background',
+                defaults: {
+                    dark: Color.transparent('button.secondary.background', 0.6),
+                    light: Color.transparent('button.secondary.background', 0.6)
+                }, description: 'Background color when hovering secondary buttons.'
+            },
+            {
+                id: 'button.disabled.foreground',
+                defaults: {
+                    dark: Color.transparent('button.foreground', 0.5),
+                    light: Color.transparent('button.foreground', 0.5),
+                    hc: Color.transparent('button.foreground', 0.5)
+                }, description: 'Foreground color of secondary buttons.'
+            },
+            {
+                id: 'button.disabled.background',
+                defaults: {
+                    dark: Color.transparent('button.background', 0.5),
+                    light: Color.transparent('button.background', 0.5)
+                }, description: 'Background color of secondary buttons.'
             }
         );
     }

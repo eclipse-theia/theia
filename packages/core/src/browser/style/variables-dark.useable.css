@@ -210,18 +210,6 @@ is not optimized for dense, information rich UIs.
   --theia-statusBar-font-color: var(--theia-ui-font-color0);
   --theia-statusBar-font-size: 12px;
 
-  /* Buttons */
-  --theia-ui-button-color: var(--theia-brand-color0);
-  --theia-ui-button-color-hover: var(--theia-brand-color1);
-  --theia-ui-button-font-color: var(--theia-ui-font-color1);
-  --theia-ui-button-color-secondary: var(--theia-secondary-brand-color0);
-  --theia-ui-button-color-secondary-hover: var(--theia-secondary-brand-color1);
-  --theia-ui-button-font-color-secondary: var(--theia-ui-font-color1);
-  --theia-ui-button-color-disabled: var(--theia-accent-color3);
-  --theia-ui-button-font-color-disabled: var(--theia-ui-font-color2);
-  --theia-ui-button-color-secondary-disabled: var(--theia-disabled-color0);
-  --theia-ui-button-font-color-secondary-disabled: var(--theia-ui-font-color2);
-
   /* Dialogs */
   --theia-ui-dialog-header-color: var(--theia-brand-color0);
   --theia-ui-dialog-header-font-color: var(--theia-ui-font-color1);
