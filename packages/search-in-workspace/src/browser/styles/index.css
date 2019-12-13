@@ -33,10 +33,9 @@
     min-width: 6px;
 }
 
-.t-siw-search-container input[type="text"] {
+.t-siw-search-container .theia-input {
     flex: 1;
     line-height: var(--theia-content-line-height);
-    font-size: var(--theia-ui-font-size1);
     padding-left: 8px;
     color: var(--theia-ui-font-color1);
     padding: 3px 0 3px 4px;

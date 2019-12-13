@@ -45,30 +45,30 @@
     padding: 0 10px;
 }
 
-.theia-mini-browser-toolbar input {
+.theia-mini-browser-toolbar .theia-input {
     width: 100%;
     line-height: var(--theia-private-mini-browser-height);
     margin-left: 4px;
     margin-right: 4px;
 }
 
-.theia-mini-browser-toolbar-read-only input {
+.theia-mini-browser-toolbar-read-only .theia-input {
     width: 100%;
     line-height: var(--theia-private-mini-browser-height);
     margin-left: 4px;
     margin-right: 4px;
     cursor: pointer;
-    background: var(--theia-layout-color0);
+    background: var(--theia-input-background);
     border: none;
     text-decoration: underline;
     outline: none;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--theia-ui-button-color);
+    color: var(--theia-input-foreground);
 }
 
-.theia-mini-browser-toolbar-read-only input:hover {
+.theia-mini-browser-toolbar-read-only .theia-input:hover {
     color: var(--theia-ui-button-color-hover);
 }
 

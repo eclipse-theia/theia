@@ -194,7 +194,7 @@
     background: var(--theia-panel-background);
 }
 
-#theia-bottom-content-panel input {
+#theia-bottom-content-panel .theia-input {
     border-color: var(--theia-panelInput-border);
 }
 
