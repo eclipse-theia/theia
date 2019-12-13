@@ -182,24 +182,24 @@ button.theia-button:hover, .theia-button:hover, .theia-button:focus {
 }
 
 button.secondary, .theia-button.secondary {
-  color: var(--theia-ui-button-font-color-secondary);
-  background-color: var(--theia-ui-button-color-secondary);
+  color: var(--theia-button-secondary-foreground);
+  background-color: var(--theia-button-secondary-background);
 }
 
 button.secondary:hover, .theia-button.secondary:hover {
-  background-color: var(--theia-ui-button-color-secondary-hover);
+  background-color: var(--theia-button-secondary-hoverBackground);
 }
 
 button.theia-button[disabled], .theia-button[disabled] {
   opacity: 0.6;
-  color: var(--theia-ui-button-font-color-disabled);
-  background-color: var(--theia-ui-button-color-disabled);
+  color: var(--theia-button-disabled-foreground);
+  background-color: var(--theia-button-disabled-background);
   cursor: default;
 }
 
 button.secondary[disabled], .theia-button.secondary[disabled] {
-    color: var(--theia-ui-button-font-color-secondary-disabled);
-    background-color: var(--theia-ui-button-color-secondary-disabled);
+    color: var(--theia-button-secondary-disabled-foreground);
+    background-color: var(--theia-button-secondary-disabled-background);
 }
 
 select {
