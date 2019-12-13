@@ -14,11 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
- :root {
-  --theia-current-search-match-color: var(--theia-word-highlight-color0);
-  --theia-range-highlight: var(--theia-word-highlight-color1);
- }
-
 .t-siw-search-container {
     padding: 5px ;
     display: flex;
@@ -266,15 +261,15 @@
 }
 
 .search-in-workspace-editor-match {
-    background: var(--theia-word-highlight-match-color0);
+    background: var(--theia-editor-findMatchHighlightBackground);
 }
 
 .current-search-in-workspace-editor-match {
-    background: var(--theia-current-search-match-color)
+    background: var(--theia-editor-findMatchBackground)
 }
 
 .current-match-range-highlight {
-    background: var(--theia-range-highlight);
+    background: var(--theia-editor-findRangeHighlightBackground);
 }
 
 .result-node-buttons {
