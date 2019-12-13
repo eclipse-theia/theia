@@ -26,7 +26,10 @@
   font-size: var(--theia-ui-font-size1);
   display: inline-block;
   padding: 1px calc(var(--theia-ui-padding)*2);
-  color: var(--theia-ui-font-color1);
   border-radius: 10px;
-  background: var(--theia-accent-color2);
+
+  background: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+  outline: 1px solid var(--theia-contrastActiveBorder); 
+  outline-offset: -1px;
 }

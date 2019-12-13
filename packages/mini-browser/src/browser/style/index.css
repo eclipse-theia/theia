@@ -78,16 +78,16 @@
     flex-grow: 0;
     font-family: FontAwesome;
     font-size: calc(var(--theia-content-font-size) * 0.8);
-    color: var(--theia-ui-font-color1);
+    color: var(--theia-icon-foreground);
     margin: 0px 4px 0px 4px;
 }
 
 .theia-mini-browser-button:not(.theia-mini-browser-button-disabled):hover {
-    color: var(--theia-ui-font-color2);
+    cursor: pointer;
 }
 
 .theia-mini-browser-button-disabled {
-    color: var(--theia-disabled-color0);
+    opacity: var(--theia-mod-disabled-opacity);
 }
 
 .theia-mini-browser-previous::before {

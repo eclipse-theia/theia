@@ -20,7 +20,6 @@
  }
 
 .t-siw-search-container {
-    color: var(--theia-ui-font-color1);
     padding: 5px ;
     display: flex;
     flex-direction: column;
@@ -37,7 +36,6 @@
     flex: 1;
     line-height: var(--theia-content-line-height);
     padding-left: 8px;
-    color: var(--theia-ui-font-color1);
     padding: 3px 0 3px 4px;
 }
 

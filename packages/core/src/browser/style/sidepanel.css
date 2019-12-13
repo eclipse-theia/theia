@@ -137,7 +137,7 @@
   opacity: 0.6;
   text-align: center;
   background: none;
-  color: var(--theia-tab-icon-color);
+  color: var(--theia-activityBar-inactiveForeground);
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tabLabel {
@@ -273,7 +273,7 @@
 }
 
 .theia-sidepanel-toolbar .theia-sidepanel-title {
-    color: var(--theia-ui-font-color1);
+    color: var(--theia-settings-headerForeground);
     flex: 1;
     margin-left: 14px;
     text-transform: uppercase;
@@ -281,7 +281,7 @@
 }
 
 .theia-sidepanel-toolbar .p-TabBar-toolbar .item {
-    color: var(--theia-ui-font-color1);
+    color: var(--theia-icon-foreground);
 }
 
 .theia-sidepanel-toolbar .p-TabBar-toolbar .item > div{

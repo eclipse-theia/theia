@@ -41,7 +41,7 @@
     flex-grow: 0;
     font-family: FontAwesome;
     font-size: calc(var(--theia-content-font-size) * 0.8);
-    color: var(--theia-ui-font-color1);
+    color: var(--theia-editorWidget-foreground);
 }
 
 .theia-search-button-next:before {
