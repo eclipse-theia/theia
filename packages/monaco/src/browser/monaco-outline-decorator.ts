@@ -55,7 +55,7 @@ export class MonacoOutlineDecorator implements TreeDecorator {
         const captionSuffixes: TreeDecoration.CaptionAffix[] = [{
                 data: (node.detail || ''),
                 fontData: {
-                    color: 'var(--theia-ui-font-color2)',
+                    color: 'var(--theia-descriptionForeground)',
                 }
             }];
 

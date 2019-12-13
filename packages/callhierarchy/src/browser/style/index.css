@@ -48,7 +48,7 @@
 }
 
 .theia-CallHierarchyTree .definitionNode .container {
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-descriptionForeground);
 }
 
 .call-hierarchy-tab-icon::before {

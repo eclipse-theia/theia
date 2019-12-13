@@ -128,10 +128,6 @@
     padding: 4px 4px 4px 4px;
 }
 
-.theia-scm-validation-message-idle {
-    background-color: var(--theia-border-color0) !important;
-}
-
 .theia-scm-validation-message-info {
     background-color: var(--theia-info-color0) !important;
     color: var(--theia-info-font-color0);

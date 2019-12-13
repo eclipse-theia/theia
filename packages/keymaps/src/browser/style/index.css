@@ -111,7 +111,6 @@
 }
 
 .kb table th {
-    border-bottom: 2px solid var(--theia-ui-font-color3);
     word-break: keep-all;
     padding-bottom: 5px;
     padding-top: 5px;
