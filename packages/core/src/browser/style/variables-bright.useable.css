@@ -156,14 +156,6 @@ is not optimized for dense, information rich UIs.
   /* Background for selected text */
   --theia-selected-text-background: var(--theia-accent-color3);
 
-  /* Colors to highlight words in widgets like tree or editors */
-
-  --theia-word-highlight-color0: rgba(168, 172, 148, 0.7);
-  --theia-word-highlight-color1: rgba(253, 255, 0, 0.2);
-  --theia-word-highlight-match-color0: rgba(234, 92, 0, 0.33);
-  --theia-word-highlight-match-color1: rgba(234, 92, 0, 0.5);
-  --theia-word-highlight-replace-color0: rgba(155, 185, 85, 0.2);
-
   /* Icons */
   --theia-icon-close: url(../icons/close-bright.svg);
   --theia-sprite-y-offset: 0px;
