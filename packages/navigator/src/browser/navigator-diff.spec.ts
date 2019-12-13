@@ -68,7 +68,7 @@ describe('NavigatorDiff', () => {
     it('should reject invalid file when added', done => {
         const diff = testContainer.get(NavigatorDiff);
         testContainer.get(SelectionService).selection = [{
-            uri: new URI(FileUri.create(path.resolve(__dirname, '../../test-resources/nonExistantFile.json')).toString())
+            uri: new URI(FileUri.create(path.resolve(__dirname, '../../test-resources/nonExistentFile.json')).toString())
         }];
 
         diff.addFirstComparisonFile()
