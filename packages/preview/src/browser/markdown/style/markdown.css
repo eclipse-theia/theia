@@ -63,12 +63,10 @@
 }
 
 .markdown-preview a {
-	color: var(--theia-accent-color1);
 	text-decoration: none;
 }
 
 .markdown-preview a:hover {
-	color: var(--theia-accent-color1);
 	text-decoration: underline;
 }
 
@@ -136,8 +134,8 @@
 	margin: 0 7px 0 5px;
 	padding: 0 16px 0 10px;
 	border-left: 5px solid;
-	background: var(--theia-accent-color4);
-	border-color: var(--theia-brand-color2);
+	background: var(--theia-textBlockQuote-background);
+	border-color: var(--theia-textBlockQuote-border);
 }
 
 .markdown-preview code {
@@ -161,21 +159,43 @@
 .markdown-preview,
 .markdown-preview pre code {
 	color: var(--theia-editor-foreground);
+	tab-size: 4;
 }
 
-.markdown-preview pre:not(.hljs),
-.markdown-preview code > div {
-	background-color: var(--theia-accent-color4);
+/** Theming */
+
+.theia-light .markdown-preview pre {
+	background-color: rgba(220, 220, 220, 0.4);
 }
 
-.markdown-preview h1,
-.markdown-preview hr,
-.markdown-preview table > tbody > tr + tr > td {
-	border-color: rgba(255, 255, 255, 0.18);
+.theia-dark .markdown-preview pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.theia-high-contrast .markdown-preview pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast .markdown-preview h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.theia-light .markdown-preview table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.theia-dark .markdown-preview table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
 }
 
 .theia-light .markdown-preview h1,
 .theia-light .markdown-preview hr,
 .theia-light .markdown-preview table > tbody > tr + tr > td {
 	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.theia-dark .markdown-preview h1,
+.theia-dark .markdown-preview hr,
+.theia-dark .markdown-preview table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
 }

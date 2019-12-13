@@ -120,9 +120,11 @@ export class MonacoThemingService {
     }
 
     static init(): void {
-        ThemeService.get().onThemeChange(e =>
-            MonacoThemingService.store(MonacoThemingService.monacoThemes.get(e.newTheme.id))
-        );
+        this.updateBodyUiTheme();
+        ThemeService.get().onThemeChange(e => {
+            this.updateBodyUiTheme();
+            MonacoThemingService.store(MonacoThemingService.monacoThemes.get(e.newTheme.id));
+        });
         try {
             const value = window.localStorage.getItem('monacoTheme');
             if (value) {
@@ -133,6 +135,15 @@ export class MonacoThemingService {
         } catch (e) {
             console.error('Failed to restore monaco theme', e);
         }
+    }
+
+    protected static toUpdateUiTheme = new DisposableCollection();
+    protected static updateBodyUiTheme(): void {
+        this.toUpdateUiTheme.dispose();
+        const type = ThemeService.get().getCurrentTheme().type;
+        const uiTheme: MonacoTheme['uiTheme'] = type === 'hc' ? 'hc-black' : type === 'light' ? 'vs' : 'vs-dark';
+        document.body.classList.add(uiTheme);
+        this.toUpdateUiTheme.push(Disposable.create(() => document.body.classList.remove(uiTheme)));
     }
 
     static store(state: MonacoThemingService.MonacoThemeState | undefined): void {

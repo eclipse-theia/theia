@@ -128,7 +128,7 @@
     bottom: 0;
     left: 0;
     z-index: 10;
-    background: var(--theia-layout-color3);
+    background: var(--theia-editor-background);
     background-image: var(--theia-preloader);
     background-size: 60px 60px;
     background-repeat: no-repeat;

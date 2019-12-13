@@ -46,7 +46,7 @@
     line-height: inherit;
     vertical-align: middle;
     font-size: 120%;
-    color: var(--theia-accent-color2);
+    color: var(--theia-editorInfo-foreground);
 }
 
 .modal-Notification .icon .error {

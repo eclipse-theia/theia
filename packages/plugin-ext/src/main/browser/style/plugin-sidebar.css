@@ -38,7 +38,7 @@
 }
 
 .theia-plugins .pluginHeaderContainer:hover {
-    background: var(--theia-layout-color2);
+    background: var(--theia-list-hoverBackground);
 }
 
 .theia-plugins .pluginHeaderContainer .row {

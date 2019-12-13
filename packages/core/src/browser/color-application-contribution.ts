@@ -39,10 +39,15 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
     @inject(ContributionProvider) @named(ColorContribution)
     protected readonly colorContributions: ContributionProvider<ColorContribution>;
 
+    private static themeBackgroundId = 'theme.background';
+
     onStart(): void {
         for (const contribution of this.colorContributions.getContributions()) {
             contribution.registerColors(this.colors);
         }
+
+        this.updateThemeBackground();
+        ThemeService.get().onThemeChange(() => this.updateThemeBackground());
 
         this.update();
         ThemeService.get().onThemeChange(() => this.update());
@@ -71,6 +76,21 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
             }
         }
         this.onDidChangeEmitter.fire(undefined);
+    }
+
+    protected updateThemeBackground(): void {
+        const color = this.colors.getCurrentColor('editor.background');
+        if (color) {
+            window.localStorage.setItem(ColorApplicationContribution.themeBackgroundId, color);
+        } else {
+            window.localStorage.removeItem(ColorApplicationContribution.themeBackgroundId);
+        }
+    }
+
+    static initBackground(): void {
+        const value = window.localStorage.getItem(this.themeBackgroundId) || '#1d1d1d';
+        const documentElement = document.documentElement;
+        documentElement.style.setProperty('--theia-editor-background', value);
     }
 
 }
