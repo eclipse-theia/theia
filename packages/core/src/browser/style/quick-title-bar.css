@@ -19,7 +19,7 @@
     padding: calc(var(--theia-ui-padding)/2);
     justify-content: space-between;
     align-items: center;
-    background: var(--theia-layout-color4);
+    background: var(--theia-titleBar-activeBackground);
 }
 
 .theia-quick-title-left-bar {

@@ -33,7 +33,6 @@
   min-width: 35px;
   line-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 8px;
-  background: var(--theia-layout-color2);
   align-items: center;
 }
 
@@ -42,10 +41,6 @@
     display: flex;
     line-height: var(--theia-content-line-height);
     align-items: center;
-}
-
-.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab:hover:not(.p-mod-current) {
-  background: var(--theia-accent-color3);
 }
 
 

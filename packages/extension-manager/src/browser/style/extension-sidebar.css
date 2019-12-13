@@ -16,7 +16,6 @@
 
 .theia-extensions {
     min-width: 250px !important;
-    background-color: var(--theia-layout-color0);
     display: flex;
     flex-direction: column;
 }
@@ -41,7 +40,6 @@
     line-height: var(--theia-content-line-height);
     border-width: 1px;
     border-style: solid;
-    background: var(--theia-layout-color2);
     padding-left: 5px;
 }
 
@@ -55,15 +53,10 @@
 .theia-extensions .extensionHeaderContainer {
     padding: 3px 15px;
     font-size: var(--theia-ui-font-size0);
-    background: var(--theia-layout-color0);
 }
 
 .theia-side-panel .theia-extensions .extensionHeaderContainer {
     padding-left: 20px;
-}
-
-.theia-extensions .extensionHeaderContainer:hover {
-    background: var(--theia-layout-color2);
 }
 
 .theia-extensions .extensionHeaderContainer .row {

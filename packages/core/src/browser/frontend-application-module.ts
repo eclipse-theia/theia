@@ -92,6 +92,8 @@ import { TreeLabelProvider } from './tree/tree-label-provider';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
+ColorApplicationContribution.initBackground();
+
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     const themeService = ThemeService.get();
     themeService.register(...BuiltinThemeProvider.themes);
