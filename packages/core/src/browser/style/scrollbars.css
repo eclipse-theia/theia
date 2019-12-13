@@ -23,7 +23,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--theia-scrollbar-thumb-color);
+    background: var(--theia-scrollbarSlider-background);
 }
 
 ::-webkit-scrollbar:hover {
@@ -31,7 +31,11 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--theia-scrollbar-active-thumb-color);
+    background: var(--theia-scrollbarSlider-hoverBackground);
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: var(--theia-scrollbarSlider-activeBackground);
 }
 
 ::-webkit-scrollbar-corner {
@@ -53,7 +57,7 @@
 #theia-dialog-shell .ps__rail-x > .ps__thumb-x {
     height: var(--theia-scrollbar-width);
     bottom: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
-    background: var(--theia-scrollbar-thumb-color);
+    background: var(--theia-scrollbarSlider-background);
     border-radius: 0px;
 }
 
@@ -83,7 +87,7 @@
 #theia-dialog-shell .ps__rail-y > .ps__thumb-y {
     width: var(--theia-scrollbar-width);
     right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
-    background: var(--theia-scrollbar-thumb-color);
+    background: var(--theia-scrollbarSlider-background);
     border-radius: 0px;
 }
 
@@ -113,12 +117,23 @@
     background-color: var(--theia-scrollbar-active-rail-color);
 }
 
-#theia-app-shell .ps [class^='ps__rail']:hover > [class^='ps__thumb'],
-#theia-app-shell .ps [class^='ps__rail']:focus > [class^='ps__thumb'],
-#theia-dialog-shell .ps [class^='ps__rail']:hover > [class^='ps__thumb'],
-#theia-dialog-shell .ps [class^='ps__rail']:focus > [class^='ps__thumb']
- {
-    background: var(--theia-scrollbar-active-thumb-color);
+#theia-app-shell .ps [class^='ps__rail'].ps--clicking > [class^='ps__thumb'],
+#theia-dialog-shell .ps [class^='ps__rail'].ps--clicking > [class^='ps__thumb']{
+    background-color: var(--theia-scrollbarSlider-activeBackground);
+}
+
+#theia-app-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:hover,
+#theia-app-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:focus,
+#theia-dialog-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:hover,
+#theia-dialog-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:focus
+{
+    background: var(--theia-scrollbarSlider-hoverBackground);
+}
+
+#theia-app-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:active,
+#theia-dialog-shell .ps [class^='ps__rail'] > [class^='ps__thumb']:active
+{
+    background: var(--theia-scrollbarSlider-activeBackground);
 }
 
 #theia-app-shell .ps:hover > [class^='ps__rail'],
@@ -144,7 +159,7 @@
 
 .vs .monaco-scrollable-element > .scrollbar > .slider,
 .vs-dark .monaco-scrollable-element > .scrollbar > .slider {
-    background: var(--theia-scrollbar-thumb-color) !important;
+    background: var(--theia-scrollbarSlider-background) !important;
 }
 
 .vs .monaco-scrollable-element > .scrollbar:hover,
@@ -152,13 +167,10 @@
     background: var(--theia-scrollbar-active-rail-color);
 }
 
-.vs .monaco-scrollable-element > .scrollbar:hover > .slider,
-.vs-dark .monaco-scrollable-element > .scrollbar:hover > .slider {
-    background: var(--theia-scrollbar-active-thumb-color) !important;
-}
-
-.monaco-scrollable-element > .visible.scrollbar.vertical:hover > .slider {
-    background: var(--theia-scrollbar-thumb-color) !important;
+.monaco-scrollable-element > .visible.scrollbar.vertical > .slider:hover,
+.vs .monaco-scrollable-element > .scrollbar > .slider:hover,
+.vs-dark .monaco-scrollable-element > .scrollbar > .slider:hover {
+    background: var(--theia-scrollbarSlider-hoverBackground) !important;
 }
 
 .monaco-scrollable-element > .scrollbar.vertical > .slider {
@@ -166,7 +178,7 @@
 }
 
 .monaco-scrollable-element > .scrollbar.vertical > .slider.active {
-    background: var(--theia-scrollbar-active-thumb-color) !important;
+    background: var(--theia-scrollbarSlider-hoverBackground) !important;
 }
 
 .monaco-scrollable-element > .scrollbar.horizontal > .slider {
@@ -174,5 +186,5 @@
 }
 
 .monaco-scrollable-element > .shadow.top {
-    box-shadow: var(--theia-widget-shadow) 0px 6px 6px -6px inset !important;
+    box-shadow: var(--theia-scrollbar-shadow) 0px 6px 6px -6px inset !important;
 }
