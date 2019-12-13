@@ -627,7 +627,7 @@ export class KeybindingRegistry {
             this.keySequence = [];
             this.statusBar.removeElement('keybinding-status');
 
-        } else if (bindings.partial.length > 0) {
+        } else if (bindings.partial.some(binding => this.isEnabled(binding, event))) {
 
             /* Accumulate the keysequence */
             event.preventDefault();
