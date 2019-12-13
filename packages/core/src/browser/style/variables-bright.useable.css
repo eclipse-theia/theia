@@ -94,40 +94,15 @@ is not optimized for dense, information rich UIs.
   /* State colors (warn, error, success, info)
     ------------------------------------------ */
 
-  --theia-warn-color1: var(--md-amber-400);
-  --theia-warn-color2: var(--md-amber-300);
-  --theia-warn-color3: var(--md-amber-200);
-
-  --theia-warn-font-color0: var(--md-grey-900);
-
-  --theia-error-color0: var(--md-red-400);
-  --theia-error-color2: var(--md-red-200);
-  --theia-error-color3: var(--md-red-100);
-
-  --theia-error-font-color0: var(--md-grey-300);
-
   --theia-success-color0: var(--md-green-500);
-  --theia-success-color1: var(--md-green-300);
   --theia-success-color2: var(--md-green-100);
-  --theia-success-color3: var(--md-green-50);
 
   --theia-success-font-color0: var(--md-grey-300);
 
   --theia-info-color0: var(--md-cyan-700);
   --theia-info-color1: var(--md-cyan-500);
-  --theia-info-color2: var(--md-cyan-300);
-  --theia-info-color3: var(--md-cyan-100);
 
   --theia-info-font-color0: var(--md-grey-300);
-
-  --theia-disabled-color0: var(--md-grey-500);
-  --theia-disabled-color1: var(--md-grey-300);
-  --theia-disabled-color2: var(--md-grey-200);
-  --theia-disabled-color3: var(--md-grey-50);
-
-  --theia-added-color0: rgba(0, 255, 0, 0.8);
-  --theia-removed-color0: rgba(230, 0, 0, 0.8);
-  --theia-modified-color0: rgba(0, 100, 150, 0.8);
 
   /* Background for selected text */
   --theia-selected-text-background: var(--theia-accent-color3);

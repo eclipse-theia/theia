@@ -53,7 +53,7 @@
 }
 
 .theia-marker-container .error {
-    color: var(--theia-error-color0);
+    color: var(--theia-errorBackground);
 }
 
 .theia-marker-container .warning {
