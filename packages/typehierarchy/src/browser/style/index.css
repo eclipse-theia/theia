@@ -16,7 +16,6 @@
 
 .theia-type-hierarchy-tree {
     font-size: var(--theia-ui-font-size0);
-    color: var(--theia-ui-font-color1);
 }
 
 .theia-type-hierarchy-tree .theia-caption-suffix {

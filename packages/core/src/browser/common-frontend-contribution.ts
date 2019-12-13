@@ -739,15 +739,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-            placeholder: 'Select File Icon Theme',
-            fuzzyMatchLabel: true,
-            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-            onClose: () => {
-                if (resetTo) {
-                    this.iconThemes.current = resetTo;
+                placeholder: 'Select File Icon Theme',
+                fuzzyMatchLabel: true,
+                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+                onClose: () => {
+                    if (resetTo) {
+                        this.iconThemes.current = resetTo;
+                    }
                 }
-            }
-        });
+            });
     }
 
     registerColors(colors: ColorRegistry): void {
@@ -938,20 +938,20 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 id: 'tab.hoverBackground',
                 description: 'Tab background color when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             }, {
-            id: 'tab.unfocusedHoverBackground', defaults: {
-                dark: Color.transparent('tab.hoverBackground', 0.5),
-                light: Color.transparent('tab.hoverBackground', 0.7)
-            }, description: 'Tab background color in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
-        },
+                id: 'tab.unfocusedHoverBackground', defaults: {
+                    dark: Color.transparent('tab.hoverBackground', 0.5),
+                    light: Color.transparent('tab.hoverBackground', 0.7)
+                }, description: 'Tab background color in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
             {
                 id: 'tab.hoverBorder',
                 description: 'Border to highlight tabs when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
             }, {
-            id: 'tab.unfocusedHoverBorder', defaults: {
-                dark: Color.transparent('tab.hoverBorder', 0.5),
-                light: Color.transparent('tab.hoverBorder', 0.7)
-            }, description: 'Border to highlight tabs in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
-        },
+                id: 'tab.unfocusedHoverBorder', defaults: {
+                    dark: Color.transparent('tab.hoverBorder', 0.5),
+                    light: Color.transparent('tab.hoverBorder', 0.7)
+                }, description: 'Border to highlight tabs in an unfocused group when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
+            },
             {
                 id: 'tab.activeModifiedBorder', defaults: {
                     dark: '#3399CC',
@@ -1108,21 +1108,21 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: Color.transparent('titleBar.activeForeground', 0.6)
                 }, description: 'Title bar foreground when the window is inactive. Note that this color is currently only supported on macOS.'
             }, {
-            id: 'titleBar.activeBackground', defaults: {
-                dark: '#3C3C3C',
-                light: '#DDDDDD',
-                hc: '#000000'
-            }, description: 'Title bar background when the window is active. Note that this color is currently only supported on macOS.'
-        }, {
-            id: 'titleBar.inactiveBackground', defaults: {
-                dark: Color.transparent('titleBar.activeBackground', 0.6),
-                light: Color.transparent('titleBar.activeBackground', 0.6)
-            }, description: 'Title bar background when the window is inactive. Note that this color is currently only supported on macOS.'
-        }, {
-            id: 'titleBar.border', defaults: {
-                hc: 'contrastBorder'
-            }, description: 'Title bar border color. Note that this color is currently only supported on macOS.'
-        },
+                id: 'titleBar.activeBackground', defaults: {
+                    dark: '#3C3C3C',
+                    light: '#DDDDDD',
+                    hc: '#000000'
+                }, description: 'Title bar background when the window is active. Note that this color is currently only supported on macOS.'
+            }, {
+                id: 'titleBar.inactiveBackground', defaults: {
+                    dark: Color.transparent('titleBar.activeBackground', 0.6),
+                    light: Color.transparent('titleBar.activeBackground', 0.6)
+                }, description: 'Title bar background when the window is inactive. Note that this color is currently only supported on macOS.'
+            }, {
+                id: 'titleBar.border', defaults: {
+                    hc: 'contrastBorder'
+                }, description: 'Title bar border color. Note that this color is currently only supported on macOS.'
+            },
 
             // Menu Bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#menu-bar-colors
             {
@@ -1132,33 +1132,33 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: 'titleBar.activeForeground'
                 }, description: 'Foreground color of the selected menu item in the menubar.'
             }, {
-            id: 'menubar.selectionBackground', defaults: {
-                dark: Color.transparent('#ffffff', 0.1),
-                light: Color.transparent('#000000', 0.1)
-            }, description: 'Background color of the selected menu item in the menubar.'
-        }, {
-            id: 'menubar.selectionBorder', defaults: {
-                hc: 'activeContrastBorder'
-            }, description: 'Border color of the selected menu item in the menubar.'
-        },
+                id: 'menubar.selectionBackground', defaults: {
+                    dark: Color.transparent('#ffffff', 0.1),
+                    light: Color.transparent('#000000', 0.1)
+                }, description: 'Background color of the selected menu item in the menubar.'
+            }, {
+                id: 'menubar.selectionBorder', defaults: {
+                    hc: 'activeContrastBorder'
+                }, description: 'Border color of the selected menu item in the menubar.'
+            },
             {
                 id: 'menu.border', defaults: {
                     hc: 'contrastBorder'
                 }, description: 'Border color of menus.'
             }, {
-            id: 'menu.foreground', defaults: {
-                dark: 'dropdown.foreground', light: 'foreground', hc: 'dropdown.foreground'
+                id: 'menu.foreground', defaults: {
+                    dark: 'dropdown.foreground', light: 'foreground', hc: 'dropdown.foreground'
+                },
+                description: 'Foreground color of menu items.'
+            }, {
+                id: 'menu.background', defaults: {
+                    dark: 'dropdown.background', light: 'dropdown.background', hc: 'dropdown.background'
+                }, description: 'Background color of menu items.'
+            }, {
+                id: 'menu.selectionForeground', defaults: {
+                    dark: 'list.activeSelectionForeground', light: 'list.activeSelectionForeground', hc: 'list.activeSelectionForeground'
+                }, description: 'Foreground color of the selected menu item in menus.'
             },
-            description: 'Foreground color of menu items.'
-        }, {
-            id: 'menu.background', defaults: {
-                dark: 'dropdown.background', light: 'dropdown.background', hc: 'dropdown.background'
-            }, description: 'Background color of menu items.'
-        }, {
-            id: 'menu.selectionForeground', defaults: {
-                dark: 'list.activeSelectionForeground', light: 'list.activeSelectionForeground', hc: 'list.activeSelectionForeground'
-            }, description: 'Foreground color of the selected menu item in menus.'
-        },
             {
                 id: 'menu.selectionBackground', defaults:
                     { dark: 'list.activeSelectionBackground', light: 'list.activeSelectionBackground', hc: 'list.activeSelectionBackground' },
@@ -1181,6 +1181,76 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'welcomePage.buttonBackground', defaults: { dark: Color.rgba(0, 0, 0, .2), light: Color.rgba(0, 0, 0, .04), hc: Color.black }, description: 'Background color for the buttons on the Welcome page.' },
             { id: 'welcomePage.buttonHoverBackground', defaults: { dark: Color.rgba(200, 235, 255, .072), light: Color.rgba(0, 0, 0, .10) }, description: 'Hover background color for the buttons on the Welcome page.' },
             { id: 'walkThrough.embeddedEditorBackground', defaults: { dark: Color.rgba(0, 0, 0, .4), light: '#f4f4f4' }, description: 'Background color for the embedded editors on the Interactive Playground.' },
+
+            // Settings Editor colors should be aligned with https://code.visualstudio.com/api/references/theme-color#settings-editor-colors
+            {
+                id: 'settings.headerForeground', defaults: {
+                    light: '#444444', dark: '#e7e7e7', hc: '#ffffff'
+                }, description: 'The foreground color for a section header or active title.'
+            }, {
+                id: 'settings.modifiedItemIndicator', defaults: {
+                    light: Color.rgba(102, 175, 224),
+                    dark: Color.rgba(12, 125, 157),
+                    hc: Color.rgba(0, 73, 122)
+                }, description: 'The color of the modified setting indicator.'
+            }, {
+                id: 'settings.dropdownBackground', defaults:
+                    { dark: 'dropdown.background', light: 'dropdown.background', hc: 'dropdown.background' },
+                description: 'Settings editor dropdown background.'
+            }, {
+                id: 'settings.dropdownForeground', defaults: {
+                    dark: 'dropdown.foreground', light: 'dropdown.foreground', hc: 'dropdown.foreground'
+                }, description: 'Settings editor dropdown foreground.'
+            },
+            {
+                id: 'settings.dropdownBorder', defaults: {
+                    dark: 'dropdown.border', light: 'dropdown.border', hc: 'dropdown.border'
+                }, description: 'Settings editor dropdown border.'
+            },
+            {
+                id: 'settings.dropdownListBorder', defaults: {
+                    dark: 'editorWidget.border', light: 'editorWidget.border', hc: 'editorWidget.border'
+                }, description: 'Settings editor dropdown list border. This surrounds the options and separates the options from the description.'
+            },
+            {
+                id: 'settings.checkboxBackground', defaults: {
+                    dark: 'checkbox.background', light: 'checkbox.background', hc: 'checkbox.background'
+                }, description: 'Settings editor checkbox background.'
+            }, {
+                id: 'settings.checkboxForeground', defaults: {
+                    dark: 'checkbox.foreground', light: 'checkbox.foreground', hc: 'checkbox.foreground'
+                }, description: 'Settings editor checkbox foreground.'
+            }, {
+                id: 'settings.checkboxBorder', defaults:
+                {
+                    dark: 'checkbox.border', light: 'checkbox.border', hc: 'checkbox.border'
+                }, description: 'Settings editor checkbox border.'
+            }, {
+                id: 'settings.textInputBackground', defaults: {
+                    dark: 'input.background', light: 'input.background', hc: 'input.background'
+                }, description: 'Settings editor text input box background.'
+            }, {
+                id: 'settings.textInputForeground', defaults: {
+                    dark: 'input.foreground', light: 'input.foreground', hc: 'input.foreground'
+                }, description: 'Settings editor text input box foreground.'
+            }, {
+                id: 'settings.textInputBorder', defaults: {
+                    dark: 'input.border', light: 'input.border', hc: 'input.border'
+                }, description: 'Settings editor text input box border.'
+            }, {
+                id: 'settings.numberInputBackground', defaults: {
+                    dark: 'input.background', light: 'input.background', hc: 'input.background'
+                }, description: 'Settings editor number input box background.'
+            }, {
+                id: 'settings.numberInputForeground', defaults: {
+                    dark: 'input.foreground', light: 'input.foreground', hc: 'input.foreground'
+                }, description: 'Settings editor number input box foreground.'
+            },
+            {
+                id: 'settings.numberInputBorder', defaults: {
+                    dark: 'input.border', light: 'input.border', hc: 'input.border'
+                }, description: 'Settings editor number input box border.'
+            },
 
             // Theia Variable colors
             {

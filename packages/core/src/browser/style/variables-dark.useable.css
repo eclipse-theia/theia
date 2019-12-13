@@ -43,16 +43,12 @@ is not optimized for dense, information rich UIs.
   --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
   /* deprecated ui font colors */
-  --theia-ui-font-color0: var(--theia-foreground);
-  --theia-ui-font-color1: var(--md-grey-300);
   --theia-ui-font-color2: var(--md-grey-500);
   --theia-ui-font-color3: var(--theia-badge-background);
 
   /* Special font colors */
 
   --theia-ui-icon-font-color: #d4d4d4;
-  --theia-ui-bar-font-color0: #eeeeee;
-  --theia-ui-bar-font-color1: #d4d4d4;
 
   /* Use the inverse UI colors against the brand/accent/warn/error colors. */
 
@@ -79,7 +75,6 @@ is not optimized for dense, information rich UIs.
   --theia-ui-padding: 6px;
 
   /* Tab Colors */
-  --theia-tab-icon-color: rgb(255, 255, 255);
   --theia-tab-font-color: #FFF;
 
   /* Main layout colors (dark to bright)
