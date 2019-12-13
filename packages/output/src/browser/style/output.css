@@ -32,11 +32,9 @@
 #outputView #outputChannelList {
     line-height: var(--theia-content-line-height);
     font-size: var(--theia-ui-font-size1);
-    color: var(--theia-ui-font-color1);
-
+    
     -webkit-appearance: none;
     -moz-appearance: none;
-    background-image: linear-gradient(45deg, transparent 50%, var(--theia-ui-font-color1) 50%), linear-gradient(135deg, var(--theia-ui-font-color1) 50%, transparent 50%);
     background-position: calc(100% - 6px) 8px, calc(100% - 2px) 8px, 100% 0;
     background-size: 4px 5px;
     background-repeat: no-repeat;

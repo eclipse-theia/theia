@@ -17,7 +17,6 @@
 .icon-git-commit {
     mask-repeat: no-repeat;
     mask-position: center;
-    background-color: var(--theia-ui-font-color1);
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-position: center;
     mask-image: url('~octicons/build/svg/git-commit.svg');

@@ -16,7 +16,6 @@
 
 .theia-CallHierarchyTree {
     font-size: var(--theia-ui-font-size1);
-    color: var(--theia-ui-font-color1);
 }
 
 .theia-CallHierarchyTree .theia-TreeNode {

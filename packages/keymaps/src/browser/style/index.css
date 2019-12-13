@@ -43,7 +43,7 @@
 .kb table {
     border-spacing: 0;
     border-collapse: separate;
-    color: var(--theia-ui-font-color1);
+    background-color: var(--theia-editor-background);
     width: 100%;
     table-layout: fixed;
 }
@@ -106,7 +106,7 @@
 
 .kb table tbody tr:hover .kb-action-item {
     visibility: visible;
-    color: var(--theia-ui-font-color1);
+    color: var(--theia-icon-foreground);
     text-decoration: none;
 }
 

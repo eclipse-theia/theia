@@ -19,7 +19,6 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    color: var(--theia-ui-font-color1);
 }
 
 .theia-side-panel .theia-debug-container .theia-ExpansionToggle {

@@ -104,10 +104,11 @@
 }
 
 .theia-view-container-drag-image {
-    background: var(--theia-menu-color0);
+    background: var(--theia-sideBarSectionHeader-background);
+    color: var(--theia-sideBarSectionHeader-foreground);
     line-height: var(--theia-content-line-height);
     position: absolute;
-    color: var(--theia-ui-font-color1);
+    z-index: 999;
     text-transform: uppercase;
     font-size: var(--theia-ui-font-size0);
     font-weight: 500;

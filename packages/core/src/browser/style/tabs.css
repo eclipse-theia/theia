@@ -14,8 +14,6 @@
 |----------------------------------------------------------------------------*/
 
 .p-TabBar {
-  color: var(--theia-ui-font-color1);
-  background: var(--theia-layout-color1);
   font-size: var(--theia-ui-font-size1);
 }
 
@@ -39,7 +37,8 @@
   align-items: center;
 }
 
-.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab .theia-tab-icon-label {
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab .theia-tab-icon-label,
+.p-TabBar-tab.p-mod-drag-image  .theia-tab-icon-label  {
     display: flex;
     line-height: var(--theia-content-line-height);
     align-items: center;
@@ -163,7 +162,7 @@ body.theia-editor-highlightModifiedTabs
 }
 
 .p-TabBar-tab-secondary-label {
-  color: var(--theia-brand-color2);
+  color: var(--theia-settings-headerForeground);
   cursor: pointer;
   font-size: var(--theia-ui-font-size0);
   margin-left: 5px;
@@ -171,7 +170,7 @@ body.theia-editor-highlightModifiedTabs
 
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--theia-ui-font-color1) 50%), linear-gradient(135deg, var(--theia-ui-font-color1) 50%, transparent 50%);
+  background-image: linear-gradient(45deg, transparent 50%, var(--theia-icon-foreground) 50%), linear-gradient(135deg, var(--theia-icon-foreground) 50%, transparent 50%);
   background-position: calc(100% - 6px) 8px, calc(100% - 2px) 8px, 100% 0;
   background-size: 4px 5px;
   background-repeat: no-repeat;
@@ -186,10 +185,11 @@ body.theia-editor-highlightModifiedTabs
     background-repeat: no-repeat;
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tabIcon {
+.p-TabBar.theia-app-centers .p-TabBar-tabIcon,
+.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon {
     background-size: 13px;
     background-position-y: 3px;
-    background-color: var(--theia-tab-icon-color);
+    background: var(--theia-icon-foreground);
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-size: 13px;
     mask-repeat: no-repeat;
@@ -197,13 +197,15 @@ body.theia-editor-highlightModifiedTabs
     padding-right: calc(var(--theia-ui-padding)/2);
 }
 
-.p-TabBar[data-orientation='horizontal'] .file-icon.p-TabBar-tabIcon {
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-tabIcon.file-icon,
+.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon.file-icon {
     background: none;
     padding-bottom: 0px;
     min-height: 20px;
 }
 
-.p-TabBar[data-orientation='horizontal'] .fa.p-TabBar-tabIcon {
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-tabIcon.fa,
+.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon.fa {
     background: none;
     min-height: 0;
 }
@@ -237,7 +239,8 @@ body.theia-editor-highlightModifiedTabs
   background-image: var(--theia-icon-close);
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tab > .p-TabBar-tabIcon.no-icon {
+.p-TabBar.theia-app-centers .p-TabBar-tab > .p-TabBar-tabIcon.no-icon,
+.p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabIcon.no-icon {
   display: none;
 }
 
@@ -274,27 +277,16 @@ body.theia-editor-highlightModifiedTabs
 .p-TabBar-tab.p-mod-drag-image {
   transform: translateX(-40%) translateY(-58%);
   opacity: 0.8;
+  line-height: var(--theia-private-horizontal-tab-height);
+  height: var(--theia-private-horizontal-tab-height);
   min-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 10px;
   font-size: var(--theia-ui-font-size1);
-  line-height: var(--theia-private-horizontal-tab-height);
-  color: var(--theia-ui-font-color1);
-  background: var(--theia-layout-color4);
-  border: var(--theia-border-width) solid var(--theia-border-color1);
-  box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabIcon,
-.p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabLabel {
-  display: inline-block;
-}
-.p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabIcon.no-icon {
-  display: none;
-}
-
-.p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabIcon {
-  width: 15px;
-  line-height: 1.7;
+  background: var(--theia-editorGroupHeader-tabsBackground);
+  border: var(--theia-border-width) solid var(--theia-contrastBorder);
+  box-shadow: 1px 1px 2px var(--theia-widget-shadow);
+  display: flex;
+  align-items: center;
 }
 
 /*-----------------------------------------------------------------------------

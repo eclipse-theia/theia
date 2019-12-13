@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 .theia-git {
-    color: var(--theia-ui-font-color1);
     padding: 5px;
     box-sizing: border-box;
 }
