@@ -18,10 +18,6 @@
   padding: 0px;
 }
 
-.p-SplitPanel-handle {
-    background: var(--theia-layout-color1);
-}
-
 .p-DockPanel-widget {
   min-width: 100px;
   min-height: 100px;
@@ -37,7 +33,7 @@
 
 .p-DockPanel-overlay {
   background: var(--theia-editorGroup-dropBackground);
-  border: var(--theia-border-width) dashed var(--theia-brand-color1);
+  border: var(--theia-border-width) dashed var(--theia-contrastActiveBorder);
   transition-property: top, left, right, bottom;
   transition-duration: 150ms;
   transition-timing-function: ease;

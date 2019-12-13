@@ -110,7 +110,7 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
                 color,
                 background: {
                     shape: 'circle',
-                    color: 'var(--theia-layout-color0)'
+                    color: 'transparent'
                 }
             }
         };

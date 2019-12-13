@@ -322,7 +322,7 @@
 }
 
 .replace-toggle:hover {
-    background: var(--theia-layout-color2);
+    background: rgba(0, 0, 0, 0.1);
 }
 
 .search-and-replace-fields {
@@ -373,8 +373,8 @@
 }
 
 .highlighted-count-container {
-    background-color: var(--theia-brand-color0);
-    color: #ffffff;
+    background-color: var(--theia-list-activeSelectionBackground);
+    color: var(--theia-list-activeSelectionForeground);
 }
 
 .t-siw-search-container .searchHeader .search-info {

@@ -26,7 +26,7 @@
     outline-style: solid;
     outline-offset: -1px;
     opacity: 1 !important;
-    outline-color: var(--theia-accent-color3);
+    outline-color: var(--theia-focusBorder);
 }
 
 .theia-Tree:focus,

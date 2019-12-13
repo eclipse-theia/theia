@@ -19,13 +19,13 @@ is not optimized for dense, information rich UIs.
 
 :root {
 
-  /* Borders: Width and color (bright to dark) */
+  /* Borders */
 
   --theia-border-width: 1px;
   --theia-panel-border-width: 2px;
 
 
-  /* UI fonts: Family, size and color (dark to bright)
+  /* UI fonts
     ---------------------------------------------------
      The UI font CSS variables are used for the typography all of the Theia
      user interface elements that are not directly user-generated content.
@@ -39,7 +39,7 @@ is not optimized for dense, information rich UIs.
   --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
   --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
-  /* Content fonts: Family, size and color (dark to bright)
+  /* Content fonts
      Content font variables are used for typography of user-generated content.
   */
 
@@ -53,44 +53,6 @@ is not optimized for dense, information rich UIs.
   --theia-terminal-font-family: monospace;
   --theia-ui-padding: 6px;
 
-  /* Main layout colors (bright to dark)
-    ------------------------------------ */
-
-  --theia-layout-color0: #ffffff;
-  --theia-layout-color1: #f3f3f3;
-  --theia-layout-color2: #ececec;
-  --theia-layout-color3: #dcdcdc;
-  --theia-layout-color4: #dcdcdc;
-
-  /* Brand colors */
-
-  --theia-brand-color0: var(--md-blue-700);
-  --theia-brand-color1: var(--md-blue-500);
-  --theia-brand-color2: var(--md-blue-300);
-  --theia-brand-color3: var(--md-blue-100);
-
-  /* Secondary Brand colors */
-
-  --theia-secondary-brand-color0: var(--md-grey-700);
-  --theia-secondary-brand-color1: var(--md-grey-500);
-  --theia-secondary-brand-color2: var(--md-grey-300);
-  --theia-secondary-brand-color3: var(--md-grey-100);
-
-  /* Accent colors (dark to bright): Use these to create contrast to layout colors. */
-
-  --theia-accent-color0: var(--md-blue-900);
-  --theia-accent-color1: #2b75c0;
-  --theia-accent-color2: #4496da;
-  --theia-accent-color3: #c0dbf1;
-  --theia-accent-color4: #d7eaf8;
-
-  /* Accent colors with opacity */
-
-  --theia-transparent-accent-color0: hsla(210, 63%, 46%, 0.3);
-  --theia-transparent-accent-color1: hsla(207, 66%, 56%, 0.3);
-  --theia-transparent-accent-color2: hsla(207, 64%, 85%, 0.3);
-  --theia-transparent-accent-color3: hsla(205, 70%, 91%, 0.3);
-
   /* State colors (warn, error, success, info)
     ------------------------------------------ */
 
@@ -103,9 +65,6 @@ is not optimized for dense, information rich UIs.
   --theia-info-color1: var(--md-cyan-500);
 
   --theia-info-font-color0: var(--md-grey-300);
-
-  /* Background for selected text */
-  --theia-selected-text-background: var(--theia-accent-color3);
 
   /* Icons */
   --theia-icon-close: url(../icons/close-bright.svg);

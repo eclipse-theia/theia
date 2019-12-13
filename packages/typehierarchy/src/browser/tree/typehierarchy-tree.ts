@@ -168,7 +168,7 @@ export namespace TypeHierarchyTree {
                 captionSuffixes.unshift({
                     data: item.detail,
                     fontData: {
-                        color: 'var(--theia-accent-color0)',
+                        color: 'var(--theia-list-highlightForeground)',
                         style: 'italic'
                     }
                 });

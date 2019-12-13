@@ -36,7 +36,6 @@
 }
 
 .extensionHeaderContainer {
-    background: var(--theia-layout-color1);
     margin-bottom: 5px;
 }
 
@@ -68,16 +67,8 @@
     background-color: var(--theia-editorError-foreground);
 }
 
-.extensionButton.outdated {
-    background-color: var(--theia-accent-color2);
-}
-
 .extensionButton.installed:hover {
     background-color: var(--theia-errorBackground);
-}
-
-.extensionButton.outdated:hover {
-    background-color: var(--theia-accent-color1);
 }
 
 @import './extension-sidebar.css';

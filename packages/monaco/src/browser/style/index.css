@@ -4,18 +4,6 @@
     font-size: inherit !important;
 }
 
-.monaco-editor, .monaco-editor-background {
-    background: var(--theia-layout-color0);
-}
-
-.monaco-editor .margin {
-    background: var(--theia-layout-color0);
-}
-
-.monaco-keybinding-key {
-    color: var(--theia-quickInput-foreground) !important;
-}
-
 /*
  * set z-index to 0, so tabs are not above overlay widgets
  */
@@ -41,12 +29,7 @@
     color: var(--theia-quickInput-foreground) !important;
 }
 
-.quick-open-entry .quick-open-row .monaco-icon-label .monaco-icon-label-description-container .monaco-highlighted-label .highlight {
-    color: var(--theia-accent-color1);
-}
-
 .quick-open-entry .quick-open-row .monaco-icon-label .monaco-icon-label-description-container .label-description {
-    color: var(--theia-descriptionForeground);
     font-size: calc(var(--theia-ui-font-size0) * 0.95);
 }
 
@@ -60,8 +43,8 @@
 	border-bottom-style: solid;
 	border-top-width: 0;
 	border-bottom-width: 0;
-    border-top-color: var(--theia-accent-color2);
-    border-bottom-color: var(--theia-accent-color2);
+    border-top-color: var(--theia-peekView-border);
+    border-bottom-color: var(--theia-peekView-border);
 	position: relative;
 }
 
