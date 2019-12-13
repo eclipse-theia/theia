@@ -1427,6 +1427,39 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
 
             // Theia defaults
+            // Base
+            {
+                id: 'errorBackground',
+                defaults: {
+                    dark: 'inputValidation.errorBackground',
+                    light: 'inputValidation.errorBackground',
+                    hc: 'inputValidation.errorBackground'
+                }, description: 'Background color of error widgets (like alerts or notifications).'
+            },
+            {
+                id: 'warningBackground',
+                defaults: {
+                    dark: 'inputValidation.warningBackground',
+                    light: 'inputValidation.warningBackground',
+                    hc: 'inputValidation.warningBackground'
+                }, description: 'Background color of warn widgets (like alerts or notifications).'
+            },
+            {
+                id: 'successBackground',
+                defaults: {
+                    dark: 'gitDecoration.untrackedResourceForeground',
+                    light: 'gitDecoration.untrackedResourceForeground',
+                    hc: 'gitDecoration.untrackedResourceForeground'
+                }, description: 'Background color of success widgets (like alerts or notifications).'
+            },
+            {
+                id: 'infoBackground',
+                defaults: {
+                    dark: 'inputValidation.infoBackground',
+                    light: 'inputValidation.infoBackground',
+                    hc: 'inputValidation.infoBackground'
+                }, description: 'Background color of info widgets (like alerts or notifications).'
+            },
             // Buttons
             {
                 id: 'secondaryButton.foreground',

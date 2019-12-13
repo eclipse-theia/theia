@@ -143,8 +143,8 @@
 .theia-mini-browser-error-bar {
     height: 19px;
     padding-left: var(--theia-ui-padding);
-    background-color: var(--theia-editorWarning-foreground);
-    color: var(--theia-warn-font-color0);
+    background-color: var(--theia-warningBackground);
+    color: var(--theia-inputValidation-infoForeground);
     font-size: var(--theia-statusBar-font-size);
     z-index: 1000; /* Above the transparent overlay (`z-index: 999;`). */
 }

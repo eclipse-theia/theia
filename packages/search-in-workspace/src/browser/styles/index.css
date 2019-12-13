@@ -127,13 +127,13 @@
 }
 
 .t-siw-search-container .searchHeader .search-notification div{
-    background-color: var(--theia-editorWarning-foreground);
+    background-color: var(--theia-warningBackground);
     width: calc(100% + 2px);
     margin-left: -1px;
-    color: var(--theia-warn-font-color0);
+    color: var(--theia-inputValidation-warningForeground);
     z-index: 1000;
     position: absolute;
-    border: 1px solid var(--theia-editorWarning-foreground);
+    border: 1px solid var(--theia-inputValidation-warningBorder);
     box-sizing: border-box;
     padding: 3px;
 }

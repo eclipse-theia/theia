@@ -63,7 +63,7 @@
 }
 
 .theia-scm .warn {
-    background-color: var(--theia-error-color2) !important;
+    background-color: var(--theia-inputValidation-warningBackground) !important;
 }
 
 .theia-scm-main-container {
@@ -140,13 +140,13 @@
 
 .theia-scm-message-warning,
 .theia-scm-validation-message-warning {
-    background-color: var(--theia-editorWarning-foreground) !important;
-    color: var(--theia-warn-font-color0);
+    background-color: var(--theia-warningBackground) !important;
+    color: var(--theia-inputValidation-warningForeground);
 }
 
 .theia-scm-validation-message-error {
-    background-color: var(--theia-error-color0) !important;
-    color: var(--theia-error-font-color0);
+    background-color: var(--theia-errorBackground) !important;
+    color: var(--theia-errorForeground);
 }
 
 .no-select {

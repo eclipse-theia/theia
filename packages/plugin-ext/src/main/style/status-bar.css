@@ -19,7 +19,7 @@
 }
 
 #theia-statusBar .development-host-offline {
-    background-color: var(--theia-error-color0);
+    background-color: var(--theia-errorBackground);
 }
 
 #theia-statusBar .hosted-plugin {
@@ -31,5 +31,5 @@
 }
 
 #theia-statusBar .hosted-plugin-failed {
-    background-color: var(--theia-error-color0);
+    background-color: var(--theia-errorBackground);
 }

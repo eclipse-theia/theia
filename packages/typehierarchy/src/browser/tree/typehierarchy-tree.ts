@@ -174,7 +174,7 @@ export namespace TypeHierarchyTree {
                 });
             }
             const data = `${TypeHierarchyDirection.Children === direction ? '▼' : '▲'}`;
-            const color = `var(${TypeHierarchyDirection.Children === direction ? '--theia-error-color2' : '--theia-success-color2'})`;
+            const color = `var(${TypeHierarchyDirection.Children === direction ? '--theia-errorForeground' : '--theia-success-color2'})`;
             return {
                 captionSuffixes,
                 captionPrefixes: [{
