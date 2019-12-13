@@ -46,7 +46,7 @@
 }
 
 .quick-open-entry .quick-open-row .monaco-icon-label .monaco-icon-label-description-container .label-description {
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-descriptionForeground);
     font-size: calc(var(--theia-ui-font-size0) * 0.95);
 }
 

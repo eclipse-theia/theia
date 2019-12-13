@@ -151,7 +151,7 @@ body.theia-editor-highlightModifiedTabs
 
 .p-TabBar.theia-app-centers .p-TabBar-tabLabelDetails {
   margin-left: 5px;
-  color: var(--theia-ui-font-color2);
+  color: var(--theia-descriptionForeground);
   flex: 1 1 auto;
   overflow: hidden;
   white-space: nowrap;

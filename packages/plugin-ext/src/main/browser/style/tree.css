@@ -33,7 +33,7 @@
 }
 
 .theia-tree-view-description {
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-descriptionForeground);
     font-size: var(--theia-ui-font-size0);
     margin-left: var(--theia-ui-padding);
 }

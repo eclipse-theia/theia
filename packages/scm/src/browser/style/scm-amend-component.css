@@ -72,7 +72,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--theia-ui-font-color2);
+    color: var(--theia-descriptionForeground);
     font-size: smaller;
 }
 
