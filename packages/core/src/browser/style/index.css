@@ -26,7 +26,7 @@ body {
   padding: 0;
   overflow: hidden;
   font-family: var(--theia-ui-font-family);
-  background: var(--theia-layout-color0);
+  background: var(--theia-editor-background);
   color: var(--theia-foreground);
   border: 1px solid var(--theia-window-activeBorder);
 }
@@ -75,7 +75,7 @@ blockquote {
     width: auto !important;
     height: auto !important;
     z-index: 255 !important;
-    background: var(--theia-layout-color0);
+    background: var(--theia-editor-background);
 }
 
 .theia-ApplicationShell {
@@ -84,7 +84,7 @@ blockquote {
   left: 0;
   right: 0;
   bottom: 0;
-  background: var(--theia-layout-color0);
+  background: var(--theia-editor-background);
 }
 
 .theia-preload {
@@ -182,24 +182,24 @@ button.theia-button:hover, .theia-button:hover, .theia-button:focus {
 }
 
 button.secondary, .theia-button.secondary {
-  color: var(--theia-button-secondary-foreground);
-  background-color: var(--theia-button-secondary-background);
+  color: var(--theia-secondaryButton-foreground);
+  background-color: var(--theia-secondaryButton-background);
 }
 
 button.secondary:hover, .theia-button.secondary:hover {
-  background-color: var(--theia-button-secondary-hoverBackground);
+  background-color: var(--theia-secondaryButton-hoverBackground);
 }
 
 button.theia-button[disabled], .theia-button[disabled] {
   opacity: 0.6;
-  color: var(--theia-button-disabled-foreground);
-  background-color: var(--theia-button-disabled-background);
+  color: var(--theia-button-disabledForeground);
+  background-color: var(--theia-button-disabledBackground);
   cursor: default;
 }
 
 button.secondary[disabled], .theia-button.secondary[disabled] {
-    color: var(--theia-button-secondary-disabled-foreground);
-    background-color: var(--theia-button-secondary-disabled-background);
+    color: var(--theia-secondaryButton-disabledForeground);
+    background-color: var(--theia-secondaryButton-disabledBackground);
 }
 
 select {

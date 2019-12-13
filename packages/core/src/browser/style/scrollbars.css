@@ -19,7 +19,7 @@
 ::-webkit-scrollbar {
     height: var(--theia-scrollbar-width);
     width: var(--theia-scrollbar-width);
-    background: var(--theia-scrollbar-rail-color);
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -27,7 +27,7 @@
 }
 
 ::-webkit-scrollbar:hover {
-    background: var(--theia-scrollbar-active-rail-color);
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -50,7 +50,6 @@
 #theia-app-shell .ps__rail-x,
 #theia-dialog-shell .ps__rail-x {
     height: var(--theia-scrollbar-rail-width);
-    background: var(--theia-scrollbar-rail-color);
 }
 
 #theia-app-shell .ps__rail-x > .ps__thumb-x,
@@ -80,7 +79,6 @@
 #theia-app-shell .ps__rail-y,
 #theia-dialog-shell .ps__rail-y {
     width: var(--theia-scrollbar-rail-width);
-    background: var(--theia-scrollbar-rail-color);
 }
 
 #theia-app-shell .ps__rail-y > .ps__thumb-y,
@@ -106,15 +104,6 @@
 #theia-dialog-shell .ps__rail-y.ps--clicking .ps__thumb-y  {
     right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
     width: var(--theia-scrollbar-width);
-}
-
-#theia-app-shell .ps [class^='ps__rail']:hover,
-#theia-app-shell .ps [class^='ps__rail']:focus,
-#theia-app-shell .ps [class^='ps__rail'].ps--clicking,
-#theia-dialog-shell .ps [class^='ps__rail']:hover,
-#theia-dialog-shell .ps [class^='ps__rail']:focus,
-#theia-dialog-shell .ps [class^='ps__rail'].ps--clicking {
-    background-color: var(--theia-scrollbar-active-rail-color);
 }
 
 #theia-app-shell .ps [class^='ps__rail'].ps--clicking > [class^='ps__thumb'],
@@ -152,20 +141,9 @@
 |----------------------------------------------------------------------------*/
 
 /* Make horizontal scrollbar, decorations overview ruler and vertical scrollbar arrows opaque */
-.vs .monaco-scrollable-element > .scrollbar,
-.vs-dark .monaco-scrollable-element > .scrollbar,
-.decorationsOverviewRuler {
-    background: var(--theia-scrollbar-rail-color);
-}
-
 .vs .monaco-scrollable-element > .scrollbar > .slider,
 .vs-dark .monaco-scrollable-element > .scrollbar > .slider {
     background: var(--theia-scrollbarSlider-background) !important;
-}
-
-.vs .monaco-scrollable-element > .scrollbar:hover,
-.vs-dark .monaco-scrollable-element > .scrollbar:hover {
-    background: var(--theia-scrollbar-active-rail-color);
 }
 
 .monaco-scrollable-element > .visible.scrollbar.vertical > .slider:hover,

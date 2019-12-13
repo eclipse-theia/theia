@@ -16,7 +16,6 @@
 
  #outputView {
 	font-size: var(--theia-ui-font-size1);
-    color: var(--theia-output-font-color);
 }
 
 #outputView #outputContents {
