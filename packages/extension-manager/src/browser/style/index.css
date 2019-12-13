@@ -73,7 +73,7 @@
 }
 
 .extensionButton.installed:hover {
-    background-color: var(--theia-error-color0);
+    background-color: var(--theia-errorBackground);
 }
 
 .extensionButton.outdated:hover {
