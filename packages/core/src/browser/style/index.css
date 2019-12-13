@@ -57,6 +57,9 @@ blockquote {
     color: var(--theia-input-foreground);
     border: var(--theia-border-width) solid var(--theia-input-border);
     font-family: var(--theia-ui-font-family);
+    font-size: var(--theia-ui-font-size1);
+    line-height: var(--theia-content-line-height);
+    padding-left: 5px;
 }
 
 .theia-input::placeholder {

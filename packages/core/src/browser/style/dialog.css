@@ -78,14 +78,6 @@
     min-height: 21px;
 }
 
-input {
-    line-height: var(--theia-content-line-height);
-    border-width: 1px;
-    border-style: solid;
-    border-color: var(--theia-border-color1);
-    padding-left: 5px;
-}
-
 .dialogOverlay :focus {
   box-shadow: 0px 0px 1px 1px var(--theia-accent-color3);
   outline: none;
