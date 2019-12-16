@@ -190,7 +190,9 @@ export class DebugBreakpointWidget implements Disposable {
         if (this._input) {
             this._input.getControl().setValue(this._values[this.context] || '');
         }
-        ReactDOM.render(<select value={this.context} onChange={this.updateInput}>
+        ReactDOM.render(<select
+            className='theia-select'
+            value={this.context} onChange={this.updateInput}>
             {this.renderOption('condition', 'Expression')}
             {this.renderOption('hitCondition', 'Hit Count')}
             {this.renderOption('logMessage', 'Log Message')}

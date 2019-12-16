@@ -43,7 +43,7 @@ export class LocationListRenderer extends ReactRenderer {
     protected readonly handleLocationChanged = (e: React.ChangeEvent<HTMLSelectElement>) => this.onLocationChanged(e);
     protected doRender(): React.ReactNode {
         const options = this.collectLocations().map(value => this.renderLocation(value));
-        return <select className={LocationListRenderer.Styles.LOCATION_LIST_CLASS} onChange={this.handleLocationChanged}>{...options}</select>;
+        return <select className={'theia-select ' + LocationListRenderer.Styles.LOCATION_LIST_CLASS} onChange={this.handleLocationChanged}>{...options}</select>;
     }
 
     /**

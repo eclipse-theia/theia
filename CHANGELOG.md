@@ -7,6 +7,8 @@
 Breaking changes:
 
 - [core] new browser windows spawned through opener-service have noopener set, preventing them from accessing window.opener and giveing them their own event loop. openNewWindow will no longer return a Window as a result.
+- Support VS Code icon and color theming. [#6475](https://github.com/eclipse-theia/theia/pull/6475)
+  - Use `theia-input`, `theia-select` and `theia-button` to style input/textarea, select and button elements correspondingly. Before such elements were styled in an ad-hoc manner.
 
 ## v0.13.0
 
