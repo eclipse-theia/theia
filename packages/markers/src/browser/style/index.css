@@ -53,7 +53,7 @@
 }
 
 .theia-marker-container .error {
-    color: var(--theia-errorBackground);
+    color: var(--theia-editorError-foreground);
 }
 
 .theia-marker-container .warning {
@@ -61,11 +61,11 @@
 }
 
 .theia-marker-container .information {
-    color: var(--theia-info-color0);
+    color: var(--theia-editorInfo-foreground);
 }
 
 .theia-marker-container .hint {
-    color: var(--theia-success-color0);
+    color: var(--theia-successBackground);
 }
 
 .theia-marker-container .markerNode .position,
