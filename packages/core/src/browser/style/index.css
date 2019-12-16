@@ -128,10 +128,6 @@ blockquote {
   font-size: var(--theia-ui-font-size1);
 }
 
-.p-Widget .error {
-    color: var(--theia-errorForeground);
-}
-
 .p-Widget.p-mod-hidden {
   display: none !important;
 }

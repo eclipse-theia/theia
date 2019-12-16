@@ -53,19 +53,6 @@ is not optimized for dense, information rich UIs.
   --theia-terminal-font-family: monospace;
   --theia-ui-padding: 6px;
 
-  /* State colors (warn, error, success, info)
-    ------------------------------------------ */
-
-  --theia-success-color0: var(--md-green-500);
-  --theia-success-color2: var(--md-green-100);
-
-  --theia-success-font-color0: var(--md-grey-300);
-
-  --theia-info-color0: var(--md-cyan-700);
-  --theia-info-color1: var(--md-cyan-500);
-
-  --theia-info-font-color0: var(--md-grey-300);
-
   /* Icons */
   --theia-icon-close: url(../icons/close-bright.svg);
   --theia-sprite-y-offset: 0px;

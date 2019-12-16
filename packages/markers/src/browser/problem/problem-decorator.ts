@@ -155,10 +155,10 @@ export class ProblemDecorator implements TreeDecorator {
     protected getOverlayIconColor(marker: Marker<Diagnostic>): TreeDecoration.Color {
         const { severity } = marker.data;
         switch (severity) {
-            case 1: return 'var(--theia-errorBackground)';
+            case 1: return 'var(--theia-editorError-foreground)';
             case 2: return 'var(--theia-editorWarning-foreground)';
-            case 3: return 'var(--theia-info-color0)';
-            default: return 'var(--theia-success-color0)';
+            case 3: return 'var(--theia-editorInfo-foreground)';
+            default: return 'var(--theia-successBackground)';
         }
     }
 
