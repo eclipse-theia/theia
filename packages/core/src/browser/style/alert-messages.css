@@ -26,28 +26,21 @@
  
 /* information message */
 .theia-info-alert {
-    background-color: var(--theia-infoBackground);
-    color: #ffffff;
-    padding: 10px;
-}
-
-/* success message */
-.theia-success-alert {
-    background-color: var(--theia-successBackground);
-    color: #ffffff;
+    background-color: var(--theia-inputValidation-infoBackground);
+    color: var(--theia-editor-foreground);
     padding: 10px;
 }
 
 /* warning message */
 .theia-warning-alert {
-    background-color: var(--theia-inputValidation-warningBackground);
-    color: var(--theia-inputValidation-warningForeground);
+    background-color: var(--theia-editorWarning-foreground);
+    color: var(--theia-inputValidation-warningBackground);
     padding: 10px;
 }
 
 /* error message */
 .theia-error-alert {
-    background-color: var(--theia-errorBackground);
-    color: #ffffff;
+    background-color: var(--theia-inputValidation-errorBorder);
+    color: var(--theia-editor-foreground);
     padding: 10px;
 }

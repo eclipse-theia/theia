@@ -112,7 +112,7 @@
 }
 
 .theia-scm-input-message-success {
-    border-color: var(--theia-success-color0);
+    border-color: var(--theia-successBackground);
 }
 
 .theia-scm-input-message-warning {
@@ -129,19 +129,19 @@
 }
 
 .theia-scm-validation-message-info {
-    background-color: var(--theia-info-color0) !important;
-    color: var(--theia-info-font-color0);
+    background-color: var(--theia-inputValidation-infoBackground) !important;
+    color: var(--theia-inputValidation-warningBackground);
 }
 
 .theia-scm-validation-message-success {
-    background-color: var(--theia-success-color0) !important;
-    color: var(--theia-success-font-color0);
+    background-color: var(--theia-successBackground) !important;
+    color: var(--theia-inputValidation-warningBackground);
 }
 
 .theia-scm-message-warning,
 .theia-scm-validation-message-warning {
-    background-color: var(--theia-warningBackground) !important;
-    color: var(--theia-inputValidation-warningForeground);
+    background-color: var(--theia-editorWarning-foreground) !important;
+    color: var(--theia-inputValidation-warningBackground);
 }
 
 .theia-scm-validation-message-error {

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 #theia-statusBar .development-host {
-    background-color: var(--theia-success-color0);
+    background-color: var(--theia-successBackground);
 }
 
 #theia-statusBar .development-host-offline {
@@ -23,11 +23,11 @@
 }
 
 #theia-statusBar .hosted-plugin {
-    background-color: var(--theia-info-color0);
+    background-color: var(--theia-inputValidation-infoBackground);
 }
 
 #theia-statusBar .hosted-plugin:hover {
-    background-color: var(--theia-info-color1);
+    background-color: var(--theia-editorInfo-foreground);
 }
 
 #theia-statusBar .hosted-plugin-failed {
