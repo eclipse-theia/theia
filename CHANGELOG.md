@@ -6,6 +6,8 @@ Breaking changes:
 
 - [task] renamed method `getStrigifiedTaskSchema()` has been renamed to `getStringifiedTaskSchema()` [#6780](https://github.com/eclipse-theia/theia/pull/6780)
 - [task] renamed method `reorgnizeTasks()` has been renamed to `reorganizeTasks()` [#6780](https://github.com/eclipse-theia/theia/pull/6780)
+- Support VS Code icon and color theming. [#6475](https://github.com/eclipse-theia/theia/pull/6475)
+  - Use `theia-input`, `theia-select` and `theia-button` to style input/textarea, select and button elements correspondingly. Before such elements were styled in an ad-hoc manner.
 
 ## v0.14.0
 

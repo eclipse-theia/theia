@@ -198,7 +198,7 @@ button.secondary[disabled], .theia-button.secondary[disabled] {
     background-color: var(--theia-secondaryButton-disabledBackground);
 }
 
-select {
+.theia-select {
     color: var(--dropdown-foreground);
     font-size: var(--theia-ui-font-size1);
     border-radius: 0;
@@ -207,7 +207,7 @@ select {
     outline: none;
 }
 
-select option {
+.theia-select option {
     background: var(--theia-dropdown-listBackground);
 }
 
