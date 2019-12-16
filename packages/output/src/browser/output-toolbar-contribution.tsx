@@ -54,6 +54,7 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
             channelOptionElements.push(<option key={this.NONE} value={this.NONE}>{this.NONE}</option>);
         }
         return <select
+            className='theia-select'
             id={OutputWidget.IDs.CHANNEL_LIST}
             key={OutputWidget.IDs.CHANNEL_LIST}
             value={this.outputChannelManager.selectedChannel ? this.outputChannelManager.selectedChannel.name : this.NONE}

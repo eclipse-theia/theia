@@ -80,7 +80,7 @@ export class DebugConfigurationWidget extends ReactWidget {
         const { options } = this;
         return <React.Fragment>
             <DebugAction run={this.start} label='Start Debugging' iconClass='start' ref={this.setStepRef} />
-            <select className='debug-configuration' value={this.currentValue} onChange={this.setCurrentConfiguration}>
+            <select className='theia-select debug-configuration' value={this.currentValue} onChange={this.setCurrentConfiguration}>
                 {options.length ? options : <option value='__NO_CONF__'>No Configurations</option>}
                 <option disabled>{'Add Configuration...'.replace(/./g, '-')}</option>
                 <option value='__ADD_CONF__'>Add Configuration...</option>

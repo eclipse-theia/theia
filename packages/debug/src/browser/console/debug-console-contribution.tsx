@@ -132,6 +132,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         const selectedValue = Severity.toString(this.debugConsoleSession.severity || Severity.Ignore);
 
         return <select
+            className='theia-select'
             id={'debugConsoleSeverity'}
             key={'debugConsoleSeverity'}
             value={selectedValue}

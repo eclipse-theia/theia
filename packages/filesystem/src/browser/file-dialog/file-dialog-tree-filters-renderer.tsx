@@ -56,7 +56,7 @@ export class FileDialogTreeFiltersRenderer extends ReactRenderer {
         });
 
         const options = fileTypes.map(value => this.renderLocation(value));
-        return <select className={FILE_TREE_FILTERS_LIST_CLASS} onChange={this.handleFilterChanged}>{...options}</select>;
+        return <select className={'theia-select ' + FILE_TREE_FILTERS_LIST_CLASS} onChange={this.handleFilterChanged}>{...options}</select>;
     }
 
     protected renderLocation(value: string): React.ReactNode {
