@@ -90,12 +90,12 @@
 }
 
 .p-TabBar.theia-app-right .p-TabBar-tab.p-mod-current {
-    border-right-color: var(--theia-panel-border-width) solid var(--theia-activityBar-activeBorder);
+    border-right: var(--theia-panel-border-width) solid var(--theia-activityBar-activeBorder);
     border-top-color: transparent;
 }
 
 .p-TabBar.theia-app-right .p-TabBar-tab.p-mod-current.theia-mod-active {
-    border-left: var(--theia-panel-border-width) solid var(--theia-focusBorder);
+    border-right: var(--theia-panel-border-width) solid var(--theia-focusBorder);
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tabLabel,
