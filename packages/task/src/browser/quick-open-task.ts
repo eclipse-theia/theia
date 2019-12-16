@@ -19,16 +19,61 @@ import { TaskService } from './task-service';
 import { TaskInfo, TaskConfiguration, TaskCustomization } from '../common/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import URI from '@theia/core/lib/common/uri';
-import { TaskActionProvider } from './task-action-provider';
-import { QuickOpenHandler, QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser';
+import { QuickOpenHandler, QuickOpenService, QuickOpenOptions, QuickOpenBaseAction } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { FileSystem } from '@theia/filesystem/lib/common';
-import { QuickOpenModel, QuickOpenItem, QuickOpenActionProvider, QuickOpenMode, QuickOpenGroupItem, QuickOpenGroupItemOptions } from '@theia/core/lib/common/quick-open-model';
+import { QuickOpenModel, QuickOpenItem, QuickOpenActionProvider, QuickOpenMode, QuickOpenGroupItem, QuickOpenGroupItemOptions, QuickOpenAction } from '@theia/core/lib/common/quick-open-model';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { TaskNameResolver } from './task-name-resolver';
 import { TaskSourceResolver } from './task-source-resolver';
 import { TaskConfigurationManager } from './task-configuration-manager';
+import { ThemeService } from '@theia/core/lib/browser/theming';
+
+@injectable()
+export class ConfigureTaskAction extends QuickOpenBaseAction {
+
+    @inject(TaskService)
+    protected readonly taskService: TaskService;
+
+    constructor() {
+        super({ id: 'configure:task' });
+
+        this.updateTheme();
+
+        ThemeService.get().onThemeChange(() => this.updateTheme());
+    }
+
+    async run(item?: QuickOpenItem): Promise<void> {
+        if (item instanceof TaskRunQuickOpenItem) {
+            this.taskService.configure(item.getTask());
+        }
+    }
+
+    protected updateTheme(): void {
+        const theme = ThemeService.get().getCurrentTheme().id;
+        if (theme === 'dark') {
+            this.class = 'quick-open-task-configure-dark';
+        } else if (theme === 'light') {
+            this.class = 'quick-open-task-configure-bright';
+        }
+    }
+}
+
+@injectable()
+export class TaskActionProvider implements QuickOpenActionProvider {
+
+    @inject(ConfigureTaskAction)
+    protected configureTaskAction: ConfigureTaskAction;
+
+    hasActions(): boolean {
+        return true;
+    }
+
+    getActions(): ReadonlyArray<QuickOpenAction> {
+        return [this.configureTaskAction];
+    }
+}
 
 @injectable()
 export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
