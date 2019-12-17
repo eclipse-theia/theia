@@ -17,6 +17,7 @@
 import { injectable, inject, named, interfaces } from 'inversify';
 import URI from '../../common/uri';
 import { ContributionProvider, bindContributionProvider } from '../../common/contribution-provider';
+import { EnvVariablesServer } from '../../common/env-variables';
 
 export const PreferenceConfiguration = Symbol('PreferenceConfiguration');
 export interface PreferenceConfiguration {
@@ -34,9 +35,12 @@ export class PreferenceConfigurations {
     @inject(ContributionProvider) @named(PreferenceConfiguration)
     protected readonly provider: ContributionProvider<PreferenceConfiguration>;
 
+    @inject(EnvVariablesServer)
+    protected readonly envServer: EnvVariablesServer;
+
     /* prefer Theia over VS Code by default */
-    getPaths(): string[] {
-        return ['.theia', '.vscode'];
+    async getPaths(): Promise<string[]> {
+        return [await this.envServer.getDataFolderName(), '.vscode'];
     }
 
     getConfigName(): string {
@@ -71,7 +75,10 @@ export class PreferenceConfigurations {
         return configUri.parent.path.base;
     }
 
-    createUri(folder: URI, configPath: string = this.getPaths()[0], configName: string = this.getConfigName()): URI {
+    async createUri(folder: URI, configPath: string, configName: string = this.getConfigName()): Promise<URI> {
+        if (!configPath) {
+            configPath = (await this.getPaths())[0];
+        }
         return folder.resolve(configPath).resolve(configName + '.json');
     }
 

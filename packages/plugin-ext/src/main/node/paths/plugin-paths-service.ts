@@ -20,10 +20,12 @@ import * as path from 'path';
 import { readdir, remove } from 'fs-extra';
 import * as crypto from 'crypto';
 import URI from '@theia/core/lib/common/uri';
-import { ILogger, isWindows } from '@theia/core';
+import { FileUri } from '@theia/core/lib/node';
+import { ILogger } from '@theia/core';
 import { PluginPaths } from './const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
 import { THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '@theia/workspace/lib/common';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PluginCliContribution } from '../plugin-cli-contribution';
 
 const SESSION_TIMESTAMP_PATTERN = /^\d{8}T\d{6}$/;
@@ -32,13 +34,14 @@ const SESSION_TIMESTAMP_PATTERN = /^\d{8}T\d{6}$/;
 @injectable()
 export class PluginPathsServiceImpl implements PluginPathsService {
 
-    private readonly windowsDataFolders = [PluginPaths.WINDOWS_APP_DATA_DIR, PluginPaths.WINDOWS_ROAMING_DIR];
-
     @inject(ILogger)
     protected readonly logger: ILogger;
 
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
+
+    @inject(EnvVariablesServer)
+    protected readonly envServer: EnvVariablesServer;
 
     @inject(PluginCliContribution)
     protected readonly cliContribution: PluginCliContribution;
@@ -82,8 +85,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     }
 
     protected async buildWorkspaceId(workspace: FileStat, roots: FileStat[]): Promise<string> {
-        const homeDir = await this.getUserHomeDir();
-        const untitledWorkspace = getTemporaryWorkspaceFileUri(new URI(homeDir));
+        const untitledWorkspace = getTemporaryWorkspaceFileUri(await this.envServer.getUserDataFolder());
 
         if (untitledWorkspace.toString() === workspace.uri) {
             // if workspace is temporary
@@ -102,6 +104,16 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         }
     }
 
+    private async getLogsDirPath(): Promise<string> {
+        const theiaDirPath = FileUri.fsPath(await this.envServer.getUserDataFolder());
+        return path.join(theiaDirPath, PluginPaths.PLUGINS_LOGS_DIR);
+    }
+
+    private async getWorkspaceStorageDirPath(): Promise<string> {
+        const theiaDirPath = FileUri.fsPath(await this.envServer.getUserDataFolder());
+        return path.join(theiaDirPath, PluginPaths.PLUGINS_WORKSPACE_STORAGE_DIR);
+    }
+
     /**
      * Generate time folder name in format: YYYYMMDDTHHMMSS, for example: 20181205T093828
      */
@@ -115,34 +127,6 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         return timeStamp;
     }
 
-    private async getLogsDirPath(): Promise<string> {
-        const theiaDir = await this.getTheiaDirPath();
-        return path.join(theiaDir, PluginPaths.PLUGINS_LOGS_DIR);
-    }
-
-    private async getWorkspaceStorageDirPath(): Promise<string> {
-        const theiaDir = await this.getTheiaDirPath();
-        return path.join(theiaDir, PluginPaths.PLUGINS_WORKSPACE_STORAGE_DIR);
-    }
-
-    async getTheiaDirPath(): Promise<string> {
-        const homeDir = await this.getUserHomeDir();
-        return path.join(
-            homeDir,
-            ...(isWindows ? this.windowsDataFolders : ['']),
-            PluginPaths.THEIA_DIR
-        );
-    }
-
-    private async getUserHomeDir(): Promise<string> {
-        const homeDirStat = await this.fileSystem.getCurrentUserHome();
-        if (!homeDirStat) {
-            throw new Error('Unable to get user home directory');
-        }
-        const homeDirPath = await this.fileSystem.getFsPath(homeDirStat.uri);
-        return homeDirPath!;
-    }
-
     private async cleanupOldLogs(parentLogsDir: string): Promise<void> {
         // @ts-ignore - fs-extra types (Even latest version) is not updated with the `withFileTypes` option.
         const dirEntries = await readdir(parentLogsDir, { withFileTypes: true });
@@ -150,7 +134,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         // However, upgrading the @types/node in theia to 10.11 (as defined in engine field)
         // Causes other packages to break in compilation, so we are using the infamous `any` type...
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const subDirEntries = dirEntries.filter((dirent: any) => dirent.isDirectory() );
+        const subDirEntries = dirEntries.filter((dirent: any) => dirent.isDirectory());
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const subDirNames = subDirEntries.map((dirent: any) => dirent.name);
         // We never clean a folder that is not a Theia logs session folder.

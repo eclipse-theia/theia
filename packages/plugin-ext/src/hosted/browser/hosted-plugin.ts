@@ -27,13 +27,13 @@ import { injectable, inject, interfaces, named, postConstruct } from 'inversify'
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { MAIN_RPC_CONTEXT, PluginManagerExt } from '../../common/plugin-api-rpc';
+import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, JsonRpcProxy, ProgressService
+    CancellationTokenSource, JsonRpcProxy, ProgressService, Path
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -47,6 +47,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { WaitUntilEvent } from '@theia/core/lib/common/event';
+import { FileSystem } from '@theia/filesystem/lib/common';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { Emitter, isCancelled } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -56,6 +57,7 @@ import { WebviewEnvironment } from '../../main/browser/webview/webview-environme
 import { WebviewWidget } from '../../main/browser/webview/webview';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -109,6 +111,9 @@ export class HostedPluginSupport {
     @inject(DebugConfigurationManager)
     protected readonly debugConfigurationManager: DebugConfigurationManager;
 
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
     @inject(FileSearchService)
     protected readonly fileSearchService: FileSearchService;
 
@@ -135,6 +140,9 @@ export class HostedPluginSupport {
 
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
+
+    @inject(EnvVariablesServer)
+    protected readonly envServer: EnvVariablesServer;
 
     private theiaReadyPromise: Promise<any>;
 
@@ -330,15 +338,20 @@ export class HostedPluginSupport {
         let started = 0;
         const startPluginsMeasurement = this.createMeasurement('startPlugins');
 
-        const [hostLogPath, hostStoragePath] = await Promise.all([
+        const [hostLogPath, hostStoragePath, hostGlobalStoragePath] = await Promise.all([
             this.pluginPathsService.getHostLogPath(),
-            this.getStoragePath()
+            this.getStoragePath(),
+            this.getHostGlobalStoragePath()
         ]);
         if (toDisconnect.disposed) {
             return;
         }
         const thenable: Promise<void>[] = [];
-        const configStorage = { hostLogPath, hostStoragePath };
+        const configStorage: ConfigStorage = {
+            hostLogPath: hostLogPath!,
+            hostStoragePath: hostStoragePath,
+            hostGlobalStoragePath: hostGlobalStoragePath!
+        };
         for (const [host, hostContributions] of contributionsByHost) {
             const manager = await this.obtainManager(host, hostContributions, toDisconnect);
             if (!manager) {
@@ -454,6 +467,18 @@ export class HostedPluginSupport {
     protected async getStoragePath(): Promise<string | undefined> {
         const roots = await this.workspaceService.roots;
         return this.pluginPathsService.getHostStoragePath(this.workspaceService.workspace, roots);
+    }
+
+    protected async getHostGlobalStoragePath(): Promise<string> {
+        const userDataFolderPath: string = (await this.fileSystem.getFsPath(await this.envServer.getUserDataFolder()))!;
+        const globalStorageFolderPath = new Path(userDataFolderPath).join('globalStorage').toString();
+
+        // Make sure that folder by the path exists
+        if (! await this.fileSystem.exists(globalStorageFolderPath)) {
+            await this.fileSystem.createFolder(globalStorageFolderPath);
+        }
+
+        return globalStorageFolderPath;
     }
 
     async activateByEvent(activationEvent: string): Promise<void> {

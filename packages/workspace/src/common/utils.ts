@@ -19,6 +19,13 @@ import URI from '@theia/core/lib/common/uri';
 export const THEIA_EXT = 'theia-workspace';
 export const VSCODE_EXT = 'code-workspace';
 
-export function getTemporaryWorkspaceFileUri(home: URI): URI {
-    return home.resolve('.theia').resolve(`Untitled.${THEIA_EXT}`).withScheme('file');
+export function getTemporaryWorkspaceFileUri(userDataFolder: string | URI): URI {
+    let userDataFolderUri: URI;
+    if (typeof userDataFolder === 'string') {
+        userDataFolderUri = new URI(userDataFolder);
+    } else {
+        userDataFolderUri = userDataFolder;
+    }
+
+    return userDataFolderUri.resolve(`Untitled.${THEIA_EXT}`).withScheme('file');
 }

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (C) 2018-2020 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,9 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as os from 'os';
 import { injectable } from 'inversify';
 import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
 import { isWindows } from '../../common/os';
+import { FileUri } from '../file-uri';
+
+const THEIA_DATA_FOLDER = '.theia';
+
+const WINDOWS_APP_DATA_DIR = 'AppData';
+const WINDOWS_ROAMING_DIR = 'Roaming';
 
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {
@@ -44,4 +51,27 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         }
         return this.envs[key];
     }
+
+    async getUserHomeFolder(): Promise<string> {
+        return FileUri.create(os.homedir()).toString();
+    }
+
+    async getDataFolderName(): Promise<string> {
+        return THEIA_DATA_FOLDER;
+    }
+
+    async getUserDataFolder(): Promise<string> {
+        return FileUri.create(await this.getUserHomeFolder()).resolve(await this.getDataFolderName()).toString();
+    }
+
+    async getAppDataFolder(): Promise<string> {
+        const dataFolderUriBuilder = FileUri.create(await this.getUserHomeFolder());
+        if (isWindows) {
+            dataFolderUriBuilder.resolve(WINDOWS_APP_DATA_DIR);
+            dataFolderUriBuilder.resolve(WINDOWS_ROAMING_DIR);
+        }
+        dataFolderUriBuilder.resolve(await this.getDataFolderName());
+        return dataFolderUriBuilder.toString();
+    }
+
 }

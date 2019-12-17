@@ -171,7 +171,7 @@ export class TaskConfigurationManager {
             if (configUri && configUri.path.base === 'tasks.json') {
                 uri = configUri;
             } else { // fallback
-                uri = new URI(model.workspaceFolderUri).resolve(`${this.preferenceConfigurations.getPaths()[0]}/tasks.json`);
+                uri = new URI(model.workspaceFolderUri).resolve((await this.preferenceConfigurations.getPaths())[0] + '/tasks.json');
             }
 
             const fileStat = await this.filesystem.getFileStat(uri.toString());
