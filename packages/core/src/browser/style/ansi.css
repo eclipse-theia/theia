@@ -15,20 +15,74 @@
  ********************************************************************************/
 
 /* ANSI */
-.ansi-black-fg, .ansi-bright-black-fg { color: var(--theia-ansi-black-color); }
-.ansi-red-fg, .ansi-bright-red-fg { color: var(--theia-ansi-red-color); }
-.ansi-green-fg, .ansi-bright-green-fg { color: var(--theia-ansi-green-color); }
-.ansi-yellow-fg, .ansi-bright-yellow-fg { color: var(--theia-ansi-yellow-color); }
-.ansi-blue-fg, .ansi-bright-blue-fg { color: var(--theia-ansi-blue-color); }
-.ansi-magenta-fg, .ansi-bright-magenta-fg { color: var(--theia-ansi-magenta-color); }
-.ansi-cyan-fg, .ansi-bright-cyan-fg { color: var(--theia-ansi-cyan-color); }
-.ansi-white-fg, .ansi-bright-white-fg { color: var(--theia-ansi-white-color); }
+.ansi-black-fg,
+.ansi-black-bg {
+    color: var(--theia-terminal-ansiBlack);
+}
+.ansi-bright-black-fg,
+.ansi-bright-black-bg {
+    color: var(--theia-terminal-ansiBrightBlack);
+}
 
-.ansi-black-bg, .ansi-bright-black-bg { background-color: var(--theia-ansi-black-background-color); }
-.ansi-red-bg, .ansi-bright-red-bg { background-color: var(--theia-ansi-red-background-color); }
-.ansi-green-bg, .ansi-bright-green-bg { background-color: var(--theia-ansi-green-background-color); }
-.ansi-yellow-bg, .ansi-bright-yellow-bg { background-color: var(--theia-ansi-yellow-background-color); }
-.ansi-blue-bg, .ansi-bright-blue-bg { background-color: var(--theia-ansi-blue-background-color); }
-.ansi-magenta-bg, .ansi-bright-magenta-bg { background-color: var(--theia-ansi-magenta-background-color); }
-.ansi-cyan-bg, .ansi-bright-cyan-bg { background-color: var(--theia-ansi-cyan-background-color); }
-.ansi-white-bg, .ansi-bright-white-bg { background-color: var(--theia-ansi-white-background-color); }
+.ansi-red-fg,
+.ansi-red-bg {
+    color: var(--theia-terminal-ansiRed);
+}
+.ansi-bright-red-fg,
+.ansi-bright-red-bg {
+    color: var(--theia-terminal-ansiBrightRed);
+}
+
+.ansi-green-fg,
+.ansi-green-bg {
+    color: var(--theia-terminal-ansiGreen);
+}
+.ansi-bright-green-fg,
+.ansi-bright-green-bg {
+    color: var(--theia-terminal-ansiBrightGreen);
+}
+
+.ansi-yellow-fg,
+.ansi-yellow-bg {
+    color: var(--theia-terminal-ansiYellow);
+}
+.ansi-bright-yellow-fg,
+.ansi-bright-yellow-bg {
+    color: var(--theia-terminal-ansiBrightYellow);
+}
+
+.ansi-blue-fg,
+.ansi-blue-bg {
+    color: var(--theia-terminal-ansiBlue);
+}
+.ansi-bright-blue-fg,
+.ansi-bright-blue-bg {
+    color: var(--theia-terminal-ansiBrightBlue);
+}
+
+.ansi-magenta-fg,
+.ansi-magenta-bg {
+    color: var(--theia-terminal-ansiMagenta);
+}
+.ansi-bright-magenta-fg,
+.ansi-bright-magenta-bg {
+    color: var(--theia-terminal-ansiBrightMagenta);
+}
+
+.ansi-cyan-fg,
+.ansi-cyan-bg {
+    color: var(--theia-terminal-ansiCyan);
+}
+.ansi-bright-cyan-fg,
+.ansi-bright-cyan-bg {
+    color: var(--theia-terminal-ansiBrightCyan);
+}
+
+.ansi-white-fg,
+.ansi-white-bg {
+    color: var(--theia-terminal-ansiWhite);
+}
+.ansi-bright-white-fg,
+.ansi-bright-white-bg {
+    color: var(--theia-terminal-ansiBrightWhite);
+}
