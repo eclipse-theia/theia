@@ -85,6 +85,13 @@ export class TabBarRenderer extends TabBar.Renderer {
             this.toDispose.push(this.decoratorService);
             this.toDispose.push(this.decoratorService.onDidChangeDecorations(() => this.resetDecorations()));
         }
+        if (this.iconThemeService) {
+            this.toDispose.push(this.iconThemeService.onDidChangeCurrent(() => {
+                if (this._tabBar) {
+                    this._tabBar.update();
+                }
+            }));
+        }
     }
 
     protected _tabBar?: TabBar<Widget>;

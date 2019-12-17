@@ -182,6 +182,7 @@ body.theia-editor-highlightModifiedTabs
 
 .p-TabBar.theia-app-centers .p-TabBar-tabIcon,
 .p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon {
+    min-height: 14px;
     background-size: 13px;
     background-position-y: 3px;
     background: var(--theia-icon-foreground);
@@ -203,6 +204,7 @@ body.theia-editor-highlightModifiedTabs
 .p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon.fa {
     background: none;
     min-height: 0;
+    height: inherit;
 }
 
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon {
