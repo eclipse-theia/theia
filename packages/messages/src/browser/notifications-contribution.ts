@@ -51,11 +51,20 @@ export class NotificationsContribution implements FrontendApplicationContributio
             text: this.getStatusBarItemText(count),
             alignment: StatusBarAlignment.RIGHT,
             priority: -900,
-            command: NotificationsCommands.TOGGLE.id
+            command: NotificationsCommands.TOGGLE.id,
+            tooltip: this.getStatusBarItemTooltip(count)
         });
     }
     protected getStatusBarItemText(count: number): string {
-        return `$(bell) ${count ? ` ${count}` : '' }`;
+        return `$(bell) ${count ? ` ${count}` : ''}`;
+    }
+    protected getStatusBarItemTooltip(count: number): string {
+        if (this.manager.centerVisible) {
+            return 'Hide Notifications';
+        }
+        return count === 0
+            ? 'No Notifications'
+            : count === 1 ? '1 Notification' : `${count} Notifications`;
     }
 
     registerCommands(commands: CommandRegistry): void {
