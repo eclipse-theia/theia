@@ -19,6 +19,7 @@ import * as fs from 'fs-extra';
 import * as path from 'path';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileSystem } from '@theia/filesystem/lib/common';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PluginPaths } from './paths/const';
 import { PluginPathsService } from '../common/plugin-paths-protocol';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
@@ -32,13 +33,16 @@ export class PluginsKeyValueStorage {
     @inject(PluginPathsService)
     private readonly pluginPathsService: PluginPathsService;
 
+    @inject(EnvVariablesServer)
+    protected readonly envServer: EnvVariablesServer;
+
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
 
     @postConstruct()
     protected async init(): Promise<void> {
         try {
-            const theiaDirPath = await this.pluginPathsService.getTheiaDirPath();
+            const theiaDirPath = await this.envServer.getUserDataFolderPath();
             await this.fileSystem.createFolder(theiaDirPath);
             const globalDataPath = path.join(theiaDirPath, PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR, 'global-state.json');
             await this.fileSystem.createFolder(path.dirname(globalDataPath));

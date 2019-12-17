@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { interfaces } from 'inversify';
-import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { EnvVariablesServer, EnvVariable } from '@theia/core/lib/common/env-variables';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { EnvMain } from '../../common/plugin-api-rpc';
 import { QueryParameters } from '../../common/env';
@@ -23,6 +23,7 @@ import { isWindows, isOSX } from '@theia/core';
 import { OperatingSystem } from '../../plugin/types-impl';
 
 export class EnvMainImpl implements EnvMain {
+
     private envVariableServer: EnvVariablesServer;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
@@ -33,6 +34,10 @@ export class EnvMainImpl implements EnvMain {
         return this.envVariableServer.getValue(envVarName).then(result => result ? result.value : undefined);
     }
 
+    $getAllEnvVariables(): Promise<EnvVariable[]> {
+        return this.envVariableServer.getVariables();
+    }
+
     async $getClientOperatingSystem(): Promise<OperatingSystem> {
         if (isWindows) {
             return OperatingSystem.Windows;
@@ -41,6 +46,26 @@ export class EnvMainImpl implements EnvMain {
             return OperatingSystem.OSX;
         }
         return OperatingSystem.Linux;
+    }
+
+    $getExecPath(): Promise<string> {
+        return this.envVariableServer.getExecPath();
+    }
+
+    $getUserHomeFolderPath(): Promise<string> {
+        return this.envVariableServer.getUserHomeFolderPath();
+    }
+
+    $getDataFolderName(): Promise<string> {
+        return this.envVariableServer.getDataFolderName();
+    }
+
+    $getUserDataFolderPath(): Promise<string> {
+        return this.envVariableServer.getUserDataFolderPath();
+    }
+
+    $getAppDataPath(): Promise<string> {
+        return this.envVariableServer.getAppDataPath();
     }
 }
 

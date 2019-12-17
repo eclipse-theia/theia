@@ -35,7 +35,7 @@ export class PreferenceConfigurations {
     protected readonly provider: ContributionProvider<PreferenceConfiguration>;
 
     /* prefer Theia over VS Code by default */
-    getPaths(): string[] {
+    async getPaths(): Promise<string[]> {
         return ['.theia', '.vscode'];
     }
 
@@ -71,7 +71,10 @@ export class PreferenceConfigurations {
         return configUri.parent.path.base;
     }
 
-    createUri(folder: URI, configPath: string = this.getPaths()[0], configName: string = this.getConfigName()): URI {
+    async createUri(folder: URI, configPath: string, configName: string = this.getConfigName()): Promise<URI> {
+        if (!configPath) {
+            configPath = (await this.getPaths())[0];
+        }
         return folder.resolve(configPath).resolve(configName + '.json');
     }
 

@@ -21,6 +21,10 @@ export interface EnvVariablesServer {
     getExecPath(): Promise<string>
     getVariables(): Promise<EnvVariable[]>
     getValue(key: string): Promise<EnvVariable | undefined>
+    getUserHomeFolderPath(): Promise<string>
+    getDataFolderName(): Promise<string>
+    getUserDataFolderPath(): Promise<string>
+    getAppDataPath(): Promise<string>
 }
 
 export interface EnvVariable {

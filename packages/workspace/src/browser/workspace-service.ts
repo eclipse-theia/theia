@@ -24,6 +24,7 @@ import {
     FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider
 } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
@@ -64,6 +65,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @inject(PreferenceSchemaProvider)
     protected readonly schemaProvider: PreferenceSchemaProvider;
+
+    @inject(EnvVariablesServer)
+    protected readonly envServer: EnvVariablesServer;
 
     protected applicationName: string;
 
@@ -376,8 +380,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async getUntitledWorkspace(): Promise<URI | undefined> {
-        const home = await this.fileSystem.getCurrentUserHome();
-        return home && getTemporaryWorkspaceFileUri(new URI(home.uri));
+        const userDataDirPath = await this.envServer.getUserDataFolderPath();
+        return getTemporaryWorkspaceFileUri(userDataDirPath);
     }
 
     private async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {

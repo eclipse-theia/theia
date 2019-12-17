@@ -17,7 +17,6 @@
 import * as path from 'path';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
-import * as os from 'os';
 import * as jsoncparser from 'jsonc-parser';
 
 import { injectable, inject, postConstruct } from 'inversify';
@@ -25,6 +24,7 @@ import { FileUri } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { WorkspaceServer } from '../common';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
@@ -65,6 +65,9 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
 
     @inject(WorkspaceCliContribution)
     protected readonly cliParams: WorkspaceCliContribution;
+
+    @inject(EnvVariablesServer)
+    protected readonly envServer: EnvVariablesServer;
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -134,7 +137,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
      * @param uri most recently used uri
      */
     protected async writeToUserHome(data: RecentWorkspacePathsData): Promise<void> {
-        const file = this.getUserStoragePath();
+        const file = await this.getUserStoragePath();
         await this.writeToFile(file, data);
     }
 
@@ -149,7 +152,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
      * Reads the most recently used workspace root from the user's home directory.
      */
     protected async readRecentWorkspacePathsFromUserHome(): Promise<RecentWorkspacePathsData | undefined> {
-        const filePath = this.getUserStoragePath();
+        const filePath = await this.getUserStoragePath();
         const data = await this.readJsonFromFile(filePath);
         return RecentWorkspacePathsData.is(data) ? data : undefined;
     }
@@ -162,8 +165,8 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         }
     }
 
-    protected getUserStoragePath(): string {
-        return path.resolve(os.homedir(), '.theia', 'recentworkspace.json');
+    protected async getUserStoragePath(): Promise<string> {
+        return path.resolve(await this.envServer.getUserDataFolderPath(), 'recentworkspace.json');
     }
 }
 

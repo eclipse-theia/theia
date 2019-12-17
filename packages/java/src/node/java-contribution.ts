@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as os from 'os';
 import * as path from 'path';
 import * as glob from 'glob';
 import { Socket } from 'net';
@@ -23,6 +22,7 @@ import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
 import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol';
 import { createSocketConnection } from 'vscode-ws-jsonrpc/lib/server';
 import { DEBUG_MODE } from '@theia/core/lib/node';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { IConnection, BaseLanguageServerContribution, LanguageServerStartOptions } from '@theia/languages/lib/node';
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME, JavaStartParams } from '../common';
 import { JavaCliContribution } from './java-cli-contribution';
@@ -52,6 +52,7 @@ export class JavaContribution extends BaseLanguageServerContribution {
     protected readonly ready: Promise<void>;
 
     constructor(
+        @inject(EnvVariablesServer) protected readonly envServer: EnvVariablesServer,
         @inject(JavaCliContribution) protected readonly cli: JavaCliContribution,
         @inject(ContributionProvider) @named(JavaExtensionContribution)
         protected readonly contributions: ContributionProvider<JavaExtensionContribution>
@@ -103,7 +104,7 @@ export class JavaContribution extends BaseLanguageServerContribution {
         this.activeDataFolders.add(dataFolderSuffix);
         clientConnection.onClose(() => this.activeDataFolders.delete(dataFolderSuffix));
 
-        const workspacePath = path.resolve(os.homedir(), '.theia', 'jdt.ls', '_ws_' + dataFolderSuffix);
+        const workspacePath = path.resolve(await this.envServer.getUserDataFolderPath(), 'jdt.ls', '_ws_' + dataFolderSuffix);
         const configuration = configurations.get(process.platform);
         if (!configuration) {
             throw new Error('Cannot find Java server configuration for ' + process.platform);

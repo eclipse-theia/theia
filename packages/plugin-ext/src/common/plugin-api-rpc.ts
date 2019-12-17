@@ -974,6 +974,11 @@ export interface ModelChangedEvent {
     readonly versionId: number;
 }
 
+export interface EnvVariable {
+    readonly name: string
+    readonly value: string | undefined
+}
+
 export interface DocumentsExt {
     $acceptModelModeChanged(startUrl: UriComponents, oldModeId: string, newModeId: string): void;
     $acceptModelSaved(strUrl: UriComponents): void;
@@ -992,7 +997,13 @@ export interface DocumentsMain {
 
 export interface EnvMain {
     $getEnvVariable(envVarName: string): Promise<string | undefined>;
+    $getAllEnvVariables(): Promise<EnvVariable[]>
     $getClientOperatingSystem(): Promise<theia.OperatingSystem>;
+    $getExecPath(): Promise<string>
+    $getUserHomeFolderPath(): Promise<string>
+    $getDataFolderName(): Promise<string>
+    $getUserDataFolderPath(): Promise<string>
+    $getAppDataPath(): Promise<string>
 }
 
 export interface PreferenceRegistryMain {
