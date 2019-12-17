@@ -72,6 +72,22 @@ body.theia-no-open-workspace #theia-statusBar{
     background-color: var(--theia-statusBarItem-activeBackground);
 }
 
+#theia-statusBar.theia-state-offline {
+    background-color: var(--theia-statusBar-offlineBackground);
+}
+
+#theia-statusBar.theia-state-offline .area .element {
+    color: var(--theia-statusBar-offlineForeground);
+}
+
+#theia-statusBar.theia-state-offline .area .element.hasCommand:hover {
+    background-color: var(--theia-statusBarItem-offlineHoverBackground);
+}
+
+#theia-statusBar.theia-state-offline .area .element.hasCommand:active {
+    background-color: var(--theia-statusBarItem-offlineActiveBackground);
+}
+
 #theia-statusBar .area.left .element {
     margin-right: var(--theia-ui-padding);
 }

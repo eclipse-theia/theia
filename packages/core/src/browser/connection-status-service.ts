@@ -198,9 +198,8 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
     private statusbarId = 'connection-status';
 
     protected handleOnline(): void {
-        this.statusBar.setBackgroundColor(undefined);
-        this.statusBar.setColor(undefined);
         this.statusBar.removeElement(this.statusbarId);
+        this.statusBar.removeCls('theia-state-offline');
     }
 
     protected handleOffline(): void {
@@ -210,7 +209,6 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
             tooltip: 'Cannot connect to backend.',
             priority: 5000
         });
-        this.statusBar.setBackgroundColor('var(--theia-editorWarning-foreground)');
-        this.statusBar.setColor('var(--theia-statusBar-foreground)');
+        this.statusBar.addCls('theia-state-offline');
     }
 }

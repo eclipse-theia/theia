@@ -66,6 +66,8 @@ export interface StatusBar {
     setColor(color?: string): Promise<void>;
     setElement(id: string, entry: StatusBarEntry): Promise<void>;
     removeElement(id: string): Promise<void>;
+    addCls(cls: string): Promise<void>;
+    removeCls(cls: string): Promise<void>;
 }
 
 @injectable()
@@ -105,6 +107,18 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     async setBackgroundColor(color?: string): Promise<void> {
         await this.ready;
         this.internalSetBackgroundColor(color);
+        this.update();
+    }
+
+    async addCls(cls: string): Promise<void> {
+        await this.ready;
+        this.addClass(cls);
+        this.update();
+    }
+
+    async removeCls(cls: string): Promise<void> {
+        await this.ready;
+        this.removeClass(cls);
         this.update();
     }
 
