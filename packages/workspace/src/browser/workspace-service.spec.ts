@@ -25,6 +25,8 @@ import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem';
 import { FileSystemWatcher, FileChangeEvent, FileChangeType } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DefaultWindowService } from '@theia/core/lib/browser/window/default-window-service';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
 import { WorkspaceServer } from '../common';
 import { DefaultWorkspaceServer } from '../node/default-workspace-server';
 import { Emitter, Disposable, DisposableCollection, ILogger, Logger } from '@theia/core';
@@ -107,6 +109,7 @@ describe('WorkspaceService', () => {
         testContainer.bind(WindowService).toConstantValue(mockWindowService);
         testContainer.bind(ILogger).toConstantValue(mockILogger);
         testContainer.bind(WorkspacePreferences).toConstantValue(mockPref);
+        testContainer.bind(EnvVariablesServer).to(MockEnvVariablesServerImpl);
         testContainer.bind(PreferenceServiceImpl).toConstantValue(mockPreferenceServiceImpl);
         testContainer.bind(PreferenceSchemaProvider).toConstantValue(mockPreferenceSchemaProvider);
 

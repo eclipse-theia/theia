@@ -29,6 +29,8 @@ import { PreferenceService } from '@theia/core/lib/browser/preferences';
 import { MockPreferenceService } from '@theia/core/lib/browser/preferences/test/mock-preference-service';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { MockFilesystem, MockFilesystemWatcherServer } from '@theia/filesystem/lib/common/test';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
 import { UserStorageUri } from './user-storage-uri';
 import URI from '@theia/core/lib/common/uri';
 
@@ -105,6 +107,7 @@ before(async () => {
 
         return fs;
     }).inSingletonScope();
+    testContainer.bind(EnvVariablesServer).to(MockEnvVariablesServerImpl).inSingletonScope();
     testContainer.bind(UserStorageService).to(UserStorageServiceFilesystemImpl);
 });
 

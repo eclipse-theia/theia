@@ -25,6 +25,4 @@ export interface PluginPathsService {
     getHostLogPath(): Promise<string>;
     /** Returns storage path for given workspace */
     getHostStoragePath(workspace: FileStat | undefined, roots: FileStat[]): Promise<string | undefined>;
-    /** Returns Theia data directory (one for all Theia workspaces, so doesn't change) */
-    getTheiaDirPath(): Promise<string>;
 }

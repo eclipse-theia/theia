@@ -16,6 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, LabelProvider } from '@theia/core/lib/browser';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from './workspace-service';
 import { getTemporaryWorkspaceFileUri } from '../common';
 import { WorkspacePreferences } from './workspace-preferences';
@@ -34,15 +35,12 @@ export class QuickOpenWorkspace implements QuickOpenModel {
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
+    @inject(EnvVariablesServer) protected readonly envServer: EnvVariablesServer;
 
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
-        const homeStat = await this.fileSystem.getCurrentUserHome();
-        const home = (homeStat) ? new URI(homeStat.uri).path.toString() : undefined;
-        let tempWorkspaceFile: URI | undefined;
-        if (home) {
-            tempWorkspaceFile = getTemporaryWorkspaceFileUri(new URI(home));
-        }
+        const homeDirPath: string = (await this.fileSystem.getFsPath(await this.envServer.getUserHomeFolder()))!;
+        const tempWorkspaceFile = getTemporaryWorkspaceFileUri(await this.envServer.getUserDataFolder());
         await this.preferences.ready;
         if (!workspaces.length) {
             this.items.push(new QuickOpenGroupItem({
@@ -64,7 +62,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
             const iconClass = icon === '' ? undefined : icon + ' file-icon';
             this.items.push(new QuickOpenGroupItem({
                 label: uri.path.base,
-                description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
+                description: (homeDirPath) ? FileSystemUtils.tildifyPath(uri.path.toString(), homeDirPath) : uri.path.toString(),
                 groupLabel: `last modified ${moment(stat.lastModification).fromNow()}`,
                 iconClass,
                 run: (mode: QuickOpenMode): boolean => {

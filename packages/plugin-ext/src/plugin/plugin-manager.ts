@@ -37,8 +37,6 @@ import { Memento, KeyValueStorageProxy } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
-import * as os from 'os';
-import * as fs from 'fs-extra';
 import { WebviewsExtImpl } from './webviews';
 
 export interface PluginHost {
@@ -317,12 +315,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const asAbsolutePath = (relativePath: string): string => join(plugin.pluginFolder, relativePath);
         const logPath = join(configStorage.hostLogPath, plugin.model.id); // todo check format
         const storagePath = join(configStorage.hostStoragePath || '', plugin.model.id);
-        async function defaultGlobalStorage(): Promise<string> {
-            const globalStorage = join(os.homedir(), '.theia', 'globalStorage');
-            await fs.ensureDir(globalStorage);
-            return globalStorage;
-        }
-        const globalStoragePath = join(configStorage.hostGlobalStoragePath || (await defaultGlobalStorage()), plugin.model.id);
+        const globalStoragePath = join(configStorage.hostGlobalStoragePath, plugin.model.id);
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
             globalState: new Memento(plugin.model.id, true, this.storageProxy),
