@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import debounce = require('lodash.debounce');
 import { injectable, inject, postConstruct } from 'inversify';
 import { TabBar, Widget, Title } from '@phosphor/widgets';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
@@ -36,12 +37,13 @@ import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
 import { Navigatable } from './navigatable';
 import { QuickViewService } from './quick-view-service';
-import { PrefixQuickOpenService, QuickOpenItem, QuickOpenMode, QuickOpenService } from './quick-open';
+import { PrefixQuickOpenService, QuickOpenItem, QuickOpenMode, QuickOpenService, QuickOpenGroupItem } from './quick-open';
 import { environment } from '@theia/application-package/lib/environment';
 import { IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
 import { ColorRegistry, Color } from './color-registry';
 import { CorePreferences } from './core-preferences';
+import { ThemeService } from './theming';
 
 export namespace CommonMenus {
 
@@ -202,6 +204,11 @@ export namespace CommonCommands {
         label: 'Open Preferences',
     };
 
+    export const SELECT_COLOR_THEME: Command = {
+        id: 'workbench.action.selectTheme',
+        label: 'Color Theme',
+        category: 'Preferences'
+    };
     export const SELECT_ICON_THEME: Command = {
         id: 'workbench.action.selectIconTheme',
         label: 'File Icon Theme',
@@ -250,6 +257,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(IconThemeService)
     protected readonly iconThemes: IconThemeService;
+
+    @inject(ThemeService)
+    protected readonly themeService: ThemeService;
 
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
@@ -395,6 +405,13 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         registry.registerMenuAction(CommonMenus.VIEW_PRIMARY, {
             commandId: CommonCommands.OPEN_VIEW.id
         });
+
+        registry.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_THEME, {
+            commandId: CommonCommands.SELECT_COLOR_THEME.id
+        });
+        registry.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_THEME, {
+            commandId: CommonCommands.SELECT_ICON_THEME.id
+        });
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {
@@ -538,6 +555,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: () => this.quickOpen.open(this.quickView.prefix)
         });
 
+        commandRegistry.registerCommand(CommonCommands.SELECT_COLOR_THEME, {
+            execute: () => this.selectColorTheme()
+        });
         commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
             execute: () => this.selectIconTheme()
         });
@@ -672,6 +692,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 command: CommonCommands.SAVE_ALL.id,
                 keybinding: 'ctrlcmd+alt+s'
+            },
+            // Theming
+            {
+                command: CommonCommands.SELECT_COLOR_THEME.id,
+                keybinding: 'ctrlcmd+k ctrlcmd+t'
             }
         );
     }
@@ -715,6 +740,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     protected selectIconTheme(): void {
         let resetTo: string | undefined = this.iconThemes.current;
+        const previewTheme = debounce((id: string) => this.iconThemes.current = id, 200);
+
         let items: (QuickOpenItem & { id: string })[] = [];
         for (const iconTheme of this.iconThemes.definitions) {
             const item = Object.assign(new QuickOpenItem({
@@ -724,7 +751,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     if (mode === QuickOpenMode.OPEN) {
                         resetTo = undefined;
                     }
-                    this.iconThemes.current = iconTheme.id;
+                    previewTheme(iconTheme.id);
                     return true;
                 }
             }), { id: iconTheme.id });
@@ -744,7 +771,50 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
                 onClose: () => {
                     if (resetTo) {
+                        previewTheme.cancel();
                         this.iconThemes.current = resetTo;
+                    }
+                }
+            });
+    }
+
+    protected selectColorTheme(): void {
+        let resetTo: string | undefined = this.themeService.getCurrentTheme().id;
+        const previewTheme = debounce((id: string) => this.themeService.setCurrentTheme(id), 200);
+
+        type ThemeQuickOpenItem = QuickOpenItem & { id: string };
+        const itemsByTheme: { light: ThemeQuickOpenItem[], dark: ThemeQuickOpenItem[], hc: ThemeQuickOpenItem[] } = { light: [], dark: [], hc: [] };
+        for (const theme of this.themeService.getThemes().sort((a, b) => a.label.localeCompare(b.label))) {
+            const themeItems = itemsByTheme[theme.type];
+            const groupLabel = themeItems.length === 0 ? (theme.type === 'hc' ? 'high contrast' : theme.type) + ' themes' : undefined;
+            themeItems.push(Object.assign(new QuickOpenGroupItem({
+                label: theme.label,
+                description: theme.description,
+                run: (mode: QuickOpenMode) => {
+                    if (mode === QuickOpenMode.OPEN) {
+                        resetTo = undefined;
+                    }
+                    previewTheme(theme.id);
+                    return true;
+                },
+                groupLabel,
+                showBorder: !!groupLabel && theme.type !== 'light'
+            }), { id: theme.id }));
+        }
+        const items = [...itemsByTheme.light, ...itemsByTheme.dark, ...itemsByTheme.hc];
+        this.quickOpenService.open({
+            onType: (_, accept) => accept(items)
+        }, {
+                placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
+                fuzzyMatchLabel: true,
+                selectIndex: () => {
+                    const current = this.themeService.getCurrentTheme().id;
+                    return items.findIndex(item => item.id === current);
+                },
+                onClose: () => {
+                    if (resetTo) {
+                        previewTheme.cancel();
+                        this.themeService.setCurrentTheme(resetTo);
                     }
                 }
             });

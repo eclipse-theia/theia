@@ -14,15 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import { CommandRegistry, CommandContribution, CommandHandler, Command } from '../common/command';
 import { Emitter, Event } from '../common/event';
 import { Disposable } from '../common/disposable';
-import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open/quick-open-model';
-import { QuickOpenService } from './quick-open/quick-open-service';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
-import { MenuContribution, MenuModelRegistry } from '../common/';
-import { CommonMenus } from './common-frontend-contribution';
 
 export const ThemeServiceSymbol = Symbol('ThemeService');
 
@@ -150,69 +144,6 @@ export class ThemeService {
         this.setCurrentTheme(this.defaultTheme.id);
     }
 
-}
-
-@injectable()
-export class ThemingCommandContribution implements CommandContribution, MenuContribution, CommandHandler, Command, QuickOpenModel {
-
-    id = 'change_theme';
-    category = 'Settings';
-    label = 'Change Color Theme';
-    private resetTo: string | undefined;
-
-    @inject(ThemeService)
-    protected readonly themeService: ThemeService;
-
-    @inject(QuickOpenService)
-    protected readonly openService: QuickOpenService;
-
-    registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(this, this);
-    }
-
-    registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_THEME, {
-            commandId: this.id,
-            label: this.label,
-            order: 'a30'
-        });
-    }
-
-    execute(): void {
-        this.resetTo = this.themeService.getCurrentTheme().id;
-        this.openService.open(this, {
-            placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
-            fuzzyMatchLabel: true,
-            selectIndex: () => this.activeIndex(),
-            onClose: () => {
-                if (this.resetTo) {
-                    this.themeService.setCurrentTheme(this.resetTo);
-                }
-            }
-        });
-    }
-
-    private activeIndex(): number {
-        const current = this.themeService.getCurrentTheme().id;
-        const themes = this.themeService.getThemes();
-        return themes.findIndex(theme => theme.id === current);
-    }
-
-    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-        const items = this.themeService.getThemes().map(t =>
-            new QuickOpenItem({
-                label: t.label,
-                description: t.description,
-                run: (mode: QuickOpenMode) => {
-                    if (mode === QuickOpenMode.OPEN) {
-                        this.resetTo = undefined;
-                    }
-                    this.themeService.setCurrentTheme(t.id);
-                    return true;
-                }
-            }));
-        acceptor(items);
-    }
 }
 
 export class BuiltinThemeProvider {
