@@ -53,7 +53,7 @@ import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
 import { PreferenceService } from './preferences';
 import { ContextMenuRenderer } from './context-menu-renderer';
-import { ThemingCommandContribution, ThemeService, BuiltinThemeProvider } from './theming';
+import { ThemeService, BuiltinThemeProvider } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
 import { ApplicationServer, applicationPath } from '../common/application-protocol';
@@ -282,11 +282,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     }).inSingletonScope();
 
     bind(ThemeService).toDynamicValue(() => ThemeService.get());
-
-    bind(ThemingCommandContribution).toSelf().inSingletonScope();
-    [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toService(ThemingCommandContribution),
-    );
 
     bindCorePreferences(bind);
 
