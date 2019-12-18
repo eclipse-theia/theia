@@ -71,7 +71,8 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
                 text: `${useSpaceOrTab}: ${tabSize}`,
                 alignment: StatusBarAlignment.RIGHT,
                 priority: 10,
-                command: EditorCommands.CONFIG_INDENTATION.id
+                command: EditorCommands.CONFIG_INDENTATION.id,
+                tooltip: 'Select Indentation'
             });
         }
     }
@@ -89,7 +90,8 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
                 text: `${text}`,
                 alignment: StatusBarAlignment.RIGHT,
                 priority: 11,
-                command: EditorCommands.CONFIG_EOL.id
+                command: EditorCommands.CONFIG_EOL.id,
+                tooltip: 'Select End Of Line Sequence'
             });
         }
     }
