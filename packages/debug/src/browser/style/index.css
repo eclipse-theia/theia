@@ -358,3 +358,10 @@
 	margin-top: var(--theia-ui-padding);
 	margin-bottom: var(--theia-ui-padding);
 }
+
+/* Status Bar */
+.theia-mod-debugging #theia-statusBar {
+    background: var(--theia-statusBar-debuggingBackground);
+    color: var(--theia-statusBar-debuggingForeground);
+    border-top: var(--theia-border-width) solid var(--theia-statusBar-debuggingBorder);
+}

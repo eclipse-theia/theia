@@ -313,7 +313,7 @@ const lightCss = require('../../src/browser/style/debug-bright.useable.css');
 
 function updateTheme(): void {
     const themeType = ThemeService.get().getCurrentTheme().type;
-    if (themeType === 'dark' || themeType === 'hc' ) {
+    if (themeType === 'dark' || themeType === 'hc') {
         lightCss.unuse();
         darkCss.use();
     } else if (themeType === 'light') {
@@ -398,6 +398,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 this.openSession(session);
             }
         });
+
+        this.updateStatusBar();
+        this.manager.onDidChange(() => this.updateStatusBar());
 
         this.schemaUpdater.update();
         this.configurations.load();
@@ -1024,6 +1027,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     registerColors(colors: ColorRegistry): void {
         colors.register(
+            // Debug colors should be aligned with https://code.visualstudio.com/api/references/theme-color#debug
             {
                 id: 'editor.stackFrameHighlightBackground',
                 defaults: { dark: '#ffff0033', light: '#ffff6673', hc: '#fff600' },
@@ -1032,8 +1036,50 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 id: 'editor.focusedStackFrameHighlightBackground',
                 defaults: { dark: '#7abd7a4d', light: '#cee7ce73', hc: '#cee7ce' },
                 description: 'Background color for the highlight of line at focused stack frame position.'
+            },
+            // Status bar colors should be aligned with debugging colors from https://code.visualstudio.com/api/references/theme-color#status-bar-colors
+            {
+                id: 'statusBar.debuggingBackground', defaults: {
+                    dark: '#CC6633',
+                    light: '#CC6633',
+                    hc: '#CC6633'
+                }, description: 'Status bar background color when a program is being debugged. The status bar is shown in the bottom of the window'
+            },
+            {
+                id: 'statusBar.debuggingForeground', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hc: 'statusBar.foreground'
+                }, description: 'Status bar foreground color when a program is being debugged. The status bar is shown in the bottom of the window'
+            },
+            {
+                id: 'statusBar.debuggingBorder', defaults: {
+                    dark: 'statusBar.border',
+                    light: 'statusBar.border',
+                    hc: 'statusBar.border'
+                }, description: 'Status bar border color separating to the sidebar and editor when a program is being debugged. The status bar is shown in the bottom of the window'
             }
         );
+    }
+
+    protected updateStatusBar(): void {
+        if (this.debuggingStaturBar === document.body.classList.contains('theia-mod-debugging')) {
+            return;
+        }
+        document.body.classList.toggle('theia-mod-debugging');
+    }
+
+    protected get debuggingStaturBar(): boolean {
+        if (this.manager.state < DebugState.Running) {
+            return false;
+        }
+
+        const session = this.manager.currentSession;
+        if (session && session.configuration.noDebug) {
+            return false;
+        }
+
+        return true;
     }
 
 }
