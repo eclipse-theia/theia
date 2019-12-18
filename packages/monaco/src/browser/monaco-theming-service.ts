@@ -16,6 +16,7 @@
 
 // tslint:disable:no-any
 
+import * as idb from 'idb';
 import { injectable, inject } from 'inversify';
 import * as jsoncparser from 'jsonc-parser';
 import * as plistparser from 'fast-plist';
@@ -33,10 +34,19 @@ export interface MonacoTheme {
     uri: string;
 }
 
+let monacoDB: Promise<idb.IDBPDatabase> | undefined;
+if ('indexedDB' in window) {
+    monacoDB = idb.openDB('theia-monaco', 1, {
+        upgrade: db => {
+            if (!db.objectStoreNames.contains('themes')) {
+                db.createObjectStore('themes', { keyPath: 'id' });
+            }
+        }
+    });
+}
+
 @injectable()
 export class MonacoThemingService {
-
-    static monacoThemes = new Map<string, MonacoThemingService.MonacoThemeState>();
 
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
@@ -121,20 +131,8 @@ export class MonacoThemingService {
 
     static init(): void {
         this.updateBodyUiTheme();
-        ThemeService.get().onThemeChange(e => {
-            this.updateBodyUiTheme();
-            MonacoThemingService.store(MonacoThemingService.monacoThemes.get(e.newTheme.id));
-        });
-        try {
-            const value = window.localStorage.getItem('monacoTheme');
-            if (value) {
-                const state: MonacoThemingService.MonacoThemeState = JSON.parse(value);
-                MonacoThemeRegistry.SINGLETON.setTheme(state.data.name!, state.data);
-                MonacoThemingService.doRegister(state);
-            }
-        } catch (e) {
-            console.error('Failed to restore monaco theme', e);
-        }
+        ThemeService.get().onThemeChange(() => this.updateBodyUiTheme());
+        this.restore();
     }
 
     protected static toUpdateUiTheme = new DisposableCollection();
@@ -146,15 +144,7 @@ export class MonacoThemingService {
         this.toUpdateUiTheme.push(Disposable.create(() => document.body.classList.remove(uiTheme)));
     }
 
-    static store(state: MonacoThemingService.MonacoThemeState | undefined): void {
-        if (state) {
-            window.localStorage.setItem('monacoTheme', JSON.stringify(state));
-        } else {
-            window.localStorage.removeItem('monacoTheme');
-        }
-    }
-
-    static doRegister(state: MonacoThemingService.MonacoThemeState): Disposable {
+    protected static doRegister(state: MonacoThemingService.MonacoThemeState): Disposable {
         const { id, label, description, uiTheme, data } = state;
         const type = uiTheme === 'vs' ? 'light' : uiTheme === 'vs-dark' ? 'dark' : 'hc';
         const builtInTheme = uiTheme === 'vs' ? BuiltinThemeProvider.lightCss : BuiltinThemeProvider.darkCss;
@@ -171,13 +161,55 @@ export class MonacoThemingService {
                 builtInTheme.unuse();
             }
         }));
-        MonacoThemingService.monacoThemes.set(id, state);
-        toDispose.push(Disposable.create(() => MonacoThemingService.monacoThemes.delete(id)));
+        this.storeTheme(state, toDispose);
         return toDispose;
     }
 
+    protected static async restore(): Promise<void> {
+        if (!monacoDB) {
+            return;
+        }
+        try {
+            const db = await monacoDB;
+            const themes = await db.transaction('themes', 'readonly').objectStore('themes').getAll();
+            for (const state of themes) {
+                if (MonacoThemingService.MonacoThemeState.is(state)) {
+                    MonacoThemeRegistry.SINGLETON.setTheme(state.data.name!, state.data);
+                    MonacoThemingService.doRegister(state);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to restore monaco themes', e);
+        }
+    }
+
+    protected static async storeTheme(state: MonacoThemingService.MonacoThemeState, toDispose: DisposableCollection): Promise<void> {
+        if (!monacoDB) {
+            return;
+        }
+        const db = await monacoDB;
+        if (toDispose.disposed) {
+            return;
+        }
+        const id = state.id;
+        await db.transaction('themes', 'readwrite').objectStore('themes').put(state);
+        if (toDispose.disposed) {
+            await this.cleanTheme(id);
+            return;
+        }
+        toDispose.push(Disposable.create(() => this.cleanTheme(id)));
+    }
+
+    protected static async cleanTheme(id: string): Promise<void> {
+        if (!monacoDB) {
+            return;
+        }
+        const db = await monacoDB;
+        await db.transaction('themes', 'readwrite').objectStore('themes').delete(id);
+    }
+
     /* remove all characters that are not allowed in css */
-    static toCssSelector(str: string): string {
+    protected static toCssSelector(str: string): string {
         str = str.replace(/[^\-a-zA-Z0-9]/g, '-');
         if (str.charAt(0).match(/[0-9\-]/)) {
             str = '-' + str;
@@ -193,5 +225,10 @@ export namespace MonacoThemingService {
         description?: string,
         uiTheme: MonacoTheme['uiTheme']
         data: ThemeMix
+    }
+    export namespace MonacoThemeState {
+        export function is(state: Object | undefined): state is MonacoThemeState {
+            return !!state && typeof state === 'object' && 'id' in state && 'label' in state && 'uiTheme' in state && 'data' in state;
+        }
     }
 }
