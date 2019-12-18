@@ -44,6 +44,7 @@ import { ColorContribution } from './color-application-contribution';
 import { ColorRegistry, Color } from './color-registry';
 import { CorePreferences } from './core-preferences';
 import { ThemeService } from './theming';
+import { PreferenceService, PreferenceScope } from './preferences';
 
 export namespace CommonMenus {
 
@@ -267,6 +268,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(CorePreferences)
     protected readonly preferences: CorePreferences;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     @postConstruct()
     protected init(): void {
         this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);
@@ -277,13 +281,50 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.registerCtrlWHandling();
 
         this.updateStyles();
-        this.preferences.onPreferenceChanged(() => this.updateStyles());
+        this.updateThemeFromPreference('workbench.colorTheme');
+        this.updateThemeFromPreference('workbench.iconTheme');
+        this.preferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'workbench.editor.highlightModifiedTabs') {
+                this.updateStyles();
+            } else if (e.preferenceName === 'workbench.colorTheme' || e.preferenceName === 'workbench.iconTheme') {
+                this.updateThemeFromPreference(e.preferenceName);
+            }
+        });
+        this.themeService.onThemeChange(() => this.updateThemePreference('workbench.colorTheme'));
+        this.iconThemes.onDidChangeCurrent(() => this.updateThemePreference('workbench.iconTheme'));
     }
 
     protected updateStyles(): void {
         document.body.classList.remove('theia-editor-highlightModifiedTabs');
         if (this.preferences['workbench.editor.highlightModifiedTabs']) {
             document.body.classList.add('theia-editor-highlightModifiedTabs');
+        }
+    }
+
+    protected updateThemePreference(preferenceName: 'workbench.colorTheme' | 'workbench.iconTheme'): void {
+        const inspect = this.preferenceService.inspect<string>(preferenceName);
+        const workspaceValue = inspect && inspect.workspaceValue;
+        const userValue = inspect && inspect.globalValue;
+        const value = workspaceValue || userValue;
+        const newValue = preferenceName === 'workbench.colorTheme' ? this.themeService.getCurrentTheme().id : this.iconThemes.current;
+        if (newValue !== value) {
+            const scope = workspaceValue !== undefined ? PreferenceScope.Workspace : PreferenceScope.User;
+            this.preferenceService.set(preferenceName, newValue, scope);
+        }
+    }
+
+    protected updateThemeFromPreference(preferenceName: 'workbench.colorTheme' | 'workbench.iconTheme'): void {
+        const value = this.preferences[preferenceName];
+        if (value !== undefined) {
+            if (preferenceName === 'workbench.colorTheme') {
+                if (!value) {
+                    this.themeService.reset();
+                } else {
+                    this.themeService.setCurrentTheme(value);
+                }
+            } else {
+                this.iconThemes.current = value || 'none';
+            }
         }
     }
 
