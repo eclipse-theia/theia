@@ -155,9 +155,8 @@ export class BuiltinThemeProvider {
     static readonly darkTheme: Theme = {
         id: 'dark',
         type: 'dark',
-        label: 'Dark Theme',
-        description: 'Bright fonts on dark backgrounds.',
-        editorTheme: 'dark-plus', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
+        label: 'Dark (Theia)',
+        editorTheme: 'dark-theia', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
         activate(): void {
             BuiltinThemeProvider.darkCss.use();
         },
@@ -169,9 +168,8 @@ export class BuiltinThemeProvider {
     static readonly lightTheme: Theme = {
         id: 'light',
         type: 'light',
-        label: 'Light Theme',
-        description: 'Dark fonts on light backgrounds.',
-        editorTheme: 'light-plus', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
+        label: 'Light (Theia)',
+        editorTheme: 'light-theia', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
         activate(): void {
             BuiltinThemeProvider.lightCss.use();
         },
@@ -180,8 +178,22 @@ export class BuiltinThemeProvider {
         }
     };
 
+    static readonly hcTheme: Theme = {
+        id: 'hc-theia',
+        type: 'hc',
+        label: 'High Contrast (Theia)',
+        editorTheme: 'hc-theia', // loaded in /packages/monaco/src/browser/textmate/monaco-theme-registry.ts
+        activate(): void {
+            BuiltinThemeProvider.darkCss.use();
+        },
+        deactivate(): void {
+            BuiltinThemeProvider.darkCss.unuse();
+        }
+    };
+
     static readonly themes = [
         BuiltinThemeProvider.darkTheme,
         BuiltinThemeProvider.lightTheme,
+        BuiltinThemeProvider.hcTheme
     ];
 }
