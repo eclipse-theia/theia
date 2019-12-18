@@ -1444,6 +1444,39 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: 'editorGutter.addedBackground'
                 }, description: 'Background color of success widgets (like alerts or notifications).'
             },
+            // Statusbar
+            {
+                id: 'statusBar.offlineBackground',
+                defaults: {
+                    dark: 'editorWarning.foreground',
+                    light: 'editorWarning.foreground',
+                    hc: 'editorWarning.foreground'
+                }, description: 'Background of hovered statusbar item in case the theia server is offlline.'
+            },
+            {
+                id: 'statusBar.offlineForeground',
+                defaults: {
+                    dark: 'editor.background',
+                    light: 'editor.background',
+                    hc: 'editor.background'
+                }, description: 'Background of hovered statusbar item in case the theia server is offlline.'
+            },
+            {
+                id: 'statusBarItem.offlineHoverBackground',
+                defaults: {
+                    dark: Color.lighten('statusBar.offlineBackground', 0.4),
+                    light: Color.lighten('statusBar.offlineBackground', 0.4),
+                    hc: Color.lighten('statusBar.offlineBackground', 0.4)
+                }, description: 'Background of hovered statusbar item in case the theia server is offlline.'
+            },
+            {
+                id: 'statusBarItem.offlineActiveBackground',
+                defaults: {
+                    dark: Color.lighten('statusBar.offlineBackground', 0.6),
+                    light: Color.lighten('statusBar.offlineBackground', 0.6),
+                    hc: Color.lighten('statusBar.offlineBackground', 0.6)
+                }, description: 'Background of active statusbar item in case the theia server is offlline.'
+            },
             // Buttons
             {
                 id: 'secondaryButton.foreground',
