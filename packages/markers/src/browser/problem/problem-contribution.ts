@@ -87,8 +87,36 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
                 : `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings} $(info-circle) ${problemStat.infos}`,
             alignment: StatusBarAlignment.LEFT,
             priority: 10,
-            command: this.toggleCommand ? this.toggleCommand.id : undefined
+            command: this.toggleCommand ? this.toggleCommand.id : undefined,
+            tooltip: this.getStatusBarTooltip(problemStat)
         });
+    }
+
+    /**
+     * Get the tooltip to be displayed when hovering over the problem statusbar item.
+     * - Displays `No Problems` when no problems are present.
+     * - Displays a human-readable label which describes for each type of problem stat properties,
+     * their overall count and type when any one of these properties has a positive count.
+     * @param stat the problem stat describing the number of `errors`, `warnings` and `infos`.
+     *
+     * @return the tooltip to be displayed in the statusbar.
+     */
+    protected getStatusBarTooltip(stat: ProblemStat): string {
+        if (stat.errors <= 0 && stat.warnings <= 0 && stat.infos <= 0) {
+            return 'No Problems';
+        }
+        const tooltip: string[] = [];
+        if (stat.errors > 0) {
+            tooltip.push(`${stat.errors} Errors`);
+        }
+        if (stat.warnings > 0) {
+            tooltip.push(`${stat.warnings} Warnings`);
+        }
+        if (stat.infos > 0) {
+            tooltip.push(`${stat.infos} Infos`);
+        }
+        return tooltip.join(', ');
+
     }
 
     registerCommands(commands: CommandRegistry): void {
