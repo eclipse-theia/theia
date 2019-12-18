@@ -535,7 +535,7 @@ export class PluginIconThemeService implements LabelProviderContribution {
         const pluginId = getPluginId(plugin.metadata.model);
         const packagePath = plugin.metadata.model.packagePath;
         const iconTheme = this.iconThemeFactory({
-            id: pluginId + '-' + contribution.id,
+            id: contribution.id,
             label: contribution.label || new URI(contribution.uri).path.base,
             description: contribution.description,
             uri: contribution.uri,

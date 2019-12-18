@@ -49,6 +49,14 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: 50,
             minimum: 0,
             description: 'Controls the number of recently used commands to keep in history for the command palette. Set to 0 to disable command history.'
+        },
+        'workbench.colorTheme': {
+            type: 'string',
+            description: 'Specifies the color theme used in the workbench.'
+        },
+        'workbench.iconTheme': {
+            type: ['string', 'null'],
+            description: "Specifies the icon theme used in the workbench or 'null' to not show any file icons."
         }
     }
 };
@@ -57,7 +65,9 @@ export interface CoreConfiguration {
     'application.confirmExit': 'never' | 'ifRequired' | 'always';
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
-    'workbench.editor.highlightModifiedTabs': boolean
+    'workbench.editor.highlightModifiedTabs': boolean;
+    'workbench.colorTheme'?: string;
+    'workbench.iconTheme'?: string | null;
 }
 
 export const CorePreferences = Symbol('CorePreferences');
