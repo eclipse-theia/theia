@@ -67,7 +67,7 @@ export class WatchModeLineMatcher extends StartStopLineMatcher {
 
     private beginsPattern: WatchingPattern;
     private endsPattern: WatchingPattern;
-    private activeOnStart: boolean = false;
+    activeOnStart: boolean = false;
 
     constructor(
         protected matcher: ProblemMatcher
@@ -108,7 +108,7 @@ export class WatchModeLineMatcher extends StartStopLineMatcher {
         return undefined;
     }
 
-    private matchBegin(line: string): boolean {
+    matchBegin(line: string): boolean {
         const beginRegexp = new RegExp(this.beginsPattern.regexp);
         const regexMatches = beginRegexp.exec(line);
         if (regexMatches) {
@@ -119,7 +119,7 @@ export class WatchModeLineMatcher extends StartStopLineMatcher {
         return false;
     }
 
-    private matchEnd(line: string): boolean {
+    matchEnd(line: string): boolean {
         const endRegexp = new RegExp(this.endsPattern.regexp);
         const match = endRegexp.exec(line);
         if (match) {
