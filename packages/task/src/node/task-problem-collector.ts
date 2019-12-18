@@ -23,7 +23,7 @@ export class ProblemCollector {
     private lineMatchers: AbstractLineMatcher[] = [];
 
     constructor(
-        protected problemMatchers: ProblemMatcher[]
+        public problemMatchers: ProblemMatcher[]
     ) {
         for (const matcher of problemMatchers) {
             if (ProblemMatcher.isWatchModeWatcher(matcher)) {
@@ -43,5 +43,20 @@ export class ProblemCollector {
             }
         });
         return markers;
+    }
+
+    isTaskActiveOnStart(): boolean {
+        const activeOnStart = this.lineMatchers.some(lineMatcher => (lineMatcher instanceof WatchModeLineMatcher) && lineMatcher.activeOnStart);
+        return activeOnStart;
+    }
+
+    matchBeginMatcher(line: string): boolean {
+        const match = this.lineMatchers.some(lineMatcher => (lineMatcher instanceof WatchModeLineMatcher) && lineMatcher.matchBegin(line));
+        return match;
+    }
+
+    matchEndMatcher(line: string): boolean {
+        const match = this.lineMatchers.some(lineMatcher => (lineMatcher instanceof WatchModeLineMatcher) && lineMatcher.matchEnd(line));
+        return match;
     }
 }

@@ -22,11 +22,25 @@ export const taskPath = '/services/task';
 
 export const TaskServer = Symbol('TaskServer');
 export const TaskClient = Symbol('TaskClient');
+export enum DependsOrder {
+    Sequence = 'sequence',
+    Parallel = 'parallel',
+}
 
 export interface TaskCustomization {
     type: string;
     group?: 'build' | 'test' | 'none' | { kind: 'build' | 'test' | 'none', isDefault: true };
     problemMatcher?: string | ProblemMatcherContribution | (string | ProblemMatcherContribution)[];
+
+    /** Whether the task is a background task or not. */
+    isBackground?: boolean;
+
+    /** The other tasks the task depend on. */
+    dependsOn?: string | TaskIdentifier | Array<string | TaskIdentifier>;
+
+    /** The order the dependsOn tasks should be executed in. */
+    dependsOrder?: DependsOrder;
+
     // tslint:disable-next-line:no-any
     [name: string]: any;
 }
@@ -66,6 +80,12 @@ export interface ContributedTaskConfiguration extends TaskConfiguration {
      * This field is not supposed to be used in `tasks.json`
      */
     readonly _source: string;
+}
+
+/** A task identifier */
+export interface TaskIdentifier {
+    type: string;
+    [name: string]: string;
 }
 
 /** Runtime information about Task. */
@@ -138,12 +158,18 @@ export interface TaskOutputProcessedEvent {
     readonly problems?: ProblemMatch[];
 }
 
+export interface BackgroundTaskEndedEvent {
+    readonly taskId: number;
+    readonly ctx?: string;
+}
+
 export interface TaskClient {
     onTaskExit(event: TaskExitedEvent): void;
     onTaskCreated(event: TaskInfo): void;
     onDidStartTaskProcess(event: TaskInfo): void;
     onDidEndTaskProcess(event: TaskExitedEvent): void;
     onDidProcessTaskOutput(event: TaskOutputProcessedEvent): void;
+    onBackgroundTaskEnded(event: BackgroundTaskEndedEvent): void;
 }
 
 export interface TaskDefinition {

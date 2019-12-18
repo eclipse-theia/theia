@@ -532,6 +532,17 @@ const problemMatcher = {
     ]
 };
 
+const taskIdentifier: IJSONSchema = {
+    type: 'object',
+    additionalProperties: true,
+    properties: {
+        type: {
+            type: 'string',
+            description: 'The task identifier.'
+        }
+    }
+};
+
 const processTaskConfigurationSchema: IJSONSchema = {
     type: 'object',
     required: ['type', 'label', 'command'],
@@ -539,6 +550,43 @@ const processTaskConfigurationSchema: IJSONSchema = {
         label: taskLabel,
         type: defaultTaskType,
         ...commandAndArgs,
+        isBackground: {
+            type: 'boolean',
+            default: false,
+            description: 'Whether the executed task is kept alive and is running in the background.'
+        },
+        dependsOn: {
+            anyOf: [
+                {
+                    type: 'string',
+                    description: 'Another task this task depends on.'
+                },
+                taskIdentifier,
+                {
+                    type: 'array',
+                    description: 'The other tasks this task depends on.',
+                    items: {
+                        anyOf: [
+                            {
+                                type: 'string'
+                            },
+                            taskIdentifier
+                        ]
+                    }
+                }
+            ],
+            description: 'Either a string representing another task or an array of other tasks that this task depends on.'
+        },
+        dependsOrder: {
+            type: 'string',
+            enum: ['parallel', 'sequence'],
+            enumDescriptions: [
+                'Run all dependsOn tasks in parallel.',
+                'Run all dependsOn tasks in sequence.'
+            ],
+            default: 'parallel',
+            description: 'Determines the order of the dependsOn tasks for this task. Note that this property is not recursive.'
+        },
         windows: {
             type: 'object',
             description: 'Windows specific command configuration that overrides the command, args, and options',
