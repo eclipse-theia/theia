@@ -26,7 +26,7 @@
     border-top: var(--theia-border-width) solid var(--theia-statusBar-border);
 }
 
-body.theia-no-open-workspace #theia-statusBar{
+body.theia-no-open-workspace #theia-statusBar {
     background: var(--theia-statusBar-noFolderBackground);
     color: var(--theia-statusBar-noFolderForeground);
     border-top: var(--theia-border-width) solid var(--theia-statusBar-noFolderBorder);
@@ -70,6 +70,22 @@ body.theia-no-open-workspace #theia-statusBar{
 
 #theia-statusBar .area .element.hasCommand:active {
     background-color: var(--theia-statusBarItem-activeBackground);
+}
+
+.theia-mod-offline #theia-statusBar {
+    background-color: var(--theia-statusBar-offlineBackground) !important;
+}
+
+.theia-mod-offline #theia-statusBar .area .element {
+    color: var(--theia-statusBar-offlineForeground) !important;
+}
+
+.theia-mod-offline #theia-statusBar .area .element.hasCommand:hover {
+    background-color: var(--theia-statusBarItem-offlineHoverBackground) !important;
+}
+
+.theia-mod-offline #theia-statusBar .area .element.hasCommand:active {
+    background-color: var(--theia-statusBarItem-offlineActiveBackground) !important;
 }
 
 #theia-statusBar .area.left .element {
