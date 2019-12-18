@@ -252,6 +252,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.clear();
     }
 
+    async hasChildProcesses(): Promise<boolean> {
+        return this.shellTerminalServer.hasChildProcesses(await this.processId);
+    }
+
     storeState(): object {
         this.closeOnDispose = false;
         return { terminalId: this.terminalId, titleLabel: this.title.label };

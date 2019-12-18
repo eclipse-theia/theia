@@ -20,6 +20,7 @@ import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal
 export const IShellTerminalServer = Symbol('IShellTerminalServer');
 
 export interface IShellTerminalServer extends IBaseTerminalServer {
+    hasChildProcesses(processId: number | undefined): Promise<boolean>;
 }
 
 export const shellTerminalPath = '/services/shell-terminal';

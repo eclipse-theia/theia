@@ -47,6 +47,11 @@ export abstract class TerminalWidget extends BaseWidget {
      * Cleat terminal output.
      */
     abstract clearOutput(): void;
+
+    /**
+     * Whether the terminal process has child processes.
+     */
+    abstract hasChildProcesses(): Promise<boolean>;
 }
 
 /**
