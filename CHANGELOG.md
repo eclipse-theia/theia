@@ -7,7 +7,59 @@ Breaking changes:
 - [task] renamed method `getStrigifiedTaskSchema()` has been renamed to `getStringifiedTaskSchema()` [#6780](https://github.com/eclipse-theia/theia/pull/6780)
 - [task] renamed method `reorgnizeTasks()` has been renamed to `reorganizeTasks()` [#6780](https://github.com/eclipse-theia/theia/pull/6780)
 - Support VS Code icon and color theming. [#6475](https://github.com/eclipse-theia/theia/pull/6475)
-  - Use `theia-input`, `theia-select` and `theia-button` to style input/textarea, select and button elements correspondingly. Before such elements were styled in an ad-hoc manner.
+  - Theming: Before `input`, `textarea`, `select` and `button` elements were styled in an ad-hoc manner, i.e.
+  some were styled globally for a tag, other per a component and third with a dedicated css class name.
+  Now Theia does not style these elements by default, but an extension developer should decide.
+  Theia comes though with predefined css class names: `theia-input`, `theia-select` and `theia-button`
+  to style input/textarea, select and button elements correspondingly. Existing components were refactored to use them.
+  - Theming: Theia css colors are replaced with [VS Code colors](https://code.visualstudio.com/api/references/theme-color).
+    - One can reference VS Code color in css by prefixing them with `--theia` and replacing all dots with dashes.
+    For example `widget.shadow` color can be referenced in css with `var(--theia-widget-shadow)`.
+    - One can resolve a current color value programmatically with `ColorRegistry.getCurrentColor`.
+    - One can load a new color theme:
+      - in the frontend module to enable it on startup
+        ```ts
+            MonacoThemingService.register({
+                id: 'myDarkTheme',
+                label: 'My Dark Theme',
+                uiTheme: 'vs-dark',
+                json: require('./relative/path/to/my_theme.json'),
+                includes: {
+                    './included_theme.json': require('./relative/path/to/included_theme.json')
+                }
+            });
+        ```
+      - later from a file:
+        ```ts
+            @inject(MonacoThemingService)
+            protected readonly monacoThemeService: MonacoThemingService;
+
+            this.monacoThemeService.register({
+                id: 'myDarkTheme',
+                label: 'My Dark Theme',
+                uiTheme: 'vs-dark',
+                uri: 'file:///absolute/path/to/my_theme.json'
+            });
+        ```
+      - or install from a VS Code extension.
+    - One should not introduce css color variables anymore or hardcode colors in css. 
+    - One can contribute new colors by implementing `ColorContribution` contribution point and calling `ColorRegistry.register`.
+    It's important that new colors are derived from existing VS Code colors if one plans to allow installation of VS Code extension contributing color themes.
+    Otherwise, there is no guarantee that new colors don't look alien for a random VS Code color theme.
+    One can derive from an existing color, just by plainly referencing it, e.g. `dark: 'widget.shadow'`,
+    or applying transformations, e.g. `dark: Color.lighten('widget.shadow', 0.4)`.
+    - One can though specify values, without deriving from VS Code colors, for new colors in their own theme.
+    See for example, how [Light (Theia)](packages/monaco/data/monaco-themes/vscode/light_theia.json) theme overrides colors for the activity bar.
+  - Labeling: `LabelProvider.getIcon` should be sync and fast to avoid blocking rendering and icon caching.
+  One has to pass more specific elements to get a more specific icon. For example, one cannot answer precisely from a URI
+  whether a folder or a file icon should be used. If a client wants to get a proper result then it should pass `FileStat` for example or
+  provide own `LabelProviderContribution` which derives `FileStat` from a custom data structure and then calls  `LabelProvider.getIcon` again.
+  - Labeling: `LabelProviderContribution` methods can return `undefined` meaning that the next contribution should be tried.
+  - Tree: `TreeNode.name`, `TreeNode.description` and `TreeNode.icon` are deprecated and will be removed later.
+  One has to provide `LabelProviderContribution` implementation for a custom tree node structure.
+  Before these attributes have to be computed for all nodes and stored as a part of the layout.
+  From now on they will be computed only on demand for visible nodes.
+  It decreases requirements to the local storage and allows to invalidate node appearance by simply rerendering a tree.
 
 ## v0.14.0
 
