@@ -71,7 +71,8 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
     async unwatchGitChanges(watcher: number): Promise<void> {
         const disposable = this.watchers.get(watcher);
         if (disposable) {
-            disposable.dispose();
+            // TODO: Uncomment in Theia 0.12.0
+            // disposable.dispose();
             this.watchers.delete(watcher);
         } else {
             throw new Error(`No Git watchers were registered with ID: ${watcher}.`);
