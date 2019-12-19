@@ -29,9 +29,30 @@ import { MonacoThemeRegistry, ThemeMix } from './textmate/monaco-theme-registry'
 export interface MonacoTheme {
     id?: string;
     label?: string;
-    uiTheme?: 'vs' | 'vs-dark' | 'hc-black';
+    uiTheme?: monaco.editor.BuiltinTheme;
     description?: string;
     uri: string;
+}
+
+export interface MonacoThemeJson {
+    /**
+     * theme id (optional), label is used if not provided
+     */
+    id?: string;
+    label: string;
+    /**
+     * theme type, `vs-dark` if not provided
+     */
+    uiTheme?: monaco.editor.BuiltinTheme;
+    description?: string;
+    /**
+     * Follow https://code.visualstudio.com/api/extension-guides/color-theme#create-a-new-color-theme to create a custom theme.
+     */
+    json: any
+    /**
+     * Themes can include each other. It specifies how inclusions should be resolved.
+     */
+    includes?: { [includePath: string]: any }
 }
 
 let monacoDB: Promise<idb.IDBPDatabase> | undefined;
@@ -68,12 +89,9 @@ export class MonacoThemingService {
             if (toDispose.disposed) {
                 return;
             }
-            const uiTheme = theme.uiTheme || 'vs-dark';
             const label = theme.label || new URI(theme.uri).path.base;
-            const id = theme.id || label;
-            const cssSelector = MonacoThemingService.toCssSelector(id);
-            const data = MonacoThemeRegistry.SINGLETON.register(json, includes, cssSelector, uiTheme);
-            toDispose.push(MonacoThemingService.doRegister({ id, label, description: theme.description, uiTheme, data }));
+            const { id, description, uiTheme } = theme;
+            toDispose.push(MonacoThemingService.register({ id, label, description, uiTheme: uiTheme, json, includes }));
         } catch (e) {
             console.error('Failed to load theme from ' + theme.uri, e);
         }
@@ -135,11 +153,20 @@ export class MonacoThemingService {
         this.restore();
     }
 
+    static register(theme: MonacoThemeJson): Disposable {
+        const uiTheme = theme.uiTheme || 'vs-dark';
+        const { label, description, json, includes } = theme;
+        const id = theme.id || label;
+        const cssSelector = MonacoThemingService.toCssSelector(id);
+        const data = MonacoThemeRegistry.SINGLETON.register(json, includes, cssSelector, uiTheme);
+        return MonacoThemingService.doRegister({ id, label, description, uiTheme, data });
+    }
+
     protected static toUpdateUiTheme = new DisposableCollection();
     protected static updateBodyUiTheme(): void {
         this.toUpdateUiTheme.dispose();
         const type = ThemeService.get().getCurrentTheme().type;
-        const uiTheme: MonacoTheme['uiTheme'] = type === 'hc' ? 'hc-black' : type === 'light' ? 'vs' : 'vs-dark';
+        const uiTheme: monaco.editor.BuiltinTheme = type === 'hc' ? 'hc-black' : type === 'light' ? 'vs' : 'vs-dark';
         document.body.classList.add(uiTheme);
         this.toUpdateUiTheme.push(Disposable.create(() => document.body.classList.remove(uiTheme)));
     }
@@ -223,7 +250,7 @@ export namespace MonacoThemingService {
         id: string,
         label: string,
         description?: string,
-        uiTheme: MonacoTheme['uiTheme']
+        uiTheme: monaco.editor.BuiltinTheme
         data: ThemeMix
     }
     export namespace MonacoThemeState {
