@@ -749,7 +749,7 @@ export class TaskService implements TaskConfigurationClient {
      * The task config, together with updates, will be written into the `tasks.json` if it is not found in the file.
      *
      * @param task task that the updates will be applied to
-     * @param update the updates to be appplied
+     * @param update the updates to be applied
      */
     // tslint:disable-next-line:no-any
     async updateTaskConfiguration(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {

@@ -75,7 +75,7 @@ export class TaskSchemaUpdater {
 
         taskConfigurationSchema.anyOf = [processTaskConfigurationSchema, ...customizedDetectedTasks, ...customSchemas];
 
-        const schemaContent = this.getStrigifiedTaskSchema();
+        const schemaContent = this.getStringifiedTaskSchema();
         try {
             this.inmemoryResources.update(taskSchemaUri, schemaContent);
         } catch (e) {
@@ -89,7 +89,7 @@ export class TaskSchemaUpdater {
 
     /**
      * Adds given task schema to `taskConfigurationSchema` as `oneOf` subschema.
-     * Replaces existed subschema by given schema if the corrresponding `$id` properties are equal.
+     * Replaces existed subschema by given schema if the corresponding `$id` properties are equal.
      *
      * Note: please provide `$id` property for subschema to have ability remove/replace it.
      * @param schema subschema for adding to `taskConfigurationSchema`
@@ -190,7 +190,7 @@ export class TaskSchemaUpdater {
     }
 
     /** Returns the task's JSON schema as a string */
-    private getStrigifiedTaskSchema(): string {
+    private getStringifiedTaskSchema(): string {
         return JSON.stringify(this.getTaskSchema());
     }
 

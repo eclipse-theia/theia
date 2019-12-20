@@ -20,7 +20,7 @@ import { TaskDefinitionRegistry } from './task-definition-registry';
 // tslint:disable:no-unused-expression
 describe('TaskDefinitionRegistry', () => {
     let registry: TaskDefinitionRegistry;
-    const definitonContributionA = {
+    const definitionContributionA = {
         taskType: 'extA',
         source: 'extA',
         required: ['extensionType'],
@@ -37,7 +37,7 @@ describe('TaskDefinitionRegistry', () => {
             }
         }
     };
-    const definitonContributionB = {
+    const definitionContributionB = {
         taskType: 'extA',
         source: 'extA',
         properties: {
@@ -61,48 +61,48 @@ describe('TaskDefinitionRegistry', () => {
 
     describe('register function', () => {
         it('should transform the task definition contribution and store it in memory', () => {
-            registry.register(definitonContributionA);
-            expect(registry['definitions'].get(definitonContributionA.taskType)).to.be.ok;
-            expect(registry['definitions'].get(definitonContributionA.taskType)![0]).to.deep.equal(definitonContributionA);
+            registry.register(definitionContributionA);
+            expect(registry['definitions'].get(definitionContributionA.taskType)).to.be.ok;
+            expect(registry['definitions'].get(definitionContributionA.taskType)![0]).to.deep.equal(definitionContributionA);
         });
     });
 
     describe('getDefinitions function', () => {
         it('should return all definitions associated with the given type', () => {
-            registry.register(definitonContributionA);
-            const defs1 = registry.getDefinitions(definitonContributionA.taskType);
+            registry.register(definitionContributionA);
+            const defs1 = registry.getDefinitions(definitionContributionA.taskType);
             expect(defs1.length).to.eq(1);
 
-            registry.register(definitonContributionB);
-            const defs2 = registry.getDefinitions(definitonContributionA.taskType);
+            registry.register(definitionContributionB);
+            const defs2 = registry.getDefinitions(definitionContributionA.taskType);
             expect(defs2.length).to.eq(2);
         });
     });
 
     describe('getDefinition function', () => {
         it('should return undefined if the given task configuration does not match any registered definitions', () => {
-            registry.register(definitonContributionA);
-            registry.register(definitonContributionB);
+            registry.register(definitionContributionA);
+            registry.register(definitionContributionB);
             const defs = registry.getDefinition({
-                type: definitonContributionA.taskType, label: 'grunt task', task: 'build'
+                type: definitionContributionA.taskType, label: 'grunt task', task: 'build'
             });
             expect(defs).to.be.not.ok;
         });
 
         it('should return the best match if there is one or more registered definitions match the given task configuration', () => {
-            registry.register(definitonContributionA);
-            registry.register(definitonContributionB);
+            registry.register(definitionContributionA);
+            registry.register(definitionContributionB);
             const defs = registry.getDefinition({
-                type: definitonContributionA.taskType, label: 'extention task', extensionType: 'extensionType', taskLabel: 'taskLabel'
+                type: definitionContributionA.taskType, label: 'extension task', extensionType: 'extensionType', taskLabel: 'taskLabel'
             });
             expect(defs).to.be.ok;
-            expect(defs!.taskType).to.be.eq(definitonContributionA.taskType);
+            expect(defs!.taskType).to.be.eq(definitionContributionA.taskType);
 
             const defs2 = registry.getDefinition({
-                type: definitonContributionA.taskType, label: 'extention task', extensionType: 'extensionType', taskLabel: 'taskLabel', taskDetailedLabel: 'taskDetailedLabel'
+                type: definitionContributionA.taskType, label: 'extension task', extensionType: 'extensionType', taskLabel: 'taskLabel', taskDetailedLabel: 'taskDetailedLabel'
             });
             expect(defs2).to.be.ok;
-            expect(defs2!.taskType).to.be.eq(definitonContributionB.taskType);
+            expect(defs2!.taskType).to.be.eq(definitionContributionB.taskType);
         });
     });
 });
