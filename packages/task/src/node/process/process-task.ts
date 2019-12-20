@@ -70,20 +70,20 @@ export class ProcessTask extends Task {
         });
 
         // Buffer to accumulate incoming output.
-        let databuf: string = '';
+        let dataBuffer: string = '';
         this.process.outputStream.on('data', (chunk: string) => {
-            databuf += chunk;
+            dataBuffer += chunk;
 
             while (1) {
                 // Check if we have a complete line.
-                const eolIdx = databuf.indexOf('\n');
+                const eolIdx = dataBuffer.indexOf('\n');
                 if (eolIdx < 0) {
                     break;
                 }
 
                 // Get and remove the line from the data buffer.
-                const lineBuf = databuf.slice(0, eolIdx);
-                databuf = databuf.slice(eolIdx + 1);
+                const lineBuf = dataBuffer.slice(0, eolIdx);
+                dataBuffer = dataBuffer.slice(eolIdx + 1);
                 const processedLine = removeAnsiEscapeCodes(lineBuf);
                 this.fireOutputLine({
                     taskId: this.taskId,

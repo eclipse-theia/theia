@@ -154,7 +154,7 @@ export class ProcessTaskRunner implements TaskRunner {
         args: Array<string | QuotedString> | undefined,
         options: CommandOptions
     } {
-        // initialise with default values from the `taskConfig`
+        // initialize with default values from the `taskConfig`
         let command: string | undefined = taskConfig.command;
         let args: Array<string | QuotedString> | undefined = taskConfig.args;
         let options: CommandOptions = taskConfig.options || {};

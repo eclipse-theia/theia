@@ -135,7 +135,7 @@ describe('Task server / back-end', function (): void {
         const config = createProcessTaskConfig('shell', command, [], FileUri.create(wsRoot).toString());
         const taskInfo: TaskInfo = await taskServer.run(config, wsRoot);
 
-        const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
+        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
 
         await p;
     });
@@ -144,7 +144,7 @@ describe('Task server / back-end', function (): void {
         const command = isWindows ? commandShortRunningWindows : (isOSX ? commandShortRunningOsx : commandShortRunning);
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', command, []), wsRoot);
 
-        const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
+        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
 
         await p;
     });
@@ -154,7 +154,7 @@ describe('Task server / back-end', function (): void {
         const executable = FileUri.fsPath(wsRootUri.resolve(command));
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', executable, []));
 
-        const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
+        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
 
         await p;
     });
@@ -166,7 +166,7 @@ describe('Task server / back-end', function (): void {
         const taskConfig: TaskConfiguration = createTaskConfig('npm', command, []);
         const taskInfo: TaskInfo = await taskServer.run(taskConfig, wsRoot);
 
-        const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
+        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
 
         await p;
     });
@@ -177,7 +177,7 @@ describe('Task server / back-end', function (): void {
         const opts: TaskConfiguration = createProcessTaskConfig('shell', command, []);
         const taskInfo: TaskInfo = await taskServer.run(opts, wsRoot);
 
-        const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
+        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
 
         await p;
     });
@@ -186,7 +186,7 @@ describe('Task server / back-end', function (): void {
         const command = isWindows ? commandWindowsNoop : commandUnixNoop;
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', command, []), wsRoot);
 
-        const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
+        const p = checkSuccessfulProcessExit(taskInfo, taskWatcher);
 
         await p;
     });
@@ -329,21 +329,21 @@ describe('Task server / back-end', function (): void {
     it('creating and killing a bunch of tasks works as expected', async function (): Promise<void> {
         // const command = isWindows ? command_absolute_path_long_running_windows : command_absolute_path_long_running;
         const numTasks = 20;
-        const taskinfo: TaskInfo[] = [];
+        const taskInfo: TaskInfo[] = [];
 
         // create a mix of terminal and raw processes
         for (let i = 0; i < numTasks; i++) {
             if (i % 2 === 0) {
-                taskinfo.push(await taskServer.run(createTaskConfigTaskLongRunning('shell')));
+                taskInfo.push(await taskServer.run(createTaskConfigTaskLongRunning('shell')));
             } else {
-                taskinfo.push(await taskServer.run(createTaskConfigTaskLongRunning('process')));
+                taskInfo.push(await taskServer.run(createTaskConfigTaskLongRunning('process')));
             }
         }
 
         const numRunningTasksAfterCreated = await taskServer.getTasks();
 
-        for (let i = 0; i < taskinfo.length; i++) {
-            await taskServer.kill(taskinfo[i].taskId);
+        for (let i = 0; i < taskInfo.length; i++) {
+            await taskServer.kill(taskInfo[i].taskId);
         }
         const numRunningTasksAfterKilled = await taskServer.getTasks();
 
@@ -412,7 +412,7 @@ function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfigur
     };
 }
 
-function checkSuccessfullProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatcher): Promise<object> {
+function checkSuccessfulProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatcher): Promise<object> {
     const p = new Promise<object>((resolve, reject) => {
         const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
             if (event.taskId === taskInfo.taskId && event.code === 0) {

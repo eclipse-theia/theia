@@ -113,8 +113,8 @@ export class TaskConfigurations implements Disposable {
                 }
             })
         );
-        this.reorgnizeTasks();
-        this.toDispose.push(this.taskSchemaUpdater.onDidChangeTaskSchema(() => this.reorgnizeTasks()));
+        this.reorganizeTasks();
+        this.toDispose.push(this.taskSchemaUpdater.onDidChangeTaskSchema(() => this.reorganizeTasks()));
     }
 
     setClient(client: TaskConfigurationClient): void {
@@ -261,7 +261,7 @@ export class TaskConfigurations implements Disposable {
         this.removeTasks(rootFolderUri);
         this.removeTaskCustomizations(rootFolderUri);
 
-        this.reorgnizeTasks();
+        this.reorganizeTasks();
     }
 
     /** parses a config file and extracts the tasks launch configurations */
@@ -360,7 +360,7 @@ export class TaskConfigurations implements Disposable {
      * This function is called after a change in TaskDefinitionRegistry happens.
      * It checks all tasks that have been loaded, and re-organized them in `tasksMap` and `taskCustomizationMap`.
      */
-    protected reorgnizeTasks(): void {
+    protected reorganizeTasks(): void {
         const newTaskMap = new Map<string, Map<string, TaskConfiguration>>();
         const newTaskCustomizationMap = new Map<string, TaskCustomization[]>();
         const addCustomization = (rootFolder: string, customization: TaskCustomization) => {
@@ -414,7 +414,7 @@ export class TaskConfigurations implements Disposable {
      * The task config, together with updates, will be written into the `tasks.json` if it is not found in the file.
      *
      * @param task task that the updates will be applied to
-     * @param update the updates to be appplied
+     * @param update the updates to be applied
      */
     // tslint:disable-next-line:no-any
     async updateTaskConfig(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {

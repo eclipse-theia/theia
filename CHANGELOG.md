@@ -1,5 +1,12 @@
 # Change Log
 
+## v0.15.0
+
+Breaking changes:
+
+- [task] renamed method `getStrigifiedTaskSchema()` has been renamed to `getStringifiedTaskSchema()` [#6780](https://github.com/eclipse-theia/theia/pull/6780)
+- [task] renamed method `reorgnizeTasks()` has been renamed to `reorganizeTasks()` [#6780](https://github.com/eclipse-theia/theia/pull/6780)
+
 ## v0.14.0
 
 - [application-manager] removed unnecessary `bunyan` dependency [#6651](https://github.com/eclipse-theia/theia/pull/6651)
