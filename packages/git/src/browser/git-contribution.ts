@@ -638,7 +638,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         return {
             command: GIT_COMMANDS.CHECKOUT.id,
             title: `$(code-fork) ${branch}${changes}`,
-            tooltip: 'Checkout...'
+            tooltip: `${branch}${changes}`
         };
     }
     protected getSyncStatusBarCommand(): ScmCommand | undefined {
