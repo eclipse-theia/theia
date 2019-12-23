@@ -46,8 +46,8 @@ const mockEditorManager = sinon.createStubInstance(EditorManager);
 mockEditorManager.getOrCreateByUri = sinon.stub().returns(mockEditorWidget);
 
 const mockWidgetManager = sinon.createStubInstance(WidgetManager);
-let onCreateListners: Function[] = [];
-mockWidgetManager.onDidCreateWidget = sinon.stub().callsFake((fn: Function) => onCreateListners.push(fn));
+let onCreateListeners: Function[] = [];
+mockWidgetManager.onDidCreateWidget = sinon.stub().callsFake((fn: Function) => onCreateListeners.push(fn));
 (mockWidgetManager.getOrCreateWidget as sinon.SinonStub).returns(mockPreviewWidget);
 
 const mockShell = sinon.createStubInstance(ApplicationShell) as ApplicationShell;
@@ -81,7 +81,7 @@ describe('editor-preview-manager', () => {
         sinon.stub(previewManager as any, 'onReveal').resolves();
     });
     afterEach(() => {
-        onCreateListners = [];
+        onCreateListeners = [];
         onPinnedListeners = [];
     });
 
@@ -124,9 +124,9 @@ describe('editor-preview-manager', () => {
         expect(await previewManager.open(new URI(), {})).to.equal(mockPreviewWidget);
         expect((mockPreviewWidget.pinEditorWidget as sinon.SinonStub).calledOnce).to.be.true;
     });
-    it('should should transition the editor to perminent on pin events.', async () => {
+    it('should should transition the editor to permanent on pin events.', async () => {
         // Fake creation call.
-        await onCreateListners.pop()!({ factoryId: EditorPreviewWidgetFactory.ID, widget: mockPreviewWidget });
+        await onCreateListeners.pop()!({ factoryId: EditorPreviewWidgetFactory.ID, widget: mockPreviewWidget });
         // Fake pinned call
         onPinnedListeners.pop()!({ preview: mockPreviewWidget, editorWidget: mockEditorWidget });
 
