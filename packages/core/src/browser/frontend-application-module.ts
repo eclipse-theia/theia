@@ -83,6 +83,9 @@ import { ProgressStatusBarItem } from './progress-status-bar-item';
 import { TabBarDecoratorService, TabBarDecorator } from './shell/tab-bar-decorator';
 import { ContextMenuContext } from './menu/context-menu-context';
 import { bindResourceProvider, bindMessageService, bindPreferenceService } from './frontend-application-bindings';
+import { ColorRegistry } from './color-registry';
+import { ColorContribution, ColorApplicationContribution } from './color-application-contribution';
+import { ExternalUriService } from './external-uri-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -90,6 +93,11 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     const themeService = ThemeService.get();
     themeService.register(...BuiltinThemeProvider.themes);
     themeService.startupTheme();
+
+    bind(ColorRegistry).toSelf().inSingletonScope();
+    bindContributionProvider(bind, ColorContribution);
+    bind(ColorApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ColorApplicationContribution);
 
     bind(FrontendApplication).toSelf().inSingletonScope();
     bind(FrontendApplicationStateService).toSelf().inSingletonScope();
@@ -131,6 +139,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();
     bind(OpenerService).toService(DefaultOpenerService);
+
+    bind(ExternalUriService).toSelf().inSingletonScope();
     bind(HttpOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(HttpOpenHandler);
 
@@ -216,6 +226,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bindContributionProvider(bind, LabelProviderContribution);
     bind(LabelProvider).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(LabelProvider);
     bind(LabelProviderContribution).to(DefaultUriLabelProviderContribution).inSingletonScope();
     bind(LabelProviderContribution).to(DiffUriLabelProviderContribution).inSingletonScope();
 

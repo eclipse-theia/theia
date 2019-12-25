@@ -290,3 +290,19 @@
     background-repeat: no-repeat;
     line-height: 18px;
 }
+
+.p-TabBar-toolbar .item .collapse-all {
+  background: var(--theia-icon-collapse-all) no-repeat;
+}
+
+.p-TabBar-toolbar .item .close {
+  background: var(--theia-icon-collapse-all) no-repeat;
+}
+
+.p-TabBar-toolbar .item .clear-all {
+  background: var(--theia-icon-clear) no-repeat;
+}
+
+.p-TabBar-toolbar .item .refresh {
+  background: var(--theia-icon-refresh) no-repeat;
+}

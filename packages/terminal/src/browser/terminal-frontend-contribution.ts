@@ -38,6 +38,7 @@ import { TerminalService } from './base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystem } from '@theia/filesystem/lib/common';
+import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -94,6 +95,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
+        @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(SelectionService) protected readonly selectionService: SelectionService
@@ -158,6 +160,10 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     getById(id: string): TerminalWidget | undefined {
         return this.all.find(terminal => terminal.id === id);
+    }
+
+    getDefaultShell(): Promise<string> {
+        return this.shellTerminalServer.getDefaultShell();
     }
 
     registerCommands(commands: CommandRegistry): void {

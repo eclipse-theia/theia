@@ -18,7 +18,7 @@ import { ContainerModule } from 'inversify';
 import { FrontendApplicationContribution, QuickOpenContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
-import { QuickOpenTask, TaskTerminateQuickOpen, TaskRunningQuickOpen } from './quick-open-task';
+import { QuickOpenTask, TaskTerminateQuickOpen, TaskRunningQuickOpen, TaskActionProvider, ConfigureTaskAction } from './quick-open-task';
 import { TaskContribution, TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
 import { TaskService } from './task-service';
 import { TaskConfigurations } from './task-configurations';
@@ -29,7 +29,6 @@ import { TaskServer, taskPath } from '../common/task-protocol';
 import { TaskWatcher } from '../common/task-watcher';
 import { bindProcessTaskModule } from './process/process-task-frontend-module';
 import { TaskSchemaUpdater } from './task-schema-updater';
-import { TaskActionProvider, ConfigureTaskAction } from './task-action-provider';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { ProblemPatternRegistry } from './task-problem-pattern-registry';
@@ -38,6 +37,7 @@ import { bindTaskPreferences } from './task-preferences';
 import '../../src/browser/style/index.css';
 import './tasks-monaco-contribution';
 import { TaskNameResolver } from './task-name-resolver';
+import { TaskSourceResolver } from './task-source-resolver';
 import { TaskTemplateSelector } from './task-templates';
 
 export default new ContainerModule(bind => {
@@ -74,6 +74,7 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, TaskContribution);
     bind(TaskSchemaUpdater).toSelf().inSingletonScope();
     bind(TaskNameResolver).toSelf().inSingletonScope();
+    bind(TaskSourceResolver).toSelf().inSingletonScope();
     bind(TaskTemplateSelector).toSelf().inSingletonScope();
 
     bindProcessTaskModule(bind);

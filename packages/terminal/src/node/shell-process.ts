@@ -87,7 +87,7 @@ export class ShellProcess extends TerminalProcess {
         }, processManager, ringBuffer, logger);
     }
 
-    protected static getShellExecutablePath(): string {
+    public static getShellExecutablePath(): string {
         const shell = process.env.THEIA_SHELL;
         if (shell) {
             return shell;
@@ -99,7 +99,7 @@ export class ShellProcess extends TerminalProcess {
         }
     }
 
-    protected static getShellExecutableArgs(): string[] {
+    public static getShellExecutableArgs(): string[] {
         const args = process.env.THEIA_SHELL_ARGS;
         if (args) {
             return parseArgs(args);

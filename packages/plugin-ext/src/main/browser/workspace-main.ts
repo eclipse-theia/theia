@@ -150,7 +150,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
                 placeholder: options.placeHolder,
                 onClose: () => {
                     if (activeElement) {
-                        activeElement.focus();
+                        activeElement.focus({ preventScroll: true });
                     }
 
                     resolve(returnValue);

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { RequestType } from 'vscode-jsonrpc';
+import { RequestType } from '../language-client-services';
 import { SymbolKind, Range } from 'vscode-languageserver-types';
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions, StaticRegistrationOptions } from 'vscode-languageserver';
 

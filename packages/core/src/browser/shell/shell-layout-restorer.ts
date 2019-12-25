@@ -20,7 +20,7 @@ import { FrontendApplication } from '../frontend-application';
 import { WidgetManager, WidgetConstructionOptions } from '../widget-manager';
 import { StorageService } from '../storage-service';
 import { ILogger } from '../../common/logger';
-import { CommandContribution, CommandRegistry } from '../../common/command';
+import { CommandContribution, CommandRegistry, Command } from '../../common/command';
 import { ThemeService } from '../theming';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { MaybePromise } from '../../common/types';
@@ -109,7 +109,7 @@ export interface ApplicationShellLayoutMigration {
     onWillInflateWidget?(desc: WidgetDescription, context: ApplicationShellLayoutMigrationContext): MaybePromise<WidgetDescription | undefined>;
 }
 
-const resetLayoutCommand = {
+export const RESET_LAYOUT: Command = {
     id: 'reset.layout',
     category: 'View',
     label: 'Reset Workbench Layout'
@@ -117,8 +117,9 @@ const resetLayoutCommand = {
 
 @injectable()
 export class ShellLayoutRestorer implements CommandContribution {
-    private storageKey = 'layout';
-    private shouldStoreLayout: boolean = true;
+
+    protected storageKey = 'layout';
+    protected shouldStoreLayout: boolean = true;
 
     @inject(ContributionProvider) @named(ApplicationShellLayoutMigration)
     protected readonly migrations: ContributionProvider<ApplicationShellLayoutMigration>;
@@ -129,22 +130,28 @@ export class ShellLayoutRestorer implements CommandContribution {
         @inject(StorageService) protected storageService: StorageService) { }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(resetLayoutCommand, {
-            execute: async () => {
-                this.shouldStoreLayout = false;
-                this.storageService.setData(this.storageKey, undefined);
-                ThemeService.get().reset(); // Theme service cannot use DI, so the current theme ID is stored elsewhere. Hence the explicit reset.
-                window.location.reload(true);
-            }
+        commands.registerCommand(RESET_LAYOUT, {
+            execute: async () => this.resetLayout()
         });
+    }
+
+    protected async resetLayout(): Promise<void> {
+        this.logger.info('>>> Resetting layout...');
+        this.shouldStoreLayout = false;
+        this.storageService.setData(this.storageKey, undefined);
+        ThemeService.get().reset(); // Theme service cannot use DI, so the current theme ID is stored elsewhere. Hence the explicit reset.
+        this.logger.info('<<< The layout has been successfully reset.');
+        window.location.reload(true);
     }
 
     storeLayout(app: FrontendApplication): void {
         if (this.shouldStoreLayout) {
             try {
+                this.logger.info('>>> Storing the layout...');
                 const layoutData = app.shell.getLayoutData();
                 const serializedLayoutData = this.deflate(layoutData);
                 this.storageService.setData(this.storageKey, serializedLayoutData);
+                this.logger.info('<<< The layout has been successfully stored.');
             } catch (error) {
                 this.storageService.setData(this.storageKey, undefined);
                 this.logger.error('Error during serialization of layout data', error);
@@ -153,12 +160,15 @@ export class ShellLayoutRestorer implements CommandContribution {
     }
 
     async restoreLayout(app: FrontendApplication): Promise<boolean> {
+        this.logger.info('>>> Restoring the layout state...');
         const serializedLayoutData = await this.storageService.getData<string>(this.storageKey);
         if (serializedLayoutData === undefined) {
+            this.logger.info('<<< Nothing to restore.');
             return false;
         }
         const layoutData = await this.inflate(serializedLayoutData);
         await app.shell.setLayoutData(layoutData);
+        this.logger.info('<<< The layout has been successfully restored.');
         return true;
     }
 
@@ -227,7 +237,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             } else {
                 console.warn(`Layout version ${layoutVersion} is ahead current layout version ${applicationShellLayoutVersion}, trying to load anyway...`);
             }
-            console.info(`Please use '${resetLayoutCommand.label}' command if the layout looks bogus.`);
+            console.info(`Please use '${RESET_LAYOUT.label}' command if the layout looks bogus.`);
         }
 
         const migrations = this.migrations.getContributions()
@@ -246,7 +256,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     protected async fireWillInflateLayout(context: ShellLayoutRestorer.InflateContext): Promise<void> {
         for (const migration of context.migrations) {
             if (migration.onWillInflateLayout) {
-                // don't catch exceptions, if one migrarion fails all should fail.
+                // don't catch exceptions, if one migration fails all should fail.
                 await migration.onWillInflateLayout(context);
             }
         }
@@ -284,7 +294,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     protected async fireWillInflateWidget(desc: WidgetDescription, context: ShellLayoutRestorer.InflateContext): Promise<WidgetDescription> {
         for (const migration of context.migrations) {
             if (migration.onWillInflateWidget) {
-                // don't catch exceptions, if one migrarion fails all should fail.
+                // don't catch exceptions, if one migration fails all should fail.
                 const migrated = await migration.onWillInflateWidget(desc, context);
                 if (migrated) {
                     if (migrated.innerWidgetState && typeof migrated.innerWidgetState !== 'string') {
@@ -307,7 +317,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             const widget = await this.widgetManager.getOrCreateWidget(desc.constructionOptions.factoryId, desc.constructionOptions.options);
             if (StatefulWidget.is(widget) && desc.innerWidgetState !== undefined) {
                 try {
-                    let oldState;
+                    let oldState: object;
                     if (typeof desc.innerWidgetState === 'string') {
                         const parseContext = new ShellLayoutRestorer.ParseContext();
                         oldState = this.parse(desc.innerWidgetState, parseContext);
@@ -322,6 +332,9 @@ export class ShellLayoutRestorer implements CommandContribution {
                     }
                     this.logger.warn(`Couldn't restore widget state for ${widget.id}. Error: ${e} `);
                 }
+            }
+            if (widget.isDisposed) {
+                return undefined;
             }
             return widget;
         } catch (e) {

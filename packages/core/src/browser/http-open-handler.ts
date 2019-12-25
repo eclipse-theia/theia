@@ -18,6 +18,7 @@ import { injectable, inject } from 'inversify';
 import URI from '../common/uri';
 import { OpenHandler } from './opener-service';
 import { WindowService } from './window/window-service';
+import { ExternalUriService } from './external-uri-service';
 
 @injectable()
 export class HttpOpenHandler implements OpenHandler {
@@ -27,12 +28,16 @@ export class HttpOpenHandler implements OpenHandler {
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
+    @inject(ExternalUriService)
+    protected readonly externalUriService: ExternalUriService;
+
     canHandle(uri: URI): number {
-        return uri.scheme.startsWith('http') ? 500 : 0;
+        return (uri.scheme.startsWith('http') || uri.scheme.startsWith('mailto')) ? 500 : 0;
     }
 
-    open(uri: URI): Window | undefined {
-        return this.windowService.openNewWindow(uri.toString(true), { external: true });
+    async open(uri: URI): Promise<undefined> {
+        const resolvedUri = await this.externalUriService.resolve(uri);
+        return this.windowService.openNewWindow(resolvedUri.toString(true), { external: true });
     }
 
 }

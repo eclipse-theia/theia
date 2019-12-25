@@ -14,131 +14,80 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { WebviewsMain, MAIN_RPC_CONTEXT, WebviewsExt } from '../../common/plugin-api-rpc';
+import debounce = require('lodash.debounce');
+import URI from 'vscode-uri';
 import { interfaces } from 'inversify';
+import { WebviewsMain, MAIN_RPC_CONTEXT, WebviewsExt, WebviewPanelViewState } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { UriComponents } from '../../common/uri-components';
 import { WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions } from '@theia/plugin';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
-import { WebviewWidget } from './webview/webview';
-import { ThemeService } from '@theia/core/lib/browser/theming';
-import { ThemeRulesService } from './webview/theme-rules-service';
+import { WebviewWidget, WebviewWidgetIdentifier } from './webview/webview';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ViewColumnService } from './view-column-service';
-import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
-
-import debounce = require('lodash.debounce');
+import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { JSONExt } from '@phosphor/coreutils/lib/json';
+import { Mutable } from '@theia/core/lib/common/types';
+import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
+import { IconUrl } from '../../common/plugin-protocol';
 
 export class WebviewsMainImpl implements WebviewsMain, Disposable {
-    private readonly revivers = new Set<string>();
+
     private readonly proxy: WebviewsExt;
     protected readonly shell: ApplicationShell;
+    protected readonly widgets: WidgetManager;
+    protected readonly pluginService: HostedPluginSupport;
     protected readonly viewColumnService: ViewColumnService;
-    protected readonly keybindingRegistry: KeybindingRegistry;
-    protected readonly themeService = ThemeService.get();
-    protected readonly themeRulesService = ThemeRulesService.get();
-    protected readonly updateViewOptions: () => void;
-
-    private readonly views = new Map<string, WebviewWidget>();
-    private readonly viewsOptions = new Map<string, {
-        panelOptions: WebviewPanelShowOptions;
-        options: (WebviewPanelOptions & WebviewOptions) | undefined;
-        panelId: string;
-        active: boolean;
-        visible: boolean;
-    }>();
-
-    protected readonly mouseTracker: ApplicationShellMouseTracker;
-
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEWS_EXT);
         this.shell = container.get(ApplicationShell);
-        this.mouseTracker = container.get(ApplicationShellMouseTracker);
-        this.keybindingRegistry = container.get(KeybindingRegistry);
         this.viewColumnService = container.get(ViewColumnService);
-        this.updateViewOptions = debounce<() => void>(() => {
-            for (const key of this.viewsOptions.keys()) {
-                this.checkViewOptions(key);
-            }
-        }, 100);
-        this.toDispose.push(this.shell.onDidChangeActiveWidget(() => this.updateViewOptions()));
-        this.toDispose.push(this.shell.onDidChangeCurrentWidget(() => this.updateViewOptions()));
-        this.toDispose.push(this.viewColumnService.onViewColumnChanged(() => this.updateViewOptions()));
+        this.widgets = container.get(WidgetManager);
+        this.pluginService = container.get(HostedPluginSupport);
+        this.toDispose.push(this.shell.onDidChangeActiveWidget(() => this.updateViewStates()));
+        this.toDispose.push(this.shell.onDidChangeCurrentWidget(() => this.updateViewStates()));
+        this.toDispose.push(this.viewColumnService.onViewColumnChanged(() => this.updateViewStates()));
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    $createWebviewPanel(
+    async $createWebviewPanel(
         panelId: string,
         viewType: string,
         title: string,
         showOptions: WebviewPanelShowOptions,
-        options: (WebviewPanelOptions & WebviewOptions) | undefined,
-        extensionLocation: UriComponents
-    ): void {
-        const toDisposeOnClose = new DisposableCollection();
-        const toDisposeOnLoad = new DisposableCollection();
-        const view = new WebviewWidget(title, {
-            allowScripts: options ? options.enableScripts : false
-        }, {
-                onMessage: m => {
-                    this.proxy.$onMessage(panelId, m);
-                },
-                onKeyboardEvent: e => {
-                    this.keybindingRegistry.run(e);
-                },
-                onLoad: contentDocument => {
-                    const styleId = 'webview-widget-theme';
-                    let styleElement: HTMLStyleElement | null | undefined;
-                    if (!toDisposeOnLoad.disposed) {
-                        // if reload the frame
-                        toDisposeOnLoad.dispose();
-                        styleElement = <HTMLStyleElement>contentDocument.getElementById(styleId);
-                    }
-                    toDisposeOnClose.push(toDisposeOnLoad);
-                    if (!styleElement) {
-                        const parent = contentDocument.head ? contentDocument.head : contentDocument.body;
-                        styleElement = this.themeRulesService.createStyleSheet(parent);
-                        styleElement.id = styleId;
-                        parent.appendChild(styleElement);
-                    }
-
-                    this.themeRulesService.setRules(styleElement, this.themeRulesService.getCurrentThemeRules());
-                    contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
-                    toDisposeOnLoad.push(this.themeService.onThemeChange(() => {
-                        this.themeRulesService.setRules(<HTMLElement>styleElement, this.themeRulesService.getCurrentThemeRules());
-                        contentDocument.body.className = `vscode-${ThemeService.get().getCurrentTheme().id}`;
-                    }));
-                }
-            },
-            this.mouseTracker);
-        view.disposed.connect(() => {
-            toDisposeOnClose.dispose();
-            this.proxy.$onDidDisposeWebviewPanel(panelId);
+        options: WebviewPanelOptions & WebviewOptions
+    ): Promise<void> {
+        const view = await this.widgets.getOrCreateWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: panelId });
+        this.hookWebview(view);
+        view.viewType = viewType;
+        view.title.label = title;
+        const { enableFindWidget, retainContextWhenHidden, enableScripts, localResourceRoots, ...contentOptions } = options;
+        view.options = { enableFindWidget, retainContextWhenHidden };
+        view.setContentOptions({
+            allowScripts: enableScripts,
+            localResourceRoots: localResourceRoots && localResourceRoots.map(root => root.toString()),
+            ...contentOptions
         });
-        this.toDispose.push(view);
-
-        const viewId = view.id;
-        toDisposeOnClose.push(Disposable.create(() => this.themeRulesService.setIconPath(viewId, undefined)));
-
-        this.views.set(panelId, view);
-        toDisposeOnClose.push(Disposable.create(() => this.views.delete(panelId)));
-
-        this.viewsOptions.set(viewId, { panelOptions: showOptions, options: options, panelId, visible: false, active: false });
-        toDisposeOnClose.push(Disposable.create(() => this.viewsOptions.delete(viewId)));
-
-        this.addOrReattachWidget(panelId, showOptions);
+        this.addOrReattachWidget(view, showOptions);
     }
-    private addOrReattachWidget(handler: string, showOptions: WebviewPanelShowOptions): void {
-        const view = this.views.get(handler);
-        if (!view) {
-            return;
-        }
+
+    protected hookWebview(view: WebviewWidget): void {
+        const handle = view.identifier.id;
+        this.toDispose.push(view.onDidChangeVisibility(() => this.updateViewState(view)));
+        this.toDispose.push(view.onMessage(data => this.proxy.$onMessage(handle, data)));
+        view.disposed.connect(() => {
+            if (this.toDispose.disposed) {
+                return;
+            }
+            this.proxy.$onDidDisposeWebviewPanel(handle);
+        });
+    }
+
+    private addOrReattachWidget(widget: WebviewWidget, showOptions: WebviewPanelShowOptions): void {
         const widgetOptions: ApplicationShell.WidgetOptions = { area: showOptions.area ? showOptions.area : 'main' };
 
         let mode = 'open-to-right';
@@ -159,133 +108,150 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
                     widgetIds = this.viewColumnService.getViewColumnIds(showOptions.viewColumn);
                 }
             }
-            const ref = this.shell.getWidgets(widgetOptions.area).find(widget => widget.isVisible && widgetIds.indexOf(widget.id) !== -1);
+            const ref = this.shell.getWidgets(widgetOptions.area).find(w => !w.isHidden && widgetIds.indexOf(w.id) !== -1);
             if (ref) {
                 Object.assign(widgetOptions, { ref, mode });
             }
         }
 
-        this.shell.addWidget(view, widgetOptions);
-        const visible = true;
-        let active: boolean;
+        this.shell.addWidget(widget, widgetOptions);
         if (showOptions.preserveFocus) {
-            this.shell.revealWidget(view.id);
-            active = false;
+            this.shell.revealWidget(widget.id);
         } else {
-            this.shell.activateWidget(view.id);
-            active = true;
+            this.shell.activateWidget(widget.id);
         }
-        const options = this.viewsOptions.get(view.id);
-        if (!options) {
-            return;
-        }
-        options.panelOptions = showOptions;
-        options.visible = visible;
-        options.active = active;
     }
-    $disposeWebview(handle: string): void {
-        const view = this.views.get(handle);
+
+    async $disposeWebview(handle: string): Promise<void> {
+        const view = await this.tryGetWebview(handle);
         if (view) {
             view.dispose();
         }
     }
-    $reveal(handle: string, showOptions: WebviewPanelShowOptions): void {
-        const view = this.getWebview(handle);
-        if (view.isDisposed) {
+
+    async $reveal(handle: string, showOptions: WebviewPanelShowOptions): Promise<void> {
+        const widget = await this.getWebview(handle);
+        if (widget.isDisposed) {
             return;
         }
-        const options = this.viewsOptions.get(view.id);
-        let retain = false;
-        if (options && options.options && options.options.retainContextWhenHidden) {
-            retain = options.options.retainContextWhenHidden;
-        }
-        if ((showOptions.viewColumn !== undefined && showOptions.viewColumn !== options!.panelOptions.viewColumn) || showOptions.area !== undefined) {
+        if ((showOptions.viewColumn !== undefined && showOptions.viewColumn !== widget.viewState.position) || showOptions.area !== undefined) {
             this.viewColumnService.updateViewColumns();
-            if (!options) {
-                return;
-            }
             const columnIds = showOptions.viewColumn ? this.viewColumnService.getViewColumnIds(showOptions.viewColumn) : [];
-            if (columnIds.indexOf(view.id) === -1 || options.panelOptions.area !== showOptions.area) {
-                this.addOrReattachWidget(options.panelId, showOptions);
-                options.panelOptions = showOptions;
-                this.checkViewOptions(view.id, options.panelOptions.viewColumn);
-                this.updateViewOptions();
+            const area = this.shell.getAreaFor(widget);
+            if (columnIds.indexOf(widget.id) === -1 || area !== showOptions.area) {
+                this.addOrReattachWidget(widget, showOptions);
                 return;
             }
-        } else if (!retain) {
-            // reload content when revealing
-            view.reloadFrame();
         }
-
         if (showOptions.preserveFocus) {
-            this.shell.revealWidget(view.id);
+            this.shell.revealWidget(widget.id);
         } else {
-            this.shell.activateWidget(view.id);
+            this.shell.activateWidget(widget.id);
         }
     }
-    $setTitle(handle: string, value: string): void {
-        const webview = this.getWebview(handle);
+
+    async $setTitle(handle: string, value: string): Promise<void> {
+        const webview = await this.getWebview(handle);
         webview.title.label = value;
     }
-    $setIconPath(handle: string, iconPath: { light: string; dark: string; } | string | undefined): void {
-        const webview = this.getWebview(handle);
-        webview.setIconClass(iconPath ? `webview-icon ${webview.id}-file-icon` : '');
-        this.themeRulesService.setIconPath(webview.id, iconPath);
+
+    async $setIconPath(handle: string, iconUrl: IconUrl | undefined): Promise<void> {
+        const webview = await this.getWebview(handle);
+        webview.setIconUrl(iconUrl);
     }
-    $setHtml(handle: string, value: string): void {
-        const webview = this.getWebview(handle);
+
+    async $setHtml(handle: string, value: string): Promise<void> {
+        const webview = await this.getWebview(handle);
         webview.setHTML(value);
     }
-    $setOptions(handle: string, options: WebviewOptions): void {
-        const webview = this.getWebview(handle);
-        webview.setOptions({ allowScripts: options ? options.enableScripts : false });
+
+    async $setOptions(handle: string, options: WebviewOptions): Promise<void> {
+        const webview = await this.getWebview(handle);
+        const { enableScripts, localResourceRoots, ...contentOptions } = options;
+        webview.setContentOptions({
+            allowScripts: enableScripts,
+            localResourceRoots: localResourceRoots && localResourceRoots.map(root => root.toString()),
+            ...contentOptions
+        });
     }
+
     // tslint:disable-next-line:no-any
-    $postMessage(handle: string, value: any): Thenable<boolean> {
-        const webview = this.getWebview(handle);
-        if (webview) {
-            webview.postMessage(value);
-        }
-        return Promise.resolve(webview !== undefined);
+    async $postMessage(handle: string, value: any): Promise<boolean> {
+        const webview = await this.getWebview(handle);
+        webview.sendMessage(value);
+        return true;
     }
+
     $registerSerializer(viewType: string): void {
-        this.revivers.add(viewType);
+        this.pluginService.registerWebviewReviver(viewType, widget => this.restoreWidget(widget));
         this.toDispose.push(Disposable.create(() => this.$unregisterSerializer(viewType)));
     }
+
     $unregisterSerializer(viewType: string): void {
-        this.revivers.delete(viewType);
+        this.pluginService.unregisterWebviewReviver(viewType);
     }
 
-    private async checkViewOptions(handler: string, viewColumn?: number | undefined): Promise<void> {
-        const options = this.viewsOptions.get(handler);
-        if (!options || !options.panelOptions) {
-            return;
-        }
-        const view = this.views.get(options.panelId);
-        if (!view) {
-            return;
-        }
-        const active = !!this.shell.activeWidget ? this.shell.activeWidget.id === view!.id : false;
-        const visible = view!.isVisible;
-        if (viewColumn === undefined) {
-            this.viewColumnService.updateViewColumns();
-            viewColumn = this.viewColumnService.hasViewColumn(view.id) ? this.viewColumnService.getViewColumn(view.id)! : 0;
-            if (options.panelOptions.viewColumn === viewColumn && options.visible === visible && options.active === active) {
-                return;
+    protected async restoreWidget(widget: WebviewWidget): Promise<void> {
+        this.hookWebview(widget);
+        const handle = widget.identifier.id;
+        const title = widget.title.label;
+
+        let state = undefined;
+        if (widget.state) {
+            try {
+                state = JSON.parse(widget.state);
+            } catch {
+                // noop
             }
         }
-        options.active = active;
-        options.visible = visible;
-        options.panelOptions.viewColumn = viewColumn;
-        this.proxy.$onDidChangeWebviewPanelViewState(options.panelId, { active, visible, position: options.panelOptions.viewColumn! });
+
+        const options = widget.options;
+        const { allowScripts, localResourceRoots, ...contentOptions } = widget.contentOptions;
+        this.updateViewState(widget);
+        await this.proxy.$deserializeWebviewPanel(handle, widget.viewType, title, state, widget.viewState, {
+            enableScripts: allowScripts,
+            localResourceRoots: localResourceRoots && localResourceRoots.map(root => URI.parse(root)),
+            ...contentOptions,
+            ...options
+        });
     }
 
-    private getWebview(viewId: string): WebviewWidget {
-        const webview = this.views.get(viewId);
+    protected readonly updateViewStates = debounce(() => {
+        for (const widget of this.widgets.getWidgets(WebviewWidget.FACTORY_ID)) {
+            if (widget instanceof WebviewWidget) {
+                this.updateViewState(widget);
+            }
+        }
+    }, 100);
+
+    private updateViewState(widget: WebviewWidget, viewColumn?: number | undefined): void {
+        const viewState: Mutable<WebviewPanelViewState> = {
+            active: this.shell.activeWidget === widget,
+            visible: !widget.isHidden,
+            position: viewColumn || 0
+        };
+        if (typeof viewColumn !== 'number') {
+            this.viewColumnService.updateViewColumns();
+            viewState.position = this.viewColumnService.getViewColumn(widget.id) || 0;
+        }
+        // tslint:disable-next-line:no-any
+        if (JSONExt.deepEqual(<any>viewState, <any>widget.viewState)) {
+            return;
+        }
+        widget.viewState = viewState;
+        this.proxy.$onDidChangeWebviewPanelViewState(widget.identifier.id, widget.viewState);
+    }
+
+    private async getWebview(viewId: string): Promise<WebviewWidget> {
+        const webview = await this.tryGetWebview(viewId);
         if (!webview) {
             throw new Error(`Unknown Webview: ${viewId}`);
         }
         return webview;
+    }
+
+    private async tryGetWebview(id: string): Promise<WebviewWidget | undefined> {
+        return this.widgets.getWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id });
     }
 
 }

@@ -20,7 +20,7 @@ import '../../../src/main/browser/style/index.css';
 import { ContainerModule } from 'inversify';
 import {
     FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution,
-    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, OpenHandler
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -63,6 +63,13 @@ import { LanguagesMainFactory, OutputChannelRegistryFactory } from '../../common
 import { LanguagesMainImpl } from './languages-main';
 import { OutputChannelRegistryMainImpl } from './output-channel-registry-main';
 import { InPluginFileSystemWatcherManager } from './in-plugin-filesystem-watcher-manager';
+import { WebviewWidget, WebviewWidgetIdentifier, WebviewWidgetExternalEndpoint } from './webview/webview';
+import { WebviewEnvironment } from './webview/webview-environment';
+import { WebviewThemeDataProvider } from './webview/webview-theme-data-provider';
+import { PluginCommandOpenHandler } from './plugin-command-open-handler';
+import { bindWebviewPreferences } from './webview/webview-preferences';
+import { WebviewResourceLoader, WebviewResourceLoaderPath } from '../common/webview-protocol';
+import { WebviewResourceCache } from './webview/webview-resource-cache';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -143,6 +150,33 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
             child.bind(TreeViewWidget).toSelf();
             child.rebind(TreeWidget).toService(TreeViewWidget);
             return child.get(TreeWidget);
+        }
+    })).inSingletonScope();
+
+    bind(PluginCommandOpenHandler).toSelf().inSingletonScope();
+    bind(OpenHandler).toService(PluginCommandOpenHandler);
+
+    bindWebviewPreferences(bind);
+    bind(WebviewEnvironment).toSelf().inSingletonScope();
+    bind(WebviewThemeDataProvider).toSelf().inSingletonScope();
+    bind(WebviewResourceLoader).toDynamicValue(ctx =>
+        WebSocketConnectionProvider.createProxy(ctx.container, WebviewResourceLoaderPath)
+    ).inSingletonScope();
+    bind(WebviewResourceCache).toSelf().inSingletonScope();
+    bind(WebviewWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: WebviewWidget.FACTORY_ID,
+        createWidget: async (identifier: WebviewWidgetIdentifier) => {
+            const externalEndpoint = await container.get(WebviewEnvironment).externalEndpoint();
+            let endpoint = externalEndpoint.replace('{{uuid}}', identifier.id);
+            if (endpoint[endpoint.length - 1] === '/') {
+                endpoint = endpoint.slice(0, endpoint.length - 1);
+            }
+
+            const child = container.createChild();
+            child.bind(WebviewWidgetIdentifier).toConstantValue(identifier);
+            child.bind(WebviewWidgetExternalEndpoint).toConstantValue(endpoint);
+            return child.get(WebviewWidget);
         }
     })).inSingletonScope();
 

@@ -72,8 +72,20 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
     }
 
     // tslint:disable-next-line:no-any
-    $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
-        return this.delegate.executeCommand(id, ...args);
+    async $executeCommand<T>(id: string, ...args: any[]): Promise<T | undefined> {
+        if (!this.delegate.getCommand(id)) {
+            throw new Error(`Command with id '${id}' is not registered.`);
+        }
+        try {
+            return await this.delegate.executeCommand(id, ...args);
+        } catch (e) {
+            // Command handler may be not active at the moment so the error must be caught. See https://github.com/eclipse-theia/theia/pull/6687#discussion_r354810079
+            if ('code' in e && e['code'] === 'NO_ACTIVE_HANDLER') {
+                return;
+            } else {
+                throw e;
+            }
+        }
     }
 
     $getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined> {

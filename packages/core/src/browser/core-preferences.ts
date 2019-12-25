@@ -20,7 +20,7 @@ import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceCo
 export const corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
-        'list.openMode': {
+        'workbench.list.openMode': {
             type: 'string',
             enum: [
                 'singleClick',
@@ -50,7 +50,7 @@ export const corePreferenceSchema: PreferenceSchema = {
 
 export interface CoreConfiguration {
     'application.confirmExit': 'never' | 'ifRequired' | 'always';
-    'list.openMode': 'singleClick' | 'doubleClick';
+    'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
 }
 

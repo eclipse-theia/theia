@@ -93,6 +93,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         this.scmService.onDidRemoveRepository(() => this.updateStatusBar());
         this.scmService.onDidChangeSelectedRepository(() => this.updateStatusBar());
         this.scmService.onDidChangeStatusBarCommands(() => this.updateStatusBar());
+        this.labelProvider.onDidChange(() => this.updateStatusBar());
 
         this.updateContextKeys();
         this.shell.currentChanged.connect(() => this.updateContextKeys());

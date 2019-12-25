@@ -114,7 +114,7 @@ export class DebugThreadsWidget extends SourceTreeWidget {
     }
 
     protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
-        if (this.threads.multiSesssion) {
+        if (this.threads.multiSession) {
             return super.getDefaultNodeStyle(node, props);
         }
         return undefined;

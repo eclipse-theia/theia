@@ -14,11 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as Ajv from 'ajv';
 import { inject, injectable, postConstruct } from 'inversify';
 import { ContributedTaskConfiguration, TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskConfigurationManager } from './task-configuration-manager';
+import { TaskSchemaUpdater } from './task-schema-updater';
+import { TaskSourceResolver } from './task-source-resolver';
 import { Disposable, DisposableCollection, ResourceProvider } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
@@ -81,6 +84,12 @@ export class TaskConfigurations implements Disposable {
     @inject(TaskConfigurationManager)
     protected readonly taskConfigurationManager: TaskConfigurationManager;
 
+    @inject(TaskSchemaUpdater)
+    protected readonly taskSchemaUpdater: TaskSchemaUpdater;
+
+    @inject(TaskSourceResolver)
+    protected readonly taskSourceResolver: TaskSourceResolver;
+
     constructor() {
         this.toDispose.push(Disposable.create(() => {
             this.tasksMap.clear();
@@ -104,11 +113,8 @@ export class TaskConfigurations implements Disposable {
                 }
             })
         );
-        this.reorgnizeTasks();
-        this.toDispose.pushAll([
-            this.taskDefinitionRegistry.onDidRegisterTaskDefinition(() => this.reorgnizeTasks()),
-            this.taskDefinitionRegistry.onDidUnregisterTaskDefinition(() => this.reorgnizeTasks())
-        ]);
+        this.reorganizeTasks();
+        this.toDispose.push(this.taskSchemaUpdater.onDidChangeTaskSchema(() => this.reorganizeTasks()));
     }
 
     setClient(client: TaskConfigurationClient): void {
@@ -125,9 +131,11 @@ export class TaskConfigurations implements Disposable {
     }
 
     /**
-     * returns the list of known tasks, which includes:
+     * returns a collection of known tasks, which includes:
      * - all the configured tasks in `tasks.json`, and
-     * - the customized detected tasks
+     * - the customized detected tasks.
+     *
+     * The invalid task configs are not returned.
      */
     async getTasks(): Promise<TaskConfiguration[]> {
         const configuredTasks = Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as TaskConfiguration[]);
@@ -136,11 +144,27 @@ export class TaskConfigurations implements Disposable {
             for (const cus of customizations) {
                 const detected = await this.providedTaskConfigurations.getTaskToCustomize(cus, rootFolder);
                 if (detected) {
-                    detectedTasksAsConfigured.push(detected);
+                    detectedTasksAsConfigured.push({ ...detected, ...cus });
                 }
             }
         }
         return [...configuredTasks, ...detectedTasksAsConfigured];
+    }
+
+    /**
+     * returns a collection of invalid task configs as per the task schema defined in Theia.
+     */
+    getInvalidTaskConfigurations(): (TaskCustomization | TaskConfiguration)[] {
+        const invalidTaskConfigs: (TaskCustomization | TaskConfiguration)[] = [];
+        for (const taskConfigs of this.rawTaskConfigurations.values()) {
+            for (const taskConfig of taskConfigs) {
+                const isValid = this.isTaskConfigValid(taskConfig);
+                if (!isValid) {
+                    invalidTaskConfigs.push(taskConfig);
+                }
+            }
+        }
+        return invalidTaskConfigs;
     }
 
     /** returns the task configuration for a given label or undefined if none */
@@ -237,7 +261,7 @@ export class TaskConfigurations implements Disposable {
         this.removeTasks(rootFolderUri);
         this.removeTaskCustomizations(rootFolderUri);
 
-        this.reorgnizeTasks();
+        this.reorganizeTasks();
     }
 
     /** parses a config file and extracts the tasks launch configurations */
@@ -272,7 +296,7 @@ export class TaskConfigurations implements Disposable {
             return;
         }
 
-        const sourceFolderUri: string | undefined = this.getSourceFolderUriFromTask(task);
+        const sourceFolderUri: string | undefined = this.taskSourceResolver.resolve(task);
         if (!sourceFolderUri) {
             console.error('Global task cannot be customized');
             return;
@@ -280,7 +304,7 @@ export class TaskConfigurations implements Disposable {
 
         const configuredAndCustomizedTasks = await this.getTasks();
         if (!configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) {
-            await this.saveTask(sourceFolderUri, task);
+            await this.saveTask(sourceFolderUri, { ...task, problemMatcher: [] });
         }
 
         try {
@@ -302,8 +326,8 @@ export class TaskConfigurations implements Disposable {
                 customization[p] = task[p];
             }
         });
-        const problemMatcher: string[] = [];
-        if (task.problemMatcher) {
+        if ('problemMatcher' in task) {
+            const problemMatcher: string[] = [];
             if (Array.isArray(task.problemMatcher)) {
                 problemMatcher.push(...task.problemMatcher.map(t => {
                     if (typeof t === 'string') {
@@ -314,14 +338,15 @@ export class TaskConfigurations implements Disposable {
                 }));
             } else if (typeof task.problemMatcher === 'string') {
                 problemMatcher.push(task.problemMatcher);
-            } else {
+            } else if (task.problemMatcher) {
                 problemMatcher.push(task.problemMatcher.name!);
             }
+            customization.problemMatcher = problemMatcher.map(name => name.startsWith('$') ? name : `$${name}`);
         }
-        return {
-            ...customization,
-            problemMatcher: problemMatcher.map(name => name.startsWith('$') ? name : `$${name}`)
-        };
+        if (task.group) {
+            customization.group = task.group;
+        }
+        return { ...customization };
     }
 
     /** Writes the task to a config file. Creates a config file if this one does not exist */
@@ -335,7 +360,7 @@ export class TaskConfigurations implements Disposable {
      * This function is called after a change in TaskDefinitionRegistry happens.
      * It checks all tasks that have been loaded, and re-organized them in `tasksMap` and `taskCustomizationMap`.
      */
-    protected reorgnizeTasks(): void {
+    protected reorganizeTasks(): void {
         const newTaskMap = new Map<string, Map<string, TaskConfiguration>>();
         const newTaskCustomizationMap = new Map<string, TaskCustomization[]>();
         const addCustomization = (rootFolder: string, customization: TaskCustomization) => {
@@ -357,6 +382,10 @@ export class TaskConfigurations implements Disposable {
 
         for (const [rootFolder, taskConfigs] of this.rawTaskConfigurations.entries()) {
             for (const taskConfig of taskConfigs) {
+                const isValid = this.isTaskConfigValid(taskConfig);
+                if (!isValid) {
+                    continue;
+                }
                 if (this.isDetectedTask(taskConfig)) {
                     addCustomization(rootFolder, taskConfig);
                 } else {
@@ -370,12 +399,26 @@ export class TaskConfigurations implements Disposable {
     }
 
     /**
-     * saves the names of the problem matchers to be used to parse the output of the given task to `tasks.json`
-     * @param task task that the problem matcher(s) are applied to
-     * @param problemMatchers name(s) of the problem matcher(s)
+     * Returns `true` if the given task configuration is valid as per the task schema defined in Theia
+     * or contributed by Theia extensions and plugins, `false` otherwise.
      */
-    async saveProblemMatcherForTask(task: TaskConfiguration, problemMatchers: string[]): Promise<void> {
-        const sourceFolderUri: string | undefined = this.getSourceFolderUriFromTask(task);
+    private isTaskConfigValid(task: TaskCustomization): boolean {
+        const schema = this.taskSchemaUpdater.getTaskSchema();
+        const ajv = new Ajv();
+        const validateSchema = ajv.compile(schema);
+        return !!validateSchema({ tasks: [task] });
+    }
+
+    /**
+     * Updates the task config in the `tasks.json`.
+     * The task config, together with updates, will be written into the `tasks.json` if it is not found in the file.
+     *
+     * @param task task that the updates will be applied to
+     * @param update the updates to be applied
+     */
+    // tslint:disable-next-line:no-any
+    async updateTaskConfig(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
+        const sourceFolderUri: string | undefined = this.taskSourceResolver.resolve(task);
         if (!sourceFolderUri) {
             console.error('Global task cannot be customized');
             return;
@@ -396,12 +439,14 @@ export class TaskConfigurations implements Disposable {
                 });
                 jsonTasks[ind] = {
                     ...jsonTasks[ind],
-                    problemMatcher: problemMatchers.map(name => name.startsWith('$') ? name : `$${name}`)
+                    ...update
                 };
             }
             this.taskConfigurationManager.setTaskConfigurations(sourceFolderUri, jsonTasks);
         } else { // task is not in `tasks.json`
-            task.problemMatcher = problemMatchers;
+            Object.keys(update).forEach(taskProperty => {
+                task[taskProperty] = update[taskProperty];
+            });
             this.saveTask(sourceFolderUri, task);
         }
     }
@@ -422,16 +467,5 @@ export class TaskConfigurations implements Disposable {
             ...task,
             type: task.taskType || task.type
         });
-    }
-
-    private getSourceFolderUriFromTask(task: TaskConfiguration): string | undefined {
-        const isDetectedTask = this.isDetectedTask(task);
-        let sourceFolderUri: string | undefined;
-        if (isDetectedTask) {
-            sourceFolderUri = task._scope;
-        } else {
-            sourceFolderUri = task._source;
-        }
-        return sourceFolderUri;
     }
 }

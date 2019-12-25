@@ -443,7 +443,7 @@ export class PreferencesTreeWidget extends TreeWidget {
 
     private activeFolderUri: string | undefined;
     private preferencesGroupNames = new Set<string>();
-    private readonly properties: { [name: string]: PreferenceDataProperty };
+    private properties: { [name: string]: PreferenceDataProperty };
     private readonly onPreferenceSelectedEmitter: Emitter<{ [key: string]: string }>;
     readonly onPreferenceSelected: Event<{ [key: string]: string }>;
 
@@ -468,17 +468,6 @@ export class PreferencesTreeWidget extends TreeWidget {
         this.toDispose.push(this.onPreferenceSelectedEmitter);
 
         this.id = PreferencesTreeWidget.ID;
-
-        this.properties = this.preferenceSchemaProvider.getCombinedSchema().properties;
-        for (const property in this.properties) {
-            if (property) {
-                // Compute preference group name and accept those which have the proper format.
-                const group: string = property.substring(0, property.indexOf('.'));
-                if (property.split('.').length > 1) {
-                    this.preferencesGroupNames.add(group);
-                }
-            }
-        }
     }
 
     dispose(): void {
@@ -488,6 +477,9 @@ export class PreferencesTreeWidget extends TreeWidget {
 
     protected onAfterAttach(msg: Message): void {
         this.initializeModel();
+        this.toDisposeOnDetach.push(this.preferenceSchemaProvider.onDidPreferenceSchemaChanged(() => {
+            this.initializeModel();
+        }));
         super.onAfterAttach(msg);
     }
 
@@ -538,6 +530,17 @@ export class PreferencesTreeWidget extends TreeWidget {
     }
 
     protected initializeModel(): void {
+        this.properties = this.preferenceSchemaProvider.getCombinedSchema().properties;
+        for (const property in this.properties) {
+            if (property) {
+                // Compute preference group name and accept those which have the proper format.
+                const group: string = property.substring(0, property.indexOf('.'));
+                if (property.split('.').length > 1) {
+                    this.preferencesGroupNames.add(group);
+                }
+            }
+        }
+
         type GroupNode = SelectableTreeNode & ExpandableTreeNode;
         const preferencesGroups: GroupNode[] = [];
         const nodes: { [id: string]: PreferenceDataProperty }[] = [];

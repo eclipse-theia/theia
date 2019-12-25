@@ -39,6 +39,11 @@ export const GitConfigSchema: PreferenceSchema = {
             'type': 'number',
             'description': 'Do not show dirty diff decorations, if editor\'s line count exceeds this limit.',
             'default': 1000
+        },
+        'git.alwaysSignOff': {
+            'type': 'boolean',
+            'description': 'Always sign off commits.',
+            'default': false
         }
     }
 };
@@ -48,6 +53,7 @@ export interface GitConfiguration {
     'git.decorations.colors': boolean,
     'git.editor.decorations.enabled': boolean,
     'git.editor.dirtyDiff.linesLimit': number,
+    'git.alwaysSignOff': boolean
 }
 
 export const GitPreferences = Symbol('GitPreferences');

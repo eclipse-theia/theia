@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { NotificationType } from 'vscode-jsonrpc';
+import { NotificationType } from '../';
 import { VersionedTextDocumentIdentifier } from '..';
 
 // NOTE: This module can be removed, once the semantic highlighting will become the part of the LSP.

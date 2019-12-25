@@ -148,7 +148,7 @@ export interface EmitterOptions {
     onLastListenerRemove?: Function;
 }
 
-export class Emitter<T> {
+export class Emitter<T = any> {
 
     private static _noop = function (): void { };
 

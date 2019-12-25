@@ -64,26 +64,26 @@ export class ProcessTask extends Task {
     ) {
         super(taskManager, logger, options);
 
-        const toDispose = this.process.onExit(async event => {
+        const toDispose = this.process.onClose(async event => {
             toDispose.dispose();
             this.fireTaskExited(await this.getTaskExitedEvent(event));
         });
 
         // Buffer to accumulate incoming output.
-        let databuf: string = '';
+        let dataBuffer: string = '';
         this.process.outputStream.on('data', (chunk: string) => {
-            databuf += chunk;
+            dataBuffer += chunk;
 
             while (1) {
                 // Check if we have a complete line.
-                const eolIdx = databuf.indexOf('\n');
+                const eolIdx = dataBuffer.indexOf('\n');
                 if (eolIdx < 0) {
                     break;
                 }
 
                 // Get and remove the line from the data buffer.
-                const lineBuf = databuf.slice(0, eolIdx);
-                databuf = databuf.slice(eolIdx + 1);
+                const lineBuf = dataBuffer.slice(0, eolIdx);
+                dataBuffer = dataBuffer.slice(eolIdx + 1);
                 const processedLine = removeAnsiEscapeCodes(lineBuf);
                 this.fireOutputLine({
                     taskId: this.taskId,
@@ -100,7 +100,7 @@ export class ProcessTask extends Task {
             if (this.process.killed) {
                 resolve();
             } else {
-                const toDispose = this.process.onExit(event => {
+                const toDispose = this.process.onClose(event => {
                     toDispose.dispose();
                     resolve();
                 });

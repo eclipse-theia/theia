@@ -109,13 +109,13 @@ export class VariableResolverService {
     }
 
     protected async resolveVariables(value: string, context: VariableResolverService.Context): Promise<void> {
+        const variableRegExp = new RegExp(VariableResolverService.VAR_REGEXP);
         let match;
-        while ((match = VariableResolverService.VAR_REGEXP.exec(value)) !== null) {
+        while ((match = variableRegExp.exec(value)) !== null) {
             const variableName = match[1];
             await context.resolve(variableName);
         }
     }
-
 }
 export namespace VariableResolverService {
     export class Context {

@@ -199,8 +199,10 @@ export namespace KnownCommands {
     mappings['scrollPageUp'] = ['scrollPageUp', MONACO_CONVERSION_IDENTITY];
     mappings['tab'] = ['tab', MONACO_CONVERSION_IDENTITY];
     mappings['removeSecondaryCursors'] = ['removeSecondaryCursors', MONACO_CONVERSION_IDENTITY];
+    mappings['cursorWordRight'] = ['cursorWordEndRight', MONACO_CONVERSION_IDENTITY];
     mappings['cursorWordEndRight'] = ['cursorWordEndRight', MONACO_CONVERSION_IDENTITY];
     mappings['cursorWordEndRightSelect'] = ['cursorWordEndRightSelect', MONACO_CONVERSION_IDENTITY];
+    mappings['cursorWordLeft'] = ['cursorWordStartLeft', MONACO_CONVERSION_IDENTITY];
     mappings['cursorWordStartLeft'] = ['cursorWordStartLeft', MONACO_CONVERSION_IDENTITY];
     mappings['cursorWordStartLeftSelect'] = ['cursorWordStartLeftSelect', MONACO_CONVERSION_IDENTITY];
     mappings['deleteWordLeft'] = ['deleteWordLeft', MONACO_CONVERSION_IDENTITY];

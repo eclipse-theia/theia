@@ -195,13 +195,6 @@ describe('FileNavigatorModel', () => {
         toRestore.length = 0;
     });
 
-    it('should update the root(s) on receiving a WorkspaceChanged event from the WorkspaceService', done => {
-        sinon.stub(navigatorModel, 'updateRoot').callsFake(() => {
-            done(); // This test would time out if updateRoot() is not called
-        });
-        mockWorkspaceServiceEmitter.fire([]);
-    }).timeout(2000);
-
     describe('updateRoot() function', () => {
         it('should assign "this.root" a WorkspaceNode with WorkspaceRootNodes (one for each root folder in the workspace) as its children', async () => {
             sinon.stub(mockWorkspaceService, 'roots').value([folderA, folderB]);
@@ -215,7 +208,7 @@ describe('FileNavigatorModel', () => {
                 })
             );
 
-            await navigatorModel.updateRoot();
+            await navigatorModel['updateRoot']();
             const thisRoot = navigatorModel['root'] as WorkspaceNode;
             expect(thisRoot).not.to.be.undefined;
             expect(thisRoot.children.length).to.eq(2);
@@ -226,7 +219,7 @@ describe('FileNavigatorModel', () => {
         it('should assign "this.root" undefined if there is no workspace open', async () => {
             sinon.stub(mockWorkspaceService, 'opened').value(false);
 
-            await navigatorModel.updateRoot();
+            await navigatorModel['updateRoot']();
             const thisRoot = navigatorModel['root'] as WorkspaceNode;
             expect(thisRoot).to.be.undefined;
         });

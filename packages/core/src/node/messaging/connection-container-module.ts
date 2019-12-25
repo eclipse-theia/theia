@@ -80,7 +80,7 @@ export const ConnectionContainerModule: symbol & { create(callback: ConnectionCo
                     path,
                     onConnection: connection => serviceFactory.listen(connection)
                 });
-                return bind(serviceIdentifier).toConstantValue(service);
+                return bind(serviceIdentifier).toConstantValue(service as any);
             };
             const bindBackendService: BindBackendService = (path, serviceIdentifier, onActivation) => {
                 bind(ConnectionHandler).toDynamicValue(context =>

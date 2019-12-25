@@ -1,0 +1,51 @@
+{
+  "name": "@theia/plugin-metrics",
+  "version": "0.14.0",
+  "description": "Theia - Plugin Metrics",
+  "dependencies": {
+    "@theia/core": "^0.14.0",
+    "@theia/languages": "^0.14.0",
+    "@theia/metrics": "^0.14.0",
+    "@theia/plugin": "^0.14.0",
+    "@theia/plugin-ext": "^0.14.0",
+    "vscode-languageserver-protocol": "^3.15.0-next.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/plugin-metrics-frontend-module",
+      "backend": "lib/node/plugin-metrics-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.14.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

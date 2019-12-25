@@ -28,11 +28,6 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
     }
 
     getModel(plugin: PluginPackage): PluginModel {
-        // translate vscode builtins, as they are published with a prefix. See https://github.com/theia-ide/vscode-builtin-extensions/blob/master/src/republish.js#L50
-        const built_prefix = '@theia/vscode-builtin-';
-        if (plugin && plugin.name && plugin.name.startsWith(built_prefix)) {
-            plugin.name = plugin.name.substr(built_prefix.length);
-        }
         const result: PluginModel = {
             packagePath: plugin.packagePath,
             // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
@@ -57,15 +52,20 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
      * Maps extension dependencies to deployable extension dependencies.
      */
     getDependencies(plugin: PluginPackage): Map<string, string> | undefined {
-        if (!plugin.extensionDependencies || !plugin.extensionDependencies.length) {
-            return undefined;
-        }
+        // Store the list of dependencies.
         const dependencies = new Map<string, string>();
-        for (const dependency of plugin.extensionDependencies) {
-            const dependencyId = dependency.toLowerCase();
-            dependencies.set(dependencyId, this.VSCODE_PREFIX + dependencyId);
+        // Iterate through the list of dependencies from `extensionDependencies` and `extensionPack`.
+        for (const dependency of [plugin.extensionDependencies, plugin.extensionPack]) {
+            if (dependency !== undefined) {
+                // Iterate over the list of dependencies present, and add them to the collection.
+                dependency.forEach((dep: string) => {
+                    const dependencyId = dep.toLowerCase();
+                    dependencies.set(dependencyId, this.VSCODE_PREFIX + dependencyId);
+                });
+            }
         }
-        return dependencies;
+        // Return the map of dependencies if present, else `undefined`.
+        return dependencies.size > 0 ? dependencies : undefined ;
     }
 
     getLifecycle(plugin: PluginPackage): PluginLifecycle {

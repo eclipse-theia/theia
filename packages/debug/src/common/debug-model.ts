@@ -29,7 +29,7 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { MaybePromise } from '@theia/core/lib/common/types';
 
-// FXIME: break down this file to debug adapter and debug adapter contribution (see Theia file naming conventions)
+// FIXME: break down this file to debug adapter and debug adapter contribution (see Theia file naming conventions)
 
 /**
  * DebugAdapterSession symbol for DI.

@@ -18,6 +18,7 @@ import '../../src/browser/style/index.css';
 import '../../src/browser/style/symbol-sprite.svg';
 import '../../src/browser/style/symbol-icons.css';
 
+import debounce = require('lodash.debounce');
 import { ContainerModule, decorate, injectable, interfaces } from 'inversify';
 import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
@@ -58,9 +59,9 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MonacoContextKeyService } from './monaco-context-key-service';
 import { MonacoMimeService } from './monaco-mime-service';
 import { MimeService } from '@theia/core/lib/browser/mime-service';
-
-import debounce = require('lodash.debounce');
 import { MonacoEditorServices } from './monaco-editor';
+import { MonacoColorRegistry } from './monaco-color-registry';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -130,6 +131,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoMimeService).toSelf().inSingletonScope();
     rebind(MimeService).toService(MonacoMimeService);
+
+    bind(MonacoColorRegistry).toSelf().inSingletonScope();
+    rebind(ColorRegistry).toService(MonacoColorRegistry);
 });
 
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');

@@ -35,7 +35,8 @@
         "--no-app-auto-install"
       ],
       "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": "development",
+        "THEIA_WEBVIEW_EXTERNAL_ENDPOINT": "${env:THEIA_WEBVIEW_EXTERNAL_ENDPOINT}"
       },
       "sourceMaps": true,
       "outFiles": [
@@ -63,7 +64,8 @@
         "--hosted-plugin-inspect=9339"
       ],
       "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": "development",
+        "THEIA_WEBVIEW_EXTERNAL_ENDPOINT": "${env:THEIA_WEBVIEW_EXTERNAL_ENDPOINT}"
       },
       "sourceMaps": true,
       "outFiles": [
@@ -104,7 +106,8 @@
         "--no-app-auto-install"
       ],
       "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": "development",
+        "THEIA_WEBVIEW_EXTERNAL_ENDPOINT": "${env:THEIA_WEBVIEW_EXTERNAL_ENDPOINT}"
       },
       "sourceMaps": true,
       "outFiles": [
@@ -166,7 +169,8 @@
         "--hosted-plugin-inspect=9339"
       ],
       "env": {
-        "THEIA_DEFAULT_PLUGINS": "local-dir:${workspaceFolder}/plugins"
+        "THEIA_DEFAULT_PLUGINS": "local-dir:${workspaceFolder}/plugins",
+        "THEIA_WEBVIEW_EXTERNAL_ENDPOINT": "${env:THEIA_WEBVIEW_EXTERNAL_ENDPOINT}"
       },
       "stopOnEntry": false,
       "sourceMaps": true,

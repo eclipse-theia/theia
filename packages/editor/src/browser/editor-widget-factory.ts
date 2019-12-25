@@ -43,15 +43,27 @@ export class EditorWidgetFactory implements WidgetFactory {
     }
 
     protected async createEditor(uri: URI): Promise<EditorWidget> {
-        const icon = await this.labelProvider.getIcon(uri);
-        return this.editorProvider(uri).then(textEditor => {
-            const newEditor = new EditorWidget(textEditor, this.selectionService);
-            newEditor.id = this.id + ':' + uri.toString();
-            newEditor.title.closable = true;
-            newEditor.title.label = this.labelProvider.getName(uri);
-            newEditor.title.iconClass = icon + ' file-icon';
-            newEditor.title.caption = uri.path.toString();
-            return newEditor;
+        const textEditor = await this.editorProvider(uri);
+        const newEditor = new EditorWidget(textEditor, this.selectionService);
+
+        await this.setLabels(newEditor, uri);
+        const labelListener = this.labelProvider.onDidChange(async event => {
+            if (uri && event.affects(uri)) {
+                this.setLabels(newEditor, uri);
+            }
         });
+        newEditor.onDispose(() => labelListener.dispose());
+
+        newEditor.id = this.id + ':' + uri.toString();
+        newEditor.title.closable = true;
+        newEditor.title.caption = uri.path.toString();
+        return newEditor;
+    }
+
+    private async setLabels(editor: EditorWidget, uri: URI): Promise<void> {
+        const icon = await this.labelProvider.getIcon(uri);
+        editor.title.label = this.labelProvider.getName(uri);
+        editor.title.iconClass = icon + ' file-icon';
+
     }
 }

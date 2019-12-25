@@ -22,7 +22,7 @@ import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-k
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { QuickOpenTask } from '@theia/task/lib/browser/quick-open-task';
-import { TaskService } from '@theia/task/lib/browser/task-service';
+import { TaskService, TaskEndedInfo, TaskEndedTypes } from '@theia/task/lib/browser/task-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { inject, injectable, postConstruct } from 'inversify';
 import { DebugConfiguration } from '../common/debug-common';
@@ -35,6 +35,7 @@ import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-sessio
 import { DebugBreakpoint } from './model/debug-breakpoint';
 import { DebugStackFrame } from './model/debug-stack-frame';
 import { DebugThread } from './model/debug-thread';
+import { TaskIdentifier } from '@theia/task/lib/common';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -147,6 +148,14 @@ export class DebugSessionManager {
         this.debugTypeKey = this.contextKeyService.createKey<string>('debugType', undefined);
         this.inDebugModeKey = this.contextKeyService.createKey<boolean>('inDebugMode', this.inDebugMode);
         this.breakpoints.onDidChangeMarkers(uri => this.fireDidChangeBreakpoints({ uri }));
+        this.labelProvider.onDidChange(event => {
+            for (const uriString of this.breakpoints.getUris()) {
+                const uri = new URI(uriString);
+                if (event.affects(uri)) {
+                    this.fireDidChangeBreakpoints({ uri });
+                }
+            }
+        });
     }
 
     get inDebugMode(): boolean {
@@ -402,7 +411,7 @@ export class DebugSessionManager {
      * @param taskName the task name to run, see [TaskNameResolver](#TaskNameResolver)
      * @return true if it allowed to continue debugging otherwise it returns false
      */
-    protected async runTask(workspaceFolderUri: string | undefined, taskName: string | undefined, checkErrors?: boolean): Promise<boolean> {
+    protected async runTask(workspaceFolderUri: string | undefined, taskName: string | TaskIdentifier | undefined, checkErrors?: boolean): Promise<boolean> {
         if (!taskName) {
             return true;
         }
@@ -416,11 +425,22 @@ export class DebugSessionManager {
             return this.doPostTaskAction(`Could not run the task '${taskName}'.`);
         }
 
-        const code = await this.taskService.getExitCode(taskInfo.taskId);
-        if (code === 0) {
+        const getExitCodePromise: Promise<TaskEndedInfo> = this.taskService.getExitCode(taskInfo.taskId).then(result =>
+            ({ taskEndedType: TaskEndedTypes.TaskExited, value: result }));
+        const isBackgroundTaskEndedPromise: Promise<TaskEndedInfo> = this.taskService.isBackgroundTaskEnded(taskInfo.taskId).then(result =>
+            ({ taskEndedType: TaskEndedTypes.BackgroundTaskEnded, value: result }));
+
+        // After start running the task, we wait for the task process to exit and if it is a background task, we also wait for a feedback
+        // that a background task is active, as soon as one of the promises fulfills, we can continue and analyze the results.
+        const taskEndedInfo: TaskEndedInfo = await Promise.race([getExitCodePromise, isBackgroundTaskEndedPromise]);
+
+        if (taskEndedInfo.taskEndedType === TaskEndedTypes.BackgroundTaskEnded && taskEndedInfo.value) {
             return true;
-        } else if (code !== undefined) {
-            return this.doPostTaskAction(`Task '${taskName}' terminated with exit code ${code}.`);
+        }
+        if (taskEndedInfo.taskEndedType === TaskEndedTypes.TaskExited && taskEndedInfo.value === 0) {
+            return true;
+        } else if (taskEndedInfo.taskEndedType === TaskEndedTypes.TaskExited && taskEndedInfo.value !== undefined) {
+            return this.doPostTaskAction(`Task '${taskName}' terminated with exit code ${taskEndedInfo.value}.`);
         } else {
             const signal = await this.taskService.getTerminateSignal(taskInfo.taskId);
             if (signal !== undefined) {

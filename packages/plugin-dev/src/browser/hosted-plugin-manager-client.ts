@@ -248,7 +248,8 @@ export class HostedPluginManagerClient {
             this.stateChanged.fire({ state: HostedInstanceState.FAILED, pluginLocation: this.pluginLocation! });
             this.stop();
         } else {
-            this.messageService.warn('Hosted Plugin instance is not running.');
+            this.messageService.warn('Hosted Plugin instance was not running.');
+            this.start();
         }
     }
 

@@ -102,8 +102,7 @@ export class BaseWidget extends Widget {
                         this.scrollBar.destroy();
                         this.scrollBar = undefined;
                     }
-                    // tslint:disable-next-line:no-null-keyword
-                    container.style.overflow = null;
+                    container.style.overflow = 'initial';
                 }));
             })();
         }

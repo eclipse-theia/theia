@@ -33,6 +33,7 @@ import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFA
 import { TerminalContribution } from './terminal-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
+import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -75,6 +76,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
     @inject(TerminalService) protected readonly terminalService: TerminalService;
+    @inject(TerminalCopyOnSelectionHandler) protected readonly copyOnSelectionHandler: TerminalCopyOnSelectionHandler;
 
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
@@ -196,6 +198,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.toDispose.push(this.onTermDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
+
+        this.toDispose.push(this.term.onSelectionChange(() => {
+            if (this.copyOnSelection) {
+                this.copyOnSelectionHandler.copy(this.term.getSelection());
+            }
+        }));
 
         for (const contribution of this.terminalContributionProvider.getContributions()) {
             contribution.onCreate(this);
@@ -532,6 +540,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         return true;
     }
+
+    protected get copyOnSelection(): boolean {
+        return this.preferences['terminal.integrated.copyOnSelection'];
+    }
+
     protected attachCustomKeyEventHandler(): void {
         this.term.attachCustomKeyEventHandler(e => this.customKeyHandler(e));
     }

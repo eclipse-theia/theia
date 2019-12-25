@@ -16,10 +16,11 @@
 
 import { ApplicationShell, FrontendApplication, WidgetManager } from '@theia/core/lib/browser';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
-import { ILogger } from '@theia/core/lib/common';
+import { ILogger, CommandService } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { QuickPickItem, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
@@ -40,7 +41,11 @@ import {
     TaskExitedEvent,
     TaskInfo,
     TaskOutputProcessedEvent,
-    TaskServer
+    BackgroundTaskEndedEvent,
+    TaskDefinition,
+    TaskServer,
+    TaskIdentifier,
+    DependsOrder
 } from '../common';
 import { TaskWatcher } from '../common/task-watcher';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -48,12 +53,31 @@ import { TaskConfigurationClient, TaskConfigurations } from './task-configuratio
 import { TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskNameResolver } from './task-name-resolver';
+import { TaskSourceResolver } from './task-source-resolver';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { TaskSchemaUpdater } from './task-schema-updater';
+import { TaskConfigurationManager } from './task-configuration-manager';
+import { PROBLEMS_WIDGET_ID, ProblemWidget } from '@theia/markers/lib/browser/problem/problem-widget';
+import { TaskNode } from './task-node';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
     learnMore?: boolean;
+}
+
+interface TaskGraphNode {
+    taskConfiguration: TaskConfiguration;
+    node: TaskNode;
+}
+
+export enum TaskEndedTypes {
+    TaskExited,
+    BackgroundTaskEnded
+}
+
+export interface TaskEndedInfo {
+    taskEndedType: TaskEndedTypes,
+    value: number | boolean | undefined
 }
 
 @injectable()
@@ -66,7 +90,8 @@ export class TaskService implements TaskConfigurationClient {
     protected cachedRecentTasks: TaskConfiguration[] = [];
     protected runningTasks = new Map<number, {
         exitCode: Deferred<number | undefined>,
-        terminateSignal: Deferred<string | undefined>
+        terminateSignal: Deferred<string | undefined>,
+        isBackgroundTaskEnded: Deferred<boolean | undefined>
     }>();
 
     @inject(FrontendApplication)
@@ -129,9 +154,20 @@ export class TaskService implements TaskConfigurationClient {
     @inject(TaskNameResolver)
     protected readonly taskNameResolver: TaskNameResolver;
 
+    @inject(TaskSourceResolver)
+    protected readonly taskSourceResolver: TaskSourceResolver;
+
     @inject(TaskSchemaUpdater)
     protected readonly taskSchemaUpdater: TaskSchemaUpdater;
 
+    @inject(TaskConfigurationManager)
+    protected readonly taskConfigurationManager: TaskConfigurationManager;
+
+    @inject(CommandService)
+    protected readonly commands: CommandService;
+
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
     /**
      * @deprecated To be removed in 0.5.0
      */
@@ -143,7 +179,10 @@ export class TaskService implements TaskConfigurationClient {
         this.getRunningTasks().then(tasks =>
             tasks.forEach(task => {
                 if (!this.runningTasks.has(task.taskId)) {
-                    this.runningTasks.set(task.taskId, { exitCode: new Deferred<number | undefined>(), terminateSignal: new Deferred<string | undefined>() });
+                    this.runningTasks.set(task.taskId, {
+                        exitCode: new Deferred<number | undefined>(), terminateSignal: new Deferred<string | undefined>(),
+                        isBackgroundTaskEnded: new Deferred<boolean | undefined>()
+                    });
                 }
             }));
 
@@ -152,13 +191,14 @@ export class TaskService implements TaskConfigurationClient {
             if (!this.isEventForThisClient(event.ctx)) {
                 return;
             }
-            this.runningTasks.set(event.taskId, { exitCode: new Deferred<number | undefined>(), terminateSignal: new Deferred<string | undefined>() });
-            const task = event.config;
-            let taskIdentifier = event.taskId.toString();
-            if (task) {
-                taskIdentifier = this.taskNameResolver.resolve(task);
-            }
-            this.messageService.info(`Task ${taskIdentifier} has been started`);
+            this.runningTasks.set(event.taskId, {
+                exitCode: new Deferred<number | undefined>(),
+                terminateSignal: new Deferred<string | undefined>(),
+                isBackgroundTaskEnded: new Deferred<boolean | undefined>()
+            });
+            const taskConfig = event.config;
+            const taskIdentifier = taskConfig ? this.getTaskIdentifier(taskConfig) : event.taskId.toString();
+            this.messageService.info(`Task '${taskIdentifier}' has been started.`);
         });
 
         this.taskWatcher.onOutputProcessed((event: TaskOutputProcessedEvent) => {
@@ -190,37 +230,58 @@ export class TaskService implements TaskConfigurationClient {
             }
         });
 
+        this.taskWatcher.onBackgroundTaskEnded((event: BackgroundTaskEndedEvent) => {
+            if (!this.isEventForThisClient(event.ctx)) {
+                return;
+            }
+
+            if (!this.runningTasks.has(event.taskId)) {
+                this.runningTasks.set(event.taskId, {
+                    exitCode: new Deferred<number | undefined>(),
+                    terminateSignal: new Deferred<string | undefined>(),
+                    isBackgroundTaskEnded: new Deferred<boolean | undefined>()
+                });
+            }
+            this.runningTasks.get(event.taskId)!.isBackgroundTaskEnded.resolve(true);
+        });
+
         // notify user that task has finished
         this.taskWatcher.onTaskExit((event: TaskExitedEvent) => {
             if (!this.isEventForThisClient(event.ctx)) {
                 return;
             }
             if (!this.runningTasks.has(event.taskId)) {
-                this.runningTasks.set(event.taskId, { exitCode: new Deferred<number | undefined>(), terminateSignal: new Deferred<string | undefined>() });
+                this.runningTasks.set(event.taskId, {
+                    exitCode: new Deferred<number | undefined>(),
+                    terminateSignal: new Deferred<string | undefined>(),
+                    isBackgroundTaskEnded: new Deferred<boolean | undefined>()
+                });
             }
             this.runningTasks.get(event.taskId)!.exitCode.resolve(event.code);
             this.runningTasks.get(event.taskId)!.terminateSignal.resolve(event.signal);
             setTimeout(() => this.runningTasks.delete(event.taskId), 60 * 1000);
 
-            const taskConfiguration = event.config;
-            let taskIdentifier = event.taskId.toString();
-            if (taskConfiguration) {
-                taskIdentifier = this.taskNameResolver.resolve(taskConfiguration);
-            }
-
+            const taskConfig = event.config;
+            const taskIdentifier = taskConfig ? this.getTaskIdentifier(taskConfig) : event.taskId.toString();
             if (event.code !== undefined) {
-                const message = `Task ${taskIdentifier} has exited with code ${event.code}.`;
+                const message = `Task '${taskIdentifier}' has exited with code ${event.code}.`;
                 if (event.code === 0) {
                     this.messageService.info(message);
                 } else {
                     this.messageService.error(message);
                 }
             } else if (event.signal !== undefined) {
-                this.messageService.info(`Task ${taskIdentifier} was terminated by signal ${event.signal}.`);
+                this.messageService.info(`Task '${taskIdentifier}' was terminated by signal ${event.signal}.`);
             } else {
                 console.error('Invalid TaskExitedEvent received, neither code nor signal is set.');
             }
         });
+    }
+
+    private getTaskIdentifier(taskConfig: TaskConfiguration): string {
+        const taskName = this.taskNameResolver.resolve(taskConfig);
+        const sourceStrUri = this.taskSourceResolver.resolve(taskConfig);
+        return `${taskName} (${this.labelProvider.getName(new URI(sourceStrUri))})`;
     }
 
     /** Returns an array of the task configurations configured in tasks.json and provided by the extensions. */
@@ -233,9 +294,39 @@ export class TaskService implements TaskConfigurationClient {
         return [...configuredTasks, ...notCustomizedProvidedTasks];
     }
 
-    /** Returns an array of the task configurations which are configured in tasks.json files */
-    getConfiguredTasks(): Promise<TaskConfiguration[]> {
-        return this.taskConfigurations.getTasks();
+    /** Returns an array of the valid task configurations which are configured in tasks.json files */
+    async getConfiguredTasks(): Promise<TaskConfiguration[]> {
+        const invalidTaskConfig = this.taskConfigurations.getInvalidTaskConfigurations()[0];
+        if (invalidTaskConfig) {
+            const widget = <ProblemWidget>await this.widgetManager.getOrCreateWidget(PROBLEMS_WIDGET_ID);
+            const isProblemsWidgetVisible = widget && widget.isVisible;
+            const currentEditorUri = this.editorManager.currentEditor && this.editorManager.currentEditor.editor.getResourceUri();
+            let isInvalidTaskConfigFileOpen = false;
+            if (currentEditorUri) {
+                const folderUri = this.workspaceService.getWorkspaceRootUri(currentEditorUri);
+                if (folderUri && folderUri.toString() === invalidTaskConfig._scope) {
+                    isInvalidTaskConfigFileOpen = true;
+                }
+            }
+            const warningMessage = 'Invalid task configurations are found. Open tasks.json and find details in the Problems view.';
+            if (!isProblemsWidgetVisible || !isInvalidTaskConfigFileOpen) {
+                this.messageService.warn(warningMessage, 'Open').then(actionOpen => {
+                    if (actionOpen) {
+                        if (invalidTaskConfig && invalidTaskConfig._scope) {
+                            this.taskConfigurationManager.openConfiguration(invalidTaskConfig._scope);
+                        }
+                        if (!isProblemsWidgetVisible) {
+                            this.commands.executeCommand('problemsView:toggle');
+                        }
+                    }
+                });
+            } else {
+                this.messageService.warn(warningMessage);
+            }
+        }
+
+        const validTaskConfigs = await this.taskConfigurations.getTasks();
+        return validTaskConfigs;
     }
 
     /** Returns an array of the task configurations which are provided by the extensions. */
@@ -274,8 +365,8 @@ export class TaskService implements TaskConfigurationClient {
      * Returns a task configuration provided by an extension by task source and label.
      * If there are no task configuration, returns undefined.
      */
-    async getProvidedTask(source: string, label: string): Promise<TaskConfiguration | undefined> {
-        return this.providedTaskConfigurations.getTask(source, label);
+    async getProvidedTask(source: string, label: string, scope?: string): Promise<TaskConfiguration | undefined> {
+        return this.providedTaskConfigurations.getTask(source, label, scope);
     }
 
     /** Returns an array of running tasks 'TaskInfo' objects */
@@ -326,8 +417,8 @@ export class TaskService implements TaskConfigurationClient {
      * Runs a task, by the source and label of the task configuration.
      * It looks for configured and detected tasks.
      */
-    async run(source: string, taskLabel: string): Promise<TaskInfo | undefined> {
-        let task = await this.getProvidedTask(source, taskLabel);
+    async run(source: string, taskLabel: string, scope?: string): Promise<TaskInfo | undefined> {
+        let task = await this.getProvidedTask(source, taskLabel, scope);
         if (!task) { // if a detected task cannot be found, search from tasks.json
             task = this.taskConfigurations.getTask(source, taskLabel);
             if (!task) {
@@ -354,7 +445,7 @@ export class TaskService implements TaskConfigurationClient {
                     customizationObject.problemMatcher = matcherNames;
 
                     // write the selected matcher (or the decision of "never parse") into the `tasks.json`
-                    this.taskConfigurations.saveProblemMatcherForTask(task, matcherNames);
+                    this.updateTaskConfiguration(task, { problemMatcher: matcherNames });
                 } else if (selected.learnMore) { // user wants to learn more about parsing task output
                     open(this.openerService, new URI('https://code.visualstudio.com/docs/editor/tasks#_processing-task-output-with-problem-matchers'));
                 }
@@ -364,13 +455,240 @@ export class TaskService implements TaskConfigurationClient {
             }
         }
 
+        const tasks = await this.getWorkspaceTasks(task._scope);
         const resolvedMatchers = await this.resolveProblemMatchers(task, customizationObject);
-        return this.runTask(task, {
+        try {
+            const rootNode = new TaskNode(task, [], []);
+            this.detectDirectedAcyclicGraph(task, rootNode, tasks);
+        } catch (error) {
+            this.logger.error(error.message);
+            this.messageService.error(error.message);
+            return undefined;
+        }
+        return this.runTasksGraph(task, tasks, {
             customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
+        }).catch(error => {
+            console.log(error.message);
+            return undefined;
         });
     }
 
+    /**
+     * A recursive function that runs a task and all its sub tasks that it depends on.
+     * A task can be executed only when all of its dependencies have been executed, or when it doesn’t have any dependencies at all.
+     */
+    async runTasksGraph(task: TaskConfiguration, tasks: TaskConfiguration[], option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        if (task && task.dependsOn) {
+            // In case it is an array of task dependencies
+            if (Array.isArray(task.dependsOn) && task.dependsOn.length > 0) {
+                const dependentTasks: { 'task': TaskConfiguration; 'taskCustomization': TaskCustomization; 'resolvedMatchers': ProblemMatcher[] | undefined }[] = [];
+                for (let i = 0; i < task.dependsOn.length; i++) {
+                    // It may be a string (a task label) or a JSON object which represents a TaskIdentifier (e.g. {"type":"npm", "script":"script1"})
+                    const taskIdentifier = task.dependsOn[i];
+                    const dependentTask = this.getDependentTask(taskIdentifier, tasks);
+                    const taskCustomization = await this.getTaskCustomization(dependentTask);
+                    const resolvedMatchers = await this.resolveProblemMatchers(dependentTask, taskCustomization);
+                    dependentTasks.push({ 'task': dependentTask, 'taskCustomization': taskCustomization, 'resolvedMatchers': resolvedMatchers });
+                    // In case the 'dependsOrder' is 'sequence'
+                    if (task.dependsOrder && task.dependsOrder === DependsOrder.Sequence) {
+                        await this.runTasksGraph(dependentTask, tasks, {
+                            customization: { ...taskCustomization, ...{ problemMatcher: resolvedMatchers } }
+                        });
+                    }
+                }
+                // In case the 'dependsOrder' is 'parallel'
+                if (((!task.dependsOrder) || (task.dependsOrder && task.dependsOrder === DependsOrder.Parallel))) {
+                    const promises = dependentTasks.map(item =>
+                        this.runTasksGraph(item.task, tasks, {
+                            customization: { ...item.taskCustomization, ...{ problemMatcher: item.resolvedMatchers } }
+                        })
+                    );
+                    await Promise.all(promises);
+                }
+            } else if (!Array.isArray(task.dependsOn)) {
+                // In case it is a string (a task label) or a JSON object which represents a TaskIdentifier (e.g. {"type":"npm", "script":"script1"})
+                const taskIdentifier = task.dependsOn;
+                const dependentTask = this.getDependentTask(taskIdentifier, tasks);
+                const taskCustomization = await this.getTaskCustomization(dependentTask);
+                const resolvedMatchers = await this.resolveProblemMatchers(dependentTask, taskCustomization);
+                await this.runTasksGraph(dependentTask, tasks, {
+                    customization: { ...taskCustomization, ...{ problemMatcher: resolvedMatchers } }
+                });
+            }
+        }
+
+        const taskInfo = await this.runTask(task, option);
+        if (taskInfo) {
+            const getExitCodePromise: Promise<TaskEndedInfo> = this.getExitCode(taskInfo.taskId).then(result => ({ taskEndedType: TaskEndedTypes.TaskExited, value: result }));
+            const isBackgroundTaskEndedPromise: Promise<TaskEndedInfo> = this.isBackgroundTaskEnded(taskInfo.taskId).then(result =>
+                ({ taskEndedType: TaskEndedTypes.BackgroundTaskEnded, value: result }));
+
+            // After start running the task, we wait for the task process to exit and if it is a background task, we also wait for a feedback
+            // that a background task is active, as soon as one of the promises fulfills, we can continue and analyze the results.
+            const taskEndedInfo: TaskEndedInfo = await Promise.race([getExitCodePromise, isBackgroundTaskEndedPromise]);
+
+            if ((taskEndedInfo.taskEndedType === TaskEndedTypes.TaskExited && taskEndedInfo.value !== 0) ||
+                (taskEndedInfo.taskEndedType === TaskEndedTypes.BackgroundTaskEnded && !taskEndedInfo.value)) {
+                throw new Error('The task: ' + task.label + ' terminated with exit code ' + taskEndedInfo.value + '.');
+            }
+        }
+        return taskInfo;
+    }
+
+    /**
+     * Creates a graph of dependencies tasks from the root task and verify there is no DAG (Directed Acyclic Graph).
+     * In case of detection of a circular dependency, an error is thrown with a message which describes the detected circular reference.
+     */
+    detectDirectedAcyclicGraph(task: TaskConfiguration, taskNode: TaskNode, tasks: TaskConfiguration[]): void {
+        if (task && task.dependsOn) {
+            // In case the 'dependsOn' is an array
+            if (Array.isArray(task.dependsOn) && task.dependsOn.length > 0) {
+                for (let i = 0; i < task.dependsOn.length; i++) {
+                    const childNode = this.createChildTaskNode(task, taskNode, task.dependsOn[i], tasks);
+                    this.detectDirectedAcyclicGraph(childNode.taskConfiguration, childNode.node, tasks);
+                }
+            } else if (!Array.isArray(task.dependsOn)) {
+                const childNode = this.createChildTaskNode(task, taskNode, task.dependsOn, tasks);
+                this.detectDirectedAcyclicGraph(childNode.taskConfiguration, childNode.node, tasks);
+            }
+        }
+    }
+
+    // 'childTaskIdentifier' may be a string (a task label) or a JSON object which represents a TaskIdentifier (e.g. {"type":"npm", "script":"script1"})
+    createChildTaskNode(task: TaskConfiguration, taskNode: TaskNode, childTaskIdentifier: string | TaskIdentifier, tasks: TaskConfiguration[]): TaskGraphNode {
+        const childTaskConfiguration = this.getDependentTask(childTaskIdentifier, tasks);
+
+        // If current task and child task are identical or if
+        // one of the child tasks is identical to one of the current task ancestors, then raise an error
+        if (this.taskDefinitionRegistry.compareTasks(task, childTaskConfiguration) ||
+            taskNode.parentsID.filter(t => this.taskDefinitionRegistry.compareTasks(childTaskConfiguration, t)).length > 0) {
+            const fromNode = task.label;
+            const toNode = childTaskConfiguration.label;
+            throw new Error('Circular reference detected: ' + fromNode + ' -->  ' + toNode);
+        }
+        const childNode = new TaskNode(childTaskConfiguration, [], Object.assign([], taskNode.parentsID));
+        childNode.addParentDependency(taskNode.taskId);
+        taskNode.addChildDependency(childNode);
+        return { 'taskConfiguration': childTaskConfiguration, 'node': childNode };
+    }
+
+    /**
+     * Gets task configuration by task label or by a JSON object which represents a task identifier
+     *
+     * @param taskIdentifier The task label (string) or a JSON object which represents a TaskIdentifier (e.g. {"type":"npm", "script":"script1"})
+     * @param tasks an array of the task configurations
+     * @returns the correct TaskConfiguration object which matches the taskIdentifier
+     */
+    getDependentTask(taskIdentifier: string | TaskIdentifier, tasks: TaskConfiguration[]): TaskConfiguration {
+        const notEnoughDataError = 'The information provided in the "dependsOn" is not enough for matching the correct task !';
+        let currentTaskChildConfiguration: TaskConfiguration;
+        if (typeof (taskIdentifier) !== 'string') {
+            // TaskIdentifier object does not support tasks of type 'shell' (The same behavior as in VS Code).
+            // So if we want the 'dependsOn' property to include tasks of type 'shell',
+            // then we must mention their labels (in the 'dependsOn' property) and not to create a task identifier object for them.
+            const taskDefinition = this.taskDefinitionRegistry.getDefinition(taskIdentifier);
+            if (taskDefinition) {
+                currentTaskChildConfiguration = this.getTaskByTaskIdentifierAndTaskDefinition(taskDefinition, taskIdentifier, tasks);
+                if (!currentTaskChildConfiguration.type) {
+                    this.messageService.error(notEnoughDataError);
+                    throw new Error(notEnoughDataError);
+                }
+                return currentTaskChildConfiguration;
+            } else {
+                this.messageService.error(notEnoughDataError);
+                throw new Error(notEnoughDataError);
+            }
+        } else {
+            currentTaskChildConfiguration = tasks.filter(t => taskIdentifier === this.taskNameResolver.resolve(t))[0];
+            return currentTaskChildConfiguration;
+        }
+    }
+
+    /**
+     * Gets the matched task from an array of task configurations by TaskDefinition and TaskIdentifier.
+     * In case that more than one task configuration matches, we returns the first one.
+     *
+     * @param taskDefinition The task definition for the task configuration.
+     * @param taskIdentifier The task label (string) or a JSON object which represents a TaskIdentifier (e.g. {"type":"npm", "script":"script1"})
+     * @param tasks An array of task configurations.
+     * @returns The correct TaskConfiguration object which matches the taskDefinition and taskIdentifier.
+     */
+    getTaskByTaskIdentifierAndTaskDefinition(taskDefinition: TaskDefinition | undefined, taskIdentifier: TaskIdentifier, tasks: TaskConfiguration[]): TaskConfiguration {
+        const identifierProperties: string[] = [];
+        let relevantTasks = tasks.filter(t =>
+            taskDefinition && t.hasOwnProperty('taskType') &&
+            taskDefinition['taskType'] === t['taskType'] &&
+            t.hasOwnProperty('source') &&
+            taskDefinition['source'] === t['source']);
+
+        Object.keys(taskIdentifier).forEach(key => {
+            identifierProperties.push(key);
+        });
+
+        identifierProperties.forEach(key => {
+            if (key === 'type' || key === 'taskType') {
+                relevantTasks = relevantTasks.filter(t => (t.hasOwnProperty('type') || t.hasOwnProperty('taskType')) &&
+                    ((taskIdentifier[key] === t['type']) || (taskIdentifier[key] === t['taskType'])));
+            } else {
+                relevantTasks = relevantTasks.filter(t => t.hasOwnProperty(key) && taskIdentifier[key] === t[key]);
+            }
+        });
+
+        if (relevantTasks.length > 0) {
+            return relevantTasks[0];
+        } else {
+            // return empty TaskConfiguration
+            return { 'label': '', '_scope': '', 'type': '' };
+        }
+    }
+
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        const runningTasksInfo: TaskInfo[] = await this.getRunningTasks();
+
+        // check if the task is active
+        const matchedRunningTaskInfo = runningTasksInfo.find(taskInfo => {
+            const taskConfig = taskInfo.config;
+            return this.taskDefinitionRegistry.compareTasks(taskConfig, task);
+        });
+        if (matchedRunningTaskInfo) { // the task is active
+            const taskName = this.taskNameResolver.resolve(task);
+            const terminalId = matchedRunningTaskInfo.terminalId;
+            if (terminalId) {
+                const terminal = this.terminalService.getById(this.getTerminalWidgetId(terminalId));
+                if (terminal) {
+                    this.shell.activateWidget(terminal.id); // make the terminal visible and assign focus
+                }
+            }
+            const selectedAction = await this.messageService.info(`The task '${taskName}' is already active`, 'Terminate Task', 'Restart Task');
+            if (selectedAction === 'Terminate Task') {
+                await this.terminateTask(matchedRunningTaskInfo);
+            } else if (selectedAction === 'Restart Task') {
+                return this.restartTask(matchedRunningTaskInfo, option);
+            }
+        } else { // run task as the task is not active
+            return this.doRunTask(task, option);
+        }
+    }
+
+    /**
+     * Terminates a task that is actively running.
+     * @param activeTaskInfo the TaskInfo of the task that is actively running
+     */
+    protected async terminateTask(activeTaskInfo: TaskInfo): Promise<void> {
+        const taskId = activeTaskInfo.taskId;
+        return this.kill(taskId);
+    }
+
+    /**
+     * Terminates a task that is actively running, and restarts it.
+     * @param activeTaskInfo the TaskInfo of the task that is actively running
+     */
+    protected async restartTask(activeTaskInfo: TaskInfo, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        await this.terminateTask(activeTaskInfo);
+        return this.doRunTask(activeTaskInfo.config, option);
+    }
+
+    protected async doRunTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
         if (option && option.customization) {
             const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
             if (taskDefinition) { // use the customization object to override the task config
@@ -398,23 +716,55 @@ export class TaskService implements TaskConfigurationClient {
                 return this.runTask(task);
             }
         }
-
         return;
     }
 
-    async runWorkspaceTask(workspaceFolderUri: string | undefined, taskName: string): Promise<TaskInfo | undefined> {
+    async runWorkspaceTask(workspaceFolderUri: string | undefined, taskIdentifier: string | TaskIdentifier): Promise<TaskInfo | undefined> {
         const tasks = await this.getWorkspaceTasks(workspaceFolderUri);
-        const task = tasks.filter(t => taskName === this.taskNameResolver.resolve(t))[0];
+        const task = this.getDependentTask(taskIdentifier, tasks);
         if (!task) {
             return undefined;
         }
 
         const taskCustomization = await this.getTaskCustomization(task);
         const resolvedMatchers = await this.resolveProblemMatchers(task, taskCustomization);
-
-        return this.runTask(task, {
+        try {
+            const rootNode = new TaskNode(task, [], []);
+            this.detectDirectedAcyclicGraph(task, rootNode, tasks);
+        } catch (error) {
+            this.logger.error(error.message);
+            this.messageService.error(error.message);
+            return undefined;
+        }
+        return this.runTasksGraph(task, tasks, {
             customization: { ...taskCustomization, ...{ problemMatcher: resolvedMatchers } }
+        }).catch(error => {
+            console.log(error.message);
+            return undefined;
         });
+    }
+
+    /**
+     * Updates the task configuration in the `tasks.json`.
+     * The task config, together with updates, will be written into the `tasks.json` if it is not found in the file.
+     *
+     * @param task task that the updates will be applied to
+     * @param update the updates to be applied
+     */
+    // tslint:disable-next-line:no-any
+    async updateTaskConfiguration(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
+        if (update.problemMatcher) {
+            if (Array.isArray(update.problemMatcher)) {
+                update.problemMatcher.forEach((name, index) => {
+                    if (!name.startsWith('$')) {
+                        update.problemMatcher[index] = `$${update.problemMatcher[index]}`;
+                    }
+                });
+            } else if (!update.problemMatcher.startsWith('$')) {
+                update.problemMatcher = `$${update.problemMatcher}`;
+            }
+        }
+        this.taskConfigurations.updateTaskConfig(task, update);
     }
 
     protected async getWorkspaceTasks(workspaceFolderUri: string | undefined): Promise<TaskConfiguration[]> {
@@ -484,16 +834,18 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     private async getResolvedTask(task: TaskConfiguration): Promise<TaskConfiguration | undefined> {
-        const resolver = await this.taskResolverRegistry.getResolver(task.type);
+        let resolver = undefined;
+        let resolvedTask: TaskConfiguration;
         try {
-            const resolvedTask = resolver ? await resolver.resolveTask(task) : task;
-            this.addRecentTasks(task);
-            return resolvedTask;
+            resolver = await this.taskResolverRegistry.getResolver(task.type);
+            resolvedTask = resolver ? await resolver.resolveTask(task) : task;
         } catch (error) {
             const errMessage = `Error resolving task '${task.label}': ${error}`;
             this.logger.error(errMessage);
-            this.messageService.error(errMessage);
+            resolvedTask = task;
         }
+        this.addRecentTasks(task);
+        return resolvedTask;
     }
 
     /**
@@ -587,7 +939,7 @@ export class TaskService implements TaskConfigurationClient {
             TERMINAL_WIDGET_FACTORY_ID,
             <TerminalWidgetFactoryOptions>{
                 created: new Date().toString(),
-                id: 'terminal-' + processId,
+                id: this.getTerminalWidgetId(processId),
                 title: taskInfo
                     ? `Task: ${taskInfo.config.label}`
                     : `Task: #${taskId}`,
@@ -597,6 +949,10 @@ export class TaskService implements TaskConfigurationClient {
         this.shell.addWidget(widget, { area: 'bottom' });
         this.shell.activateWidget(widget.id);
         widget.start(processId);
+    }
+
+    private getTerminalWidgetId(terminalId: number): string {
+        return `${TERMINAL_WIDGET_FACTORY_ID}-${terminalId}`;
     }
 
     async configure(task: TaskConfiguration): Promise<void> {
@@ -628,6 +984,11 @@ export class TaskService implements TaskConfigurationClient {
             return;
         }
         this.logger.debug(`Task killed. Task id: ${id}`);
+    }
+
+    async isBackgroundTaskEnded(id: number): Promise<boolean | undefined> {
+        const completedTask = this.runningTasks.get(id);
+        return completedTask && completedTask.isBackgroundTaskEnded!.promise;
     }
 
     async getExitCode(id: number): Promise<number | undefined> {

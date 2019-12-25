@@ -53,6 +53,10 @@ import { Emitter, isCancelled } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PluginViewRegistry } from '../../main/browser/view/plugin-view-registry';
 import { TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/browser/task-contribution';
+import { WebviewEnvironment } from '../../main/browser/webview/webview-environment';
+import { WebviewWidget } from '../../main/browser/webview/webview';
+import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -127,6 +131,15 @@ export class HostedPluginSupport {
     @inject(ProgressService)
     protected readonly progressService: ProgressService;
 
+    @inject(WebviewEnvironment)
+    protected readonly webviewEnvironment: WebviewEnvironment;
+
+    @inject(WidgetManager)
+    protected readonly widgets: WidgetManager;
+
+    @inject(TerminalService)
+    protected readonly terminalService: TerminalService;
+
     private theiaReadyPromise: Promise<any>;
 
     protected readonly managers = new Map<string, PluginManagerExt>();
@@ -154,6 +167,26 @@ export class HostedPluginSupport {
         this.viewRegistry.onDidExpandView(id => this.activateByView(id));
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
+        this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
+            if (factoryId === WebviewWidget.FACTORY_ID && widget instanceof WebviewWidget) {
+                const storeState = widget.storeState.bind(widget);
+                const restoreState = widget.restoreState.bind(widget);
+                widget.storeState = () => {
+                    if (this.webviewRevivers.has(widget.viewType)) {
+                        return storeState();
+                    }
+                    return {};
+                };
+                widget.restoreState = oldState => {
+                    if (oldState.viewType) {
+                        restoreState(oldState);
+                        this.preserveWebview(widget);
+                    } else {
+                        widget.dispose();
+                    }
+                };
+            }
+        });
     }
 
     get plugins(): PluginMetadata[] {
@@ -181,6 +214,7 @@ export class HostedPluginSupport {
 
     protected async doLoad(): Promise<void> {
         const toDisconnect = new DisposableCollection(Disposable.create(() => { /* mark as connected */ }));
+        toDisconnect.push(Disposable.create(() => this.preserveWebviews()));
         this.server.onDidCloseConnection(() => toDisconnect.dispose());
 
         // process empty plugins as well in order to properly remove stale plugin widgets
@@ -207,6 +241,7 @@ export class HostedPluginSupport {
             return;
         }
         await this.startPlugins(contributionsByHost, toDisconnect);
+        this.restoreWebviews();
     }
 
     /**
@@ -355,13 +390,16 @@ export class HostedPluginSupport {
             this.managers.set(host, manager);
             toDisconnect.push(Disposable.create(() => this.managers.delete(host)));
 
-            const [extApi, globalState, workspaceState] = await Promise.all([
+            const [extApi, globalState, workspaceState, webviewResourceRoot, webviewCspSource, defaultShell] = await Promise.all([
                 this.server.getExtPluginAPI(),
                 this.pluginServer.getAllStorageValues(undefined),
                 this.pluginServer.getAllStorageValues({
                     workspace: this.workspaceService.workspace,
                     roots: this.workspaceService.tryGetRoots()
-                })
+                }),
+                this.webviewEnvironment.resourceRoot(),
+                this.webviewEnvironment.cspSource(),
+                this.terminalService.getDefaultShell()
             ]);
             if (toDisconnect.disposed) {
                 return undefined;
@@ -371,8 +409,16 @@ export class HostedPluginSupport {
                 preferences: getPreferences(this.preferenceProviderProvider, this.workspaceService.tryGetRoots()),
                 globalState,
                 workspaceState,
-                env: { queryParams: getQueryParameters(), language: navigator.language },
-                extApi
+                env: {
+                    queryParams: getQueryParameters(),
+                    language: navigator.language,
+                    shell: defaultShell
+                },
+                extApi,
+                webview: {
+                    webviewResourceRoot,
+                    webviewCspSource
+                }
             });
             if (toDisconnect.disposed) {
                 return undefined;
@@ -552,6 +598,71 @@ export class HostedPluginSupport {
     protected logMeasurement(prefix: string, count: number, measurement: () => number): void {
         const pluginCount = `${count} plugin${count === 1 ? '' : 's'}`;
         console.log(`[${this.clientId}] ${prefix} of ${pluginCount} took: ${measurement()} ms`);
+    }
+
+    protected readonly webviewsToRestore = new Set<WebviewWidget>();
+    protected readonly webviewRevivers = new Map<string, (webview: WebviewWidget) => Promise<void>>();
+
+    registerWebviewReviver(viewType: string, reviver: (webview: WebviewWidget) => Promise<void>): void {
+        if (this.webviewRevivers.has(viewType)) {
+            throw new Error(`Reviver for ${viewType} already registered`);
+        }
+        this.webviewRevivers.set(viewType, reviver);
+    }
+
+    unregisterWebviewReviver(viewType: string): void {
+        this.webviewRevivers.delete(viewType);
+    }
+
+    protected preserveWebviews(): void {
+        for (const webview of this.widgets.getWidgets(WebviewWidget.FACTORY_ID)) {
+            this.preserveWebview(webview as WebviewWidget);
+        }
+    }
+
+    protected preserveWebview(webview: WebviewWidget): void {
+        if (!this.webviewsToRestore.has(webview)) {
+            this.webviewsToRestore.add(webview);
+            webview.disposed.connect(() => this.webviewsToRestore.delete(webview));
+        }
+    }
+
+    protected restoreWebviews(): void {
+        for (const webview of this.webviewsToRestore) {
+            this.restoreWebview(webview);
+        }
+        this.webviewsToRestore.clear();
+    }
+
+    protected async restoreWebview(webview: WebviewWidget): Promise<void> {
+        await this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
+        const restore = this.webviewRevivers.get(webview.viewType);
+        if (!restore) {
+            webview.setHTML(this.getDeserializationFailedContents(`
+            <p>The extension providing '${webview.viewType}' view is not capable of restoring it.</p>
+            <p>Want to help fix this? Please inform the extension developer to register a <a href="https://code.visualstudio.com/api/extension-guides/webview#serialization">reviver</a>.</p>
+            `));
+            return;
+        }
+        try {
+            await restore(webview);
+        } catch (e) {
+            webview.setHTML(this.getDeserializationFailedContents(`
+            An error occurred while restoring '${webview.viewType}' view. Please check logs.
+            `));
+            console.error('Failed to restore the webview', e);
+        }
+    }
+
+    protected getDeserializationFailedContents(message: string): string {
+        return `<!DOCTYPE html>
+		<html>
+			<head>
+				<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
+			</head>
+			<body>${message}</body>
+		</html>`;
     }
 
 }

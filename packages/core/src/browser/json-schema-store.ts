@@ -38,6 +38,9 @@ export class JsonSchemaStore {
     protected readonly onSchemasChangedEmitter = new Emitter<void>();
     readonly onSchemasChanged = this.onSchemasChangedEmitter.event;
 
+    protected readonly onDidChangeSchemaEmitter = new Emitter<URI>();
+    readonly onDidChangeSchema = this.onDidChangeSchemaEmitter.event;
+
     protected notifyChanged = debounce(() => {
         this.onSchemasChangedEmitter.fire(undefined);
     }, 500);
@@ -48,7 +51,10 @@ export class JsonSchemaStore {
         if (uri.scheme === 'vscode') {
             const resource = this.inMemoryResources.resolve(new URI(config.url));
             if (resource && resource.onDidChangeContents) {
-                toDispose.push(resource.onDidChangeContents(() => this.notifyChanged()));
+                toDispose.push(resource.onDidChangeContents(() => {
+                    this.onDidChangeSchemaEmitter.fire(uri);
+                    this.notifyChanged();
+                }));
             }
         }
         this.schemas.push(config);
@@ -56,9 +62,11 @@ export class JsonSchemaStore {
             const idx = this.schemas.indexOf(config);
             if (idx > -1) {
                 this.schemas.splice(idx, 1);
+                this.onDidChangeSchemaEmitter.fire(uri);
                 this.notifyChanged();
             }
         }));
+        this.onDidChangeSchemaEmitter.fire(uri);
         this.notifyChanged();
         return toDispose;
     }

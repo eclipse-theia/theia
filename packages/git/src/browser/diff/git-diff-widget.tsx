@@ -68,6 +68,12 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                 this.setContent(this.options);
             }
         }));
+        this.toDispose.push(this.labelProvider.onDidChange(event => {
+            const affectsFiles = this.fileChangeNodes.some(node => event.affects(new URI(node.uri)));
+            if (this.options && affectsFiles) {
+                this.setContent(this.options);
+            }
+        }));
     }
 
     protected getScrollContainer(): MaybePromise<HTMLElement> {
@@ -431,7 +437,7 @@ export class GitDiffListContainer extends React.Component<GitDiffListContainer.P
 
     focus(): void {
         if (this.listContainer) {
-            this.listContainer.focus();
+            this.listContainer.focus({ preventScroll: true });
         }
     }
 }

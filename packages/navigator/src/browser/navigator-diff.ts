@@ -116,7 +116,7 @@ export class NavigatorDiff {
      * Compare selected files.  First file is selected through addFirstComparisonFile
      * @see SelectionService
      * @see addFirstComparisonFile
-     * @returns Promise<boolean> indiccating whether the comparison was completed successfully
+     * @returns Promise<boolean> indicating whether the comparison was completed successfully
      */
     async compareFiles(): Promise<boolean> {
         const uriSelected = await this.getURISelection();

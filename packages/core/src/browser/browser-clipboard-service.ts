@@ -56,13 +56,13 @@ export class BrowserClipboardService implements ClipboardService {
                     It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia.
                     Note, it will allow FireFox getting full access to the system clipboard.`);
                 }
-                throw new Error('Failed reading clipboard content.');
+                return '';
             }
         }
         if (permission.state === 'denied') {
             // most likely, the user intentionally denied the access
-            this.messageService.error("Access to the clipboard is denied. Check your browser's permission.");
-            throw new Error('Access to the clipboard is denied.');
+            this.messageService.warn("Access to the clipboard is denied. Check your browser's permission.");
+            return '';
         }
         return this.getClipboardAPI().readText();
     }
@@ -84,13 +84,13 @@ export class BrowserClipboardService implements ClipboardService {
                     It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia.
                     Note, it will allow FireFox getting full access to the system clipboard.`);
                 }
-                throw new Error('Failed writing the the clipboard.');
+                return;
             }
         }
         if (permission.state === 'denied') {
             // most likely, the user intentionally denied the access
-            this.messageService.error("Access to the clipboard is denied. Check your browser's permission.");
-            throw new Error('Access to the clipboard is denied.');
+            this.messageService.warn("Access to the clipboard is denied. Check your browser's permission.");
+            return;
         }
         return this.getClipboardAPI().writeText(value);
     }

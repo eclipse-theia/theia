@@ -27,6 +27,6 @@ export namespace MiniBrowserContentStyle {
     export const OPEN = 'theia-mini-browser-open';
     export const BUTTON = 'theia-mini-browser-button';
     export const DISABLED = 'theia-mini-browser-button-disabled';
-    export const TRANSPARENT_OVERLAY = 'theia-mini-browser-transparent-overlay';
+    export const TRANSPARENT_OVERLAY = 'theia-transparent-overlay';
     export const ERROR_BAR = 'theia-mini-browser-error-bar';
 }

@@ -19,6 +19,8 @@ import * as fileIcons from 'file-icons-js';
 import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Prioritizeable, MaybePromise } from '../common/types';
+import { Event, Emitter } from '../common';
+import { FrontendApplicationContribution } from './frontend-application';
 
 export const FOLDER_ICON = 'fa fa-folder';
 export const FILE_ICON = 'fa fa-file';
@@ -48,6 +50,17 @@ export interface LabelProviderContribution {
      */
     getLongName?(element: object): string;
 
+    /**
+     * Emit when something has changed that may result in this label provider returning a different
+     * value for one or more properties (name, icon etc).
+     */
+    readonly onDidChange?: Event<DidChangeLabelEvent>;
+
+    readonly getConstituentUris?: (compositeElement: object) => URI[];
+}
+
+export interface DidChangeLabelEvent {
+    affects(element: object): boolean;
 }
 
 @injectable()
@@ -86,12 +99,75 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
 }
 
 @injectable()
-export class LabelProvider {
+export class LabelProvider implements FrontendApplicationContribution {
 
-    constructor(
-        @inject(ContributionProvider) @named(LabelProviderContribution)
-        protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>
-    ) { }
+    protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
+
+    @inject(ContributionProvider) @named(LabelProviderContribution)
+    protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>;
+
+    /**
+     * Start listening to contributions.
+     *
+     * Don't call this method directly!
+     * It's called by the frontend application during initialization.
+     */
+    initialize(): void {
+        const contributions = this.contributionProvider.getContributions();
+        for (const contribution of contributions) {
+            if (contribution.onDidChange) {
+                contribution.onDidChange(event => {
+                    const affects = (uri: URI) => this.affects(uri, event, contribution);
+                    this.onDidChangeEmitter.fire({ affects });
+                });
+            }
+        }
+    }
+
+    /**
+     * When the given event occurs, determine if the given URI could in any
+     * way be affected.
+     *
+     * If the event directly indicates that it affects the URI then of course we
+     * return `true`.  However there may be label provider contributions that delegate
+     * back to the label provider.  These contributors do not, and should not, listen for
+     * label provider events because that would cause infinite recursion.
+     *
+     * @param uri
+     * @param event
+     */
+    protected affects(element: object, event: DidChangeLabelEvent, originatingContribution: LabelProviderContribution): boolean {
+
+        const contribs = this.findContribution(element);
+        const possibleContribsWithDups = [
+            contribs.find(c => c.getIcon !== undefined),
+            contribs.find(c => c.getName !== undefined),
+            contribs.find(c => c.getLongName !== undefined),
+        ];
+        const possibleContribsWithoutDups = [...new Set(possibleContribsWithDups)];
+        for (const possibleContrib of possibleContribsWithoutDups) {
+            if (possibleContrib) {
+                if (possibleContrib === originatingContribution) {
+                    if (event.affects(element)) {
+                        return true;
+                    }
+                }
+                if (possibleContrib.getConstituentUris) {
+                    const constituentUris: URI[] = possibleContrib.getConstituentUris(element);
+                    for (const constituentUri of constituentUris) {
+                        if (this.affects(constituentUri, event, originatingContribution)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    get onDidChange(): Event<DidChangeLabelEvent> {
+        return this.onDidChangeEmitter.event;
+    }
 
     async getIcon(element: object): Promise<string> {
         const contribs = this.findContribution(element);
@@ -117,7 +193,7 @@ export class LabelProvider {
         if (!contrib) {
             return '';
         }
-        return contrib!.getLongName!(element);
+        return contrib.getLongName!(element);
     }
 
     protected findContribution(element: object): LabelProviderContribution[] {
@@ -126,5 +202,4 @@ export class LabelProvider {
         );
         return prioritized.map(c => c.value);
     }
-
 }

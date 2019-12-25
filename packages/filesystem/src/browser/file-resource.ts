@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
+import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import {
     Resource, ResourceResolver, Emitter, Event, DisposableCollection, ResourceError
 } from '@theia/core';

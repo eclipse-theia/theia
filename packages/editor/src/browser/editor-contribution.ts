@@ -112,7 +112,8 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
             text: languageName,
             alignment: StatusBarAlignment.RIGHT,
             priority: 1,
-            command: EditorCommands.CHANGE_LANGUAGE.id
+            command: EditorCommands.CHANGE_LANGUAGE.id,
+            tooltip: 'Select Language Mode'
         });
     }
 
@@ -125,7 +126,8 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
             text: SUPPORTED_ENCODINGS[editor.getEncoding()].labelShort,
             alignment: StatusBarAlignment.RIGHT,
             priority: 10,
-            command: EditorCommands.CHANGE_ENCODING.id
+            command: EditorCommands.CHANGE_ENCODING.id,
+            tooltip: 'Select Encoding'
         });
     }
 
@@ -138,7 +140,9 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
         this.statusBar.setElement('editor-status-cursor-position', {
             text: `Ln ${cursor.line + 1}, Col ${editor.getVisibleColumn(cursor)}`,
             alignment: StatusBarAlignment.RIGHT,
-            priority: 100
+            priority: 100,
+            tooltip: 'Go To Line',
+            command: 'editor.action.gotoLine'
         });
     }
 

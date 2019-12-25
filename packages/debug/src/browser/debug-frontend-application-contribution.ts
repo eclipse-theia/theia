@@ -205,12 +205,12 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         label: 'Set Value',
     };
-    export const COPY_VAIRABLE_VALUE: Command = {
+    export const COPY_VARIABLE_VALUE: Command = {
         id: 'debug.variable.copyValue',
         category: DEBUG_CATEGORY,
         label: 'Copy Value',
     };
-    export const COPY_VAIRABLE_AS_EXPRESSION: Command = {
+    export const COPY_VARIABLE_AS_EXPRESSION: Command = {
         id: 'debug.variable.copyAsExpression',
         category: DEBUG_CATEGORY,
         label: 'Copy As Expression',
@@ -477,8 +477,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registerMenuActions(DebugVariablesWidget.CONTEXT_MENU,
             DebugCommands.SET_VARIABLE_VALUE,
-            DebugCommands.COPY_VAIRABLE_VALUE,
-            DebugCommands.COPY_VAIRABLE_AS_EXPRESSION
+            DebugCommands.COPY_VARIABLE_VALUE,
+            DebugCommands.COPY_VARIABLE_AS_EXPRESSION
         );
 
         registerMenuActions(DebugBreakpointsWidget.EDIT_MENU,
@@ -737,12 +737,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => !!this.selectedVariable && this.selectedVariable.supportSetVariable,
             isVisible: () => !!this.selectedVariable && this.selectedVariable.supportSetVariable
         });
-        registry.registerCommand(DebugCommands.COPY_VAIRABLE_VALUE, {
+        registry.registerCommand(DebugCommands.COPY_VARIABLE_VALUE, {
             execute: () => this.selectedVariable && this.selectedVariable.copyValue(),
             isEnabled: () => !!this.selectedVariable && this.selectedVariable.supportCopyValue,
             isVisible: () => !!this.selectedVariable && this.selectedVariable.supportCopyValue
         });
-        registry.registerCommand(DebugCommands.COPY_VAIRABLE_AS_EXPRESSION, {
+        registry.registerCommand(DebugCommands.COPY_VARIABLE_AS_EXPRESSION, {
             execute: () => this.selectedVariable && this.selectedVariable.copyAsExpression(),
             isEnabled: () => !!this.selectedVariable && this.selectedVariable.supportCopyAsExpression,
             isVisible: () => !!this.selectedVariable && this.selectedVariable.supportCopyAsExpression

@@ -178,7 +178,7 @@ export class TerminalProcess extends Process {
     protected readonly terminal: IPty | undefined;
 
     readonly outputStream = this.createOutputStream();
-    readonly errorStream = new DevNullStream();
+    readonly errorStream = new DevNullStream({ autoDestroy: true });
     readonly inputStream: Writable;
 
     constructor(
@@ -210,7 +210,9 @@ export class TerminalProcess extends Process {
                 }
             });
 
-            this.terminal.on('exit', (code: number, signal?: number) => {
+            // node-pty actually wait for the underlying streams to be closed before emitting exit.
+            // We should emulate the `exit` and `close` sequence.
+            this.terminal.on('exit', (code, signal) => {
                 // Make sure to only pass either code or signal as !undefined, not
                 // both.
                 //
@@ -224,6 +226,13 @@ export class TerminalProcess extends Process {
                 } else {
                     this.emitOnExit(undefined, signame(signal));
                 }
+                process.nextTick(() => {
+                    if (signal === undefined || signal === 0) {
+                        this.emitOnClose(code, undefined);
+                    } else {
+                        this.emitOnClose(undefined, signame(signal));
+                    }
+                });
             });
 
             this.terminal.on('data', (data: string) => {
@@ -237,7 +246,7 @@ export class TerminalProcess extends Process {
             });
 
         } catch (error) {
-            this.inputStream = new DevNullStream();
+            this.inputStream = new DevNullStream({ autoDestroy: true });
 
             // Normalize the error to make it as close as possible as what
             // node's child_process.spawn would generate in the same

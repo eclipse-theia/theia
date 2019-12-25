@@ -57,6 +57,9 @@ import {
     ColorPresentation,
     RenameLocation,
     SignatureHelpContext,
+    CodeActionContext,
+    CodeAction,
+    FoldingRange,
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -439,9 +442,9 @@ export class LanguagesExtImpl implements LanguagesExt {
     $provideCodeActions(handle: number,
         resource: UriComponents,
         rangeOrSelection: Range | Selection,
-        context: monaco.languages.CodeActionContext,
+        context: CodeActionContext,
         token: theia.CancellationToken
-    ): Promise<monaco.languages.CodeAction[] | undefined> {
+    ): Promise<CodeAction[] | undefined> {
         return this.withAdapter(handle, CodeActionAdapter, adapter => adapter.provideCodeAction(URI.revive(resource), rangeOrSelection, context, token));
     }
     // ### Code Actions Provider end
@@ -522,7 +525,7 @@ export class LanguagesExtImpl implements LanguagesExt {
         resource: UriComponents,
         context: theia.FoldingContext,
         token: theia.CancellationToken
-    ): Promise<monaco.languages.FoldingRange[] | undefined> {
+    ): Promise<FoldingRange[] | undefined> {
         return this.withAdapter(callId, FoldingProviderAdapter, adapter => adapter.provideFoldingRanges(URI.revive(resource), context, token));
     }
     // ### Folging Range Provider end

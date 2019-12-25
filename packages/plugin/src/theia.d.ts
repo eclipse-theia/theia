@@ -2546,6 +2546,17 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Options to configure the behaviour of a file upload dialog.
+     */
+    export interface UploadDialogOptions {
+
+        /**
+         * The resource, where files should be uploaded.
+         */
+        defaultUri?: Uri;
+    }
+
+    /**
      * Definition of the terminal emulator.
      */
     export interface Terminal {
@@ -2719,6 +2730,21 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Defines a port mapping used for localhost inside the webview.
+     */
+    export interface WebviewPortMapping {
+        /**
+         * Localhost port to remap inside the webview.
+         */
+        readonly webviewPort: number;
+
+        /**
+         * Destination port. The `webviewPort` is resolved to this port.
+         */
+        readonly extensionHostPort: number;
+    }
+
+    /**
      * Content settings for a webview.
      */
     export interface WebviewOptions {
@@ -2744,6 +2770,21 @@ declare module '@theia/plugin' {
          * Pass in an empty array to disallow access to any local resources.
          */
         readonly localResourceRoots?: ReadonlyArray<Uri>;
+
+        /**
+         * Mappings of localhost ports used inside the webview.
+         *
+         * Port mapping allow webviews to transparently define how localhost ports are resolved. This can be used
+         * to allow using a static localhost port inside the webview that is resolved to random port that a service is
+         * running on.
+         *
+         * If a webview accesses localhost content, we recommend that you specify port mappings even if
+         * the `webviewPort` and `extensionHostPort` ports are the same.
+         *
+         * *Note* that port mappings only work for `http` or `https` urls. Websocket urls (e.g. `ws://localhost:3000`)
+         * cannot be mapped to another port.
+         */
+        readonly portMapping?: ReadonlyArray<WebviewPortMapping>;
     }
 
     /**
@@ -2775,6 +2816,30 @@ declare module '@theia/plugin' {
          * @param message Body of the message.
          */
         postMessage(message: any): PromiseLike<boolean>;
+
+        /**
+         * Convert a uri for the local file system to one that can be used inside webviews.
+         *
+         * Webviews cannot directly load resources from the workspace or local file system using `file:` uris. The
+         * `asWebviewUri` function takes a local `file:` uri and converts it into a uri that can be used inside of
+         * a webview to load the same resource:
+         *
+         * ```ts
+         * webview.html = `<img src="${webview.asWebviewUri(vscode.Uri.file('/Users/codey/workspace/cat.gif'))}">`
+         * ```
+         */
+        asWebviewUri(localResource: Uri): Uri;
+
+        /**
+         * Content security policy source for webview resources.
+         *
+         * This is the origin that should be used in a content security policy rule:
+         *
+         * ```
+         * img-src https: ${webview.cspSource} ...;
+         * ```
+         */
+        readonly cspSource: string;
     }
 
     /**
@@ -3322,6 +3387,15 @@ declare module '@theia/plugin' {
          * @returns A promise that resolves to the selected resource or `undefined`.
          */
         export function showSaveDialog(options: SaveDialogOptions): PromiseLike<Uri | undefined>;
+
+        /**
+         * Shows a file upload dialog to the user which allows to upload files
+         * for various purposes.
+         * 
+         * @param options Options, that control the dialog.
+         * @returns A promise that resolves the paths of uploaded files or `undefined`.
+         */
+        export function showUploadDialog(options: UploadDialogOptions): PromiseLike<Uri[] | undefined>;
 
         /**
          * Create and show a new webview panel.
@@ -4797,6 +4871,11 @@ declare module '@theia/plugin' {
         export const language: string;
 
         /**
+         * The detected default shell for the extension host.
+         */
+        export const shell: string;
+
+        /**
          * The system clipboard.
          */
         export const clipboard: Clipboard;
@@ -4823,6 +4902,28 @@ declare module '@theia/plugin' {
          * @returns A promise indicating if open was successful.
          */
         export function openExternal(target: Uri): PromiseLike<boolean>;
+
+        /**
+         * Resolves an *external* uri, such as a `http:` or `https:` link, from where the extension is running to a
+         * uri to the same resource on the client machine.
+         *
+         * This is a no-op if the extension is running on the client machine. Currently only supports
+         * `https:` and `http:` uris.
+         *
+         * If the extension is running remotely, this function automatically establishes a port forwarding tunnel
+         * from the local machine to `target` on the remote and returns a local uri to the tunnel. The lifetime of
+         * the port fowarding tunnel is managed by VS Code and the tunnel can be closed by the user.
+         *
+         * Extensions should not cache the result of `asExternalUri` as the resolved uri may become invalid due to
+         * a system or user action — for example, in remote cases, a user may close a port forwardng tunnel
+         * that was opened by `asExternalUri`.
+         *
+         * *Note* that uris passed through `openExternal` are automatically resolved and you should not call `asExternalUri`
+         * on them.
+         *
+         * @return A uri that can be used on the client machine.
+         */
+        export function asExternalUri(target: Uri): PromiseLike<Uri>;
 
     }
 
@@ -7533,9 +7634,9 @@ declare module '@theia/plugin' {
          */
         readonly name: string;
 
-		/**
-		 * The "resolved" [debug configuration](#DebugConfiguration) of this session.
-		 */
+        /**
+         * The "resolved" [debug configuration](#DebugConfiguration) of this session.
+         */
         readonly configuration: DebugConfiguration;
 
         /**
@@ -8424,10 +8525,10 @@ declare module '@theia/plugin' {
     }
 
     export interface TaskFilter {
-		/**
-		 * The task version as used in the tasks.json file.
-		 * The string support the package.json semver notation.
-		 */
+        /**
+         * The task version as used in the tasks.json file.
+         * The string support the package.json semver notation.
+         */
         version?: string;
 
         /**
@@ -8457,11 +8558,11 @@ declare module '@theia/plugin' {
         export function fetchTasks(filter?: TaskFilter): PromiseLike<Task[]>;
 
         /**
-		 * Executes a task that is managed by VS Code. The returned
-		 * task execution can be used to terminate the task.
-		 *
-		 * @param task the task to execute
-		 */
+         * Executes a task that is managed by VS Code. The returned
+         * task execution can be used to terminate the task.
+         *
+         * @param task the task to execute
+         */
         export function executeTask(task: Task): PromiseLike<TaskExecution>;
 
         /**

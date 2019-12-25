@@ -77,7 +77,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         command: string, args?: string[], options?: cp.SpawnOptions): Promise<IConnection> {
 
         const process = await this.spawnProcessAsync(command, args, options);
-        const [outSock, inSock] = await Promise.all([outSocket, inSocket]);
+        const [outSock, inSock] = await Promise.all<net.Socket>([outSocket, inSocket]);
         return createProcessSocketConnection(process.process!, outSock, inSock);
     }
 

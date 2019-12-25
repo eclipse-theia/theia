@@ -16,8 +16,11 @@
 
 import * as React from 'react';
 import { ConsoleItem } from './console-session';
-import { ansiToHtml } from 'anser';
 import { Severity } from '@theia/core/lib/common/severity';
+
+// TODO: Remove this workaround once issue is fixed by anser.
+// REF: https://github.com/IonicaBizau/anser/issues/52
+const { ansiToHtml } = (require('anser') as import('anser').default);
 
 export class AnsiConsoleItem implements ConsoleItem {
 

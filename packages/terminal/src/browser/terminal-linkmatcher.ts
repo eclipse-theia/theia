@@ -16,9 +16,10 @@
 
 import { injectable, inject } from 'inversify';
 import { isOSX, } from '@theia/core';
-import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { TerminalContribution } from './terminal-contribution';
 import { TerminalWidgetImpl } from './terminal-widget-impl';
+import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export abstract class AbstractCmdClickTerminalContribution implements TerminalContribution {
@@ -76,25 +77,24 @@ export abstract class AbstractCmdClickTerminalContribution implements TerminalCo
 @injectable()
 export class URLMatcher extends AbstractCmdClickTerminalContribution {
 
-    @inject(WindowService)
-    protected readonly windowService: WindowService;
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     async getRegExp(): Promise<RegExp> {
         return /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/;
     }
 
     getHandler(): (event: MouseEvent, uri: string) => void {
-        return (event: MouseEvent, uri: string) => {
-            this.windowService.openNewWindow(uri);
-        };
+        return (event: MouseEvent, uri: string) =>
+            open(this.openerService, new URI(uri));
     }
 }
 
 @injectable()
 export class LocalhostMatcher extends AbstractCmdClickTerminalContribution {
 
-    @inject(WindowService)
-    protected readonly windowService: WindowService;
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     async getRegExp(): Promise<RegExp> {
         return /(https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0)(:[0-9]{1,5})?([-a-zA-Z0-9@:%_\+.~#?&//=]*)/;
@@ -103,7 +103,7 @@ export class LocalhostMatcher extends AbstractCmdClickTerminalContribution {
     getHandler(): (event: MouseEvent, uri: string) => void {
         return (event: MouseEvent, matched: string) => {
             const uri = matched.startsWith('http') ? matched : `http://${matched}`;
-            this.windowService.openNewWindow(uri);
+            open(this.openerService, new URI(uri));
         };
     }
 }

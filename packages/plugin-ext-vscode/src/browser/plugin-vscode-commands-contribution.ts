@@ -15,7 +15,15 @@
  ********************************************************************************/
 
 import { Command, CommandContribution, CommandRegistry, ResourceProvider } from '@theia/core';
-import { ApplicationShell, NavigatableWidget, open, OpenerService, Saveable } from '@theia/core/lib/browser';
+import {
+    ApplicationShell,
+    CommonCommands,
+    NavigatableWidget,
+    open,
+    OpenerService,
+    PrefixQuickOpenService,
+    Saveable
+} from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { CommandService } from '@theia/core/lib/common/command';
@@ -24,11 +32,11 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { TextDocumentShowOptions } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import { createUntitledResource } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
-import { WebviewWidget } from '@theia/plugin-ext/lib/main/browser/webview/webview';
 import { fromViewColumn, toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { inject, injectable } from 'inversify';
 import URI from 'vscode-uri';
 
@@ -43,10 +51,6 @@ export namespace VscodeCommands {
 
     export const SET_CONTEXT: Command = {
         id: 'setContext'
-    };
-
-    export const PREVIEW_HTML: Command = {
-        id: 'vscode.previewHtml'
     };
 }
 
@@ -68,6 +72,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly openerService: OpenerService;
     @inject(ApplicationShellMouseTracker)
     protected readonly mouseTracker: ApplicationShellMouseTracker;
+    @inject(PrefixQuickOpenService)
+    protected readonly quickOpen: PrefixQuickOpenService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -123,26 +129,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 this.contextKeyService.createKey(String(contextKey), contextValue);
             }
         });
-        commands.registerCommand(VscodeCommands.PREVIEW_HTML, {
-            isVisible: () => false,
-            // tslint:disable-next-line: no-any
-            execute: async (resource: URI, position?: any, label?: string, options?: any) => {
-                label = label || resource.fsPath;
-                const view = new WebviewWidget(label, { allowScripts: true }, {}, this.mouseTracker);
-                const res = await this.resources(new TheiaURI(resource));
-                const str = await res.readContents();
-                const html = this.getHtml(str);
-                this.shell.addWidget(view, { area: 'main', mode: 'split-right' });
-                this.shell.activateWidget(view.id);
-                view.setHTML(html);
-
-                const editorWidget = await this.editorManager.getOrCreateByUri(new TheiaURI(resource));
-                editorWidget.editor.onDocumentContentChanged(listener => {
-                    view.setHTML(this.getHtml(editorWidget.editor.document.getText()));
-                });
-
-            }
-        });
 
         // https://code.visualstudio.com/docs/getstarted/keybindings#_navigation
         /*
@@ -161,6 +147,29 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.files.openFolder' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.OPEN_FOLDER.id)
+        });
+        commands.registerCommand({ id: 'workbench.action.gotoLine' }, {
+            execute: () => commands.executeCommand('editor.action.gotoLine')
+        });
+        commands.registerCommand({ id: 'actions.find' }, {
+            execute: () => commands.executeCommand(CommonCommands.FIND.id)
+        });
+        commands.registerCommand({ id: 'undo' }, {
+            execute: () => commands.executeCommand(CommonCommands.UNDO.id)
+        });
+        commands.registerCommand({ id: 'editor.action.startFindReplaceAction' }, {
+            execute: () => commands.executeCommand(CommonCommands.REPLACE.id)
+        });
+        commands.registerCommand({ id: 'workbench.action.quickOpen' }, {
+            execute: () => this.quickOpen.open('')
+        });
+        commands.registerCommand({ id: 'default:type' }, {
+            execute: args => {
+                const editor = MonacoEditor.getCurrent(this.editorManager);
+                if (editor) {
+                    editor.trigger('keyboard', 'type', args);
+                }
+            }
         });
         commands.registerCommand({ id: 'workbench.action.files.save', }, {
             execute: (uri?: monaco.Uri) => {
@@ -335,10 +344,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         );
         // TODO register other `vscode.execute...` commands.
         // see https://github.com/microsoft/vscode/blob/master/src/vs/workbench/api/common/extHostApiCommands.ts
-    }
-
-    private getHtml(body: String): string {
-        return `<!DOCTYPE html><html><head></head>${body}</html>`;
     }
 
 }

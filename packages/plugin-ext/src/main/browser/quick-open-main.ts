@@ -77,7 +77,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
         this.items = undefined;
         this.acceptor = undefined;
         if (this.activeElement) {
-            this.activeElement.focus();
+            this.activeElement.focus({ preventScroll: true });
         }
         this.activeElement = undefined;
     }

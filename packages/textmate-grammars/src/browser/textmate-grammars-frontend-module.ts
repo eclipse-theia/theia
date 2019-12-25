@@ -56,6 +56,7 @@ import { GoContribution } from './go';
 import { RustContribution } from './rust';
 import { PhpGrammarContribution } from './php';
 import { CppContribution } from './cpp';
+import { JsonContribution } from './json';
 
 export default new ContainerModule(bind => {
     bind(BatContribution).toSelf().inSingletonScope();
@@ -177,4 +178,7 @@ export default new ContainerModule(bind => {
 
     bind(CppContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(CppContribution);
+
+    bind(JsonContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(JsonContribution);
 });

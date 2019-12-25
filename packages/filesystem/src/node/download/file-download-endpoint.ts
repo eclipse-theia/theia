@@ -16,11 +16,13 @@
 
 // tslint:disable:no-any
 
+import * as url from 'url';
 import { injectable, inject, named } from 'inversify';
 import { json } from 'body-parser';
 // tslint:disable-next-line:no-implicit-dependencies
 import { Application, Router } from 'express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileDownloadHandler } from './file-download-handler';
 
 @injectable()
@@ -48,6 +50,15 @@ export class FileDownloadEndpoint implements BackendApplicationContribution {
         // Content-Type: application/json
         app.use(json());
         app.use(FileDownloadEndpoint.PATH, router);
+        app.get('/file', (request, response) => {
+            const uri = url.parse(request.url).query;
+            if (!uri) {
+                response.status(400).send('invalid uri');
+                return;
+            }
+            const fsPath = FileUri.fsPath(decodeURIComponent(uri));
+            response.sendFile(fsPath);
+        });
     }
 
 }

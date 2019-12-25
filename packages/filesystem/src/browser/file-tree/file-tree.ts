@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
 import { FileSystem, FileStat } from '../../common';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { LabelProvider, DidChangeLabelEvent } from '@theia/core/lib/browser/label-provider';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { FileSelection } from '../file-selection';
 
@@ -27,6 +27,34 @@ export class FileTree extends TreeImpl {
 
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+
+    @postConstruct()
+    protected initFileTree(): void {
+        this.toDispose.push(
+            this.labelProvider.onDidChange((event: DidChangeLabelEvent) => this.doUpdateElement(event))
+        );
+    }
+
+    protected async doUpdateElement(event: DidChangeLabelEvent): Promise<void> {
+        let isAnyAffectedNodes = false;
+        for (const nodeId of Object.keys(this.nodes)) {
+            const mutableNode = this.nodes[nodeId];
+
+            const nodeWithPossibleUri = mutableNode;
+            if (mutableNode && FileStatNode.is(nodeWithPossibleUri)) {
+                const uri = nodeWithPossibleUri.uri;
+                if (event.affects(uri)) {
+                    mutableNode.name = this.labelProvider.getName(uri);
+                    mutableNode.description = this.labelProvider.getLongName(uri);
+                    mutableNode.icon = await this.labelProvider.getIcon(uri);
+                    isAnyAffectedNodes = true;
+                }
+            }
+        }
+        if (isAnyAffectedNodes) {
+            this.fireChanged();
+        }
+    }
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (FileStatNode.is(parent)) {
@@ -54,14 +82,14 @@ export class FileTree extends TreeImpl {
             return [];
         }
         const result = await Promise.all(fileStat.children.map(async child =>
-            await this.toNode(child, parent)
+            this.toNode(child, parent)
         ));
         return result.sort(DirNode.compare);
     }
 
     protected async toNode(fileStat: FileStat, parent: CompositeTreeNode): Promise<FileNode | DirNode> {
         const uri = new URI(fileStat.uri);
-        const name = await this.labelProvider.getName(uri);
+        const name = this.labelProvider.getName(uri);
         const icon = await this.labelProvider.getIcon(fileStat);
         const id = this.toNodeId(uri, parent);
         const node = this.getNode(id);

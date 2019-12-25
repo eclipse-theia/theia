@@ -50,8 +50,8 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
         if (index >= 0) {
             promise.catch(err => {
                 unhandledPromises.splice(index, 1);
-                console.error(`Promise rejection not handled in one second: ${err}`);
-                if (err.stack) {
+                console.error(`Promise rejection not handled in one second: ${err} , reason: ${reason}`);
+                if (err && err.stack) {
                     console.error(`With stack trace: ${err.stack}`);
                 }
             });

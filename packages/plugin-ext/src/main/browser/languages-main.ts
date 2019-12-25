@@ -37,7 +37,7 @@ import {
 import { injectable, inject } from 'inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider, RelatedInformation,
-    MarkerSeverity, DocumentLink, WorkspaceSymbolParams
+    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
@@ -656,27 +656,30 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }, token);
     }
 
-    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], codeActionKinds?: string[]): void {
+    $registerQuickFixProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], providedCodeActionKinds?: string[]): void {
         const languageSelector = fromLanguageSelector(selector);
-        const quickFixProvider = this.createQuickFixProvider(handle, codeActionKinds);
-        this.register(handle, monaco.languages.registerCodeActionProvider(languageSelector, quickFixProvider));
-    }
-
-    protected createQuickFixProvider(handle: number, providedCodeActionKinds?: string[]): monaco.languages.CodeActionProvider {
-        return {
-            provideCodeActions: async (model, rangeOrSelection, monacoContext, token) => this.provideCodeActions(handle, model, rangeOrSelection, monacoContext, token)
+        const quickFixProvider = {
+            provideCodeActions: (model: monaco.editor.ITextModel, range: monaco.Range,
+                context: monaco.languages.CodeActionContext, token: monaco.CancellationToken): monaco.languages.CodeActionList | Promise<monaco.languages.CodeActionList> => {
+                const markers = monaco.services.StaticServices.markerService.get().read({ resource: model.uri }).filter(m => monaco.Range.areIntersectingOrTouching(m, range));
+                return this.provideCodeActions(handle, model, range, { markers, only: context.only }, token);
+            },
+            providedCodeActionKinds
         };
+        this.register(handle, monaco.modes.CodeActionProviderRegistry.register(languageSelector, quickFixProvider));
     }
 
     protected async provideCodeActions(handle: number, model: monaco.editor.ITextModel,
         rangeOrSelection: Range, context: monaco.languages.CodeActionContext,
-        token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | Promise<monaco.languages.CodeActionList>> {
-        const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, context, token);
+        token: monaco.CancellationToken): Promise<monaco.languages.CodeActionList | monaco.languages.CodeActionList> {
+        const actions = await this.proxy.$provideCodeActions(handle, model.uri, rangeOrSelection, {
+            ...context
+        }, token);
         if (!actions) {
             return undefined!;
         }
         return {
-            actions,
+            actions: actions.map(a => toMonacoAction(a)),
             dispose: () => {
                 // TODO this.proxy.$releaseCodeActions(handle, cacheId);
             }
@@ -794,6 +797,30 @@ function reviveOnEnterRules(onEnterRules?: SerializedOnEnterRule[]): monaco.lang
         return undefined;
     }
     return onEnterRules.map(reviveOnEnterRule);
+}
+
+function toMonacoAction(action: CodeAction): monaco.languages.CodeAction {
+    return {
+        ...action,
+        diagnostics: action.diagnostics ? action.diagnostics.map(m => toMonacoMarkerData(m)) : undefined,
+        edit: action.edit ? toMonacoWorkspaceEdit(action.edit) : undefined
+    };
+}
+
+function toMonacoMarkerData(marker: MarkerData): monaco.editor.IMarkerData {
+    return {
+        ...marker,
+        relatedInformation: marker.relatedInformation
+            ? marker.relatedInformation.map(i => toMonacoRelatedInformation(i))
+            : undefined
+    };
+}
+
+function toMonacoRelatedInformation(relatedInfo: RelatedInformation): monaco.editor.IRelatedInformation {
+    return {
+        ...relatedInfo,
+        resource: monaco.Uri.parse(relatedInfo.resource)
+    };
 }
 
 export function toMonacoWorkspaceEdit(data: WorkspaceEditDto | undefined): monaco.languages.WorkspaceEdit {

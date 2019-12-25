@@ -243,7 +243,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     close(): void {
         if (this.resolve) {
             if (this.activeElement) {
-                this.activeElement.focus();
+                this.activeElement.focus({ preventScroll: true });
             }
             this.resolve(undefined);
         }

@@ -22,12 +22,44 @@ export const taskPath = '/services/task';
 
 export const TaskServer = Symbol('TaskServer');
 export const TaskClient = Symbol('TaskClient');
+export enum DependsOrder {
+    Sequence = 'sequence',
+    Parallel = 'parallel',
+}
 
 export interface TaskCustomization {
     type: string;
+    group?: 'build' | 'test' | 'none' | { kind: 'build' | 'test' | 'none', isDefault: true };
     problemMatcher?: string | ProblemMatcherContribution | (string | ProblemMatcherContribution)[];
+
+    /** Whether the task is a background task or not. */
+    isBackground?: boolean;
+
+    /** The other tasks the task depend on. */
+    dependsOn?: string | TaskIdentifier | Array<string | TaskIdentifier>;
+
+    /** The order the dependsOn tasks should be executed in. */
+    dependsOrder?: DependsOrder;
+
     // tslint:disable-next-line:no-any
     [name: string]: any;
+}
+export namespace TaskCustomization {
+    export function isBuildTask(task: TaskCustomization): boolean {
+        return task.group === 'build' || !!task.group && typeof task.group === 'object' && task.group.kind === 'build';
+    }
+
+    export function isDefaultBuildTask(task: TaskCustomization): boolean {
+        return !!task.group && typeof task.group === 'object' && task.group.kind === 'build' && task.group.isDefault;
+    }
+
+    export function isTestTask(task: TaskCustomization): boolean {
+        return task.group === 'test' || !!task.group && typeof task.group === 'object' && task.group.kind === 'test';
+    }
+
+    export function isDefaultTestTask(task: TaskCustomization): boolean {
+        return !!task.group && typeof task.group === 'object' && task.group.kind === 'test' && task.group.isDefault;
+    }
 }
 
 export interface TaskConfiguration extends TaskCustomization {
@@ -48,6 +80,12 @@ export interface ContributedTaskConfiguration extends TaskConfiguration {
      * This field is not supposed to be used in `tasks.json`
      */
     readonly _source: string;
+}
+
+/** A task identifier */
+export interface TaskIdentifier {
+    type: string;
+    [name: string]: string;
 }
 
 /** Runtime information about Task. */
@@ -120,12 +158,18 @@ export interface TaskOutputProcessedEvent {
     readonly problems?: ProblemMatch[];
 }
 
+export interface BackgroundTaskEndedEvent {
+    readonly taskId: number;
+    readonly ctx?: string;
+}
+
 export interface TaskClient {
     onTaskExit(event: TaskExitedEvent): void;
     onTaskCreated(event: TaskInfo): void;
     onDidStartTaskProcess(event: TaskInfo): void;
     onDidEndTaskProcess(event: TaskExitedEvent): void;
     onDidProcessTaskOutput(event: TaskOutputProcessedEvent): void;
+    onBackgroundTaskEnded(event: BackgroundTaskEndedEvent): void;
 }
 
 export interface TaskDefinition {
@@ -171,8 +215,10 @@ export interface ProblemPatternContribution {
     location?: number;
     line?: number;
     character?: number;
+    column?: number;
     endLine?: number;
     endCharacter?: number;
+    endColumn?: number;
     code?: number;
     severity?: number;
     loop?: boolean;

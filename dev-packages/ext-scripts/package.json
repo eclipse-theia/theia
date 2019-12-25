@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@theia/ext-scripts",
-  "version": "0.12.0",
+  "version": "0.14.0",
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "description": "NPM scripts for Theia packages.",
   "files": [

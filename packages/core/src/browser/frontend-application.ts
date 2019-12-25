@@ -58,7 +58,7 @@ export interface FrontendApplicationContribution {
     /**
      * Called when an application is stopped or unloaded.
      *
-     * Note that this is implemented using `window.unload` which doesn't allow any asynchronous code anymore.
+     * Note that this is implemented using `window.beforeunload` which doesn't allow any asynchronous code anymore.
      * I.e. this is the last tick.
      */
     onStop?(app: FrontendApplication): void;
@@ -157,17 +157,42 @@ export class FrontendApplication {
         return startupElements.length === 0 ? undefined : startupElements[0] as HTMLElement;
     }
 
+    /* vvv HOTFIX begin vvv
+     *
+     * This is a hotfix against issues eclipse/theia#6459 and gitpod-io/gitpod#875 .
+     * It should be reverted after Theia was updated to the newer Monaco.
+     */
+    protected inComposition = false;
+    /**
+     * Register composition related event listeners.
+     */
+    protected registerComositionEventListeners(): void {
+        window.document.addEventListener('compositionstart', event => {
+            this.inComposition = true;
+        });
+        window.document.addEventListener('compositionend', event => {
+            this.inComposition = false;
+        });
+    }
+    /* ^^^ HOTFIX end ^^^ */
+
     /**
      * Register global event listeners.
      */
     protected registerEventListeners(): void {
-        window.addEventListener('unload', () => {
+        this.registerComositionEventListeners(); /* Hotfix. See above. */
+
+        window.addEventListener('beforeunload', () => {
             this.stateService.state = 'closing_window';
             this.layoutRestorer.storeLayout(this);
             this.stopContributions();
         });
         window.addEventListener('resize', () => this.shell.update());
-        document.addEventListener('keydown', event => this.keybindings.run(event), true);
+        document.addEventListener('keydown', event => {
+            if (this.inComposition !== true) {
+                this.keybindings.run(event);
+            }
+        }, true);
         document.addEventListener('touchmove', event => { event.preventDefault(); }, { passive: false });
         // Prevent forward/back navigation by scrolling in OS X
         if (isOSX) {
@@ -320,6 +345,7 @@ export class FrontendApplication {
      * Stop the frontend application contributions. This is called when the window is unloaded.
      */
     protected stopContributions(): void {
+        this.logger.info('>>> Stopping contributions....');
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onStop) {
                 try {
@@ -329,6 +355,7 @@ export class FrontendApplication {
                 }
             }
         }
+        this.logger.info('<<< All contributions have been stopped.');
     }
 
     protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {

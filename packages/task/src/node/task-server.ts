@@ -24,6 +24,7 @@ import {
     TaskConfiguration,
     TaskOutputProcessedEvent,
     RunTaskOption,
+    BackgroundTaskEndedEvent
 } from '../common';
 import { TaskManager } from './task-manager';
 import { TaskRunnerRegistry } from './task-runner';
@@ -38,6 +39,10 @@ export class TaskServerImpl implements TaskServer, Disposable {
     protected clients: TaskClient[] = [];
     /** Map of task id and task disposable */
     protected readonly toDispose = new Map<number, DisposableCollection>();
+
+    /** Map of task id and task background status. */
+    // Currently there is only one property ('isActive'), but in the future we may want to store more properties
+    protected readonly backgroundTaskStatusMap = new Map<number, { 'isActive': boolean }>();
 
     @inject(ILogger) @named('task')
     protected readonly logger: ILogger;
@@ -56,12 +61,17 @@ export class TaskServerImpl implements TaskServer, Disposable {
             toDispose.dispose();
         }
         this.toDispose.clear();
+        this.backgroundTaskStatusMap.clear();
     }
 
     protected disposeByTaskId(taskId: number): void {
         if (this.toDispose.has(taskId)) {
             this.toDispose.get(taskId)!.dispose();
             this.toDispose.delete(taskId);
+        }
+
+        if (this.backgroundTaskStatusMap.has(taskId)) {
+            this.backgroundTaskStatusMap.delete(taskId);
         }
     }
 
@@ -85,6 +95,11 @@ export class TaskServerImpl implements TaskServer, Disposable {
         if (!this.toDispose.has(task.id)) {
             this.toDispose.set(task.id, new DisposableCollection());
         }
+
+        if (taskConfiguration.isBackground && !this.backgroundTaskStatusMap.has(task.id)) {
+            this.backgroundTaskStatusMap.set(task.id, { 'isActive': false });
+        }
+
         this.toDispose.get(task.id)!.push(
             task.onExit(event => {
                 this.taskManager.delete(task);
@@ -111,6 +126,32 @@ export class TaskServerImpl implements TaskServer, Disposable {
                             ctx: event.ctx,
                             problems
                         });
+                    }
+                    if (taskConfiguration.isBackground) {
+                        const backgroundTaskStatus = this.backgroundTaskStatusMap.get(event.taskId)!;
+                        if (!backgroundTaskStatus.isActive) {
+                            // Get the 'activeOnStart' value of the problem matcher 'background' property
+                            const activeOnStart = collector.isTaskActiveOnStart();
+                            if (activeOnStart) {
+                                backgroundTaskStatus.isActive = true;
+                            } else {
+                                const isBeginsPatternMatch = collector.matchBeginMatcher(event.line);
+                                if (isBeginsPatternMatch) {
+                                    backgroundTaskStatus.isActive = true;
+                                }
+                            }
+                        }
+
+                        if (backgroundTaskStatus.isActive) {
+                            const isEndsPatternMatch = collector.matchEndMatcher(event.line);
+                            // Mark ends pattern as matches, only after begins pattern matches
+                            if (isEndsPatternMatch) {
+                                this.fireBackgroundTaskEndedEvent({
+                                    taskId: event.taskId,
+                                    ctx: event.ctx
+                                });
+                            }
+                        }
                     }
                 })
             );
@@ -156,6 +197,10 @@ export class TaskServerImpl implements TaskServer, Disposable {
 
     protected fireTaskOutputProcessedEvent(event: TaskOutputProcessedEvent): void {
         this.clients.forEach(client => client.onDidProcessTaskOutput(event));
+    }
+
+    protected fireBackgroundTaskEndedEvent(event: BackgroundTaskEndedEvent): void {
+        this.clients.forEach(client => client.onBackgroundTaskEnded(event));
     }
 
     /** Kill task for a given id. Rejects if task is not found */

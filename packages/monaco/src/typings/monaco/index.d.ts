@@ -47,6 +47,7 @@ declare module monaco.editor {
     export interface IStandaloneCodeEditor extends CommonCodeEditor {
         setDecorations(decorationTypeKey: string, ranges: IDecorationOptions[]): void;
         setDecorationsFast(decorationTypeKey: string, ranges: IRange[]): void;
+        trigger(source: string, handlerId: string, payload: any): void
     }
 
     // https://github.com/TypeFox/vscode/blob/monaco/0.18.0/src/vs/editor/browser/widget/codeEditorWidget.ts#L107
@@ -477,6 +478,7 @@ declare module monaco.services {
 
     export interface IStandaloneTheme {
         tokenTheme: TokenTheme;
+        getColor(color: string): Color | undefined;
     }
 
     export interface TokenTheme {
@@ -512,6 +514,10 @@ declare module monaco.services {
         set<T>(id: any, instanceOrDescriptor: T): T;
     }
 
+    export interface IMarkerService {
+        read(filter?: { owner?: string; resource?: monaco.Uri; severities?: number, take?: number; }): editor.IMarkerData[];
+    }
+
     export module StaticServices {
         export function init(overrides: monaco.editor.IEditorOverrideServices): [ServiceCollection, monaco.instantiation.IInstantiationService];
         export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
@@ -520,6 +526,7 @@ declare module monaco.services {
         export const configurationService: LazyStaticService<IConfigurationService>;
         export const resourcePropertiesService: LazyStaticService<ITextResourcePropertiesService>;
         export const instantiationService: LazyStaticService<monaco.instantiation.IInstantiationService>;
+        export const markerService: LazyStaticService<IMarkerService>;
     }
 }
 
@@ -530,6 +537,23 @@ declare module monaco.theme {
     }
     export interface IThemable { }
     export function attachQuickOpenStyler(widget: IThemable, themeService: IThemeService): monaco.IDisposable;
+}
+
+declare module monaco.color {
+    export interface ColorContribution {
+        readonly id: string;
+    }
+    export interface ColorDefaults {
+        ligh?: string;
+        dark?: string;
+        hc?: string;
+    }
+    export interface IColorRegistry {
+        getColors(): ColorContribution[];
+        registerColor(id: string, defaults: ColorDefaults | undefined, description: string): string;
+        deregisterColor(id: string): void;
+    }
+    export function getColorRegistry(): IColorRegistry;
 }
 
 declare module monaco.referenceSearch {
@@ -844,6 +868,8 @@ declare module monaco.modes {
     export const DocumentSymbolProviderRegistry: LanguageFeatureRegistry<monaco.languages.DocumentSymbolProvider>;
 
     export const CompletionProviderRegistry: LanguageFeatureRegistry<monaco.languages.CompletionItemProvider>;
+
+    export const CodeActionProviderRegistry: LanguageFeatureRegistry<monaco.languages.CodeActionProvider & { providedCodeActionKinds?: string[] }>;
 }
 
 declare module monaco.suggest {

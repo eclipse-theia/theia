@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import URI from 'vscode-uri';
 import {
     TextEditorsMain,
     MAIN_RPC_CONTEXT,
@@ -25,6 +26,7 @@ import {
     ApplyEditsOptions,
     UndoStopOptions,
     DecorationRenderOptions,
+    ThemeDecorationInstanceRenderOptions,
     DecorationOptions,
     WorkspaceEditDto
 } from '../../common/plugin-api-rpc';
@@ -37,18 +39,21 @@ import { disposed } from '../../common/errors';
 import { toMonacoWorkspaceEdit } from './languages-main';
 import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
+import { theiaUritoUriComponents, UriComponents } from '../../common/uri-components';
+import { Endpoint } from '@theia/core/lib/browser/endpoint';
 
 export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     private readonly proxy: TextEditorsExt;
     private readonly toDispose = new DisposableCollection();
     private readonly editorsToDispose = new Map<string, DisposableCollection>();
+    private readonly fileEndpoint = new Endpoint({ path: 'file' }).getRestUrl();
 
     constructor(
         private readonly editorsAndDocuments: EditorsAndDocumentsMain,
         rpc: RPCProtocol,
         private readonly bulkEditService: MonacoBulkEditService,
-        private readonly monacoEditorService: MonacoEditorService
+        private readonly monacoEditorService: MonacoEditorService,
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT);
         this.toDispose.push(editorsAndDocuments);
@@ -127,8 +132,34 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
     }
 
     $registerTextEditorDecorationType(key: string, options: DecorationRenderOptions): void {
+        this.injectRemoteUris(options);
         this.monacoEditorService.registerDecorationType(key, options);
         this.toDispose.push(Disposable.create(() => this.$removeTextEditorDecorationType(key)));
+    }
+
+    protected injectRemoteUris(options: DecorationRenderOptions | ThemeDecorationInstanceRenderOptions): void {
+        if (options.before) {
+            options.before.contentIconPath = this.toRemoteUri(options.before.contentIconPath);
+        }
+        if (options.after) {
+            options.after.contentIconPath = this.toRemoteUri(options.after.contentIconPath);
+        }
+        if ('gutterIconPath' in options) {
+            options.gutterIconPath = this.toRemoteUri(options.gutterIconPath);
+        }
+        if ('dark' in options && options.dark) {
+            this.injectRemoteUris(options.dark);
+        }
+        if ('light' in options && options.light) {
+            this.injectRemoteUris(options.light);
+        }
+    }
+
+    protected toRemoteUri(uri?: UriComponents): UriComponents | undefined {
+        if (uri && uri.scheme === 'file') {
+            return theiaUritoUriComponents(this.fileEndpoint.withQuery(URI.revive(uri).toString()));
+        }
+        return uri;
     }
 
     $removeTextEditorDecorationType(key: string): void {

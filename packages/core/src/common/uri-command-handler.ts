@@ -62,6 +62,13 @@ export namespace UriAwareCommandHandler {
     }
 
 }
+/**
+ * @todo Create different classes for single and multi-uris. State can be
+ * corrupt if the developer does something like:
+ * ```ts
+ * new UriAwareCommandHandler<URI[]>(selectionService, handler, { multi: false })
+ * ```
+ */
 export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements CommandHandler {
 
     constructor(
@@ -73,6 +80,7 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements Comman
     // tslint:disable-next-line:no-any
     protected getUri(...args: any[]): T | undefined {
         if (args && args[0] instanceof URI) {
+            // @ts-ignore we want to always return URIs
             return this.isMulti() ? [args[0]] : args[0];
         }
         const { selection } = this.selectionService;

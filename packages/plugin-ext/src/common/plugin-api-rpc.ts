@@ -61,7 +61,11 @@ import {
     RenameLocation,
     FileMoveEvent,
     FileWillMoveEvent,
-    SignatureHelpContext
+    SignatureHelpContext,
+    CodeAction,
+    CodeActionContext,
+    FoldingContext,
+    FoldingRange
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -95,6 +99,7 @@ export interface ConfigStorage {
 export interface EnvInit {
     queryParams: QueryParameters;
     language: string;
+    shell: string;
 }
 
 export interface PluginAPI {
@@ -158,6 +163,7 @@ export interface PluginManagerInitializeParams {
     workspaceState: KeysToKeysToAnyValue
     env: EnvInit
     extApi?: ExtPluginApi[]
+    webview: WebviewInitData
 }
 
 export interface PluginManagerStartParams {
@@ -399,6 +405,20 @@ export interface SaveDialogOptionsMain {
 }
 
 /**
+ * Options to configure the behaviour of a file upload dialog.
+ */
+export interface UploadDialogOptionsMain {
+    /**
+     * The resource, where files should be uploaded.
+     */
+    defaultUri?: string;
+}
+
+export interface FileUploadResultMain {
+    uploaded: string[]
+}
+
+/**
  * Options to configure the behaviour of the [workspace folder](#WorkspaceFolder) pick UI.
  */
 export interface WorkspaceFolderPickOptionsMain {
@@ -484,6 +504,7 @@ export interface WorkspaceExt {
 export interface DialogsMain {
     $showOpenDialog(options: OpenDialogOptionsMain): Promise<string[] | undefined>;
     $showSaveDialog(options: SaveDialogOptionsMain): Promise<string | undefined>;
+    $showUploadDialog(options: UploadDialogOptionsMain): Promise<string[] | undefined>;
 }
 
 export interface TreeViewsMain {
@@ -556,6 +577,7 @@ export enum TreeViewItemCollapsibleState {
 
 export interface WindowMain {
     $openUri(uri: UriComponents): Promise<boolean>;
+    $asExternalUri(uri: UriComponents): Promise<UriComponents>;
 }
 
 export interface WindowStateExt {
@@ -1155,18 +1177,18 @@ export interface LanguagesExt {
         handle: number,
         resource: UriComponents,
         rangeOrSelection: Range | Selection,
-        context: monaco.languages.CodeActionContext,
+        context: CodeActionContext,
         token: CancellationToken
-    ): Promise<monaco.languages.CodeAction[] | undefined>;
+    ): Promise<CodeAction[] | undefined>;
     $provideDocumentSymbols(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentSymbol[] | undefined>;
     $provideWorkspaceSymbols(handle: number, query: string, token: CancellationToken): PromiseLike<SymbolInformation[]>;
     $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: CancellationToken): PromiseLike<SymbolInformation>;
     $provideFoldingRange(
         handle: number,
         resource: UriComponents,
-        context: monaco.languages.FoldingContext,
+        context: FoldingContext,
         token: CancellationToken
-    ): PromiseLike<monaco.languages.FoldingRange[] | undefined>;
+    ): PromiseLike<FoldingRange[] | undefined>;
     $provideDocumentColors(handle: number, resource: UriComponents, token: CancellationToken): PromiseLike<RawColorInfo[]>;
     $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo, token: CancellationToken): PromiseLike<ColorPresentation[]>;
     $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string, token: CancellationToken): PromiseLike<WorkspaceEditDto | undefined>;
@@ -1214,6 +1236,11 @@ export interface LanguagesMain {
     $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResoveInitialValues: boolean): void;
 }
 
+export interface WebviewInitData {
+    webviewResourceRoot: string
+    webviewCspSource: string
+}
+
 export interface WebviewPanelViewState {
     readonly active: boolean;
     readonly visible: boolean;
@@ -1228,7 +1255,7 @@ export interface WebviewsExt {
         viewType: string,
         title: string,
         state: any,
-        position: number,
+        viewState: WebviewPanelViewState,
         options: theia.WebviewOptions & theia.WebviewPanelOptions): PromiseLike<void>;
 }
 
@@ -1237,12 +1264,11 @@ export interface WebviewsMain {
         viewType: string,
         title: string,
         showOptions: theia.WebviewPanelShowOptions,
-        options: theia.WebviewPanelOptions & theia.WebviewOptions | undefined,
-        pluginLocation: UriComponents): void;
+        options: theia.WebviewPanelOptions & theia.WebviewOptions): void;
     $disposeWebview(handle: string): void;
     $reveal(handle: string, showOptions: theia.WebviewPanelShowOptions): void;
     $setTitle(handle: string, value: string): void;
-    $setIconPath(handle: string, value: { light: string, dark: string } | string | undefined): void;
+    $setIconPath(handle: string, value: IconUrl | undefined): void;
     $setHtml(handle: string, value: string): void;
     $setOptions(handle: string, options: theia.WebviewOptions): void;
     $postMessage(handle: string, value: any): Thenable<boolean>;

@@ -1005,6 +1005,11 @@ export class ApplicationShell extends Widget {
     private readonly toDisposeOnActivationCheck = new DisposableCollection();
     private assertActivated(widget: Widget): void {
         this.toDisposeOnActivationCheck.dispose();
+
+        const onDispose = () => this.toDisposeOnActivationCheck.dispose();
+        widget.disposed.connect(onDispose);
+        this.toDisposeOnActivationCheck.push(Disposable.create(() => widget.disposed.disconnect(onDispose)));
+
         let start = 0;
         const step: FrameRequestCallback = timestamp => {
             if (document.activeElement && widget.node.contains(document.activeElement)) {

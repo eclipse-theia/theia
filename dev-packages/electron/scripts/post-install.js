@@ -32,7 +32,7 @@ async function fork(script, args = [], options = {}, callback) {
     return new Promise((resolve, reject) => {
         const subprocess = cp.fork(script, args, options);
         subprocess.once('error', reject);
-        subprocess.once('exit', (code, signal) => {
+        subprocess.once('close', (code, signal) => {
             if (signal || code) reject(new Error(`"${script}" exited with ${signal || code}`));
             else resolve();
         });
