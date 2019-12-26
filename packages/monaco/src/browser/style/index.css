@@ -51,3 +51,42 @@
 .monaco-editor .parameter-hints-widget > .wrapper {
     overflow: hidden;
 }
+
+/* List highlight, see https://github.com/microsoft/vscode/blob/ff5f581425da6230b6f9216ecf19abf6c9d285a6/src/vs/workbench/browser/style.ts#L50 */
+.monaco-tree .monaco-tree-row .monaco-highlighted-label .highlight,
+.monaco-list .monaco-list-row .monaco-highlighted-label .highlight {
+	color: var(--theia-list-highlightForeground) !important; 
+}
+
+/* Scrollbars, see https://github.com/microsoft/vscode/blob/ff5f581425da6230b6f9216ecf19abf6c9d285a6/src/vs/workbench/browser/style.ts#L65 */
+.monaco-scrollable-element > .shadow.top {
+    box-shadow: var(--theia-scrollbar-shadow) 0 6px 6px -6px inset !important;
+}
+
+.monaco-scrollable-element > .shadow.left {
+    box-shadow: var(--theia-scrollbar-shadow) 6px 0 6px -6px inset !important;
+}
+
+.monaco-scrollable-element > .shadow.top.left {
+    box-shadow: var(--theia-scrollbar-shadow) 6px 6px 6px -6px inset !important;
+}
+
+.monaco-scrollable-element > .scrollbar > .slider {
+    background: var(--theia-scrollbarSlider-background) !important;
+}
+
+.monaco-scrollable-element > .scrollbar > .slider:hover {
+    background: var(--theia-scrollbarSlider-hoverBackground) !important;
+}
+
+.monaco-scrollable-element > .scrollbar > .slider.active {
+    background: var(--theia-scrollbarSlider-activeBackground) !important;
+}
+
+.monaco-scrollable-element > .scrollbar.vertical > .slider {
+    width: var(--theia-scrollbar-width) !important;
+}
+
+.monaco-scrollable-element > .scrollbar.horizontal > .slider {
+    height: var(--theia-scrollbar-width) !important;
+}
