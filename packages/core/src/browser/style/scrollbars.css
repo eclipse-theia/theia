@@ -134,36 +134,3 @@
     opacity: 1;
     background: transparent;
 }
-
-
-/*-----------------------------------------------------------------------------
-| Monaco
-|----------------------------------------------------------------------------*/
-
-/* Make horizontal scrollbar, decorations overview ruler and vertical scrollbar arrows opaque */
-.vs .monaco-scrollable-element > .scrollbar > .slider,
-.vs-dark .monaco-scrollable-element > .scrollbar > .slider {
-    background: var(--theia-scrollbarSlider-background) !important;
-}
-
-.monaco-scrollable-element > .visible.scrollbar.vertical > .slider:hover,
-.vs .monaco-scrollable-element > .scrollbar > .slider:hover,
-.vs-dark .monaco-scrollable-element > .scrollbar > .slider:hover {
-    background: var(--theia-scrollbarSlider-hoverBackground) !important;
-}
-
-.monaco-scrollable-element > .scrollbar.vertical > .slider {
-    width: var(--theia-scrollbar-width) !important;
-}
-
-.monaco-scrollable-element > .scrollbar.vertical > .slider.active {
-    background: var(--theia-scrollbarSlider-hoverBackground) !important;
-}
-
-.monaco-scrollable-element > .scrollbar.horizontal > .slider {
-    height: var(--theia-scrollbar-width) !important;
-}
-
-.monaco-scrollable-element > .shadow.top {
-    box-shadow: var(--theia-scrollbar-shadow) 0px 6px 6px -6px inset !important;
-}
