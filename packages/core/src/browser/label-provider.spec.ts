@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
-import { DefaultUriLabelProviderContribution } from './label-provider';
+import { DefaultUriLabelProviderContribution, URIIconReference } from './label-provider';
 import URI from '../common/uri';
 
 describe('DefaultUriLabelProviderContribution', function (): void {
@@ -41,9 +41,16 @@ describe('DefaultUriLabelProviderContribution', function (): void {
         expect(icon).eq('text-icon medium-blue theia-file-icons-js');
     });
 
-    it('should return icon class for something that seems to be a directory', function (): void {
+    it('should return file icon class for something that seems to be a directory', function (): void {
         const prov = new DefaultUriLabelProviderContribution();
         const icon = prov.getIcon(new URI('file:///tmp/hello'));
+
+        expect(icon).eq(prov.defaultFileIcon);
+    });
+
+    it('should return folder icon class for something that is a directory', function (): void {
+        const prov = new DefaultUriLabelProviderContribution();
+        const icon = prov.getIcon(URIIconReference.create('folder', new URI('file:///tmp/hello')));
 
         expect(icon).eq(prov.defaultFolderIcon);
     });

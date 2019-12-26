@@ -30,7 +30,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
 import { RecursivePartial } from '@theia/core/lib/common/types';
-import { LabelProviderContribution, DidChangeLabelEvent, LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { LabelProviderContribution, DidChangeLabelEvent, LabelProvider, URIIconReference } from '@theia/core/lib/browser/label-provider';
 import { ThemeType } from '@theia/core/lib/browser/theming';
 import { FileStatNode, DirNode, FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser';
 import { WorkspaceRootNode } from '@theia/navigator/lib/browser/navigator-tree';
@@ -457,7 +457,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
      * This should be aligned with
      * https://github.com/microsoft/vscode/blob/7cf4cca47aa025a590fc939af54932042302be63/src/vs/editor/common/services/getIconClasses.ts#L5
      */
-    getIcon(element: URI | FileStat | FileStatNode | WorkspaceRootNode): string {
+    getIcon(element: URI | URIIconReference | FileStat | FileStatNode | WorkspaceRootNode): string {
         let icon = '';
         for (const className of this.getClassNames(element)) {
             if (this.icons.has(className)) {
@@ -470,14 +470,15 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         return icon;
     }
 
-    protected getClassNames(element: URI | FileStat | FileStatNode | WorkspaceRootNode): string[] {
+    protected getClassNames(element: URI | URIIconReference | FileStat | FileStatNode | WorkspaceRootNode): string[] {
         if (WorkspaceRootNode.is(element)) {
             const name = this.labelProvider.getName(element);
             if (element.expanded) {
                 return [this.rootFolderExpandedIcon, this.expandedFolderNameIcon(name)];
             }
             return [this.rootFolderIcon, this.folderNameIcon(name)];
-        } if (DirNode.is(element)) {
+        }
+        if (DirNode.is(element)) {
             if (element.expanded) {
                 const name = this.labelProvider.getName(element);
                 return [this.folderExpandedIcon, this.expandedFolderNameIcon(name)];
@@ -493,8 +494,11 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             }
             return this.getFileClassNames(element, element.uri);
         }
-        if (!element.path.ext) {
-            return this.getFolderClassNames(element);
+        if (URIIconReference.is(element)) {
+            if (element.id === 'folder') {
+                return this.getFolderClassNames(element);
+            }
+            return this.getFileClassNames(element, element.uri && element.uri.toString());
         }
         return this.getFileClassNames(element, element.toString());
     }
@@ -504,12 +508,14 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         return [this.folderIcon, this.folderNameIcon(name)];
     }
 
-    protected getFileClassNames(element: URI | FileStat | FileStatNode, uri: string): string[] {
+    protected getFileClassNames(element: object, uri?: string): string[] {
         const name = this.labelProvider.getName(element);
         const classNames = this.fileNameIcon(name);
+        if (uri) {
+            const language = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(monaco.Uri.parse(uri));
+            classNames.push(this.languageIcon(language.languageIdentifier.language));
+        }
         classNames.unshift(this.fileIcon);
-        const language = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(monaco.Uri.parse(uri));
-        classNames.push(this.languageIcon(language.languageIdentifier.language));
         return classNames;
     }
 
@@ -553,14 +559,14 @@ export class PluginIconThemeService implements LabelProviderContribution {
     canHandle(element: object): number {
         const current = this.iconThemeService.getDefinition(this.iconThemeService.current);
         if (current instanceof PluginIconTheme && (
-            (element instanceof URI && element.scheme === 'file') || FileStat.is(element) || FileStatNode.is(element)
+            (element instanceof URI && element.scheme === 'file') || URIIconReference.is(element) || FileStat.is(element) || FileStatNode.is(element)
         )) {
             return Number.MAX_SAFE_INTEGER;
         }
         return 0;
     }
 
-    getIcon(element: URI | FileStat | FileStatNode | WorkspaceRootNode): string | undefined {
+    getIcon(element: URI | URIIconReference | FileStat | FileStatNode | WorkspaceRootNode): string | undefined {
         const current = this.iconThemeService.getDefinition(this.iconThemeService.current);
         if (current instanceof PluginIconTheme) {
             return current.getIcon(element);

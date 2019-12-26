@@ -54,7 +54,7 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
         });
     }
 
-    private getUri(element: URI): URI {
+    protected getUri(element: URI): URI {
         return new URI(element.toString());
     }
 
@@ -70,7 +70,7 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
     protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
     private x: number = 0;
 
-    getName(element: URI): string {
+    getName(element: URI): string | undefined {
         const uri = this.getUri(element);
         if (this.isActive && uri.toString().includes('test')) {
             return super.getName(uri) + '-' + this.x.toString(10);
@@ -79,7 +79,7 @@ export class SampleDynamicLabelProviderContribution extends DefaultUriLabelProvi
         }
     }
 
-    getLongName(element: URI): string {
+    getLongName(element: URI): string | undefined {
         const uri = this.getUri(element);
         return super.getLongName(uri);
     }
