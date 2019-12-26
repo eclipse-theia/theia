@@ -153,9 +153,12 @@
 }
 
 #search-kb {
-    border-radius: 5px;
     height: 25px;
     flex: 1;
+}
+
+.vs #search-kb {
+    border: 1px solid #ddd;
 }
 
 .search-kb-container {
