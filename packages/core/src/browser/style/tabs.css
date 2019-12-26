@@ -37,7 +37,7 @@
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab .theia-tab-icon-label,
-.p-TabBar-tab.p-mod-drag-image  .theia-tab-icon-label  {
+.p-TabBar-tab.p-mod-drag-image .theia-tab-icon-label  {
     display: flex;
     line-height: var(--theia-content-line-height);
     align-items: center;
@@ -172,7 +172,8 @@ body.theia-editor-highlightModifiedTabs
   padding: 2px 14px 0 0;
 }
 
-.p-TabBar .p-TabBar-tabIcon {
+.p-TabBar .p-TabBar-tabIcon,
+.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon {
     width: 15px;
     line-height: 1.7;
     font-size: 12px;
@@ -236,9 +237,8 @@ body.theia-editor-highlightModifiedTabs
   background-image: var(--theia-icon-close);
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tab > .p-TabBar-tabIcon.no-icon,
-.p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabIcon.no-icon {
-  display: none;
+.p-TabBar-tabIcon.no-icon {
+  display: none !important;
 }
 
 /*-----------------------------------------------------------------------------
