@@ -88,26 +88,38 @@ export interface DidChangeLabelEvent {
     affects(element: object): boolean;
 }
 
+export interface URIIconReference {
+    kind: 'uriIconReference';
+    id: 'file' | 'folder';
+    uri?: URI
+}
+export namespace URIIconReference {
+    // tslint:disable-next-line:no-any
+    export function is(element: any | undefined): element is URIIconReference {
+        return !!element && typeof element === 'object' && 'kind' in element && element['kind'] === 'uriIconReference';
+    }
+    export function create(id: URIIconReference['id'], uri?: URI): URIIconReference {
+        return { kind: 'uriIconReference', id, uri };
+    }
+}
+
 @injectable()
 export class DefaultUriLabelProviderContribution implements LabelProviderContribution {
 
-    canHandle(uri: object): number {
-        if (uri instanceof URI) {
+    canHandle(element: object): number {
+        if (element instanceof URI || URIIconReference.is(element)) {
             return 1;
         }
         return 0;
     }
 
-    getIcon(uri: URI): string {
-        const iconClass = this.getFileIcon(uri);
-        if (!iconClass) {
-            if (uri.displayName.indexOf('.') === -1) {
-                return this.defaultFolderIcon;
-            } else {
-                return this.defaultFileIcon;
-            }
+    getIcon(element: URI | URIIconReference): string {
+        if (URIIconReference.is(element) && element.id === 'folder') {
+            return this.defaultFolderIcon;
         }
-        return iconClass;
+        const uri = URIIconReference.is(element) ? element.uri : element;
+        const iconClass = uri && this.getFileIcon(uri);
+        return iconClass || this.defaultFileIcon;
     }
 
     get defaultFolderIcon(): string {
@@ -126,12 +138,18 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
         return fileIcon + ' theia-file-icons-js';
     }
 
-    getName(uri: URI): string {
-        return uri.displayName;
+    getName(element: URI | URIIconReference): string | undefined {
+        const uri = this.getUri(element);
+        return uri && uri.displayName;
     }
 
-    getLongName(uri: URI): string {
-        return uri.path.toString();
+    getLongName(element: URI | URIIconReference): string | undefined {
+        const uri = this.getUri(element);
+        return uri && uri.path.toString();
+    }
+
+    protected getUri(element: URI | URIIconReference): URI | undefined {
+        return URIIconReference.is(element) ? element.uri : element;
     }
 }
 
@@ -183,14 +201,14 @@ export class LabelProvider implements FrontendApplicationContribution {
      * Return a default file icon for the current icon theme.
      */
     get fileIcon(): string {
-        return this.getIcon(new URI('file:///foo/foo.txt'));
+        return this.getIcon(URIIconReference.create('file'));
     }
 
     /**
      * Return a default folder icon for the current icon theme.
      */
     get folderIcon(): string {
-        return this.getIcon(new URI('file:///foo'));
+        return this.getIcon(URIIconReference.create('folder'));
     }
 
     getIcon(element: object): string {

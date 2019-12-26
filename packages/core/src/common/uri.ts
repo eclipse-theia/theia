@@ -34,6 +34,11 @@ export default class URI {
         }
     }
 
+    /**
+     * TODO move implementation to `DefaultUriLabelProviderContribution.getName`
+     *
+     * @deprecated use `LabelProvider.getName` instead
+     */
     get displayName(): string {
         const base = this.path.base;
         if (base) {

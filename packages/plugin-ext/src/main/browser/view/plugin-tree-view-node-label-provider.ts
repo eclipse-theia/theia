@@ -16,11 +16,10 @@
 
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { LabelProviderContribution, LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { LabelProviderContribution, LabelProvider, URIIconReference } from '@theia/core/lib/browser/label-provider';
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
 import { TreeViewNode } from './tree-view-widget';
 import { TreeNode } from '@theia/core/lib/browser/tree/tree';
-import { FileStat } from '@theia/filesystem/lib/common';
 
 @injectable()
 export class PluginTreeViewNodeLabelProvider implements LabelProviderContribution {
@@ -44,10 +43,8 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
             return node.icon;
         }
         if (node.themeIconId) {
-            const isDirectory = node.themeIconId === 'folder';
-            const uri = node.resourceUri || (isDirectory ? 'file:///foo' : 'file:///foo.txt');
-            const fileStat: FileStat = { uri, lastModification: 0, isDirectory };
-            return this.labelProvider.getIcon(fileStat);
+            const uri = node.resourceUri && new URI(node.resourceUri) || undefined;
+            return this.labelProvider.getIcon(URIIconReference.create(node.themeIconId, uri));
         }
         if (node.resourceUri) {
             return this.labelProvider.getIcon(new URI(node.resourceUri));
