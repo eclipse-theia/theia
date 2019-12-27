@@ -38,9 +38,7 @@ import { Memento, KeyValueStorageProxy } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
-import * as fs from 'fs-extra';
 import { WebviewsExtImpl } from './webviews';
-import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 export interface PluginHost {
 
@@ -99,7 +97,6 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         private readonly storageProxy: KeyValueStorageProxy,
         private readonly preferencesManager: PreferenceRegistryExtImpl,
         private readonly webview: WebviewsExtImpl,
-        private readonly envServer: EnvVariablesServer,
         private readonly rpc: RPCProtocol
     ) {
         this.messageRegistryProxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN);
@@ -281,12 +278,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const asAbsolutePath = (relativePath: string): string => join(plugin.pluginFolder, relativePath);
         const logPath = join(configStorage.hostLogPath, plugin.model.id); // todo check format
         const storagePath = join(configStorage.hostStoragePath || '', plugin.model.id);
-        const defaultGlobalStorage = async () => {
-            const globalStorageFolderPath = join(await this.envServer.getUserDataFolderPath(), 'globalStorage');
-            await fs.ensureDir(globalStorageFolderPath);
-            return globalStorageFolderPath;
-        };
-        const globalStoragePath = join(configStorage.hostGlobalStoragePath || (await defaultGlobalStorage()), plugin.model.id);
+        const globalStoragePath = join(configStorage.hostGlobalStoragePath, plugin.model.id);
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
             globalState: new Memento(plugin.model.id, true, this.storageProxy),

@@ -30,7 +30,6 @@ import { ClipboardExt } from '../../plugin/clipboard-ext';
 import { loadManifest } from './plugin-manifest-loader';
 import { KeyValueStorageProxy } from '../../plugin/plugin-storage';
 import { WebviewsExtImpl } from '../../plugin/webviews';
-import { EnvVariablesServerExt as EnvVariablesServerExtImpl } from '../../plugin/env-variables-server-ext';
 
 /**
  * Handle the RPC calls.
@@ -55,8 +54,7 @@ export class PluginHostRPC {
         const preferenceRegistryExt = new PreferenceRegistryExtImpl(this.rpc, workspaceExt);
         const clipboardExt = new ClipboardExt(this.rpc);
         const webviewExt = new WebviewsExtImpl(this.rpc, workspaceExt);
-        const envServer = new EnvVariablesServerExtImpl(this.rpc);
-        this.pluginManager = this.createPluginManager(envExt, storageProxy, preferenceRegistryExt, webviewExt, envServer, this.rpc);
+        this.pluginManager = this.createPluginManager(envExt, storageProxy, preferenceRegistryExt, webviewExt, this.rpc);
         this.rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, this.pluginManager);
         this.rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocumentsExt);
         this.rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
@@ -91,7 +89,7 @@ export class PluginHostRPC {
     }
 
     createPluginManager(
-        envExt: EnvExtImpl, storageProxy: KeyValueStorageProxy, preferencesManager: PreferenceRegistryExtImpl, webview: WebviewsExtImpl, envServer: EnvVariablesServerExtImpl,
+        envExt: EnvExtImpl, storageProxy: KeyValueStorageProxy, preferencesManager: PreferenceRegistryExtImpl, webview: WebviewsExtImpl,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         rpc: any): PluginManagerExtImpl {
         const { extensionTestsPath } = process.env;
@@ -224,7 +222,7 @@ export class PluginHostRPC {
                     `Path ${extensionTestsPath} does not point to a valid extension test runner.`
                 );
             } : undefined
-        }, envExt, storageProxy, preferencesManager, webview, envServer, rpc);
+        }, envExt, storageProxy, preferencesManager, webview, rpc);
         return pluginManager;
     }
 }

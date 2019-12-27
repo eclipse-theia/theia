@@ -96,7 +96,7 @@ export interface Plugin {
 export interface ConfigStorage {
     hostLogPath: string;
     hostStoragePath?: string;
-    hostGlobalStoragePath?: string;
+    hostGlobalStoragePath: string;
 }
 
 export interface EnvInit {

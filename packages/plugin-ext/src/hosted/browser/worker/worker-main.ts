@@ -31,7 +31,6 @@ import { WorkerEnvExtImpl } from './worker-env-ext';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
 import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 import { WebviewsExtImpl } from '../../../plugin/webviews';
-import { EnvVariablesServerExt } from '../../../plugin/env-variables-server-ext';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -62,7 +61,6 @@ const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc, workspaceExt);
 const debugExt = createDebugExtStub(rpc);
 const clipboardExt = new ClipboardExt(rpc);
 const webviewExt = new WebviewsExtImpl(rpc, workspaceExt);
-const envServerExt = new EnvVariablesServerExt(rpc);
 
 const pluginManager = new PluginManagerExtImpl({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -135,7 +133,7 @@ const pluginManager = new PluginManagerExtImpl({
             }
         }
     }
-}, envExt, storageProxy, preferenceRegistryExt, webviewExt, envServerExt, rpc);
+}, envExt, storageProxy, preferenceRegistryExt, webviewExt, rpc);
 
 const apiFactory = createAPIFactory(
     rpc,

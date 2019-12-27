@@ -45,6 +45,7 @@ export class PreferenceConfigurations {
 
     /* prefer Theia over VS Code by default */
     getPaths(): string[] {
+        console.log('========================:', this.DATA_FOLDER_NAME);
         return [this.DATA_FOLDER_NAME, '.vscode'];
     }
 
