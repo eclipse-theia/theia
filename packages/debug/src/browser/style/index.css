@@ -399,13 +399,13 @@
 
 /** Exception Widget */
 .monaco-editor .zone-widget .zone-widget-container.theia-debug-exception-widget {
-    color: var(--theia-content-font-color0);
+    color: var(--theia-editor-foreground);
     font-size: var(--theia-code-font-size);
     line-height: var(--theia-code-line-height);
     font-family: var(--theia-code-font-family);
-    border-top-color: var(--theia-debug-exception-widget-border-color);
-    border-bottom-color: var(--theia-debug-exception-widget-border-color);
-    background-color: var(--theia-debug-exception-widget-background-color);
+    border-top-color: var(--theia-debugExceptionWidget-border);
+    border-bottom-color: var(--theia-debugExceptionWidget-border);
+    background-color: var(--theia-debugExceptionWidget-background);
     padding: var(--theia-ui-padding) calc(var(--theia-ui-padding)*1.5);
 	white-space: pre-wrap;
 	user-select: text;
