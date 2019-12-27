@@ -50,7 +50,6 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
         });
 
         this.toDispose.push(this.onUserStorageChangedEmitter);
-
     }
 
     dispose(): void {

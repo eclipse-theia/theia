@@ -16,16 +16,22 @@
 
 import { injectable, inject, named, interfaces } from 'inversify';
 import URI from '../../common/uri';
+import { EnvVariablesServer } from '../../common/env-variables';
 import { ContributionProvider, bindContributionProvider } from '../../common/contribution-provider';
 
 export const PreferenceConfiguration = Symbol('PreferenceConfiguration');
 export interface PreferenceConfiguration {
     name: string;
 }
+export const DATA_FOLDER_NAME = Symbol('DataFolderName');
 
 export function bindPreferenceConfigurations(bind: interfaces.Bind): void {
     bindContributionProvider(bind, PreferenceConfiguration);
     bind(PreferenceConfigurations).toSelf().inSingletonScope();
+    bind(DATA_FOLDER_NAME).toDynamicValue(async ctx => {
+        const envServer = <EnvVariablesServer>ctx.container.get(EnvVariablesServer);
+        return envServer.getDataFolderName();
+    });
 }
 
 @injectable()
@@ -34,9 +40,12 @@ export class PreferenceConfigurations {
     @inject(ContributionProvider) @named(PreferenceConfiguration)
     protected readonly provider: ContributionProvider<PreferenceConfiguration>;
 
+    @inject(DATA_FOLDER_NAME)
+    protected readonly DATA_FOLDER_NAME: string;
+
     /* prefer Theia over VS Code by default */
-    async getPaths(): Promise<string[]> {
-        return ['.theia', '.vscode'];
+    getPaths(): string[] {
+        return [this.DATA_FOLDER_NAME, '.vscode'];
     }
 
     getConfigName(): string {
@@ -71,10 +80,7 @@ export class PreferenceConfigurations {
         return configUri.parent.path.base;
     }
 
-    async createUri(folder: URI, configPath: string, configName: string = this.getConfigName()): Promise<URI> {
-        if (!configPath) {
-            configPath = (await this.getPaths())[0];
-        }
+    createUri(folder: URI, configPath: string, configName: string = this.getConfigName()): URI {
         return folder.resolve(configPath).resolve(configName + '.json');
     }
 

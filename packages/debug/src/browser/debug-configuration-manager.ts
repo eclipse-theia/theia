@@ -268,7 +268,7 @@ export class DebugConfigurationManager {
         if (configUri && configUri.path.base === 'launch.json') {
             uri = configUri;
         } else { // fallback
-            uri = new URI(model.workspaceFolderUri).resolve((await this.preferenceConfigurations.getPaths())[0] + '/launch.json');
+            uri = new URI(model.workspaceFolderUri).resolve(`${this.preferenceConfigurations.getPaths()[0]}/launch.json`);
         }
         const debugType = await this.selectDebugType();
         const configurations = debugType ? await this.provideDebugConfigurations(debugType, model.workspaceFolderUri) : [];

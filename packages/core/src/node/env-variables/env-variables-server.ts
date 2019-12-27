@@ -53,23 +53,35 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         return this.envs[key];
     }
 
-    async getUserHomeFolderPath(): Promise<string> {
+    getUserHomeFolderPathSync(): string {
         return os.homedir();
     }
 
-    async getDataFolderName(): Promise<string> {
+    async getUserHomeFolderPath(): Promise<string> {
+        return this.getUserHomeFolderPathSync();
+    }
+
+    getDataFolderNameSync(): string {
         return THEIA_DATA_FOLDER;
     }
 
+    async getDataFolderName(): Promise<string> {
+        return this.getDataFolderNameSync();
+    }
+
+    getUserDataFolderPathSync(): string {
+        return path.join(this.getUserHomeFolderPathSync(), this.getDataFolderNameSync());
+    }
+
     async getUserDataFolderPath(): Promise<string> {
-        return path.join(os.homedir(), THEIA_DATA_FOLDER);
+        return this.getUserDataFolderPathSync();
     }
 
     async getAppDataPath(): Promise<string> {
         return path.join(
-            os.homedir(),
+            this.getUserHomeFolderPathSync(),
             ...(isWindows ? WINDOWS_DATA_FOLDERS : ['']),
-            THEIA_DATA_FOLDER
+            this.getDataFolderNameSync()
         );
     }
 }

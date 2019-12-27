@@ -79,6 +79,7 @@ import { ArgumentProcessor } from '../plugin/command-registry';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { QuickOpenItem, QuickOpenItemOptions } from '@theia/core/lib/common/quick-open-model';
 import { QuickTitleButton } from '@theia/core/lib/common/quick-open-model';
+import { EnvVariable } from '@theia/core/lib/common/env-variables';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -972,11 +973,6 @@ export interface ModelChangedEvent {
     readonly eol: string;
 
     readonly versionId: number;
-}
-
-export interface EnvVariable {
-    readonly name: string
-    readonly value: string | undefined
 }
 
 export interface DocumentsExt {
