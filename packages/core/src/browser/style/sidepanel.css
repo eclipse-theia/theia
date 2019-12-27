@@ -33,7 +33,7 @@
 
 .p-TabBar.theia-app-sides {
   display: block;
-  color: var(--theia-activityBar-foreground);
+  color: var(--theia-activityBar-inactiveForeground);
   background: var(--theia-activityBar-background);
   font-size: var(--theia-ui-font-size1);
   min-width: var(--theia-private-sidebar-tab-width);
@@ -53,6 +53,7 @@
   align-items: center;
   min-height: var(--theia-private-sidebar-tab-height);
   cursor: pointer;
+  opacity: 0.6;
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tab {
@@ -71,10 +72,11 @@
     border-left: var(--theia-panel-border-width) solid var(--theia-activityBar-border);
 }
 
-.p-TabBar.theia-app-sides .p-TabBar-tab.p-mod-current {
+.p-TabBar.theia-app-sides .p-TabBar-tab.p-mod-current,
+.p-TabBar.theia-app-sides .p-TabBar-tab:hover {
   color: var(--theia-activityBar-foreground);
   opacity: 1.0;
-  background: none;
+  background-color: var(--theia-activityBar-activeBackground);
   min-height: var(--theia-private-sidebar-tab-height);
   height: var(--theia-private-sidebar-tab-height);
   border-top: none;
@@ -103,41 +105,40 @@
   display: none;
 }
 
+/* inactive common icons */
 .p-TabBar.theia-app-sides .p-TabBar-tabIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+  text-align: center;
+  color: inherit;
+  background-color: var(--theia-activityBar-inactiveForeground);
+  
+  /* svg */ 
   width: var(--theia-private-sidebar-icon-size);
   height: var(--theia-private-sidebar-icon-size);
-  background-color: var(--theia-activityBar-inactiveForeground);
-  opacity: 0.6;
   mask-repeat: no-repeat;
   -webkit-mask-repeat: no-repeat;
   mask-size: var(--theia-private-sidebar-icon-size);
   -webkit-mask-size: var(--theia-private-sidebar-icon-size);
 }
 
-.p-TabBar.theia-app-sides .file-icon.p-TabBar-tabIcon,
-.p-TabBar.theia-app-sides .file-icon.p-TabBar-tabIcon:hover,
-.p-TabBar.theia-app-sides .p-mod-current .file-icon.p-TabBar-tabIcon,
-.p-TabBar.theia-app-sides .fa.p-TabBar-tabIcon:hover,
-.p-TabBar.theia-app-sides .p-mod-current .fa.p-TabBar-tabIcon {
-  background-color: var(--theia-activityBar-foreground);
-  opacity: 1.0;
-  background: none;
+/* inactive file icons */
+.p-TabBar.theia-app-sides .file-icon.p-TabBar-tabIcon {
+  background: inherit !important;
 }
 
+/* inactive font-awesome icons */
+.p-TabBar.theia-app-sides .fa.p-TabBar-tabIcon {
+  background: none !important;
+}
+
+/* active icons */
 .p-TabBar.theia-app-sides .p-TabBar-tabIcon:hover,
 .p-TabBar.theia-app-sides .p-mod-current .p-TabBar-tabIcon {
-  opacity: 1.0;
-}
-
-.p-TabBar.theia-app-sides .fa.p-TabBar-tabIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 23px;
-  opacity: 0.6;
-  text-align: center;
-  background: none;
-  color: var(--theia-activityBar-inactiveForeground);
+  color: var(--theia-activityBar-foreground);
+  background-color: var(--theia-activityBar-foreground);
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tabLabel {
