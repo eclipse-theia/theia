@@ -888,11 +888,62 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'button.hoverBackground', defaults: { dark: Color.lighten('button.background', 0.2), light: Color.darken('button.background', 0.2) }, description: 'Button background color when hovering.' },
 
             // Activity Bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#activity-bar
-            { id: 'activityBar.background', defaults: { dark: '#333333', light: '#2C2C2C', hc: '#000000' }, description: 'Activity bar background color. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
-            { id: 'activityBar.border', defaults: { hc: '#6FC3DF' }, description: 'Activity bar border color separating to the side bar. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
-            { id: 'activityBar.activeBorder', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar border color for the active item. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
-            { id: 'activityBar.foreground', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar item foreground color when it is active. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
-            { id: 'activityBar.inactiveForeground', defaults: { dark: '#FFFFFF', light: '#FFFFFF', hc: '#FFFFFF' }, description: 'Activity bar item foreground color when it is active. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
+            {
+                id: 'activityBar.background', defaults: {
+                    dark: '#333333',
+                    light: '#2C2C2C',
+                    hc: '#000000'
+                }, description: 'Activity bar background color. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
+            }, {
+                id: 'activityBar.foreground', defaults: {
+                    dark: Color.white,
+                    light: Color.white,
+                    hc: Color.white
+                }, description: 'Activity bar item foreground color when it is active. The activity bar is showing on the far left or right and allows to switch between views of the side bar.',
+            }, {
+                id: 'activityBar.inactiveForeground', defaults: {
+                    dark: Color.transparent('activityBar.foreground', 0.4),
+                    light: Color.transparent('activityBar.foreground', 0.4),
+                    hc: Color.white
+                }, description: 'Activity bar item foreground color when it is inactive. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
+            },
+            {
+                id: 'activityBar.border', defaults: {
+                    hc: 'contrastBorder'
+                }, description: 'Activity bar border color separating to the side bar. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
+            },
+            {
+                id: 'activityBar.activeBorder', defaults: {
+                    dark: 'activityBar.foreground',
+                    light: 'activityBar.foreground',
+                }, description: 'Activity bar border color for the active item. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
+            },
+            {
+                id: 'activityBar.activeFocusBorder',
+                description: 'Activity bar focus border color for the active item. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
+            },
+            { id: 'activityBar.activeBackground', description: 'Activity bar background color for the active item. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
+            {
+                id: 'activityBar.dropBackground', defaults: {
+                    dark: Color.transparent('#ffffff', 0.12),
+                    light: Color.transparent('#ffffff', 0.12),
+                    hc: Color.transparent('#ffffff', 0.12),
+                }, description: 'Drag and drop feedback color for the activity bar items. The color should have transparency so that the activity bar entries can still shine through. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
+            },
+            {
+                id: 'activityBarBadge.background', defaults: {
+                    dark: '#007ACC',
+                    light: '#007ACC',
+                    hc: '#000000'
+                }, description: 'Activity notification badge background color. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
+            },
+            {
+                id: 'activityBarBadge.foreground', defaults: {
+                    dark: Color.white,
+                    light: Color.white,
+                    hc: Color.white
+                }, description: 'Activity notification badge foreground color. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
+            },
 
             // Input control colors should be aligned with https://code.visualstudio.com/api/references/theme-color#input-control
             // if not yet contributed by Monaco, check runtime css variables to learn
