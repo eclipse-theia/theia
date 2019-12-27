@@ -1278,6 +1278,17 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: 'statusBar.border',
                     hc: 'statusBar.border'
                 }, description: 'Status bar border color separating to the sidebar and editor when a program is being debugged. The status bar is shown in the bottom of the window'
+            },
+            // Debug Exception Widget colors should be aligned with
+            // https://github.com/microsoft/vscode/blob/ff5f581425da6230b6f9216ecf19abf6c9d285a6/src/vs/workbench/contrib/debug/browser/exceptionWidget.ts#L23
+            {
+                id: 'debugExceptionWidget.border', defaults: {
+                    dark: '#a31515', light: '#a31515', hc: '#a31515'
+                }, description: 'Exception widget border color.',
+            }, {
+                id: 'debugExceptionWidget.background', defaults: {
+                    dark: '#420b0d', light: '#f1dfde', hc: '#420b0d'
+                }, description: 'Exception widget background color.'
             }
         );
     }
