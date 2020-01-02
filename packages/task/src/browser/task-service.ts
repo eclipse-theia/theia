@@ -674,7 +674,7 @@ export class TaskService implements TaskConfigurationClient {
      * Terminates a task that is actively running.
      * @param activeTaskInfo the TaskInfo of the task that is actively running
      */
-    protected async terminateTask(activeTaskInfo: TaskInfo): Promise<void> {
+    async terminateTask(activeTaskInfo: TaskInfo): Promise<void> {
         const taskId = activeTaskInfo.taskId;
         return this.kill(taskId);
     }
@@ -683,7 +683,7 @@ export class TaskService implements TaskConfigurationClient {
      * Terminates a task that is actively running, and restarts it.
      * @param activeTaskInfo the TaskInfo of the task that is actively running
      */
-    protected async restartTask(activeTaskInfo: TaskInfo, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+    async restartTask(activeTaskInfo: TaskInfo, option?: RunTaskOption): Promise<TaskInfo | undefined> {
         await this.terminateTask(activeTaskInfo);
         return this.doRunTask(activeTaskInfo.config, option);
     }
