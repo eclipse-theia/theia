@@ -30,7 +30,7 @@ import { TerminalWidgetFactoryOptions, TERMINAL_WIDGET_FACTORY_ID } from '@theia
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { Range } from 'vscode-languageserver-types';
+import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import {
     NamedProblemMatcher,
     ProblemMatchData,
@@ -45,7 +45,8 @@ import {
     TaskDefinition,
     TaskServer,
     TaskIdentifier,
-    DependsOrder
+    DependsOrder,
+    RevealKind
 } from '../common';
 import { TaskWatcher } from '../common/task-watcher';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -201,16 +202,34 @@ export class TaskService implements TaskConfigurationClient {
             this.messageService.info(`Task '${taskIdentifier}' has been started.`);
         });
 
-        this.taskWatcher.onOutputProcessed((event: TaskOutputProcessedEvent) => {
+        this.taskWatcher.onOutputProcessed(async (event: TaskOutputProcessedEvent) => {
             if (!this.isEventForThisClient(event.ctx)) {
                 return;
             }
             if (event.problems) {
+                const runningTasksInfo: TaskInfo[] = await this.getRunningTasks();
+                // check if the task is active
+                const matchedRunningTaskInfo = runningTasksInfo.find(taskInfo => {
+                    const taskConfig = taskInfo.config;
+                    return this.taskDefinitionRegistry.compareTasks(taskConfig, event.config);
+                });
+                const isTaskActiveAndOutputSilent = matchedRunningTaskInfo &&
+                    matchedRunningTaskInfo.config.presentation && matchedRunningTaskInfo.config.presentation.reveal === RevealKind.Silent;
                 event.problems.forEach(problem => {
                     const existingMarkers = this.problemManager.findMarkers({ owner: problem.description.owner });
                     const uris = new Set<string>();
                     existingMarkers.forEach(marker => uris.add(marker.uri));
                     if (ProblemMatchData.is(problem) && problem.resource) {
+                        // When task.presentation.reveal === RevealKind.Silent, put focus on the terminal only if it is an error
+                        if (isTaskActiveAndOutputSilent && problem.marker.severity === DiagnosticSeverity.Error) {
+                            const terminalId = matchedRunningTaskInfo!.terminalId;
+                            if (terminalId) {
+                                const terminal = this.terminalService.getById(this.getTerminalWidgetId(terminalId));
+                                if (terminal) {
+                                    this.shell.activateWidget(terminal.id);
+                                }
+                            }
+                        }
                         const uri = new URI(problem.resource.path).withScheme(problem.resource.scheme);
                         if (uris.has(uri.toString())) {
                             const newData = [
@@ -655,8 +674,13 @@ export class TaskService implements TaskConfigurationClient {
             const terminalId = matchedRunningTaskInfo.terminalId;
             if (terminalId) {
                 const terminal = this.terminalService.getById(this.getTerminalWidgetId(terminalId));
-                if (terminal) {
-                    this.shell.activateWidget(terminal.id); // make the terminal visible and assign focus
+                if (terminal &&
+                    task.presentation && (task.presentation.focus || task.presentation.reveal === RevealKind.Always)
+                ) {
+                    // make the terminal visible and assign focus, if
+                    // 1) task.presentation.focus === true, or
+                    // 2) task.presentation.reveal === 'always'
+                    this.shell.activateWidget(terminal.id);
                 }
             }
             const selectedAction = await this.messageService.info(`The task '${taskName}' is already active`, 'Terminate Task', 'Restart Task');
@@ -947,7 +971,9 @@ export class TaskService implements TaskConfigurationClient {
             }
         );
         this.shell.addWidget(widget, { area: 'bottom' });
-        this.shell.activateWidget(widget.id);
+        if (taskInfo && taskInfo.config.presentation && taskInfo.config.presentation.reveal === RevealKind.Always) {
+            this.shell.activateWidget(widget.id);
+        }
         widget.start(processId);
     }
 

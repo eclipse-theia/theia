@@ -16,7 +16,13 @@
 
 import * as Ajv from 'ajv';
 import { inject, injectable, postConstruct } from 'inversify';
-import { ContributedTaskConfiguration, TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
+import {
+    ContributedTaskConfiguration,
+    TaskConfiguration,
+    TaskCustomization,
+    TaskDefinition,
+    TaskOutputPresentation
+} from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskConfigurationManager } from './task-configuration-manager';
@@ -266,27 +272,12 @@ export class TaskConfigurations implements Disposable {
 
     /** parses a config file and extracts the tasks launch configurations */
     protected async readTasks(rootFolderUri: string): Promise<(TaskCustomization | TaskConfiguration)[] | undefined> {
-        const configArray = this.taskConfigurationManager.getTasks(rootFolderUri);
+        const rawConfigArray = this.taskConfigurationManager.getTasks(rootFolderUri);
         if (this.rawTaskConfigurations.has(rootFolderUri)) {
             this.rawTaskConfigurations.delete(rootFolderUri);
         }
-        const tasks = configArray.map(config => {
-            if (this.isDetectedTask(config)) {
-                const def = this.getTaskDefinition(config);
-                return {
-                    ...config,
-                    _source: def!.source,
-                    _scope: rootFolderUri
-                };
-            }
-            return {
-                ...config,
-                _source: rootFolderUri,
-                _scope: rootFolderUri
-            };
-        });
-        this.rawTaskConfigurations.set(rootFolderUri, tasks);
-        return tasks;
+        this.rawTaskConfigurations.set(rootFolderUri, rawConfigArray);
+        return rawConfigArray;
     }
 
     /** Adds given task to a config file and opens the file to provide ability to edit task configuration. */
@@ -386,16 +377,39 @@ export class TaskConfigurations implements Disposable {
                 if (!isValid) {
                     continue;
                 }
-                if (this.isDetectedTask(taskConfig)) {
-                    addCustomization(rootFolder, taskConfig);
+                const transformedTask = this.getTransformedRawTask(taskConfig, rootFolder);
+                if (this.isDetectedTask(transformedTask)) {
+                    addCustomization(rootFolder, transformedTask);
                 } else {
-                    addConfiguredTask(rootFolder, taskConfig['label'] as string, taskConfig);
+                    addConfiguredTask(rootFolder, transformedTask['label'] as string, transformedTask);
                 }
             }
         }
 
         this.taskCustomizationMap = newTaskCustomizationMap;
         this.tasksMap = newTaskMap;
+    }
+
+    private getTransformedRawTask(rawTask: TaskCustomization | TaskConfiguration, rootFolderUri: string): TaskCustomization | TaskConfiguration {
+        let taskConfig: TaskCustomization | TaskConfiguration;
+        if (this.isDetectedTask(rawTask)) {
+            const def = this.getTaskDefinition(rawTask);
+            taskConfig = {
+                ...rawTask,
+                _source: def!.source,
+                _scope: rootFolderUri
+            };
+        } else {
+            taskConfig = {
+                ...rawTask,
+                _source: rootFolderUri,
+                _scope: rootFolderUri
+            };
+        }
+        return {
+            ...taskConfig,
+            presentation: TaskOutputPresentation.fromJson(rawTask)
+        };
     }
 
     /**

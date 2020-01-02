@@ -27,10 +27,45 @@ export enum DependsOrder {
     Parallel = 'parallel',
 }
 
+export enum RevealKind {
+    Always,
+    Silent,
+    Never
+}
+
+export interface TaskOutputPresentation {
+    focus?: boolean;
+    reveal?: RevealKind;
+    // tslint:disable-next-line:no-any
+    [name: string]: any;
+}
+export namespace TaskOutputPresentation {
+    // tslint:disable-next-line:no-any
+    export function fromJson(task: any): TaskOutputPresentation {
+        if (task && task.presentation) {
+            let reveal = RevealKind.Always;
+            if (task.presentation.reveal === 'silent') {
+                reveal = RevealKind.Silent;
+            } else if (task.presentation.reveal === 'never') {
+                reveal = RevealKind.Never;
+            }
+            return {
+                reveal,
+                focus: !!task.presentation.focus
+            };
+        }
+        return {
+            reveal: RevealKind.Always,
+            focus: false
+        };
+    }
+}
+
 export interface TaskCustomization {
     type: string;
     group?: 'build' | 'test' | 'none' | { kind: 'build' | 'test' | 'none', isDefault: true };
     problemMatcher?: string | ProblemMatcherContribution | (string | ProblemMatcherContribution)[];
+    presentation?: TaskOutputPresentation;
 
     /** Whether the task is a background task or not. */
     isBackground?: boolean;
@@ -154,6 +189,7 @@ export interface TaskOutputEvent {
 
 export interface TaskOutputProcessedEvent {
     readonly taskId: number;
+    readonly config: TaskConfiguration;
     readonly ctx?: string;
     readonly problems?: ProblemMatch[];
 }
