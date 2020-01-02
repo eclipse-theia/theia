@@ -57,7 +57,7 @@
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tab {
-    margin-right: var(--theia-panel-border-width);
+    border-left: var(--theia-panel-border-width) solid transparent;
 }
 
 .p-TabBar.theia-app-left.theia-app-sides {
@@ -65,7 +65,7 @@
 }
 
 .p-TabBar.theia-app-right .p-TabBar-tab {
-    margin-left: var(--theia-panel-border-width);
+    border-right: var(--theia-panel-border-width) solid transparent;
 }
 
 .p-Widget.p-TabBar.theia-app-right.theia-app-sides {
@@ -114,8 +114,8 @@
   text-align: center;
   color: inherit;
   background-color: var(--theia-activityBar-inactiveForeground);
-  
-  /* svg */ 
+
+  /* svg */
   width: var(--theia-private-sidebar-icon-size);
   height: var(--theia-private-sidebar-icon-size);
   mask-repeat: no-repeat;
