@@ -16,7 +16,7 @@
 
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { ILogger, ContributionProvider } from '@theia/core/lib/common';
-import { QuickOpenTask, TaskTerminateQuickOpen, TaskRunningQuickOpen } from './quick-open-task';
+import { QuickOpenTask, TaskTerminateQuickOpen, TaskRunningQuickOpen, TaskRestartRunningQuickOpen } from './quick-open-task';
 import { CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import {
     FrontendApplication, FrontendApplicationContribution, QuickOpenContribution,
@@ -97,6 +97,12 @@ export namespace TaskCommands {
         category: TASK_CATEGORY,
         label: 'Terminate Task'
     };
+
+    export const TASK_RESTART_RUNNING: Command = {
+        id: 'task:restart-running',
+        category: TASK_CATEGORY,
+        label: 'Restart Running Task...'
+    };
 }
 
 const TASKS_STORAGE_KEY = 'tasks';
@@ -141,6 +147,9 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
 
     @inject(TaskTerminateQuickOpen)
     protected readonly taskTerminateQuickOpen: TaskTerminateQuickOpen;
+
+    @inject(TaskRestartRunningQuickOpen)
+    protected readonly taskRestartRunningQuickOpen: TaskRestartRunningQuickOpen;
 
     @inject(TaskWatcher)
     protected readonly taskWatcher: TaskWatcher;
@@ -293,6 +302,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
                 execute: () => this.taskTerminateQuickOpen.open()
             }
         );
+
+        registry.registerCommand(
+            TaskCommands.TASK_RESTART_RUNNING,
+            {
+                execute: () => this.taskRestartRunningQuickOpen.open()
+            }
+        );
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -333,9 +349,15 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         });
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_INFO, {
+            commandId: TaskCommands.TASK_RESTART_RUNNING.id,
+            label: TaskCommands.TASK_RESTART_RUNNING.label,
+            order: '1'
+        });
+
+        menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_INFO, {
             commandId: TaskCommands.TASK_TERMINATE.id,
             label: 'Terminate Task...',
-            order: '1'
+            order: '2'
         });
 
         menus.registerMenuAction(TerminalMenus.TERMINAL_TASKS_CONFIG, {

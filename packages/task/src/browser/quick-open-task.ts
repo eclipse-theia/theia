@@ -19,7 +19,7 @@ import { TaskService } from './task-service';
 import { TaskInfo, TaskConfiguration, TaskCustomization } from '../common/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import URI from '@theia/core/lib/common/uri';
-import { QuickOpenHandler, QuickOpenService, QuickOpenOptions, QuickOpenBaseAction } from '@theia/core/lib/browser';
+import { QuickOpenHandler, QuickOpenService, QuickOpenOptions, QuickOpenBaseAction, LabelProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { FileSystem } from '@theia/filesystem/lib/common';
@@ -716,6 +716,101 @@ export class TaskRunningQuickOpen implements QuickOpenModel {
     async open(): Promise<void> {
         this.quickOpenService.open(this, {
             placeholder: 'Select the task to show its output',
+            fuzzyMatchLabel: true,
+            fuzzyMatchDescription: true,
+        });
+    }
+}
+
+export class TaskRestartRunningQuickOpenItem extends QuickOpenItem {
+
+    constructor(
+        protected readonly taskInfo: TaskInfo,
+        protected readonly taskService: TaskService,
+        protected readonly taskNameResolver: TaskNameResolver,
+        protected readonly taskSourceResolver: TaskSourceResolver,
+        protected readonly taskDefinitionRegistry: TaskDefinitionRegistry,
+        protected readonly labelProvider: LabelProvider,
+        protected readonly isMulti: boolean,
+        public readonly options: QuickOpenGroupItemOptions,
+    ) {
+        super(options);
+    }
+
+    getLabel(): string {
+        return this.taskNameResolver.resolve(this.taskInfo.config);
+    }
+
+    getDescription(): string {
+        if (!this.isMulti) {
+            return '';
+        }
+        const source = this.taskSourceResolver.resolve(this.taskInfo.config);
+        return source ? this.labelProvider.getName(new URI(source)) : '';
+    }
+
+    run(mode: QuickOpenMode): boolean {
+        if (mode !== QuickOpenMode.OPEN) {
+            return false;
+        }
+        this.taskService.restartTask(this.taskInfo);
+        return true;
+    }
+}
+
+@injectable()
+export class TaskRestartRunningQuickOpen implements QuickOpenModel {
+
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
+
+    @inject(QuickOpenService)
+    protected readonly quickOpenService: QuickOpenService;
+
+    @inject(TaskDefinitionRegistry)
+    protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
+
+    @inject(TaskNameResolver)
+    protected readonly taskNameResolver: TaskNameResolver;
+
+    @inject(TaskSourceResolver)
+    protected readonly taskSourceResolver: TaskSourceResolver;
+
+    @inject(TaskService)
+    protected readonly taskService: TaskService;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    async onType(_lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
+        const items = [];
+        const runningTasks: TaskInfo[] = await this.taskService.getRunningTasks();
+        const isMulti: boolean = this.workspaceService.isMultiRootWorkspaceOpened;
+        if (runningTasks.length <= 0) {
+            items.push(new QuickOpenItem({
+                label: 'No task to restart',
+                run: (): boolean => false,
+            }));
+        } else {
+            runningTasks.forEach((task: TaskInfo) => {
+                items.push(new TaskRestartRunningQuickOpenItem(
+                    task,
+                    this.taskService,
+                    this.taskNameResolver,
+                    this.taskSourceResolver,
+                    this.taskDefinitionRegistry,
+                    this.labelProvider,
+                    isMulti,
+                    {},
+                ));
+            });
+        }
+        acceptor(items);
+    }
+
+    async open(): Promise<void> {
+        this.quickOpenService.open(this, {
+            placeholder: 'Select task to restart',
             fuzzyMatchLabel: true,
             fuzzyMatchDescription: true,
         });
