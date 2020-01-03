@@ -48,7 +48,7 @@ code {
 }
 
 blockquote {
-    color: var(--theia-textBlockQuote-background);
+    background: var(--vscode-textBlockQuote-background);
     border: var(--theia-border-width) solid var(--theia-textBlockQuote-border);
 }
 
