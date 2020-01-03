@@ -41,6 +41,7 @@ import URI from '@theia/core/lib/common/uri';
 import * as React from 'react';
 import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
 import { ProgressService } from '@theia/core';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 
 const ROOT_ID = 'ResultTree';
 
@@ -118,6 +119,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @inject(TreeExpansionService) protected readonly expansionService: TreeExpansionService;
     @inject(SearchInWorkspacePreferences) protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
     @inject(ProgressService) protected readonly progressService: ProgressService;
+    @inject(ColorRegistry) protected readonly colorRegistry: ColorRegistry;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -759,8 +761,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     },
                     options: {
                         overviewRuler: {
-                            color: 'rgba(230, 0, 0, 1)',
-                            position: OverviewRulerLane.Full
+                            color: this.colorRegistry.getCurrentColor('editor.findMatchHighlightBackground') || '',
+                            position: OverviewRulerLane.Center
                         },
                         className: res.selected ? 'current-search-in-workspace-editor-match' : 'search-in-workspace-editor-match',
                         stickiness: TrackedRangeStickiness.GrowsOnlyWhenTypingBefore
