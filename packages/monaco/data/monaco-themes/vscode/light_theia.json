@@ -5,7 +5,6 @@
   "colors": {
     "activityBar.background": "#ececec",
     "activityBar.activeBorder": "#000000",
-    "activityBar.foreground": "#000000",
-    "activityBar.inactiveForeground": "#000000"
+    "activityBar.foreground": "#000000"
   }
 }

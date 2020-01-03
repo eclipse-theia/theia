@@ -53,7 +53,6 @@
   align-items: center;
   min-height: var(--theia-private-sidebar-tab-height);
   cursor: pointer;
-  opacity: 0.6;
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tab {
@@ -75,7 +74,6 @@
 .p-TabBar.theia-app-sides .p-TabBar-tab.p-mod-current,
 .p-TabBar.theia-app-sides .p-TabBar-tab:hover {
   color: var(--theia-activityBar-foreground);
-  opacity: 1.0;
   background-color: var(--theia-activityBar-activeBackground);
   min-height: var(--theia-private-sidebar-tab-height);
   height: var(--theia-private-sidebar-tab-height);
