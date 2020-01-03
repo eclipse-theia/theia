@@ -25,6 +25,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 import { ProgressLocationService } from '@theia/core/lib/browser/progress-location-service';
 import { ProgressBar } from '@theia/core/lib/browser/progress-bar';
+import { CancellationTokenSource } from '@theia/core';
 
 export interface SearchFieldState {
     className: string;
@@ -215,6 +216,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     refresh(): void {
         this.resultTreeWidget.search(this.searchTerm, this.searchInWorkspaceOptions);
         this.update();
+    }
+
+    getCancelIndicator(): CancellationTokenSource | undefined {
+        return this.resultTreeWidget.cancelIndicator;
     }
 
     collapseAll(): void {

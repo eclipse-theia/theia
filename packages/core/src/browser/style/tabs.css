@@ -343,3 +343,7 @@ body.theia-editor-highlightModifiedTabs
 .p-TabBar-toolbar .item .refresh {
   background: var(--theia-icon-refresh) no-repeat;
 }
+
+.p-TabBar-toolbar .item .cancel {
+  background: var(--theia-icon-close) no-repeat;
+}

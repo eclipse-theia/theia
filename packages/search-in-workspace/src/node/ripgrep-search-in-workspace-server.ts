@@ -19,7 +19,7 @@ import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from 'inversify';
-import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient } from '../common/search-in-workspace-interface';
+import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceResult, SearchInWorkspaceClient, LinePreview } from '../common/search-in-workspace-interface';
 
 export const RgPath = Symbol('RgPath');
 
@@ -28,34 +28,46 @@ export const RgPath = Symbol('RgPath');
  *
  *   https://docs.rs/grep-printer/0.1.0/grep_printer/struct.JSON.html#object-arbitrary-data
  */
-interface RipGrepArbitraryData {
-    text?: string;
-    bytes?: string;
+export type IRgBytesOrText = { bytes: string } | { text: string };
+
+function bytesOrTextToString(obj: IRgBytesOrText): string {
+    return 'bytes' in obj ?
+        Buffer.from(obj.bytes, 'base64').toString() :
+        obj.text;
 }
 
-/**
- * Convert the length of a range in `text` expressed in bytes to a number of
- * characters (or more precisely, code points).  The range starts at character
- * `charStart` in `text`.
- */
-function byteRangeLengthToCharacterLength(text: string, charStart: number, byteLength: number): number {
-    let char: number = charStart;
-    for (let byteIdx = 0; byteIdx < byteLength; char++) {
-        const codePoint: number = text.charCodeAt(char);
-        if (codePoint < 0x7F) {
-            byteIdx++;
-        } else if (codePoint < 0x7FF) {
-            byteIdx += 2;
-        } else if (codePoint < 0xFFFF) {
-            byteIdx += 3;
-        } else if (codePoint < 0x10FFFF) {
-            byteIdx += 4;
-        } else {
-            throw new Error('Invalid UTF-8 string');
-        }
-    }
+type IRgMessage = IRgMatch | IRgBegin | IRgEnd;
 
-    return char - charStart;
+interface IRgMatch {
+    type: 'match';
+    data: {
+        path: IRgBytesOrText;
+        lines: IRgBytesOrText;
+        line_number: number;
+        absolute_offset: number;
+        submatches: IRgSubmatch[];
+    };
+}
+
+export interface IRgSubmatch {
+    match: IRgBytesOrText;
+    start: number;
+    end: number;
+}
+
+interface IRgBegin {
+    type: 'begin';
+    data: {
+        path: IRgBytesOrText;
+        lines: string;
+    };
+}
+
+interface IRgEnd {
+    type: 'end';
+    data: {
+        path: IRgBytesOrText;
+    };
 }
 
 @injectable()
@@ -65,7 +77,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     private ongoingSearches: Map<number, RawProcess> = new Map();
 
     // Each incoming search is given a unique id, returned to the client.  This is the next id we will assigned.
-    private nextSearchId: number = 0;
+    private nextSearchId: number = 1;
 
     private client: SearchInWorkspaceClient | undefined;
 
@@ -82,10 +94,15 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     protected getArgs(options?: SearchInWorkspaceOptions): string[] {
-        const args = ['--json', '--max-count=100'];
+        const args = ['--hidden', '--json'];
         args.push(options && options.matchCase ? '--case-sensitive' : '--ignore-case');
         if (options && options.includeIgnored) {
-            args.push('-uu');
+            args.push('--no-ignore');
+        }
+        if (options && options.maxFileSize) {
+            args.push('--max-filesize=' + options.maxFileSize.trim());
+        } else {
+            args.push('--max-filesize=20M');
         }
         if (options && options.include) {
             for (const include of options.include) {
@@ -116,7 +133,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         // line, --color=always to get color control characters that
         // we'll use to parse the lines.
         const searchId = this.nextSearchId++;
-        const args = this.getArgs(opts);
+        const rgArgs = this.getArgs(opts);
         // if we use matchWholeWord we use regExp internally,
         // so, we need to escape regexp characters if we actually not set regexp true in UI.
         if (opts && opts.matchWholeWord && !opts.useRegExp) {
@@ -129,9 +146,10 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
             }
         }
 
+        const args = [...rgArgs, what].concat(rootUris.map(root => FileUri.fsPath(root)));
         const processOptions: RawProcessOptions = {
             command: this.rgPath,
-            args: [...args, what].concat(rootUris.map(root => FileUri.fsPath(root)))
+            args
         };
 
         // TODO: Use child_process directly instead of rawProcessFactory?
@@ -159,7 +177,9 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         // Buffer to accumulate incoming output.
         let databuf: string = '';
 
-        rgProcess.outputStream.on('data', (chunk: string) => {
+        let currentSearchResult: SearchInWorkspaceResult | undefined;
+
+        rgProcess.outputStream.on('data', (chunk: Buffer) => {
             // We might have already reached the max number of
             // results, sent a TERM signal to rg, but we still get
             // the data that was already output in the mean time.
@@ -183,41 +203,71 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 const lineBuf = databuf.slice(0, eolIdx);
                 databuf = databuf.slice(eolIdx + 1);
 
-                const obj = JSON.parse(lineBuf);
-
-                if (obj['type'] === 'match') {
-                    const data = obj['data'];
-                    const file = (<RipGrepArbitraryData>data['path']).text;
-                    const line = data['line_number'];
-                    const lineText = (<RipGrepArbitraryData>data['lines']).text;
+                const obj = JSON.parse(lineBuf) as IRgMessage;
+                if (obj.type === 'begin') {
+                    const file = bytesOrTextToString(obj.data.path);
+                    if (file) {
+                        currentSearchResult = {
+                            fileUri: FileUri.create(file).toString(),
+                            root: this.getRoot(file, rootUris).toString(),
+                            matches: []
+                        };
+                    } else {
+                        this.logger.error('Begin message without path. ' + JSON.stringify(obj));
+                    }
+                } else if (obj.type === 'end') {
+                    if (currentSearchResult && this.client) {
+                        this.client.onResult(searchId, currentSearchResult);
+                    }
+                    currentSearchResult = undefined;
+                } else if (obj.type === 'match') {
+                    if (!currentSearchResult) {
+                        continue;
+                    }
+                    const data = obj.data;
+                    const file = bytesOrTextToString(data.path);
+                    const line = data.line_number;
+                    const lineText = bytesOrTextToString(data.lines);
 
                     if (file === undefined || lineText === undefined) {
                         continue;
                     }
 
-                    for (const submatch of data['submatches']) {
-                        const startByte = submatch['start'];
-                        const endByte = submatch['end'];
-                        const character = byteRangeLengthToCharacterLength(lineText, 0, startByte);
-                        const length = byteRangeLengthToCharacterLength(lineText, character, endByte - startByte);
+                    const lineInBytes = Buffer.from(lineText);
 
-                        const result: SearchInWorkspaceResult = {
-                            fileUri: FileUri.create(file).toString(),
-                            root: this.getRoot(file, rootUris).toString(),
-                            line,
-                            character: character + 1,
-                            length,
-                            lineText: lineText.replace(/[\r\n]+$/, ''),
-                        };
-
-                        numResults++;
-                        if (this.client) {
-                            this.client.onResult(searchId, result);
+                    for (const submatch of data.submatches) {
+                        const startOffset = lineInBytes.slice(0, submatch.start).toString().length;
+                        const match = bytesOrTextToString(submatch.match);
+                        let lineInfo: string | LinePreview = lineText.trimRight();
+                        if (lineInfo.length > 300) {
+                            const prefixLength = 25;
+                            const start = Math.max(startOffset - prefixLength, 0);
+                            const length = prefixLength + match.length + 70;
+                            let prefix = '';
+                            if (start >= prefixLength) {
+                                prefix = '...';
+                            }
+                            const character = (start < prefixLength ? start : prefixLength) + prefix.length + 1;
+                            lineInfo = <LinePreview>{
+                                text: prefix + lineInfo.substr(start, length),
+                                character
+                            };
                         }
+                        currentSearchResult.matches.push({
+                            line,
+                            character: startOffset + 1,
+                            length: match.length,
+                            lineText: lineInfo
+                        });
+                        numResults++;
 
                         // Did we reach the maximum number of results?
                         if (opts && opts.maxResults && numResults >= opts.maxResults) {
                             rgProcess.kill();
+                            if (currentSearchResult && this.client) {
+                                this.client.onResult(searchId, currentSearchResult);
+                            }
+                            currentSearchResult = undefined;
                             this.wrapUpSearch(searchId);
                             break;
                         }

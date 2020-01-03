@@ -34,7 +34,7 @@ import { CancellationTokenSource, Emitter, Event } from '@theia/core';
 import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileResourceResolver } from '@theia/filesystem/lib/browser';
-import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
+import { SearchInWorkspaceResult, SearchInWorkspaceOptions, SearchMatch } from '../common/search-in-workspace-interface';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
 import { MEMORY_TEXT } from './in-memory-text-resource';
 import URI from '@theia/core/lib/common/uri';
@@ -83,7 +83,7 @@ export namespace SearchInWorkspaceFileNode {
     }
 }
 
-export interface SearchInWorkspaceResultLineNode extends SelectableTreeNode, SearchInWorkspaceResult { // line node
+export interface SearchInWorkspaceResultLineNode extends SelectableTreeNode, SearchInWorkspaceResult, SearchMatch { // line node
     parent: SearchInWorkspaceFileNode
 }
 export namespace SearchInWorkspaceResultLineNode {
@@ -104,7 +104,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected appliedDecorations = new Map<string, string[]>();
 
-    private cancelIndicator = new CancellationTokenSource();
+    cancelIndicator?: CancellationTokenSource;
 
     protected changeEmitter = new Emitter<Map<string, SearchInWorkspaceRootFolderNode>>();
     // tslint:disable-next-line:no-any
@@ -200,14 +200,22 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         this.searchTerm = searchTerm;
         const collapseValue: string = this.searchInWorkspacePreferences['search.collapseResults'];
         this.resultTree.clear();
-        this.cancelIndicator.cancel();
-        this.cancelIndicator = new CancellationTokenSource();
-        const token = this.cancelIndicator.token;
+        if (this.cancelIndicator) {
+            this.cancelIndicator.cancel();
+        }
         if (searchTerm === '') {
             this.refreshModelChildren();
             return;
         }
+        this.cancelIndicator = new CancellationTokenSource();
+        const cancelIndicator = this.cancelIndicator;
+        const token = this.cancelIndicator.token;
+        token.onCancellationRequested(() => {
+            this.changeEmitter.fire(this.resultTree);
+        });
         const progress = await this.progressService.showProgress({ text: `search: ${searchTerm}`, options: { location: 'search' } });
+        // tslint:disable-next-line:no-any
+        let pendingRefreshTimeout: any;
         const searchId = await this.searchService.search(searchTerm, {
             onResult: (aSearchId: number, result: SearchInWorkspaceResult) => {
                 if (token.isCancellationRequested || aSearchId !== searchId) {
@@ -215,38 +223,30 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 }
                 const { path } = this.filenameAndPath(result.root, result.fileUri);
                 const tree = this.resultTree;
-                const rootFolderNode = tree.get(result.root);
-
-                if (rootFolderNode) {
-                    const fileNode = rootFolderNode.children.find(f => f.fileUri === result.fileUri);
-                    if (fileNode) {
-                        const line = this.createResultLineNode(result, fileNode);
-                        if (fileNode.children.findIndex(lineNode => lineNode.id === line.id) < 0) {
-                            fileNode.children.push(line);
-                        }
-                        this.collapseFileNode(fileNode, collapseValue);
-                    } else {
-                        const newFileNode = this.createFileNode(result.root, path, result.fileUri, rootFolderNode);
-                        this.collapseFileNode(newFileNode, collapseValue);
-                        const line = this.createResultLineNode(result, newFileNode);
-                        newFileNode.children.push(line);
-                        rootFolderNode.children.push(newFileNode);
-                    }
-
-                } else {
-                    const newRootFolderNode = this.createRootFolderNode(result.root);
-                    tree.set(result.root, newRootFolderNode);
-                    const newFileNode = this.createFileNode(result.root, path, result.fileUri, newRootFolderNode);
-                    this.collapseFileNode(newFileNode, collapseValue);
-                    newFileNode.children.push(this.createResultLineNode(result, newFileNode));
-                    newRootFolderNode.children.push(newFileNode);
+                let rootFolderNode = tree.get(result.root);
+                if (!rootFolderNode) {
+                    rootFolderNode = this.createRootFolderNode(result.root);
+                    tree.set(result.root, rootFolderNode);
                 }
+                let fileNode = rootFolderNode.children.find(f => f.fileUri === result.fileUri);
+                if (!fileNode) {
+                    fileNode = this.createFileNode(result.root, path, result.fileUri, rootFolderNode);
+                    rootFolderNode.children.push(fileNode);
+                }
+                for (const match of result.matches) {
+                    const line = this.createResultLineNode(result, match, fileNode);
+                    if (fileNode.children.findIndex(lineNode => lineNode.id === line.id) < 0) {
+                        fileNode.children.push(line);
+                    }
+                }
+                this.collapseFileNode(fileNode, collapseValue);
+                if (pendingRefreshTimeout) {
+                    clearTimeout(pendingRefreshTimeout);
+                }
+                pendingRefreshTimeout = setTimeout(() => this.refreshModelChildren(), 100);
             },
             onDone: () => {
-                progress.cancel();
-                if (token.isCancellationRequested) {
-                    return;
-                }
+                cancelIndicator.cancel();
                 // Sort the result map by folder URI.
                 this.resultTree = new Map([...this.resultTree]
                     .sort((a: [string, SearchInWorkspaceRootFolderNode], b: [string, SearchInWorkspaceRootFolderNode]) => this.compare(a[1].folderUri, b[1].folderUri)));
@@ -263,6 +263,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             if (searchId) {
                 this.searchService.cancel(searchId);
             }
+            this.cancelIndicator = undefined;
         });
     }
 
@@ -357,12 +358,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         };
     }
 
-    protected createResultLineNode(result: SearchInWorkspaceResult, fileNode: SearchInWorkspaceFileNode): SearchInWorkspaceResultLineNode {
+    protected createResultLineNode(result: SearchInWorkspaceResult, match: SearchMatch, fileNode: SearchInWorkspaceFileNode): SearchInWorkspaceResultLineNode {
         return {
             ...result,
+            ...match,
             selected: false,
-            id: result.fileUri + '-' + result.line + '-' + result.character + '-' + result.length,
-            name: result.lineText,
+            id: result.fileUri + '-' + match.line + '-' + match.character + '-' + match.length,
+            name: typeof match.lineText === 'string' ? match.lineText : match.lineText.text,
             parent: fileNode
         };
     }
@@ -628,15 +630,27 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderResultLineNode(node: SearchInWorkspaceResultLineNode): React.ReactNode {
-        const prefix = node.character > 26 ? '... ' : '';
-        return <div className={`resultLine noWrapInfo ${node.selected ? 'selected' : ''}`} title={node.lineText.trim()}>
+        let before;
+        let after;
+        let title;
+        if (typeof node.lineText === 'string') {
+            const prefix = node.character > 26 ? '... ' : '';
+            before = prefix + node.lineText.substr(0, node.character - 1).substr(-25);
+            after = node.lineText.substr(node.character - 1 + node.length, 75);
+            title = node.lineText.trim();
+        } else {
+            before = node.lineText.text.substr(0, node.lineText.character);
+            after = node.lineText.text.substr(node.lineText.character + node.length);
+            title = node.lineText.text.trim();
+        }
+        return <div className={`resultLine noWrapInfo ${node.selected ? 'selected' : ''}`} title={title}>
             {this.searchInWorkspacePreferences['search.lineNumbers'] && <span className='theia-siw-lineNumber'>{node.line}</span>}
             <span>
-                {prefix + node.lineText.substr(0, node.character - 1).substr(-25)}
+                {before}
             </span>
             {this.renderMatchLinePart(node)}
             <span>
-                {node.lineText.substr(node.character - 1 + node.length, 75)}
+                {after}
             </span>
         </div>;
     }
@@ -644,8 +658,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected renderMatchLinePart(node: SearchInWorkspaceResultLineNode): React.ReactNode {
         const replaceTerm = this._replaceTerm !== '' && this._showReplaceButtons ? <span className='replace-term'>{this._replaceTerm}</span> : '';
         const className = `match${this._showReplaceButtons ? ' strike-through' : ''}`;
+        const match = typeof node.lineText === 'string' ?
+            node.lineText.substr(node.character - 1, node.length)
+            : node.lineText.text.substr(node.lineText.character - 1, node.length);
         return <React.Fragment>
-            <span className={className}>{node.lineText.substr(node.character - 1, node.length)}</span>
+            <span className={className}>{match}</span>
             {replaceTerm}
         </React.Fragment>;
     }
