@@ -161,11 +161,16 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         };
         updateFocusContextKeys();
         this.shell.activeChanged.connect(updateFocusContextKeys);
-        this.updateAddRemoveFolderActions(this.menuRegistry);
-        this.workspacePreferences.onPreferenceChanged(change => {
-            if (change.preferenceName === 'workspace.supportMultiRootWorkspace') {
-                this.updateAddRemoveFolderActions(this.menuRegistry);
-            }
+    }
+
+    async onStart(app: FrontendApplication): Promise<void> {
+        this.workspacePreferences.ready.then(() => {
+            this.updateAddRemoveFolderActions(this.menuRegistry);
+            this.workspacePreferences.onPreferenceChanged(change => {
+                if (change.preferenceName === 'workspace.supportMultiRootWorkspace') {
+                    this.updateAddRemoveFolderActions(this.menuRegistry);
+                }
+            });
         });
     }
 
