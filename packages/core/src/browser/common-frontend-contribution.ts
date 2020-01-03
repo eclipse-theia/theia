@@ -1577,9 +1577,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'secondaryButton.foreground',
                 defaults: {
-                    dark: 'button.foreground',
-                    light: 'button.foreground',
-                    hc: 'button.foreground'
+                    dark: 'dropdown.foreground',
+                    light: 'dropdown.foreground',
+                    hc: 'dropdown.foreground'
                 }, description: 'Foreground color of secondary buttons.'
             },
             {
@@ -1593,8 +1593,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'secondaryButton.background',
                 defaults: {
-                    dark: Color.lighten('button.background', 0.5),
-                    light: Color.lighten('button.background', 0.5)
+                    dark: Color.lighten('dropdown.background', 0.5),
+                    light: Color.lighten('dropdown.background', 0.5)
                 }, description: 'Background color of secondary buttons.'
             },
             {
