@@ -51,6 +51,12 @@ export namespace SearchInWorkspaceCommands {
         label: 'Refresh',
         iconClass: 'refresh'
     };
+    export const CANCEL_SEARCH: Command = {
+        id: 'search-in-workspace.cancel',
+        category: SEARCH_CATEGORY,
+        label: 'Cancel Search',
+        iconClass: 'cancel'
+    };
     export const COLLAPSE_ALL: Command = {
         id: 'search-in-workspace.collapse-all',
         category: SEARCH_CATEGORY,
@@ -133,6 +139,11 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             }
         }));
 
+        commands.registerCommand(SearchInWorkspaceCommands.CANCEL_SEARCH, {
+            execute: w => this.withWidget(w, widget => widget.getCancelIndicator() && widget.getCancelIndicator()!.cancel()),
+            isEnabled: w => this.withWidget(w, widget => widget.getCancelIndicator() !== undefined),
+            isVisible: w => this.withWidget(w, widget => widget.getCancelIndicator() !== undefined)
+        });
         commands.registerCommand(SearchInWorkspaceCommands.REFRESH_RESULTS, {
             execute: w => this.withWidget(w, widget => widget.refresh()),
             isEnabled: w => this.withWidget(w, widget => (widget.hasResultList() || widget.hasSearchTerm()) && this.workspaceService.tryGetRoots().length > 0),
@@ -202,24 +213,31 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         const widget = await this.widget;
         const onDidChange = widget.onDidUpdate;
         toolbarRegistry.registerItem({
+            id: SearchInWorkspaceCommands.CANCEL_SEARCH.id,
+            command: SearchInWorkspaceCommands.CANCEL_SEARCH.id,
+            tooltip: SearchInWorkspaceCommands.CANCEL_SEARCH.label,
+            priority: 0,
+            onDidChange
+        });
+        toolbarRegistry.registerItem({
             id: SearchInWorkspaceCommands.REFRESH_RESULTS.id,
             command: SearchInWorkspaceCommands.REFRESH_RESULTS.id,
             tooltip: SearchInWorkspaceCommands.REFRESH_RESULTS.label,
-            priority: 0,
+            priority: 1,
             onDidChange
         });
         toolbarRegistry.registerItem({
             id: SearchInWorkspaceCommands.CLEAR_ALL.id,
             command: SearchInWorkspaceCommands.CLEAR_ALL.id,
             tooltip: SearchInWorkspaceCommands.CLEAR_ALL.label,
-            priority: 1,
+            priority: 2,
             onDidChange
         });
         toolbarRegistry.registerItem({
             id: SearchInWorkspaceCommands.COLLAPSE_ALL.id,
             command: SearchInWorkspaceCommands.COLLAPSE_ALL.id,
             tooltip: SearchInWorkspaceCommands.COLLAPSE_ALL.label,
-            priority: 2,
+            priority: 3,
             onDidChange
         });
     }
