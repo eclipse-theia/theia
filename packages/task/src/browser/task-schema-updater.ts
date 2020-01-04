@@ -532,6 +532,34 @@ const problemMatcher = {
     ]
 };
 
+const presentation: IJSONSchema = {
+    type: 'object',
+    default: {
+        reveal: 'always',
+        focus: false
+    },
+    description: 'Configures the panel that is used to present the task\'s output and reads its input.',
+    additionalProperties: true,
+    properties: {
+        focus: {
+            type: 'boolean',
+            default: false,
+            description: 'Controls whether the panel takes focus. Default is false. If set to true the panel is revealed as well.'
+        },
+        reveal: {
+            type: 'string',
+            enum: ['always', 'silent', 'never'],
+            enumDescriptions: [
+                'Always reveals the terminal when this task is executed.',
+                'Only reveals the terminal if the task exits with an error or the problem matcher finds an error.',
+                'Never reveals the terminal when this task is executed.'
+            ],
+            default: 'always',
+            description: 'Controls whether the terminal running the task is revealed or not. May be overridden by option \"revealProblems\". Default is \"always\".'
+        }
+    }
+};
+
 const taskIdentifier: IJSONSchema = {
     type: 'object',
     additionalProperties: true,
@@ -603,7 +631,8 @@ const processTaskConfigurationSchema: IJSONSchema = {
             properties: commandAndArgs
         },
         group,
-        problemMatcher
+        problemMatcher,
+        presentation
     },
     additionalProperties: true
 };

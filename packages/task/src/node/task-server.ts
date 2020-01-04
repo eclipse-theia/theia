@@ -123,6 +123,7 @@ export class TaskServerImpl implements TaskServer, Disposable {
                     if (problems.length > 0) {
                         this.fireTaskOutputProcessedEvent({
                             taskId: event.taskId,
+                            config: taskConfiguration,
                             ctx: event.ctx,
                             problems
                         });
