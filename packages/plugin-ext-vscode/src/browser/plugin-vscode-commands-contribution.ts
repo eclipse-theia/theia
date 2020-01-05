@@ -32,7 +32,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { TextDocumentShowOptions } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import { createUntitledResource } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
-import { fromViewColumn, toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
+import { toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
@@ -89,12 +89,11 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 let options: TextDocumentShowOptions | undefined;
                 if (typeof columnOrOptions === 'number') {
                     options = {
-                        viewColumn: fromViewColumn(columnOrOptions)
+                        viewColumn: columnOrOptions
                     };
                 } else if (columnOrOptions) {
                     options = {
-                        ...columnOrOptions,
-                        viewColumn: fromViewColumn(columnOrOptions.viewColumn)
+                        ...columnOrOptions
                     };
                 }
                 const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);

@@ -239,7 +239,8 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
             widgetOptions = undefined;
         } else if (viewColumn > 0) {
             const tabBars = shell.mainAreaTabBars;
-            const tabBar = tabBars[viewColumn];
+            // convert to zero-based index
+            const tabBar = tabBars[viewColumn - 1];
             if (tabBar && tabBar.currentTitle) {
                 widgetOptions = { ref: tabBar.currentTitle.owner };
             }
