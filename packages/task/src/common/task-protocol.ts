@@ -144,6 +144,9 @@ export interface TaskExitedEvent {
     readonly signal?: string;
 
     readonly config?: TaskConfiguration;
+
+    readonly terminalId?: number;
+    readonly processId?: number;
 }
 
 export interface TaskOutputEvent {
