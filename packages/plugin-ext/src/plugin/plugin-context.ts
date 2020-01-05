@@ -264,17 +264,19 @@ export function createAPIFactory(
                 return editors.onDidChangeTextEditorVisibleRanges(listener, thisArg, disposables);
             },
             async showTextDocument(documentArg: theia.TextDocument | Uri,
-                optionsArg?: theia.TextDocumentShowOptions | theia.ViewColumn,
+                columnOrOptions?: theia.TextDocumentShowOptions | theia.ViewColumn,
                 preserveFocus?: boolean
             ): Promise<theia.TextEditor> {
                 let documentOptions: theia.TextDocumentShowOptions | undefined;
                 const uri: Uri = documentArg instanceof Uri ? documentArg : documentArg.uri;
-                if (optionsArg) {
-                    // tslint:disable-next-line:no-any
-                    const optionsAny: any = optionsArg;
-                    if (optionsAny.preserveFocus || optionsAny.preview || optionsAny.selection || optionsAny.viewColumn) {
-                        documentOptions = optionsArg as theia.TextDocumentShowOptions;
-                    }
+                if (typeof columnOrOptions === 'number') {
+                    documentOptions = {
+                        viewColumn: columnOrOptions
+                    };
+                } else if (columnOrOptions && (columnOrOptions.preserveFocus || columnOrOptions.preview || columnOrOptions.selection || columnOrOptions.viewColumn)) {
+                    documentOptions = {
+                        ...columnOrOptions
+                    };
                 }
                 if (preserveFocus) {
                     if (documentOptions) {
