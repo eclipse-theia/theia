@@ -115,7 +115,9 @@ export class ProcessTask extends Task {
             ctx: this.context,
             code: evt.code,
             signal: evt.signal,
-            config: this.options.config
+            config: this.options.config,
+            terminalId: this.process.id,
+            processId: this.process.id
         };
     }
 
