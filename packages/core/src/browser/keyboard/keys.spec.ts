@@ -227,4 +227,29 @@ describe('keys api', () => {
         expect(first.key).is.equal(Key.F10);
         expect(second.key).is.equal(Key.KEY_B);
     });
+
+    it('should parse minus as key', () => {
+        const keycode = KeyCode.parse('ctrl+-');
+        expect(keycode.ctrl).to.be.true;
+        expect(keycode.key).is.equal(Key.MINUS);
+    });
+
+    it('should parse minus as key and seprator', () => {
+        const keycode = KeyCode.parse('ctrl--');
+        expect(keycode.ctrl).to.be.true;
+        expect(keycode.key).is.equal(Key.MINUS);
+    });
+
+    it('should parse plus as separator', () => {
+        const keycode = KeyCode.parse('ctrl-+-');
+        expect(keycode.ctrl).to.be.true;
+        expect(keycode.key).is.equal(Key.MINUS);
+    });
+
+    it('should not parse plus as key but separator', () => {
+        const keycode = KeyCode.parse('ctrl++-');
+        expect(keycode.ctrl).to.be.true;
+        expect(keycode.key).is.equal(Key.MINUS);
+    });
+
 });
