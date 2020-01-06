@@ -236,7 +236,19 @@ export class KeyCode {
         }
 
         const schema: KeyCodeSchema = {};
-        const keys = keybinding.trim().toLowerCase().split(/[-+]/g);
+        const keys = [];
+        let currentKey = '';
+        for (const character of keybinding.trim().toLowerCase()) {
+            if (currentKey && (character === '-' || character === '+')) {
+                keys.push(currentKey);
+                currentKey = '';
+            } else if (character !== '+') {
+                currentKey += character;
+            }
+        }
+        if (currentKey) {
+            keys.push(currentKey);
+        }
         /* If duplicates i.e ctrl+ctrl+a or alt+alt+b or b+alt+b it is invalid */
         if (keys.length !== new Set(keys).size) {
             throw new Error(`Can't parse keybinding ${keybinding} Duplicate modifiers`);
