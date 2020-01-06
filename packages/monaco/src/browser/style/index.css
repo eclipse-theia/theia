@@ -90,3 +90,7 @@
 .monaco-scrollable-element > .scrollbar.horizontal > .slider {
     height: var(--theia-scrollbar-width) !important;
 }
+
+.monaco-editor .reference-zone-widget .ref-tree .referenceMatch .highlight {
+    color: unset !important;
+}
