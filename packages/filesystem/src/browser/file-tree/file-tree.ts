@@ -121,13 +121,13 @@ export namespace DirNode {
     }
 
     export function uriCompare(node: TreeNode, node2: TreeNode): number {
-        if (FileNode.is(node)) {
-            if (FileNode.is(node2)) {
+        if (FileStatNode.is(node)) {
+            if (FileStatNode.is(node2)) {
                 return node.uri.displayName.localeCompare(node2.uri.displayName);
             }
             return 1;
         }
-        if (FileNode.is(node2)) {
+        if (FileStatNode.is(node2)) {
             return -1;
         }
         return 0;
