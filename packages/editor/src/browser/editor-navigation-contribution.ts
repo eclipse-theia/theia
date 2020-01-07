@@ -79,7 +79,8 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         });
         this.commandRegistry.registerHandler(EditorCommands.TOGGLE_MINIMAP.id, {
             execute: () => this.toggleMinimap(),
-            isEnabled: () => true
+            isEnabled: () => true,
+            isToggled: () => this.isMinimapEnabled()
         });
     }
 
@@ -165,6 +166,10 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             }
             this.locationStack.register(...locations);
         }
+    }
+
+    private isMinimapEnabled(): boolean {
+        return !!this.preferenceService.get('editor.minimap.enabled');
     }
 
 }
