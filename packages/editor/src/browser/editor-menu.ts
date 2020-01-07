@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import { MenuContribution, MenuModelRegistry, MenuPath, MAIN_MENU_BAR } from '@theia/core';
-import { CommonCommands } from '@theia/core/lib/browser';
+import { CommonCommands, CommonMenus } from '@theia/core/lib/browser';
 import { EditorCommands } from './editor-command';
 
 export const EDITOR_CONTEXT_MENU: MenuPath = ['editor_context_menu'];
@@ -84,6 +84,12 @@ export class EditorMenuContribution implements MenuContribution {
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
             commandId: EditorCommands.GO_LAST_EDIT.id,
             label: 'Last Edit Location'
+        });
+
+        // Toggle Commands.
+        registry.registerMenuAction(CommonMenus.VIEW_TOGGLE, {
+            commandId: EditorCommands.TOGGLE_MINIMAP.id,
+            label: 'Show Minimap'
         });
     }
 
