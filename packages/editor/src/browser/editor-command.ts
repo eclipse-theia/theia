@@ -125,6 +125,14 @@ export namespace EditorCommands {
         category: 'View',
         label: 'Toggle Render Whitespace'
     };
+    /**
+     * Command that toggles the word wrap.
+     */
+    export const TOGGLE_WORD_WRAP: Command = {
+        id: 'editor.action.toggleWordWrap',
+        category: 'View',
+        label: 'Toggle Word Wrap'
+    };
 }
 
 @injectable()
@@ -178,6 +186,7 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.CLEAR_EDITOR_HISTORY);
         registry.registerCommand(EditorCommands.TOGGLE_MINIMAP);
         registry.registerCommand(EditorCommands.TOGGLE_RENDER_WHITESPACE);
+        registry.registerCommand(EditorCommands.TOGGLE_WORD_WRAP);
 
         registry.registerCommand(CommonCommands.AUTO_SAVE, {
             isToggled: () => this.isAutoSaveOn(),

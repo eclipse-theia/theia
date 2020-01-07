@@ -35,6 +35,10 @@ export class EditorKeybindingContribution implements KeybindingContribution {
             {
                 command: EditorCommands.GO_LAST_EDIT.id,
                 keybinding: 'ctrl+alt+q'
+            },
+            {
+                command: EditorCommands.TOGGLE_WORD_WRAP.id,
+                keybinding: 'alt+z'
             }
         );
     }

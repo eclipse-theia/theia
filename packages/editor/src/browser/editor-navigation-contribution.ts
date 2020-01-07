@@ -87,6 +87,10 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             isEnabled: () => true,
             isToggled: () => this.isRenderWhitespaceEnabled()
         });
+        this.commandRegistry.registerHandler(EditorCommands.TOGGLE_WORD_WRAP.id, {
+            execute: () => this.toggleWordWrap(),
+            isEnabled: () => true,
+        });
     }
 
     async onStart(): Promise<void> {
@@ -100,6 +104,24 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    /**
+     * Toggle the editor word wrap behavior.
+     */
+    protected async toggleWordWrap(): Promise<void> {
+        // Get the current word wrap.
+        const wordWrap: string | undefined = this.preferenceService.get('editor.wordWrap');
+        if (wordWrap === undefined) {
+            return;
+        }
+        // The list of allowed word wrap values.
+        const values: string[] = ['off', 'on', 'wordWrapColumn', 'bounded'];
+        // Get the index of the current value, and toggle to the next available value.
+        const index = values.indexOf(wordWrap) + 1;
+        if (index > -1) {
+            this.preferenceService.set('editor.wordWrap', values[index % values.length], PreferenceScope.User);
+        }
     }
 
     /**
