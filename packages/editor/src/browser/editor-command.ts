@@ -117,6 +117,14 @@ export namespace EditorCommands {
         category: 'View',
         label: 'Toggle Minimap'
     };
+    /**
+     * Command that toggles the rendering of whitespace.
+     */
+    export const TOGGLE_RENDER_WHITESPACE: Command = {
+        id: 'editor.action.toggleRenderWhitespace',
+        category: 'View',
+        label: 'Toggle Render Whitespace'
+    };
 }
 
 @injectable()
@@ -169,6 +177,7 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.GO_LAST_EDIT);
         registry.registerCommand(EditorCommands.CLEAR_EDITOR_HISTORY);
         registry.registerCommand(EditorCommands.TOGGLE_MINIMAP);
+        registry.registerCommand(EditorCommands.TOGGLE_RENDER_WHITESPACE);
 
         registry.registerCommand(CommonCommands.AUTO_SAVE, {
             isToggled: () => this.isAutoSaveOn(),

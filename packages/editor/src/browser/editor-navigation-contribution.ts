@@ -81,6 +81,11 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             execute: () => this.toggleMinimap(),
             isEnabled: () => true
         });
+        this.commandRegistry.registerHandler(EditorCommands.TOGGLE_RENDER_WHITESPACE.id, {
+            execute: () => this.toggleRenderWhitespace(),
+            isEnabled: () => true,
+            isToggled: () => this.isRenderWhitespaceEnabled()
+        });
     }
 
     async onStart(): Promise<void> {
@@ -102,6 +107,20 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
     protected async toggleMinimap(): Promise<void> {
         const value: boolean | undefined = this.preferenceService.get('editor.minimap.enabled');
         this.preferenceService.set('editor.minimap.enabled', !value, PreferenceScope.User);
+    }
+
+    /**
+     * Toggle the rendering of whitespace in the editor.
+     */
+    protected async toggleRenderWhitespace(): Promise<void> {
+        const renderWhitespace: string | undefined = this.preferenceService.get('editor.renderWhitespace');
+        let updatedRenderWhitespace: string;
+        if (renderWhitespace === 'none') {
+            updatedRenderWhitespace = 'all';
+        } else {
+            updatedRenderWhitespace = 'none';
+        }
+        this.preferenceService.set('editor.renderWhitespace', updatedRenderWhitespace, PreferenceScope.User);
     }
 
     protected onCurrentEditorChanged(editorWidget: EditorWidget | undefined): void {
@@ -165,6 +184,11 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             }
             this.locationStack.register(...locations);
         }
+    }
+
+    private isRenderWhitespaceEnabled(): boolean {
+        const renderWhitespace = this.preferenceService.get('editor.renderWhitespace');
+        return renderWhitespace === 'none' ? false : true;
     }
 
 }
