@@ -68,6 +68,7 @@ export namespace CommonMenus {
     export const VIEW_PRIMARY = [...VIEW, '0_primary'];
     export const VIEW_VIEWS = [...VIEW, '1_views'];
     export const VIEW_LAYOUT = [...VIEW, '2_layout'];
+    export const VIEW_TOGGLE = [...VIEW, '3_toggle'];
 
     // last menu item
     export const HELP = [...MAIN_MENU_BAR, '9_help'];
