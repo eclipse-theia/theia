@@ -47,7 +47,8 @@ export class ProblemDecorator implements TreeDecorator {
     protected init(): void {
         this.problemPreferences.onPreferenceChanged((event: PreferenceChangeEvent<ProblemConfiguration>) => {
             const { preferenceName } = event;
-            if (preferenceName === 'problems.decorations.enabled') {
+            if (preferenceName === 'problems.decorations.enabled' ||
+                preferenceName === 'problems.decorations.colors.enabled') {
                 this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
             }
         });
@@ -130,6 +131,9 @@ export class ProblemDecorator implements TreeDecorator {
         const icon = this.getOverlayIcon(marker);
         const color = this.getOverlayIconColor(marker);
         return {
+            fontData: {
+                color: !!this.problemPreferences['problems.decorations.colors.enabled'] ? color : '',
+            },
             iconOverlay: {
                 position,
                 icon,

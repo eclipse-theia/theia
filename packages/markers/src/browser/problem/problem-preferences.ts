@@ -25,6 +25,11 @@ export const ProblemConfigSchema: PreferenceSchema = {
             'description': 'Show problem decorators (diagnostic markers) in tree widgets.',
             'default': true,
         },
+        'problems.decorations.colors.enabled': {
+            'type': 'boolean',
+            'description': 'Show problem color decorations in tree widgets.',
+            'default': false,
+        },
         'problems.decorations.tabbar.enabled': {
             'type': 'boolean',
             'description': 'Show problem decorators (diagnostic markers) in the tab bars.',
@@ -35,7 +40,8 @@ export const ProblemConfigSchema: PreferenceSchema = {
 
 export interface ProblemConfiguration {
     'problems.decorations.enabled': boolean,
-    'problems.decorations.tabbar.enabled': boolean
+    'problems.decorations.colors.enabled': boolean,
+    'problems.decorations.tabbar.enabled': boolean,
 }
 
 export const ProblemPreferences = Symbol('ProblemPreferences');
