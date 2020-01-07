@@ -89,7 +89,13 @@ export class EditorMenuContribution implements MenuContribution {
         // Toggle Commands.
         registry.registerMenuAction(CommonMenus.VIEW_TOGGLE, {
             commandId: EditorCommands.TOGGLE_MINIMAP.id,
-            label: 'Show Minimap'
+            label: 'Show Minimap',
+            order: '1',
+        });
+        registry.registerMenuAction(CommonMenus.VIEW_TOGGLE, {
+            commandId: EditorCommands.TOGGLE_RENDER_WHITESPACE.id,
+            label: 'Render Whitespace',
+            order: '2'
         });
     }
 
