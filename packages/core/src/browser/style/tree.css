@@ -85,7 +85,14 @@
 .theia-Tree:focus .theia-TreeNode.theia-mod-selected,
 .theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected {
     background: var(--theia-list-activeSelectionBackground);
-    color: var(--theia-list-activeSelectionForeground);
+    color: var(--theia-list-activeSelectionForeground) !important;
+}
+
+.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
+.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
+.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-caption-suffix,
+.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-caption-suffix {
+    color: var(--theia-list-activeSelectionForeground) !important;
 }
 
 .theia-Tree .theia-TreeNode.theia-mod-selected {
