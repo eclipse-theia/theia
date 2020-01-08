@@ -71,6 +71,11 @@ Breaking changes:
   Before these attributes have to be computed for all nodes and stored as a part of the layout.
   From now on they will be computed only on demand for visible nodes.
   It decreases requirements to the local storage and allows to invalidate node appearance by simply rerendering a tree.
+- [application-manager] `ApplicationPackageManager.start*` methods return an instance of a server child process instead of promise.
+- [cli] Generated webpack config is renamed to `gen-webpack.config.js`.
+  `webpack.config.js` is generated only once. It can be edited by users to custoimze bundling,
+  but should be based on `gen-webpack.config.js` to pick any changes in the generated config.
+  If it does not have a reference to `gen-webpack.config.js` then it will be regenerated.
 
 ## v0.14.0
 

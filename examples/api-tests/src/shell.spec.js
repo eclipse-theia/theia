@@ -14,37 +14,29 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-/* tslint:disable:no-unused-expression*/
-import { MainPage } from './main-page';
-import { expect } from 'chai';
+// @ts-check
+describe('Shell', function () {
 
-let mainPage: MainPage;
-let driver: WebdriverIO.Client<void>;
+    const { assert } = chai;
 
-describe('theia main page', () => {
+    const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
+    const { StatusBarImpl } = require('@theia/core/lib/browser/status-bar');
 
-    before(() => {
-        const url = '/';
-        driver = browser;
-        driver.url(url);
-        mainPage = new MainPage(driver);
-        // Make sure that the application shell is loaded
-        mainPage.waitForStartup();
-    });
+    /** @type {import('inversify').Container} */
+    const container = window['theia'].container;
+    const shell = container.get(ApplicationShell);
+    const statusBar = container.get(StatusBarImpl);
 
-    it('should show the application shell', () => {
-        expect(mainPage.applicationShellExists()).to.be.true;
+    it('should be shown', () => {
+        assert.isTrue(shell.isAttached && shell.isVisible);
     });
 
     it('should show the main content panel', () => {
-        expect(mainPage.mainContentPanelExists()).to.be.true;
-    });
-
-    it('should show the left and right sidebars', () => {
-        expect(mainPage.rightSideBarExists() && mainPage.leftSideBarExists()).to.be.true;
+        assert.isTrue(shell.mainPanel.isAttached && shell.mainPanel.isVisible);
     });
 
     it('should show the status bar', () => {
-        expect(mainPage.statusBarExists()).to.be.true;
+        assert.isTrue(statusBar.isAttached && statusBar.isVisible);
     });
+
 });

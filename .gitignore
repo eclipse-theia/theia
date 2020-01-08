@@ -12,7 +12,7 @@ lerna-debug.log
 coverage
 errorShots
 examples/*/src-gen
-examples/*/webpack.config.js
+examples/*/gen-webpack.config.js
 .browser_modules
 **/docs/api
 package-backup.json

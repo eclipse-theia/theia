@@ -54,18 +54,16 @@
   },
   "scripts": {
     "prepare": "yarn run clean && yarn build",
-    "clean": "theia clean && rimraf errorShots",
-    "build": "theiaext compile && theia build --mode development",
-    "watch": "concurrently -n compile,bundle \"theiaext watch --preserveWatchOutput\" \"theia build --watch --mode development\"",
+    "clean": "theia clean",
+    "build": "theia build --mode development",
+    "watch": "yarn build --watch",
     "start": "theia start --plugins=local-dir:../../plugins",
     "start:debug": "yarn start --log-level=debug",
-    "test": "wdio wdio.conf.js",
-    "test-non-headless": "wdio wdio-non-headless.conf.js",
-    "coverage:compile": "yarn build --config coverage-webpack.config.js",
-    "coverage:remap": "remap-istanbul -i coverage/coverage.json -o coverage/coverage-final.json --exclude 'frontend/index.js' && rimraf coverage/coverage.json",
-    "coverage:report:html": "istanbul report --root coverage --format html",
-    "coverage:report:lcov": "istanbul report --root coverage --format lcov",
-    "coverage": "yarn coverage:compile && yarn test && yarn coverage:remap && yarn coverage:report:lcov && yarn coverage:report:html"
+    "test": "theia test . --test-spec=../api-tests/**/*.spec.js",
+    "test:debug": "yarn test --test-inspect",
+    "coverage": "yarn test --test-coverage && yarn coverage:report",
+    "coverage:report": "nyc report --reporter=html",
+    "coverage:clean": "rimraf .nyc_output && rimraf coverage"
   },
   "devDependencies": {
     "@theia/cli": "^0.14.0"

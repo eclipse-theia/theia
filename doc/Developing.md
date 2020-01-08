@@ -311,7 +311,8 @@ You should be able to see message of `[${server-name}: ${server-PID}]: IPC start
 
 ## Testing
 
-See the [testing](Testing.md) documentation.
+- See the [unit testing](Testing.md) documentation.
+- See the [API integration testing](api-testing.md) documentation.
 
 ## Code coverage
 

@@ -50,7 +50,7 @@ export class ApplicationPackageManager {
     async clean(): Promise<void> {
         await this.remove(this.pck.lib());
         await this.remove(this.pck.srcGen());
-        await this.remove(this.webpack.configPath);
+        await this.remove(this.webpack.genConfigPath);
     }
 
     async generate(): Promise<void> {
@@ -70,22 +70,22 @@ export class ApplicationPackageManager {
         return this.__process.run('webpack', args);
     }
 
-    async start(args: string[] = []): Promise<void> {
+    start(args: string[] = []): cp.ChildProcess {
         if (this.pck.isElectron()) {
             return this.startElectron(args);
         }
         return this.startBrowser(args);
     }
 
-    async startElectron(args: string[]): Promise<void> {
+    startElectron(args: string[]): cp.ChildProcess {
         const { mainArgs, options } = this.adjustArgs([this.pck.frontend('electron-main.js'), ...args]);
         const electronCli = require.resolve('electron/cli.js', { paths: [this.pck.projectPath] });
-        this.__process.fork(electronCli, mainArgs, options);
+        return this.__process.fork(electronCli, mainArgs, options);
     }
 
-    async startBrowser(args: string[]): Promise<void> {
+    startBrowser(args: string[]): cp.ChildProcess {
         const { mainArgs, options } = this.adjustArgs(args);
-        this.__process.fork(this.pck.backend('main.js'), mainArgs, options);
+        return this.__process.fork(this.pck.backend('main.js'), mainArgs, options);
     }
 
     private adjustArgs(args: string[], forkOptions: cp.ForkOptions = {}): Readonly<{ mainArgs: string[]; options: cp.ForkOptions }> {

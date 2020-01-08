@@ -17,7 +17,7 @@
 // tslint:disable:no-any
 
 import { injectable, inject } from 'inversify';
-import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from '@phosphor/widgets';
+import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
 import {
     CommandRegistry, ActionMenuNode, CompositeMenuNode,
@@ -27,6 +27,13 @@ import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 import { ContextKeyService } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
+import { waitForRevealed } from '../widgets';
+import { ApplicationShell } from '../shell';
+
+export abstract class MenuBarWidget extends MenuBar {
+    abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
+    abstract triggerMenuItem(label: string, ...labels: string[]): Promise<MenuWidget.IItem>;
+}
 
 @injectable()
 export class BrowserMainMenuFactory {
@@ -145,6 +152,46 @@ class DynamicMenuBarWidget extends MenuBarWidget {
         };
     }
 
+    async activateMenu(label: string, ...labels: string[]): Promise<MenuWidget> {
+        const menu = this.menus.find(m => m.title.label === label);
+        if (!menu) {
+            throw new Error(`could not find '${label}' menu`);
+        }
+        this.activeMenu = menu;
+        this.openActiveMenu();
+        await waitForRevealed(menu);
+
+        const menuPath = [label];
+
+        let current = menu;
+        for (const itemLabel of labels) {
+            const item = current.items.find(i => i.label === itemLabel);
+            if (!item || !item.submenu) {
+                throw new Error(`could not find '${label}' submenu in ${menuPath.map(l => "'" + l + "'").join(' -> ')} menu`);
+            }
+            current.activeItem = item;
+            current.triggerActiveItem();
+            current = item.submenu;
+            await waitForRevealed(current);
+        }
+        return current;
+    }
+
+    async triggerMenuItem(label: string, ...labels: string[]): Promise<MenuWidget.IItem> {
+        if (!labels.length) {
+            throw new Error('menu item label is not specified');
+        }
+        const menuPath = [label, ...labels.slice(0, labels.length - 1)];
+        const menu = await this.activateMenu(menuPath[0], ...menuPath.slice(1));
+        const item = menu.items.find(i => i.label === labels[labels.length - 1]);
+        if (!item) {
+            throw new Error(`could not find '${label}' item in ${menuPath.map(l => "'" + l + "'").join(' -> ')} menu`);
+        }
+        menu.activeItem = item;
+        menu.triggerActiveItem();
+        return item;
+    }
+
 }
 /**
  * A menu widget that would recompute its items on update
@@ -252,6 +299,9 @@ class DynamicMenuWidget extends MenuWidget {
 @injectable()
 export class BrowserMenuBarContribution implements FrontendApplicationContribution {
 
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
     constructor(
         @inject(BrowserMainMenuFactory) protected readonly factory: BrowserMainMenuFactory
     ) { }
@@ -261,6 +311,10 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
         app.shell.addWidget(logo, { area: 'top' });
         const menu = this.factory.createMenuBar();
         app.shell.addWidget(menu, { area: 'top' });
+    }
+
+    get menuBar(): MenuBarWidget | undefined {
+        return this.shell.topPanel.widgets.find(w => w instanceof MenuBarWidget) as MenuBarWidget | undefined;
     }
 
     protected createLogo(): Widget {
