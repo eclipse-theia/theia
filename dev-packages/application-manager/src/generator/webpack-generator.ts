@@ -15,16 +15,32 @@
  ********************************************************************************/
 
 import * as paths from 'path';
+import * as fs from 'fs-extra';
 import { AbstractGenerator } from './abstract-generator';
 
 export class WebpackGenerator extends AbstractGenerator {
 
     async generate(): Promise<void> {
-        await this.write(this.configPath, this.compileWebpackConfig());
+        await this.write(this.genConfigPath, this.compileWebpackConfig());
+        if (await this.shouldGenerateUserWebpackConfig()) {
+            await this.write(this.configPath, this.compileUserWebpackConfig());
+        }
+    }
+
+    protected async shouldGenerateUserWebpackConfig(): Promise<boolean> {
+        if (!(await fs.pathExists(this.configPath))) {
+            return true;
+        }
+        const content = await fs.readFile(this.configPath, 'utf8');
+        return content.indexOf('gen-webpack') === -1;
     }
 
     get configPath(): string {
         return this.pck.path('webpack.config.js');
+    }
+
+    get genConfigPath(): string {
+        return this.pck.path('gen-webpack.config.js');
     }
 
     protected resolve(moduleName: string, path: string): string {
@@ -32,7 +48,11 @@ export class WebpackGenerator extends AbstractGenerator {
     }
 
     protected compileWebpackConfig(): string {
-        return `// @ts-check
+        return `/**
+ * Don't touch this file. It will be renerated by theia build.
+ * To customize webpack configuration change ${this.configPath}
+ */
+// @ts-check
 const path = require('path');
 const webpack = require('webpack');
 const yargs = require('yargs');
@@ -199,6 +219,26 @@ module.exports = {
         warnings: true
     }
 };`;
+    }
+
+    protected compileUserWebpackConfig(): string {
+        return `/**
+ * This file can be edited to customize webpack configuration.
+ * To reset delete this file and rerun theia build again.
+ */
+// @ts-check
+const config = require('./${paths.basename(this.genConfigPath)}');
+
+/**
+ * Expose bundled modules on window.theia.moduleName namespace, e.g.
+ * window['theia']['@theia/core/lib/common/uri'].
+ * Such syntax can be used by external code, for instance, for testing.
+config.module.rules.push({
+    test: /\\.js$/,
+    loader: require.resolve('@theia/application-manager/lib/expose-loader')
+}); */
+
+module.exports = config;`;
     }
 
 }

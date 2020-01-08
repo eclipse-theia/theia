@@ -101,9 +101,11 @@ describe('Preference Service', () => {
             if (pref) {
                 expect(pref.preferenceName).eq('testPref');
                 expect(pref.newValue).eq('newVal');
-                return done();
+                done();
+                return;
             }
-            return done(new Error('onPreferenceChanged() fails to return any preference change infomation'));
+            done(new Error('onPreferenceChanged() fails to return any preference change infomation'));
+            return;
         });
 
         userProvider.emitPreferencesChangedEvent({

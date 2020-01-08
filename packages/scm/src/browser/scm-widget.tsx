@@ -399,6 +399,21 @@ export abstract class ScmElement<P extends ScmElement.Props = ScmElement.Props> 
         this.state = {
             hover: false
         };
+
+        const setState = this.setState.bind(this);
+        this.setState = newState => {
+            if (!this.toDisposeOnUnmount.disposed) {
+                setState(newState);
+            }
+        };
+    }
+
+    protected readonly toDisposeOnUnmount = new DisposableCollection();
+    componentDidMount(): void {
+        this.toDisposeOnUnmount.push(Disposable.create(() => { /* mark as mounted */ }));
+    }
+    componentWillUnmount(): void {
+        this.toDisposeOnUnmount.dispose();
     }
 
     protected detectHover = (element: HTMLElement | null) => {

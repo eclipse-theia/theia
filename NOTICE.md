@@ -256,12 +256,6 @@ vscode-java-debug (0.15.0)
 
 * License: MIT
 
-webdriverio (n/a)
-
-* License: MIT
-* Project: http://webdriver.io/
-* Source: https://github.com/webdriverio/webdriverio.git
-
 when (3.7.8)
 
 * License: MIT

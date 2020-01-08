@@ -3,3 +3,4 @@
 --require reflect-metadata/Reflect
 --reporter spec
 --watch-extensions js
+--exit

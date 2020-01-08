@@ -10,6 +10,13 @@
 - [**Rebuilding native modules**](#rebuilding-native-modules)
 - [**Running**](#running)
 - [**Debugging**](#debugging)
+- [**Testing**](#testing)
+  - [**Enabling tests**](#enabling-tests)
+  - [**Writing tests**](#writing-tests)
+  - [**Running tests**](#running-tests)
+  - [**Configuring tests**](#configuring-tests)
+  - [**Inspecting tests**](#inspecting-tests)
+  - [**Reporting test coverage**](#reporting-test-coverage)
 
 ## Getting started
 
@@ -103,3 +110,70 @@ To debug the backend server:
     theia start --inspect
 
 Theia CLI accepts `--inspect` node flag: https://nodejs.org/en/docs/inspector/#command-line-options.
+
+
+## Testing
+
+### Enabling tests
+
+First enable `expose-loader` in `webpack.config.js`
+to expose modules from bundled code to tests
+by uncommenting:
+
+```js
+/**
+ * Expose bundled modules on window.theia.moduleName namespace, e.g.
+ * window['theia']['@theia/core/lib/common/uri'].
+ * Such syntax can be used by external code, for instance, for testing.
+config.module.rules.push({
+    test: /\.js$/,
+    loader: require.resolve('@theia/application-manager/lib/expose-loader')
+}); */
+```
+
+After that run `theia build` again to expose modules in generated bundle files.
+
+### Writing tests
+
+See [API integrationg testing](../../doc/api-testing.md) docs.
+
+### Running tests
+
+To start the backend server and run API tests against it:
+
+    theia test
+
+After running test this command terminates. It accepts the same arguments as `start` command,
+but as well additional arguments to specify test files, enable inspection or generate test coverage.
+
+### Configuring tests
+
+To specify test files:
+
+    theia test . --test-spec=./test/*.spec.js --plugins=./plugins
+
+This command starts the application with a current directory as a workspace,
+load VS Code extensions from `./plugins`
+and run test files matching `./test/*.spec.js` glob.
+
+Use `theia test --help` to learn more options. Test specific options start with `--test-`.
+
+### Inspecting tests
+
+To inspect tests:
+
+    theia test . --test-spec=./test/*.spec.js --test-inspect --inspect
+
+This command starts the application server in the debug mode 
+as well as open the Chrome devtools to debug frontend code and test files.
+One can reload/rerun code and tests by simply reloading the page.
+
+> Important! Since tests are relying on focus, while running tests keep the page focused.
+
+### Reporting test coverage
+
+To report test coverage:
+
+    theia test . --test-spec=./test/*.spec.js --test-coverage
+
+This command executes tests and generate test coverage files consumable by istanbyl.

@@ -19,7 +19,7 @@ import '../../src/browser/style/scm-amend-component.css';
 import * as React from 'react';
 import { ScmAvatarService } from './scm-avatar-service';
 import { StorageService } from '@theia/core/lib/browser';
-import { DisposableCollection } from '@theia/core';
+import { Disposable, DisposableCollection } from '@theia/core';
 
 import { ScmRepository } from './scm-repository';
 import { ScmAmendSupport, ScmCommit } from './scm-provider';
@@ -80,14 +80,26 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
             amendingCommits: [],
             lastCommit: undefined
         };
+
+        const setState = this.setState.bind(this);
+        this.setState = newState => {
+            if (!this.toDisposeOnUnmount.disposed) {
+                setState(newState);
+            }
+        };
     }
 
     protected readonly toDisposeOnUnmount = new DisposableCollection();
 
     async componentDidMount(): Promise<void> {
+        this.toDisposeOnUnmount.push(Disposable.create(() => { /* mark as mounted */ }));
+
         const lastCommit = await this.getLastCommit();
         this.setState({ amendingCommits: await this.buildAmendingList(lastCommit ? lastCommit.commit : undefined), lastCommit });
 
+        if (this.toDisposeOnUnmount.disposed) {
+            return;
+        }
         this.toDisposeOnUnmount.push(
             this.props.repository.provider.onDidChange(() => this.fetchStatusAndSetState())
         );

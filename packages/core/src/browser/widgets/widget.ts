@@ -255,3 +255,27 @@ export function addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element
         document.removeEventListener(type, documentListener)
     );
 }
+
+export function waitForClosed(widget: Widget): Promise<void> {
+    return waitForVisible(widget, false);
+}
+
+export function waitForRevealed(widget: Widget): Promise<void> {
+    return waitForVisible(widget, true);
+}
+
+function waitForVisible(widget: Widget, visible: boolean): Promise<void> {
+    if (widget.isAttached === visible && (widget.isVisible === visible || (widget.node.style.visibility !== 'hidden') === visible)) {
+        return new Promise(resolve => window.requestAnimationFrame(() => resolve()));
+    }
+    return new Promise(resolve => {
+        const waitFor = () => window.requestAnimationFrame(() => {
+            if (widget.isAttached === visible && (widget.isVisible === visible || (widget.node.style.visibility !== 'hidden') === visible)) {
+                window.requestAnimationFrame(() => resolve());
+            } else {
+                waitFor();
+            }
+        });
+        waitFor();
+    });
+}

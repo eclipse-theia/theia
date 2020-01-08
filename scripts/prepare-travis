@@ -50,6 +50,6 @@ const endOfLine = content[content.indexOf('\n') - 1] === '\r' ? '\r\n' : '\n';
 const startIndex = content.indexOf('# start_cache_directories') + '# start_cache_directories'.length;
 const endIndex = content.indexOf('# end_cache_directories');
 const result = content.substr(0, startIndex) + endOfLine +
-    directories.sort((d, d2) => d.localeCompare(d2)).map(d => `  - ${d}${endOfLine}`).join('') +
+    directories.sort((d, d2) => d.localeCompare(d2)).map(d => `    - ${d}${endOfLine}`).join('') +
     content.substr(endIndex);
 fs.writeFileSync(travisPath, result);

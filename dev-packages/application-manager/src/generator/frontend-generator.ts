@@ -88,6 +88,8 @@ function load(raw) {
 }
 
 function start() {
+    (window['theia'] = window['theia'] || {}).container = container;
+
     const themeService = ThemeService.get();
     themeService.loadUserTheme();
 
@@ -317,8 +319,8 @@ app.on('ready', () => {
         });
     } else {
         const cp = fork(mainPath, [], { env: Object.assign({}, process.env) });
-        cp.on('message', (message) => {
-            loadMainWindow(message);
+        cp.on('message', (address) => {
+            loadMainWindow(address.port);
         });
         cp.on('error', (error) => {
             console.error(error);
