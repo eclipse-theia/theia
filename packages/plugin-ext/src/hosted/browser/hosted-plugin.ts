@@ -597,7 +597,7 @@ export class HostedPluginSupport {
 
     protected logMeasurement(prefix: string, count: number, measurement: () => number): void {
         const pluginCount = `${count} plugin${count === 1 ? '' : 's'}`;
-        console.log(`[${this.clientId}] ${prefix} of ${pluginCount} took: ${measurement()} ms`);
+        console.log(`[${this.clientId}] ${prefix} of ${pluginCount} took: ${Math.round(measurement() * 10) / 10} ms`);
     }
 
     protected readonly webviewsToRestore = new Set<WebviewWidget>();
