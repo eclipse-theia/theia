@@ -2,6 +2,8 @@
 
 ## v0.16.0
 
+- [core] added a new React-based dialog type `ReactDialog` [#6855](https://github.com/eclipse-theia/theia/pull/6855)
+
 Breaking changes:
 
 - [core] fixed typo (highligh -> highlight) in caption highlight fragment [#7050](https://github.com/eclipse-theia/theia/pull/7050)
