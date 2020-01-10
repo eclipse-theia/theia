@@ -150,6 +150,9 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             await this.onigasmPromise;
             try {
                 const grammar = await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, initialLanguage, configuration);
+                if (!grammar) {
+                    throw new Error(`no grammar for ${scopeName}, ${initialLanguage}, ${JSON.stringify(configuration)}`);
+                }
                 const options = configuration.tokenizerOption ? configuration.tokenizerOption : TokenizerOption.DEFAULT;
                 monaco.languages.setTokensProvider(languageId, createTextmateTokenizer(grammar, options));
             } catch (error) {
