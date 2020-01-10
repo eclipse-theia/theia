@@ -22,7 +22,7 @@ export class GitErrorHandler {
 
     @inject(MessageService) protected readonly messageService: MessageService;
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public handleError(error: any): void {
         const message = error instanceof Error ? error.message : error;
         if (message) {

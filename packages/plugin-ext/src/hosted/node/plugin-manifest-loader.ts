@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as path from 'path';
 import * as fs from 'fs-extra';
@@ -66,7 +66,7 @@ function localize(value: any, translations: {
     }
     if (typeof value === 'object') {
         const result: { [key: string]: any } = {};
-        // tslint:disable-next-line:forin
+        // eslint-disable-next-line guard-for-in
         for (const propertyName in value) {
             result[propertyName] = localize(value[propertyName], translations);
         }

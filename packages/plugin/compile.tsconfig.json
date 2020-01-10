@@ -1,6 +1,7 @@
 {
   "extends": "../../configs/base.tsconfig",
   "compilerOptions": {
+    "composite": true,
     "rootDir": "src",
     "outDir": "lib",
     "lib": [
@@ -11,5 +12,6 @@
   },
   "include": [
     "src"
-  ]
+  ],
+  "references": []
 }

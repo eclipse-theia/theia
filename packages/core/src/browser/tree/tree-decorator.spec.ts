@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { TreeDecoratorService, AbstractTreeDecoratorService, TreeDecoration } from './tree-decorator';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 class MockTreeDecoratorService extends AbstractTreeDecoratorService {
 

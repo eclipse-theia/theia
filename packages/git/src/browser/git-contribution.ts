@@ -526,9 +526,11 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                 group: '2_other'
             })
         );
-        [GIT_COMMANDS.STASH, GIT_COMMANDS.APPLY_STASH,
-        GIT_COMMANDS.APPLY_LATEST_STASH, GIT_COMMANDS.POP_STASH,
-        GIT_COMMANDS.POP_LATEST_STASH, GIT_COMMANDS.DROP_STASH].forEach(command =>
+        [
+            GIT_COMMANDS.STASH, GIT_COMMANDS.APPLY_STASH,
+            GIT_COMMANDS.APPLY_LATEST_STASH, GIT_COMMANDS.POP_STASH,
+            GIT_COMMANDS.POP_LATEST_STASH, GIT_COMMANDS.DROP_STASH
+        ].forEach(command =>
             registerItem({
                 id: command.id,
                 command: command.id,
@@ -745,71 +747,63 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                 'dark': '#81b88b',
                 'hc': '#1b5225'
             }
-        },
-            {
-                'id': 'gitDecoration.modifiedResourceForeground',
-                'description': 'Color for modified resources.',
-                'defaults': {
-                    'light': '#895503',
-                    'dark': '#E2C08D',
-                    'hc': '#E2C08D'
-                }
-            },
-            {
-                'id': 'gitDecoration.deletedResourceForeground',
-                'description': 'Color for deleted resources.',
-                'defaults': {
-                    'light': '#ad0707',
-                    'dark': '#c74e39',
-                    'hc': '#c74e39'
-                }
-            },
-            {
-                'id': 'gitDecoration.untrackedResourceForeground',
-                'description': 'Color for untracked resources.',
-                'defaults': {
-                    'light': '#007100',
-                    'dark': '#73C991',
-                    'hc': '#73C991'
-                }
-            },
-            {
-                'id': 'gitDecoration.conflictingResourceForeground',
-                'description': 'Color for resources with conflicts.',
-                'defaults': {
-                    'light': '#6c6cc4',
-                    'dark': '#6c6cc4',
-                    'hc': '#6c6cc4'
-                }
-            },
-            {
-                'id': 'gitlens.gutterBackgroundColor',
-                'description': 'Specifies the background color of the gutter blame annotations',
-                'defaults': {
-                    'dark': '#FFFFFF13',
-                    'light': '#0000000C',
-                    'hc': '#FFFFFF13'
-                }
-            },
-            {
-                'id': 'gitlens.gutterForegroundColor',
-                'description': 'Specifies the foreground color of the gutter blame annotations',
-                'defaults': {
-                    'dark': '#BEBEBE',
-                    'light': '#747474',
-                    'hc': '#BEBEBE'
-                }
-            },
-            {
-                'id': 'gitlens.lineHighlightBackgroundColor',
-                'description': 'Specifies the background color of the associated line highlights in blame annotations',
-                'defaults': {
-                    'dark': '#00BCF233',
-                    'light': '#00BCF233',
-                    'hc': '#00BCF233'
-                }
+        }, {
+            'id': 'gitDecoration.modifiedResourceForeground',
+            'description': 'Color for modified resources.',
+            'defaults': {
+                'light': '#895503',
+                'dark': '#E2C08D',
+                'hc': '#E2C08D'
             }
-        );
+        }, {
+            'id': 'gitDecoration.deletedResourceForeground',
+            'description': 'Color for deleted resources.',
+            'defaults': {
+                'light': '#ad0707',
+                'dark': '#c74e39',
+                'hc': '#c74e39'
+            }
+        }, {
+            'id': 'gitDecoration.untrackedResourceForeground',
+            'description': 'Color for untracked resources.',
+            'defaults': {
+                'light': '#007100',
+                'dark': '#73C991',
+                'hc': '#73C991'
+            }
+        }, {
+            'id': 'gitDecoration.conflictingResourceForeground',
+            'description': 'Color for resources with conflicts.',
+            'defaults': {
+                'light': '#6c6cc4',
+                'dark': '#6c6cc4',
+                'hc': '#6c6cc4'
+            }
+        }, {
+            'id': 'gitlens.gutterBackgroundColor',
+            'description': 'Specifies the background color of the gutter blame annotations',
+            'defaults': {
+                'dark': '#FFFFFF13',
+                'light': '#0000000C',
+                'hc': '#FFFFFF13'
+            }
+        }, {
+            'id': 'gitlens.gutterForegroundColor',
+            'description': 'Specifies the foreground color of the gutter blame annotations',
+            'defaults': {
+                'dark': '#BEBEBE',
+                'light': '#747474',
+                'hc': '#BEBEBE'
+            }
+        }, {
+            'id': 'gitlens.lineHighlightBackgroundColor',
+            'description': 'Specifies the background color of the associated line highlights in blame annotations',
+            'defaults': {
+                'dark': '#00BCF233',
+                'light': '#00BCF233',
+                'hc': '#00BCF233'
+            }
+        });
     }
 }
 export interface GitOpenFileOptions {

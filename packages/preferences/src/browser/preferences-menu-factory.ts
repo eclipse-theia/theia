@@ -23,7 +23,7 @@ import { PreferenceDataProperty } from '@theia/core/lib/browser';
 @injectable()
 export class PreferencesMenuFactory {
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     createPreferenceContextMenu(id: string, savedPreference: any, property: PreferenceDataProperty, execute: (property: string, value: any) => void): Menu {
         const commands = new CommandRegistry();
         const menu = new Menu({ commands });

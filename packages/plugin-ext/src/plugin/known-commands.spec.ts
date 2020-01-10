@@ -34,7 +34,7 @@ describe('Known Command Conversions', () => {
         assert.ok(KnownCommands.mapped(commandID));
 
         // when
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         KnownCommands.map(commandID, [uri, position], (mappedID: string, mappedArgs: any[]) => {
 
             // then

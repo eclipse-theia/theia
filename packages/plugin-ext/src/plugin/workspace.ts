@@ -362,7 +362,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         this.workspaceDidRenameFileEmitter.fire(Object.freeze({ oldUri: URI.revive(event.oldUri), newUri: URI.revive(event.newUri) }));
     }
 
-    /* tslint:disable-next-line:no-any */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $onWillRename(event: FileWillMoveEvent): Promise<any> {
         return this.workspaceWillRenameFileEmitter.fire({
             oldUri: URI.revive(event.oldUri),

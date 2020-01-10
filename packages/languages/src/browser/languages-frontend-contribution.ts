@@ -60,26 +60,26 @@ export class LanguagesFrontendContribution implements FrontendApplicationContrib
                 id: `${contribution.id}.server.start`,
                 label: `${contribution.name}: Start Language Server`
             }, {
-                    execute: () => contribution.activate(this.app),
-                    isEnabled: () => !contribution.running,
-                    isVisible: () => !contribution.running,
-                });
+                execute: () => contribution.activate(this.app),
+                isEnabled: () => !contribution.running,
+                isVisible: () => !contribution.running,
+            });
             commands.registerCommand({
                 id: `${contribution.id}.server.stop`,
                 label: `${contribution.name}: Stop Language Server`
             }, {
-                    execute: () => contribution.deactivate(),
-                    isEnabled: () => contribution.running,
-                    isVisible: () => contribution.running,
-                });
+                execute: () => contribution.deactivate(),
+                isEnabled: () => contribution.running,
+                isVisible: () => contribution.running,
+            });
             commands.registerCommand({
                 id: `${contribution.id}.server.restart`,
                 label: `${contribution.name}: Restart Language Server`
             }, {
-                    execute: () => contribution.restart(),
-                    isEnabled: () => contribution.running,
-                    isVisible: () => contribution.running,
-                });
+                execute: () => contribution.restart(),
+                isEnabled: () => contribution.running,
+                isVisible: () => contribution.running,
+            });
         }
     }
 

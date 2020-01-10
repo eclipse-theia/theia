@@ -54,10 +54,10 @@ export class QuickOpenExtImpl implements QuickOpenExt {
     }
 
     showQuickPick(promiseOrItems: QuickPickItem[] | PromiseLike<QuickPickItem[]>, options?: QuickPickOptions, token?: CancellationToken): PromiseLike<QuickPickItem | undefined>;
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     showQuickPick(promiseOrItems: QuickPickItem[] | PromiseLike<QuickPickItem[]>, options?: QuickPickOptions & { canSelectMany: true; }, token?: CancellationToken): PromiseLike<QuickPickItem[] | undefined>;
     showQuickPick(promiseOrItems: string[] | PromiseLike<string[]>, options?: QuickPickOptions, token?: CancellationToken): PromiseLike<string | undefined>;
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     showQuickPick(promiseOrItems: Item[] | PromiseLike<Item[]>, options?: QuickPickOptions, token: CancellationToken = CancellationToken.None): PromiseLike<Item | Item[] | undefined> {
         this.selectItemHandler = undefined;
         const itemPromise = Promise.resolve(promiseOrItems);

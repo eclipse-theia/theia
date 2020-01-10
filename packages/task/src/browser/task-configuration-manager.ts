@@ -26,7 +26,7 @@ import { TaskConfigurationModel } from './task-configuration-model';
 import { TaskTemplateSelector } from './task-templates';
 import { TaskCustomization, TaskConfiguration } from '../common/task-protocol';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
-import { FileSystem, FileSystemError /*, FileStat */ } from '@theia/filesystem/lib/common';
+import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 

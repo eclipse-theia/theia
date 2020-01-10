@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable-next-line:no-implicit-dependencies
 import * as upath from 'upath';
 
 import * as path from 'path';
@@ -28,8 +27,7 @@ import { WorkingDirectoryStatus, Repository, GitUtils, GitFileStatus, GitFileCha
 import { initRepository, createTestRepository } from 'dugite-extra/lib/command/test-helper';
 import { createGit } from './test/binding-helper';
 
-// tslint:disable:no-unused-expression
-// tslint:disable:max-line-length
+/* eslint-disable max-len, no-unused-expressions */
 
 const track = temp.track();
 
@@ -697,14 +695,14 @@ describe('git', async function (): Promise<void> {
             await expectDiff('HEAD~4', 'HEAD', [
                 { pathSegment: 'folder/F1.txt', status: GitFileStatus.Deleted },
                 { pathSegment: 'folder/F2.txt', status: GitFileStatus.Modified },
-                { pathSegment: 'folder/F3 with space.txt', status: GitFileStatus.New }],
-                'folder');
+                { pathSegment: 'folder/F3 with space.txt', status: GitFileStatus.New },
+            ], 'folder');
 
             // Filter for a single file.
             await expectDiff('HEAD~4', 'HEAD~3', [], 'folder/F1.txt');
             await expectDiff('HEAD~4', 'HEAD', [
-                { pathSegment: 'folder/F1.txt', status: GitFileStatus.Deleted }],
-                'folder/F1.txt');
+                { pathSegment: 'folder/F1.txt', status: GitFileStatus.Deleted },
+            ], 'folder/F1.txt');
 
             // Filter for a non-existing file.
             await expectDiff('HEAD~4', 'HEAD~3', [], 'does not exist');

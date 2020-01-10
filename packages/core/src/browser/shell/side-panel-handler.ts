@@ -232,6 +232,7 @@ export class SidePanelHandler {
             rank: SidePanelHandler.rankProperty.get(title.owner),
             expanded: title === currentTitle
         }));
+        // eslint-disable-next-line no-null/no-null
         const size = currentTitle !== null ? this.getPanelSize() : this.state.lastPanelSize;
         return { type: 'sidepanel', items, size };
     }
@@ -240,7 +241,7 @@ export class SidePanelHandler {
      * Apply a side panel layout that has been previously created with `getLayoutData`.
      */
     setLayoutData(layoutData: SidePanel.LayoutData): void {
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         this.tabBar.currentTitle = null;
 
         let currentTitle: Title<Widget> | undefined;
@@ -341,7 +342,7 @@ export class SidePanelHandler {
      */
     collapse(): void {
         if (this.tabBar.currentTitle) {
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             this.tabBar.currentTitle = null;
         } else {
             this.refresh();
@@ -364,7 +365,7 @@ export class SidePanelHandler {
     protected updateToolbarTitle = (): void => {
         const currentTitle = this.tabBar && this.tabBar.currentTitle;
         this.toolBar.toolbarTitle = currentTitle || undefined;
-    }
+    };
 
     /**
      * Refresh the visibility of the side bar and dock panel.
@@ -376,6 +377,7 @@ export class SidePanelHandler {
         const dockPanel = this.dockPanel;
         const isEmpty = tabBar.titles.length === 0;
         const currentTitle = tabBar.currentTitle;
+        // eslint-disable-next-line no-null/no-null
         const hideDockPanel = currentTitle === null;
         let relativeSizes: number[] | undefined;
 
@@ -523,14 +525,14 @@ export class SidePanelHandler {
         sender.releaseMouse();
 
         // Clone the selected tab and use that as drag image
-        // tslint:disable:no-null-keyword
+        /* eslint-disable no-null/no-null */
         const clonedTab = tab.cloneNode(true) as HTMLElement;
         clonedTab.style.width = null;
         clonedTab.style.height = null;
         const label = clonedTab.getElementsByClassName('p-TabBar-tabLabel')[0] as HTMLElement;
         label.style.width = null;
         label.style.height = null;
-        // tslint:enable:no-null-keyword
+        /* eslint-enable no-null/no-null */
 
         // Create and start a drag to move the selected tab to another panel
         const mimeData = new MimeData();

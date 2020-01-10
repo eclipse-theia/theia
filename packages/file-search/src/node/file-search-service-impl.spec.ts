@@ -26,7 +26,7 @@ import processBackendModule from '@theia/process/lib/node/process-backend-module
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService } from '../common/file-search-service';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 const testContainer = new Container();
 

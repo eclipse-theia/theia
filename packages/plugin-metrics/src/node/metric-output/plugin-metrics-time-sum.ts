@@ -20,8 +20,7 @@ import { injectable } from 'inversify';
 @injectable()
 export class PluginMetricTimeSum implements MetricOutput {
 
-    public header =
-        '# HELP language_server_time_sum Sum of time in milliseconds that language server requests take\n# TYPE language_server_time_sum gauge\n';
+    public header = '# HELP language_server_time_sum Sum of time in milliseconds that language server requests take\n# TYPE language_server_time_sum gauge\n';
 
     createMetricOutput(id: string, method: string, requestAnalytics: AnalyticsFromRequests): string {
         const successTime = requestAnalytics.sumOfTimeForSuccess;

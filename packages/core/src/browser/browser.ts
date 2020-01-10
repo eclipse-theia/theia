@@ -30,9 +30,9 @@ export const isWebKit = (userAgent.indexOf('AppleWebKit') >= 0);
 export const isChrome = (userAgent.indexOf('Chrome') >= 0);
 export const isSafari = (userAgent.indexOf('Chrome') === -1) && (userAgent.indexOf('Safari') >= 0);
 export const isIPad = (userAgent.indexOf('iPad') >= 0);
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isNative = typeof (window as any).process !== 'undefined';
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const isBasicWasmSupported = typeof (window as any).WebAssembly !== 'undefined';
 
 /**
@@ -88,6 +88,7 @@ interface ElementScroll {
 function getMonacoEditorScroll(elem: HTMLElement): ElementScroll | undefined {
     const linesContent = elem.querySelector('.lines-content') as HTMLElement;
     const viewLines = elem.querySelector('.view-lines') as HTMLElement;
+    // eslint-disable-next-line no-null/no-null
     if (linesContent === null || viewLines === null) {
         return undefined;
     }

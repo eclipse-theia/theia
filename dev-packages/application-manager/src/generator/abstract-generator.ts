@@ -80,7 +80,7 @@ export abstract class AbstractGenerator {
     }
 
     protected prettyStringify(object: object): string {
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         return JSON.stringify(object, null, 4);
     }
 

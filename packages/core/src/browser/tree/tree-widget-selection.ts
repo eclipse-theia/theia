@@ -28,7 +28,7 @@ export namespace TreeWidgetSelection {
         return is(selection) ? selection.source : undefined;
     }
     export function is(selection: Object | undefined): selection is TreeWidgetSelection {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return Array.isArray(selection) && ('source' in selection) && <any>selection['source'] instanceof TreeWidget;
     }
     export function create(source: TreeWidget): TreeWidgetSelection {

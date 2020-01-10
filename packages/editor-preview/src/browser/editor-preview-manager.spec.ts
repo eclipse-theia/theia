@@ -16,7 +16,7 @@
 
 // This file is strictly for testing; disable no-any so we can mock out objects not under test
 // disable no-unused-expression for chai.
-// tslint:disable:no-any no-unused-expression
+/* eslint-disable no-unused-expressions, @typescript-eslint/no-explicit-any */
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJsDom = enableJSDOM();

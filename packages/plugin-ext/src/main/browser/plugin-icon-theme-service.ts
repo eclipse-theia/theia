@@ -410,7 +410,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         }
         const folderNames = associations.folderNames;
         if (folderNames) {
-            // tslint:disable-next-line:forin
+            // eslint-disable-next-line guard-for-in
             for (const folderName in folderNames) {
                 accept(folderNames[folderName]!, this.folderNameIcon(folderName), this.folderIcon);
                 this.hasFolderIcons = true;
@@ -418,7 +418,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         }
         const folderNamesExpanded = associations.folderNamesExpanded;
         if (folderNamesExpanded) {
-            // tslint:disable-next-line:forin
+            // eslint-disable-next-line guard-for-in
             for (const folderName in folderNamesExpanded) {
                 accept(folderNamesExpanded[folderName]!, this.expandedFolderNameIcon(folderName), this.folderExpandedIcon);
                 this.hasFolderIcons = true;
@@ -429,7 +429,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             if (!languageIds.jsonc && languageIds.json) {
                 languageIds.jsonc = languageIds.json;
             }
-            // tslint:disable-next-line:forin
+            // eslint-disable-next-line guard-for-in
             for (const languageId in languageIds) {
                 accept(languageIds[languageId]!, this.languageIcon(languageId), this.fileIcon);
                 this.hasFileIcons = true;
@@ -437,7 +437,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         }
         const fileExtensions = associations.fileExtensions;
         if (fileExtensions) {
-            // tslint:disable-next-line:forin
+            // eslint-disable-next-line guard-for-in
             for (const fileExtension in fileExtensions) {
                 accept(fileExtensions[fileExtension]!, ...this.fileExtensionIcon(fileExtension), this.fileIcon);
                 this.hasFileIcons = true;
@@ -445,7 +445,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         }
         const fileNames = associations.fileNames;
         if (fileNames) {
-            // tslint:disable-next-line:forin
+            // eslint-disable-next-line guard-for-in
             for (const fileName in fileNames) {
                 accept(fileNames[fileName]!, ...this.fileNameIcon(fileName), this.fileIcon);
                 this.hasFileIcons = true;

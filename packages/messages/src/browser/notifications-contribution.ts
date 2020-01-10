@@ -139,6 +139,7 @@ export class NotificationsContribution implements FrontendApplicationContributio
                     dark: 'notificationCenterHeader.background',
                     light: 'notificationCenterHeader.background',
                     hc: 'notificationCenterHeader.background'
+                    // eslint-disable-next-line max-len
                 }, description: 'Notifications border color separating from other notifications in the notifications center. Notifications slide in from the bottom right of the window.'
             },
             {

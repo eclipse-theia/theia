@@ -23,7 +23,7 @@ import { ChildProcess, spawn, fork } from 'child_process';
  * Starts debug adapter process.
  */
 export function startDebugAdapter(executable: theia.DebugAdapterExecutable): CommunicationProvider {
-    // tslint:disable-next-line: no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const options: any = { stdio: ['pipe', 'pipe', 2] };
 
     if (executable.options) {

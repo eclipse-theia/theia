@@ -43,7 +43,7 @@ import { WebviewsExtImpl } from './webviews';
 
 export interface PluginHost {
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     loadPlugin(plugin: Plugin): any;
 
     init(data: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> | [Plugin[], Plugin[]];
@@ -268,7 +268,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         }
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private async startPlugin(plugin: Plugin, configStorage: ConfigStorage, pluginMain: any): Promise<boolean> {
         const subscriptions: theia.Disposable[] = [];
         const asAbsolutePath = (relativePath: string): string => join(plugin.pluginFolder, relativePath);
@@ -368,6 +368,5 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
 // for electron
 function getGlobal(): Window | NodeJS.Global | null {
-    // tslint:disable-next-line:no-null-keyword
     return typeof self === 'undefined' ? typeof global === 'undefined' ? null : global : self;
 }

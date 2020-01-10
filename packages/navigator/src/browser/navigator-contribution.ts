@@ -427,7 +427,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         item.command = id;
         this.tabbarToolbarRegistry.registerItem(item);
-    }
+    };
 
     /**
      * Reveals and selects node in the file navigator to which given widget is related.

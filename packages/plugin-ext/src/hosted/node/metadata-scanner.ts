@@ -21,7 +21,7 @@ import { PluginPackage, PluginScanner, PluginMetadata } from '../../common/plugi
 export class MetadataScanner {
     private scanners: Map<string, PluginScanner> = new Map();
 
-    constructor(
+    constructor( // eslint-disable-next-line @typescript-eslint/indent
         @multiInject(PluginScanner) scanners: PluginScanner[]
     ) {
         scanners.forEach((scanner: PluginScanner) => {

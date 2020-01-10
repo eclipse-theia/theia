@@ -41,7 +41,7 @@ export interface ViewContributionOptions {
     toggleKeybinding?: string;
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function bindViewContribution<T extends AbstractViewContribution<any>>(bind: interfaces.Bind, identifier: interfaces.Newable<T>): interfaces.BindingWhenOnSyntax<T> {
     const syntax = bind<T>(identifier).toSelf().inSingletonScope();
     bind(CommandContribution).toService(identifier);

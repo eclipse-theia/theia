@@ -140,7 +140,7 @@ export class TextEditorDecorationType implements theia.TextEditorDecorationType 
     constructor(proxy: TextEditorsMain, options: theia.DecorationRenderOptions) {
         this.key = TextEditorDecorationType.Keys.nextId();
         this.proxy = proxy;
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.proxy.$registerTextEditorDecorationType(this.key, Converters.DecorationRenderOptions.from(options));
     }
 

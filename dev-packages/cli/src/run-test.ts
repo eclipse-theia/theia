@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as net from 'net';
 import * as puppeteer from 'puppeteer';
@@ -110,7 +110,7 @@ export default async function runTest(options: TestOptions): Promise<void> {
                 reporter: 'spec',
                 ui: 'bdd',
                 useColors: true
-            });
+            } as MochaSetupOptions);
         });
         const files = collectFiles(fileOptions);
         for (const file of files) {

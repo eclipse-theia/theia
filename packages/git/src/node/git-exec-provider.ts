@@ -27,7 +27,7 @@ import { IGitExecutionOptions } from 'dugite-extra/lib/core/git';
  * @injectable()
  * export class GitSshExecProvider extends GitExecProvider {
  *
- *     // tslint:disable-next-line:no-any
+ *     // eslint-disable-next-line @typescript-eslint/no-explicit-any
  *     protected deferred = new Deferred<any>();
  *
  *     @postConstruct()
@@ -55,11 +55,11 @@ import { IGitExecutionOptions } from 'dugite-extra/lib/core/git';
  *
  *             const command = `${gitPath} ${args.join(' ')}`;
  *             const { stdout, stderr, code } = await connection.execCommand(command, options);
- *             // tslint:disable-next-line:no-null-keyword
+ *             // eslint-disable-next-line no-null/no-null
  *             let error: Error | null = null;
  *             if (code) {
  *                 error = new Error(stderr || `Unknown error when executing the Git command. ${args}.`);
- *                 // tslint:disable-next-line:no-any
+ *                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
  *                 (error as any).code = code;
  *             }
  *             callback(error, stdout, stderr);

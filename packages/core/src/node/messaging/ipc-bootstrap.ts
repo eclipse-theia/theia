@@ -26,7 +26,7 @@ const writer = new IPCMessageWriter(process);
 const logger = new ConsoleLogger();
 const connection = createMessageConnection(reader, writer, logger);
 connection.trace(Trace.Off, {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     log: (message: any, data?: string) => console.log(message, data)
 });
 

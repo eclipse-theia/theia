@@ -180,7 +180,7 @@ export class QuickTitleBar {
         return rightButtonDiv;
     }
 
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     public attachTitleBar(widgetNode: HTMLElement, title: string | undefined, step: number | undefined, totalSteps: number | undefined, buttons: ReadonlyArray<QuickTitleButton> | undefined): void {
         const div = this.createTitleBarDiv();
 

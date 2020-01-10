@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import {
     TreeDataProvider, TreeView, TreeViewExpansionEvent, TreeItem2, TreeItemLabel,
@@ -69,30 +69,26 @@ export class TreeViewsExtImpl implements TreeViewsExt {
         this.treeViews.set(treeViewId, treeView);
 
         return {
-            // tslint:disable-next-line:typedef
+            // tslint:disable:typedef
             get onDidExpandElement() {
                 return treeView.onDidExpandElement;
             },
-            // tslint:disable-next-line:typedef
             get onDidCollapseElement() {
                 return treeView.onDidCollapseElement;
             },
-            // tslint:disable-next-line:typedef
             get selection() {
                 return treeView.selectedElements;
             },
-            // tslint:disable-next-line:typedef
             get onDidChangeSelection() {
                 return treeView.onDidChangeSelection;
             },
-            // tslint:disable-next-line:typedef
             get visible() {
                 return treeView.visible;
             },
-            // tslint:disable-next-line:typedef
             get onDidChangeVisibility() {
                 return treeView.onDidChangeVisibility;
             },
+            // tslint:enable:typedef
             reveal: (element: T, selectionOptions: { select?: boolean }): Thenable<void> =>
                 treeView.reveal(element, selectionOptions),
 

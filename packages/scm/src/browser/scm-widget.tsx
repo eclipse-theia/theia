@@ -14,8 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
-// tslint:disable:no-null-keyword
+/* eslint-disable no-null/no-null, @typescript-eslint/no-explicit-any */
 
 import * as React from 'react';
 import TextareaAutosize from 'react-autosize-textarea';
@@ -145,7 +144,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         if (container) {
             this.addScmListNavigationKeyListeners(container);
         }
-    }
+    };
 
     protected render(): React.ReactNode {
         const repository = this.scmService.selectedRepository;
@@ -237,7 +236,7 @@ export class ScmWidget extends ReactWidget implements StatefulWidget {
         if (repository) {
             repository.input.value = typeof event === 'string' ? event : event.currentTarget.value;
         }
-    }
+    };
 
     protected acceptInput = () => this.commands.executeCommand('scm.acceptInput');
 
@@ -423,7 +422,7 @@ export abstract class ScmElement<P extends ScmElement.Props = ScmElement.Props> 
                 this.setState({ hover });
             });
         }
-    }
+    };
     protected showHover = () => this.setState({ hover: true });
     protected hideHover = () => this.setState({ hover: false });
 
@@ -441,7 +440,7 @@ export abstract class ScmElement<P extends ScmElement.Props = ScmElement.Props> 
         } finally {
             contextKeys.scmResourceGroup.set(currentScmResourceGroup);
         }
-    }
+    };
 
     protected abstract get contextMenuPath(): MenuPath;
     protected abstract get contextMenuArgs(): any[];
@@ -519,7 +518,7 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
         if (isSingle) {
             this.open();
         }
-    }
+    };
 
     /**
      * Handle the double clicking of nodes present in the widget.
@@ -531,7 +530,7 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
         if (isDouble) {
             this.open();
         }
-    }
+    };
 }
 export namespace ScmResourceComponent {
     export interface Props extends ScmElement.Props {
@@ -557,7 +556,7 @@ export class ScmResourceGroupsContainer extends React.Component<ScmResourceGroup
         if (!selectedResource && this.props.repository.resources.length) {
             this.props.repository.selectedResource = this.props.repository.resources[0];
         }
-    }
+    };
 
     protected renderGroup(group: ScmResourceGroup): React.ReactNode {
         const visible = !!group.resources.length || !group.hideWhenEmpty;
@@ -681,7 +680,7 @@ export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
 
         const { commands, node, args } = this.props;
         commands.executeCommand(node.action.commandId, ...args);
-    }
+    };
 }
 export namespace ScmInlineAction {
     export interface Props {

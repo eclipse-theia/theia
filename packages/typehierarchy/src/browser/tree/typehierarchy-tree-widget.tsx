@@ -29,7 +29,7 @@ import { TypeHierarchyTree } from './typehierarchy-tree';
 @injectable()
 export class TypeHierarchyTreeWidget extends TreeWidget {
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readonly icons = new Map(Array.from(Object.keys(SymbolKind)).map(key => [(SymbolKind as any)[key], key.toLocaleLowerCase()] as [number, string]));
 
     constructor(

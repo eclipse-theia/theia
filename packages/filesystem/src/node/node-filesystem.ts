@@ -299,7 +299,7 @@ export class FileSystemNode implements FileSystem {
             return this.createFile(uri);
         } else {
             return new Promise<FileStat>((resolve, reject) => {
-                // tslint:disable-next-line:no-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 touch(FileUri.fsPath(_uri), async (error: any) => {
                     if (error) {
                         reject(error);
@@ -545,7 +545,7 @@ export class FileSystemNode implements FileSystem {
 
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isErrnoException(error: any | NodeJS.ErrnoException): error is NodeJS.ErrnoException {
     return (<NodeJS.ErrnoException>error).code !== undefined && (<NodeJS.ErrnoException>error).errno !== undefined;
 }

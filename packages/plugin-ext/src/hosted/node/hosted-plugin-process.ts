@@ -71,12 +71,12 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public acceptMessage(jsonMessage: any): boolean {
         return jsonMessage.type !== undefined && jsonMessage.id;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public onMessage(jsonMessage: any): void {
         if (this.childProcess) {
             this.childProcess.send(JSON.stringify(jsonMessage));
@@ -89,7 +89,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
 
         this.terminatingPluginServer = true;
-        // tslint:disable-next-line:no-shadowed-variable
+        // eslint-disable-next-line no-shadow
         const cp = this.childProcess;
         this.childProcess = undefined;
 

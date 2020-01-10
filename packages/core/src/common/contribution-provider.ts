@@ -39,6 +39,7 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
         if (this.services === undefined) {
             const currentServices: T[] = [];
             let currentContainer: interfaces.Container | null = this.container;
+            // eslint-disable-next-line no-null/no-null
             while (currentContainer !== null) {
                 if (currentContainer.isBound(this.serviceIdentifier)) {
                     try {
@@ -47,7 +48,7 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
                         console.error(error);
                     }
                 }
-                // tslint:disable-next-line:no-null-keyword
+                // eslint-disable-next-line no-null/no-null
                 currentContainer = recursive === true ? currentContainer.parent : null;
             }
             this.services = currentServices;

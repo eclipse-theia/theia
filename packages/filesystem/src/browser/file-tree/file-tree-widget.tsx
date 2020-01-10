@@ -67,7 +67,7 @@ export class FileTreeWidget extends TreeWidget {
         if (icon) {
             return <div className={icon + ' file-icon'}></div>;
         }
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         return null;
     }
 
@@ -221,7 +221,7 @@ export class FileTreeWidget extends TreeWidget {
 
     protected renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
         if (this.hidesExplorerArrows) {
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             return null;
         }
         return super.renderExpansionToggle(node, props);

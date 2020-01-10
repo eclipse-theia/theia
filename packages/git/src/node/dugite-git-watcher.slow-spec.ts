@@ -27,7 +27,7 @@ import { DugiteGitWatcherServer } from './dugite-git-watcher';
 import { bindGit, bindRepositoryWatcher } from './git-backend-module';
 import { GitWatcherServer, GitStatusChangeEvent } from '../common/git-watcher';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 const track = temp.track();
 

@@ -20,7 +20,7 @@ import { FolderPreferenceProvider } from '@theia/preferences/lib/browser/folder-
 @injectable()
 export class LaunchFolderPreferenceProvider extends FolderPreferenceProvider {
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected parse(content: string): any {
         const launch = super.parse(content);
         if (launch === undefined) {

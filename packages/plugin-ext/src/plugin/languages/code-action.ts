@@ -79,10 +79,10 @@ export class CodeActionAdapter {
             } else {
                 if (codeActionContext.only) {
                     if (!candidate.kind) {
-                        /* tslint:disable-next-line:max-line-length */
+                        /* eslint-disable-next-line max-len */
                         console.warn(`${this.pluginId} - Code actions of kind '${codeActionContext.only.value}' requested but returned code action does not have a 'kind'. Code action will be dropped. Please set 'CodeAction.kind'.`);
                     } else if (!codeActionContext.only.contains(candidate.kind)) {
-                        /* tslint:disable-next-line:max-line-length */
+                        /* eslint-disable-next-line max-len */
                         console.warn(`${this.pluginId} - Code actions of kind '${codeActionContext.only.value}' requested but returned code action is of kind '${candidate.kind.value}'. Code action will be dropped. Please check 'CodeActionContext.only' to only return requested code action.`);
                     }
                 }
@@ -100,12 +100,12 @@ export class CodeActionAdapter {
         return result;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private static _isCommand(smth: any): smth is theia.Command {
         return typeof (<theia.Command>smth).command === 'string' || typeof (<theia.Command>smth).id === 'string';
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private static _isSelection(obj: any): obj is Selection {
         return (
             obj

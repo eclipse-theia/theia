@@ -28,7 +28,7 @@ export namespace KnownCommands {
      * Commands that you want to apply custom conversions to rather than pass through the automatic args converter.
      * Would be useful in the case where theia provides some command and you need to provide custom conversions
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const mappings: { [id: string]: [string, (args: any[] | undefined) => any[] | undefined] } = {};
     mappings['editor.action.showReferences'] = ['textEditor.commands.showReferences', createConversionFunction(
         (uri: URI) => uri.toString(),
@@ -41,14 +41,14 @@ export namespace KnownCommands {
      * incoming arguments from vscode api types to monaco types
      */
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const MONACO_CONVERSION_IDENTITY = (args: any[] | undefined) => {
         if (!args) {
             return args;
         }
         const argStack: ConversionFunction[] = [];
         args.forEach(_ => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             argStack.push((arg: any) => monacoArgsConverter(arg));
         });
         if (args) {
@@ -251,7 +251,7 @@ export namespace KnownCommands {
     mappings['goToNextReference'] = ['goToNextReference', MONACO_CONVERSION_IDENTITY];
     mappings['goToPreviousReference'] = ['goToPreviousReference', MONACO_CONVERSION_IDENTITY];
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function map<T>(id: string, args: any[] | undefined, toDo: (mappedId: string, mappedArgs: any[] | undefined) => T): T {
         if (mappings[id]) {
             return toDo(mappings[id][0], mappings[id][1](args));
@@ -264,16 +264,16 @@ export namespace KnownCommands {
         return !!mappings[id];
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     type ConversionFunction = ((parameter: any) => any) | undefined;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function createConversionFunction(...conversions: ConversionFunction[]): (args: any[] | undefined) => any[] | undefined {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return function (args: any[] | undefined): any[] | undefined {
             if (!args) {
                 return args;
             }
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return args.map(function (arg: any, index: number): any {
                 if (index < conversions.length) {
                     const conversion = conversions[index];
@@ -298,7 +298,7 @@ export namespace KnownCommands {
         return L.create(l.uri.toString(), fromRangeToR(l.range));
     }
 
-    // tslint:disable-next-line:no-any typedef
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/tslint/config
     function monacoArgsConverter(args: any[]) {
         // tslint:disable-next-line:typedef
         return cloneAndChange(args, function (value) {

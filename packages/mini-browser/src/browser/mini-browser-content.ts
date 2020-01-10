@@ -193,7 +193,7 @@ export class MiniBrowserContent extends BaseWidget {
     protected readonly loadIndicator: HTMLElement;
     protected readonly errorBar: HTMLElement & Readonly<{ message: HTMLElement }>;
     protected readonly frame: HTMLIFrameElement;
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     // XXX This is a hack to be able to tack the mouse events when drag and dropping the widgets. On `mousedown` we put a transparent div over the `iframe` to avoid losing the mouse tacking.
     protected readonly transparentOverlay: HTMLElement;
     // XXX It is a hack. Instead of loading the PDF in an iframe we use `PDFObject` to render it in a div.
@@ -290,7 +290,7 @@ export class MiniBrowserContent extends BaseWidget {
         return !this.props.startPage ? 'show' : this.props.toolbar || 'show';
     }
 
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     protected createContentArea(parent: HTMLElement): HTMLElement & Readonly<{ frame: HTMLIFrameElement, loadIndicator: HTMLElement, errorBar: HTMLElement & Readonly<{ message: HTMLElement }>, pdfContainer: HTMLElement, transparentOverlay: HTMLElement }> {
         const contentArea = document.createElement('div');
         contentArea.classList.add(MiniBrowserContentStyle.CONTENT_AREA);
@@ -506,7 +506,7 @@ export class MiniBrowserContent extends BaseWidget {
         return button;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected onClick(element: HTMLElement, emitter: Emitter<any>): HTMLElement {
         this.toDispose.push(addEventListener(element, 'click', () => {
             if (!element.classList.contains(MiniBrowserContentStyle.DISABLED)) {
@@ -545,6 +545,7 @@ export class MiniBrowserContent extends BaseWidget {
     protected contentDocument(): Document | null {
         try {
             let { contentDocument } = this.frame;
+            // eslint-disable-next-line no-null/no-null
             if (contentDocument === null) {
                 const { contentWindow } = this.frame;
                 if (contentWindow) {
@@ -553,7 +554,7 @@ export class MiniBrowserContent extends BaseWidget {
             }
             return contentDocument;
         } catch {
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             return null;
         }
     }
@@ -586,7 +587,7 @@ export class MiniBrowserContent extends BaseWidget {
                     this.pdfContainer.style.display = 'block';
                     this.frame.style.display = 'none';
                     PDFObject.embed(url, this.pdfContainer, {
-                        // tslint:disable-next-line:max-line-length quotemark
+                        // eslint-disable-next-line max-len, @typescript-eslint/quotes
                         fallbackLink: `<p style="padding: 0px 15px 0px 15px">Your browser does not support inline PDFs. Click on this <a href='[url]' target="_blank">link</a> to open the PDF in a new tab.</p>`
                     });
                     clearTimeout(this.frameLoadTimeout);

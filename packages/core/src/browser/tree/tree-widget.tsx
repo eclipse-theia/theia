@@ -439,7 +439,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 handleScroll={this.handleScroll}
             />;
         }
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         return null;
     }
 
@@ -467,7 +467,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      */
     protected readonly handleScroll = (info: ScrollParams) => {
         this.node.scrollTop = info.scrollTop;
-    }
+    };
 
     /**
      * Render the node row.
@@ -486,7 +486,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param props the node properties.
      */
     protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         return null;
     }
 
@@ -514,7 +514,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      */
     protected renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
         if (!this.isExpandable(node)) {
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             return null;
         }
         const classes = [TREE_NODE_SEGMENT_CLASS, EXPANSION_TOGGLE_CLASS];
@@ -601,12 +601,14 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param attrs the additional attributes.
      */
     protected decorateCaption(node: TreeNode, attrs: React.HTMLAttributes<HTMLElement>): React.Attributes & React.HTMLAttributes<HTMLElement> {
-        const style = this.getDecorationData(node, 'fontData').filter(notEmpty).reverse().map(fontData => this.applyFontStyles({}, fontData)).reduce((acc, current) =>
-            ({
+        const style = this.getDecorationData(node, 'fontData')
+            .filter(notEmpty)
+            .reverse()
+            .map(fontData => this.applyFontStyles({}, fontData))
+            .reduce((acc, current) => ({
                 ...acc,
                 ...current
-            })
-            , {});
+            }), {});
         return {
             ...attrs,
             style
@@ -708,8 +710,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param icon the icon.
      */
     protected decorateIcon(node: TreeNode, icon: React.ReactNode | null): React.ReactNode {
+        // eslint-disable-next-line no-null/no-null
         if (icon === null) {
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             return null;
         }
 
@@ -975,7 +978,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         this.addKeyListener(this.node, up, event => this.handleUp(event));
         this.addKeyListener(this.node, down, event => this.handleDown(event));
         this.addKeyListener(this.node, Key.ENTER, event => this.handleEnter(event));
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
             if (this.view && this.view.list && this.view.list.Grid) {
                 const { scrollTop } = e.target;
@@ -1123,7 +1126,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * Convert the tree node to context menu arguments.
      * @param node the selectable tree node.
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected toContextMenuArgs(node: SelectableTreeNode): any[] | undefined {
         return undefined;
     }
@@ -1158,7 +1161,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param node the tree node.
      */
     protected deflateForStorage(node: TreeNode): object {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const copy = Object.assign({}, node) as any;
         if (copy.parent) {
             delete copy.parent;
@@ -1183,7 +1186,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param node the tree node.
      * @param parent the optional tree node.
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected inflateFromStorage(node: any, parent?: TreeNode): TreeNode {
         if (node.selected) {
             node.selected = false;
@@ -1223,7 +1226,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param oldState the old state object.
      */
     restoreState(oldState: object): void {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { root, decorations, model } = (oldState as any);
         if (root) {
             this.model.root = this.inflateFromStorage(root);
@@ -1332,6 +1335,6 @@ export namespace TreeWidget {
                 rowIndex={index}>
                 <div key={key} style={style}>{this.props.renderNodeRow(row)}</div>
             </CellMeasurer>;
-        }
+        };
     }
 }

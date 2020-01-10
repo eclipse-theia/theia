@@ -18,8 +18,7 @@
 // Licensed under EPL-1.0 license
 // some preferences copied from https://github.com/redhat-developer/vscode-java/blob/68d4bede335b194e8d8f44add1d868e3250cda22/package.json#L56-L264
 
-// tslint:disable:max-line-length
-// tslint:disable:no-null-keyword
+/* eslint-disable max-len, no-null/no-null */
 
 import { interfaces } from 'inversify';
 import {
@@ -29,7 +28,6 @@ import {
     PreferenceContribution,
     PreferenceSchema,
     PreferenceChangeEvent
-    // tslint:disable-next-line:no-implicit-dependencies
 } from '@theia/core/lib/browser/preferences';
 
 export const javaDebugPreferenceSchema: PreferenceSchema = {

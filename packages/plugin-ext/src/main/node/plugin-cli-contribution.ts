@@ -28,7 +28,7 @@ export class PluginCliContribution implements CliContribution {
 
     configure(conf: Argv): void {
         conf.option(PluginCliContribution.PLUGINS, {
-            // tslint:disable-next-line:max-line-length
+            // eslint-disable-next-line max-len
             description: `Provides further refinement for the plugins. Example: --${PluginCliContribution.PLUGINS}=${LocalDirectoryPluginDeployerResolver.LOCAL_DIR}:path/to/your/plugins`,
             type: 'string',
             nargs: 1

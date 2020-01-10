@@ -32,14 +32,14 @@ export class BackendApplicationConfigProvider {
         if (BackendApplicationConfigProvider.doGet() !== undefined) {
             throw new Error('The configuration is already set.');
         }
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalObject = global as any;
         const key = BackendApplicationConfigProvider.KEY;
         globalObject[key] = config;
     }
 
     private static doGet(): BackendApplicationConfig | undefined {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalObject = global as any;
         const key = BackendApplicationConfigProvider.KEY;
         return globalObject[key];

@@ -21,7 +21,7 @@ import { MockTreeModel } from './test/mock-tree-model';
 import { expect } from 'chai';
 import { createTreeTestContainer } from './test/tree-test-container';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 describe('Tree', () => {
 
     it('addChildren', () => {
@@ -221,7 +221,7 @@ describe('Tree', () => {
     }
 
     function assertTreeNode(expectation: string, node: TreeNode): void {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         assert.deepStrictEqual(expectation, JSON.stringify(node, (key: keyof CompositeTreeNode, value: any) => {
             if (key === 'parent' || key === 'previousSibling' || key === 'nextSibling') {
                 return value && value.id;

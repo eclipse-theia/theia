@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // some code copied and modified from https://github.com/microsoft/vscode/blob/da5fb7d5b865aa522abc7e82c10b746834b98639/src/vs/workbench/api/node/extHostExtensionService.ts
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import debounce = require('lodash.debounce');
 import { UUID } from '@phosphor/coreutils';
@@ -638,10 +638,12 @@ export class HostedPluginSupport {
         await this.activateByEvent(`onWebviewPanel:${webview.viewType}`);
         const restore = this.webviewRevivers.get(webview.viewType);
         if (!restore) {
+            /* eslint-disable max-len */
             webview.setHTML(this.getDeserializationFailedContents(`
             <p>The extension providing '${webview.viewType}' view is not capable of restoring it.</p>
             <p>Want to help fix this? Please inform the extension developer to register a <a href="https://code.visualstudio.com/api/extension-guides/webview#serialization">reviver</a>.</p>
             `));
+            /* eslint-enable max-len */
             return;
         }
         try {

@@ -19,7 +19,7 @@ import { PROMETHEUS_REGEXP, toPrometheusValidName } from './prometheus';
 
 const expect = chai.expect;
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 describe('Prometheus helper module', () => {
     /* According to https://prometheus.io/docs/concepts/data_model/ */

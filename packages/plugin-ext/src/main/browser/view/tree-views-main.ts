@@ -96,7 +96,7 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         }
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async $reveal(treeViewId: string, treeItemId: string): Promise<any> {
         const viewPanel = await this.viewRegistry.openView(treeViewId);
         const widget = viewPanel && viewPanel.widgets[0];

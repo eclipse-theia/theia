@@ -45,7 +45,7 @@ export namespace MockTreeModel {
                 return node;
             } else {
                 node.children = children;
-                // tslint:disable-next-line:no-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 (node as any).expanded = expanded;
                 return node as CompositeTreeNode & SelectableTreeNode & ExpandableTreeNode;
             }

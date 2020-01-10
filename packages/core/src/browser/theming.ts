@@ -46,7 +46,7 @@ export class ThemeService {
     readonly onThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
 
     static get(): ThemeService {
-        const global = window as any; // tslint:disable-line
+        const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
         return global[ThemeServiceSymbol] || new ThemeService();
     }
 
@@ -54,7 +54,7 @@ export class ThemeService {
         protected _defaultTheme: string | undefined = FrontendApplicationConfigProvider.get().defaultTheme,
         protected fallbackTheme: string = 'dark'
     ) {
-        const global = window as any; // tslint:disable-line
+        const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
         global[ThemeServiceSymbol] = this;
     }
 

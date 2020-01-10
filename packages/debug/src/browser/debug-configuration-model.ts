@@ -64,7 +64,7 @@ export class DebugConfigurationModel implements Disposable {
     }
     protected parseConfigurations(): DebugConfigurationModel.JsonContent {
         const configurations: DebugConfiguration[] = [];
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { configUri, value } = this.preferences.resolve<any>('launch', undefined, this.workspaceFolderUri);
         if (value && typeof value === 'object' && 'configurations' in value) {
             if (Array.isArray(value.configurations)) {

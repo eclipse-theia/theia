@@ -58,7 +58,7 @@ export class CallHierarchyContext implements Disposable {
         const { line, character } = location.range.start;
 
         // Definition can be null
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         let locations: Location | Location[] | LocationLink[] | null = null;
         try {
             locations = await this.languageClient.sendRequest(DefinitionRequest.type, <TextDocumentPositionParams>{

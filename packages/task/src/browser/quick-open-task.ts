@@ -23,7 +23,9 @@ import { QuickOpenHandler, QuickOpenService, QuickOpenOptions, QuickOpenBaseActi
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { FileSystem } from '@theia/filesystem/lib/common';
-import { QuickOpenModel, QuickOpenItem, QuickOpenActionProvider, QuickOpenMode, QuickOpenGroupItem, QuickOpenGroupItemOptions, QuickOpenAction } from '@theia/core/lib/common/quick-open-model';
+import {
+    QuickOpenModel, QuickOpenItem, QuickOpenActionProvider, QuickOpenMode, QuickOpenGroupItem, QuickOpenGroupItemOptions, QuickOpenAction
+} from '@theia/core/lib/common/quick-open-model';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { TaskNameResolver } from './task-name-resolver';
 import { TaskSourceResolver } from './task-source-resolver';
@@ -406,8 +408,9 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         return `Task id: ${task.taskId}, label: ${task.config.label}`;
     }
 
-    private getFilteredTasks(recentTasks: TaskConfiguration[], configuredTasks: TaskConfiguration[], providedTasks: TaskConfiguration[])
-        : { filteredRecentTasks: TaskConfiguration[], filteredConfiguredTasks: TaskConfiguration[], filteredProvidedTasks: TaskConfiguration[] } {
+    private getFilteredTasks(recentTasks: TaskConfiguration[], configuredTasks: TaskConfiguration[], providedTasks: TaskConfiguration[]): {
+        filteredRecentTasks: TaskConfiguration[], filteredConfiguredTasks: TaskConfiguration[], filteredProvidedTasks: TaskConfiguration[]
+    } {
 
         const filteredRecentTasks: TaskConfiguration[] = [];
         recentTasks.forEach(recent => {

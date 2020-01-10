@@ -53,7 +53,6 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         await this.loadSnippets(languageId);
         const snippetsForLanguage = this.snippets.get(languageId) || [];
 
-        let suggestions: MonacoSnippetSuggestion[];
         const pos = { lineNumber: position.lineNumber, column: 1 };
         const lineOffsets: number[] = [];
         const linePrefixLow = model.getLineContent(position.lineNumber).substr(0, position.column - 1).toLowerCase();
@@ -80,7 +79,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
 
         const availableSnippets = new Set<Snippet>();
         snippetsForLanguage.forEach(availableSnippets.add, availableSnippets);
-        suggestions = [];
+        const suggestions: MonacoSnippetSuggestion[] = [];
         for (const start of lineOffsets) {
             availableSnippets.forEach(snippet => {
                 if (this.isPatternInWord(linePrefixLow, start, linePrefixLow.length, snippet.prefix.toLowerCase(), 0, snippet.prefix.length)) {
@@ -190,7 +189,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
     }
     protected parseSnippets(snippets: JsonSerializedSnippets | undefined, accept: (name: string, snippet: JsonSerializedSnippet) => void): void {
         if (typeof snippets === 'object') {
-            // tslint:disable-next-line:forin
+            // eslint-disable-next-line guard-for-in
             for (const name in snippets) {
                 const scopeOrTemplate = snippets[name];
                 if (JsonSerializedSnippet.is(scopeOrTemplate)) {

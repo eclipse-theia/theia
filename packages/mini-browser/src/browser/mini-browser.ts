@@ -102,7 +102,7 @@ export class MiniBrowser extends BaseWidget implements NavigatableWidget, Statef
             return;
         }
         if ('props' in oldState) {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.setProps((<any>oldState)['props']);
         }
     }

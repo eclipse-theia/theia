@@ -430,7 +430,7 @@ export class TaskConfigurations implements Disposable {
      * @param task task that the updates will be applied to
      * @param update the updates to be applied
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateTaskConfig(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
         const sourceFolderUri: string | undefined = this.taskSourceResolver.resolve(task);
         if (!sourceFolderUri) {

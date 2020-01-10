@@ -19,7 +19,7 @@ import { DebugAdapterSessionImpl } from '@theia/debug/lib/node/debug-adapter-ses
 import * as theia from '@theia/plugin';
 import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 
-// tslint:disable: no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
  * Server debug adapter session.

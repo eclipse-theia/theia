@@ -20,7 +20,7 @@
 // copied from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/services/extensions/node/rpcProtocol.ts
 // with small modifications
 
-/* tslint:disable:no-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Event } from '@theia/core/lib/common/event';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
@@ -130,7 +130,6 @@ export class RPCProtocolImpl implements RPCProtocol {
                 return target[name];
             }
         };
-        // tslint:disable-next-line:no-null-keyword
         return new Proxy(Object.create(null), handler);
     }
 
@@ -203,7 +202,7 @@ export class RPCProtocolImpl implements RPCProtocol {
         const callId = msg.id;
         const proxyId = msg.proxyId;
         // convert `null` to `undefined`, since we don't use `null` in internal plugin APIs
-        const args = msg.args.map(arg => arg === null ? undefined : arg);
+        const args = msg.args.map(arg => arg === null ? undefined : arg); // eslint-disable-line no-null/no-null
 
         const addToken = args.length && args[args.length - 1] === 'add.cancellation.token' ? args.pop() : false;
         if (addToken) {
@@ -388,7 +387,7 @@ class MessageFactory {
  */
 namespace ObjectsTransferrer {
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function replacer(key: string | undefined, value: any): any {
         if (value instanceof URI) {
             return {
@@ -424,7 +423,7 @@ namespace ObjectsTransferrer {
         return value;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function reviver(key: string | undefined, value: any): any {
         if (isSerializedObject(value)) {
             switch (value.$type) {
@@ -433,7 +432,7 @@ namespace ObjectsTransferrer {
                 case SerializedObjectType.VSCODE_URI:
                     return VSCodeURI.parse(value.data);
                 case SerializedObjectType.THEIA_RANGE:
-                    // tslint:disable-next-line:no-any
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const obj: any = JSON.parse(value.data);
                     const start = new Position(obj.start.line, obj.start.character);
                     const end = new Position(obj.end.line, obj.end.character);

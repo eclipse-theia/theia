@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { Event, Emitter, DisposableCollection, Disposable, deepFreeze } from '../../common';
@@ -268,6 +268,7 @@ export class PreferenceServiceImpl implements PreferenceService {
     getBoolean(preferenceName: string, defaultValue: boolean, resourceUri: string): boolean;
     getBoolean(preferenceName: string, defaultValue?: boolean, resourceUri?: string): boolean | undefined {
         const value = resourceUri ? this.get(preferenceName, defaultValue, resourceUri) : this.get(preferenceName, defaultValue);
+        // eslint-disable-next-line no-null/no-null
         return value !== null && value !== undefined ? !!value : defaultValue;
     }
 
@@ -276,6 +277,7 @@ export class PreferenceServiceImpl implements PreferenceService {
     getString(preferenceName: string, defaultValue: string, resourceUri: string): string;
     getString(preferenceName: string, defaultValue?: string, resourceUri?: string): string | undefined {
         const value = resourceUri ? this.get(preferenceName, defaultValue, resourceUri) : this.get(preferenceName, defaultValue);
+        // eslint-disable-next-line no-null/no-null
         if (value === null || value === undefined) {
             return defaultValue;
         }
@@ -287,6 +289,7 @@ export class PreferenceServiceImpl implements PreferenceService {
     getNumber(preferenceName: string, defaultValue: number, resourceUri: string): number;
     getNumber(preferenceName: string, defaultValue?: number, resourceUri?: string): number | undefined {
         const value = resourceUri ? this.get(preferenceName, defaultValue, resourceUri) : this.get(preferenceName, defaultValue);
+        // eslint-disable-next-line no-null/no-null
         if (value === null || value === undefined) {
             return defaultValue;
         }

@@ -26,7 +26,7 @@ export class MonacoResolvedKeybinding extends monaco.keybindings.ResolvedKeybind
     constructor(protected readonly keySequence: KeySequence, keybindingService: KeybindingRegistry) {
         super();
         this.parts = keySequence.map(keyCode => {
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             const keyLabel = keyCode.key ? keybindingService.acceleratorForKey(keyCode.key) : null;
             const keyAriaLabel = keyLabel;
             return new monaco.keybindings.ResolvedKeybindingPart(
@@ -51,7 +51,7 @@ export class MonacoResolvedKeybinding extends monaco.keybindings.ResolvedKeybind
     public getElectronAccelerator(): string | null {
         if (this.isChord) {
             // Electron cannot handle chords
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             return null;
         }
         return monaco.keybindings.ElectronAcceleratorLabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyLabel);

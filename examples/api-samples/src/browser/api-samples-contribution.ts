@@ -47,7 +47,7 @@ export class ExampleLabelProviderCommandHandler implements CommandHandler {
     constructor(private readonly labelProviderContribution: SampleDynamicLabelProviderContribution) {
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute(...args: any[]): any {
         this.labelProviderContribution.toggle();
     }

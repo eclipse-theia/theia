@@ -36,7 +36,7 @@ export class NotificationComponent extends React.Component<NotificationComponent
                 this.props.manager.clear(messageId);
             }
         }
-    }
+    };
 
     protected onToggleExpansion = (event: React.MouseEvent) => {
         if (event.target instanceof HTMLElement) {
@@ -45,7 +45,7 @@ export class NotificationComponent extends React.Component<NotificationComponent
                 this.props.manager.toggleExpansion(messageId);
             }
         }
-    }
+    };
 
     protected onAction = (event: React.MouseEvent) => {
         if (event.target instanceof HTMLElement) {
@@ -55,7 +55,7 @@ export class NotificationComponent extends React.Component<NotificationComponent
                 this.props.manager.accept(messageId, action);
             }
         }
-    }
+    };
 
     protected onMessageClick = (event: React.MouseEvent) => {
         if (event.target instanceof HTMLAnchorElement) {
@@ -64,7 +64,7 @@ export class NotificationComponent extends React.Component<NotificationComponent
             const link = event.target.href;
             this.props.manager.openLink(link);
         }
-    }
+    };
 
     render(): React.ReactNode {
         const { messageId, message, type, progress, collapsed, expandable, source, actions } = this.props.notification;

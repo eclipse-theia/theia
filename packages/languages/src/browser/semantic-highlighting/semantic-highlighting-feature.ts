@@ -49,7 +49,7 @@ export class SemanticHighlightFeature extends TextDocumentFeature<{}, TextDocume
         if (!capabilities.textDocument) {
             capabilities.textDocument = {};
         }
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (capabilities.textDocument as any).semanticHighlightingCapabilities = {
             semanticHighlighting: true
         };

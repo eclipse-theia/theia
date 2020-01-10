@@ -211,7 +211,7 @@ export class DebugBreakpointWidget implements Disposable {
         if (this._input) {
             this._input.focus();
         }
-    }
+    };
 
     static PLACEHOLDER_DECORATION = 'placeholderDecoration';
     protected updatePlaceholder(): void {

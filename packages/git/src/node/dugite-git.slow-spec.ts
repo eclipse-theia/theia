@@ -20,7 +20,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { GitFileStatus } from '../common';
 import { createGit } from './test/binding-helper';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 const track = temp.track();
 
