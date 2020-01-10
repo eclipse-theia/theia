@@ -39,7 +39,7 @@ export namespace NpmRegistryProps {
  */
 export interface ApplicationProps extends NpmRegistryProps {
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly [key: string]: any;
 
     /**
@@ -90,7 +90,7 @@ export namespace ApplicationProps {
  * Base configuration for the Theia application.
  */
 export interface ApplicationConfig {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly [key: string]: any;
 }
 

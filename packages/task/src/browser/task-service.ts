@@ -791,7 +791,7 @@ export class TaskService implements TaskConfigurationClient {
      * @param task task that the updates will be applied to
      * @param update the updates to be applied
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateTaskConfiguration(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
         if (update.problemMatcher) {
             if (Array.isArray(update.problemMatcher)) {

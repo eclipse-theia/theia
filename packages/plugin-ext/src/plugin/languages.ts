@@ -86,6 +86,7 @@ import { Event } from '@theia/core/lib/common/event';
 import { CommandRegistryImpl } from './command-registry';
 import { DeclarationAdapter } from './languages/declaration';
 
+/* eslint-disable @typescript-eslint/indent */
 type Adapter = CompletionAdapter |
     SignatureHelpAdapter |
     HoverAdapter |
@@ -107,6 +108,7 @@ type Adapter = CompletionAdapter |
     FoldingProviderAdapter |
     ColorProviderAdapter |
     RenameAdapter;
+/* eslint-enable @typescript-eslint/indent */
 
 export class LanguagesExtImpl implements LanguagesExt {
 
@@ -149,7 +151,6 @@ export class LanguagesExtImpl implements LanguagesExt {
         if (wordPattern) {
             this.documents.setWordDefinitionFor(language, wordPattern);
         } else {
-            // tslint:disable-next-line:no-null-keyword
             this.documents.setWordDefinitionFor(language, null);
         }
 
@@ -184,7 +185,7 @@ export class LanguagesExtImpl implements LanguagesExt {
         return callId;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private withAdapter<A, R>(handle: number, ctor: { new(...args: any[]): A }, callback: (adapter: A) => Promise<R>): Promise<R> {
         const adapter = this.adaptersMap.get(handle);
         if (!(adapter instanceof ctor)) {

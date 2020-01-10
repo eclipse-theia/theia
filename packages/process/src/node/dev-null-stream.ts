@@ -35,13 +35,13 @@ export class DevNullStream extends stream.Duplex {
         }
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _write(chunk: any, encoding: string, callback: (err?: Error) => void): void {
         callback();
     }
 
     _read(size: number): void {
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         this.push(null);
     }
 }

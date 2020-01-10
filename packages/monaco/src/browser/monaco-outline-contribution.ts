@@ -136,6 +136,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             this.roots.forEach(resetSelection);
         } else {
             this.roots = [];
+            // eslint-disable-next-line @typescript-eslint/await-thenable
             const providers = await DocumentSymbolProviderRegistry.all(model);
             if (token.isCancellationRequested) {
                 return [];
@@ -314,11 +315,13 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     }
 
     protected shouldExpand(symbol: DocumentSymbol): boolean {
-        return [SymbolKind.Class,
-        SymbolKind.Enum, SymbolKind.File,
-        SymbolKind.Interface, SymbolKind.Module,
-        SymbolKind.Namespace, SymbolKind.Object,
-        SymbolKind.Package, SymbolKind.Struct].indexOf(symbol.kind) !== -1;
+        return [
+            SymbolKind.Class,
+            SymbolKind.Enum, SymbolKind.File,
+            SymbolKind.Interface, SymbolKind.Module,
+            SymbolKind.Namespace, SymbolKind.Object,
+            SymbolKind.Package, SymbolKind.Struct
+        ].indexOf(symbol.kind) !== -1;
     }
 
     protected orderByPosition(symbol: DocumentSymbol, symbol2: DocumentSymbol): number {

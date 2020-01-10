@@ -38,10 +38,10 @@ export class StatusBarMessageRegistryExt {
     }
 
     // copied from https://github.com/Microsoft/vscode/blob/6c8f02b41db9ae5c4d15df767d47755e5c73b9d5/src/vs/workbench/api/node/extHostStatusBar.ts#L174
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setStatusBarMessage(text: string, timeoutOrThenable?: number | PromiseLike<any>): Disposable {
         const d = this.statusMessage.setMessage(text);
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let handle: any;
 
         if (typeof timeoutOrThenable === 'number') {

@@ -103,7 +103,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         commands.registerCommand(VscodeCommands.DIFF, {
             isVisible: () => false,
-            // tslint:disable-next-line: no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             execute: async (left: URI, right: URI, label?: string, options?: TextDocumentShowOptions) => {
                 if (!left || !right) {
                     throw new Error(`${VscodeCommands.DIFF} command requires at least two URI arguments. Found left=${left}, right=${right} as arguments`);
@@ -123,7 +123,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         commands.registerCommand(VscodeCommands.SET_CONTEXT, {
             isVisible: () => false,
-            // tslint:disable-next-line: no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             execute: (contextKey: any, contextValue: any) => {
                 this.contextKeyService.createKey(String(contextKey), contextValue);
             }
@@ -325,7 +325,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         // Register built-in language service commands
         // see https://code.visualstudio.com/api/references/commands
-        // tslint:disable: no-any
+        /* eslint-disable @typescript-eslint/no-explicit-any */
         commands.registerCommand(
             {
                 id: 'vscode.executeDocumentSymbolProvider'
@@ -333,7 +333,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             {
                 execute: (resource: URI) => commands.executeCommand('_executeDocumentSymbolProvider',
                     { resource: monaco.Uri.parse(resource.toString()) }
-                ).then((value: any) => {
+                ).then((value: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                     if (!Array.isArray(value) || value === undefined) {
                         return undefined;
                     }

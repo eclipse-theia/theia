@@ -69,7 +69,7 @@ export class TaskConfigurationModel implements Disposable {
 
     protected parseConfigurations(): TaskConfigurationModel.JsonContent {
         const configurations: (TaskCustomization | TaskConfiguration)[] = [];
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { configUri, value } = this.preferences.resolve<any>('tasks', undefined, this.workspaceFolderUri);
         if (value && typeof value === 'object' && 'tasks' in value) {
             if (Array.isArray(value.tasks)) {

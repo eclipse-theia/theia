@@ -426,7 +426,7 @@ export class TheiaPluginScanner implements PluginScanner {
         }
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private readConfiguration(rawConfiguration: RecursivePartial<PreferenceSchema>, pluginPath: string): PreferenceSchema | undefined {
         return PreferenceSchema.is(rawConfiguration) ? rawConfiguration : undefined;
     }

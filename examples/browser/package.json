@@ -54,6 +54,7 @@
   },
   "scripts": {
     "prepare": "yarn run clean && yarn build",
+    "lint": "theiaext lint",
     "clean": "theia clean",
     "build": "theia build --mode development",
     "watch": "yarn build --watch",

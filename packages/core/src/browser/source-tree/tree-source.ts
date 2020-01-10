@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { ReactNode } from 'react';
 import { injectable, unmanaged } from 'inversify';
@@ -37,7 +37,7 @@ export interface CompositeTreeElement extends TreeElement {
     getElements(): MaybePromise<IterableIterator<TreeElement>>
 }
 export namespace CompositeTreeElement {
-    // tslint:disable:no-any
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     export function is(element: CompositeTreeElement | any): element is CompositeTreeElement {
         return !!element && 'getElements' in element;
     }

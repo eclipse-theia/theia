@@ -42,7 +42,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
 
     protected readonly makers = new Map<string, MonacoDiagnosticCollection>();
 
-    constructor(
+    constructor( // eslint-disable-next-line @typescript-eslint/indent
         @inject(ProtocolToMonacoConverter) p2m: ProtocolToMonacoConverter,
         @inject(MonacoToProtocolConverter) m2p: MonacoToProtocolConverter,
         @inject(ProblemManager) protected readonly problemManager: ProblemManager

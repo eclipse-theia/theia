@@ -26,7 +26,7 @@ export namespace LanguageContribution {
     }
     export const Service = Symbol('LanguageContributionService');
     export interface Service {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         create(contributionId: string, parameters: any): Promise<string>;
         destroy(sessionId: string): Promise<void>;
     }

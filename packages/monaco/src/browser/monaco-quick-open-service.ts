@@ -113,6 +113,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
     }
 
     internalOpen(opts: MonacoQuickOpenControllerOpts): void {
+        // eslint-disable-next-line no-null/no-null
         if (this.widgetNode && this.widgetNode.offsetParent !== null) {
             this.hide();
         }
@@ -515,7 +516,7 @@ export class MonacoQuickOpenAction implements monaco.quickOpen.IAction {
         return this.action.radio || false;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     run(entry: QuickOpenEntry | QuickOpenEntryGroup): PromiseLike<any> {
         return this.action.run(entry.item);
     }
@@ -528,12 +529,12 @@ export class MonacoQuickOpenAction implements monaco.quickOpen.IAction {
 export class MonacoQuickOpenActionProvider implements monaco.quickOpen.IActionProvider {
     constructor(public readonly provider: QuickOpenActionProvider) { }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     hasActions(element: any, entry: QuickOpenEntry | QuickOpenEntryGroup): boolean {
         return this.provider.hasActions(entry.item);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getActions(element: any, entry: QuickOpenEntry | QuickOpenEntryGroup): ReadonlyArray<monaco.quickOpen.IAction> {
         const actions = this.provider.getActions(entry.item);
         return actions.map(action => new MonacoQuickOpenAction(action));

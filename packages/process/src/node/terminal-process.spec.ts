@@ -121,7 +121,7 @@ if (process.platform !== 'win32' || process.env.THEIA_PROCESS_TEST_OVERRIDE) {
             output: string;
         }
 
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async function checkOutput(proc: TerminalProcess, pattern?: RegExp): Promise<ProcessExit> {
             return new Promise<ProcessExit>((resolve, reject) => {
                 let output = '';

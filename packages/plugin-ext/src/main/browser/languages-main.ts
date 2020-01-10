@@ -428,7 +428,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return this.proxy.$resolveCodeLens(handle, model.uri, codeLens, token);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $emitCodeLensEvent(eventHandle: number, event?: any): void {
         const obj = this.services.get(eventHandle);
         if (obj instanceof Emitter) {

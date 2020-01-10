@@ -76,15 +76,15 @@ export class DiffComputer {
 }
 
 class ArrayDiff extends jsdiff.Diff {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     tokenize(value: any): any {
         return value;
     }
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     join(value: any): any {
         return value;
     }
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     removeEmpty(value: any): any {
         return value;
     }
@@ -95,9 +95,9 @@ const arrayDiff = new ArrayDiff();
 /**
  * Computes diff without copying data.
  */
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function diffArrays(oldArr: ContentLinesArrayLike, newArr: ContentLinesArrayLike): DiffResult[] {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return arrayDiff.diff(oldArr as any, newArr as any) as any;
 }
 

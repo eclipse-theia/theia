@@ -23,7 +23,7 @@ export interface Disposable {
 }
 
 export namespace Disposable {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(arg: any): arg is Disposable {
         return !!arg && typeof arg === 'object' && 'dispose' in arg && typeof arg['dispose'] === 'function';
     }

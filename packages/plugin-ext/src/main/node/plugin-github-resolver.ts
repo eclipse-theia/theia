@@ -51,7 +51,6 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
         return new Promise<void>((resolve, reject) => {
             // extract data
             const extracted = /^github:(.*)\/(.*)\/(.*)$/gm.exec(pluginResolverContext.getOriginId());
-
             if (!extracted || extracted === null || extracted.length !== 4) {
                 reject(new Error('Invalid extension' + pluginResolverContext.getOriginId()));
                 return;
@@ -115,7 +114,7 @@ export class GithubPluginDeployerResolver implements PluginDeployerResolver {
      * Grab the github file specified by the plugin's ID
      */
     protected grabGithubFile(pluginResolverContext: PluginDeployerResolverContext, orgName: string, repoName: string, filename: string, version: string,
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         resolve: (value?: void | PromiseLike<void>) => void, reject: (reason?: any) => void): void {
 
         const unpackedPath = path.resolve(this.unpackedFolder, path.basename(version + filename));

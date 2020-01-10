@@ -74,7 +74,7 @@ export class PreferencesDecorator implements TreeDecorator {
         this.fireDidChangeDecorations(this.preferences);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private getPreferenceDisplayValue(storedValue: any, defaultValue: any): any {
         if (storedValue !== undefined) {
             if (typeof storedValue === 'string') {

@@ -41,7 +41,7 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
         return this.options.workspaceUri;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected parse(content: string): any {
         const data = super.parse(content);
         if (WorkspaceData.is(data)) {

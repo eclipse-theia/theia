@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as jsoncparser from 'jsonc-parser';
 import { JSONExt } from '@phosphor/coreutils/lib/json';
@@ -148,11 +148,11 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         if (typeof jsonData !== 'object') {
             return preferences;
         }
-        // tslint:disable-next-line:forin
+        // eslint-disable-next-line guard-for-in
         for (const preferenceName in jsonData) {
             const preferenceValue = jsonData[preferenceName];
             if (this.schemaProvider.testOverrideValue(preferenceName, preferenceValue)) {
-                // tslint:disable-next-line:forin
+                // eslint-disable-next-line guard-for-in
                 for (const overriddenPreferenceName in preferenceValue) {
                     const overriddenValue = preferenceValue[overriddenPreferenceName];
                     preferences[`${preferenceName}.${overriddenPreferenceName}`] = overriddenValue;

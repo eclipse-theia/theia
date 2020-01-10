@@ -55,7 +55,7 @@ export class DocumentHighlightAdapter {
         });
     }
 
-    /* tslint:disable-next-line:no-any */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private isDocumentHighlightArray(array: any): array is types.DocumentHighlight[] {
         return Array.isArray(array) && array.length > 0 && array[0] instanceof types.DocumentHighlight;
     }

@@ -21,9 +21,9 @@ import { MonacoEditor } from './monaco-editor';
 import { MonacoEditorProvider } from './monaco-editor-provider';
 
 export interface MonacoEditorCommandHandler {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute(editor: MonacoEditor, ...args: any[]): any;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isEnabled?(editor: MonacoEditor, ...args: any[]): boolean;
 }
 @injectable()
@@ -59,7 +59,7 @@ export class MonacoCommandRegistry {
         };
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected execute(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): any {
         const editor = this.monacoEditors.current;
         if (editor) {
@@ -69,13 +69,13 @@ export class MonacoCommandRegistry {
         return Promise.resolve();
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected isEnabled(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): boolean {
         const editor = this.monacoEditors.current;
         return !!editor && (!monacoHandler.isEnabled || monacoHandler.isEnabled(editor, ...args));
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected isVisible(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): boolean {
         return TextEditorSelection.is(this.selectionService.selection);
     }

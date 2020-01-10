@@ -24,7 +24,7 @@ describe('selection-service', () => {
     describe('01 #addListener and dispose', () => {
         it('Should be rejected when path argument is undefined.', () => {
             const service = createSelectionService();
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const events: any[] = [];
             const disposable = service.onSelectionChanged(
                 e => events.push(e)

@@ -69,7 +69,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
 
         const updateProcessId = () => terminal.processId.then(
             processId => this.extProxy.$terminalOpened(terminal.id, processId),
-            () => {/*no-op*/ }
+            () => {/* no-op */ }
         );
         updateProcessId();
         this.toDispose.push(terminal.onDidOpen(() => updateProcessId()));

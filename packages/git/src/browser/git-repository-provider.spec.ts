@@ -63,7 +63,7 @@ const repoB = <Repository>{
     localUri: folderB.uri
 };
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 describe('GitRepositoryProvider', () => {
     let testContainer: Container;
 

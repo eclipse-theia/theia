@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export function loadVsRequire(context: any): Promise<any> {
     // Monaco uses a custom amd loader that over-rides node's require.
@@ -84,28 +84,29 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 codeEditorService: any, codeEditorServiceImpl: any,
                 markerService: any,
                 contextKey: any, contextKeyService: any,
-                error: any) => {
-                    const global: any = self;
-                    global.monaco.commands = commands;
-                    global.monaco.actions = actions;
-                    global.monaco.keybindings = Object.assign({}, keybindingsRegistry, keybindingResolver, resolvedKeybinding, keybindingLabels, keyCodes);
-                    global.monaco.services = Object.assign({}, simpleServices, standaloneServices, configuration, configurationModels,
-                        codeEditorService, codeEditorServiceImpl, markerService);
-                    global.monaco.quickOpen = Object.assign({}, quickOpenWidget, quickOpenModel);
-                    global.monaco.filters = filters;
-                    global.monaco.theme = styler;
-                    global.monaco.color = Object.assign({}, colorRegistry, color);
-                    global.monaco.platform = platform;
-                    global.monaco.editorExtensions = editorExtensions;
-                    global.monaco.modes = modes;
-                    global.monaco.suggest = suggest;
-                    global.monaco.snippetParser = snippetParser;
-                    global.monaco.contextkey = contextKey;
-                    global.monaco.contextKeyService = contextKeyService;
-                    global.monaco.mime = mime;
-                    global.monaco.error = error;
-                    resolve();
-                });
+                error: any
+            ) => {
+                const global: any = self;
+                global.monaco.commands = commands;
+                global.monaco.actions = actions;
+                global.monaco.keybindings = Object.assign({}, keybindingsRegistry, keybindingResolver, resolvedKeybinding, keybindingLabels, keyCodes);
+                global.monaco.services = Object.assign({}, simpleServices, standaloneServices, configuration, configurationModels,
+                    codeEditorService, codeEditorServiceImpl, markerService);
+                global.monaco.quickOpen = Object.assign({}, quickOpenWidget, quickOpenModel);
+                global.monaco.filters = filters;
+                global.monaco.theme = styler;
+                global.monaco.color = Object.assign({}, colorRegistry, color);
+                global.monaco.platform = platform;
+                global.monaco.editorExtensions = editorExtensions;
+                global.monaco.modes = modes;
+                global.monaco.suggest = suggest;
+                global.monaco.snippetParser = snippetParser;
+                global.monaco.contextkey = contextKey;
+                global.monaco.contextKeyService = contextKeyService;
+                global.monaco.mime = mime;
+                global.monaco.error = error;
+                resolve();
+            });
         });
     });
 }

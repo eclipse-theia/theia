@@ -44,13 +44,13 @@ export class BrowserClipboardService implements ClipboardService {
         let permission;
         try {
             permission = await this.queryPermission('clipboard-read');
-        } catch (e) {
-            this.logger.error('Failed checking a clipboard-read permission.', e);
+        } catch (e1) {
+            this.logger.error('Failed checking a clipboard-read permission.', e1);
             // in FireFox, Clipboard API isn't gated with the permissions
             try {
                 return await this.getClipboardAPI().readText();
-            } catch (e) {
-                this.logger.error('Failed reading clipboard content.', e);
+            } catch (e2) {
+                this.logger.error('Failed reading clipboard content.', e2);
                 if (isFirefox) {
                     this.messageService.warn(`Clipboard API is not available.
                     It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia.
@@ -71,14 +71,14 @@ export class BrowserClipboardService implements ClipboardService {
         let permission;
         try {
             permission = await this.queryPermission('clipboard-write');
-        } catch (e) {
-            this.logger.error('Failed checking a clipboard-write permission.', e);
+        } catch (e1) {
+            this.logger.error('Failed checking a clipboard-write permission.', e1);
             // in FireFox, Clipboard API isn't gated with the permissions
             try {
                 await this.getClipboardAPI().writeText(value);
                 return;
-            } catch (e) {
-                this.logger.error('Failed writing to the clipboard.', e);
+            } catch (e2) {
+                this.logger.error('Failed writing to the clipboard.', e2);
                 if (isFirefox) {
                     this.messageService.warn(`Clipboard API is not available.
                     It can be enabled by 'dom.events.testing.asyncClipboard' preference on 'about:config' page. Then reload Theia.

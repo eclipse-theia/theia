@@ -173,7 +173,7 @@ interface RecentWorkspacePathsData {
 
 namespace RecentWorkspacePathsData {
     export function is(data: Object | undefined): data is RecentWorkspacePathsData {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return !!data && typeof data === 'object' && ('recentRoots' in data) && Array.isArray((data as any)['recentRoots']);
     }
 }

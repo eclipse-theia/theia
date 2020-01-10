@@ -157,7 +157,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         this.ongoingSearches.set(searchId, rgProcess);
 
         rgProcess.onError(error => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let errorCode = (error as any).code;
 
             // Try to provide somewhat clearer error messages, if possible.

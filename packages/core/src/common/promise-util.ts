@@ -20,7 +20,7 @@
  */
 export class Deferred<T> {
     resolve: (value?: T) => void;
-    reject: (err?: any) => void; // tslint:disable-line
+    reject: (err?: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
 
     promise = new Promise<T>((resolve, reject) => {
         this.resolve = resolve;

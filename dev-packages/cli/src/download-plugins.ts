@@ -55,7 +55,7 @@ export default function downloadPlugins(): void {
             maxAttempts: 5,
             retryDelay: 2000,
             retryStrategy: request.RetryStrategies.HTTPOrNetworkError
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         }, (err: any, response: any) => {
             if (err) {
                 console.error(plugin + ': failed to download', err);

@@ -34,7 +34,7 @@ export class ScmExtImpl implements ScmExt {
     constructor(readonly rpc: RPCProtocol, private readonly commands: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.SCM_MAIN);
         commands.registerArgumentProcessor({
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             processArgument: (arg: any) => {
                 if (!ScmCommandArg.is(arg)) {
                     return arg;
@@ -85,7 +85,7 @@ export class ScmExtImpl implements ScmExt {
         const sourceControl = this.sourceControlMap.get(sourceControlHandle);
         console.log(sourceControl);
         if (sourceControl && sourceControl.quickDiffProvider && sourceControl.quickDiffProvider.provideOriginalResource) {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const newUri: any = new URI(uri);
             newUri.fsPath = uri;
             return sourceControl.quickDiffProvider.provideOriginalResource(newUri, token);
@@ -343,7 +343,7 @@ class SourceControlResourceGroupImpl implements theia.SourceControlResourceGroup
                 decorations = { strikeThrough, faded, tooltip, iconPath };
             }
             this.resourceStatesMap.set(handle, resourceState);
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const resource: any = resourceState;
             return { handle, resourceUri: resourceState.resourceUri.path, command: resourceCommand, decorations, letter: resource.letter, colorId: resource.color.id };
         }));

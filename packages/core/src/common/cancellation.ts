@@ -29,7 +29,7 @@ export interface CancellationToken {
     readonly onCancellationRequested: Event<void>;
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const shortcutEvent: Event<void> = Object.freeze(Object.assign(function (callback: any, context?: any): any {
     const handle = setTimeout(callback.bind(context), 0);
     return { dispose(): void { clearTimeout(handle); } };

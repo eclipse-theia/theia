@@ -164,7 +164,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         };
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     restoreState(oldState: any): void {
         this.matchCaseState = oldState.matchCaseState;
         this.wholeWordState = oldState.wholeWordState;

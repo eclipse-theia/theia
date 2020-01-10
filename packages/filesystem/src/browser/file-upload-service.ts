@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
@@ -86,8 +86,8 @@ export class FileUploadService {
                 const { resolve, reject } = this.deferredUpload;
                 this.deferredUpload = undefined;
                 const { onDidUpload } = this.uploadForm;
-                this.withProgress((progress, token) =>
-                    this.doUpload(targetUri, { source, progress, token, onDidUpload }),
+                this.withProgress(
+                    (progress, token) => this.doUpload(targetUri, { source, progress, token, onDidUpload }),
                     this.uploadForm.progress).then(resolve, reject);
             }
         });
@@ -98,8 +98,8 @@ export class FileUploadService {
     async upload(targetUri: string | URI, params: FileUploadParams = {}): Promise<FileUploadResult> {
         const { source, onDidUpload } = params;
         if (source) {
-            return this.withProgress((progress, token) =>
-                this.doUpload(new URI(String(targetUri)), { source, progress, token, onDidUpload }),
+            return this.withProgress(
+                (progress, token) => this.doUpload(new URI(String(targetUri)), { source, progress, token, onDidUpload }),
                 params.progress);
         }
         this.deferredUpload = new Deferred<FileUploadResult>();
@@ -340,9 +340,10 @@ export class FileUploadService {
     protected async indexFileEntry(targetUri: URI, entry: WebKitFileEntry, context: FileUploadService.Context): Promise<void> {
         await new Promise<void>((resolve, reject) => {
             try {
-                entry.file(file =>
-                    this.indexFile(targetUri, file, context).then(resolve, reject)
-                    , reject);
+                entry.file(
+                    file => this.indexFile(targetUri, file, context).then(resolve, reject),
+                    reject,
+                );
             } catch (e) {
                 reject(e);
             }

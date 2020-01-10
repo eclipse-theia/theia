@@ -119,16 +119,16 @@ export class DebugConfigurationWidget extends ReactWidget {
             const [name, workspaceFolderUri] = value.split('__CONF__');
             this.manager.current = this.manager.find(name, workspaceFolderUri);
         }
-    }
+    };
 
     protected readonly start = () => {
         const configuration = this.manager.current;
         this.commandRegistry.executeCommand(DebugCommands.START.id, configuration);
-    }
+    };
 
     protected readonly openConfiguration = () => this.manager.openConfiguration();
     protected readonly openConsole = () => this.debugConsole.openView({
         activate: true
-    })
+    });
 
 }

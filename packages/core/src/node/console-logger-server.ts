@@ -52,7 +52,7 @@ export class ConsoleLoggerServer implements ILoggerServer {
         return this.cli.logLevelFor(name);
     }
 
-    // tslint:disable:no-any
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     async log(name: string, logLevel: number, message: string, params: any[]): Promise<void> {
         const configuredLogLevel = await this.getLogLevel(name);
         if (logLevel >= configuredLogLevel) {

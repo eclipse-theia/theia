@@ -41,7 +41,7 @@ export interface GitCommitNode extends GitCommitDetails {
 }
 
 export namespace GitCommitNode {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(node: any): node is GitCommitNode {
         return !!node && 'commitSha' in node && 'commitMessage' in node && 'fileChangeNodes' in node;
     }
@@ -101,7 +101,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         this.addGitListNavigationKeyListeners(this.node);
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.addEventListener<any>(this.node, 'ps-scroll-y', (e: Event & { target: { scrollTop: number } }) => {
             if (this.listView && this.listView.list && this.listView.list.Grid) {
                 const { scrollTop } = e.target;
@@ -139,8 +139,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     }
 
     protected async addCommits(options?: Git.Options.Log): Promise<void> {
-        let repository: Repository | undefined;
-        repository = this.repositoryProvider.findRepositoryOrSelected(options);
+        const repository: Repository | undefined = this.repositoryProvider.findRepositoryOrSelected(options);
 
         this.cancelIndicator.cancel();
         this.cancelIndicator = new CancellationTokenSource();
@@ -233,7 +232,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         };
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     restoreState(oldState: any): void {
         this.options = oldState['options'];
         this.singleFileMode = oldState['singleFileMode'];
@@ -258,9 +257,8 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 break;
 
             case 'error':
+                const reason: React.ReactNode = this.status.errorMessage;
                 let path: React.ReactNode = '';
-                let reason: React.ReactNode;
-                reason = this.status.errorMessage;
                 if (this.options.uri) {
                     const relPathEncoded = this.gitLabelProvider.relativePath(this.options.uri);
                     const relPath = relPathEncoded ? `${decodeURIComponent(relPathEncoded)}` : '';
@@ -330,7 +328,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
     }
 
     protected readonly loadMoreRows = (params: IndexRange) => this.doLoadMoreRows(params);
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected doLoadMoreRows(params: IndexRange): Promise<any> {
         let resolver: () => void;
         const promise = new Promise(resolve => resolver = resolve);
@@ -379,24 +377,24 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
             <div className='headContent'><div className='image-container'>
                 <img className='gravatar' src={commit.authorAvatar}></img>
             </div>
-                <div className={`headLabelContainer${this.singleFileMode ? ' singleFileMode' : ''}`}>
-                    <div className='headLabel noWrapInfo noselect'>
-                        {commit.commitMessage}
-                    </div>
-                    <div className='commitTime noWrapInfo noselect'>
-                        {commit.authorDateRelative + ' by ' + commit.authorName}
+            <div className={`headLabelContainer${this.singleFileMode ? ' singleFileMode' : ''}`}>
+                <div className='headLabel noWrapInfo noselect'>
+                    {commit.commitMessage}
+                </div>
+                <div className='commitTime noWrapInfo noselect'>
+                    {commit.authorDateRelative + ' by ' + commit.authorName}
+                </div>
+            </div>
+            <div className='fa fa-eye detailButton' onClick={() => this.openDetailWidget(commit)}></div>
+            {
+                !this.singleFileMode ? <div className='expansionToggle noselect'>
+                    <div className='toggle'>
+                        <div className='number'>{(commit.fileChanges && commit.fileChanges.length || commit.fileChangeNodes.length).toString()}</div>
+                        <div className={'icon fa fa-' + expansionToggleIcon}></div>
                     </div>
                 </div>
-                <div className='fa fa-eye detailButton' onClick={() => this.openDetailWidget(commit)}></div>
-                {
-                    !this.singleFileMode ? <div className='expansionToggle noselect'>
-                        <div className='toggle'>
-                            <div className='number'>{(commit.fileChanges && commit.fileChanges.length || commit.fileChangeNodes.length).toString()}</div>
-                            <div className={'icon fa fa-' + expansionToggleIcon}></div>
-                        </div>
-                    </div>
-                        : ''
-                }
+                    : ''
+            }
             </div>
         </div >;
     }
@@ -494,7 +492,7 @@ export namespace GitHistoryList {
         readonly indexOfSelected: number
         readonly hasMoreRows: boolean
         readonly handleScroll: (info: { clientHeight: number; scrollHeight: number; scrollTop: number }) => void
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         readonly loadMoreRows: (params: IndexRange) => Promise<any>
         readonly renderCommit: (commit: GitCommitNode) => React.ReactNode
         readonly renderFileChangeList: (fileChange: GitFileChangeNode) => React.ReactNode
@@ -566,7 +564,7 @@ export class GitHistoryList extends React.Component<GitHistoryList.Props> {
                 {() => this.renderRow(params)}
             </CellMeasurer>
         );
-    }
+    };
 
     protected renderRow: ListRowRenderer = ({ index, key, style }) => {
         if (this.checkIfRowIsLoaded({ index })) {
@@ -586,5 +584,5 @@ export class GitHistoryList extends React.Component<GitHistoryList.Props> {
                 <span className='fa fa-spinner fa-pulse fa-fw'></span>
             </div>;
         }
-    }
+    };
 }

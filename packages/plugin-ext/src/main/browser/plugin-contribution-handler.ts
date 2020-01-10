@@ -223,7 +223,7 @@ export class PluginContributionHandler {
             }
         }
         if (contributions.views) {
-            // tslint:disable-next-line:forin
+            // eslint-disable-next-line guard-for-in
             for (const location in contributions.views) {
                 for (const view of contributions.views[location]) {
                     pushContribution(`views.${view.id}`,
@@ -361,7 +361,7 @@ export class PluginContributionHandler {
             title: 'Default Configuration Overrides',
             properties: {}
         };
-        // tslint:disable-next-line:forin
+        // eslint-disable-next-line guard-for-in
         for (const key in configurationDefaults) {
             const defaultValue = configurationDefaults[key];
             if (this.preferenceSchemaProvider.testOverrideValue(key, defaultValue)) {
@@ -420,7 +420,6 @@ export class PluginContributionHandler {
         if (typeof tokenTypes === 'undefined' || tokenTypes === null) {
             return undefined;
         }
-        // tslint:disable-next-line:no-null-keyword
         const result = Object.create(null);
         const scopes = Object.keys(tokenTypes);
         const len = scopes.length;
@@ -446,8 +445,6 @@ export class PluginContributionHandler {
         if (typeof languages === 'undefined' || languages === null) {
             return undefined;
         }
-
-        // tslint:disable-next-line:no-null-keyword
         const result = Object.create(null);
         const scopes = Object.keys(languages);
         const len = scopes.length;

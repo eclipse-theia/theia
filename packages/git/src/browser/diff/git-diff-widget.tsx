@@ -27,7 +27,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import * as React from 'react';
 import { MaybePromise } from '@theia/core/lib/common/types';
 
-// tslint:disable:no-null-keyword
+/* eslint-disable no-null/no-null */
 
 export const GIT_DIFF = 'git-diff';
 @injectable()
@@ -109,7 +109,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         };
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     restoreState(oldState: any): void {
         this.fileChangeNodes = oldState['fileChangeNodes'];
         this.options = oldState['options'];

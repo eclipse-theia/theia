@@ -24,7 +24,7 @@ import * as sinon from 'sinon';
 
 disableJSDOM();
 
-/* tslint:disable:no-unused-expression */
+/* eslint-disable no-unused-expressions */
 
 const expect = chai.expect;
 
@@ -125,18 +125,14 @@ describe('keys api', () => {
         expect(KeySequence.compare(left, right)).to.be.equal(KeySequence.CompareResult.FULL);
 
         expect(KeySequence.compare(
-            [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Alt, KeyModifier.Shift] })], right)).to.be.equal(
-                KeySequence.CompareResult.FULL);
+            [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Alt, KeyModifier.Shift] })], right)).to.be.equal(KeySequence.CompareResult.FULL);
         expect(KeySequence.compare(
-            left, [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Alt, KeyModifier.Shift] })])).to.be.equal(
-                KeySequence.CompareResult.FULL);
+            left, [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Alt, KeyModifier.Shift] })])).to.be.equal(KeySequence.CompareResult.FULL);
 
         expect(KeySequence.compare(
-            [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift, KeyModifier.Alt] })], right)).to.be.equal(
-                KeySequence.CompareResult.FULL);
+            [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift, KeyModifier.Alt] })], right)).to.be.equal(KeySequence.CompareResult.FULL);
         expect(KeySequence.compare(
-            left, [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift, KeyModifier.Alt] })])).to.be.equal(
-                KeySequence.CompareResult.FULL);
+            left, [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift, KeyModifier.Alt] })])).to.be.equal(KeySequence.CompareResult.FULL);
     });
 
     it('should parse ctrl key properly on both OS X and other platforms', () => {

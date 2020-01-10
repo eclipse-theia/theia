@@ -21,7 +21,7 @@ import { TreeNode, CompositeTreeNode } from './tree';
 import { ExpandableTreeNode } from './tree-expansion';
 import { createTreeTestContainer } from './test/tree-test-container';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 describe('TreeExpansionService', () => {
     let model: TreeModel;
     beforeEach(() => {

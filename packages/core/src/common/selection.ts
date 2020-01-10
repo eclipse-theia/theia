@@ -23,7 +23,7 @@ export interface UriSelection {
 export namespace UriSelection {
 
     export function is(arg: Object | undefined): arg is UriSelection {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return typeof arg === 'object' && ('uri' in arg) && (<any>arg)['uri'] instanceof URI;
     }
 

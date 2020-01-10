@@ -45,7 +45,7 @@ beforeEach(() => {
     container = new Container();
     container.bind(ApplicationShell).toConstantValue({
         currentChanged: new Signal({})
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     const workspaceService = new WorkspaceService();
     workspaceService.tryGetRoots = () => roots;
@@ -96,7 +96,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
         });
 
         it('should return file icon from a non-folder FileStat', async () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             stubs.push(sinon.stub(DefaultUriLabelProviderContribution.prototype, <any>'getFileIcon').returns(undefined));
             expect(labelProvider.getIcon(<FileStat>{
                 uri: 'file:///home/test',
@@ -106,7 +106,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
         });
 
         it('should return folder icon from a folder URI', async () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             stubs.push(sinon.stub(DefaultUriLabelProviderContribution.prototype, <any>'getFileIcon').returns(undefined));
             expect(labelProvider.getIcon(<FileStat>{
                 uri: 'file:///home/test',
@@ -116,7 +116,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
         });
 
         it('should return file icon from a file URI', async () => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             stubs.push(sinon.stub(DefaultUriLabelProviderContribution.prototype, <any>'getFileIcon').returns(undefined));
             expect(labelProvider.getIcon(<FileStat>{
                 uri: 'file:///home/test',
@@ -127,7 +127,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
 
         it('should return what getFileIcon() returns from a URI or non-folder FileStat, if getFileIcon() does not return null or undefined', async () => {
             const ret = 'TestString';
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             stubs.push(sinon.stub(DefaultUriLabelProviderContribution.prototype, <any>'getFileIcon').returns(ret));
             expect(labelProvider.getIcon(new URI('file:///home/test'))).eq(ret);
             expect(labelProvider.getIcon(<FileStat>{

@@ -1,6 +1,7 @@
 {
   "extends": "../../configs/base.tsconfig",
   "compilerOptions": {
+    "composite": true,
     "rootDir": "src",
     "outDir": "lib",
     "baseUrl": ".",
@@ -15,5 +16,13 @@
   },
   "include": [
     "src"
+  ],
+  "references": [
+    {
+      "path": "../../dev-packages/application-package/compile.tsconfig.json"
+    },
+    {
+      "path": "../core/compile.tsconfig.json"
+    }
   ]
 }

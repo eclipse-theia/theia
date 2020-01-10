@@ -1,10 +1,25 @@
 {
-    "extends": "../../configs/base.tsconfig.json",
-    "compilerOptions": {
-        "rootDir": "src",
-        "outDir": "lib"
+  "extends": "../../configs/base.tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "lib"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../core/compile.tsconfig.json"
     },
-    "include": [
-        "src"
-    ]
+    {
+      "path": "../editor/compile.tsconfig.json"
+    },
+    {
+      "path": "../languages/compile.tsconfig.json"
+    },
+    {
+      "path": "../monaco/compile.tsconfig.json"
+    }
+  ]
 }

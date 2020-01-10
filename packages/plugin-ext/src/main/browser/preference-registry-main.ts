@@ -36,7 +36,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 
 export function getPreferences(preferenceProviderProvider: PreferenceProviderProvider, rootFolders: FileStat[]): PreferenceData {
     const folders = rootFolders.map(root => root.uri.toString());
-    /* tslint:disable-next-line:no-any */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return PreferenceScope.getScopes().reduce((result: { [key: number]: any }, scope: PreferenceScope) => {
         result[scope] = {};
         const provider = preferenceProviderProvider(scope);
@@ -83,7 +83,7 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
         this.toDispose.dispose();
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async $updateConfigurationOption(target: boolean | ConfigurationTarget | undefined, key: string, value: any, resource?: string): Promise<void> {
         const scope = this.parseConfigurationTarget(target);
         await this.preferenceService.set(key, value, scope, resource);

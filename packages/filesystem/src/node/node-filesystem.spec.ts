@@ -25,7 +25,7 @@ import { FileSystem } from '../common/filesystem';
 import { FileSystemNode } from './node-filesystem';
 import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 const expect = chai.expect;
 const track = temp.track();
@@ -812,7 +812,7 @@ describe('NodeFileSystem', function (): void {
 
 });
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('unhandledRejection', (reason: any) => {
     console.error('Unhandled promise rejection: ' + reason);
 });

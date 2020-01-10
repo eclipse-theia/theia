@@ -58,7 +58,7 @@ export interface TreeViewNode extends SelectableTreeNode {
     resourceUri?: string;
     themeIconId?: 'folder' | 'file';
     tooltip?: string;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     description?: string | boolean | any;
 }
 export namespace TreeViewNode {
@@ -68,7 +68,7 @@ export namespace TreeViewNode {
 }
 
 export interface CompositeTreeViewNode extends TreeViewNode, ExpandableTreeNode, CompositeTreeNode {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     description?: string | boolean | any;
 }
 export namespace CompositeTreeViewNode {
@@ -307,7 +307,7 @@ export class TreeViewWidget extends TreeWidget {
         return { treeViewId: this.id, treeItemId: node.id };
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected renderInlineCommand(node: ActionMenuNode, index: number, arg: any): React.ReactNode {
         const { icon } = node;
         if (!icon || !this.commands.isVisible(node.action.commandId, arg) || !this.contextKeys.match(node.action.when)) {

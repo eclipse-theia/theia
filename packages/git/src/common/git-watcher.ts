@@ -47,7 +47,7 @@ export namespace GitStatusChangeEvent {
      * `true` if the argument is a `GitStatusEvent`, otherwise `false`.
      * @param event the argument to check whether it is a Git status change event or not.
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(event: any | undefined): event is GitStatusChangeEvent {
         return !!event && ('source' in event) && ('status' in event);
     }

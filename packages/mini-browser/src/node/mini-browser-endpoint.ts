@@ -146,9 +146,9 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
         return this.fileSystem.resolveContent(uri);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected errorHandler(): (error: any, uri: string, response: Response) => MaybePromise<Response> {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return async (error: any, uri: string, response: Response) => {
             const details = error.toString ? error.toString() : error;
             this.logger.error(`Error occurred while handling request for ${uri}. Details: ${details}`);

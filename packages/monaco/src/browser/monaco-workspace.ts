@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-null-keyword
+/* eslint-disable no-null/no-null */
 
 import Uri from 'vscode-uri';
 import { injectable, inject, postConstruct } from 'inversify';
@@ -60,8 +60,8 @@ export interface CreateResourceEdit extends ResourceEdit {
 export namespace CreateResourceEdit {
     export function is(arg: Edit): arg is CreateResourceEdit {
         return 'newUri' in arg
-            && typeof (arg as any).newUri === 'string' // tslint:disable-line:no-any
-            && (!('oldUri' in arg) || typeof (arg as any).oldUri === 'undefined'); // tslint:disable-line:no-any
+            && typeof (arg as any).newUri === 'string' // eslint-disable-line @typescript-eslint/no-explicit-any
+            && (!('oldUri' in arg) || typeof (arg as any).oldUri === 'undefined'); // eslint-disable-line @typescript-eslint/no-explicit-any
     }
 }
 
@@ -71,8 +71,8 @@ export interface DeleteResourceEdit extends ResourceEdit {
 export namespace DeleteResourceEdit {
     export function is(arg: Edit): arg is DeleteResourceEdit {
         return 'oldUri' in arg
-            && typeof (arg as any).oldUri === 'string' // tslint:disable-line:no-any
-            && (!('newUri' in arg) || typeof (arg as any).newUri === 'undefined'); // tslint:disable-line:no-any
+            && typeof (arg as any).oldUri === 'string' // eslint-disable-line @typescript-eslint/no-explicit-any
+            && (!('newUri' in arg) || typeof (arg as any).newUri === 'undefined'); // eslint-disable-line @typescript-eslint/no-explicit-any
     }
 }
 
@@ -83,9 +83,9 @@ export interface RenameResourceEdit extends ResourceEdit {
 export namespace RenameResourceEdit {
     export function is(arg: Edit): arg is RenameResourceEdit {
         return 'oldUri' in arg
-            && typeof (arg as any).oldUri === 'string' // tslint:disable-line:no-any
+            && typeof (arg as any).oldUri === 'string' // eslint-disable-line @typescript-eslint/no-explicit-any
             && 'newUri' in arg
-            && typeof (arg as any).newUri === 'string'; // tslint:disable-line:no-any
+            && typeof (arg as any).newUri === 'string'; // eslint-disable-line @typescript-eslint/no-explicit-any
     }
 }
 
@@ -97,7 +97,7 @@ export interface TextEdits {
 export namespace TextEdits {
     export function is(arg: Edit): arg is TextEdits {
         return 'uri' in arg
-            && typeof (arg as any).uri === 'string'; // tslint:disable-line:no-any
+            && typeof (arg as any).uri === 'string'; // eslint-disable-line @typescript-eslint/no-explicit-any
     }
     export function isVersioned(arg: TextEdits): boolean {
         return is(arg) && arg.version !== undefined;
@@ -111,7 +111,7 @@ export namespace EditsByEditor {
     export function is(arg: Edit): arg is EditsByEditor {
         return TextEdits.is(arg)
             && 'editor' in arg
-            && (arg as any).editor instanceof MonacoEditor; // tslint:disable-line:no-any
+            && (arg as any).editor instanceof MonacoEditor; // eslint-disable-line @typescript-eslint/no-explicit-any
     }
 }
 
@@ -496,7 +496,7 @@ export class MonacoWorkspace implements lang.Workspace {
     }
 
     protected isResourceFileEdit(edit: monaco.languages.ResourceFileEdit | monaco.languages.ResourceTextEdit): edit is monaco.languages.ResourceTextEdit {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return 'resource' in edit && (edit as any).resource instanceof monaco.Uri;
     }
 

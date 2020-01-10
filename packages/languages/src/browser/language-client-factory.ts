@@ -45,7 +45,7 @@ export class LanguageClientFactory {
         });
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected registerCommand(id: string, callback: (...args: any[]) => any, thisArg?: any): Disposable {
         const execute = callback.bind(thisArg);
         return this.registry.registerCommand({ id }, { execute });

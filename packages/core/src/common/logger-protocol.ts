@@ -24,7 +24,7 @@ export const loggerPath = '/services/logger';
 export interface ILoggerServer extends JsonRpcServer<ILoggerClient> {
     setLogLevel(name: string, logLevel: number): Promise<void>;
     getLogLevel(name: string): Promise<number>;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     log(name: string, logLevel: number, message: any, params: any[]): Promise<void>;
     child(name: string): Promise<void>;
 }
@@ -86,7 +86,7 @@ export namespace LogLevel {
     }
 }
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export namespace ConsoleLogger {
     type Console = (message?: any, ...optionalParams: any[]) => void;
     const originalConsoleLog = console.log;

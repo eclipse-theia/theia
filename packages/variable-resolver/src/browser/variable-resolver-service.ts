@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject } from 'inversify';
 import { VariableRegistry } from './variable';
@@ -64,6 +64,7 @@ export class VariableResolverService {
     }
 
     protected async doResolve(value: Object | undefined, context: VariableResolverService.Context): Promise<Object | undefined> {
+        // eslint-disable-next-line no-null/no-null
         if (value === undefined || value === null) {
             return value;
         }
@@ -111,6 +112,7 @@ export class VariableResolverService {
     protected async resolveVariables(value: string, context: VariableResolverService.Context): Promise<void> {
         const variableRegExp = new RegExp(VariableResolverService.VAR_REGEXP);
         let match;
+        // eslint-disable-next-line no-null/no-null
         while ((match = variableRegExp.exec(value)) !== null) {
             const variableName = match[1];
             await context.resolve(variableName);
@@ -145,6 +147,7 @@ export namespace VariableResolverService {
                 }
                 const variable = this.variableRegistry.getVariable(variableName);
                 const value = variable && await variable.resolve(this.options.context, argument, this.options.configurationSection);
+                // eslint-disable-next-line no-null/no-null
                 const stringValue = value !== undefined && value !== null && JSONExt.isPrimitive(value as ReadonlyJSONValue) ? String(value) : undefined;
                 this.resolved.set(name, stringValue);
             } catch (e) {

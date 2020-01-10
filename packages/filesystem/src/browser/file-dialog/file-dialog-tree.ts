@@ -45,7 +45,7 @@ export class FileDialogTree extends FileTree {
         const result = await Promise.all(
             fileStat.children
                 .filter(child => this.isVisible(child))
-                .map(async child => await this.toNode(child, parent))
+                .map(child => this.toNode(child, parent))
         );
 
         return result.sort(DirNode.compare);

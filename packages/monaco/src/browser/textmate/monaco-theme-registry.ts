@@ -15,7 +15,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { IRawTheme, Registry } from 'vscode-textmate';
 
@@ -73,7 +73,7 @@ export class MonacoThemeRegistry {
             reg.setTheme(result);
             result.encodedTokensColors = reg.getColorMap();
             // index 0 has to be set to null as it is 'undefined' by default, but monaco code expects it to be null
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             result.encodedTokensColors[0] = null!;
             // index 1 and 2 are the default colors
             if (result.colors && result.colors['editor.foreground']) {

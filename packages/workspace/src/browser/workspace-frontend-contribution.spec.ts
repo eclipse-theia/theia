@@ -55,7 +55,7 @@ describe('workspace-frontend-contribution', () => {
         ] as [OS.Type, 'browser' | 'electron', boolean, OpenFileDialogProps][]).forEach(test => {
             const [type, environment, supportMultiRootWorkspace, expected] = test;
             const electron = environment === 'electron' ? true : false;
-            const os = (OS.Type as any)[type]; // tslint:disable-line:no-any
+            const os = (OS.Type as any)[type]; // eslint-disable-line @typescript-eslint/no-explicit-any
             const actual = WorkspaceFrontendContribution.createOpenWorkspaceOpenFileDialogProps({
                 type,
                 electron,

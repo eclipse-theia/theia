@@ -60,9 +60,8 @@ export class PreferenceEditorTabHeaderRenderer extends TabBar.Renderer {
         const key = this.createTabKey(data);
         const style = this.createTabStyle(data);
         const className = this.createTabClass(data);
-        return h.li({
-            key, className, title: title.caption, style
-        },
+        return h.li(
+            { key, className, title: title.caption, style },
             this.renderIcon(data),
             this.renderLabel(data),
             this.renderCloseIcon(data)

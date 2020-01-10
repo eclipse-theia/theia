@@ -34,7 +34,7 @@ export interface MenuAction {
 
 export namespace MenuAction {
     /* Determine whether object is a MenuAction */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(arg: MenuAction | any): arg is MenuAction {
         return !!arg && arg === Object(arg) && 'commandId' in arg;
     }

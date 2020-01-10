@@ -46,7 +46,7 @@ class ElectronEnv {
         return this.is()
             && typeof process !== 'undefined'
             // `defaultApp` does not exist on the Node.js API, but on electron (`electron.d.ts`).
-            && ((process as any).defaultApp || /node_modules[/]electron[/]/.test(process.execPath)); // tslint:disable-line:no-any
+            && ((process as any).defaultApp || /node_modules[/]electron[/]/.test(process.execPath)); // eslint-disable-line @typescript-eslint/no-explicit-any
     }
 
     /**
@@ -60,7 +60,7 @@ class ElectronEnv {
      *
      * Calling this function from the frontend does not make any sense, hence throw an error.
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     runAsNodeEnv(env?: any): any & { ELECTRON_RUN_AS_NODE: 1 } {
         if (typeof process === 'undefined') {
             throw new Error("'process' cannot be undefined.");

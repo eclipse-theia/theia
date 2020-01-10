@@ -16,41 +16,41 @@
 
 import { interfaces } from 'inversify';
 import {
-  createPreferenceProxy,
-  PreferenceProxy,
-  PreferenceService,
-  PreferenceContribution,
-  PreferenceSchema
+    createPreferenceProxy,
+    PreferenceProxy,
+    PreferenceService,
+    PreferenceContribution,
+    PreferenceSchema
 } from '@theia/core/lib/browser';
 
 export const PreviewConfigSchema: PreferenceSchema = {
-  type: 'object',
-  properties: {
-    'preview.openByDefault': {
-      type: 'boolean',
-      description: 'Open the preview instead of the editor by default.',
-      default: false
+    type: 'object',
+    properties: {
+        'preview.openByDefault': {
+            type: 'boolean',
+            description: 'Open the preview instead of the editor by default.',
+            default: false
+        }
     }
-  }
 };
 
 export interface PreviewConfiguration {
-  'preview.openByDefault': boolean;
+    'preview.openByDefault': boolean;
 }
 
 export const PreviewPreferences = Symbol('PreviewPreferences');
 export type PreviewPreferences = PreferenceProxy<PreviewConfiguration>;
 
 export function createPreviewPreferences(
-  preferences: PreferenceService
+    preferences: PreferenceService
 ): PreviewPreferences {
-  return createPreferenceProxy(preferences, PreviewConfigSchema);
+    return createPreferenceProxy(preferences, PreviewConfigSchema);
 }
 
 export function bindPreviewPreferences(bind: interfaces.Bind): void {
-  bind(PreviewPreferences).toDynamicValue(ctx => {
-    const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-    return createPreviewPreferences(preferences);
-  });
-  bind(PreferenceContribution).toConstantValue({ schema: PreviewConfigSchema });
+    bind(PreviewPreferences).toDynamicValue(ctx => {
+        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
+        return createPreviewPreferences(preferences);
+    });
+    bind(PreferenceContribution).toConstantValue({ schema: PreviewConfigSchema });
 }

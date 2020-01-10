@@ -193,6 +193,6 @@ export interface TypeHierarchyItem {
     /**
      * An optional data field can be used to identify a type hierarchy item in a resolve request.
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data?: any;
 }

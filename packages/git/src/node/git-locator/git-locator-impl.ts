@@ -29,16 +29,16 @@ export interface GitLocateContext {
 export class GitLocatorImpl implements GitLocator {
 
     protected readonly options: {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         info: (message: string, ...args: any[]) => void
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         error: (message: string, ...args: any[]) => void
     };
 
     constructor(options?: {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         info?: (message: string, ...args: any[]) => void
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         error?: (message: string, ...args: any[]) => void
     }) {
         this.options = {

@@ -451,17 +451,17 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
         super(selectionService, handler);
     }
 
-    // tslint:disable-next-line: no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public isEnabled(...args: any[]): boolean {
         return super.isEnabled(...args) && !!this.workspaceService.tryGetRoots().length;
     }
 
-    // tslint:disable-next-line: no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public isVisible(...args: any[]): boolean {
         return super.isVisible(...args) && !!this.workspaceService.tryGetRoots().length;
     }
 
-    // tslint:disable-next-line: no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected getUri(...args: any[]): URI | undefined {
         const uri = super.getUri(...args);
         // If the URI is available, return it immediately.

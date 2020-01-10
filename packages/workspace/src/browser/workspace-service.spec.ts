@@ -55,8 +55,8 @@ const getFormattedJson = (data: string): string => {
     return jsoncparser.applyEdits(data, edits);
 };
 
-// tslint:disable:no-any
-// tslint:disable:no-unused-expression
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-unused-expressions */
 describe('WorkspaceService', () => {
     const toRestore: Array<sinon.SinonStub | sinon.SinonSpy | sinon.SinonMock> = [];
     const toDispose: Disposable[] = [];
@@ -182,8 +182,10 @@ describe('WorkspaceService', () => {
             });
         });
 
-        it('should set the exposed roots and workspace to the folders listed in the workspace file returned by the server, ' +
-            'and start watching the workspace file and all the folders', async () => {
+        it(
+            'should set the exposed roots and workspace to the folders listed in the workspace file returned by the server, ' +
+            'and start watching the workspace file and all the folders',
+            async () => {
                 const workspaceFilePath = '/home/workspaceFile';
                 const workspaceFileUri = 'file://' + workspaceFilePath;
                 const workspaceFileStat = <FileStat>{

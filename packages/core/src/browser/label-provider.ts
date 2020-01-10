@@ -94,7 +94,7 @@ export interface URIIconReference {
     uri?: URI
 }
 export namespace URIIconReference {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(element: any | undefined): element is URIIconReference {
         return !!element && typeof element === 'object' && 'kind' in element && element['kind'] === 'uriIconReference';
     }

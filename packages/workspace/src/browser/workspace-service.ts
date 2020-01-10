@@ -596,7 +596,7 @@ export interface WorkspaceInput {
 
 export interface WorkspaceData {
     folders: Array<{ path: string, name?: string }>;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     settings?: { [id: string]: any };
 }
 
@@ -625,12 +625,12 @@ export namespace WorkspaceData {
         required: ['folders']
     });
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(data: any): data is WorkspaceData {
         return !!validateSchema(data);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function buildWorkspaceData(folders: string[] | FileStat[], settings: { [id: string]: any } | undefined): WorkspaceData {
         let roots: string[] = [];
         if (folders.length > 0) {

@@ -339,6 +339,7 @@ export class ApplicationShell extends Widget {
                 && clientX >= offsetLeft + clientWidth - this.options.rightPanel.expandThreshold;
             const expBottom = allowExpansion && !expLeft && !expRight && clientY <= offsetTop + clientHeight
                 && clientY >= offsetTop + clientHeight - this.options.bottomPanel.expandThreshold;
+            // eslint-disable-next-line no-null/no-null
             if (expLeft && !state.leftExpanded && this.leftPanelHandler.tabBar.currentTitle === null) {
                 // The mouse cursor is moved close to the left border
                 this.leftPanelHandler.expand();
@@ -349,6 +350,7 @@ export class ApplicationShell extends Widget {
                 this.leftPanelHandler.collapse();
                 state.leftExpanded = false;
             }
+            // eslint-disable-next-line no-null/no-null
             if (expRight && !state.rightExpanded && this.rightPanelHandler.tabBar.currentTitle === null) {
                 // The mouse cursor is moved close to the right border
                 this.rightPanelHandler.expand();
@@ -381,7 +383,7 @@ export class ApplicationShell extends Widget {
             const { clientX, clientY } = this.dragState.lastDragOver;
             const event = document.createEvent('MouseEvent');
             event.initMouseEvent('mousemove', true, true, window, 0, 0, 0,
-                // tslint:disable-next-line:no-null-keyword
+                // eslint-disable-next-line no-null/no-null
                 clientX, clientY, false, false, false, false, 0, null);
             document.dispatchEvent(event);
         }
@@ -666,7 +668,7 @@ export class ApplicationShell extends Widget {
             this.bottomPanelState.pendingUpdate,
             this.leftPanelHandler.state.pendingUpdate,
             this.rightPanelHandler.state.pendingUpdate
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ]) as Promise<any>;
     }
 
@@ -860,7 +862,7 @@ export class ApplicationShell extends Widget {
                 w = w.parent;
             }
             // Reset the z-index to the default
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             this.setZIndex(oldValue.node, null);
         }
         if (newValue) {
@@ -1653,7 +1655,7 @@ export namespace ApplicationShell {
      * Whether a widget should be opened to the side tab bar relatively to the reference widget.
      */
     export type OpenToSideMode = 'open-to-left' | 'open-to-right';
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function isOpenToSideMode(mode: OpenToSideMode | any): mode is OpenToSideMode {
         return mode === 'open-to-left' || mode === 'open-to-right';
     }

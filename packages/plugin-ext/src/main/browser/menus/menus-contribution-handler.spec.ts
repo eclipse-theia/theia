@@ -61,17 +61,17 @@ describe.skip('MenusContributionHandler', () => {
             bind(CommandRegistry).toSelf().inSingletonScope();
             bind(ContextKeyService).toSelf().inSingletonScope();
             bind(MenusContributionPointHandler).toSelf();
-            // tslint:disable-next-line:no-any mock QuickCommandService
-            bind(QuickCommandService).toConstantValue({} as any);
-            // tslint:disable-next-line:no-any mock TabBarToolbarRegistry
-            bind(TabBarToolbarRegistry).toConstantValue({} as any);
-            // tslint:disable-next-line:no-any mock PluginSharedStyle
-            bind(PluginSharedStyle).toConstantValue({} as any);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            bind(QuickCommandService).toConstantValue({} as any); // mock QuickCommandService
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            bind(TabBarToolbarRegistry).toConstantValue({} as any); // mock TabBarToolbarRegistry
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            bind(PluginSharedStyle).toConstantValue({} as any); // mock PluginSharedStyle
             bind(SelectionService).toSelf().inSingletonScope();
-            // tslint:disable-next-line:no-any mock ScmService
-            bind(ScmService).toConstantValue({} as any);
-            // tslint:disable-next-line:no-any mock ScmService
-            bind(ResourceContextKey).toConstantValue({} as any);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            bind(ScmService).toConstantValue({} as any); // mock ScmService
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            bind(ResourceContextKey).toConstantValue({} as any); // mock ScmService
         });
 
         testContainer.load(module);

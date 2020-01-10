@@ -144,7 +144,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
 
     protected changeSeverity = (event: React.ChangeEvent<HTMLSelectElement>) => {
         this.debugConsoleSession.severity = Severity.fromValue(event.target.value);
-    }
+    };
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), fn: (widget: ConsoleWidget) => T): T | false {
         if (widget instanceof ConsoleWidget && widget.id === DebugConsoleContribution.options.id) {

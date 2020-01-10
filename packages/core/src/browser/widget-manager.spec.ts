@@ -32,7 +32,7 @@ class TestWidgetFactory implements WidgetFactory {
         // create a mock Widget, since a real widget has deps to dom api
         const result = {} as Widget;
         result.id = name;
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (<any>result).disposed = new Signal<Widget, void>(result);
         return result;
     }

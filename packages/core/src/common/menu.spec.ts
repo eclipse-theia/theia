@@ -37,17 +37,17 @@ describe('menu-model-registry', () => {
                     });
                 }
             }, {
-                    registerCommands(reg: CommandRegistry): void {
-                        reg.registerCommand({
-                            id: 'open',
-                            label: 'A'
-                        });
-                        reg.registerCommand({
-                            id: 'open.with',
-                            label: 'B'
-                        });
-                    }
-                });
+                registerCommands(reg: CommandRegistry): void {
+                    reg.registerCommand({
+                        id: 'open',
+                        label: 'A'
+                    });
+                    reg.registerCommand({
+                        id: 'open.with',
+                        label: 'B'
+                    });
+                }
+            });
             const all = service.getMenu();
             const main = all.children[0] as CompositeMenuNode;
             expect(main.children.length).equals(1);
@@ -58,7 +58,7 @@ describe('menu-model-registry', () => {
             expect(file.label, 'File');
             const openGroup = file.children[0] as CompositeMenuNode;
             expect(openGroup.children.length).equals(2);
-            // tslint:disable-next-line:no-unused-expression
+            // eslint-disable-next-line no-unused-expressions
             expect(openGroup.label).undefined;
         });
     });

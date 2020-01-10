@@ -156,7 +156,7 @@ export interface Command {
     id: string;
     title: string;
     tooltip?: string;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     arguments?: any[];
 }
 

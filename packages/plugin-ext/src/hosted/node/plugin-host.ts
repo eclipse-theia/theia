@@ -26,7 +26,7 @@ process.exit = function (code?: number): void {
 } as (code?: number) => never;
 
 // same for 'crash'(works only in electron)
-// tslint:disable-next-line: no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const proc = process as any;
 if (proc.crash) {
     proc.crash = function (): void {
@@ -39,10 +39,10 @@ process.on('uncaughtException', (err: Error) => {
     console.error(err);
 });
 
-// tslint:disable-next-line: no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const unhandledPromises: Promise<any>[] = [];
 
-// tslint:disable-next-line: no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
     unhandledPromises.push(promise);
     setTimeout(() => {
@@ -59,7 +59,7 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
     }, 1000);
 });
 
-// tslint:disable-next-line: no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('rejectionHandled', (promise: Promise<any>) => {
     const index = unhandledPromises.indexOf(promise);
     if (index >= 0) {

@@ -14,12 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject, named } from 'inversify';
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server';
-// tslint:disable-next-line:no-implicit-dependencies
 import { ResponseError, ErrorCodes, ResponseMessage, Message, isRequestMessage } from 'vscode-jsonrpc/lib/messages';
 import { InitializeRequest, ShutdownRequest } from 'vscode-languageserver-protocol';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
@@ -79,7 +78,7 @@ export class LanguagesBackendContribution implements MessagingService.Contributi
                 } else if (method === ShutdownRequest.type.method) {
                     // The client expects a `null` as the response.
                     // https://microsoft.github.io/language-server-protocol/specification#shutdown
-                    const data = null; // tslint:disable-line:no-null-keyword
+                    const data = null; // eslint-disable-line no-null/no-null
                     connection.writer.write(<ResponseMessage>{
                         jsonrpc,
                         id,

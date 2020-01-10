@@ -479,7 +479,7 @@ export namespace SpecialCases {
 
 export namespace Key {
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function isKey(arg: any): arg is Key {
         return typeof arg === 'object' && ('code' in arg) && ('keyCode' in arg);
     }
@@ -618,7 +618,7 @@ export namespace Key {
 
 }
 
-/*-------------------- Initialize the static key mappings --------------------*/
+/* -------------------- Initialize the static key mappings -------------------- */
 (() => {
     // Set the default key mappings from the constants in the Key namespace
     Object.keys(Key).map(prop => Reflect.get(Key, prop)).filter(key => Key.isKey(key)).forEach(key => {

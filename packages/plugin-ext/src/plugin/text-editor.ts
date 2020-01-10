@@ -133,7 +133,7 @@ export class TextEditorExt implements theia.TextEditor {
         this._viewColumn = value;
     }
 
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     edit(callback: (editBuilder: theia.TextEditorEdit) => void, options: { undoStopBefore: boolean; undoStopAfter: boolean; } = { undoStopBefore: true, undoStopAfter: true }): Promise<boolean> {
         if (this.disposed) {
             return Promise.reject(new Error('TextEditor#edit not possible on closed editor'));
@@ -143,7 +143,7 @@ export class TextEditorExt implements theia.TextEditor {
         callback(edit);
         return this.applyEdit(edit);
     }
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options: { undoStopBefore: boolean; undoStopAfter: boolean; } = { undoStopBefore: true, undoStopAfter: true }): Promise<boolean> {
         if (this.disposed) {
             return Promise.reject(new Error('TextEditor#insertSnippet not possible on closed editors'));
@@ -249,7 +249,7 @@ export class TextEditorExt implements theia.TextEditor {
         });
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private runOnProxy(callback: () => Promise<any>): Promise<TextEditorExt | undefined> {
         if (this.disposed) {
             console.warn('TextEditor is disposed!');
@@ -503,7 +503,7 @@ export class TextEditorEdit {
     }
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function warnOnError(promise: Promise<any>): void {
     promise.then(undefined, err => {
         console.warn(err);

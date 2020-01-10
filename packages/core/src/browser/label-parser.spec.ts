@@ -18,7 +18,7 @@ import { CommandService } from './../common';
 import { Container } from 'inversify';
 import { expect } from 'chai';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 let statusBarEntryUtility: LabelParser;
 

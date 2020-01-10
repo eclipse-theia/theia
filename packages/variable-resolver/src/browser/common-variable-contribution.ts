@@ -72,7 +72,7 @@ export class CommonVariableContribution implements VariableContribution {
         variables.registerVariable({
             name: 'command',
             resolve: async (_, command) =>
-                // tslint:disable-next-line:no-return-await
+                // eslint-disable-next-line no-return-await
                 command && await this.commands.executeCommand(command)
         });
         variables.registerVariable({
