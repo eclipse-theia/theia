@@ -367,9 +367,9 @@ export class FrontendApplication {
         performance.measure(name, startMark, endMark);
         for (const item of performance.getEntriesByName(name)) {
             if (item.duration > 100) {
-                console.warn(item.name + ' is slow, took: ' + Math.round(item.duration * 10) / 10 + ' ms');
+                console.warn(item.name + ' is slow, took: ' + item.duration.toFixed(1) + ' ms');
             } else {
-                console.debug(item.name + ' took ' + Math.round(item.duration * 10) / 10 + ' ms');
+                console.debug(item.name + ' took ' + item.duration.toFixed(1) + ' ms');
             }
         }
         performance.clearMeasures(name);

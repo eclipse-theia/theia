@@ -506,7 +506,7 @@
                     loadTimeout = setTimeout(() => {
                         clearTimeout(loadTimeout);
                         loadTimeout = undefined;
-                        console.warn('Loading webview is slow, took: ' + Math.round(timeoutDelay * 10) / 10 + 'ms');
+                        console.warn('Loading webview is slow, took: ' + timeoutDelay.toFixed(1) + 'ms');
                         onLoad(newFrame.contentDocument, newFrame.contentWindow);
                     }, timeoutDelay);
 
