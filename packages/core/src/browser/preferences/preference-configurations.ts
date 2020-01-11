@@ -16,22 +16,17 @@
 
 import { injectable, inject, named, interfaces } from 'inversify';
 import URI from '../../common/uri';
-import { EnvVariablesServer } from '../../common/env-variables';
 import { ContributionProvider, bindContributionProvider } from '../../common/contribution-provider';
+import { EnvVariablesServer } from '../../common/env-variables';
 
 export const PreferenceConfiguration = Symbol('PreferenceConfiguration');
 export interface PreferenceConfiguration {
     name: string;
 }
-export const DATA_FOLDER_NAME = Symbol('DataFolderName');
 
 export function bindPreferenceConfigurations(bind: interfaces.Bind): void {
     bindContributionProvider(bind, PreferenceConfiguration);
     bind(PreferenceConfigurations).toSelf().inSingletonScope();
-    bind(DATA_FOLDER_NAME).toDynamicValue(async ctx => {
-        const envServer = <EnvVariablesServer>ctx.container.get(EnvVariablesServer);
-        return envServer.getDataFolderName();
-    });
 }
 
 @injectable()
@@ -40,13 +35,12 @@ export class PreferenceConfigurations {
     @inject(ContributionProvider) @named(PreferenceConfiguration)
     protected readonly provider: ContributionProvider<PreferenceConfiguration>;
 
-    @inject(DATA_FOLDER_NAME)
-    protected readonly DATA_FOLDER_NAME: string;
+    @inject(EnvVariablesServer)
+    protected readonly envServer: EnvVariablesServer;
 
     /* prefer Theia over VS Code by default */
-    getPaths(): string[] {
-        console.log('========================:', this.DATA_FOLDER_NAME);
-        return [this.DATA_FOLDER_NAME, '.vscode'];
+    async getPaths(): Promise<string[]> {
+        return [await this.envServer.getDataFolderName(), '.vscode'];
     }
 
     getConfigName(): string {
@@ -81,7 +75,10 @@ export class PreferenceConfigurations {
         return configUri.parent.path.base;
     }
 
-    createUri(folder: URI, configPath: string, configName: string = this.getConfigName()): URI {
+    async createUri(folder: URI, configPath: string, configName: string = this.getConfigName()): Promise<URI> {
+        if (!configPath) {
+            configPath = (await this.getPaths())[0];
+        }
         return folder.resolve(configPath).resolve(configName + '.json');
     }
 

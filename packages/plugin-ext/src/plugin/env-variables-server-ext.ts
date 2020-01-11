@@ -34,10 +34,6 @@ export class EnvVariablesServerExt implements EnvVariablesServer {
         return this.proxy.$getAllEnvVariables();
     }
 
-    $getAllEnvVariables(): Promise<EnvVariable[]> {
-        return this.proxy.$getAllEnvVariables();
-    }
-
     async getValue(name: string): Promise<EnvVariable | undefined> {
         const value = await this.proxy.$getEnvVariable(name);
         return { name, value };

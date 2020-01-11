@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018-2019 Red Hat, Inc. and others.
+ * Copyright (C) 2018-2020 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -53,35 +53,24 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         return this.envs[key];
     }
 
-    getUserHomeFolderPathSync(): string {
+    async getUserHomeFolderPath(): Promise<string> {
         return os.homedir();
     }
 
-    async getUserHomeFolderPath(): Promise<string> {
-        return this.getUserHomeFolderPathSync();
-    }
-
-    getDataFolderNameSync(): string {
+    async getDataFolderName(): Promise<string> {
         return THEIA_DATA_FOLDER;
     }
 
-    async getDataFolderName(): Promise<string> {
-        return this.getDataFolderNameSync();
-    }
-
-    getUserDataFolderPathSync(): string {
-        return path.join(this.getUserHomeFolderPathSync(), this.getDataFolderNameSync());
-    }
-
     async getUserDataFolderPath(): Promise<string> {
-        return this.getUserDataFolderPathSync();
+        return path.join(await this.getUserHomeFolderPath(), await this.getDataFolderName());
     }
 
     async getAppDataPath(): Promise<string> {
         return path.join(
-            this.getUserHomeFolderPathSync(),
+            await this.getUserHomeFolderPath(),
             ...(isWindows ? WINDOWS_DATA_FOLDERS : ['']),
-            this.getDataFolderNameSync()
+            await this.getDataFolderName()
         );
     }
+
 }

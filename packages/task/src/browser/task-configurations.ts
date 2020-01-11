@@ -110,7 +110,7 @@ export class TaskConfigurations implements Disposable {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.toDispose.push(
             this.taskConfigurationManager.onDidChangeTaskConfig(async change => {
                 try {
