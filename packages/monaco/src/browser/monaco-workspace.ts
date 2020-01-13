@@ -363,7 +363,7 @@ export class MonacoWorkspace implements lang.Workspace {
                     totalFiles += 1;
                     totalEdits += editOperations.length;
                 } else if (CreateResourceEdit.is(edit) || DeleteResourceEdit.is(edit) || RenameResourceEdit.is(edit)) {
-                    this.performResourceEdit(edit);
+                    await this.performResourceEdit(edit);
                 } else {
                     throw new Error(`Unexpected edit type: ${JSON.stringify(edit)}`);
                 }
