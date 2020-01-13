@@ -53,6 +53,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected closeOnDispose = true;
     protected waitForConnection: Deferred<MessageConnection> | undefined;
     protected hoverMessage: HTMLDivElement;
+    protected lastTouchEnd: TouchEvent | undefined;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -173,6 +174,16 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.onTermDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
 
+        const touchEndListener = (event: TouchEvent) => {
+            if (this.node.contains(event.target as Node)) {
+                this.lastTouchEnd = event;
+            }
+        };
+        document.addEventListener('touchend', touchEndListener, { passive: true });
+        this.onDispose(() => {
+            document.removeEventListener('touchend', touchEndListener);
+        });
+
         this.toDispose.push(this.term.onSelectionChange(() => {
             if (this.copyOnSelection) {
                 this.copyOnSelectionHandler.copy(this.term.getSelection());
@@ -227,6 +238,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return Promise.reject(new Error('terminal is not started'));
         }
         return this.shellTerminalServer.getProcessId(this.terminalId);
+    }
+
+    get lastTouchEndEvent(): TouchEvent | undefined {
+        return this.lastTouchEnd;
     }
 
     onDispose(onDispose: () => void): void {

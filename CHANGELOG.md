@@ -2,6 +2,8 @@
 
 ## v0.15.0
 
+- [terminal] always open terminal links on touchevents (e.g. when tapping a link on iPad) [#6875](https://github.com/eclipse-theia/theia/pull/6875)
+
 Breaking changes:
 
 - [core] removed `virtual-renderer`. `react-renderer` should be used instead [#6885](https://github.com/eclipse-theia/theia/pull/6885)
