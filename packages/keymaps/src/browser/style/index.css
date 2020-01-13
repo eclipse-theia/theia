@@ -52,6 +52,10 @@
     min-height: var(--theia-icon-size);
 }
 
+td .kb-actions {
+    float: left;
+}
+
 .th-action, .th-keybinding,
 .kb-actions, .kb-keybinding {
     min-height: 18px;
