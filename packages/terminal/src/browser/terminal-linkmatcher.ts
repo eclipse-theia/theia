@@ -37,16 +37,18 @@ export abstract class AbstractCmdClickTerminalContribution implements TerminalCo
         const validate = this.getValidate(terminalWidget);
         const wrappedHandler = (event: MouseEvent, match: string) => {
             event.preventDefault();
-            if (this.isCommandPressed(event)) {
+            if (this.isCommandPressed(event) || this.wasTouchEvent(event, terminalWidget.lastTouchEndEvent)) {
                 handler(event, match);
             } else {
                 term.focus();
             }
         };
         const matcherId = term.registerLinkMatcher(regexp, wrappedHandler, {
-            willLinkActivate: (event: MouseEvent, uri: string) => this.isCommandPressed(event),
+            willLinkActivate: (event: MouseEvent, uri: string) => this.isCommandPressed(event) || this.wasTouchEvent(event, terminalWidget.lastTouchEndEvent),
             tooltipCallback: (event: MouseEvent, uri: string) => {
-                terminalWidget.showHoverMessage(event.clientX, event.clientY, this.getHoverMessage());
+                if (!this.wasTouchEvent(event, terminalWidget.lastTouchEndEvent)) {
+                    terminalWidget.showHoverMessage(event.clientX, event.clientY, this.getHoverMessage());
+                }
             },
             leaveCallback: (event: MouseEvent, uri: string) => {
                 terminalWidget.hideHover();
@@ -62,6 +64,26 @@ export abstract class AbstractCmdClickTerminalContribution implements TerminalCo
 
     protected isCommandPressed(event: MouseEvent): boolean {
         return isOSX ? event.metaKey : event.ctrlKey;
+    }
+
+    protected wasTouchEvent(event: MouseEvent, lastTouchEnd: TouchEvent | undefined): boolean {
+        if (!lastTouchEnd) {
+            return false;
+        }
+        if ((event.timeStamp - lastTouchEnd.timeStamp) > 400) {
+            // A 'touchend' event typically precedes a matching 'click' event by 50ms.
+            return false;
+        }
+        if (Math.abs(event.pageX - (lastTouchEnd as unknown as MouseEvent).pageX) > 5) {
+            // Matching 'touchend' and 'click' events typically have the same page coordinates,
+            // plus or minus 1 pixel.
+            return false;
+        }
+        if (Math.abs(event.pageY - (lastTouchEnd as unknown as MouseEvent).pageY) > 5) {
+            return false;
+        }
+        // We have a match! This link was tapped.
+        return true;
     }
 
     protected getHoverMessage(): string {
