@@ -42,7 +42,7 @@ export default new ContainerModule(bind => {
     bind(FileSystemWatcher).toSelf().inSingletonScope();
     bind(FileShouldOverwrite).toFunction(async function (file: FileStat, stat: FileStat): Promise<boolean> {
         const dialog = new ConfirmDialog({
-            title: `The file '${file.uri.substring(file.uri.lastIndexOf('/') + 1)}' has been changed on the file system.`,
+            title: `The file '${file.uri}' has been changed on the file system.`,
             msg: 'Do you want to overwrite the changes made on the file system?',
             ok: 'Yes',
             cancel: 'No'
