@@ -18,7 +18,7 @@ import '../../src/browser/style/index.css';
 
 import { ContainerModule, interfaces } from 'inversify';
 import { ResourceResolver, CommandContribution } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, FrontendApplicationContribution, ConfirmDialog, LabelProviderContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, FrontendApplicationContribution, ConfirmDialog, LabelProviderContribution, LabelProvider } from '@theia/core/lib/browser';
 import { FileSystem, fileSystemPath, FileShouldOverwrite, FileStat } from '../common';
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
@@ -31,6 +31,7 @@ import { FileSystemFrontendContribution } from './filesystem-frontend-contributi
 import { FileSystemProxyFactory } from './filesystem-proxy-factory';
 import { FileUploadService } from './file-upload-service';
 import { FileTreeLabelProvider } from './file-tree/file-tree-label-provider';
+import URI from '@theia/core/lib/common/uri';
 
 export default new ContainerModule(bind => {
     bindFileSystemPreferences(bind);
@@ -40,15 +41,16 @@ export default new ContainerModule(bind => {
     );
     bind(FileSystemWatcherServer).to(ReconnectingFileSystemWatcherServer);
     bind(FileSystemWatcher).toSelf().inSingletonScope();
-    bind(FileShouldOverwrite).toFunction(async function (file: FileStat, stat: FileStat): Promise<boolean> {
+    bind(FileShouldOverwrite).toDynamicValue(context => async (file: FileStat, stat: FileStat): Promise<boolean> => {
+        const labelProvider = context.container.get(LabelProvider);
         const dialog = new ConfirmDialog({
-            title: `The file '${file.uri}' has been changed on the file system.`,
-            msg: 'Do you want to overwrite the changes made on the file system?',
+            title: `The file '${labelProvider.getName(new URI(file.uri))}' has been changed on the file system.`,
+            msg: `Do you want to overwrite the changes made to '${labelProvider.getLongName(new URI(file.uri))}' on the file system?`,
             ok: 'Yes',
             cancel: 'No'
         });
         return !!await dialog.open();
-    });
+    }).inSingletonScope();
 
     bind(FileSystemProxyFactory).toSelf();
     bind(FileSystem).toDynamicValue(ctx => {
