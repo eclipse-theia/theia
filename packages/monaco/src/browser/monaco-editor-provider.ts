@@ -125,6 +125,8 @@ export class MonacoEditorProvider {
         }, toDispose);
         editor.onDispose(() => toDispose.dispose());
 
+        this.suppressMonaconKeybindingListener(editor);
+
         const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
         commandService.setDelegate(standaloneCommandService);
         this.installQuickOpenService(editor);
@@ -142,6 +144,24 @@ export class MonacoEditorProvider {
         }));
 
         return editor;
+    }
+
+    /**
+     * Suppresses Monaco keydown listener to avoid triggering default Monaco keybindings
+     * if they are overriden by a user. Monaco keybindings should be registered as Theia keybindings
+     * to allow a user to customize them.
+     */
+    protected suppressMonaconKeybindingListener(editor: MonacoEditor): void {
+        let keydownListener: monaco.IDisposable | undefined;
+        for (const listener of editor.getControl()._standaloneKeybindingService._store._toDispose) {
+            if ('_type' in listener && listener['_type'] === 'keydown') {
+                keydownListener = listener;
+                break;
+            }
+        }
+        if (keydownListener) {
+            keydownListener.dispose();
+        }
     }
 
     protected createEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {

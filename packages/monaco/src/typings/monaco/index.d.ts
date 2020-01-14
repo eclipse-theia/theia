@@ -48,6 +48,11 @@ declare module monaco.editor {
         setDecorations(decorationTypeKey: string, ranges: IDecorationOptions[]): void;
         setDecorationsFast(decorationTypeKey: string, ranges: IRange[]): void;
         trigger(source: string, handlerId: string, payload: any): void
+        _standaloneKeybindingService: {
+            _store: {
+                _toDispose: monaco.IDisposable[]
+            }
+        }
     }
 
     // https://github.com/TypeFox/vscode/blob/monaco/0.18.0/src/vs/editor/browser/widget/codeEditorWidget.ts#L107
