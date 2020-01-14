@@ -25,7 +25,6 @@ cache:
   - packages/editor-preview/node_modules
   - packages/editor/node_modules
   - packages/editorconfig/node_modules
-  - packages/extension-manager/node_modules
   - packages/file-search/node_modules
   - packages/filesystem/node_modules
   - packages/getting-started/node_modules
