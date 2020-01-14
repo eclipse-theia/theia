@@ -27,7 +27,7 @@ import * as launch from 'vscode-ws-jsonrpc/lib/server/launch';
 import { ContributionProvider, ConnectionHandler, bindContributionProvider } from '../../common';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { BackendApplicationContribution } from '../backend-application';
-import { MessagingService } from './messaging-service';
+import { MessagingService, WebSocketChannelConnection } from './messaging-service';
 import { ConsoleLogger } from './logger';
 import { ConnectionContainerModule } from './connection-container-module';
 
@@ -68,7 +68,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     forward(spec: string, callback: (params: MessagingService.PathParams, connection: IConnection) => void): void {
         this.wsChannel(spec, (params, channel) => {
             const connection = launch.createWebSocketConnection(channel);
-            callback(params, connection);
+            callback(params, WebSocketChannelConnection.create(connection, channel));
         });
     }
 

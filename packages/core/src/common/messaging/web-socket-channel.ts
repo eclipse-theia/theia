@@ -93,6 +93,20 @@ export class WebSocketChannel implements IWebSocket {
         this.fireClose(code, reason);
     }
 
+    tryClose(code: number = 1000, reason: string = ''): void {
+        if (this.closing || this.toDispose.disposed) {
+            // Do not try to close the channel if it is already closing or disposed.
+            return;
+        }
+        this.doSend(JSON.stringify(<WebSocketChannel.CloseMessage>{
+            kind: 'close',
+            id: this.id,
+            code,
+            reason
+        }));
+        this.fireClose(code, reason);
+    }
+
     protected fireOpen: () => void = () => { };
     onOpen(cb: () => void): void {
         this.checkNotDisposed();
