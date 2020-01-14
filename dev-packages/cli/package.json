@@ -32,6 +32,12 @@
   "dependencies": {
     "@theia/application-manager": "^0.14.0",
     "@theia/application-package": "^0.14.0",
+    "@types/mkdirp": "^0.5.2",
+    "@types/requestretry": "^1.12.3",
+    "mkdirp": "^0.5.0",
+    "requestretry": "^3.1.0",
+    "tar": "^4.0.0",
+    "unzip-stream": "^0.3.0",
     "yargs": "^11.1.0"
   }
 }

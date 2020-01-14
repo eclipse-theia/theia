@@ -1095,6 +1095,13 @@
   resolved "https://registry.yarnpkg.com/@types/minimatch/-/minimatch-3.0.3.tgz#3dca0e3f33b200fc7d1139c0cd96c1268cadfd9d"
   integrity sha512-tHq6qdbT9U1IRSGf14CL0pUlULksvY9OZ+5eEgl1N7t+OA3tGvNpxJCzuKQlsNgCVwbAs670L1vcVQi8j9HjnA==
 
+"@types/mkdirp@^0.5.2":
+  version "0.5.2"
+  resolved "https://registry.yarnpkg.com/@types/mkdirp/-/mkdirp-0.5.2.tgz#503aacfe5cc2703d5484326b1b27efa67a339c1f"
+  integrity sha512-U5icWpv7YnZYGsN4/cmh3WD2onMY0aJIiTE6+51TwJCttdHvtCYmkBNOobHlXwrJRL0nkH9jH4kD+1FAdMN4Tg==
+  dependencies:
+    "@types/node" "*"
+
 "@types/mocha@^2.2.41":
   version "2.2.48"
   resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-2.2.48.tgz#3523b126a0b049482e1c3c11877460f76622ffab"
@@ -1155,7 +1162,7 @@
     "@types/prop-types" "*"
     csstype "^2.2.0"
 
-"@types/request@^2.0.3":
+"@types/request@*", "@types/request@^2.0.3":
   version "2.48.4"
   resolved "https://registry.yarnpkg.com/@types/request/-/request-2.48.4.tgz#df3d43d7b9ed3550feaa1286c6eabf0738e6cf7e"
   integrity sha512-W1t1MTKYR8PxICH+A4HgEIPuAC3sbljoEVfyZbeFJJDbr30guDspJri2XOaM2E+Un7ZjrihaDi7cf6fPa2tbgw==
@@ -1164,6 +1171,14 @@
     "@types/node" "*"
     "@types/tough-cookie" "*"
     form-data "^2.5.0"
+
+"@types/requestretry@^1.12.3":
+  version "1.12.5"
+  resolved "https://registry.yarnpkg.com/@types/requestretry/-/requestretry-1.12.5.tgz#c8abf9eb173a9c61d7099ca378acca3e8a483007"
+  integrity sha512-iEs/MpRq8E+4V4wu9OseeHI0AtgLns4a+/jukKOjUJmVh36Ai+r4E5603pQwRx6mQrS0dhuq319crz8Q9lyBkA==
+  dependencies:
+    "@types/node" "*"
+    "@types/request" "*"
 
 "@types/rimraf@^2.0.2":
   version "2.0.3"
