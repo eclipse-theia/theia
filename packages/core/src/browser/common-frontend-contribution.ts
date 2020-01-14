@@ -1541,6 +1541,22 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hc: 'editorGutter.addedBackground'
                 }, description: 'Background color of success widgets (like alerts or notifications).'
             },
+            {
+                id: 'warningBackground',
+                defaults: {
+                    dark: 'editorWarning.foreground',
+                    light: 'editorWarning.foreground',
+                    hc: 'editorWarning.border'
+                }, description: 'Background color of warning widgets (like alerts or notifications).'
+            },
+            {
+                id: 'warningForeground',
+                defaults: {
+                    dark: 'inputValidation.warningBackground',
+                    light: 'inputValidation.warningBackground',
+                    hc: 'inputValidation.warningBackground'
+                }, description: 'Foreground color of warning widgets (like alerts or notifications).'
+            },
             // Statusbar
             {
                 id: 'statusBar.offlineBackground',
