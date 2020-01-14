@@ -78,7 +78,7 @@ if (staticCompression) {
     }));
 }
 plugins.push(new CircularDependencyPlugin({
-    exclude: /(node_modules|examples)\\/./,
+    exclude: /(node_modules|examples)[\\\\|\/]./,
     failOnError: false // https://github.com/nodejs/readable-stream/issues/280#issuecomment-297076462
 }));
 
