@@ -369,6 +369,7 @@
 .theia-debug-hover-content {
     display: flex;
     flex: 1;
+    overflow-y: auto;
 }
 
 /** Breakpoint Widget */
