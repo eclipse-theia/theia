@@ -4,6 +4,8 @@
 
 Breaking changes:
 
+- [core] removed `virtual-renderer`. `react-renderer` should be used instead [#6885](https://github.com/eclipse-theia/theia/pull/6885)
+- [core] removed `virtual-widget`. `react-widget` should be used instead [#6885](https://github.com/eclipse-theia/theia/pull/6885)
 - [task] renamed method `getStrigifiedTaskSchema()` has been renamed to `getStringifiedTaskSchema()` [#6780](https://github.com/eclipse-theia/theia/pull/6780)
 - [task] renamed method `reorgnizeTasks()` has been renamed to `reorganizeTasks()` [#6780](https://github.com/eclipse-theia/theia/pull/6780)
 - Support VS Code icon and color theming. [#6475](https://github.com/eclipse-theia/theia/pull/6475)
@@ -42,7 +44,7 @@ Breaking changes:
             });
         ```
       - or install from a VS Code extension.
-    - One should not introduce css color variables anymore or hardcode colors in css. 
+    - One should not introduce css color variables anymore or hardcode colors in css.
     - One can contribute new colors by implementing `ColorContribution` contribution point and calling `ColorRegistry.register`.
     It's important that new colors are derived from existing VS Code colors if one plans to allow installation of VS Code extension contributing color themes.
     Otherwise, there is no guarantee that new colors don't look alien for a random VS Code color theme.

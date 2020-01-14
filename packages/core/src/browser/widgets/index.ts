@@ -15,7 +15,5 @@
  ********************************************************************************/
 
 export * from './widget';
-export * from './virtual-renderer';
-export * from './virtual-widget';
 export * from './react-renderer';
 export * from './react-widget';
