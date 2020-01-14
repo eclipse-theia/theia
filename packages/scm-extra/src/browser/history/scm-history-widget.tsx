@@ -222,19 +222,19 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                 try {
                     const currentCommits = this.status.state === 'ready' ? this.status.commits : [];
 
-                    let history = await this.historySupport.getCommitHistory(options);
+                    let sourceHistory = await this.historySupport.getCommitHistory(options);
                     if (token.isCancellationRequested || !this.hasMoreCommits) {
                         return;
                     }
 
-                    if (options && ((options.maxCount && history.length < options.maxCount) || (!options.maxCount && currentCommits))) {
+                    if (options && ((options.maxCount && sourceHistory.length < options.maxCount) || (!options.maxCount && currentCommits))) {
                         this.hasMoreCommits = false;
                     }
                     if (currentCommits.length > 0) {
-                        history = history.slice(1);
+                        sourceHistory = sourceHistory.slice(1);
                     }
                     const commits: ScmCommitNode[] = [];
-                    for (const commit of history) {
+                    for (const commit of sourceHistory) {
                         const fileChangeNodes: ScmFileChangeNode[] = [];
                         await Promise.all(commit.fileChanges.map(async fileChange => {
                             fileChangeNodes.push({
