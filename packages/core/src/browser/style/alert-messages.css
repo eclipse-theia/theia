@@ -33,8 +33,8 @@
 
 /* warning message */
 .theia-warning-alert {
-    background-color: var(--theia-editorWarning-foreground);
-    color: var(--theia-inputValidation-warningBackground);
+    background-color: var(--theia-warningBackground);
+    color: var(--theia-warningForeground);
     padding: 10px;
 }
 
