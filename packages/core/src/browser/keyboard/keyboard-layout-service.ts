@@ -146,7 +146,7 @@ export class KeyboardLayoutService {
             if (mapping.hasOwnProperty(code)) {
                 const keyMapping = mapping[code];
                 const mappedKey = Key.getKey(code);
-                if (this.isValidKey(mappedKey)) {
+                if (mappedKey && this.shouldIncludeKey(code)) {
                     if (isWindows) {
                         this.addWindowsKeyMapping(key2KeyCode, mappedKey, (keyMapping as IWindowsKeyMapping).vkey, keyMapping.value);
                     } else {
@@ -172,13 +172,12 @@ export class KeyboardLayoutService {
         return { key2KeyCode, code2Character };
     }
 
-    protected isValidKey(key?: Key): key is Key {
-        return key !== undefined
-            && key !== Key.ADD
-            && key !== Key.SUBTRACT
-            && key !== Key.MULTIPLY
-            && key !== Key.DIVIDE
-            && key !== Key.DECIMAL;
+    protected shouldIncludeKey(code: string): boolean {
+        // Exclude all numpad keys because they produce values that are already found elsewhere on the keyboard.
+        // This can cause problems, e.g. if `Numpad3` maps to `PageDown` then commands bound to `PageDown` would
+        // be resolved to `Digit3` (`Numpad3` is associated with `Key.DIGIT3`), effectively blocking the user
+        // from typing `3` in an editor.
+        return !code.startsWith('Numpad');
     }
 
     private addKeyMapping(key2KeyCode: KeyCode[], mappedKey: Key, value: string, shift: boolean, alt: boolean): void {
