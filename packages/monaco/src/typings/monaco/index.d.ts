@@ -52,6 +52,8 @@ declare module monaco.editor {
             _store: {
                 _toDispose: monaco.IDisposable[]
             }
+            resolveKeybinding(keybinding: monaco.keybindings.ChordKeybinding): monaco.keybindings.ResolvedKeybinding[];
+            resolveKeyboardEvent(keyboardEvent: monaco.IKeyboardEvent): monaco.keybindings.ResolvedKeybinding;
         }
     }
 
@@ -351,6 +353,7 @@ declare module monaco.keybindings {
         public readonly keyCode: KeyCode;
 
         constructor(ctrlKey: boolean, shiftKey: boolean, altKey: boolean, metaKey: boolean, keyCode: KeyCode);
+        toChord(): ChordKeybinding;
     }
 
     // https://github.com/TypeFox/vscode/blob/monaco/0.18.0/src/vs/base/common/keyCodes.ts#L503

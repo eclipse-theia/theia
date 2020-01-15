@@ -15,21 +15,12 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { KeybindingContribution, KeybindingRegistry, Key, KeyCode, Keystroke, KeyModifier, KeySequence } from '@theia/core/lib/browser';
+import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { EditorKeybindingContexts } from '@theia/editor/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
-import { KEY_CODE_MAP } from './monaco-keycode-map';
-import { isOSX, environment } from '@theia/core';
-
-function monaco2BrowserKeyCode(keyCode: monaco.KeyCode): number {
-    for (let i = 0; i < KEY_CODE_MAP.length; i++) {
-        if (KEY_CODE_MAP[i] === keyCode) {
-            return i;
-        }
-    }
-    return -1;
-}
+import { environment } from '@theia/core';
+import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 
 @injectable()
 export class MonacoKeybindingContribution implements KeybindingContribution {
@@ -45,15 +36,12 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             const item = defaultKeybindings[i];
             const command = this.commands.validate(item.command);
             if (command) {
-                const raw = item.keybinding;
                 const when = item.when && item.when.serialize();
                 let keybinding;
                 if (item.command === MonacoCommands.GO_TO_DEFINITION && !environment.electron.is()) {
                     keybinding = 'ctrlcmd+f11';
                 } else {
-                    keybinding = raw instanceof monaco.keybindings.SimpleKeybinding
-                        ? this.keyCode(raw).toString()
-                        : this.keySequence(raw as monaco.keybindings.ChordKeybinding).join(' ');
+                    keybinding = MonacoResolvedKeybinding.toKeybinding(item.keybinding);
                 }
                 registry.registerKeybinding({ command, keybinding, when });
             }
@@ -68,34 +56,5 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                 context: EditorKeybindingContexts.editorTextFocus
             });
         }
-    }
-
-    protected keyCode(keybinding: monaco.keybindings.SimpleKeybinding): KeyCode {
-        const keyCode = keybinding.keyCode;
-        const sequence: Keystroke = {
-            first: Key.getKey(monaco2BrowserKeyCode(keyCode & 0xff)),
-            modifiers: []
-        };
-        if (keybinding.ctrlKey) {
-            if (isOSX) {
-                sequence.modifiers!.push(KeyModifier.MacCtrl);
-            } else {
-                sequence.modifiers!.push(KeyModifier.CtrlCmd);
-            }
-        }
-        if (keybinding.shiftKey) {
-            sequence.modifiers!.push(KeyModifier.Shift);
-        }
-        if (keybinding.altKey) {
-            sequence.modifiers!.push(KeyModifier.Alt);
-        }
-        if (keybinding.metaKey && sequence.modifiers!.indexOf(KeyModifier.CtrlCmd) === -1) {
-            sequence.modifiers!.push(KeyModifier.CtrlCmd);
-        }
-        return KeyCode.createKeyCode(sequence);
-    }
-
-    protected keySequence(keybinding: monaco.keybindings.ChordKeybinding): KeySequence {
-        return keybinding.parts.map(part => this.keyCode(part));
     }
 }
