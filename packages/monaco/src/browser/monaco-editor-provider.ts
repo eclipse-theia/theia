@@ -36,6 +36,8 @@ import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { OS } from '@theia/core';
+import { KeybindingRegistry } from '@theia/core/lib/browser';
+import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 
 @injectable()
 export class MonacoEditorProvider {
@@ -45,6 +47,9 @@ export class MonacoEditorProvider {
 
     @inject(MonacoEditorServices)
     protected readonly services: MonacoEditorServices;
+
+    @inject(KeybindingRegistry)
+    protected keybindingRegistry: KeybindingRegistry;
 
     private isWindowsBackend: boolean = false;
 
@@ -125,7 +130,8 @@ export class MonacoEditorProvider {
         }, toDispose);
         editor.onDispose(() => toDispose.dispose());
 
-        this.suppressMonaconKeybindingListener(editor);
+        this.suppressMonacoKeybindingListener(editor);
+        this.injectKeybindingResolver(editor);
 
         const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
         commandService.setDelegate(standaloneCommandService);
@@ -151,7 +157,7 @@ export class MonacoEditorProvider {
      * if they are overriden by a user. Monaco keybindings should be registered as Theia keybindings
      * to allow a user to customize them.
      */
-    protected suppressMonaconKeybindingListener(editor: MonacoEditor): void {
+    protected suppressMonacoKeybindingListener(editor: MonacoEditor): void {
         let keydownListener: monaco.IDisposable | undefined;
         for (const listener of editor.getControl()._standaloneKeybindingService._store._toDispose) {
             if ('_type' in listener && listener['_type'] === 'keydown') {
@@ -162,6 +168,21 @@ export class MonacoEditorProvider {
         if (keydownListener) {
             keydownListener.dispose();
         }
+    }
+
+    protected injectKeybindingResolver(editor: MonacoEditor): void {
+        const keybindingService = editor.getControl()._standaloneKeybindingService;
+        keybindingService.resolveKeybinding = keybinding => [new MonacoResolvedKeybinding(MonacoResolvedKeybinding.keySequence(keybinding), this.keybindingRegistry)];
+        keybindingService.resolveKeyboardEvent = keyboardEvent => {
+            const keybinding = new monaco.keybindings.SimpleKeybinding(
+                keyboardEvent.ctrlKey,
+                keyboardEvent.shiftKey,
+                keyboardEvent.altKey,
+                keyboardEvent.metaKey,
+                keyboardEvent.keyCode
+            ).toChord();
+            return new MonacoResolvedKeybinding(MonacoResolvedKeybinding.keySequence(keybinding), this.keybindingRegistry);
+        };
     }
 
     protected createEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {

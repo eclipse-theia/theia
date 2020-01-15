@@ -18,14 +18,13 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { MessageType } from '@theia/core/lib/common/message-service-protocol';
 import {
     QuickOpenService, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem,
-    QuickOpenMode, KeySequence, ResolvedKeybinding,
-    KeyCode, Key, KeybindingRegistry
+    QuickOpenMode, KeySequence, KeybindingRegistry
 } from '@theia/core/lib/browser';
 import { QuickOpenModel, QuickOpenActionProvider, QuickOpenAction } from '@theia/core/lib/common/quick-open-model';
-import { KEY_CODE_MAP } from './monaco-keycode-map';
 import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { MonacoContextKeyService } from './monaco-context-key-service';
 import { QuickOpenHideReason } from '@theia/core/lib/common/quick-open-service';
+import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     valueSelection?: Readonly<[number, number]>;
@@ -289,7 +288,7 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
 
     constructor(
         protected readonly model: QuickOpenModel,
-        protected readonly keybindingService: TheiaKeybindingService,
+        protected readonly keybindingService: KeybindingRegistry,
         options?: QuickOpenOptions
     ) {
         this.model = model;
@@ -397,7 +396,7 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
 
     constructor(
         public readonly item: QuickOpenItem,
-        protected readonly keybindingService: TheiaKeybindingService
+        protected readonly keybindingService: KeybindingRegistry
     ) {
         super();
     }
@@ -443,7 +442,7 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
         } catch (error) {
             return undefined;
         }
-        return new TheiaResolvedKeybinding(keySequence, this.keybindingService);
+        return new MonacoResolvedKeybinding(keySequence, this.keybindingService);
     }
 
     run(mode: monaco.quickOpen.Mode): boolean {
@@ -465,7 +464,7 @@ export class QuickOpenEntryGroup extends monaco.quickOpen.QuickOpenEntryGroup {
 
     constructor(
         public readonly item: QuickOpenGroupItem,
-        protected readonly keybindingService: TheiaKeybindingService
+        protected readonly keybindingService: KeybindingRegistry
     ) {
         super(new QuickOpenEntry(item, keybindingService));
     }
@@ -539,81 +538,4 @@ export class MonacoQuickOpenActionProvider implements monaco.quickOpen.IActionPr
         const actions = this.provider.getActions(entry.item);
         return actions.map(action => new MonacoQuickOpenAction(action));
     }
-}
-
-interface TheiaKeybindingService {
-    resolveKeybinding(binding: ResolvedKeybinding): KeyCode[];
-    acceleratorForKey(key: Key): string;
-    acceleratorForKeyCode(keyCode: KeyCode, separator?: string): string
-    acceleratorForSequence(keySequence: KeySequence, separator?: string): string[];
-}
-
-class TheiaResolvedKeybinding extends monaco.keybindings.ResolvedKeybinding {
-
-    protected readonly parts: monaco.keybindings.ResolvedKeybindingPart[];
-
-    constructor(protected readonly keySequence: KeySequence, keybindingService: TheiaKeybindingService) {
-        super();
-        this.parts = keySequence.map(keyCode => {
-            // tslint:disable-next-line:no-null-keyword
-            const keyLabel = keyCode.key ? keybindingService.acceleratorForKey(keyCode.key) : null;
-            const keyAriaLabel = keyLabel;
-            return new monaco.keybindings.ResolvedKeybindingPart(
-                keyCode.ctrl,
-                keyCode.shift,
-                keyCode.alt,
-                keyCode.meta,
-                keyLabel,
-                keyAriaLabel
-            );
-        });
-    }
-
-    public getLabel(): string | null {
-        return monaco.keybindings.UILabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyLabel);
-    }
-
-    public getAriaLabel(): string | null {
-        return monaco.keybindings.UILabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyAriaLabel);
-    }
-
-    public getElectronAccelerator(): string | null {
-        if (this.isChord) {
-            // Electron cannot handle chords
-            // tslint:disable-next-line:no-null-keyword
-            return null;
-        }
-        return monaco.keybindings.ElectronAcceleratorLabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyLabel);
-    }
-
-    public getUserSettingsLabel(): string | null {
-        return monaco.keybindings.UserSettingsLabelProvider.toLabel(monaco.platform.OS, this.parts, p => p.keyLabel);
-    }
-
-    public isWYSIWYG(): boolean {
-        return true;
-    }
-
-    public isChord(): boolean {
-        return this.parts.length > 1;
-    }
-
-    public getDispatchParts(): (string | null)[] {
-        return this.keySequence.map(keyCode => monaco.keybindings.USLayoutResolvedKeybinding.getDispatchStr(this.toKeybinding(keyCode)));
-    }
-
-    private toKeybinding(keyCode: KeyCode): monaco.keybindings.SimpleKeybinding {
-        return new monaco.keybindings.SimpleKeybinding(
-            keyCode.ctrl,
-            keyCode.shift,
-            keyCode.alt,
-            keyCode.meta,
-            KEY_CODE_MAP[keyCode.key!.keyCode]
-        );
-    }
-
-    public getParts(): monaco.keybindings.ResolvedKeybindingPart[] {
-        return this.parts;
-    }
-
 }
