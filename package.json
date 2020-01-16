@@ -27,7 +27,7 @@
     "ignore-styles": "^5.0.1",
     "istanbul": "^0.4.5",
     "istanbul-instrumenter-loader": "^3.0.1",
-    "jsdom": "^11.5.1",
+    "jsdom": "^16.0.0",
     "lerna": "^2.2.0",
     "mocha": "^3.4.2",
     "nyc": "^11.0.3",
