@@ -844,7 +844,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
-        return props.depth * this.props.leftPadding + (this.needsExpansionTogglePadding(node) ? this.props.expansionTogglePadding : 0);
+        return props.depth * this.props.leftPadding;
     }
 
     /**

@@ -79,7 +79,7 @@
     font-family: FontAwesome;
     font-size: calc(var(--theia-content-font-size) * 0.8);
     content: "\f0da";
-    transform: rotate(45deg);
+    transform: rotate(90deg);
 }
 
 .theia-Tree:focus .theia-TreeNode.theia-mod-selected,
@@ -138,4 +138,12 @@
 
 .theia-tree-element-node {
     width: 100%
+}
+
+.theia-tree-folder-vertical-line .theia-TreeNodeContent {
+    border-left: 1px solid #f0f0f0;
+}
+
+.theia-tree-file-extra-padding .theia-TreeNodeContent {
+    padding-left: 5px;
 }

@@ -18,9 +18,9 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CommonCommands, CorePreferences, ViewContainerTitleOptions, Key } from '@theia/core/lib/browser';
+import { CommonCommands, CorePreferences, ViewContainerTitleOptions, Key, CompositeTreeNode, NodeProps } from '@theia/core/lib/browser';
 import {
-    ContextMenuRenderer, ExpandableTreeNode,
+    ContextMenuRenderer,
     TreeProps, TreeModel, TreeNode
 } from '@theia/core/lib/browser';
 import { FileTreeWidget, FileNode, DirNode } from '@theia/filesystem/lib/browser';
@@ -67,22 +67,23 @@ export class FileNavigatorWidget extends FileTreeWidget {
         this.addClass(CLASS);
     }
 
+    protected nodesToAddVerticalLine = new Set<string>();
+
     @postConstruct()
     protected init(): void {
         super.init();
         this.updateSelectionContextKeys();
         this.toDispose.pushAll([
-            this.model.onSelectionChanged(() =>
-                this.updateSelectionContextKeys()
-            ),
-            this.model.onExpansionChanged(node => {
-                if (node.expanded && node.children.length === 1) {
-                    const child = node.children[0];
-                    if (ExpandableTreeNode.is(child) && !child.expanded) {
-                        this.model.expandNode(child);
-                    }
+            this.model.onSelectionChanged(selectedNodes => {
+                this.updateSelectionContextKeys();
+                this.nodesToAddVerticalLine.clear();
+                for (const node of selectedNodes) {
+                    this.drawFolderVerticalLine(node);
                 }
-
+            }),
+            this.model.onExpansionChanged(node => {
+                this.nodesToAddVerticalLine.clear();
+                this.drawFolderVerticalLine(node);
             })
         ]);
     }
@@ -248,6 +249,32 @@ export class FileNavigatorWidget extends FileTreeWidget {
 
     protected updateSelectionContextKeys(): void {
         this.contextKeyService.explorerResourceIsFolder.set(DirNode.is(this.model.selectedNodes[0]));
+    }
+
+    protected drawFolderVerticalLine(node: Readonly<TreeNode>): void {
+        if (CompositeTreeNode.is(node)) {
+            for (const child of node.children) {
+                this.nodesToAddVerticalLine.add(child.id);
+            }
+        } else {
+            const parent = node.parent;
+            if (parent) {
+                for (const sibling of parent.children) {
+                    this.nodesToAddVerticalLine.add(sibling.id);
+                }
+            }
+        }
+    }
+
+    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
+        const className = super.createNodeClassNames(node, props);
+        if (this.nodesToAddVerticalLine.has(node.id)) {
+            className.push('theia-tree-folder-vertical-line');
+        }
+        if (!this.isExpandable(node)) {
+            className.push('theia-tree-file-extra-padding');
+        }
+        return className;
     }
 
 }
