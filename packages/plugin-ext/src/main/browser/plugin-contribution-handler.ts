@@ -220,7 +220,7 @@ export class PluginContributionHandler {
         }
 
         pushContribution('commands', () => this.registerCommands(contributions));
-        pushContribution('menus', () => this.menusContributionHandler.handle(contributions));
+        pushContribution('menus', () => this.menusContributionHandler.handle(plugin));
         pushContribution('keybindings', () => this.keybindingsContributionHandler.handle(contributions));
 
         if (contributions.viewsContainers) {

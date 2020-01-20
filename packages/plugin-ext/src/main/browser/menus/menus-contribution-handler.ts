@@ -26,7 +26,7 @@ import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browse
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { QuickCommandService } from '@theia/core/lib/browser/quick-open/quick-command-service';
 import { VIEW_ITEM_CONTEXT_MENU, TreeViewWidget, VIEW_ITEM_INLINE_MENU } from '../view/tree-view-widget';
-import { PluginContribution, Menu, ScmCommandArg, TreeViewSelection } from '../../../common';
+import { DeployedPlugin, Menu, ScmCommandArg, TreeViewSelection } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
@@ -86,8 +86,8 @@ export class MenusContributionPointHandler {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    handle(contributions: PluginContribution): Disposable {
-        const allMenus = contributions.menus;
+    handle(plugin: DeployedPlugin): Disposable {
+        const allMenus = plugin.contributes && plugin.contributes.menus;
         if (!allMenus) {
             return Disposable.NULL;
         }
@@ -160,7 +160,7 @@ export class MenusContributionPointHandler {
             } else if (allMenus.hasOwnProperty(location)) {
                 const menuPaths = MenusContributionPointHandler.parseMenuPaths(location);
                 if (!menuPaths.length) {
-                    this.logger.warn(`Plugin contributes items to a menu with invalid identifier: ${location}`);
+                    this.logger.warn(`'${plugin.metadata.model.id}' plugin contributes items to a menu with invalid identifier: ${location}`);
                     continue;
                 }
                 const menus = allMenus[location];
