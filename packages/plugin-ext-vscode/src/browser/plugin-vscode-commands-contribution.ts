@@ -35,6 +35,7 @@ import { createUntitledResource } from '@theia/plugin-ext/lib/main/browser/edito
 import { toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
+import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/workspace-service';
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { inject, injectable } from 'inversify';
@@ -43,6 +44,10 @@ import URI from 'vscode-uri';
 export namespace VscodeCommands {
     export const OPEN: Command = {
         id: 'vscode.open'
+    };
+
+    export const OPEN_FOLDER: Command = {
+        id: 'vscode.openFolder'
     };
 
     export const DIFF: Command = {
@@ -74,6 +79,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly mouseTracker: ApplicationShellMouseTracker;
     @inject(PrefixQuickOpenService)
     protected readonly quickOpen: PrefixQuickOpenService;
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -98,6 +105,20 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 }
                 const editorOptions = DocumentsMainImpl.toEditorOpenerOptions(this.shell, options);
                 await open(this.openerService, new TheiaURI(resource), editorOptions);
+            }
+        });
+
+        commands.registerCommand(VscodeCommands.OPEN_FOLDER, {
+            isVisible: () => false,
+            execute: async (resource?: URI, options?: WorkspaceInput | undefined) => {
+                if (resource) {
+                    if (!URI.isUri(resource)) {
+                        throw new Error(`Invalid argument for ${VscodeCommands.OPEN_FOLDER.id} command with URI argument. Found ${resource}`);
+                    }
+                    this.workspaceService.open(new TheiaURI(resource), options);
+                } else {
+                    commands.executeCommand(WorkspaceCommands.OPEN_WORKSPACE.id);
+                }
             }
         });
 
