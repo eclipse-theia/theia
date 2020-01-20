@@ -65,6 +65,7 @@ import {
     DiagnosticSeverity,
     DiagnosticTag,
     Location,
+    LogLevel,
     Progress,
     ProgressOptions,
     ProgressLocation,
@@ -501,6 +502,7 @@ export function createAPIFactory(
             }
         };
 
+        const onDidChangeLogLevel = new Emitter<theia.LogLevel>();
         const env: typeof theia.env = Object.freeze({
             get appName(): string { return envExt.appName; },
             get appRoot(): string { return envExt.appRoot; },
@@ -527,7 +529,9 @@ export function createAPIFactory(
             },
             asExternalUri(target: theia.Uri): PromiseLike<theia.Uri> {
                 return windowStateExt.asExternalUri(target);
-            }
+            },
+            get logLevel(): theia.LogLevel { return LogLevel.Info; },
+            get onDidChangeLogLevel(): theia.Event<theia.LogLevel> { return onDidChangeLogLevel.event; }
         });
 
         const languageServer: typeof theia.languageServer = {
@@ -821,6 +825,7 @@ export function createAPIFactory(
             DiagnosticSeverity,
             DiagnosticRelatedInformation,
             Location,
+            LogLevel,
             DiagnosticTag,
             Diagnostic,
             CompletionTriggerKind,
