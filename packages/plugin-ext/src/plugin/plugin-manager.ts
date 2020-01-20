@@ -314,9 +314,11 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             return;
         }
         this.activations.set(activationEvent, undefined);
+        const pendingActivations = [];
         while (activations.length) {
-            await activations.pop()!();
+            pendingActivations.push(activations.pop()!());
         }
+        await Promise.all(pendingActivations);
     }
 
     async $activatePlugin(id: string): Promise<void> {
