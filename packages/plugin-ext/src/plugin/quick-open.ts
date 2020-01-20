@@ -211,7 +211,11 @@ export class QuickInputExt implements QuickInput {
     protected disposableCollection: DisposableCollection;
 
     private onDidAcceptEmitter: Emitter<void>;
-    private onDidChangeValueEmitter: Emitter<string>;
+    /**
+     * it has to be named `_onDidChangeValueEmitter`, since Gitlens extension relies on it
+     * https://github.com/eamodio/vscode-gitlens/blob/f22a9cd4199ac498c217643282a6a412e1fc01ae/src/commands/gitCommands.ts#L242-L243
+     */
+    private _onDidChangeValueEmitter: Emitter<string>;
     private onDidHideEmitter: Emitter<void>;
     private onDidTriggerButtonEmitter: Emitter<QuickInputButton>;
 
@@ -228,7 +232,7 @@ export class QuickInputExt implements QuickInput {
 
         this.disposableCollection = new DisposableCollection();
         this.disposableCollection.push(this.onDidAcceptEmitter = new Emitter());
-        this.disposableCollection.push(this.onDidChangeValueEmitter = new Emitter());
+        this.disposableCollection.push(this._onDidChangeValueEmitter = new Emitter());
         this.disposableCollection.push(this.onDidHideEmitter = new Emitter());
         this.disposableCollection.push(this.onDidTriggerButtonEmitter = new Emitter());
     }
@@ -351,7 +355,7 @@ export class QuickInputExt implements QuickInput {
     }
 
     _fireChangedValue(changedValue: string): void {
-        this.onDidChangeValueEmitter.fire(changedValue);
+        this._onDidChangeValueEmitter.fire(changedValue);
     }
 
     _fireHide(): void {
@@ -371,7 +375,7 @@ export class QuickInputExt implements QuickInput {
     }
 
     get onDidChangeValue(): Event<string> {
-        return this.onDidChangeValueEmitter.event;
+        return this._onDidChangeValueEmitter.event;
     }
 
     get onDidTriggerButton(): Event<QuickInputButton> {
