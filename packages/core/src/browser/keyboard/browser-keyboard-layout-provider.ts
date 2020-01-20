@@ -23,7 +23,7 @@ import { Deferred } from '../../common/promise-util';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator, KeyValidationInput
 } from '../../common/keyboard/keyboard-layout-provider';
-import { LocalStorageService } from '../storage-service';
+import { StorageService } from '../storage-service';
 
 export type KeyboardLayoutSource = 'navigator.keyboard' | 'user-choice' | 'pressed-keys';
 
@@ -33,8 +33,8 @@ export class BrowserKeyboardLayoutProvider implements KeyboardLayoutProvider, Ke
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    @inject(LocalStorageService)
-    protected readonly storageService: LocalStorageService;
+    @inject(StorageService)
+    protected readonly storageService: StorageService;
 
     protected readonly initialized = new Deferred();
     protected readonly nativeLayoutChanged = new Emitter<NativeKeyboardLayout>();

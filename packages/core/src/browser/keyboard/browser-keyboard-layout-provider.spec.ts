@@ -20,7 +20,7 @@ import * as chai from 'chai';
 import * as sinon from 'sinon';
 import * as os from '../../common/os';
 import { ILogger, Loggable } from '../../common/logger';
-import { LocalStorageService } from '../storage-service';
+import { StorageService, LocalStorageService } from '../storage-service';
 import { MessageService } from '../../common/message-service';
 import { WindowService } from '../window/window-service';
 import { BrowserKeyboardLayoutProvider } from './browser-keyboard-layout-provider';
@@ -51,7 +51,7 @@ describe('browser keyboard layout provider', function (): void {
         const container = new Container();
         container.bind(BrowserKeyboardLayoutProvider).toSelf();
         container.bind(ILogger).to(MockLogger);
-        container.bind(LocalStorageService).toSelf().inSingletonScope();
+        container.bind(StorageService).to(LocalStorageService).inSingletonScope();
         container.bind(MessageService).toConstantValue({} as MessageService);
         container.bind(WindowService).toConstantValue({} as WindowService);
         const service = container.get(BrowserKeyboardLayoutProvider);
