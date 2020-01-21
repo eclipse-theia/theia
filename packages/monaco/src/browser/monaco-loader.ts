@@ -73,6 +73,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/common/services/resolverService',
                 'vs/editor/browser/services/codeEditorService',
                 'vs/editor/browser/services/codeEditorServiceImpl',
+                'vs/editor/browser/services/openerService',
                 'vs/platform/markers/common/markerService',
                 'vs/platform/contextkey/common/contextkey',
                 'vs/platform/contextkey/browser/contextKeyService',
@@ -85,31 +86,32 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 platform: any, modes: any, suggest: any, snippetParser: any,
                 configuration: any, configurationModels: any,
                 resolverService: any,
-                codeEditorService: any, codeEditorServiceImpl: any,
+                codeEditorService: any, codeEditorServiceImpl: any, openerService: any,
                 markerService: any,
                 contextKey: any, contextKeyService: any,
                 error: any) => {
-                    const global: any = self;
-                    global.monaco.commands = commands;
-                    global.monaco.actions = actions;
-                    global.monaco.keybindings = Object.assign({}, keybindingsRegistry, keybindingResolver, resolvedKeybinding, keybindingLabels, keyCodes);
-                    global.monaco.services = Object.assign({}, simpleServices, standaloneServices, standaloneLanguages, configuration, configurationModels,
-                        resolverService, codeEditorService, codeEditorServiceImpl, markerService);
-                    global.monaco.quickOpen = Object.assign({}, quickOpenWidget, quickOpenModel);
-                    global.monaco.filters = filters;
-                    global.monaco.theme = styler;
-                    global.monaco.color = Object.assign({}, colorRegistry, color);
-                    global.monaco.platform = platform;
-                    global.monaco.editorExtensions = editorExtensions;
-                    global.monaco.modes = modes;
-                    global.monaco.suggest = suggest;
-                    global.monaco.snippetParser = snippetParser;
-                    global.monaco.contextkey = contextKey;
-                    global.monaco.contextKeyService = contextKeyService;
-                    global.monaco.mime = mime;
-                    global.monaco.error = error;
-                    resolve();
-                });
+                const global: any = self;
+                global.monaco.commands = commands;
+                global.monaco.actions = actions;
+                global.monaco.keybindings = Object.assign({}, keybindingsRegistry, keybindingResolver, resolvedKeybinding, keybindingLabels, keyCodes);
+                global.monaco.services = Object.assign({}, simpleServices, standaloneServices,
+                    standaloneLanguages, configuration, configurationModels,
+                    resolverService, codeEditorService, codeEditorServiceImpl, markerService, openerService);
+                global.monaco.quickOpen = Object.assign({}, quickOpenWidget, quickOpenModel);
+                global.monaco.filters = filters;
+                global.monaco.theme = styler;
+                global.monaco.color = Object.assign({}, colorRegistry, color);
+                global.monaco.platform = platform;
+                global.monaco.editorExtensions = editorExtensions;
+                global.monaco.modes = modes;
+                global.monaco.suggest = suggest;
+                global.monaco.snippetParser = snippetParser;
+                global.monaco.contextkey = contextKey;
+                global.monaco.contextKeyService = contextKeyService;
+                global.monaco.mime = mime;
+                global.monaco.error = error;
+                resolve();
+            });
         });
     });
 }

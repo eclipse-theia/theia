@@ -136,14 +136,28 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     async open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
         const editor = await super.open(uri, options);
-        this.revealSelection(editor, options);
+        this.revealSelection(editor, options, uri);
         return editor;
     }
 
-    protected revealSelection(widget: EditorWidget, input?: EditorOpenerOptions): void {
-        if (input && input.selection) {
+    protected revealSelection(widget: EditorWidget, input?: EditorOpenerOptions, uri?: URI): void {
+        let inputSelection = input && input.selection;
+        if (!inputSelection && uri) {
+            const match = /^L?(\d+)(?:,(\d+))?/.exec(uri.fragment);
+            if (match) {
+                // support file:///some/file.js#73,84
+                // support file:///some/file.js#L73
+                inputSelection = {
+                    start: {
+                        line: parseInt(match[1]) - 1,
+                        character: match[2] ? parseInt(match[2]) - 1 : 0
+                    }
+                };
+            }
+        }
+        if (inputSelection) {
             const editor = widget.editor;
-            const selection = this.getSelection(widget, input.selection);
+            const selection = this.getSelection(widget, inputSelection);
             if (Position.is(selection)) {
                 editor.cursor = selection;
                 editor.revealPosition(selection);

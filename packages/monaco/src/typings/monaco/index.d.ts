@@ -541,6 +541,25 @@ declare module monaco.services {
     export const ITextModelService: any;
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/browser/services/codeEditorService.ts#L13
+    export interface OpenInternalOptions {
+        readonly openToSide?: boolean;
+    }
+
+    export interface OpenExternalOptions {
+        readonly openExternal?: boolean
+    }
+
+    export interface IOpener {
+        open(resource: monaco.Uri | string, options?: OpenInternalOptions | OpenExternalOptions): Promise<boolean>;
+    }
+
+    // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/editor/browser/services/openerService.ts#L18
+    export class OpenerService {
+        constructor(editorService: monaco.editor.ICodeEditorService, commandService: monaco.commands.ICommandService);
+        registerOpener(opener: IOpener): monaco.IDisposable;
+        open(resource: monaco.Uri, options?: { openToSide?: boolean }): Promise<boolean>;
+    }
+
     export const ICodeEditorService: any;
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/configuration/common/configuration.ts#L16

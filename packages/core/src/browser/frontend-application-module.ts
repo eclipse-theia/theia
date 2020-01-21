@@ -91,6 +91,7 @@ import { IconThemeApplicationContribution, IconThemeContribution, DefaultFileIco
 import { TreeLabelProvider } from './tree/tree-label-provider';
 import { ProgressBar } from './progress-bar';
 import { ProgressBarFactory, ProgressBarOptions } from './progress-bar-factory';
+import { CommandOpenHandler } from './command-open-handler';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -160,6 +161,9 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ExternalUriService).toSelf().inSingletonScope();
     bind(HttpOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(HttpOpenHandler);
+
+    bind(CommandOpenHandler).toSelf().inSingletonScope();
+    bind(OpenHandler).toService(CommandOpenHandler);
 
     bindContributionProvider(bind, ApplicationShellLayoutMigration);
     bind<ApplicationShellLayoutMigration>(ApplicationShellLayoutMigration).toConstantValue({

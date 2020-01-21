@@ -15,33 +15,37 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import URI from '@theia/core/lib/common/uri';
-import { OpenHandler } from '@theia/core/lib/browser/opener-service';
-import { Schemes } from '../../common/uri-components';
-import { CommandService } from '@theia/core/lib/common/command';
+import { CommandService } from '../common/command';
+import URI from '../common/uri';
+import { OpenHandler } from './opener-service';
 
 @injectable()
-export class PluginCommandOpenHandler implements OpenHandler {
+export class CommandOpenHandler implements OpenHandler {
 
-    readonly id = 'plugin-command';
+    readonly id = 'command';
 
     @inject(CommandService)
     protected readonly commands: CommandService;
 
     canHandle(uri: URI): number {
-        return uri.scheme === Schemes.COMMAND ? 500 : -1;
+        return uri.scheme === 'command' ? 500 : -1;
     }
 
     async open(uri: URI): Promise<boolean> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let args: any = [];
         try {
-            args = JSON.parse(uri.query);
-            if (!Array.isArray(args)) {
-                args = [args];
+            args = JSON.parse(decodeURIComponent(uri.query));
+        } catch {
+            // ignore and retry
+            try {
+                args = JSON.parse(uri.query);
+            } catch {
+                // ignore error
             }
-        } catch (e) {
-            // ignore error
+        }
+        if (!Array.isArray(args)) {
+            args = [args];
         }
         await this.commands.executeCommand(uri.path.toString(), ...args);
         return true;
