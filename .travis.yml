@@ -28,7 +28,6 @@ cache:
     - packages/filesystem/node_modules
     - packages/getting-started/node_modules
     - packages/git/node_modules
-    - packages/java-debug/node_modules
     - packages/java/node_modules
     - packages/json/node_modules
     - packages/keymaps/node_modules
@@ -63,7 +62,6 @@ cache:
     - packages/variable-resolver/node_modules
     - packages/workspace/node_modules
     # end_cache_directories
-    - packages/java-debug/download
 before_cache:
   # Runs before the cache is updated, after successful CI
   - rm -f node_modules/@theia/electron/post-install.log
