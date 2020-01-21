@@ -52,9 +52,6 @@
       "@theia/editor/lib/*": [
         "packages/editor/src/*"
       ],
-      "@theia/editorconfig/lib/*": [
-        "packages/editorconfig/src/*"
-      ],
       "@theia/file-search/lib/*": [
         "packages/file-search/src/*"
       ],
