@@ -23,6 +23,8 @@ export interface Keybinding {
      * The optional keybinding context where this binding belongs to.
      * If not specified, then this keybinding context belongs to the NOOP
      * keybinding context.
+     *
+     * @deprecated use `when` closure instead
      */
     context?: string;
     /**
