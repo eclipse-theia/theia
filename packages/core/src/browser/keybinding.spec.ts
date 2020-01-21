@@ -274,7 +274,7 @@ describe('keybindings', () => {
         expect(bindings[0].keybinding).to.be.equal(validKeyBinding);
     });
 
-    it('shadowed bindings should not be returned', () => {
+    it('shadowed bindings should be returned last', () => {
         const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift] });
         let bindings: Keybinding[];
 
@@ -304,14 +304,14 @@ describe('keybindings', () => {
         // now WORKSPACE bindings are overriding the other scopes
 
         bindings = keybindingRegistry.getKeybindingsForKeySequence([keyCode]).full;
-        expect(bindings).to.have.lengthOf(1);
+        expect(bindings).to.have.lengthOf(3);
         expect(bindings[0].command).to.be.equal(workspaceBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.WORKSPACE);
         // now it should find USER bindings
 
         bindings = keybindingRegistry.getKeybindingsForKeySequence([keyCode]).full;
-        expect(bindings).to.have.lengthOf(1);
+        expect(bindings).to.have.lengthOf(2);
         expect(bindings[0].command).to.be.equal(userBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.USER);

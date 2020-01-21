@@ -415,21 +415,14 @@ export class KeybindingRegistry {
 
     /**
      * Get the lists of keybindings matching fully or partially matching a KeySequence.
-     * The lists are sorted by priority (see #sortKeybindingsByPriority).
      *
      * @param keySequence The key sequence for which we are looking for keybindings.
-     * @param event The source keyboard event.
      */
-    getKeybindingsForKeySequence(keySequence: KeySequence, event?: KeyboardEvent): KeybindingRegistry.KeybindingsResult {
+    getKeybindingsForKeySequence(keySequence: KeySequence): KeybindingRegistry.KeybindingsResult {
         const result = new KeybindingRegistry.KeybindingsResult();
 
         for (let scope = KeybindingScope.END; --scope >= KeybindingScope.DEFAULT;) {
             const matches = this.getKeySequenceCollisions(this.keymaps[scope], keySequence);
-
-            matches.full = matches.full.filter(
-                binding => (!event || this.isEnabled(binding, event)) && this.getKeybindingCollisions(result.full, binding).full.length === 0);
-            matches.partial = matches.partial.filter(
-                binding => (!event || this.isEnabled(binding, event)) && this.getKeybindingCollisions(result.partial, binding).partial.length === 0);
 
             if (scope === KeybindingScope.DEFAULT_OVERRIDING) {
                 matches.full.reverse();
@@ -439,8 +432,6 @@ export class KeybindingRegistry {
             matches.partial.forEach(binding => binding.scope = scope);
             result.merge(matches);
         }
-        this.sortKeybindingsByPriority(result.full);
-        this.sortKeybindingsByPriority(result.partial);
         return result;
     }
 
@@ -488,39 +479,6 @@ export class KeybindingRegistry {
             }
         });
         return result;
-    }
-
-    /**
-     * Sort keybindings in-place, in order of priority.
-     *
-     * The only criterion right now is that a keybinding with a context has
-     * more priority than a keybinding with no context.
-     *
-     * @param keybindings Array of keybindings to be sorted in-place.
-     */
-    private sortKeybindingsByPriority(keybindings: Keybinding[]): void {
-        keybindings.sort((a: Keybinding, b: Keybinding): number => {
-
-            let acontext: KeybindingContext | undefined;
-            if (a.context) {
-                acontext = this.contexts[a.context];
-            }
-
-            let bcontext: KeybindingContext | undefined;
-            if (b.context) {
-                bcontext = this.contexts[b.context];
-            }
-
-            if (acontext && !bcontext) {
-                return -1;
-            }
-
-            if (!acontext && bcontext) {
-                return 1;
-            }
-
-            return 0;
-        });
     }
 
     protected isActive(binding: Keybinding): boolean {
@@ -620,7 +578,7 @@ export class KeybindingRegistry {
 
         this.keyboardLayoutService.validateKeyCode(keyCode);
         this.keySequence.push(keyCode);
-        const bindings = this.getKeybindingsForKeySequence(this.keySequence, event);
+        const bindings = this.getKeybindingsForKeySequence(this.keySequence);
         const full = bindings.full.find(binding => this.isEnabled(binding, event));
         const partial = bindings.partial.find(binding => (!full || binding.scope! > full.scope!) && this.isEnabled(binding, event));
         if (partial) {
