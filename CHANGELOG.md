@@ -10,7 +10,7 @@
   - `test:references`: fails if typescript references are out of sync.
   - `prepare:references`: updates typescript references, if required.
 - [repo] the `prepare` script now updates typescript references.
-- [core] From now on, downstream projects can refine where the configuration files (such as `settings.json`, `keymaps.json`, `recentworkspace.json`, etc.) will be stored by Theia. [#4488](https://github.com/eclipse-theia/theia/pull/4488)
+- [core] From now on, downstream projects can refine where the configuration files (such as `settings.json`, `keymaps.json`, `recentworkspace.json`, etc.) will be stored by Theia. [#4488](https://github.com/eclipse-theia/theia/pull/4488)\
 The default location remains the same: `~/.theia`, however it can be customized by overriding the `#getConfigDirUri` method of the `EnvVariablesServer` API. The easiest way is to subclass the `EnvVariablesServerImpl` and rebind it in your backend module:
   ```ts
   // your-env-variables-server.ts:
@@ -64,6 +64,10 @@ Breaking changes:
   - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
 - [tslint] removed the `@theia/tslint` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
   - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+- [typescript] removed the `@theia/typescript` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+  - Please view the `theia-apps` [theia-typescript](https://github.com/theia-ide/theia-apps/tree/master/theia-docker) image for an example application which has been updated to
+  use VS Code extensions instead of `@theia/typescript`.
 
 ## v0.15.0
 
