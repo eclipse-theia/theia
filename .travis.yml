@@ -47,7 +47,6 @@ cache:
     - packages/preferences/node_modules
     - packages/preview/node_modules
     - packages/process/node_modules
-    - packages/python/node_modules
     - packages/scm/node_modules
     - packages/search-in-workspace/node_modules
     - packages/task/node_modules

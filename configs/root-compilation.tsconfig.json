@@ -104,9 +104,6 @@
       "path": "../packages/process/compile.tsconfig.json"
     },
     {
-      "path": "../packages/python/compile.tsconfig.json"
-    },
-    {
       "path": "../packages/scm/compile.tsconfig.json"
     },
     {

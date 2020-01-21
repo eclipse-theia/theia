@@ -121,9 +121,6 @@
       "@theia/process/lib/*": [
         "packages/process/src/*"
       ],
-      "@theia/python/lib/*": [
-        "packages/python/src/*"
-      ],
       "@theia/scm/lib/*": [
         "packages/scm/src/*"
       ],
