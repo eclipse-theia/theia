@@ -116,9 +116,6 @@
       "path": "../packages/terminal/compile.tsconfig.json"
     },
     {
-      "path": "../packages/textmate-grammars/compile.tsconfig.json"
-    },
-    {
       "path": "../packages/tslint/compile.tsconfig.json"
     },
     {

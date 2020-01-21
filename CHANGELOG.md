@@ -60,6 +60,8 @@ Breaking changes:
   - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
   - Please view the `theia-apps` [theia-python](https://github.com/theia-ide/theia-apps/tree/master/theia-python-docker) image for an example application which has been updated to
   use VS Code extensions instead of `@theia/python`.
+- [textmate-grammars] removed the `@theia/textmate-grammars` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
 
 ## v0.15.0
 

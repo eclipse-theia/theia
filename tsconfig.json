@@ -133,9 +133,6 @@
       "@theia/terminal/lib/*": [
         "packages/terminal/src/*"
       ],
-      "@theia/textmate-grammars/lib/*": [
-        "packages/textmate-grammars/src/*"
-      ],
       "@theia/tslint/lib/*": [
         "packages/tslint/src/*"
       ],
