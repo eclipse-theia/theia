@@ -213,7 +213,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     dialog.open().then(name => {
                         if (name) {
                             const fileUri = parentUri.resolve(name);
-                            this.fileSystem.createFile(fileUri.toString()).then(() => {
+                            this.workspaceService.createFile(fileUri.toString()).then(() => {
                                 open(this.openerService, fileUri);
                             });
                         }
@@ -234,7 +234,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     }, this.labelProvider);
                     dialog.open().then(name => {
                         if (name) {
-                            this.fileSystem.createFolder(parentUri.resolve(name).toString());
+                            this.workspaceService.createFolder(parentUri.resolve(name).toString());
                         }
                     });
                 }

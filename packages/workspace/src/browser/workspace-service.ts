@@ -66,7 +66,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
     protected readonly schemaProvider: PreferenceSchemaProvider;
 
     protected applicationName: string;
-
+    protected readonly onDidCreateFileFolderEmitter = new Emitter<string>();
+    readonly onDidCreateFileFolder = this.onDidCreateFileFolderEmitter.event;
+    readonly onDidReveal = new Emitter<void>().event;
     @postConstruct()
     protected async init(): Promise<void> {
         this.applicationName = FrontendApplicationConfigProvider.get().applicationName;
@@ -581,6 +583,22 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
         const rootUris = new Set(this.tryGetRoots().map(root => root.uri));
         return uris.every(uri => rootUris.has(uri.toString()));
+    }
+    /**
+     * Creates a file at the given URI.
+     * @param uri the file URI.
+     */
+    async createFile(uri: string): Promise<void> {
+        await this.fileSystem.createFile(uri);
+        this.onDidCreateFileFolderEmitter.fire(uri);
+    }
+    /**
+     * Creates a folder at the given URI.
+     * @param uri the folder URI.
+     */
+    async createFolder(uri: string): Promise<void> {
+        await this.fileSystem.createFolder(uri);
+        this.onDidCreateFileFolderEmitter.fire(uri);
     }
 
 }

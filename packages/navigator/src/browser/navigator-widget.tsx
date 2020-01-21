@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CommonCommands, CorePreferences, ViewContainerTitleOptions, Key } from '@theia/core/lib/browser';
+import { CommonCommands, CorePreferences, ViewContainerTitleOptions, Key, SelectableTreeNode } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeModel, TreeNode
@@ -83,10 +83,34 @@ export class FileNavigatorWidget extends FileTreeWidget {
                     }
                 }
 
+            }),
+
+            this.workspaceService.onDidCreateFileFolder(async uri => {
+                const uriResource = new URI(uri);
+                const uriNode = this.model.getNodesByUri(uriResource);
+                let status = false;
+                for (const node of uriNode) {
+                    if (SelectableTreeNode.is(node)) {
+                        this.model.selectNode(node);
+                        status = true;
+                        break;
+                    }
+                }
+                if (!status) {
+                    const treeChange = this.model.onChanged(() => {
+                        for (const node of this.model.getNodesByUri(uriResource)) {
+                            if (SelectableTreeNode.is(node)) {
+                                this.model.selectNode(node);
+                                break;
+                            }
+                        }
+                        treeChange.dispose();
+                    });
+                }
+
             })
         ]);
     }
-
     protected doUpdateRows(): void {
         super.doUpdateRows();
         this.title.label = LABEL;

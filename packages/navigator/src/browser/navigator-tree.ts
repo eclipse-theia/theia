@@ -25,7 +25,6 @@ import { FileNavigatorFilter } from './navigator-filter';
 export class FileNavigatorTree extends FileTree {
 
     @inject(FileNavigatorFilter) protected readonly filter: FileNavigatorFilter;
-
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.filter.onFilterChanged(() => this.refresh()));
@@ -57,6 +56,7 @@ export class FileNavigatorTree extends FileTree {
         });
         return node;
     }
+
 }
 
 export interface WorkspaceNode extends CompositeTreeNode, SelectableTreeNode {
