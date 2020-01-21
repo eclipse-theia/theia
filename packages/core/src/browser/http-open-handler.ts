@@ -20,6 +20,10 @@ import { OpenHandler } from './opener-service';
 import { WindowService } from './window/window-service';
 import { ExternalUriService } from './external-uri-service';
 
+export interface HttpOpenHandlerOptions {
+    openExternal?: boolean
+}
+
 @injectable()
 export class HttpOpenHandler implements OpenHandler {
 
@@ -31,8 +35,8 @@ export class HttpOpenHandler implements OpenHandler {
     @inject(ExternalUriService)
     protected readonly externalUriService: ExternalUriService;
 
-    canHandle(uri: URI): number {
-        return (uri.scheme.startsWith('http') || uri.scheme.startsWith('mailto')) ? 500 : 0;
+    canHandle(uri: URI, options?: HttpOpenHandlerOptions): number {
+        return ((options && options.openExternal) || uri.scheme.startsWith('http') || uri.scheme.startsWith('mailto')) ? 500 : 0;
     }
 
     async open(uri: URI): Promise<undefined> {

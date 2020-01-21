@@ -19,8 +19,8 @@ import '../../../src/main/browser/style/index.css';
 
 import { ContainerModule } from 'inversify';
 import {
-    FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution,
-    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, OpenHandler, LabelProviderContribution
+    FrontendApplicationContribution, WidgetFactory, bindViewContribution,
+    ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, LabelProviderContribution
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
@@ -66,7 +66,6 @@ import { InPluginFileSystemWatcherManager } from './in-plugin-filesystem-watcher
 import { WebviewWidget, WebviewWidgetIdentifier, WebviewWidgetExternalEndpoint } from './webview/webview';
 import { WebviewEnvironment } from './webview/webview-environment';
 import { WebviewThemeDataProvider } from './webview/webview-theme-data-provider';
-import { PluginCommandOpenHandler } from './plugin-command-open-handler';
 import { bindWebviewPreferences } from './webview/webview-preferences';
 import { WebviewResourceLoader, WebviewResourceLoaderPath } from '../common/webview-protocol';
 import { WebviewResourceCache } from './webview/webview-resource-cache';
@@ -106,7 +105,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ResourceResolver).toService(UntitledResourceResolver);
 
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
-        onStart(app: FrontendApplication): MaybePromise<void> {
+        onStart(): MaybePromise<void> {
             ctx.container.get(HostedPluginSupport).onStart(ctx.container);
         }
     }));
@@ -156,9 +155,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
             return child.get(TreeWidget);
         }
     })).inSingletonScope();
-
-    bind(PluginCommandOpenHandler).toSelf().inSingletonScope();
-    bind(OpenHandler).toService(PluginCommandOpenHandler);
 
     bindWebviewPreferences(bind);
     bind(WebviewEnvironment).toSelf().inSingletonScope();

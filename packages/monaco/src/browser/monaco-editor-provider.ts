@@ -36,8 +36,9 @@ import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { OS } from '@theia/core';
-import { KeybindingRegistry } from '@theia/core/lib/browser';
+import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
+import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 
 @injectable()
 export class MonacoEditorProvider {
@@ -49,7 +50,10 @@ export class MonacoEditorProvider {
     protected readonly services: MonacoEditorServices;
 
     @inject(KeybindingRegistry)
-    protected keybindingRegistry: KeybindingRegistry;
+    protected readonly keybindingRegistry: KeybindingRegistry;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     private isWindowsBackend: boolean = false;
 
@@ -128,13 +132,18 @@ export class MonacoEditorProvider {
         const { codeEditorService, textModelService, contextMenuService } = this;
         const IWorkspaceEditService = this.bulkEditService;
         const toDispose = new DisposableCollection(commandService);
+        const openerService = new monaco.services.OpenerService(codeEditorService, commandService);
+        openerService.registerOpener({
+            open: (uri, options) => this.interceptOpen(uri, options)
+        });
         const editor = await factory({
             codeEditorService,
             textModelService,
             contextMenuService,
             commandService,
             IWorkspaceEditService,
-            contextKeyService
+            contextKeyService,
+            openerService
         }, toDispose);
         editor.onDispose(() => toDispose.dispose());
 
@@ -158,6 +167,35 @@ export class MonacoEditorProvider {
         }));
 
         return editor;
+    }
+
+    /**
+     * Intercept internal Monaco open calls and delegate to OpenerService.
+     */
+    protected async interceptOpen(monacoUri: monaco.Uri | string, monacoOptions?: monaco.services.OpenInternalOptions | monaco.services.OpenExternalOptions): Promise<boolean> {
+        let options = undefined;
+        if (monacoOptions) {
+            if ('openToSide' in monacoOptions && monacoOptions.openToSide) {
+                options = Object.assign(options || {}, <WidgetOpenerOptions>{
+                    widgetOptions: {
+                        mode: 'split-right'
+                    }
+                });
+            }
+            if ('openExternal' in monacoOptions && monacoOptions.openExternal) {
+                options = Object.assign(options || {}, <HttpOpenHandlerOptions>{
+                    openExternal: true
+                });
+            }
+        }
+        const uri = new URI(monacoUri.toString());
+        try {
+            await open(this.openerService, uri, options);
+            return true;
+        } catch (e) {
+            console.error(`Fail to open '${uri.toString()}':`, e);
+            return false;
+        }
     }
 
     /**

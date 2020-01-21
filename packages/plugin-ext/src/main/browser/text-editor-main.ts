@@ -304,6 +304,7 @@ export class TextEditorMain implements Disposable {
     }
 }
 
+// TODO move to monaco typings!
 interface SnippetController2 extends monaco.editor.IEditorContribution {
     insert(template: string,
         overwriteBefore: number, overwriteAfter: number,

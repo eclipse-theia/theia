@@ -26,11 +26,14 @@ describe('Monaco API', async function () {
     const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
     const { MonacoResolvedKeybinding } = require('@theia/monaco/lib/browser/monaco-resolved-keybinding');
     const { MonacoTextmateService } = require('@theia/monaco/lib/browser/textmate/monaco-textmate-service');
+    const { CommandRegistry } = require('@theia/core/lib/common/command');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
     const textmateService = container.get(MonacoTextmateService);
+    const commands = container.get(CommandRegistry);
+
     /** @type {MonacoEditor} */
     let monacoEditor;
 
@@ -105,6 +108,29 @@ describe('Monaco API', async function () {
         const monacoColorMap = (monaco.modes.TokenizationRegistry.getColorMap() || []).
             splice(0, textMateColorMap.length).map(c => c.toString().toUpperCase());
         assert.deepStrictEqual(monacoColorMap, textMateColorMap, 'Expected textmate colors to have the same index in the monaco color map.');
+    });
+
+    it('OpenerService.open', async () => {
+        const hoverContribution = monacoEditor.getControl().getContribution('editor.contrib.hover');
+        assert.isDefined(hoverContribution);
+        if (!('_openerService' in hoverContribution)) {
+            assert.fail('hoverContribution does not have OpenerService');
+            return;
+        }
+        /** @type {monaco.services.OpenerService} */
+        const openerService = hoverContribution['_openerService'];
+
+        let opened = false;
+        const id = '__test:OpenerService.open';
+        const unregisterCommand = commands.registerCommand({ id }, {
+            execute: arg => (console.log(arg), opened = arg === 'foo')
+        });
+        try {
+            await openerService.open(monaco.Uri.parse('command:' + id + '?"foo"'));
+            assert.isTrue(opened);
+        } finally {
+            unregisterCommand.dispose();
+        }
     });
 
 });
