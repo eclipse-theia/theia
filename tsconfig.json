@@ -133,9 +133,6 @@
       "@theia/terminal/lib/*": [
         "packages/terminal/src/*"
       ],
-      "@theia/tslint/lib/*": [
-        "packages/tslint/src/*"
-      ],
       "@theia/typehierarchy/lib/*": [
         "packages/typehierarchy/src/*"
       ],

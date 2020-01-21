@@ -108,9 +108,6 @@
       "path": "../../packages/terminal/compile.tsconfig.json"
     },
     {
-      "path": "../../packages/tslint/compile.tsconfig.json"
-    },
-    {
       "path": "../../packages/typehierarchy/compile.tsconfig.json"
     },
     {
