@@ -136,9 +136,6 @@
       "@theia/typehierarchy/lib/*": [
         "packages/typehierarchy/src/*"
       ],
-      "@theia/typescript/lib/*": [
-        "packages/typescript/src/*"
-      ],
       "@theia/userstorage/lib/*": [
         "packages/userstorage/src/*"
       ],

@@ -52,7 +52,6 @@ cache:
     - packages/task/node_modules
     - packages/terminal/node_modules
     - packages/typehierarchy/node_modules
-    - packages/typescript/node_modules
     - packages/userstorage/node_modules
     - packages/variable-resolver/node_modules
     - packages/workspace/node_modules
