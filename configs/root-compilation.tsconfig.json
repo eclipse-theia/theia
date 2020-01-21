@@ -26,9 +26,6 @@
       "path": "../packages/core/compile.tsconfig.json"
     },
     {
-      "path": "../packages/debug-nodejs/compile.tsconfig.json"
-    },
-    {
       "path": "../packages/debug/compile.tsconfig.json"
     },
     {

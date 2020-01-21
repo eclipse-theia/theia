@@ -21,7 +21,6 @@ cache:
     - packages/callhierarchy/node_modules
     - packages/console/node_modules
     - packages/core/node_modules
-    - packages/debug-nodejs/node_modules
     - packages/debug/node_modules
     - packages/editor-preview/node_modules
     - packages/editor/node_modules
@@ -66,7 +65,6 @@ cache:
     - packages/workspace/node_modules
     # end_cache_directories
     - packages/java-debug/download
-    - packages/debug-nodejs/download
 before_cache:
   # Runs before the cache is updated, after successful CI
   - rm -f node_modules/@theia/electron/post-install.log
