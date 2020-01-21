@@ -23,6 +23,7 @@ import { MessageType } from '../../common/message-service-protocol';
 import { Emitter, Event } from '../../common/event';
 import { QuickTitleBar } from './quick-title-bar';
 import { QuickTitleButton } from '../../common/quick-open-model';
+import { CancellationToken } from '../../common/cancellation';
 
 export interface QuickInputOptions {
 
@@ -113,7 +114,7 @@ export class QuickInputService {
     @inject(QuickTitleBar)
     protected readonly quickTitleBar: QuickTitleBar;
 
-    open(options: QuickInputOptions): Promise<string | undefined> {
+    open(options: QuickInputOptions, token: CancellationToken = CancellationToken.None): Promise<string | undefined> {
         const result = new Deferred<string | undefined>();
         const prompt = this.createPrompt(options.prompt);
         let label = prompt;
@@ -121,6 +122,14 @@ export class QuickInputService {
         const validateInput = options && options.validateInput;
         let initial: boolean = true;
 
+        const toDispose = token.onCancellationRequested(() =>
+            this.quickOpenService.hide()
+        );
+        const resolve = (value: string | undefined) => {
+            toDispose.dispose();
+            result.resolve(value);
+            this.quickTitleBar.hide();
+        };
         this.quickOpenService.open({
             onType: async (lookFor, acceptor) => {
                 let error: string | undefined;
@@ -140,9 +149,8 @@ export class QuickInputService {
                     label,
                     run: mode => {
                         if (!error && mode === QuickOpenMode.OPEN) {
-                            result.resolve(currentText);
                             this.onDidAcceptEmitter.fire(undefined);
-                            this.quickTitleBar.hide();
+                            resolve(currentText);
                             return true;
                         }
                         return false;
@@ -151,17 +159,17 @@ export class QuickInputService {
                 currentText = lookFor;
             }
         }, {
-            prefix: options.value,
-            placeholder: options.placeHolder,
-            password: options.password,
-            ignoreFocusOut: options.ignoreFocusOut,
-            enabled: options.enabled,
-            valueSelection: options.valueSelection,
-            onClose: () => {
-                result.resolve(undefined);
-                this.quickTitleBar.hide();
-            }
-        });
+                prefix: options.value,
+                placeholder: options.placeHolder,
+                password: options.password,
+                ignoreFocusOut: options.ignoreFocusOut,
+                enabled: options.enabled,
+                valueSelection: options.valueSelection,
+                onClose: () => {
+                    result.resolve(undefined);
+                    this.quickTitleBar.hide();
+                }
+            });
 
         if (options && this.quickTitleBar.shouldShowTitleBar(options.title, options.step)) {
             this.quickTitleBar.attachTitleBar(this.quickOpenService.widgetNode, options.title, options.step, options.totalSteps, options.buttons);

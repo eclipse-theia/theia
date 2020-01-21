@@ -482,10 +482,9 @@ export interface TransferQuickPick<T extends theia.QuickPickItem> extends Transf
 }
 
 export interface QuickOpenMain {
-    $show(options: PickOptions): Promise<number | number[]>;
+    $show(options: PickOptions, token: CancellationToken): Promise<number | number[]>;
     $setItems(items: PickOpenItem[]): Promise<any>;
-    $setError(error: Error): Promise<any>;
-    $input(options: theia.InputBoxOptions, validateInput: boolean): Promise<string | undefined>;
+    $input(options: theia.InputBoxOptions, validateInput: boolean, token: CancellationToken): Promise<string | undefined>;
     $hide(): void;
     $showInputBox(inputBox: TransferInputBox, validateInput: boolean): void;
     $showCustomQuickPick<T extends theia.QuickPickItem>(inputBox: TransferQuickPick<T>): void;

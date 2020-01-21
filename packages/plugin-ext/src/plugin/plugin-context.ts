@@ -306,13 +306,7 @@ export function createAPIFactory(
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             showQuickPick(items: any, options: theia.QuickPickOptions, token?: theia.CancellationToken): any {
-                if (token) {
-                    const coreEvent = Object.assign(token.onCancellationRequested, { maxListeners: 0 });
-                    const coreCancellationToken = { isCancellationRequested: token.isCancellationRequested, onCancellationRequested: coreEvent };
-                    return quickOpenExt.showQuickPick(items, options, coreCancellationToken);
-                } else {
-                    return quickOpenExt.showQuickPick(items, options);
-                }
+                return quickOpenExt.showQuickPick(items, options, token);
             },
             createQuickPick<T extends QuickPickItem>(): QuickPick<T> {
                 return quickOpenExt.createQuickPick(plugin);
@@ -337,13 +331,7 @@ export function createAPIFactory(
                 return statusBarMessageRegistryExt.setStatusBarMessage(text, arg);
             },
             showInputBox(options?: theia.InputBoxOptions, token?: theia.CancellationToken): PromiseLike<string | undefined> {
-                if (token) {
-                    const coreEvent = Object.assign(token.onCancellationRequested, { maxListeners: 0 });
-                    const coreCancellationToken = { isCancellationRequested: token.isCancellationRequested, onCancellationRequested: coreEvent };
-                    return quickOpenExt.showInput(options, coreCancellationToken);
-                } else {
-                    return quickOpenExt.showInput(options);
-                }
+                return quickOpenExt.showInput(options, token);
             },
             createStatusBarItem(alignment?: theia.StatusBarAlignment, priority?: number): theia.StatusBarItem {
                 return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority);
