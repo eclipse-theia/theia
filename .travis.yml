@@ -32,7 +32,6 @@ cache:
     - packages/keymaps/node_modules
     - packages/languages/node_modules
     - packages/markers/node_modules
-    - packages/merge-conflicts/node_modules
     - packages/messages/node_modules
     - packages/metrics/node_modules
     - packages/mini-browser/node_modules

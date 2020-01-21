@@ -59,9 +59,6 @@
       "path": "../packages/markers/compile.tsconfig.json"
     },
     {
-      "path": "../packages/merge-conflicts/compile.tsconfig.json"
-    },
-    {
       "path": "../packages/messages/compile.tsconfig.json"
     },
     {

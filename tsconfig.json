@@ -76,9 +76,6 @@
       "@theia/markers/lib/*": [
         "packages/markers/src/*"
       ],
-      "@theia/merge-conflicts/lib/*": [
-        "packages/merge-conflicts/src/*"
-      ],
       "@theia/messages/lib/*": [
         "packages/messages/src/*"
       ],
