@@ -62,6 +62,8 @@ Breaking changes:
   use VS Code extensions instead of `@theia/python`.
 - [textmate-grammars] removed the `@theia/textmate-grammars` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
   - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+- [tslint] removed the `@theia/tslint` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
 
 ## v0.15.0
 
