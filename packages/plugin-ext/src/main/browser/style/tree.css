@@ -30,7 +30,7 @@
     margin-left: var(--theia-ui-padding);
 }
 
-.theia-TreeNodeSegment {
+.theia-tree-view.theia-TreeNodeSegment {
     display: flex;
 }
 
@@ -38,4 +38,3 @@
     align-items: center;
     height: 100%;
 }
-
