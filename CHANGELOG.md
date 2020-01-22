@@ -3,6 +3,7 @@
 ## v0.15.0
 
 - [terminal] always open terminal links on touchevents (e.g. when tapping a link on iPad) [#6875](https://github.com/eclipse-theia/theia/pull/6875)
+- [plugin-ext] automatically remove old session logs folders, only the 10 (configurable using `--plugin-max-session-logs-folders=N`) most recent logs session folders will be retained [#6956](https://github.com/eclipse-theia/theia/pull/6956)
 
 Breaking changes:
 
