@@ -34,6 +34,7 @@
     "@theia/application-package": "^0.14.0",
     "@types/mkdirp": "^0.5.2",
     "@types/requestretry": "^1.12.3",
+    "@types/tar": "^4.0.3",
     "mkdirp": "^0.5.0",
     "requestretry": "^3.1.0",
     "tar": "^4.0.0",
