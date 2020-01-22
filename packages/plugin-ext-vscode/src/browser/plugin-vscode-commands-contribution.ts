@@ -29,7 +29,7 @@ import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/appl
 import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { TextDocumentShowOptions, IOpenFolderAPICommandOptions } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
+import { TextDocumentShowOptions } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import { createUntitledResource } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
 import { toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
@@ -107,6 +107,12 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 await open(this.openerService, new TheiaURI(resource), editorOptions);
             }
         });
+
+        interface IOpenFolderAPICommandOptions {
+            forceNewWindow?: boolean;
+            forceReuseWindow?: boolean;
+            noRecentEntry?: boolean;
+        }
 
         commands.registerCommand(VscodeCommands.OPEN_FOLDER, {
             isVisible: () => false,
