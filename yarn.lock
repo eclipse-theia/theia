@@ -1095,6 +1095,13 @@
   resolved "https://registry.yarnpkg.com/@types/minimatch/-/minimatch-3.0.3.tgz#3dca0e3f33b200fc7d1139c0cd96c1268cadfd9d"
   integrity sha512-tHq6qdbT9U1IRSGf14CL0pUlULksvY9OZ+5eEgl1N7t+OA3tGvNpxJCzuKQlsNgCVwbAs670L1vcVQi8j9HjnA==
 
+"@types/minipass@*":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@types/minipass/-/minipass-2.2.0.tgz#51ad404e8eb1fa961f75ec61205796807b6f9651"
+  integrity sha512-wuzZksN4w4kyfoOv/dlpov4NOunwutLA/q7uc00xU02ZyUY+aoM5PWIXEKBMnm0NHd4a+N71BMjq+x7+2Af1fg==
+  dependencies:
+    "@types/node" "*"
+
 "@types/mkdirp@^0.5.2":
   version "0.5.2"
   resolved "https://registry.yarnpkg.com/@types/mkdirp/-/mkdirp-0.5.2.tgz#503aacfe5cc2703d5484326b1b27efa67a339c1f"
@@ -1231,6 +1238,14 @@
   resolved "https://registry.yarnpkg.com/@types/tar/-/tar-4.0.0.tgz#e3239d969eeb693a012200613860d0eb871c94f0"
   integrity sha512-YybbEHNngcHlIWVCYsoj7Oo1JU9JqONuAlt1LlTH/lmL8BMhbzdFUgReY87a05rY1j8mfK47Del+TCkaLAXwLw==
   dependencies:
+    "@types/node" "*"
+
+"@types/tar@^4.0.3":
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/@types/tar/-/tar-4.0.3.tgz#e2cce0b8ff4f285293243f5971bd7199176ac489"
+  integrity sha512-Z7AVMMlkI8NTWF0qGhC4QIX0zkV/+y0J8x7b/RsHrN0310+YNjoJd8UrApCiGBCWtKjxS9QhNqLi2UJNToh5hA==
+  dependencies:
+    "@types/minipass" "*"
     "@types/node" "*"
 
 "@types/temp@^0.8.29":
