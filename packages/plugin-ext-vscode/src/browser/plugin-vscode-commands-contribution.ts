@@ -29,7 +29,7 @@ import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/appl
 import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { TextDocumentShowOptions } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
+import { TextDocumentShowOptions, IOpenFolderAPICommandOptions } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import { createUntitledResource } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
 import { toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
@@ -110,15 +110,20 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         commands.registerCommand(VscodeCommands.OPEN_FOLDER, {
             isVisible: () => false,
-            execute: async (resource?: URI, options?: WorkspaceInput | undefined) => {
-                if (resource) {
-                    if (!URI.isUri(resource)) {
-                        throw new Error(`Invalid argument for ${VscodeCommands.OPEN_FOLDER.id} command with URI argument. Found ${resource}`);
-                    }
-                    this.workspaceService.open(new TheiaURI(resource), options);
-                } else {
-                    commands.executeCommand(WorkspaceCommands.OPEN_WORKSPACE.id);
+            execute: async (resource?: URI, arg: boolean | IOpenFolderAPICommandOptions = {}) => {
+                if (!resource) {
+                    return commands.executeCommand(WorkspaceCommands.OPEN_WORKSPACE.id);
                 }
+                if (!URI.isUri(resource)) {
+                    throw new Error(`Invalid argument for ${VscodeCommands.OPEN_FOLDER.id} command with URI argument. Found ${resource}`);
+                }
+                let options: WorkspaceInput | undefined;
+                if (typeof arg === 'boolean') {
+                    options = { preserveWindow: !arg };
+                } else {
+                    options = { preserveWindow: !arg.forceNewWindow };
+                }
+                this.workspaceService.open(new TheiaURI(resource), options);
             }
         });
 

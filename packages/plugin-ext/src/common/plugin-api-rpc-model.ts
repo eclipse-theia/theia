@@ -434,6 +434,12 @@ export interface WorkspaceFolder {
     index: number;
 }
 
+export interface IOpenFolderAPICommandOptions {
+    forceNewWindow?: boolean;
+    forceReuseWindow?: boolean;
+    noRecentEntry?: boolean;
+}
+
 export interface Breakpoint {
     readonly id: string;
     readonly enabled: boolean;
