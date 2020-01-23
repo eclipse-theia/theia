@@ -122,7 +122,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                                     return () => clonedTarget;
                                 }
                                 if (clonedConfig) {
-                                    clonedTarget = cloneTarget ? cloneTarget : lookUp(clonedConfig, accessor);
+                                    clonedTarget = clonedTarget ? clonedTarget : lookUp(clonedConfig, accessor);
                                     return clonedTarget[prop];
                                 }
                                 const res = targ[prop];
