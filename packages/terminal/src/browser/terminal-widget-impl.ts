@@ -54,6 +54,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected waitForConnection: Deferred<MessageConnection> | undefined;
     protected hoverMessage: HTMLDivElement;
     protected lastTouchEnd: TouchEvent | undefined;
+    protected loadingMessage: HTMLDivElement;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -193,6 +194,24 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         for (const contribution of this.terminalContributionProvider.getContributions()) {
             contribution.onCreate(this);
         }
+
+        if (this.options.loadingMessage) {
+            this.loadingMessage = document.createElement('div');
+            this.loadingMessage.style.zIndex = '20';
+            this.loadingMessage.style.display = 'block';
+            this.loadingMessage.style.position = 'absolute';
+            this.loadingMessage.style.left = '0px';
+            this.loadingMessage.style.right = '0px';
+            this.loadingMessage.style.top = '30%';
+            this.loadingMessage.style.textAlign = 'center';
+            this.loadingMessage.style.color = 'var(--theia-editorWidget-foreground)';
+
+            const text = document.createElement('pre');
+            text.textContent = this.options.loadingMessage;
+            this.loadingMessage.appendChild(text);
+
+            this.node.appendChild(this.loadingMessage);
+        }
     }
 
     /**
@@ -280,6 +299,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
         this.resizeTerminalProcess();
         this.connectTerminalProcess();
+
+        // Hide loading message after starting the terminal.
+        if (this.loadingMessage) {
+            this.loadingMessage.style.display = 'none';
+        }
+
         if (IBaseTerminalServer.validateId(this.terminalId)) {
             this.onDidOpenEmitter.fire(undefined);
             return this.terminalId;

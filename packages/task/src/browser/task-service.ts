@@ -60,6 +60,7 @@ import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskConfigurationManager } from './task-configuration-manager';
 import { PROBLEMS_WIDGET_ID, ProblemWidget } from '@theia/markers/lib/browser/problem/problem-widget';
 import { TaskNode } from './task-node';
+import { TaskTerminal } from './task-terminal';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -169,6 +170,10 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
+
+    @inject(TaskTerminal)
+    protected readonly taskTerminal: TaskTerminal;
+
     /**
      * @deprecated To be removed in 0.5.0
      */
@@ -454,6 +459,9 @@ export class TaskService implements TaskConfigurationClient {
      * It looks for configured and detected tasks.
      */
     async run(source: string, taskLabel: string, scope?: string): Promise<TaskInfo | undefined> {
+        // Open an empty terminal, display a message informing the user that terminal is starting
+        await this.taskTerminal.openEmptyTerminal(taskLabel);
+
         let task = await this.getProvidedTask(source, taskLabel, scope);
         if (!task) { // if a detected task cannot be found, search from tasks.json
             task = this.taskConfigurations.getTask(source, taskLabel);
@@ -462,6 +470,7 @@ export class TaskService implements TaskConfigurationClient {
                 return;
             }
         }
+
         const customizationObject = await this.getTaskCustomization(task);
 
         if (!customizationObject.problemMatcher) {
@@ -972,29 +981,13 @@ export class TaskService implements TaskConfigurationClient {
     async attach(processId: number, taskId: number): Promise<void> {
         // Get the list of all available running tasks.
         const runningTasks: TaskInfo[] = await this.getRunningTasks();
+
         // Get the corresponding task information based on task id if available.
         const taskInfo: TaskInfo | undefined = runningTasks.find((t: TaskInfo) => t.taskId === taskId);
-        // Create terminal widget to display an execution output of a task that was launched as a command inside a shell.
-        const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(
-            TERMINAL_WIDGET_FACTORY_ID,
-            <TerminalWidgetFactoryOptions>{
-                created: new Date().toString(),
-                id: this.getTerminalWidgetId(processId),
-                title: taskInfo
-                    ? `Task: ${taskInfo.config.label}`
-                    : `Task: #${taskId}`,
-                destroyTermOnClose: true
-            }
-        );
-        this.shell.addWidget(widget, { area: 'bottom' });
-        if (taskInfo && taskInfo.config.presentation && taskInfo.config.presentation.reveal === RevealKind.Always) {
-            if (taskInfo.config.presentation.focus) { // assign focus to the terminal if presentation.focus is true
-                this.shell.activateWidget(widget.id);
-            } else { // show the terminal but not assign focus
-                this.shell.revealWidget(widget.id);
-            }
-        }
-        widget.start(processId);
+
+        // Attach terminal to the running task
+        // to display an execution output of a task that was launched as a command inside a shell.
+        this.taskTerminal.attach(processId, taskId, taskInfo, this.getTerminalWidgetId(processId));
     }
 
     private getTerminalWidgetId(terminalId: number): string {

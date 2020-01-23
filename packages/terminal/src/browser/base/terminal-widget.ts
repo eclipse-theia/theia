@@ -106,4 +106,9 @@ export interface TerminalWidgetOptions {
      * Terminal attributes. Can be useful to apply some implementation specific information.
      */
     readonly attributes?: { [key: string]: string | null };
+
+    /**
+     * Initial message to be displayed while terminal is not started.
+     */
+    readonly loadingMessage?: string;
 }
