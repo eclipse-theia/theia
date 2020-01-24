@@ -16,5 +16,8 @@
   "homepage": "https://github.com/eclipse-theia/theia",
   "files": [
     "src"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
