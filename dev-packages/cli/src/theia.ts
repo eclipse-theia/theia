@@ -54,7 +54,7 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
     };
 }
 
-(function (): void {
+(() => {
     const projectPath = process.cwd();
     const appTarget: ApplicationProps.Target = yargs.argv['app-target'];
     const manager = new ApplicationPackageManager({ projectPath, appTarget });

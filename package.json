@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@types/chai-string": "^1.4.0",
-    "@types/jsdom": "^11.0.4",
+    "@types/jsdom": "^12.2.4",
     "@types/node": "~10.3.6",
     "@types/sinon": "^2.3.5",
     "@types/temp": "^0.8.29",
@@ -26,13 +26,13 @@
     "nyc": "^15.0.0",
     "rimraf": "^2.6.1",
     "sinon": "^3.3.0",
-    "temp": "^0.8.3",
-    "tslint": "^5.12.0",
+    "temp": "^0.9.1",
+    "tslint": "^6.0.0",
     "tslint-language-service": "^0.9.9",
-    "typedoc": "^0.15.0-0",
+    "typedoc": "^0.16.8",
     "typedoc-plugin-external-module-map": "^1.0.0",
     "typescript": "~3.5.3",
-    "uuid": "^3.2.1"
+    "uuid": "^3.4.0"
   },
   "scripts": {
     "postinstall": "node scripts/post-install.js",
