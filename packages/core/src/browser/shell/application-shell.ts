@@ -812,6 +812,45 @@ export class ApplicationShell extends Widget {
     }
 
     /**
+     * Finds the title widget from the tab-bar.
+     * @param tabBar used for providing an array of titles.
+     * @returns the selected title widget, else returns the currentTitle or undefined.
+     */
+    findTitle(tabBar: TabBar<Widget>, event?: Event): Title<Widget> | undefined {
+        if (event?.target instanceof HTMLElement) {
+            let tabNode: HTMLElement | null = event.target;
+            while (tabNode && !tabNode.classList.contains('p-TabBar-tab')) {
+                tabNode = tabNode.parentElement;
+            }
+            if (tabNode && tabNode.title) {
+                let title = tabBar.titles.find(t => t.caption === tabNode!.title);
+                if (title) {
+                    return title;
+                }
+                title = tabBar.titles.find(t => t.label === tabNode!.title);
+                if (title) {
+                    return title;
+                }
+            }
+        }
+        return tabBar.currentTitle || undefined;
+    }
+
+    /**
+     * Finds the tab-bar widget.
+     * @returns the selected tab-bar, else returns the currentTabBar.
+     */
+    findTabBar(event?: Event): TabBar<Widget> | undefined {
+        if (event?.target instanceof HTMLElement) {
+            const tabBar = this.findWidgetForElement(event.target);
+            if (tabBar instanceof TabBar) {
+                return tabBar;
+            }
+        }
+        return this.currentTabBar;
+    }
+
+    /**
      * The current widget in the application shell. The current widget is the last widget that
      * was active and not yet closed. See the remarks to `activeWidget` on what _active_ means.
      */

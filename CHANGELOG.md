@@ -1,5 +1,18 @@
 # Change Log
 
+## v1.6.0
+
+- [core] added functionality for handling context menu for `tab-bars` without activating the shell tab-bar [#6965](https://github.com/eclipse-theia/theia/pull/6965)
+
+<a name="breaking_changes_1.6.0">[Breaking Changes:](#breaking_changes_1.6.0)</a>
+
+- [core] Context-menu for `tab-bars` requires an `Event` to be passed onto it to perform actions without activating the shell tab-bar [#6965](https://github.com/eclipse-theia/theia/pull/6965)
+  - Removed the logic from `handleContextMenuEvent()` that gives focus to the widget upon opening the context menu, instead functionality added to handle it without activating the widget
+  - This change triggers the context menu for a given shell tab-bar without the need to activate it
+  - While registering a command, `Event` should be passed down, if not passed, then the commands will not work correctly as they no longer rely on the activation of tab-bar
+- [core] Moved `findTitle()` and `findTabBar()` from `common-frontend-contribution.ts` to `application-shell.ts`  [#6965](https://github.com/eclipse-theia/theia/pull/6965)
+
+
 ## v1.5.0 - 27/08/2020
 
 - [application-manager] fixed issue regarding reloading electron windows [#8345](https://github.com/eclipse-theia/theia/pull/8345)

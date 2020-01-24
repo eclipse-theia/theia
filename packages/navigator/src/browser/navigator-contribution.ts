@@ -28,7 +28,8 @@ import {
     PreferenceService,
     SelectableTreeNode,
     SHELL_TABBAR_CONTEXT_MENU,
-    Widget
+    Widget,
+    Title
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
@@ -260,9 +261,18 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             execute: () => this.openView({ activate: true })
         });
         registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, {
-            execute: () => this.openView({ activate: true }).then(() => this.selectWidgetFileNode(this.shell.currentWidget)),
-            isEnabled: () => Navigatable.is(this.shell.currentWidget),
-            isVisible: () => Navigatable.is(this.shell.currentWidget)
+            execute: (event?: Event) => {
+                const widget = this.findTargetedWidget(event);
+                this.openView({ activate: true }).then(() => this.selectWidgetFileNode(widget || this.shell.currentWidget));
+            },
+            isEnabled: (event?: Event) => {
+                const widget = this.findTargetedWidget(event);
+                return widget ? Navigatable.is(widget) : Navigatable.is(this.shell.currentWidget);
+            },
+            isVisible: (event?: Event) => {
+                const widget = this.findTargetedWidget(event);
+                return widget ? Navigatable.is(widget) : Navigatable.is(this.shell.currentWidget);
+            }
         });
         registry.registerCommand(FileNavigatorCommands.TOGGLE_HIDDEN_FILES, {
             execute: () => {
@@ -544,6 +554,19 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         item.command = id;
         this.tabbarToolbarRegistry.registerItem(item);
     };
+
+    /**
+     * Find the selected widget.
+     * @returns `widget` of the respective `title` if it exists, else returns undefined.
+     */
+    private findTargetedWidget(event?: Event): Widget | undefined {
+        let title: Title<Widget> | undefined;
+        if (event) {
+            const tab = this.shell.findTabBar(event);
+            title = tab && this.shell.findTitle(tab, event);
+        }
+        return title && title.owner;
+    }
 
     /**
      * Reveals and selects node in the file navigator to which given widget is related.
