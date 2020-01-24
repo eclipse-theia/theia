@@ -18,7 +18,7 @@
 
 import debounce = require('lodash.debounce');
 import { injectable, inject } from 'inversify';
-import { TabBar, Widget, Title } from '@phosphor/widgets';
+import { TabBar, Widget } from '@phosphor/widgets';
 import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution } from './frontend-application';
@@ -621,55 +621,59 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_TAB, {
             isEnabled: (event?: Event) => {
-                const tabBar = this.findTabBar(event);
+                const tabBar = this.shell.findTabBar(event);
                 if (!tabBar) {
                     return false;
                 }
-                const currentTitle = this.findTitle(tabBar, event);
+                const currentTitle = this.shell.findTitle(tabBar, event);
                 return currentTitle !== undefined && currentTitle.closable;
             },
             execute: (event?: Event) => {
-                const tabBar = this.findTabBar(event)!;
-                const currentTitle = this.findTitle(tabBar, event);
+                const tabBar = this.shell.findTabBar(event)!;
+                const currentTitle = this.shell.findTitle(tabBar, event);
                 this.shell.closeTabs(tabBar, title => title === currentTitle);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS, {
             isEnabled: (event?: Event) => {
-                const tabBar = this.findTabBar(event);
+                const tabBar = this.shell.findTabBar(event);
                 if (!tabBar) {
                     return false;
                 }
-                const currentTitle = this.findTitle(tabBar, event);
+                const currentTitle = this.shell.findTitle(tabBar, event);
                 return tabBar.titles.some(title => title !== currentTitle && title.closable);
             },
             execute: (event?: Event) => {
-                const tabBar = this.findTabBar(event)!;
-                const currentTitle = this.findTitle(tabBar, event);
+                const tabBar = this.shell.findTabBar(event)!;
+                const currentTitle = this.shell.findTitle(tabBar, event);
                 this.shell.closeTabs(tabBar, title => title !== currentTitle && title.closable);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
             isEnabled: (event?: Event) => {
-                const tabBar = this.findTabBar(event);
-                return tabBar !== undefined && tabBar.titles.some((title, index) => index > tabBar.currentIndex && title.closable);
+                const tabBar = this.shell.findTabBar(event);
+                if (!tabBar) {
+                    return false;
+                }
+                const currentIndex = this.findTitleIndex(tabBar, event);
+                return tabBar.titles.some((title, index) => index > currentIndex && title.closable);
             },
             isVisible: (event?: Event) => {
                 const area = this.findTabArea(event);
                 return area !== undefined && area !== 'left' && area !== 'right';
             },
             execute: (event?: Event) => {
-                const tabBar = this.findTabBar(event)!;
-                const currentIndex = tabBar.currentIndex;
+                const tabBar = this.shell.findTabBar(event)!;
+                const currentIndex = this.findTitleIndex(tabBar, event);
                 this.shell.closeTabs(tabBar, (title, index) => index > currentIndex && title.closable);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, {
             isEnabled: (event?: Event) => {
-                const tabBar = this.findTabBar(event);
+                const tabBar = this.shell.findTabBar(event);
                 return tabBar !== undefined && tabBar.titles.some(title => title.closable);
             },
-            execute: (event?: Event) => this.shell.closeTabs(this.findTabBar(event)!, title => title.closable)
+            execute: (event?: Event) => this.shell.closeTabs(this.shell.findTabBar(event)!, title => title.closable)
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_MAIN_TAB, {
             isEnabled: () => {
@@ -716,9 +720,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             }
         });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_MAXIMIZED, {
-            isEnabled: () => this.shell.canToggleMaximized(),
-            isVisible: () => this.shell.canToggleMaximized(),
-            execute: () => this.shell.toggleMaximized()
+            isEnabled: (event?: Event) => this.canToggleMaximized(event),
+            isVisible: (event?: Event) => this.canToggleMaximized(event),
+            execute: (event?: Event) => this.toggleMaximized(event)
         });
 
         commandRegistry.registerCommand(CommonCommands.SAVE, {
@@ -743,38 +747,61 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
     }
 
-    private findTabBar(event?: Event): TabBar<Widget> | undefined {
-        if (event && event.target) {
-            const tabBar = this.shell.findWidgetForElement(event.target as HTMLElement);
-            if (tabBar instanceof TabBar) {
-                return tabBar;
-            }
-        }
-        return this.shell.currentTabBar;
-    }
-
     private findTabArea(event?: Event): ApplicationShell.Area | undefined {
-        const tabBar = this.findTabBar(event);
+        const tabBar = this.shell.findTabBar(event);
         if (tabBar) {
             return this.shell.getAreaFor(tabBar);
         }
         return this.shell.currentTabArea;
     }
 
-    private findTitle(tabBar: TabBar<Widget>, event?: Event): Title<Widget> | undefined {
-        if (event && event.target) {
-            let tabNode: HTMLElement | null = event.target as HTMLElement;
-            while (tabNode && !tabNode.classList.contains('p-TabBar-tab')) {
-                tabNode = tabNode.parentElement;
-            }
-            if (tabNode && tabNode.title) {
-                const title = tabBar.titles.find(t => t.label === tabNode!.title);
-                if (title) {
-                    return title;
-                }
+    /**
+     * Finds the index of the selected title from the tab-bar.
+     * @param tabBar: used for providing an array of titles.
+     * @returns the index of the selected title if it is available in the tab-bar, else returns the index of currently-selected title.
+     */
+    private findTitleIndex(tabBar: TabBar<Widget>, event?: Event): number {
+        if (event) {
+            const targetTitle = this.shell.findTitle(tabBar, event);
+            return targetTitle ? tabBar.titles.indexOf(targetTitle) : tabBar.currentIndex;
+        }
+        return tabBar.currentIndex;
+    }
+
+    private canToggleMaximized(event?: Event): boolean {
+        if (event?.target instanceof HTMLElement) {
+            const widget = this.shell.findWidgetForElement(event.target);
+            if (widget) {
+                return this.shell.mainPanel.contains(widget) || this.shell.bottomPanel.contains(widget);
             }
         }
-        return tabBar.currentTitle || undefined;
+        return this.shell.canToggleMaximized();
+    }
+
+    /**
+     * Maximize the bottom or the main dockpanel based on the widget.
+     * @param event used to find the selected widget.
+     */
+    private toggleMaximized(event?: Event): void {
+        if (event?.target instanceof HTMLElement) {
+            const widget = this.shell.findWidgetForElement(event.target);
+            if (widget) {
+                if (this.shell.mainPanel.contains(widget)) {
+                    this.shell.mainPanel.toggleMaximized();
+                } else if (this.shell.bottomPanel.contains(widget)) {
+                    this.shell.bottomPanel.toggleMaximized();
+                }
+                if (widget instanceof TabBar) {
+                    // reveals the widget when maximized.
+                    const title = this.shell.findTitle(widget, event);
+                    if (title) {
+                        this.shell.revealWidget(title.owner.id);
+                    }
+                }
+            }
+        } else {
+            this.shell.toggleMaximized();
+        }
     }
 
     private isElectron(): boolean {
