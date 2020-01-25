@@ -166,7 +166,7 @@ export class FrontendApplication {
     /**
      * Register composition related event listeners.
      */
-    protected registerComositionEventListeners(): void {
+    protected registerCompositionEventListeners(): void {
         window.document.addEventListener('compositionstart', event => {
             this.inComposition = true;
         });
@@ -180,7 +180,7 @@ export class FrontendApplication {
      * Register global event listeners.
      */
     protected registerEventListeners(): void {
-        this.registerComositionEventListeners(); /* Hotfix. See above. */
+        this.registerCompositionEventListeners(); /* Hotfix. See above. */
 
         window.addEventListener('beforeunload', () => {
             this.stateService.state = 'closing_window';

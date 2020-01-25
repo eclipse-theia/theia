@@ -28,7 +28,7 @@ export class ExternalUriService {
      *
      * By default maps to an origin serving Theia.
      *
-     * Use `parseLocalhost` to retrive localhost address and port information.
+     * Use `parseLocalhost` to retrieve localhost address and port information.
      */
     resolve(uri: URI): MaybePromise<URI> {
         const localhost = this.parseLocalhost(uri);

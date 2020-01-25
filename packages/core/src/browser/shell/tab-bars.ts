@@ -73,7 +73,7 @@ export class TabBarRenderer extends TabBar.Renderer {
 
     // TODO refactor shell, rendered should only receive props with event handlers
     // events should be handled by clients, like ApplicationShell
-    // right now it is mess: (1) client logic belong to renderer, (2) cyclic dependencies between renderes and clients
+    // right now it is mess: (1) client logic belong to renderer, (2) cyclic dependencies between renderers and clients
     constructor(
         protected readonly contextMenuRenderer?: ContextMenuRenderer,
         protected readonly decoratorService?: TabBarDecoratorService,

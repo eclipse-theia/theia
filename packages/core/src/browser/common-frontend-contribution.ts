@@ -1564,7 +1564,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: 'editorWarning.foreground',
                     light: 'editorWarning.foreground',
                     hc: 'editorWarning.foreground'
-                }, description: 'Background of hovered statusbar item in case the theia server is offlline.'
+                }, description: 'Background of hovered statusbar item in case the theia server is offline.'
             },
             {
                 id: 'statusBar.offlineForeground',
@@ -1572,7 +1572,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: 'editor.background',
                     light: 'editor.background',
                     hc: 'editor.background'
-                }, description: 'Background of hovered statusbar item in case the theia server is offlline.'
+                }, description: 'Background of hovered statusbar item in case the theia server is offline.'
             },
             {
                 id: 'statusBarItem.offlineHoverBackground',
@@ -1580,7 +1580,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: Color.lighten('statusBar.offlineBackground', 0.4),
                     light: Color.lighten('statusBar.offlineBackground', 0.4),
                     hc: Color.lighten('statusBar.offlineBackground', 0.4)
-                }, description: 'Background of hovered statusbar item in case the theia server is offlline.'
+                }, description: 'Background of hovered statusbar item in case the theia server is offline.'
             },
             {
                 id: 'statusBarItem.offlineActiveBackground',
@@ -1588,7 +1588,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: Color.lighten('statusBar.offlineBackground', 0.6),
                     light: Color.lighten('statusBar.offlineBackground', 0.6),
                     hc: Color.lighten('statusBar.offlineBackground', 0.6)
-                }, description: 'Background of active statusbar item in case the theia server is offlline.'
+                }, description: 'Background of active statusbar item in case the theia server is offline.'
             },
             // Buttons
             {

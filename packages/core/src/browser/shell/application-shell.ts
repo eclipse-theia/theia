@@ -48,7 +48,7 @@ const MAIN_AREA_CLASS = 'theia-app-main';
 const BOTTOM_AREA_CLASS = 'theia-app-bottom';
 
 export type ApplicationShellLayoutVersion =
-    /** layout versioning is introduced, unversiouned layout are not compatible */
+    /** layout versioning is introduced, unversioned layout are not compatible */
     2.0 |
     /** view containers are introduced, backward compatible to 2.0 */
     3.0;
