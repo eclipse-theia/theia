@@ -279,15 +279,15 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         let property;
         const overridden = this.overriddenPreferenceName(preferenceName);
         if (overridden) {
-            // try from overriden schema
+            // try from overridden schema
             property = this.overridePatternProperties[`[${overridden.overrideIdentifier}]`];
             property = property && property[overridden.preferenceName];
             if (!property) {
-                // try from overriden identifier
+                // try from overridden identifier
                 property = this.overridePatternProperties[overridden.preferenceName];
             }
             if (!property) {
-                // try from overriden value
+                // try from overridden value
                 property = this.combinedSchema.properties[overridden.preferenceName];
             }
         } else {

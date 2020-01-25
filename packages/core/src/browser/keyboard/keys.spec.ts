@@ -234,7 +234,7 @@ describe('keys api', () => {
         expect(keycode.key).is.equal(Key.MINUS);
     });
 
-    it('should parse minus as key and seprator', () => {
+    it('should parse minus as key and separator', () => {
         const keycode = KeyCode.parse('ctrl--');
         expect(keycode.ctrl).to.be.true;
         expect(keycode.key).is.equal(Key.MINUS);
