@@ -54,8 +54,8 @@ describe('Views', function () {
 
             view = await contribution.toggleView();
             assert.notEqual(view, undefined);
-            assert.isUndefined(shell.getAreaFor(view));
-            assert.isUndefined(shell.getTabBarFor(view));
+            assert.equal(shell.getAreaFor(view), contribution.defaultViewOptions.area);
+            assert.isDefined(shell.getTabBarFor(view));
             assert.isFalse(view.isVisible);
             assert.notEqual(view, shell.activeWidget);
         });
