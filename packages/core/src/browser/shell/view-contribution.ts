@@ -108,8 +108,23 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
             };
             await shell.addWidget(widget, widgetArgs);
         } else if (args.toggle && area && shell.isExpanded(area) && tabBar.currentTitle === widget.title) {
-            // The widget is attached and visible, so close it (toggle)
-            await this.closeView();
+            // The widget is attached and visible, so collapse the containing panel (toggle)
+            switch (area) {
+                case 'left':
+                case 'right':
+                    shell.collapsePanel(area);
+                    break;
+                case 'bottom':
+                    // Don't collapse the bottom panel if it's currently split
+                    if (shell.bottomAreaTabBars.length === 1) {
+                        shell.collapsePanel('bottom');
+                    }
+                    break;
+                default:
+                    // The main area cannot be collapsed, so close the widget
+                    await this.closeView();
+            }
+            return this.widget;
         }
         if (widget.isAttached && args.activate) {
             await shell.activateWidget(this.viewId);
