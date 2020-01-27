@@ -57,6 +57,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/browser/editorExtensions',
                 'vs/editor/standalone/browser/simpleServices',
                 'vs/editor/standalone/browser/standaloneServices',
+                'vs/editor/standalone/browser/standaloneLanguages',
                 'vs/base/parts/quickopen/browser/quickOpenWidget',
                 'vs/base/parts/quickopen/browser/quickOpenModel',
                 'vs/base/common/filters',
@@ -77,36 +78,36 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/base/common/errors'
             ], (css: any, html: any, commands: any, actions: any,
                 keybindingsRegistry: any, keybindingResolver: any, resolvedKeybinding: any, keybindingLabels: any,
-                keyCodes: any, mime: any, editorExtensions: any, simpleServices: any, standaloneServices: any, quickOpenWidget: any, quickOpenModel: any,
+                keyCodes: any, mime: any, editorExtensions: any, simpleServices: any,
+                standaloneServices: any, standaloneLanguages: any, quickOpenWidget: any, quickOpenModel: any,
                 filters: any, styler: any, colorRegistry: any, color: any,
                 platform: any, modes: any, suggest: any, snippetParser: any,
                 configuration: any, configurationModels: any,
                 codeEditorService: any, codeEditorServiceImpl: any,
                 markerService: any,
                 contextKey: any, contextKeyService: any,
-                error: any
-            ) => {
-                const global: any = self;
-                global.monaco.commands = commands;
-                global.monaco.actions = actions;
-                global.monaco.keybindings = Object.assign({}, keybindingsRegistry, keybindingResolver, resolvedKeybinding, keybindingLabels, keyCodes);
-                global.monaco.services = Object.assign({}, simpleServices, standaloneServices, configuration, configurationModels,
-                    codeEditorService, codeEditorServiceImpl, markerService);
-                global.monaco.quickOpen = Object.assign({}, quickOpenWidget, quickOpenModel);
-                global.monaco.filters = filters;
-                global.monaco.theme = styler;
-                global.monaco.color = Object.assign({}, colorRegistry, color);
-                global.monaco.platform = platform;
-                global.monaco.editorExtensions = editorExtensions;
-                global.monaco.modes = modes;
-                global.monaco.suggest = suggest;
-                global.monaco.snippetParser = snippetParser;
-                global.monaco.contextkey = contextKey;
-                global.monaco.contextKeyService = contextKeyService;
-                global.monaco.mime = mime;
-                global.monaco.error = error;
-                resolve();
-            });
+                error: any) => {
+                    const global: any = self;
+                    global.monaco.commands = commands;
+                    global.monaco.actions = actions;
+                    global.monaco.keybindings = Object.assign({}, keybindingsRegistry, keybindingResolver, resolvedKeybinding, keybindingLabels, keyCodes);
+                    global.monaco.services = Object.assign({}, simpleServices, standaloneServices, standaloneLanguages, configuration, configurationModels,
+                        codeEditorService, codeEditorServiceImpl, markerService);
+                    global.monaco.quickOpen = Object.assign({}, quickOpenWidget, quickOpenModel);
+                    global.monaco.filters = filters;
+                    global.monaco.theme = styler;
+                    global.monaco.color = Object.assign({}, colorRegistry, color);
+                    global.monaco.platform = platform;
+                    global.monaco.editorExtensions = editorExtensions;
+                    global.monaco.modes = modes;
+                    global.monaco.suggest = suggest;
+                    global.monaco.snippetParser = snippetParser;
+                    global.monaco.contextkey = contextKey;
+                    global.monaco.contextKeyService = contextKeyService;
+                    global.monaco.mime = mime;
+                    global.monaco.error = error;
+                    resolve();
+                });
         });
     });
 }
