@@ -27,6 +27,11 @@
     font-size: calc(var(--theia-content-font-size) * 0.8);
 }
 
+.theia-file-icons-js.file-icon {
+    width: calc(var(--theia-icon-size)*0.948);   
+}
+
+
 .fa-file:before,
 .fa-folder:before,
 .theia-file-icons-js:before {
