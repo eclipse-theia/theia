@@ -108,12 +108,17 @@ export class PluginContributionHandler {
         if (!contributions) {
             return Disposable.NULL;
         }
-        const toDispose = new DisposableCollection();
+        const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        const logError = (message: string, ...args: any[]) => console.error(`[${clientId}][${plugin.metadata.model.id}]: ${message}`, ...args);
         const pushContribution = (id: string, contribute: () => Disposable) => {
+            if (toDispose.disposed) {
+                return;
+            }
             try {
                 toDispose.push(contribute());
             } catch (e) {
-                console.error(`[${clientId}][${plugin.metadata.model.id}]: Failed to load '${id}' contribution.`, e);
+                logError(`Failed to load '${id}' contribution.`, e);
             }
         };
 
@@ -181,7 +186,6 @@ export class PluginContributionHandler {
                         });
                     }
                 }
-
                 pushContribution(`grammar.textmate.scope.${grammar.scope}`, () => this.grammarsRegistry.registerTextmateGrammarScope(grammar.scope, {
                     async getGrammarDefinition(): Promise<GrammarDefinition> {
                         return {
@@ -193,17 +197,22 @@ export class PluginContributionHandler {
                     getInjections: (scopeName: string) =>
                         this.injections.get(scopeName)!
                 }));
-                const language = grammar.language;
-                if (language) {
-                    pushContribution(`grammar.language.${language}.scope`, () => this.grammarsRegistry.mapLanguageIdToTextmateGrammar(language, grammar.scope));
-                    pushContribution(`grammar.language.${language}.configuration`, () => this.grammarsRegistry.registerGrammarConfiguration(language, {
-                        embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages),
-                        tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
-                    }));
-                    pushContribution(`grammar.language.${language}.activation`,
-                        () => this.onDidActivateLanguage(language, () => this.monacoTextmateService.activateLanguage(language))
-                    );
-                }
+
+                // load grammars on next tick to await registration of languages from all plugins in current tick
+                // see https://github.com/eclipse-theia/theia/issues/6907#issuecomment-578600243
+                setTimeout(() => {
+                    const language = grammar.language;
+                    if (language) {
+                        pushContribution(`grammar.language.${language}.scope`, () => this.grammarsRegistry.mapLanguageIdToTextmateGrammar(language, grammar.scope));
+                        pushContribution(`grammar.language.${language}.configuration`, () => this.grammarsRegistry.registerGrammarConfiguration(language, {
+                            embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages, logError),
+                            tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
+                        }));
+                        pushContribution(`grammar.language.${language}.activation`,
+                            () => this.onDidActivateLanguage(language, () => this.monacoTextmateService.activateLanguage(language))
+                        );
+                    }
+                });
             }
         }
 
@@ -441,7 +450,7 @@ export class PluginContributionHandler {
         return result;
     }
 
-    private convertEmbeddedLanguages(languages?: ScopeMap): IEmbeddedLanguagesMap | undefined {
+    private convertEmbeddedLanguages(languages: ScopeMap | undefined, logError: (error: string) => void): IEmbeddedLanguagesMap | undefined {
         if (typeof languages === 'undefined' || languages === null) {
             return undefined;
         }
@@ -452,6 +461,9 @@ export class PluginContributionHandler {
             const scope = scopes[i];
             const langId = languages[scope];
             result[scope] = getEncodedLanguageId(langId);
+            if (!result[scope]) {
+                logError(`Language for '${scope}' not found.`);
+            }
         }
         return result;
     }
