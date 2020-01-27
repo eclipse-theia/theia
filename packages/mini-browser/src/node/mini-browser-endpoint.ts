@@ -198,8 +198,8 @@ const CODE_EDITOR_PRIORITY = 100;
 @injectable()
 export class HtmlHandler implements MiniBrowserEndpointHandler {
 
-    supportedExtensions(): string {
-        return 'html';
+    supportedExtensions(): string[] {
+        return ['html', 'xhtml', 'htm'];
     }
 
     priority(): number {
