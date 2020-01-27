@@ -154,7 +154,13 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
                     throw new Error(`no grammar for ${scopeName}, ${initialLanguage}, ${JSON.stringify(configuration)}`);
                 }
                 const options = configuration.tokenizerOption ? configuration.tokenizerOption : TokenizerOption.DEFAULT;
-                monaco.languages.setTokensProvider(languageId, createTextmateTokenizer(grammar, options));
+                const tokenizer = createTextmateTokenizer(grammar, options);
+                monaco.languages.setTokensProvider(languageId, tokenizer);
+                const support = monaco.modes.TokenizationRegistry.get(languageId);
+                const themeService = monaco.services.StaticServices.standaloneThemeService.get();
+                const languageIdentifier = monaco.services.StaticServices.modeService.get().getLanguageIdentifier(languageId);
+                const adapter = new monaco.services.TokenizationSupport2Adapter(themeService, languageIdentifier!, tokenizer);
+                support!.tokenize = adapter.tokenize.bind(adapter);
             } catch (error) {
                 this.logger.warn('No grammar for this language id', languageId, error);
             }

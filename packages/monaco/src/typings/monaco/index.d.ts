@@ -438,6 +438,11 @@ declare module monaco.keybindings {
 
 declare module monaco.services {
 
+    export class TokenizationSupport2Adapter implements monaco.modes.ITokenizationSupport {
+        constructor(standaloneThemeService: IStandaloneThemeService, languageIdentifier: LanguageIdentifier, actual: monaco.languages.TokensProvider)
+        tokenize(line: string, state: monaco.languages.IState, offsetDelta: number): any;
+    }
+
     export const ICodeEditorService: any;
     export const IConfigurationService: any;
 
@@ -511,7 +516,8 @@ declare module monaco.services {
 
     // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/editor/common/services/modeService.ts#L30
     export interface IModeService {
-        createByFilepathOrFirstLine(rsource: monaco.Uri | null, firstLine?: string): ILanguageSelection
+        createByFilepathOrFirstLine(rsource: monaco.Uri | null, firstLine?: string): ILanguageSelection;
+        getLanguageIdentifier(modeId: string): LanguageIdentifier | null;
     }
 
     export interface ILanguageSelection {
@@ -846,6 +852,14 @@ declare module monaco.editorExtensions {
     }
 }
 declare module monaco.modes {
+
+    export interface ITokenizationSupport {
+        tokenize(line: string, state: monaco.languages.IState, offsetDelta: number): any;
+    }
+    export interface TokenizationRegistry {
+        get(language: string): ITokenizationSupport | null;
+    }
+    export const TokenizationRegistry: TokenizationRegistry;
 
     export class TokenMetadata {
 
