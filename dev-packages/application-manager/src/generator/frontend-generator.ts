@@ -59,7 +59,8 @@ export class FrontendGenerator extends AbstractGenerator {
 
     protected compileIndexHead(frontendModules: Map<string, string>): string {
         return `
-  <meta charset="UTF-8">`;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">`;
     }
 
     protected compileIndexJs(frontendModules: Map<string, string>): string {
