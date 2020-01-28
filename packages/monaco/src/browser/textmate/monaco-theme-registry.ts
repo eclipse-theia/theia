@@ -17,22 +17,37 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { IRawTheme, Registry } from 'vscode-textmate';
+import { IRawTheme, Registry, IRawThemeSetting } from 'vscode-textmate';
 
 export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData { }
+export interface MixStandaloneTheme extends monaco.services.IStandaloneTheme {
+    themeData: ThemeMix
+}
 
 export class MonacoThemeRegistry {
 
-    protected themes = new Map<string, ThemeMix>();
+    getThemeData(): ThemeMix;
+    getThemeData(name: string): ThemeMix | undefined;
+    getThemeData(name?: string): ThemeMix | undefined {
+        const theme = this.doGetTheme(name);
+        return theme && theme.themeData;
+    }
 
-    public getTheme(name: string): IRawTheme | undefined {
-        return this.themes.get(name);
+    getTheme(): MixStandaloneTheme;
+    getTheme(name: string): MixStandaloneTheme | undefined;
+    getTheme(name?: string): MixStandaloneTheme | undefined {
+        return this.doGetTheme(name);
+    }
+
+    protected doGetTheme(name: string | undefined): MixStandaloneTheme | undefined {
+        const standaloneThemeService = monaco.services.StaticServices.standaloneThemeService.get();
+        const theme = !name ? standaloneThemeService.getTheme() : standaloneThemeService._knownThemes.get(name);
+        return theme as MixStandaloneTheme | undefined;
     }
 
     setTheme(name: string, data: ThemeMix): void {
         // monaco auto refrehes a theme with new data
         monaco.editor.defineTheme(name, data);
-        this.themes.set(name, data);
     }
 
     /**
@@ -58,8 +73,20 @@ export class MonacoThemeRegistry {
                 result.settings.push(...parentTheme.settings);
             }
         }
-        if (json.tokenColors) {
-            result.settings.push(...json.tokenColors);
+        const tokenColors: Array<IRawThemeSetting> = json.tokenColors;
+        if (Array.isArray(tokenColors)) {
+            for (const tokenColor of tokenColors) {
+                if (tokenColor.scope && tokenColor.settings) {
+                    result.settings.push({
+                        scope: tokenColor.scope,
+                        settings: {
+                            foreground: this.normalizeColor(tokenColor.settings.foreground),
+                            background: this.normalizeColor(tokenColor.settings.background),
+                            fontStyle: tokenColor.settings.fontStyle
+                        }
+                    });
+                }
+            }
         }
         if (json.colors) {
             Object.assign(result.colors, json.colors);
@@ -95,22 +122,25 @@ export class MonacoThemeRegistry {
         }
 
         for (const scope of tokenColor.scope) {
-
-            // Converting numbers into a format that monaco understands
-            const settings = Object.keys(tokenColor.settings).reduce((previous: { [key: string]: string }, current) => {
-                let value: string = tokenColor.settings[current];
-                if (typeof value === typeof '') {
-                    value = value.replace(/^\#/, '').slice(0, 6);
-                }
-                previous[current] = value;
-                return previous;
-            }, {});
-
             acceptor({
-                ...settings, token: scope
+                ...tokenColor.settings, token: scope
             });
         }
     }
+
+    protected normalizeColor(color: string | undefined): string | undefined {
+        if (!color) {
+            return undefined;
+        }
+        color = color.replace(/^\#/, '').slice(0, 6);
+        if (color.length < 6) {
+            // ignoring not normalized colors to avoid breaking token color indexes between monaco and vscode-textmate
+            console.error(`Color '${color}' is NOT normalized, it must have 6 positions.`);
+            return undefined;
+        }
+        return '#' + color;
+    }
+
 }
 
 export namespace MonacoThemeRegistry {

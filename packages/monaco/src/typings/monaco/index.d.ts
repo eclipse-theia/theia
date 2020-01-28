@@ -486,10 +486,12 @@ declare module monaco.services {
     }
 
     export interface IStandaloneThemeService extends monaco.theme.IThemeService {
+        readonly _knownThemes: Map<string, IStandaloneTheme>;
         getTheme(): IStandaloneTheme;
     }
 
     export interface IStandaloneTheme {
+        themeData: monaco.editor.IStandaloneThemeData
         tokenTheme: TokenTheme;
         getColor(color: string): Color | undefined;
     }
@@ -858,6 +860,8 @@ declare module monaco.modes {
     }
     export interface TokenizationRegistry {
         get(language: string): ITokenizationSupport | null;
+        getColorMap(): monaco.color.Color[] | null;
+        readonly onDidChange: monaco.IEvent<any>;
     }
     export const TokenizationRegistry: TokenizationRegistry;
 
