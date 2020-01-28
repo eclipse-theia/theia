@@ -96,7 +96,7 @@ export class SidePanelToolbar extends BaseWidget {
     set toolbarTitle(title: Title<Widget> | undefined) {
         if (this.titleContainer && title) {
             this._toolbarTitle = title;
-            this.titleContainer.innerHTML = this._toolbarTitle.label;
+            this.titleContainer.innerText = this._toolbarTitle.label;
             this.titleContainer.title = this._toolbarTitle.caption || this._toolbarTitle.label;
             this.update();
         }
