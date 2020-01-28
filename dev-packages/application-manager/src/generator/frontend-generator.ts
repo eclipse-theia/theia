@@ -131,10 +131,11 @@ process.env.LC_NUMERIC = 'C';
 const electron = require('electron');
 const { join, resolve } = require('path');
 const { fork } = require('child_process');
-const { app, dialog, shell, BrowserWindow, ipcMain, Menu } = electron;
+const { app, dialog, shell, BrowserWindow, ipcMain, Menu, globalShortcut } = electron;
 
 const applicationName = \`${this.pck.props.frontend.config.applicationName}\`;
 const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
+const disallowReloadKeybinding = ${this.pck.props.frontend.config.disallowReloadKeybinding === true ? 'true' : 'false'};
 
 if (isSingleInstance && !app.requestSingleInstanceLock()) {
     // There is another instance running, exit now. The other instance will request focus.
@@ -147,6 +148,11 @@ const Storage = require('electron-store');
 const electronStore = new Storage();
 
 app.on('ready', () => {
+
+    if (disallowReloadKeybinding) {
+        globalShortcut.register('CmdOrCtrl+R', () => {});
+    }
+
     // Explicitly set the app name to have better menu items on macOS. ("About", "Hide", and "Quit")
     // See: https://github.com/electron-userland/electron-builder/issues/2468
     app.setName(applicationName);
