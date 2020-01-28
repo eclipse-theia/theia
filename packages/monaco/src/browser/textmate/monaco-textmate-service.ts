@@ -74,7 +74,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
         this.grammarRegistry = new Registry({
             getOnigLib: () => this.onigasmPromise,
-            theme: this.monacoThemeRegistry.getTheme(this.currentEditorTheme),
+            theme: this.monacoThemeRegistry.getThemeData(this.currentEditorTheme),
             loadGrammar: async (scopeName: string) => {
                 const provider = this.textmateRegistry.getProvider(scopeName);
                 if (provider) {
@@ -116,7 +116,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         this.toDisposeOnUpdateTheme.push(Disposable.create(() => document.body.classList.remove(currentEditorTheme)));
 
         // first update registry to run tokenization with the proper theme
-        const theme = this.monacoThemeRegistry.getTheme(currentEditorTheme);
+        const theme = this.monacoThemeRegistry.getThemeData(currentEditorTheme);
         if (theme) {
             this.grammarRegistry.setTheme(theme);
         }
