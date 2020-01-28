@@ -29,6 +29,7 @@ import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/appl
 import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
+import { CodeEditorWidget } from '@theia/plugin-ext/lib/main/browser/menus/menus-contribution-handler';
 import { TextDocumentShowOptions } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import { createUntitledResource } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
@@ -231,7 +232,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                         return (resourceUri && resourceUri.toString()) === uriString;
                     });
                 }
-                if (NavigatableWidget.is(widget)) {
+                if (CodeEditorWidget.is(widget)) {
                     widget.close();
                 }
             }
@@ -247,7 +248,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     });
                 }
                 for (const widget of this.shell.widgets) {
-                    if (NavigatableWidget.is(widget) && widget !== editor) {
+                    if (CodeEditorWidget.is(widget) && widget !== editor) {
                         widget.close();
                     }
                 }
@@ -267,7 +268,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     const tabBar = this.shell.getTabBarFor(editor);
                     if (tabBar) {
                         this.shell.closeTabs(tabBar,
-                            ({ owner }) => NavigatableWidget.is(owner) && owner !== editor
+                            ({ owner }) => CodeEditorWidget.is(owner) && owner !== editor
                         );
                     }
                 }
@@ -281,7 +282,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     for (const tabBar of this.shell.allTabBars) {
                         if (tabBar !== editorTabBar) {
                             this.shell.closeTabs(tabBar,
-                                ({ owner }) => NavigatableWidget.is(owner)
+                                ({ owner }) => CodeEditorWidget.is(owner)
                             );
                         }
                     }
@@ -301,7 +302,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                                     left = false;
                                     return false;
                                 }
-                                return left && NavigatableWidget.is(owner);
+                                return left && CodeEditorWidget.is(owner);
                             }
                         );
                     }
@@ -321,7 +322,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                                     left = false;
                                     return false;
                                 }
-                                return !left && NavigatableWidget.is(owner);
+                                return !left && CodeEditorWidget.is(owner);
                             }
                         );
                     }
@@ -331,7 +332,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.closeAllEditors' }, {
             execute: () => {
                 for (const widget of this.shell.widgets) {
-                    if (NavigatableWidget.is(widget)) {
+                    if (CodeEditorWidget.is(widget)) {
                         widget.close();
                     }
                 }
