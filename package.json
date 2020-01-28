@@ -28,7 +28,7 @@
     "eslint-plugin-no-null": "^1.0.2",
     "ignore-styles": "^5.0.1",
     "jsdom": "^11.5.1",
-    "lerna": "2.7.2",
+    "lerna": "^2.11.0",
     "nyc": "^15.0.0",
     "rimraf": "^3.0.1",
     "sinon": "^3.3.0",
