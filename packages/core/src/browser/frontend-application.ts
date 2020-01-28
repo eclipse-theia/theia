@@ -22,7 +22,7 @@ import { Widget } from './widgets';
 import { ApplicationShell } from './shell/application-shell';
 import { ShellLayoutRestorer, ApplicationShellLayoutMigrationError } from './shell/shell-layout-restorer';
 import { FrontendApplicationStateService } from './frontend-application-state';
-import { preventNavigation, parseCssTime } from './browser';
+import { preventNavigation, parseCssTime, animationFrame } from './browser';
 import { CorePreferences } from './core-preferences';
 
 /**
@@ -125,7 +125,7 @@ export class FrontendApplication {
 
         const host = await this.getHost();
         this.attachShell(host);
-        await new Promise(resolve => requestAnimationFrame(() => resolve()));
+        await animationFrame();
         this.stateService.state = 'attached_shell';
 
         await this.initializeLayout();

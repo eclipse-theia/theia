@@ -24,6 +24,7 @@ import {
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { RecursivePartial, MaybePromise, Event as CommonEvent, DisposableCollection, Disposable } from '../../common';
+import { animationFrame } from '../browser';
 import { Saveable } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
@@ -1198,17 +1199,14 @@ export class ApplicationShell extends Widget {
      * Collapse the named side panel area. This makes sure that the panel is hidden,
      * increasing the space that is available for other shell areas.
      */
-    collapsePanel(area: ApplicationShell.Area): void {
+    collapsePanel(area: ApplicationShell.Area): Promise<void> {
         switch (area) {
             case 'bottom':
-                this.collapseBottomPanel();
-                break;
+                return this.collapseBottomPanel();
             case 'left':
-                this.leftPanelHandler.collapse();
-                break;
+                return this.leftPanelHandler.collapse();
             case 'right':
-                this.rightPanelHandler.collapse();
-                break;
+                return this.rightPanelHandler.collapse();
             default:
                 throw new Error('Area cannot be collapsed: ' + area);
         }
@@ -1218,18 +1216,20 @@ export class ApplicationShell extends Widget {
      * Collapse the bottom panel. All contained widgets are hidden, but not closed.
      * They can be restored by calling `expandBottomPanel`.
      */
-    protected collapseBottomPanel(): void {
+    protected collapseBottomPanel(): Promise<void> {
         const bottomPanel = this.bottomPanel;
-        if (!bottomPanel.isHidden) {
-            if (this.bottomPanelState.expansion === SidePanel.ExpansionState.expanded) {
-                const size = this.getBottomPanelSize();
-                if (size) {
-                    this.bottomPanelState.lastPanelSize = size;
-                }
-            }
-            this.bottomPanelState.expansion = SidePanel.ExpansionState.collapsed;
-            bottomPanel.hide();
+        if (bottomPanel.isHidden) {
+            return Promise.resolve();
         }
+        if (this.bottomPanelState.expansion === SidePanel.ExpansionState.expanded) {
+            const size = this.getBottomPanelSize();
+            if (size) {
+                this.bottomPanelState.lastPanelSize = size;
+            }
+        }
+        this.bottomPanelState.expansion = SidePanel.ExpansionState.collapsed;
+        bottomPanel.hide();
+        return animationFrame();
     }
 
     /**

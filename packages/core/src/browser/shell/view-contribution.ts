@@ -112,12 +112,12 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
             switch (area) {
                 case 'left':
                 case 'right':
-                    shell.collapsePanel(area);
+                    await shell.collapsePanel(area);
                     break;
                 case 'bottom':
                     // Don't collapse the bottom panel if it's currently split
                     if (shell.bottomAreaTabBars.length === 1) {
-                        shell.collapsePanel('bottom');
+                        await shell.collapsePanel('bottom');
                     }
                     break;
                 default:
