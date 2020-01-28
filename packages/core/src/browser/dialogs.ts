@@ -305,7 +305,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         if (this.acceptButton) {
             this.acceptButton.disabled = !DialogError.getResult(error);
         }
-        this.errorMessageNode.innerHTML = DialogError.getMessage(error);
+        this.errorMessageNode.innerText = DialogError.getMessage(error);
     }
 
     protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
