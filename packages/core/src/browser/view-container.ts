@@ -954,7 +954,7 @@ export class ViewContainerPart extends BaseWidget {
     }
 
     protected onBeforeHide(msg: Message): void {
-        if (this.wrapped.isAttached && this.collapsed) {
+        if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
         super.onBeforeShow(msg);
@@ -962,7 +962,7 @@ export class ViewContainerPart extends BaseWidget {
 
     protected onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
-        if (this.wrapped.isAttached && this.collapsed) {
+        if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
     }

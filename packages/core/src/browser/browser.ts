@@ -36,6 +36,24 @@ export const isNative = typeof (window as any).process !== 'undefined';
 export const isBasicWasmSupported = typeof (window as any).WebAssembly !== 'undefined';
 
 /**
+ * Resolves after the next animation frame if no parameter is given,
+ * or after the given number of animation frames.
+ */
+export function animationFrame(n: number = 1): Promise<void> {
+    return new Promise(resolve => {
+        function frameFunc(): void {
+            if (n <= 0) {
+                resolve();
+            } else {
+                n--;
+                requestAnimationFrame(frameFunc);
+            }
+        }
+        frameFunc();
+    });
+}
+
+/**
  * Parse a magnitude value (e.g. width, height, left, top) from a CSS attribute value.
  * Returns the given default value (or undefined) if the value cannot be determined,
  * e.g. because it is a relative value like `50%` or `auto`.

@@ -22,6 +22,7 @@ import { Drag } from '@phosphor/dragdrop';
 import { AttachedProperty } from '@phosphor/properties';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
+import { animationFrame } from '../browser';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TheiaDockPanel } from './theia-dock-panel';
 import { SidePanelToolbar } from './side-panel-toolbar';
@@ -340,13 +341,14 @@ export class SidePanelHandler {
     /**
      * Collapse the sidebar so no items are expanded.
      */
-    collapse(): void {
+    collapse(): Promise<void> {
         if (this.tabBar.currentTitle) {
             // eslint-disable-next-line no-null/no-null
             this.tabBar.currentTitle = null;
         } else {
             this.refresh();
         }
+        return animationFrame();
     }
 
     /**
