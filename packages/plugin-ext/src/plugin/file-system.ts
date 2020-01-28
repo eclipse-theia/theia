@@ -20,12 +20,14 @@ import { PLUGIN_RPC_CONTEXT, FileSystemExt, FileSystemMain } from '../common/plu
 import { RPCProtocol } from '../common/rpc-protocol';
 import { UriComponents, Schemes } from '../common/uri-components';
 import { Disposable } from './types-impl';
+import { InPluginFileSystemProxy } from './in-plugin-filesystem-proxy';
 
 export class FileSystemExtImpl implements FileSystemExt {
 
     private readonly proxy: FileSystemMain;
     private readonly usedSchemes = new Set<string>();
     private readonly fsProviders = new Map<number, theia.FileSystemProvider>();
+    private fileSystem: InPluginFileSystemProxy;
 
     private handlePool: number = 0;
 
@@ -41,6 +43,12 @@ export class FileSystemExtImpl implements FileSystemExt {
         this.usedSchemes.add(Schemes.MAILTO);
         this.usedSchemes.add(Schemes.DATA);
         this.usedSchemes.add(Schemes.COMMAND);
+        this.fileSystem = new InPluginFileSystemProxy(this.proxy);
+
+    }
+
+    get fs(): theia.FileSystem {
+        return this.fileSystem;
     }
 
     registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider): theia.Disposable {

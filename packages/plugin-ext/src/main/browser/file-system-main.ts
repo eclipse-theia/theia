@@ -17,21 +17,24 @@
 import { interfaces, injectable } from 'inversify';
 import Uri from 'vscode-uri';
 import { Disposable, ResourceResolver, DisposableCollection } from '@theia/core';
-import { Resource } from '@theia/core/lib/common/resource';
+import { Resource, ResourceProvider } from '@theia/core/lib/common/resource';
 import URI from '@theia/core/lib/common/uri';
 import { MAIN_RPC_CONTEXT, FileSystemMain, FileSystemExt } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
+import { UriComponents } from '../../common/uri-components';
 
 export class FileSystemMainImpl implements FileSystemMain, Disposable {
 
     private readonly proxy: FileSystemExt;
     private readonly resourceResolver: FSResourceResolver;
+    private readonly resourceProvider: ResourceProvider;
     private readonly providers = new Map<number, Disposable>();
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT);
         this.resourceResolver = container.get(FSResourceResolver);
+        this.resourceProvider = container.get(ResourceProvider);
     }
 
     dispose(): void {
@@ -52,6 +55,21 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
         if (disposable) {
             disposable.dispose();
         }
+    }
+
+    async $readFile(uriComponents: UriComponents): Promise<string> {
+        const uri = Uri.revive(uriComponents);
+        const resource = await this.resourceProvider(new URI(uri));
+        return resource.readContents();
+    }
+
+    async $writeFile(uriComponents: UriComponents, content: string): Promise<void> {
+        const uri = Uri.revive(uriComponents);
+        const resource = await this.resourceProvider(new URI(uri));
+        if (!resource.saveContents) {
+            throw new Error(`'No write operation available on the resource for URI ${uriComponents}`);
+        }
+        return resource.saveContents(content);
     }
 
 }

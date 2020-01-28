@@ -1322,6 +1322,8 @@ export interface FileSystemExt {
 }
 
 export interface FileSystemMain {
+    $readFile(uri: UriComponents): Promise<string>;
+    $writeFile(uri: UriComponents, content: string): Promise<void>;
     $registerFileSystemProvider(handle: number, scheme: string): void;
     $unregisterProvider(handle: number): void;
 }
