@@ -349,12 +349,12 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }
         // check and validate each sub-paths
         if (name.split(/[\\/]/).some(file => !file || !validFilename(file) || /^\s+$/.test(file))) {
-            return `The name <strong>${this.trimFileName(name)}</strong> is not a valid file or folder name.`;
+            return `The name "${this.trimFileName(name)}" is not a valid file or folder name.`;
         }
         const childUri = new URI(parent.uri).resolve(name).toString();
         const exists = await this.fileSystem.exists(childUri);
         if (exists) {
-            return `A file or folder <strong>${this.trimFileName(name)}</strong> already exists at this location.`;
+            return `A file or folder "${this.trimFileName(name)}" already exists at this location.`;
         }
         return '';
     }
