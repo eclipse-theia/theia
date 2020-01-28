@@ -109,6 +109,12 @@ export interface FrontendApplicationConfig extends ApplicationConfig {
      */
     readonly applicationName: string;
 
+    /**
+     * If set to `true`, reloading the current browser window won't be possible with the `Ctrl/Cmd + R` keybinding.
+     * It is `false` by default. Has no effect if not in an electron environment.
+     */
+    readonly disallowReloadKeybinding?: boolean;
+
 }
 
 /**
