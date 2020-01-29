@@ -344,7 +344,7 @@ export class PreferencesEditorsContainer extends DockPanel {
         if (workspacePreferences) {
             workspacePreferences.title.label = 'Workspace';
             workspacePreferences.title.caption = `Workspace Preferences: ${await this.getPreferenceEditorCaption(workspacePreferenceUri!)}`;
-            workspacePreferences.title.iconClass = 'database-icon medium-yellow file-icon';
+            workspacePreferences.title.iconClass = 'database-icon medium-yellow theia-file-icons-js file-icon';
             workspacePreferences.editor.setLanguage('jsonc');
             workspacePreferences.scope = PreferenceScope.Workspace;
         }
