@@ -30,6 +30,7 @@
 - [**Getting Started**](#getting-started)
 - [**Contributing**](#contributing)
 - [**Feedback**](#feedback)
+- [**Documentation**](#documentation)
 - [**Roadmap**](#roadmap)
 - [**License**](#license)
 - [**Trademark**](#trademark)
@@ -73,6 +74,16 @@ Read below how to engage with Theia community:
 - Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-theia/theia/issues/new).
 - Star the repository to show your support.
 - Follow Theia on [Twitter](https://twitter.com/theia_ide).
+
+## Documentation
+
+- [API Documentation](https://eclipse-theia.github.io/theia/docs/next/index.html)
+- Useful Links:
+  - [Developing](doc/Developing.md)
+  - [Testing](doc/Testing.md)
+  - [API Integration Testing](doc/api-testing.md)
+  - [Coding Guidelines](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines)
+  - [Code Organization](https://github.com/eclipse-theia/theia/wiki/Code-Organization)
 
 ## Roadmap
 
