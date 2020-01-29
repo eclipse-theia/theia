@@ -726,7 +726,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 command: CommonCommands.TOGGLE_MAXIMIZED.id,
-                keybinding: 'ctrl+m',
+                keybinding: 'alt+m',
             },
             // Saving
             {
