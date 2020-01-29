@@ -48,6 +48,7 @@ describe('Views', function () {
             assert.notEqual(view, undefined);
             assert.equal(shell.getAreaFor(view), contribution.defaultViewOptions.area);
             assert.isDefined(shell.getTabBarFor(view));
+            assert.equal(shell.getAreaFor(shell.getTabBarFor(view)), contribution.defaultViewOptions.area);
             assert.isTrue(view.isVisible);
             assert.equal(view, shell.activeWidget);
 

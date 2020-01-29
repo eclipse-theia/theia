@@ -1326,40 +1326,39 @@ export class ApplicationShell extends Widget {
      * Determine the name of the shell area where the given widget resides. The result is
      * undefined if the widget does not reside directly in the shell.
      */
-    getAreaFor(input: Widget): ApplicationShell.Area | undefined {
+    getAreaFor(input: TabBar<Widget> | Widget): ApplicationShell.Area | undefined {
+        if (input instanceof TabBar) {
+            if (find(this.mainPanel.tabBars(), tb => tb === input)) {
+                return 'main';
+            }
+            if (find(this.bottomPanel.tabBars(), tb => tb === input)) {
+                return 'bottom';
+            }
+            if (this.leftPanelHandler.tabBar === input) {
+                return 'left';
+            }
+            if (this.rightPanelHandler.tabBar === input) {
+                return 'right';
+            }
+        }
         const widget = this.toTrackedStack(input.id).pop();
         if (!widget) {
             return undefined;
         }
-        if (widget instanceof TabBar) {
-            if (find(this.mainPanel.tabBars(), tb => tb === widget)) {
-                return 'main';
-            }
-            if (find(this.bottomPanel.tabBars(), tb => tb === widget)) {
-                return 'bottom';
-            }
-            if (this.leftPanelHandler.tabBar === widget) {
-                return 'left';
-            }
-            if (this.rightPanelHandler.tabBar === widget) {
-                return 'right';
-            }
-        } else {
-            const title = widget.title;
-            const mainPanelTabBar = this.mainPanel.findTabBar(title);
-            if (mainPanelTabBar) {
-                return 'main';
-            }
-            const bottomPanelTabBar = this.bottomPanel.findTabBar(title);
-            if (bottomPanelTabBar) {
-                return 'bottom';
-            }
-            if (ArrayExt.firstIndexOf(this.leftPanelHandler.tabBar.titles, title) > -1) {
-                return 'left';
-            }
-            if (ArrayExt.firstIndexOf(this.rightPanelHandler.tabBar.titles, title) > -1) {
-                return 'right';
-            }
+        const title = widget.title;
+        const mainPanelTabBar = this.mainPanel.findTabBar(title);
+        if (mainPanelTabBar) {
+            return 'main';
+        }
+        const bottomPanelTabBar = this.bottomPanel.findTabBar(title);
+        if (bottomPanelTabBar) {
+            return 'bottom';
+        }
+        if (ArrayExt.firstIndexOf(this.leftPanelHandler.tabBar.titles, title) > -1) {
+            return 'left';
+        }
+        if (ArrayExt.firstIndexOf(this.rightPanelHandler.tabBar.titles, title) > -1) {
+            return 'right';
         }
         return undefined;
     }
