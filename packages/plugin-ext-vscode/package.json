@@ -9,8 +9,8 @@
     "@theia/plugin": "^0.14.0",
     "@theia/plugin-ext": "^0.14.0",
     "@theia/workspace": "^0.14.0",
-    "@types/request": "^2.0.3",
-    "request": "^2.82.0"
+    "@types/request": "^2.48.4",
+    "request": "^2.88.0"
   },
   "publishConfig": {
     "access": "public"

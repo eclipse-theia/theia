@@ -7,7 +7,7 @@
     "@theia/languages": "^0.14.0",
     "@theia/variable-resolver": "^0.14.0",
     "@types/base64-arraybuffer": "0.1.0",
-    "base64-arraybuffer": "^0.1.5"
+    "base64-arraybuffer": "^0.2.0"
   },
   "publishConfig": {
     "access": "public"

@@ -10,14 +10,14 @@
     "@theia/markers": "^0.14.0",
     "@theia/outline-view": "^0.14.0",
     "@theia/workspace": "^0.14.0",
-    "deepmerge": "2.0.1",
+    "deepmerge": "4.2.2",
     "fast-plist": "^0.1.2",
-    "idb": "^4.0.5",
-    "jsonc-parser": "^2.0.2",
-    "monaco-css": "^2.5.0",
-    "monaco-html": "^2.5.2",
-    "onigasm": "2.2.1",
-    "vscode-textmate": "^4.0.1"
+    "idb": "^5.0.1",
+    "jsonc-parser": "^2.2.0",
+    "monaco-css": "^2.6.0",
+    "monaco-html": "^2.6.0",
+    "onigasm": "2.2.4",
+    "vscode-textmate": "^4.4.0"
   },
   "publishConfig": {
     "access": "public"

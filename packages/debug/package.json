@@ -21,12 +21,12 @@
     "@theia/workspace": "^0.14.0",
     "@types/p-debounce": "^1.0.1",
     "jsonc-parser": "^2.0.2",
-    "mkdirp": "^0.5.0",
+    "mkdirp": "^1.0.3",
     "p-debounce": "^2.1.0",
-    "requestretry": "^3.1.0",
-    "tar": "^4.0.0",
+    "requestretry": "^4.1.0",
+    "tar": "^6.0.1",
     "unzip-stream": "^0.3.0",
-    "vscode-debugprotocol": "^1.32.0"
+    "vscode-debugprotocol": "^1.37.0"
   },
   "publishConfig": {
     "access": "public"

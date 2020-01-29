@@ -4,7 +4,7 @@
   "description": "Theia - Textmate Grammars",
   "dependencies": {
     "@theia/monaco": "^0.14.0",
-    "vscode-textmate": "^4.0.1"
+    "vscode-textmate": "^4.4.0"
   },
   "publishConfig": {
     "access": "public"

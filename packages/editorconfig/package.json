@@ -7,7 +7,7 @@
     "@theia/editor": "^0.14.0",
     "@theia/languages": "^0.14.0",
     "@theia/monaco": "^0.14.0",
-    "editorconfig": "^0.15.0"
+    "editorconfig": "^0.15.3"
   },
   "publishConfig": {
     "access": "public"

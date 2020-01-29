@@ -7,12 +7,12 @@
     "@theia/editor": "^0.14.0",
     "@theia/languages": "^0.14.0",
     "@theia/mini-browser": "^0.14.0",
-    "@types/highlight.js": "^9.12.2",
-    "@types/markdown-it": "*",
-    "@types/markdown-it-anchor": "^4.0.1",
-    "highlight.js": "^9.12.0",
-    "markdown-it": "^8.4.0",
-    "markdown-it-anchor": "~5.0.0"
+    "@types/highlight.js": "^9.12.3",
+    "@types/markdown-it": "^0.0.9",
+    "@types/markdown-it-anchor": "^4.0.3",
+    "highlight.js": "^9.18.0",
+    "markdown-it": "^10.0.0",
+    "markdown-it-anchor": "~5.2.5"
   },
   "publishConfig": {
     "access": "public"

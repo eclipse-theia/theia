@@ -5,7 +5,7 @@
   "dependencies": {
     "@theia/debug": "^0.14.0",
     "@theia/java": "^0.14.0",
-    "lodash": "^4.17.10"
+    "lodash": "^4.17.15"
   },
   "publishConfig": {
     "access": "public"

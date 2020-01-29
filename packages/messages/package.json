@@ -5,9 +5,9 @@
   "dependencies": {
     "@theia/core": "^0.14.0",
     "lodash.throttle": "^4.1.1",
-    "markdown-it": "^8.4.0",
-    "react-perfect-scrollbar": "^1.5.3",
-    "ts-md5": "^1.2.2"
+    "markdown-it": "^10.0.0",
+    "react-perfect-scrollbar": "^1.5.5",
+    "ts-md5": "^1.2.7"
   },
   "publishConfig": {
     "access": "public"

@@ -6,10 +6,10 @@
     "@theia/core": "^0.14.0",
     "@theia/filesystem": "^0.14.0",
     "@theia/variable-resolver": "^0.14.0",
-    "ajv": "^6.5.3",
-    "jsonc-parser": "^2.0.2",
-    "moment": "^2.21.0",
-    "valid-filename": "^2.0.1"
+    "ajv": "^6.11.0",
+    "jsonc-parser": "^2.2.0",
+    "moment": "^2.24.0",
+    "valid-filename": "^3.1.0"
   },
   "publishConfig": {
     "access": "public"

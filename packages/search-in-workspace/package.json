@@ -9,7 +9,7 @@
     "@theia/navigator": "^0.14.0",
     "@theia/process": "^0.14.0",
     "@theia/workspace": "^0.14.0",
-    "vscode-ripgrep": "^1.2.4"
+    "vscode-ripgrep": "^1.5.7"
   },
   "publishConfig": {
     "access": "public"

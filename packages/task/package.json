@@ -13,10 +13,10 @@
     "@theia/terminal": "^0.14.0",
     "@theia/variable-resolver": "^0.14.0",
     "@theia/workspace": "^0.14.0",
-    "ajv": "^6.5.3",
-    "jsonc-parser": "^2.0.2",
+    "ajv": "^6.11.0",
+    "jsonc-parser": "^2.2.0",
     "p-debounce": "^2.1.0",
-    "vscode-uri": "^1.0.8"
+    "vscode-uri": "^2.1.1"
   },
   "publishConfig": {
     "access": "public"
