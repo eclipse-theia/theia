@@ -46,7 +46,7 @@ export class FrontendGenerator extends AbstractGenerator {
 
     protected compileIndexHtml(frontendModules: Map<string, string>): string {
         return `<!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>${this.compileIndexHead(frontendModules)}
   <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
