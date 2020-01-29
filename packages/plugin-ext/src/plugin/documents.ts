@@ -152,7 +152,7 @@ export class DocumentsExtImpl implements DocumentsExt {
             }
         }));
     }
-    // tslint:enable:no-any
+    /* eslint-enable  @typescript-eslint/no-explicit-any */
 
     $acceptDirtyStateChanged(strUrl: UriComponents, isDirty: boolean): void {
         const uri = URI.revive(strUrl);
