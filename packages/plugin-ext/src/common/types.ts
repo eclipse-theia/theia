@@ -79,7 +79,7 @@ export function es5ClassCompat<T extends Function>(target: T): T {
     Object.setPrototypeOf(_.prototype, target.prototype);
     return _ as unknown as T;
 }
-// tslint:enable:no-any
+/* eslint-enable @typescript-eslint/no-explicit-any */
 const _typeof = {
     number: 'number',
     string: 'string',

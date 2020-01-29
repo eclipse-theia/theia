@@ -92,7 +92,7 @@ export class MonacoThemingService {
         pending: { [uri: string]: Promise<any> },
         toDispose: DisposableCollection
     ): Promise<any> {
-        // tslint:enabled:no-any
+        /* eslint-enable @typescript-eslint/no-explicit-any */
         const { content } = await this.fileSystem.resolveContent(uri);
         if (toDispose.disposed) {
             return;
@@ -122,6 +122,7 @@ export class MonacoThemingService {
         return json;
     }
 
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     protected doLoadTheme(
         themeUri: URI,
         referencedPath: string,
@@ -135,6 +136,7 @@ export class MonacoThemingService {
         }
         return pending[referencedUri];
     }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     static init(): void {
         this.updateBodyUiTheme();

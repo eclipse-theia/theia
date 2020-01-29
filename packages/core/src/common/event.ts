@@ -251,7 +251,7 @@ export interface WaitUntilEvent {
      * @param thenable A thenable that delays execution.
      */
     waitUntil(thenable: Promise<any>): void;
-    // tslint:enable:no-any
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 export namespace WaitUntilEvent {
     export async function fire<T extends WaitUntilEvent>(

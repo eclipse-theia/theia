@@ -110,7 +110,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
             return this.proxy.$executeCommand(id, ...args);
         }
     }
-    // tslint:enable:no-any
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined> {
         return this.proxy.$getKeyBinding(commandId);
