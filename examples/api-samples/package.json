@@ -31,8 +31,7 @@
     "lint": "theiaext lint",
     "build": "theiaext build",
     "watch": "theiaext watch",
-    "clean": "theiaext clean",
-    "watch": "theiaext watch"
+    "clean": "theiaext clean"
   },
   "devDependencies": {
     "@theia/ext-scripts": "^0.14.0"
