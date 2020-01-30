@@ -418,17 +418,18 @@ export class KeybindingRegistry {
      * The lists are sorted by priority (see #sortKeybindingsByPriority).
      *
      * @param keySequence The key sequence for which we are looking for keybindings.
+     * @param event The source keyboard event.
      */
-    getKeybindingsForKeySequence(keySequence: KeySequence): KeybindingRegistry.KeybindingsResult {
+    getKeybindingsForKeySequence(keySequence: KeySequence, event?: KeyboardEvent): KeybindingRegistry.KeybindingsResult {
         const result = new KeybindingRegistry.KeybindingsResult();
 
         for (let scope = KeybindingScope.END; --scope >= KeybindingScope.DEFAULT;) {
             const matches = this.getKeySequenceCollisions(this.keymaps[scope], keySequence);
 
             matches.full = matches.full.filter(
-                binding => this.getKeybindingCollisions(result.full, binding).full.length === 0);
+                binding => (!event || this.isEnabled(binding, event)) && this.getKeybindingCollisions(result.full, binding).full.length === 0);
             matches.partial = matches.partial.filter(
-                binding => this.getKeybindingCollisions(result.partial, binding).partial.length === 0);
+                binding => (!event || this.isEnabled(binding, event)) && this.getKeybindingCollisions(result.partial, binding).partial.length === 0);
 
             if (scope === KeybindingScope.DEFAULT_OVERRIDING) {
                 matches.full.reverse();
@@ -590,7 +591,7 @@ export class KeybindingRegistry {
 
         this.keyboardLayoutService.validateKeyCode(keyCode);
         this.keySequence.push(keyCode);
-        const bindings = this.getKeybindingsForKeySequence(this.keySequence);
+        const bindings = this.getKeybindingsForKeySequence(this.keySequence, event);
         const full = bindings.full.find(binding => this.isEnabled(binding, event));
         const partial = bindings.partial.find(binding => (!full || binding.scope! > full.scope!) && this.isEnabled(binding, event));
         if (partial) {
