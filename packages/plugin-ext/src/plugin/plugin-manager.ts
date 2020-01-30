@@ -16,6 +16,7 @@
 
 import {
     PLUGIN_RPC_CONTEXT,
+    NotificationMain,
     MainMessageType,
     MessageRegistryMain,
     PluginManagerExt,
@@ -87,6 +88,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
     private onDidChangeEmitter = new Emitter<void>();
     private messageRegistryProxy: MessageRegistryMain;
+    private notificationMain: NotificationMain;
     protected fireOnDidChange(): void {
         this.onDidChangeEmitter.fire(undefined);
     }
@@ -100,6 +102,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         private readonly rpc: RPCProtocol
     ) {
         this.messageRegistryProxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN);
+        this.notificationMain = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTIFICATION_MAIN);
     }
 
     async $stop(pluginId?: string): Promise<void> {
@@ -185,7 +188,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.registry.set(plugin.model.id, plugin);
         if (plugin.pluginPath && Array.isArray(plugin.rawModel.activationEvents)) {
             const activation = async () => {
+                const title = `Activating ${plugin.model.displayName || plugin.model.name}`;
+                const id = await this.notificationMain.$startProgress({ title, location: 'window' });
                 await this.loadPlugin(plugin, configStorage);
+                this.notificationMain.$stopProgress(id);
             };
             // an internal activation event is a subject to change
             this.setActivation(`onPlugin:${plugin.model.id}`, activation);
