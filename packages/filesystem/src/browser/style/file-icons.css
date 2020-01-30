@@ -41,5 +41,10 @@
 
 .theia-app-sides .theia-file-icons-js:before {
     font-size: var(--theia-private-sidebar-icon-size);
-    margin-right: 0px;
+    position: absolute;
+}
+
+.p-TabBar-content .p-TabBar-tab .theia-tab-icon-label .theia-file-icons-js.file-icon {
+    position: relative;
+    top: -2px !important;
 }
