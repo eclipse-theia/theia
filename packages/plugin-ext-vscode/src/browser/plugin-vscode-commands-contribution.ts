@@ -268,7 +268,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     const tabBar = this.shell.getTabBarFor(editor);
                     if (tabBar) {
                         this.shell.closeTabs(tabBar,
-                            ({ owner }) => CodeEditorWidget.is(owner) && owner !== editor
+                            ({ owner }) => CodeEditorWidget.is(owner)
                         );
                     }
                 }
