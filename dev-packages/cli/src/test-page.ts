@@ -59,7 +59,7 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
     page.exposeFunction('fireDidUnloadTheia', () => theiaLoaded = false);
     const preLoad = (frame: puppeteer.Frame) => {
         const frameUrl = frame.url();
-        if (matchAppUrl && matchAppUrl(frameUrl)) {
+        if (matchAppUrl && !matchAppUrl(frameUrl)) {
             return;
         }
         if (theiaLoaded) {
@@ -76,7 +76,7 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
     page.on('framenavigated', preLoad);
 
     page.on('load', async () => {
-        if (matchAppUrl && matchAppUrl(page.url())) {
+        if (matchAppUrl && !matchAppUrl(page.url())) {
             return;
         }
         console.log('loading mocha...');
