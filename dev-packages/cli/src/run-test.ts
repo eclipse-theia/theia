@@ -33,6 +33,7 @@ export default async function runTest(options: TestOptions): Promise<void> {
 
     const testPage = await newTestPage({
         files: options.files,
+        matchAppUrl: () => true, // all urls are application urls
         newPage: async () => {
             const browser = await puppeteer.launch(launch);
             return browser.newPage();
