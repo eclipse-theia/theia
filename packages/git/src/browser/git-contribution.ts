@@ -323,16 +323,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_AMEND, {
-            execute: () => this.withProgress(async () => {
-                try {
-                    const message = await this.quickOpenService.commitMessageForAmend();
-                    await this.commit({ message, amend: true });
-                } catch (e) {
-                    if (!(e instanceof Error) || e.message !== 'User abort.') {
-                        throw e;
-                    }
-                }
-            }),
+            execute: () => this.withProgress(async () => this.amend()),
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.STAGE_ALL, {
@@ -454,6 +445,33 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             isVisible: widget => (!widget || widget instanceof ScmWidget) && !this.repositoryProvider.selectedRepository
         });
     }
+    async amend(): Promise<void> {
+        {
+            const scmRepository = this.repositoryProvider.selectedScmRepository;
+            if (!scmRepository) {
+                return;
+            }
+
+            try {
+                const lastCommit = await scmRepository.provider.amendSupport.getLastCommit();
+                if (lastCommit === undefined) {
+                    scmRepository.input.issue = {
+                        type: 'error',
+                        message: 'No previous commit to amend'
+                    };
+                    scmRepository.input.focus();
+                    return;
+                }
+                const message = await this.quickOpenService.commitMessageForAmend();
+                await this.commit({ message, amend: true });
+            } catch (e) {
+                if (!(e instanceof Error) || e.message !== 'User abort.') {
+                    throw e;
+                }
+            }
+        }
+    }
+
 
     protected withProgress<T>(task: () => Promise<T>): Promise<T> {
         return this.progressService.withProgress('', 'scm', task);
