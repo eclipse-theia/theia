@@ -39,7 +39,7 @@ import './tasks-monaco-contribution';
 import { TaskNameResolver } from './task-name-resolver';
 import { TaskSourceResolver } from './task-source-resolver';
 import { TaskTemplateSelector } from './task-templates';
-import { TaskTerminal } from './task-terminal';
+import { TaskTerminalManager } from './task-terminal-manager';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
@@ -78,7 +78,7 @@ export default new ContainerModule(bind => {
     bind(TaskNameResolver).toSelf().inSingletonScope();
     bind(TaskSourceResolver).toSelf().inSingletonScope();
     bind(TaskTemplateSelector).toSelf().inSingletonScope();
-    bind(TaskTerminal).toSelf().inSingletonScope();
+    bind(TaskTerminalManager).toSelf().inSingletonScope();
 
     bindProcessTaskModule(bind);
     bindTaskPreferences(bind);

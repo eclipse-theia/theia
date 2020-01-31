@@ -60,7 +60,7 @@ import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskConfigurationManager } from './task-configuration-manager';
 import { PROBLEMS_WIDGET_ID, ProblemWidget } from '@theia/markers/lib/browser/problem/problem-widget';
 import { TaskNode } from './task-node';
-import { TaskTerminal } from './task-terminal';
+import { TaskTerminalManager } from './task-terminal-manager';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -171,8 +171,8 @@ export class TaskService implements TaskConfigurationClient {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    @inject(TaskTerminal)
-    protected readonly taskTerminal: TaskTerminal;
+    @inject(TaskTerminalManager)
+    protected readonly taskTerminalManager: TaskTerminalManager;
 
     /**
      * @deprecated To be removed in 0.5.0
@@ -460,7 +460,7 @@ export class TaskService implements TaskConfigurationClient {
      */
     async run(source: string, taskLabel: string, scope?: string): Promise<TaskInfo | undefined> {
         // Open an empty terminal, display a message informing the user that terminal is starting
-        await this.taskTerminal.openEmptyTerminal(taskLabel);
+        const widget = await this.taskTerminalManager.openEmptyTerminal(taskLabel);
 
         let task = await this.getProvidedTask(source, taskLabel, scope);
         if (!task) { // if a detected task cannot be found, search from tasks.json
@@ -511,7 +511,7 @@ export class TaskService implements TaskConfigurationClient {
             return undefined;
         }
         return this.runTasksGraph(task, tasks, {
-            customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
+            customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers }, widget}
         }).catch(error => {
             console.log(error.message);
             return undefined;
@@ -522,7 +522,8 @@ export class TaskService implements TaskConfigurationClient {
      * A recursive function that runs a task and all its sub tasks that it depends on.
      * A task can be executed only when all of its dependencies have been executed, or when it doesn’t have any dependencies at all.
      */
-    async runTasksGraph(task: TaskConfiguration, tasks: TaskConfiguration[], option?: RunTaskOption): Promise<TaskInfo | undefined> {
+    async runTasksGraph(task: TaskConfiguration, tasks: TaskConfiguration[],
+                        option?: RunTaskOption, widget?: TerminalWidget): Promise<TaskInfo | undefined> {
         if (task && task.dependsOn) {
             // In case it is an array of task dependencies
             if (Array.isArray(task.dependsOn) && task.dependsOn.length > 0) {
@@ -687,7 +688,7 @@ export class TaskService implements TaskConfigurationClient {
         }
     }
 
-    async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+    async runTask(task: TaskConfiguration, option?: RunTaskOption, widget?: TerminalWidget): Promise<TaskInfo | undefined> {
         const runningTasksInfo: TaskInfo[] = await this.getRunningTasks();
 
         // check if the task is active
@@ -715,7 +716,7 @@ export class TaskService implements TaskConfigurationClient {
                 return this.restartTask(matchedRunningTaskInfo, option);
             }
         } else { // run task as the task is not active
-            return this.doRunTask(task, option);
+            return this.doRunTask(task, option, widget);
         }
     }
 
@@ -737,7 +738,7 @@ export class TaskService implements TaskConfigurationClient {
         return this.doRunTask(activeTaskInfo.config, option);
     }
 
-    protected async doRunTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+    protected async doRunTask(task: TaskConfiguration, option?: RunTaskOption, widget?: TerminalWidget): Promise<TaskInfo | undefined> {
         if (option && option.customization) {
             const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
             if (taskDefinition) { // use the customization object to override the task config
@@ -754,7 +755,7 @@ export class TaskService implements TaskConfigurationClient {
         if (resolvedTask) {
             // remove problem markers from the same source before running the task
             await this.removeProblemMarks(option);
-            return this.runResolvedTask(resolvedTask, option);
+            return this.runResolvedTask(resolvedTask, option, widget);
         }
     }
 
@@ -902,7 +903,8 @@ export class TaskService implements TaskConfigurationClient {
      * @param resolvedTask the resolved task
      * @param option options to run the resolved task
      */
-    private async runResolvedTask(resolvedTask: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+    private async runResolvedTask(resolvedTask: TaskConfiguration, option?: RunTaskOption,
+                                    widget?: TerminalWidget): Promise<TaskInfo | undefined> {
         const source = resolvedTask._source;
         const taskLabel = resolvedTask.label;
         try {
@@ -917,7 +919,7 @@ export class TaskService implements TaskConfigurationClient {
              *       Reason: Maybe a new task type wants to also be displayed in a terminal.
              */
             if (typeof taskInfo.terminalId === 'number') {
-                this.attach(taskInfo.terminalId, taskInfo.taskId);
+                this.attach(taskInfo.terminalId, taskInfo.taskId, widget);
             }
             return taskInfo;
         } catch (error) {
@@ -978,7 +980,7 @@ export class TaskService implements TaskConfigurationClient {
         terminal.sendText(selectedText);
     }
 
-    async attach(processId: number, taskId: number): Promise<void> {
+   async attach(processId: number, taskId: number, widget?: TerminalWidget): Promise<void> {
         // Get the list of all available running tasks.
         const runningTasks: TaskInfo[] = await this.getRunningTasks();
 
@@ -987,7 +989,7 @@ export class TaskService implements TaskConfigurationClient {
 
         // Attach terminal to the running task
         // to display an execution output of a task that was launched as a command inside a shell.
-        this.taskTerminal.attach(processId, taskId, taskInfo, this.getTerminalWidgetId(processId));
+        this.taskTerminalManager.attach(processId, taskId, taskInfo, this.getTerminalWidgetId(processId), widget);
     }
 
     private getTerminalWidgetId(terminalId: number): string {

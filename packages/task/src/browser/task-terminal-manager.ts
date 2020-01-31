@@ -21,7 +21,7 @@ import { ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
 import { TaskInfo, RevealKind } from '../common';
 
 @injectable()
-export class TaskTerminal {
+export class TaskTerminalManager {
 
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
@@ -29,9 +29,7 @@ export class TaskTerminal {
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
-    protected terminalWidgets: TerminalWidget[] = [];
-
-    async openEmptyTerminal(taskLabel: string): Promise<void> {
+    async openEmptyTerminal(taskLabel: string): Promise<TerminalWidget> {
         const id = TERMINAL_WIDGET_FACTORY_ID + '-connecting';
 
         const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(
@@ -47,29 +45,12 @@ export class TaskTerminal {
 
         this.shell.addWidget(widget, { area: 'bottom' });
         this.shell.revealWidget(widget.id);
-
-        this.terminalWidgets.push(widget);
+        return widget;
     }
 
-    private findWidget(taskInfo: TaskInfo | undefined): TerminalWidget | undefined {
-        if (taskInfo && taskInfo.config.label) {
-            for (let i = 0; i < this.terminalWidgets.length; i++) {
-                const w = this.terminalWidgets[i];
-                if (taskInfo.config.label === w.title.label) {
-                    this.terminalWidgets.splice(i, 1);
-                    return w;
-                }
-            }
-        }
-
-        return undefined;
-    }
-
-    async attach(processId: number, taskId: number, taskInfo: TaskInfo | undefined, terminalWidgetId: string): Promise<void> {
-        let widget: TerminalWidget | undefined = this.findWidget(taskInfo);
-        if (widget) {
-            widget.id = terminalWidgetId;
-        } else {
+    async attach(processId: number, taskId: number, taskInfo: TaskInfo | undefined,
+                    terminalWidgetId: string, widget?: TerminalWidget): Promise<void> {
+        if (!widget) {
             widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(
                 TERMINAL_WIDGET_FACTORY_ID,
                 <TerminalWidgetFactoryOptions>{
