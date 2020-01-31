@@ -223,7 +223,7 @@ export class NavigationLocationService {
     }
 
     private async debug(message: string | (() => string)): Promise<void> {
-        this.logger.debug(typeof message === 'string' ? message : message());
+        this.logger.trace(typeof message === 'string' ? message : message());
     }
 
     private get stackDump(): string {
