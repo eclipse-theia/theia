@@ -70,7 +70,7 @@
     padding: 2px 10px 5px 10px;
 }
 
-.th-label, .th-source, .th-context,
+.th-label, .th-source, .th-context, .th-keybinding, 
 .kb-label, .kb-source, .kb-context {
     padding: 2px 10px 5px 10px;
     min-height: 18px;
@@ -84,12 +84,8 @@
     font-size: var(--theia-ui-font-size1);
 }
 
-.kb table td {
-    font-size: calc(var(--theia-ui-font-size1) * 0.85);
-}
-
 .kb table td code {
-    font-size: calc(var(--theia-ui-font-size1) * 0.8);
+    font-size: 90%;
 }
 
 .td-source {
@@ -138,7 +134,7 @@
 }
 
 .kb table .th-context {
-    width: 15%;
+    width: 25%;
 }
 
 .message-container {
