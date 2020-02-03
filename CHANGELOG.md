@@ -1,5 +1,11 @@
 # Change Log
 
+## v0.16.0
+
+Breaking changes:
+
+- [core] fixed typo (highligh -> highlight) in caption highlight fragment [#7050](https://github.com/eclipse-theia/theia/pull/7050)
+
 ## v0.15.0
 
 - [application-manager] added config to disable reloading windows [#6981](https://github.com/eclipse-theia/theia/pull/6981)
