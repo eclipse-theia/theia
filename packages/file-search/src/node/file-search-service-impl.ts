@@ -33,6 +33,10 @@ export class FileSearchServiceImpl implements FileSearchService {
         @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory) { }
 
     async find(searchPattern: string, options: FileSearchService.Options, clientToken?: CancellationToken): Promise<string[]> {
+        if (searchPattern === '') {
+            return [];
+        }
+
         const cancellationSource = new CancellationTokenSource();
         if (clientToken) {
             clientToken.onCancellationRequested(() => cancellationSource.cancel());
