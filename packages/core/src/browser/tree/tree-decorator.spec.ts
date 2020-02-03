@@ -129,7 +129,7 @@ describe('tree-decorator', () => {
 
     });
 
-    describe('caption-highligh', () => {
+    describe('caption-highlight', () => {
 
         describe('range-contains', () => {
             ([
@@ -153,9 +153,9 @@ describe('tree-decorator', () => {
                 ranges: [{ offset: 0, length: 1 }]
             });
             expect(actual).has.lengthOf(2);
-            expect(actual[0].highligh).to.be.true;
+            expect(actual[0].highlight).to.be.true;
             expect(actual[0].data).to.be.equal('a');
-            expect(actual[1].highligh).to.be.undefined;
+            expect(actual[1].highlight).to.be.undefined;
             expect(actual[1].data).to.be.equal('lma');
         });
 
