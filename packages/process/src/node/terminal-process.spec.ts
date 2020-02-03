@@ -126,7 +126,7 @@ if (process.platform !== 'win32' || process.env.THEIA_PROCESS_TEST_OVERRIDE) {
             return new Promise<ProcessExit>((resolve, reject) => {
                 let output = '';
                 proc.outputStream.on('data', chunk => output += chunk);
-                proc.onExit(async exit => {
+                proc.onClose(async exit => {
                     if (pattern) {
                         expect(output).match(pattern, output);
                     }
