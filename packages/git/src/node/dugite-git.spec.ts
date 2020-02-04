@@ -26,6 +26,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { WorkingDirectoryStatus, Repository, GitUtils, GitFileStatus, GitFileChange } from '../common';
 import { initRepository, createTestRepository } from 'dugite-extra/lib/command/test-helper';
 import { createGit } from './test/binding-helper';
+import { isWindows } from '@theia/core/lib/common/os';
 
 /* eslint-disable max-len, no-unused-expressions */
 
@@ -73,7 +74,12 @@ describe('git', async function (): Promise<void> {
 
         });
 
-        it('should discover all nested repositories and the root repository which is at the workspace root', async () => {
+        it('should discover all nested repositories and the root repository which is at the workspace root', async function (): Promise<void> {
+            if (isWindows) {
+                // https://github.com/eclipse-theia/theia/issues/933
+                this.skip();
+                return;
+            }
 
             const root = track.mkdirSync('discovery-test-3');
             fs.mkdirSync(path.join(root, 'BASE'));
