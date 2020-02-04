@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Range } from 'vscode-languageserver-protocol';
+import { Range } from 'vscode-languageserver-types';
 
 export interface TextDocumentContentChangeDelta {
     readonly range: Range;
