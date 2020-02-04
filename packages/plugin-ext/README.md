@@ -1,5 +1,13 @@
 # Theia - Theia - Plugin API
 
+You can configure paths to folders containing plugins:
+
+    - Environment variables: `DEFAULT_THEIA_PLUGINS`, `THEIA_PLUGINS`. Use comma-separated paths.
+    - CLI argument: `--plugins`. Use comma-separated paths.
+    - Backend configuration: `plugins` entry. Array or single string.
+
+Use the `local-dir:` file scheme to refer to paths on your local disk (where the backend is hosted).
+
 See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
 
 ## License

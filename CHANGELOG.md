@@ -1,5 +1,10 @@
 # Change Log
 
+## v0.16.0
+
+- [plugin-ext] Plugins are now looked up in `$HOME/.theia/extensions` by default.
+- [plugin-ext] You can specify lookup paths for plugins from the `BackendApplicationConfig.plugins` entry.
+
 ## v0.15.0
 
 - [application-manager] added config to disable reloading windows [#6981](https://github.com/eclipse-theia/theia/pull/6981)
