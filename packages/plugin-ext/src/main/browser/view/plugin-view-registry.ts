@@ -33,13 +33,14 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { QuickViewService } from '@theia/core/lib/browser/quick-view-service';
 import { Emitter } from '@theia/core/lib/common/event';
-import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { SearchInWorkspaceWidget } from '@theia/search-in-workspace/lib/browser/search-in-workspace-widget';
 import { ViewContextKeyService } from './view-context-key-service';
 import { PROBLEMS_WIDGET_ID } from '@theia/markers/lib/browser/problem/problem-widget';
 import { OUTPUT_WIDGET_KIND } from '@theia/output/lib/browser/output-widget';
 import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug-console-contribution';
 import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { environment } from '@theia/application-package/lib/environment';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
@@ -94,6 +95,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     private readonly viewDataProviders = new Map<string, ViewDataProvider>();
     private readonly viewDataState = new Map<string, object>();
 
+    private containerHasViewContexts = new Map<string, ContextKey<boolean>>();
+
     @postConstruct()
     protected init(): void {
         // VS Code Viewlets
@@ -132,11 +135,14 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 this.prepareView(widget);
             }
         });
+
         this.doRegisterViewContainer('test', 'left', {
             label: 'Test',
             iconClass: 'theia-plugin-test-tab-icon',
             closeable: true
         });
+        this.containerHasViewContexts.set('test', this.contextKeyService.createKey<boolean>(this.containerIdToContextId('test'), false));
+
         this.contextKeyService.onDidChange(e => {
             for (const [, view] of this.views.values()) {
                 const clauseContext = this.viewClauseContexts.get(view.id);
@@ -224,7 +230,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }));
         toDispose.push(this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
             commandId: toggleCommandId,
-            label: options.label
+            label: options.label,
+            when: (id === 'test' && !this.isElectron()) ? this.containerIdToContextId(id) : undefined,
         }));
         toDispose.push(Disposable.create(async () => {
             const widget = await this.getPluginViewContainer(id);
@@ -254,6 +261,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 containerViews.splice(index, 1);
             }
         }));
+
+        const containerHasViewContext = this.containerHasViewContexts.get(viewContainerId);
+        if (containerHasViewContext) {
+            containerHasViewContext.set(true);
+        }
 
         if (view.when) {
             this.viewClauseContexts.set(view.id, this.contextKeyService.parseKeys(view.when));
@@ -470,6 +482,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     protected toViewId(identifier: PluginViewWidgetIdentifier): string {
         return identifier.viewId;
     }
+    protected containerIdToContextId(viewContainerId: string): string {
+        return `hasViewContribution.${viewContainerId}`;
+    }
 
     /**
      * retrieve restored layout state from previous user session but close widgets
@@ -613,6 +628,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         } else {
             this.viewContextKeys.focusedView.reset();
         }
+    }
+
+    private isElectron(): boolean {
+        return environment.electron.is();
     }
 
 }
