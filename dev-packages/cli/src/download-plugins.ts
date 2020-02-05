@@ -18,12 +18,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as process from 'process';
 import * as request from 'requestretry';
+
 import * as mkdirp from 'mkdirp';
 import * as tar from 'tar';
 import * as zlib from 'zlib';
-
-const unzip = require('unzip-stream');
-
 export default function downloadPlugins(): void {
 
     console.log('Downloading plugins...');
@@ -33,20 +31,32 @@ export default function downloadPlugins(): void {
 
     // Resolve the directory for which to download the plugins.
     const pluginsDir = pck.theiaPluginsDir || 'plugins';
+    mkdirp(pluginsDir, () => { });
 
     for (const plugin in pck.theiaPlugins) {
         if (!plugin) {
             continue;
         }
-        const targetPath = path.join(process.cwd(), pluginsDir, plugin);
 
-        // Skip plugins which have previously been downloaded.
-        if (!isDownloaded(targetPath)) {
-            console.log(plugin + ': already downloaded');
+        const pluginUrl = pck.theiaPlugins[plugin];
+        let fileExt = '';
+        if (pluginUrl.endsWith('tar.gz')) {
+            fileExt = '.tar.gz';
+        } else if (pluginUrl.endsWith('vsix')) {
+            fileExt = '.vsix';
+        } else {
+            console.error('Error: Unsupported file type: ' + pluginUrl);
             continue;
         }
 
-        const pluginUrl = pck.theiaPlugins[plugin];
+        const targetPath = path.join(process.cwd(), pluginsDir, plugin + fileExt);
+
+        // Skip plugins which have previously been downloaded.
+        if (isDownloaded(targetPath)) {
+            console.log('- ' + plugin + ': already downloaded - skipping');
+            continue;
+        }
+
         console.log(plugin + ': downloading from ' + pluginUrl);
 
         const download: request.RequestPromise = request({
@@ -60,11 +70,12 @@ export default function downloadPlugins(): void {
             if (err) {
                 console.error(plugin + ': failed to download', err);
             } else {
-                console.log(plugin + ': downloaded successfully' + (response.attempts > 1 ? ` after ${response.attempts}  attempts` : ''));
+                console.log('+ ' + plugin + ': downloaded successfully' + (response.attempts > 1 ? ` after ${response.attempts}  attempts` : ''));
             }
         });
 
-        if (pluginUrl.endsWith('gz')) {
+        // unzip .tar.gz files
+        if (fileExt === '.tar.gz') {
             mkdirp(targetPath, () => { });
             const gunzip = zlib.createGunzip({
                 finishFlush: zlib.Z_SYNC_FLUSH,
@@ -73,21 +84,19 @@ export default function downloadPlugins(): void {
             const untar = tar.x({ cwd: targetPath });
             download.pipe(gunzip).pipe(untar);
         } else {
-            download.pipe(unzip.Extract({ path: targetPath }));
+            // Do not unzip .vsix files
+            const file = fs.createWriteStream(targetPath);
+            download.pipe(file);
         }
     }
 }
 
 /**
  * Determine if the resource for the given path is already downloaded.
- * @param path the resource path.
+ * @param filePath the resource path.
  *
  * @returns `true` if the resource is already downloaded, else `false`.
  */
-function isDownloaded(dirPath: fs.PathLike): boolean {
-    try {
-        return !fs.readdirSync(dirPath).length;
-    } catch (e) {
-        return true;
-    }
+function isDownloaded(filePath: string): boolean {
+    return fs.existsSync(filePath);
 }
