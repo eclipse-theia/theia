@@ -208,6 +208,9 @@ class DynamicMenuWidget extends MenuWidget {
         if (menu.label) {
             this.title.label = menu.label;
         }
+        if (menu.iconClass) {
+            this.title.iconClass = menu.iconClass;
+        }
         this.updateSubMenus(this, this.menu, this.options.commands);
     }
 
