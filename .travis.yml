@@ -105,7 +105,7 @@ install:
   - THEIA_SKIP_NPM_PREPARE=1 yarn install --skip-integrity-check
   - npx electron-replace-ffmpeg # re-download library (in case it was cached)
   - npx electron-codecs-test # test library
-  - yarn prepare
+  - yarn prepare # actually build
   - scripts/check_git_status.sh
 script:
   - travis_retry yarn test:theia
