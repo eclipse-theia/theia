@@ -225,11 +225,6 @@ export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWid
 
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
         registry.registerItem({
-            id: PreviewCommands.OPEN.id,
-            command: PreviewCommands.OPEN.id,
-            tooltip: 'Open Preview to the Side'
-        });
-        registry.registerItem({
             id: PreviewCommands.OPEN_SOURCE.id,
             command: PreviewCommands.OPEN_SOURCE.id,
             tooltip: 'Open Source'
