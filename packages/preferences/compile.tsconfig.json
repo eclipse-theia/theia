@@ -19,9 +19,6 @@
       "path": "../filesystem/compile.tsconfig.json"
     },
     {
-      "path": "../json/compile.tsconfig.json"
-    },
-    {
       "path": "../monaco/compile.tsconfig.json"
     },
     {
