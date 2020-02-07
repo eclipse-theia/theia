@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2020 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,16 +13,15 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+import { injectable } from 'inversify';
+import { Emitter } from '@theia/core/lib/common/event';
+import { Preference } from './preference-types';
 
-monaco.languages.register({
-    id: 'jsonc',
-    'aliases': [
-        'JSON with Comments'
-    ],
-    'filenames': [
-        'settings.json'
-    ],
-    'extensions': [
-        '.theia-workspace'
-    ]
-});
+@injectable()
+export class PreferencesEventService {
+    onTabScopeSelected = new Emitter<Preference.SelectedScopeDetails>();
+    onSearch = new Emitter<Preference.SearchQuery>();
+    onEditorScroll = new Emitter<Preference.MouseScrollDetails>();
+    onNavTreeSelection = new Emitter<Preference.SelectedTreeNode>();
+    onDisplayChanged = new Emitter<void>();
+}

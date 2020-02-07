@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2020 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-monaco.languages.register({
-    id: 'jsonc',
-    'aliases': [
-        'JSON with Comments'
-    ],
-    'filenames': [
-        'settings.json'
-    ],
-    'extensions': [
-        '.theia-workspace'
-    ]
-});
+import * as React from 'react';
+import { Preference } from '../../util/preference-types';
+
+interface PreferenceJSONInputProps {
+    preferenceDisplayNode: Preference.NodeWithValueInSingleScope;
+    onClick(): void;
+}
+
+export const PreferenceJSONInput: React.FC<PreferenceJSONInputProps> = ({ preferenceDisplayNode, onClick }) => (
+    <a
+        role='button'
+        title={preferenceDisplayNode.name}
+        onClick={onClick}
+        className='theia-json-input'
+    >
+        Edit in settings.json
+    </a >
+);

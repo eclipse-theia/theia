@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { Tree, TreeDecorator, TreeDecoration, PreferenceDataProperty, PreferenceService } from '@theia/core/lib/browser';
 import { Emitter, Event, MaybePromise } from '@theia/core';
 import { escapeInvisibleChars } from '@theia/core/lib/common/strings';
@@ -23,15 +23,15 @@ import { escapeInvisibleChars } from '@theia/core/lib/common/strings';
 export class PreferencesDecorator implements TreeDecorator {
     readonly id: string = 'theia-preferences-decorator';
 
-    private activeFolderUri: string | undefined;
-
+    protected activeFolderUri: string | undefined;
     protected preferences: { [id: string]: PreferenceDataProperty }[];
-    protected preferencesDecorations: Map<string, TreeDecoration.Data>;
-
+    protected preferencesDecorations: Map<string, TreeDecoration.Data> = new Map();
     protected readonly emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>> = new Emitter();
 
-    constructor(@inject(PreferenceService) private readonly preferencesService: PreferenceService) {
-        this.preferencesDecorations = new Map();
+    @inject(PreferenceService) protected readonly preferencesService: PreferenceService;
+
+    @postConstruct()
+    protected init(): void {
         this.preferencesService.onPreferenceChanged(() => {
             this.fireDidChangeDecorations(this.preferences);
         });
@@ -45,23 +45,25 @@ export class PreferencesDecorator implements TreeDecorator {
         if (!this.preferences) {
             this.preferences = preferences;
         }
-        this.preferencesDecorations = new Map(preferences.map(m => {
-            const preferenceName = Object.keys(m)[0];
-            const preferenceValue = m[preferenceName];
-            const storedValue = this.preferencesService.get(preferenceName, undefined, this.activeFolderUri);
-            const description = this.getDescription(preferenceValue);
-            return [preferenceName, {
-                tooltip: this.buildTooltip(preferenceValue),
-                captionSuffixes: [
-                    {
-                        data: `: ${this.getPreferenceDisplayValue(storedValue, preferenceValue.defaultValue)}`
-                    },
-                    {
-                        data: ' ' + description,
-                        fontData: { color: 'var(--theia-descriptionForeground)' }
-                    }]
-            }] as [string, TreeDecoration.Data];
-        }));
+        if (preferences) {
+            this.preferencesDecorations = new Map(preferences.map(m => {
+                const preferenceName = Object.keys(m)[0];
+                const preferenceValue = m[preferenceName];
+                const storedValue = this.preferencesService.get(preferenceName, undefined, this.activeFolderUri);
+                const description = this.getDescription(preferenceValue);
+                return [preferenceName, {
+                    tooltip: this.buildTooltip(preferenceValue),
+                    captionSuffixes: [
+                        {
+                            data: `: ${this.getPreferenceDisplayValue(storedValue, preferenceValue.defaultValue)}`
+                        },
+                        {
+                            data: ' ' + description,
+                            fontData: { color: 'var(--theia-descriptionForeground)' }
+                        }]
+                }] as [string, TreeDecoration.Data];
+            }));
+        }
         this.emitter.fire(() => this.preferencesDecorations);
     }
 
@@ -69,13 +71,13 @@ export class PreferencesDecorator implements TreeDecorator {
         return this.preferencesDecorations;
     }
 
-    setActiveFolder(folder: string): void {
+    protected setActiveFolder(folder: string): void {
         this.activeFolderUri = folder;
         this.fireDidChangeDecorations(this.preferences);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private getPreferenceDisplayValue(storedValue: any, defaultValue: any): any {
+    protected getPreferenceDisplayValue(storedValue: any, defaultValue: any): any {
         if (storedValue !== undefined) {
             if (typeof storedValue === 'string') {
                 return escapeInvisibleChars(storedValue);
@@ -85,7 +87,7 @@ export class PreferencesDecorator implements TreeDecorator {
         return defaultValue;
     }
 
-    private buildTooltip(data: PreferenceDataProperty): string {
+    protected buildTooltip(data: PreferenceDataProperty): string {
         let tooltips: string = '';
         if (data.description) {
             tooltips = data.description;
@@ -109,7 +111,7 @@ export class PreferencesDecorator implements TreeDecorator {
      * @param value {PreferenceDataProperty} the preference data property.
      * @returns the description if available.
      */
-    private getDescription(value: PreferenceDataProperty): string {
+    protected getDescription(value: PreferenceDataProperty): string {
 
         /**
          * Format the string for consistency and display purposes.

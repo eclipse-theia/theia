@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2020 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-monaco.languages.register({
-    id: 'jsonc',
-    'aliases': [
-        'JSON with Comments'
-    ],
-    'filenames': [
-        'settings.json'
-    ],
-    'extensions': [
-        '.theia-workspace'
-    ]
-});
+export { PreferenceArrayInput } from './preference-array-input';
+export { PreferenceBooleanInput } from './preference-boolean-input';
+export { PreferenceJSONInput } from './preference-json-input';
+export { PreferenceNumberInput } from './preference-number-input';
+export { PreferenceSelectInput } from './preference-select-input';
+export { PreferenceStringInput } from './preference-string-input';

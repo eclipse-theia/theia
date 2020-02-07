@@ -1,0 +1,49 @@
+/********************************************************************************
+ * Copyright (C) 2020 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-settings-container .object-preference-input-container {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+
+.theia-settings-container .object-preference-input {
+  width: 100%;
+  max-height: 250px;
+  resize: none;
+  color: var(--theia-settings-textInputForeground);
+  background-color: var(--theia-settings-textInputBackground);
+  border-color: var(--theia-panel-border);
+  font-size: var(--theia-code-font-size);
+  margin-bottom: 10px;
+}
+
+.theia-settings-container .object-preference-input-btn-toggle {
+  padding: 0 calc(var(--theia-ui-padding) / 2);
+}
+
+.theia-settings-container .object-preference-input-btn-toggle-icon {
+  display: inline-block;
+  background: var(--theia-icon-open-json) no-repeat;
+  background-position-y: 1px;
+  height: var(--theia-icon-size);
+  width: var(--theia-icon-size);
+}
