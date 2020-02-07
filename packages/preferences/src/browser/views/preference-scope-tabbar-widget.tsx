@@ -1,0 +1,232 @@
+/********************************************************************************
+ * Copyright (C) 2020 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+import { inject, injectable, postConstruct } from 'inversify';
+import { TabBar, Widget, Title } from '@phosphor/widgets';
+import { PreferenceScope, Message, ContextMenuRenderer, LabelProvider } from '@theia/core/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import URI from '@theia/core/lib/common/uri';
+import { FileStat } from '@theia/filesystem/lib/common';
+import { PreferencesEventService } from '../util/preference-event-service';
+import { PreferenceScopeCommandManager, FOLDER_SCOPE_MENU_PATH } from '../util/preference-scope-command-manager';
+import { Preference } from '../util/preference-types';
+
+const USER_TAB_LABEL = 'User';
+const USER_TAB_INDEX = PreferenceScope[USER_TAB_LABEL].toString();
+const WORKSPACE_TAB_LABEL = 'Workspace';
+const WORKSPACE_TAB_INDEX = PreferenceScope[WORKSPACE_TAB_LABEL].toString();
+const FOLDER_TAB_LABEL = 'Folder';
+const FOLDER_TAB_INDEX = PreferenceScope[FOLDER_TAB_LABEL].toString();
+
+const PREFERENCE_TAB_CLASSNAME = 'preferences-scope-tab';
+const GENERAL_FOLDER_TAB_CLASSNAME = 'preference-folder';
+const LABELED_FOLDER_TAB_CLASSNAME = 'preferences-folder-tab';
+const FOLDER_DROPDOWN_CLASSNAME = 'preferences-folder-dropdown';
+const FOLDER_DROPDOWN_ICON_CLASSNAME = 'preferences-folder-dropdown-icon';
+const SINGLE_FOLDER_TAB_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${LABELED_FOLDER_TAB_CLASSNAME}`;
+const UNSELECTED_FOLDER_DROPDOWN_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${FOLDER_DROPDOWN_CLASSNAME}`;
+const SELECTED_FOLDER_DROPDOWN_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${LABELED_FOLDER_TAB_CLASSNAME} ${FOLDER_DROPDOWN_CLASSNAME}`;
+
+@injectable()
+export class PreferencesScopeTabBar extends TabBar<Widget> {
+
+    static ID = 'preferences-scope-tab-bar';
+    @inject(PreferencesEventService) protected readonly preferencesEventService: PreferencesEventService;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(PreferenceScopeCommandManager) protected readonly preferencesMenuFactory: PreferenceScopeCommandManager;
+    @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+
+    protected folderTitle: Title<Widget>;
+    protected currentWorkspaceRoots: FileStat[] = [];
+    protected currentSelection: Preference.SelectedScopeDetails = Preference.DEFAULT_SCOPE;
+    protected setNewScopeSelection(newSelection: Preference.SelectedScopeDetails): void {
+
+        const newIndex = this.titles.findIndex(title => title.dataset.scope === newSelection.scope);
+        if (newIndex !== -1) {
+            this.currentSelection = newSelection;
+            this.currentIndex = newIndex;
+            if (newSelection.scope === PreferenceScope.Folder.toString()) {
+                this.addOrUpdateFolderTab();
+            }
+            this.emitNewScope();
+        }
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.id = PreferencesScopeTabBar.ID;
+        this.setupInitialDisplay();
+        this.tabActivateRequested.connect((sender, args) => {
+            if (!!args.title) {
+                this.setNewScopeSelection(args.title.dataset as unknown as Preference.SelectedScopeDetails);
+            }
+        });
+        this.workspaceService.onWorkspaceChanged(newRoots => {
+            this.doUpdateDisplay(newRoots);
+        });
+        this.workspaceService.onWorkspaceLocationChanged(() => this.updateWorkspaceTab());
+    }
+
+    protected setupInitialDisplay(): void {
+        this.addUserTab();
+        this.addWorkspaceTab();
+        this.addOrUpdateFolderTab();
+    }
+
+    protected onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
+        this.addTabIndexToTabs();
+    }
+
+    protected addTabIndexToTabs(): void {
+        this.node.querySelectorAll('li').forEach((tab, index) => {
+            tab.tabIndex = 0;
+            tab.onkeypress = () => {
+                if (tab.className.includes(GENERAL_FOLDER_TAB_CLASSNAME) && this.currentWorkspaceRoots.length > 1) {
+                    const tabRect = tab.getBoundingClientRect();
+                    this.openContextMenu(tabRect);
+                } else {
+                    this.setNewScopeSelection(this.titles[index].dataset as unknown as Preference.SelectedScopeDetails);
+                }
+            };
+        });
+    }
+
+    protected addUserTab(): void {
+        this.addTab(new Title({
+            dataset: { uri: '', scope: USER_TAB_INDEX },
+            label: USER_TAB_LABEL,
+            owner: this,
+            className: PREFERENCE_TAB_CLASSNAME
+        }));
+    }
+
+    protected addWorkspaceTab(): void {
+        if (!!this.workspaceService.workspace) {
+            this.addTab(new Title({
+                dataset: this.getWorkspaceDataset(),
+                label: WORKSPACE_TAB_LABEL,
+                owner: this,
+                className: PREFERENCE_TAB_CLASSNAME,
+            }));
+        }
+    }
+
+    protected getWorkspaceDataset(): Preference.SelectedScopeDetails {
+        const { uri, isDirectory } = this.workspaceService.workspace!;
+        const scope = WORKSPACE_TAB_INDEX;
+        const activeScopeIsFolder = isDirectory.toString();
+        return { uri, activeScopeIsFolder, scope };
+    }
+
+    protected addOrUpdateFolderTab(): void {
+        if (!!this.workspaceService.workspace) {
+            this.currentWorkspaceRoots = this.workspaceService.tryGetRoots();
+            const multipleFolderRootsAreAvailable = this.currentWorkspaceRoots && this.currentWorkspaceRoots.length > 1;
+            const noFolderRootsAreAvailable = this.currentWorkspaceRoots.length === 0;
+            const shouldShowFoldersSeparately = this.workspaceService.saved;
+
+            if (!noFolderRootsAreAvailable) {
+                if (!this.folderTitle) {
+                    this.folderTitle = new Title({
+                        label: '',
+                        caption: FOLDER_TAB_LABEL,
+                        owner: this,
+                    });
+                }
+
+                this.setFolderTitleProperties(multipleFolderRootsAreAvailable);
+                this.getFolderContextMenu(this.currentWorkspaceRoots);
+                if (multipleFolderRootsAreAvailable || shouldShowFoldersSeparately) {
+                    this.addTab(this.folderTitle);
+                }
+            } else {
+                const folderTabIndex = this.titles.findIndex(title => title.caption === FOLDER_TAB_LABEL);
+
+                if (folderTabIndex > -1) {
+                    this.removeTabAt(folderTabIndex);
+                }
+            }
+        }
+    }
+
+    protected setFolderTitleProperties(multipleFolderRootsAreAvailable: boolean): void {
+        this.folderTitle.iconClass = multipleFolderRootsAreAvailable ? FOLDER_DROPDOWN_ICON_CLASSNAME : '';
+        if (this.currentSelection.scope === FOLDER_TAB_INDEX) {
+            this.folderTitle.label = this.labelProvider.getName(new URI(this.currentSelection.uri));
+            this.folderTitle.dataset = { ...this.currentSelection, folderTitle: 'true' };
+            this.folderTitle.className = multipleFolderRootsAreAvailable ? SELECTED_FOLDER_DROPDOWN_CLASSNAME : SINGLE_FOLDER_TAB_CLASSNAME;
+        } else {
+            const singleFolderRoot = this.currentWorkspaceRoots[0].uri;
+            const singleFolderLabel = this.labelProvider.getName(new URI(singleFolderRoot));
+            const defaultURI = multipleFolderRootsAreAvailable ? '' : singleFolderRoot;
+            this.folderTitle.label = multipleFolderRootsAreAvailable ? FOLDER_TAB_LABEL : singleFolderLabel;
+            this.folderTitle.className = multipleFolderRootsAreAvailable ? UNSELECTED_FOLDER_DROPDOWN_CLASSNAME : SINGLE_FOLDER_TAB_CLASSNAME;
+            this.folderTitle.dataset = { folderTitle: 'true', scope: FOLDER_TAB_INDEX, uri: defaultURI };
+        }
+    }
+
+    protected folderSelectionCallback = (newScope: Preference.SelectedScopeDetails): void => { this.setNewScopeSelection(newScope); };
+
+    protected getFolderContextMenu(workspaceRoots = this.workspaceService.tryGetRoots()): void {
+        this.preferencesMenuFactory.createFolderWorkspacesMenu(workspaceRoots, this.currentSelection.uri);
+    }
+
+    handleEvent(e: Event): void {
+        const folderTab = this.contentNode.querySelector(`.${GENERAL_FOLDER_TAB_CLASSNAME}`);
+        if (folderTab && folderTab.contains(e.target as HTMLElement) && this.currentWorkspaceRoots.length > 1) {
+            const tabRect = folderTab.getBoundingClientRect();
+            this.openContextMenu(tabRect);
+            return;
+        }
+        super.handleEvent(e);
+    }
+
+    protected openContextMenu(tabRect: DOMRect | ClientRect): void {
+        this.contextMenuRenderer.render({
+            menuPath: FOLDER_SCOPE_MENU_PATH,
+            anchor: { x: tabRect.left, y: tabRect.bottom },
+            args: [this.folderSelectionCallback, 'from-tabbar']
+        });
+    }
+
+    protected doUpdateDisplay(newRoots: FileStat[]): void {
+        const folderWasRemoved = newRoots.length < this.currentWorkspaceRoots.length;
+        this.currentWorkspaceRoots = newRoots;
+        if (folderWasRemoved) {
+            const removedFolderWasSelectedScope = !this.currentWorkspaceRoots.some(root => root.uri === this.currentSelection.uri);
+            if (removedFolderWasSelectedScope) {
+                this.setNewScopeSelection(Preference.DEFAULT_SCOPE);
+            }
+        }
+        this.updateWorkspaceTab();
+        this.addOrUpdateFolderTab();
+    }
+
+    protected updateWorkspaceTab(): void {
+        // Will always be present - otherwise workspace cannot change.
+        const workspaceTitle = this.titles.find(title => title.label === WORKSPACE_TAB_LABEL)!;
+        workspaceTitle.dataset = this.getWorkspaceDataset();
+        if (this.currentSelection.scope === PreferenceScope.Workspace.toString()) {
+            this.setNewScopeSelection(workspaceTitle.dataset as Preference.SelectedScopeDetails);
+        }
+    }
+
+    protected emitNewScope(): void {
+        this.preferencesEventService.onTabScopeSelected.fire(this.currentSelection);
+    }
+}

@@ -15,45 +15,32 @@
  ********************************************************************************/
 
 import '../../src/browser/style/index.css';
-
-import { ContainerModule, interfaces } from 'inversify';
-import { bindViewContribution, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { PreferencesContribution } from './preferences-contribution';
-import { createPreferencesTreeWidget } from './preference-tree-container';
-import { PreferencesMenuFactory } from './preferences-menu-factory';
-import { PreferencesFrontendApplicationContribution } from './preferences-frontend-application-contribution';
-import { PreferencesContainer, PreferencesTreeWidget, PreferencesEditorsContainer } from './preferences-tree-widget';
-import { bindPreferenceProviders } from './preference-bindings';
-
 import './preferences-monaco-contribution';
-
-export const PreferencesWidgetFactory = Symbol('PreferencesWidgetFactory');
+import { ContainerModule, interfaces } from 'inversify';
+import { FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { PreferenceTreeGenerator } from './util/preference-tree-generator';
+import { bindPreferenceProviders } from './preference-bindings';
+import { bindPreferencesWidgets } from './views/preference-widget-bindings';
+import { PreferencesEventService } from './util/preference-event-service';
+import { PreferencesTreeProvider } from './preference-tree-provider';
+import { PreferencesContribution } from './preference-contribution';
+import { PreferenceScopeCommandManager } from './util/preference-scope-command-manager';
+import { PreferencesFrontendApplicationContribution } from './preferences-frontend-application-contribution';
 
 export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     bindPreferenceProviders(bind, unbind);
+    bindPreferencesWidgets(bind);
+
+    bind(PreferencesEventService).toSelf().inSingletonScope();
+    bind(PreferencesTreeProvider).toSelf().inSingletonScope();
+    bind(PreferenceTreeGenerator).toSelf().inSingletonScope();
 
     bindViewContribution(bind, PreferencesContribution);
 
-    bind(PreferencesContainer).toSelf();
-    bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: PreferencesContainer.ID,
-        createWidget: () => container.get(PreferencesContainer)
-    }));
-
-    bind(PreferencesWidgetFactory).toDynamicValue(({ container }) => ({
-        id: PreferencesTreeWidget.ID,
-        createWidget: () => createPreferencesTreeWidget(container)
-    })).inSingletonScope();
-    bind(WidgetFactory).toService(PreferencesWidgetFactory);
-
-    bind(PreferencesEditorsContainer).toSelf();
-    bind(WidgetFactory).toDynamicValue(({ container }) => ({
-        id: PreferencesEditorsContainer.ID,
-        createWidget: () => container.get(PreferencesEditorsContainer)
-    }));
-
-    bind(PreferencesMenuFactory).toSelf();
+    bind(PreferenceScopeCommandManager).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).to(PreferencesFrontendApplicationContribution).inSingletonScope();
+    bind(TabBarToolbarContribution).toService(PreferencesContribution);
 }
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
