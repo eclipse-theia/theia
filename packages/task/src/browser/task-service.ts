@@ -897,6 +897,7 @@ export class TaskService implements TaskConfigurationClient {
         const source = resolvedTask._source;
         const taskLabel = resolvedTask.label;
         try {
+            const terminal = await this.createTerminalWidget(resolvedTask);
             const taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
             this.lastTask = { source, taskLabel };
             this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
@@ -908,7 +909,8 @@ export class TaskService implements TaskConfigurationClient {
              *       Reason: Maybe a new task type wants to also be displayed in a terminal.
              */
             if (typeof taskInfo.terminalId === 'number') {
-                this.attach(taskInfo.terminalId, taskInfo.taskId);
+                terminal.id = this.getTerminalWidgetId(taskInfo.terminalId);
+                terminal.start(taskInfo.terminalId);
             }
             return taskInfo;
         } catch (error) {
@@ -969,6 +971,19 @@ export class TaskService implements TaskConfigurationClient {
         terminal.sendText(selectedText);
     }
 
+    protected async createTerminalWidget(task: TaskConfiguration, widgetOptions?: ApplicationShell.WidgetOptions): Promise<TerminalWidget> {
+        const terminal = <TerminalWidget>await this.terminalService.newTerminal(<TerminalWidgetFactoryOptions>{
+            created: new Date().toString(),
+            title: `Task: ${task.label}`,
+            destroyTermOnClose: true
+        });
+
+        this.shell.addWidget(terminal, widgetOptions ? widgetOptions : { area: 'bottom' });
+        this.resolveFocus(terminal, task);
+
+        return terminal;
+    }
+
     async attach(processId: number, taskId: number): Promise<void> {
         // Get the list of all available running tasks.
         const runningTasks: TaskInfo[] = await this.getRunningTasks();
@@ -987,14 +1002,21 @@ export class TaskService implements TaskConfigurationClient {
             }
         );
         this.shell.addWidget(widget, { area: 'bottom' });
-        if (taskInfo && taskInfo.config.presentation && taskInfo.config.presentation.reveal === RevealKind.Always) {
-            if (taskInfo.config.presentation.focus) { // assign focus to the terminal if presentation.focus is true
-                this.shell.activateWidget(widget.id);
-            } else { // show the terminal but not assign focus
-                this.shell.revealWidget(widget.id);
-            }
+
+        if (taskInfo) {
+            this.resolveFocus(widget, taskInfo.config);
         }
         widget.start(processId);
+    }
+
+    private resolveFocus(terminal: TerminalWidget, taskConfig: TaskConfiguration): void {
+        if (taskConfig.presentation && taskConfig.presentation.reveal === RevealKind.Always) {
+            if (taskConfig.presentation.focus) { // assign focus to the terminal if presentation.focus is true
+                this.shell.activateWidget(terminal.id);
+            } else { // show the terminal but not assign focus
+                this.shell.revealWidget(terminal.id);
+            }
+        }
     }
 
     private getTerminalWidgetId(terminalId: number): string {
