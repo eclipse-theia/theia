@@ -22,7 +22,7 @@ import { FileChange, FileChangeType } from '../common/filesystem-watcher-protoco
  * Changes are normalized according following rules:
  * - ADDED + ADDED => ADDED
  * - ADDED + UPDATED => ADDED
- * - ADDED + DELETED => NONE
+ * - ADDED + DELETED => [ADDED, DELETED]
  * - UPDATED + ADDED => UPDATED
  * - UPDATED + UPDATED => UPDATED
  * - UPDATED + DELETED => DELETED
@@ -31,37 +31,48 @@ import { FileChange, FileChangeType } from '../common/filesystem-watcher-protoco
  * - DELETED + DELETED => DELETED
  */
 export class FileChangeCollection {
-    protected readonly changes = new Map<string, FileChange>();
+    protected readonly changes = new Map<string, FileChange[]>();
 
     push(change: FileChange): void {
-        const current = this.changes.get(change.uri);
-        if (current) {
-            if (this.isDeleted(current, change)) {
-                this.changes.delete(change.uri);
-            } else if (this.isUpdated(current, change)) {
-                current.type = FileChangeType.UPDATED;
-            } else if (!this.shouldSkip(current, change)) {
-                current.type = change.type;
-            }
+        const changes = this.changes.get(change.uri) || [];
+        this.normalize(changes, change);
+        this.changes.set(change.uri, changes);
+    }
+
+    protected normalize(changes: FileChange[], change: FileChange): void {
+        let currentType;
+        let nextType: FileChangeType | [FileChangeType, FileChangeType] = change.type;
+        do {
+            const current = changes.pop();
+            currentType = current && current.type;
+            nextType = this.reduce(currentType, nextType);
+        } while (!Array.isArray(nextType) && currentType !== undefined && currentType !== nextType);
+
+        const uri = change.uri;
+        if (Array.isArray(nextType)) {
+            changes.push(...nextType.map(type => ({ uri, type })));
         } else {
-            this.changes.set(change.uri, change);
+            changes.push({ uri, type: nextType });
         }
     }
 
-    protected isDeleted(current: FileChange, change: FileChange): boolean {
-        return current.type === FileChangeType.ADDED && change.type === FileChangeType.DELETED;
-    }
-
-    protected isUpdated(current: FileChange, change: FileChange): boolean {
-        return current.type === FileChangeType.DELETED && change.type === FileChangeType.ADDED;
-    }
-
-    protected shouldSkip(current: FileChange, change: FileChange): boolean {
-        return (current.type === FileChangeType.ADDED && change.type === FileChangeType.UPDATED) ||
-            (current.type === FileChangeType.UPDATED && change.type === FileChangeType.ADDED);
+    protected reduce(current: FileChangeType | undefined, change: FileChangeType): FileChangeType | [FileChangeType, FileChangeType] {
+        if (current === undefined) {
+            return change;
+        }
+        if (current === FileChangeType.ADDED) {
+            if (change === FileChangeType.DELETED) {
+                return [FileChangeType.ADDED, FileChangeType.DELETED];
+            }
+            return FileChangeType.ADDED;
+        }
+        if (change === FileChangeType.DELETED) {
+            return FileChangeType.DELETED;
+        }
+        return FileChangeType.UPDATED;
     }
 
     values(): FileChange[] {
-        return Array.from(this.changes.values());
+        return Array.from(this.changes.values()).reduce((acc, val) => acc.concat(val), []);
     }
 }

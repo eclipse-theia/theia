@@ -60,6 +60,9 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected readonly onWillSaveModelEmitter = new Emitter<WillSaveMonacoModelEvent>();
     readonly onWillSaveModel = this.onWillSaveModelEmitter.event;
 
+    protected readonly onDidChangeValidEmitter = new Emitter<void>();
+    readonly onDidChangeValid = this.onDidChangeValidEmitter.event;
+
     private preferredEncoding: string | undefined = undefined;
     private readonly defaultEncoding: string | undefined;
 
@@ -75,8 +78,12 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.toDispose.push(this.onDidSaveModelEmitter);
         this.toDispose.push(this.onWillSaveModelEmitter);
         this.toDispose.push(this.onDirtyChangedEmitter);
-        this.resolveModel = resource.readContents(options).then(content => this.initialize(content));
+        this.toDispose.push(this.onDidChangeValidEmitter);
         this.defaultEncoding = options && options.encoding ? options.encoding : undefined;
+        this.resolveModel = this.readContents().then(
+            content => this.initialize(content || ''),
+            e => console.error(`Failed to initialize for '${this.uri}':`, e)
+        );
     }
 
     dispose(): void {
@@ -118,6 +125,25 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
                 this.toDispose.push(this.resource.onDidChangeContents(() => this.sync()));
             }
         }
+    }
+
+    /**
+     * Use `valid` to access it.
+     * Use `setValid` to mutate it.
+     */
+    protected _valid = false;
+    /**
+     * Whether it is possible to load content from the underlying resource.
+     */
+    get valid(): boolean {
+        return this._valid;
+    }
+    protected setValid(valid: boolean): void {
+        if (valid === this._valid) {
+            return;
+        }
+        this._valid = valid;
+        this.onDidChangeValidEmitter.fire(undefined);
     }
 
     protected _dirty = false;
@@ -261,8 +287,11 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
     protected async readContents(): Promise<string | undefined> {
         try {
-            return await this.resource.readContents({ encoding: this.getEncoding() });
+            const content = await this.resource.readContents({ encoding: this.getEncoding() });
+            this.setValid(true);
+            return content;
         } catch (e) {
+            this.setValid(false);
             if (ResourceError.NotFound.is(e)) {
                 return undefined;
             }
@@ -320,14 +349,15 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     protected fireDidChangeContent(event: monaco.editor.IModelContentChangedEvent): void {
-        const changeContentEvent = this.asContentChangedEvent(event);
-        this.onDidChangeContentEmitter.fire(changeContentEvent);
-        this.pushContentChanges(changeContentEvent.contentChanges);
         if (this.model.getAlternativeVersionId() === this.bufferSavedVersionId) {
             this.setDirty(false);
         } else {
             this.markAsDirty();
         }
+
+        const changeContentEvent = this.asContentChangedEvent(event);
+        this.onDidChangeContentEmitter.fire(changeContentEvent);
+        this.pushContentChanges(changeContentEvent.contentChanges);
     }
     protected asContentChangedEvent(event: monaco.editor.IModelContentChangedEvent): MonacoModelContentChangedEvent {
         const contentChanges = event.changes.map(change => this.asTextDocumentContentChangeEvent(change));
@@ -377,6 +407,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
         const content = this.model.getValue();
         await Resource.save(this.resource, { changes, content, options: { encoding: this.getEncoding(), overwriteEncoding } }, token);
+        this.setValid(true);
         if (token.isCancellationRequested) {
             return;
         }

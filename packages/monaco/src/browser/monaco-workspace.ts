@@ -32,6 +32,7 @@ import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedE
 import { MonacoEditor } from './monaco-editor';
 import { MonacoConfigurations } from './monaco-configurations';
 import { ProblemManager } from '@theia/markers/lib/browser';
+import { MaybePromise } from '@theia/core/lib/common/types';
 
 export interface MonacoDidChangeTextDocumentParams extends lang.DidChangeTextDocumentParams {
     readonly textDocument: MonacoEditorModel;
@@ -276,7 +277,12 @@ export class MonacoWorkspace implements lang.Workspace {
         this.onDidSaveTextDocumentEmitter.fire(model);
     }
 
+    protected suppressedOpenIfDirty: MonacoEditorModel[] = [];
+
     protected openEditorIfDirty(model: MonacoEditorModel): void {
+        if (this.suppressedOpenIfDirty.indexOf(model) !== -1) {
+            return;
+        }
         if (model.dirty && MonacoEditor.findByDocument(this.editorManager, model).length === 0) {
             // create a new reference to make sure the model is not disposed before it is
             // acquired by the editor, thus losing the changes that made it dirty.
@@ -285,6 +291,18 @@ export class MonacoWorkspace implements lang.Workspace {
                     mode: 'open',
                 }).then(editor => ref.dispose());
             });
+        }
+    }
+
+    protected async suppressOpenIfDirty(model: MonacoEditorModel, cb: () => MaybePromise<void>): Promise<void> {
+        this.suppressedOpenIfDirty.push(model);
+        try {
+            await cb();
+        } finally {
+            const i = this.suppressedOpenIfDirty.indexOf(model);
+            if (i !== -1) {
+                this.suppressedOpenIfDirty.splice(i, 1);
+            }
         }
     }
 
@@ -329,6 +347,23 @@ export class MonacoWorkspace implements lang.Workspace {
             onDidDelete: onDidDeleteEmitter.event,
             dispose: () => disposables.dispose()
         };
+    }
+
+    /**
+     * Applies given edits to the given model.
+     * The model is saved if no editors is opened for it.
+     */
+    applyBackgroundEdit(model: MonacoEditorModel, editOperations: monaco.editor.IIdentifiedSingleEditOperation[]): Promise<void> {
+        return this.suppressOpenIfDirty(model, async () => {
+            const editor = MonacoEditor.findByDocument(this.editorManager, model)[0];
+            const cursorState = editor && editor.getControl().getSelections() || [];
+            model.textEditorModel.pushStackElement();
+            model.textEditorModel.pushEditOperations(cursorState, editOperations, () => cursorState);
+            model.textEditorModel.pushStackElement();
+            if (!editor) {
+                await model.save();
+            }
+        });
     }
 
     async applyEdit(changes: lang.WorkspaceEdit, options?: EditorOpenerOptions): Promise<boolean> {
