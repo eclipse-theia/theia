@@ -811,7 +811,7 @@ export interface TextEditorsExt {
 }
 
 export interface SingleEditOperation {
-    range: Range;
+    range?: Range;
     text?: string;
     forceMoveMarkers?: boolean;
 }

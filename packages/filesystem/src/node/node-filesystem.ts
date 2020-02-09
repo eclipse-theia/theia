@@ -327,19 +327,11 @@ export class FileSystemNode implements FileSystem {
             const filePath = FileUri.fsPath(_uri);
             const outputRootPath = paths.join(os.tmpdir(), v4());
             try {
-                await new Promise<void>((resolve, reject) => {
-                    fs.rename(filePath, outputRootPath, async error => {
-                        if (error) {
-                            reject(error);
-                            return;
-                        }
-                        resolve();
-                    });
-                });
+                await fs.rename(filePath, outputRootPath);
                 // There is no reason for the promise returned by this function not to resolve
                 // as soon as the move is complete.  Clearing up the temporary files can be
                 // done in the background.
-                fs.remove(FileUri.fsPath(outputRootPath));
+                fs.remove(outputRootPath);
             } catch (error) {
                 return fs.remove(filePath);
             }

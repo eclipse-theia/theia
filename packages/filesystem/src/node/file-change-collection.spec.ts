@@ -22,79 +22,84 @@ import { FileChangeType } from '../common/filesystem-watcher-protocol';
 describe('FileChangeCollection', () => {
 
     assertChanges({
-        first: FileChangeType.ADDED,
-        second: FileChangeType.ADDED,
+        changes: [FileChangeType.ADDED, FileChangeType.ADDED],
         expected: FileChangeType.ADDED
     });
 
     assertChanges({
-        first: FileChangeType.ADDED,
-        second: FileChangeType.UPDATED,
+        changes: [FileChangeType.ADDED, FileChangeType.UPDATED],
         expected: FileChangeType.ADDED
     });
 
     assertChanges({
-        first: FileChangeType.ADDED,
-        second: FileChangeType.DELETED,
-        expected: undefined
+        changes: [FileChangeType.ADDED, FileChangeType.DELETED],
+        expected: [FileChangeType.ADDED, FileChangeType.DELETED]
     });
 
     assertChanges({
-        first: FileChangeType.UPDATED,
-        second: FileChangeType.ADDED,
+        changes: [FileChangeType.UPDATED, FileChangeType.ADDED],
         expected: FileChangeType.UPDATED
     });
 
     assertChanges({
-        first: FileChangeType.UPDATED,
-        second: FileChangeType.UPDATED,
+        changes: [FileChangeType.UPDATED, FileChangeType.UPDATED],
         expected: FileChangeType.UPDATED
     });
 
     assertChanges({
-        first: FileChangeType.UPDATED,
-        second: FileChangeType.DELETED,
+        changes: [FileChangeType.UPDATED, FileChangeType.DELETED],
         expected: FileChangeType.DELETED
     });
 
     assertChanges({
-        first: FileChangeType.DELETED,
-        second: FileChangeType.ADDED,
+        changes: [FileChangeType.DELETED, FileChangeType.ADDED],
         expected: FileChangeType.UPDATED
     });
 
     assertChanges({
-        first: FileChangeType.DELETED,
-        second: FileChangeType.UPDATED,
+        changes: [FileChangeType.DELETED, FileChangeType.UPDATED],
         expected: FileChangeType.UPDATED
     });
 
     assertChanges({
-        first: FileChangeType.DELETED,
-        second: FileChangeType.DELETED,
+        changes: [FileChangeType.DELETED, FileChangeType.DELETED],
         expected: FileChangeType.DELETED
     });
 
-    function assertChanges({ first, second, expected }: {
-        first: FileChangeType,
-        second: FileChangeType,
-        expected: FileChangeType | undefined
+    assertChanges({
+        changes: [FileChangeType.ADDED, FileChangeType.UPDATED, FileChangeType.DELETED],
+        expected: [FileChangeType.ADDED, FileChangeType.DELETED]
+    });
+
+    assertChanges({
+        changes: [FileChangeType.ADDED, FileChangeType.UPDATED, FileChangeType.DELETED, FileChangeType.ADDED],
+        expected: [FileChangeType.ADDED]
+    });
+
+    assertChanges({
+        changes: [FileChangeType.ADDED, FileChangeType.UPDATED, FileChangeType.DELETED, FileChangeType.UPDATED],
+        expected: [FileChangeType.ADDED]
+    });
+
+    assertChanges({
+        changes: [FileChangeType.ADDED, FileChangeType.UPDATED, FileChangeType.DELETED, FileChangeType.DELETED],
+        expected: [FileChangeType.ADDED, FileChangeType.DELETED]
+    });
+
+    function assertChanges({ changes, expected }: {
+        changes: FileChangeType[],
+        expected: FileChangeType[] | FileChangeType
     }): void {
-        it(`${FileChangeType[first]} + ${FileChangeType[second]} => ${expected !== undefined ? FileChangeType[expected] : 'NONE'}`, () => {
+        const expectedTypes = Array.isArray(expected) ? expected : [expected];
+        const expectation = expectedTypes.map(type => FileChangeType[type]).join(' + ');
+        it(`${changes.map(type => FileChangeType[type]).join(' + ')} => ${expectation}`, () => {
             const collection = new FileChangeCollection();
             const uri = FileUri.create('/root/foo/bar.txt').toString();
-            collection.push({
-                uri,
-                type: first
-            });
-            collection.push({
-                uri,
-                type: second
-            });
-            assert.deepEqual(expected !== undefined ? [{
-                uri,
-                type: expected
-            }] : [], collection.values());
+            for (const type of changes) {
+                collection.push({ uri, type });
+            }
+            const actual = collection.values().map(({ type }) => FileChangeType[type]).join(' + ');
+            assert.equal(expectation, actual);
         });
     }
 

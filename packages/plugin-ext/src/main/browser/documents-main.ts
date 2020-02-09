@@ -108,13 +108,24 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
             onWillSaveModelEvent.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(async (resolve, reject) => {
                 setTimeout(() => reject(new Error(`Aborted onWillSaveTextDocument-event after ${this.saveTimeout}ms`)), this.saveTimeout);
                 const edits = await this.proxy.$acceptModelWillSave(onWillSaveModelEvent.model.textEditorModel.uri, onWillSaveModelEvent.reason, this.saveTimeout);
-                const transformedEdits = edits.map((edit): monaco.editor.IIdentifiedSingleEditOperation =>
-                    ({
-                        range: monaco.Range.lift(edit.range),
-                        text: edit.text!,
+                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
+                for (const edit of edits) {
+                    const { range, text } = edit;
+                    if (!range && !text) {
+                        continue;
+                    }
+                    if (range && range.startLineNumber === range.endLineNumber && range.startColumn === range.endColumn && !edit.text) {
+                        continue;
+                    }
+
+                    editOperations.push({
+                        range: range ? monaco.Range.lift(range) : onWillSaveModelEvent.model.textEditorModel.getFullModelRange(),
+                        /* eslint-disable-next-line no-null/no-null */
+                        text: text || null,
                         forceMoveMarkers: edit.forceMoveMarkers
-                    }));
-                resolve(transformedEdits);
+                    });
+                }
+                resolve(editOperations);
             }));
         }));
         this.toDispose.push(modelService.onModelDirtyChanged(m => {

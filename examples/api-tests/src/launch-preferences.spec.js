@@ -14,52 +14,39 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// @ts-check
+/// <reference types='@theia/monaco/src/typings/monaco'/>
+
 /* eslint-disable no-unused-expressions, @typescript-eslint/no-explicit-any */
 
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-const disableJSDOM = enableJSDOM();
-
-import * as path from 'path';
-import * as fs from 'fs-extra';
-import * as assert from 'assert';
-import { Container } from 'inversify';
-import { FileUri } from '@theia/core/lib/node/file-uri';
-import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import { PreferenceService, PreferenceServiceImpl, PreferenceScope } from '@theia/core/lib/browser/preferences/preference-service';
-import { bindPreferenceService, bindMessageService, bindResourceProvider } from '@theia/core/lib/browser/frontend-application-bindings';
-import { bindFileSystem } from '@theia/filesystem/lib/node/filesystem-backend-module';
-import { bindFileResource } from '@theia/filesystem/lib/browser/filesystem-frontend-module';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
-import { bindFileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
-import { FileShouldOverwrite } from '@theia/filesystem/lib/common/filesystem';
-import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
-import { bindWorkspacePreferences } from '@theia/workspace/lib/browser';
-import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { MockWindowService } from '@theia/core/lib/browser/window/test/mock-window-service';
-import { MockWorkspaceServer } from '@theia/workspace/lib/common/test/mock-workspace-server';
-import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
-import { bindPreferenceProviders } from '@theia/preferences/lib/browser/preference-bindings';
-import { bindUserStorage } from '@theia/userstorage/lib/browser/user-storage-frontend-module';
-import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
-import { MockFilesystemWatcherServer } from '@theia/filesystem/lib/common/test/mock-filesystem-watcher-server';
-import { bindLaunchPreferences } from './launch-preferences';
-
-disableJSDOM();
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error(reason);
-    throw reason;
-});
+/**
+ * @typedef {'.vscode' | '.theia' | ['.theia', '.vscode']} ConfigMode
+ */
 
 /**
  * Expectations should be tested and aligned against VS Code.
  * See https://github.com/akosyakov/vscode-launch/blob/master/src/test/extension.test.ts
  */
-describe('Launch Preferences', () => {
+describe('Launch Preferences', function () {
 
-    type ConfigMode = '.vscode' | '.theia' | ['.theia', '.vscode'];
+    const { assert } = chai;
+
+    const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
+    const Uri = require('@theia/core/lib/common/uri');
+    const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
+    const { FileSystem } = require('@theia/filesystem/lib/common/filesystem');
+    const { MonacoTextModelService } = require('@theia/monaco/lib/browser/monaco-text-model-service');
+    const { MonacoWorkspace } = require('@theia/monaco/lib/browser/monaco-workspace');
+
+    /** @type {import('inversify').Container} */
+    const container = window['theia'].container;
+    /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
+    const preferences = container.get(PreferenceService);
+    const workspaceService = container.get(WorkspaceService);
+    /** @type {import('@theia/filesystem/lib/common/filesystem').FileSystem} */
+    const fileSystem = container.get(FileSystem);
+    const textModelService = container.get(MonacoTextModelService);
+    const workspace = container.get(MonacoWorkspace);
 
     const defaultLaunch = {
         'configurations': [],
@@ -329,15 +316,20 @@ describe('Launch Preferences', () => {
         }
     });
 
+    /**
+     * @typedef {Object} LaunchAndSettingsSuiteOptions
+     * @property {string} name
+     * @property {any} expectation
+     * @property {any} [launch]
+     * @property {boolean} [only]
+     * @property {ConfigMode} [configMode]
+     */
+    /**
+     * @type {(options: LaunchAndSettingsSuiteOptions) => void}
+     */
     function testLaunchAndSettingsSuite({
         name, expectation, launch, only, configMode
-    }: {
-        name: string,
-        expectation: any,
-        launch?: any,
-        only?: boolean,
-        configMode?: ConfigMode
-    }): void {
+    }) {
         testSuite({
             name: name + ' Launch Configuration',
             launch,
@@ -356,20 +348,24 @@ describe('Launch Preferences', () => {
         });
     }
 
-    function testSuite(options: {
-        name: string,
-        expectation: any,
-        inspectExpectation?: any,
-        launch?: any,
-        settings?: any,
-        only?: boolean,
-        configMode?: ConfigMode
-    }): void {
-
+    /**
+     * @typedef {Object} SuiteOptions
+     * @property {string} name
+     * @property {any} expectation
+     * @property {any} [inspectExpectation]
+     * @property {any} [launch]
+     * @property {any} [settings]
+     * @property {boolean} [only]
+     * @property {ConfigMode} [configMode]
+     */
+    /**
+     * @type {(options: SuiteOptions) => void}
+     */
+    function testSuite(options) {
         describe(options.name, () => {
 
             if (options.configMode) {
-                testConfigSuite(options as any);
+                testConfigSuite(options);
             } else {
 
                 testConfigSuite({
@@ -394,92 +390,108 @@ describe('Launch Preferences', () => {
 
     }
 
+    /**
+     * @typedef {Object} ConfigSuiteOptions
+     * @property {any} expectation
+     * @property {any} [inspectExpectation]
+     * @property {any} [launch]
+     * @property {any} [settings]
+     * @property {boolean} [only]
+     * @property {ConfigMode} [configMode]
+     */
+    /**
+     * @type {(options: ConfigSuiteOptions) => void}
+     */
     function testConfigSuite({
         configMode, expectation, inspectExpectation, settings, launch, only
-    }: {
-        configMode: ConfigMode
-        expectation: any,
-        inspectExpectation?: any,
-        launch?: any,
-        settings?: any,
-        only?: boolean
-    }): void {
+    }) {
 
         describe(JSON.stringify(configMode, undefined, 2), () => {
-
             const configPaths = Array.isArray(configMode) ? configMode : [configMode];
 
-            const rootPath = path.resolve(__dirname, '..', '..', '..', 'launch-preference-test-temp');
-            const rootUri = FileUri.create(rootPath).toString();
+            const rootUri = new Uri.default(workspaceService.tryGetRoots()[0].uri);
 
-            let preferences: PreferenceService;
-
-            const toTearDown = new DisposableCollection();
-            beforeEach(async function (): Promise<void> {
-                toTearDown.push(Disposable.create(enableJSDOM()));
-                FrontendApplicationConfigProvider.set({
-                    'applicationName': 'test',
-                });
-
-                fs.removeSync(rootPath);
-                fs.ensureDirSync(rootPath);
-                toTearDown.push(Disposable.create(() => fs.removeSync(rootPath)));
-
-                if (settings) {
+            /** @typedef {monaco.editor.IReference<import('@theia/monaco/lib/browser/monaco-editor-model').MonacoEditorModel>} ConfigModelReference */
+            /** @type {ConfigModelReference[]} */
+            beforeEach(() => {
+                const promises = [];
+                /**
+                 * @param {string} name
+                 * @param {string} text
+                 */
+                const ensureConfigModel = (name, text) => {
                     for (const configPath of configPaths) {
-                        const settingsPath = path.resolve(rootPath, configPath, 'settings.json');
-                        fs.ensureFileSync(settingsPath);
-                        fs.writeFileSync(settingsPath, JSON.stringify(settings), 'utf-8');
+                        promises.push((async () => {
+                            try {
+                                const reference = await textModelService.createModelReference(rootUri.resolve(configPath + '/' + name + '.json'));
+                                try {
+                                    await workspace.applyBackgroundEdit(reference.object, [{
+                                        text,
+                                        range: reference.object.textEditorModel.getFullModelRange(),
+                                        forceMoveMarkers: false
+                                    }]);
+                                } finally {
+                                    reference.dispose();
+                                }
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        })());
                     }
+                };
+                if (settings) {
+                    ensureConfigModel('settings', JSON.stringify(settings));
                 }
                 if (launch) {
-                    for (const configPath of configPaths) {
-                        const launchPath = path.resolve(rootPath, configPath, 'launch.json');
-                        fs.ensureFileSync(launchPath);
-                        fs.writeFileSync(launchPath, JSON.stringify(launch), 'utf-8');
-                    }
+                    ensureConfigModel('launch', JSON.stringify(launch));
                 }
-
-                const container = new Container();
-                const bind = container.bind.bind(container);
-                const unbind = container.unbind.bind(container);
-                bindLogger(bind);
-                bindMessageService(bind);
-                bindResourceProvider(bind);
-                bindFileResource(bind);
-                bindUserStorage(bind);
-                bindPreferenceService(bind);
-                bindFileSystem(bind);
-                bind(FileSystemWatcherServer).toConstantValue(new MockFilesystemWatcherServer());
-                bindFileSystemPreferences(bind);
-                container.bind(FileShouldOverwrite).toConstantValue(async () => true);
-                bind(FileSystemWatcher).toSelf().inSingletonScope();
-                bindPreferenceProviders(bind, unbind);
-                bindWorkspacePreferences(bind);
-                container.bind(WorkspaceService).toSelf().inSingletonScope();
-                container.bind(WindowService).toConstantValue(new MockWindowService());
-
-                const workspaceServer = new MockWorkspaceServer();
-                workspaceServer['getMostRecentlyUsedWorkspace'] = async () => rootUri;
-                container.bind(WorkspaceServer).toConstantValue(workspaceServer);
-
-                bindLaunchPreferences(bind);
-
-                toTearDown.push(container.get(FileSystemWatcher));
-
-                const impl = container.get(PreferenceServiceImpl);
-                toTearDown.push(impl);
-
-                preferences = impl;
-                toTearDown.push(Disposable.create(() => preferences = undefined!));
-
-                await preferences.ready;
-                await container.get(WorkspaceService).roots;
+                return Promise.all(promises);
             });
 
-            afterEach(() => toTearDown.dispose());
+            after(() => {
+                const promises = [];
+                /**
+                 * @param {string} name
+                 */
+                const ensureReleaseModel = name => {
+                    for (const configPath of configPaths) {
+                        promises.push((async () => {
+                            try {
+                                const reference = await textModelService.createModelReference(rootUri.resolve(configPath + '/' + name + '.json'));
+                                try {
+                                    if (!reference.object.valid) {
+                                        return;
+                                    }
+                                    await new Promise(resolve => {
+                                        const listener = reference.object.onDidChangeValid(() => {
+                                            listener.dispose();
+                                            resolve();
+                                        });
+                                    });
+                                } finally {
+                                    reference.dispose();
+                                }
+                            } catch (e) {
+                                console.error(e);
+                            }
+                        })());
+                    }
+                };
+                if (settings) {
+                    ensureReleaseModel('settings');
+                }
+                if (launch) {
+                    ensureReleaseModel('launch');
+                }
+                return Promise.all([
+                    ...promises,
+                    fileSystem.delete(rootUri.resolve('.theia').toString(), { moveToTrash: false }).catch(() => { }),
+                    fileSystem.delete(rootUri.resolve('.vscode').toString(), { moveToTrash: false }).catch(() => { })
+                ]);
+            });
 
-            const testIt = !!only ? it.only : it;
+            const testItOnly = !!only ? it.only : it;
+            const testIt = testItOnly;
 
             const settingsLaunch = settings ? settings['launch'] : undefined;
 
@@ -494,7 +506,7 @@ describe('Launch Preferences', () => {
             });
 
             testIt('get from rootUri', () => {
-                const config = preferences.get('launch', undefined, rootUri);
+                const config = preferences.get('launch', undefined, rootUri.toString());
                 assert.deepStrictEqual(JSON.parse(JSON.stringify(config)), expectation);
             });
 
@@ -515,7 +527,7 @@ describe('Launch Preferences', () => {
             });
 
             testIt('inspect in rootUri', () => {
-                const inspect = preferences.inspect('launch', rootUri);
+                const inspect = preferences.inspect('launch', rootUri.toString());
                 const expected = {
                     preferenceName: 'launch',
                     defaultValue: defaultLaunch
@@ -574,7 +586,7 @@ describe('Launch Preferences', () => {
             });
 
             testIt('update launch WorkspaceFolder with resource', async () => {
-                await preferences.set('launch', validLaunch, PreferenceScope.Folder, rootUri);
+                await preferences.set('launch', validLaunch, PreferenceScope.Folder, rootUri.toString());
 
                 const inspect = preferences.inspect('launch');
                 const actual = inspect && inspect.workspaceValue;
@@ -587,7 +599,7 @@ describe('Launch Preferences', () => {
                     await preferences.set('launch.configurations', [validConfiguration, validConfiguration2]);
 
                     const inspect = preferences.inspect('launch');
-                    const actual = inspect && inspect.workspaceValue && (<any>inspect.workspaceValue).configurations;
+                    const actual = inspect && inspect.workspaceValue && inspect.workspaceValue.configurations;
                     assert.deepStrictEqual(actual, [validConfiguration, validConfiguration2]);
                 });
             }
