@@ -42,7 +42,7 @@
   "scripts": {
     "preinstall": "node-gyp install",
     "postinstall": "node scripts/post-install.js",
-    "prepare": "yarn prepare:travis && yarn prepare:references && yarn prepare:build && yarn prepare:hoisting && yarn download:plugins",
+    "prepare": "yarn prepare:travis && yarn test:dependencies && yarn prepare:references && yarn prepare:build && yarn prepare:hoisting && yarn download:plugins",
     "prepare:travis": "node scripts/prepare-travis.js",
     "prepare:references": "node scripts/compile-references.js",
     "prepare:build": "yarn build && run lint && run build \"@theia/example-*\" --stream --parallel",
@@ -55,6 +55,7 @@
     "lint:oneshot": "node --max-old-space-size=4096 node_modules/eslint/bin/eslint.js --cache=true \"{dev-packages,packages,examples}/**/*.{ts,tsx}\"",
     "docs": "rimraf gh-pages/docs/next && typedoc --tsconfig configs/typedoc-tsconfig.json --options configs/typedoc.json",
     "test": "yarn test:references && yarn test:theia && yarn test:electron && yarn test:browser",
+    "test:dependencies": "node scripts/duplicate-dependencies.js",
     "test:references": "node scripts/compile-references --dry-run",
     "test:theia": "run test \"@theia/!(example-)*\" --stream --concurrency=1",
     "test:browser": "yarn rebuild:browser && run test \"@theia/example-browser\"",
