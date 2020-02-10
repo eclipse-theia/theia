@@ -144,7 +144,16 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
         })
         .command({
             command: 'download:plugins',
-            handler: () => downloadPlugins()
+            describe: 'Download defined external plugins.',
+            builder: {
+                'packed': {
+                    alias: 'p',
+                    describe: 'Controls whether to pack or unpack plugins',
+                    boolean: true,
+                    default: false,
+                }
+            },
+            handler: args => downloadPlugins(args),
         }).command({
             command: 'test',
             builder: {
