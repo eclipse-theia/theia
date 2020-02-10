@@ -538,7 +538,7 @@ export class TaskService implements TaskConfigurationClient {
                     // In case the 'dependsOrder' is 'sequence'
                     if (task.dependsOrder && task.dependsOrder === DependsOrder.Sequence) {
                         await this.runTasksGraph(dependentTask, tasks, {
-                            customization: { ...taskCustomization, ...{ problemMatcher: resolvedMatchers } }
+                            customization: { ...taskCustomization, ...{ problemMatcher: resolvedMatchers }, widget }
                         });
                     }
                 }
@@ -546,7 +546,7 @@ export class TaskService implements TaskConfigurationClient {
                 if (((!task.dependsOrder) || (task.dependsOrder && task.dependsOrder === DependsOrder.Parallel))) {
                     const promises = dependentTasks.map(item =>
                         this.runTasksGraph(item.task, tasks, {
-                            customization: { ...item.taskCustomization, ...{ problemMatcher: item.resolvedMatchers } }
+                            customization: { ...item.taskCustomization, ...{ problemMatcher: item.resolvedMatchers }, widget }
                         })
                     );
                     await Promise.all(promises);
@@ -558,12 +558,12 @@ export class TaskService implements TaskConfigurationClient {
                 const taskCustomization = await this.getTaskCustomization(dependentTask);
                 const resolvedMatchers = await this.resolveProblemMatchers(dependentTask, taskCustomization);
                 await this.runTasksGraph(dependentTask, tasks, {
-                    customization: { ...taskCustomization, ...{ problemMatcher: resolvedMatchers } }
+                    customization: { ...taskCustomization, ...{ problemMatcher: resolvedMatchers }, widget }
                 });
             }
         }
 
-        const taskInfo = await this.runTask(task, option);
+        const taskInfo = await this.runTask(task, option, widget);
         if (taskInfo) {
             const getExitCodePromise: Promise<TaskEndedInfo> = this.getExitCode(taskInfo.taskId).then(result => ({ taskEndedType: TaskEndedTypes.TaskExited, value: result }));
             const isBackgroundTaskEndedPromise: Promise<TaskEndedInfo> = this.isBackgroundTaskEnded(taskInfo.taskId).then(result =>
@@ -921,6 +921,7 @@ export class TaskService implements TaskConfigurationClient {
             if (typeof taskInfo.terminalId === 'number') {
                 this.attach(taskInfo.terminalId, taskInfo.taskId, widget);
             }
+
             return taskInfo;
         } catch (error) {
             const errorStr = `Error launching task '${taskLabel}': ${error.message}`;
@@ -980,7 +981,7 @@ export class TaskService implements TaskConfigurationClient {
         terminal.sendText(selectedText);
     }
 
-   async attach(processId: number, taskId: number, widget?: TerminalWidget): Promise<void> {
+    async attach(processId: number, taskId: number, widget?: TerminalWidget): Promise<void> {
         // Get the list of all available running tasks.
         const runningTasks: TaskInfo[] = await this.getRunningTasks();
 
