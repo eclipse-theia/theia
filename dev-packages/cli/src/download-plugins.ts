@@ -22,7 +22,11 @@ import * as request from 'requestretry';
 import * as mkdirp from 'mkdirp';
 import * as tar from 'tar';
 import * as zlib from 'zlib';
-export default function downloadPlugins(): void {
+
+const unzip = require('unzip-stream');
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default function downloadPlugins({ packed = false }: any = {}): void {
 
     console.log('Downloading plugins...');
 
@@ -49,7 +53,7 @@ export default function downloadPlugins(): void {
             continue;
         }
 
-        const targetPath = path.join(process.cwd(), pluginsDir, plugin + fileExt);
+        const targetPath = path.join(process.cwd(), pluginsDir, `${plugin}${packed === true ? fileExt : ''}`);
 
         // Skip plugins which have previously been downloaded.
         if (isDownloaded(targetPath)) {
@@ -84,9 +88,12 @@ export default function downloadPlugins(): void {
             const untar = tar.x({ cwd: targetPath });
             download.pipe(gunzip).pipe(untar);
         } else {
-            // Do not unzip .vsix files
-            const file = fs.createWriteStream(targetPath);
-            download.pipe(file);
+            if (packed === true) {
+                const file = fs.createWriteStream(targetPath);
+                download.pipe(file);
+            } else {
+                download.pipe(unzip.Extract({ path: targetPath }));
+            }
         }
     }
 }
