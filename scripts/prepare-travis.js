@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /********************************************************************************
- * Copyright (c) 2018 TypeFox and others
+ * Copyright (c) 2018-2020 TypeFox and others
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -27,7 +27,7 @@ const os = require('os');
 
 const directories = ['node_modules'];
 
-const workspaces = JSON.parse(JSON.parse(child_process.execSync('yarn workspaces info --json').toString()).data);
+const workspaces = JSON.parse(JSON.parse(child_process.execSync('yarn workspaces --json info').toString()).data);
 for (const name in workspaces) {
     const workspace = workspaces[name];
     const nodeModulesPath = [workspace.location, 'node_modules'].join('/');
