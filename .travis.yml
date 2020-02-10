@@ -1,5 +1,9 @@
 sudo: required
 language: node_js
+env:
+  # Attempt to fix the "No output has been received in the last 10m0s" issue during the npm publishing phase on Travis CI.
+  # https://travis-ci.community/t/timeout-after-build-finished-and-succeeded/1336
+  - YARN_GPG=no
 node_js: "10"
 git:
   depth: 1
