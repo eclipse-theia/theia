@@ -33,7 +33,7 @@ export interface Keybinding {
     /**
      * Specified when the command has arguments that are passed to the command handler.
      */
-    // tslint:disable-next-line no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args?: any;
 }
 export namespace Keybinding {
@@ -57,7 +57,7 @@ export namespace Keybinding {
     }
 
     /* Determine whether object is a KeyBinding */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(arg: Keybinding | any): arg is Keybinding {
         return !!arg && arg === Object(arg) && 'command' in arg && 'keybinding' in arg;
     }

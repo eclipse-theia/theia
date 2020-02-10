@@ -134,7 +134,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
     }
 
     protected deflateForStorage(node: TreeNode): object {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const copy = { ...node } as any;
         if (copy.uri) {
             copy.uri = copy.uri.toString();
@@ -142,7 +142,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         return super.deflateForStorage(copy);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected inflateFromStorage(node: any, parent?: TreeNode): TreeNode {
         if (node.uri) {
             node.uri = new URI(node.uri);
@@ -200,7 +200,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         if (Key.ENTER.keyCode === e.keyCode) {
             (e.target as HTMLElement).click();
         }
-    }
+    };
     /**
      * Instead of rendering the file resources from the workspace, we render a placeholder
      * button when the workspace root is not yet set.

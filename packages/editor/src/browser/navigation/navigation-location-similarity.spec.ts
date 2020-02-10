@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import { NavigationLocation } from './navigation-location';
 import { NavigationLocationSimilarity } from './navigation-location-similarity';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 describe('navigation-location-similarity', () => {
 

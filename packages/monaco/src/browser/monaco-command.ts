@@ -122,7 +122,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                         id: command
                     },
                     {
-                        // tslint:disable-next-line:no-any
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         execute: (...args: any) => instantiationService.invokeFunction(
                             monacoCommands.get(command)!.handler,
                             ...args
@@ -134,7 +134,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     }
 
     protected registerCommonCommandHandlers(): void {
-        // tslint:disable-next-line:forin
+        // eslint-disable-next-line guard-for-in
         for (const action in MonacoCommands.COMMON_ACTIONS) {
             const command = MonacoCommands.COMMON_ACTIONS[action];
             const handler = this.newCommonActionHandler(action);

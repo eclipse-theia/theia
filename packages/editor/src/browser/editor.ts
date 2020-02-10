@@ -128,7 +128,7 @@ export interface MouseTarget {
     /**
      * Some extra detail.
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly detail: any;
 }
 
@@ -283,7 +283,7 @@ export interface ReplaceOperation {
 }
 
 export namespace TextEditorSelection {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(e: any): e is TextEditorSelection {
         return e && e['uri'] instanceof URI;
     }

@@ -140,6 +140,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
             return;
         }
         const vmargs = vmargsLine.match(/(?:[^\s"]+|"[^"]*")+/g);
+        // eslint-disable-next-line no-null/no-null
         if (vmargs === null) {
             return;
         }

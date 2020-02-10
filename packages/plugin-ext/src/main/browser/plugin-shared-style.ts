@@ -85,7 +85,7 @@ export class PluginSharedStyle {
         const rules = sheet.rules || sheet.cssRules || [];
         for (let i = rules.length - 1; i >= 0; i--) {
             const rule = rules[i];
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             if ((<any>rule).selectorText.indexOf(selector) !== -1) {
                 sheet.deleteRule(i);
             }

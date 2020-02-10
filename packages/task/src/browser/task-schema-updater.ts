@@ -309,7 +309,7 @@ const group = {
         'Marks the task as a test task accessible through the \'Run Test Task\' command.',
         'Assigns the task to no group'
     ],
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     description: 'Defines to which execution group this task belongs to. It supports "build" to add it to the build group and "test" to add it to the test group.'
 };
 
@@ -336,6 +336,7 @@ const problemPattern: IJSONSchema = {
         },
         location: {
             type: 'integer',
+            // eslint-disable-next-line max-len
             description: 'The match group index of the problem\'s location. Valid location patterns are: (line), (line,column) and (startLine,startColumn,endLine,endColumn). If omitted (line,column) is assumed.'
         },
         line: {
@@ -368,6 +369,7 @@ const problemPattern: IJSONSchema = {
         },
         loop: {
             type: 'boolean',
+            // eslint-disable-next-line max-len
             description: 'In a multi line matcher loop indicated whether this pattern is executed in a loop as long as it matches. Can only specified on a last pattern in a multi line pattern.'
         }
     }

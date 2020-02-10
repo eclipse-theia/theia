@@ -247,6 +247,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
          */
         function score(str: string): number {
             const match = fuzzy.match(query, str);
+            // eslint-disable-next-line no-null/no-null
             return (match === null) ? 0 : match.score;
         }
 

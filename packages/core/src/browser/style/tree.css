@@ -128,6 +128,7 @@
 
 .theia-TreeNodeSegment mark {
     background-color: var(--theia-list-filterMatchBackground);
+    color: var(--theia-list-inactiveSelectionForeground);
 }
 
 .theia-tree-source-node-placeholder {

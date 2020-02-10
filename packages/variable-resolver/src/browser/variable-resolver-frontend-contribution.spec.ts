@@ -51,8 +51,8 @@ describe('variable-resolver-frontend-contribution', () => {
             bind(ILogger).to(MockLogger);
             bind(VariableRegistry).toSelf().inSingletonScope();
 
-            // tslint:disable-next-line:no-any mocking VariableQuickOpenService
-            bind(VariableQuickOpenService).toConstantValue({} as any);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            bind(VariableQuickOpenService).toConstantValue({} as any); // mock VariableQuickOpenService
 
             bind(VariableResolverFrontendContribution).toSelf();
         });

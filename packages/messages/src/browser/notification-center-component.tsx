@@ -80,10 +80,10 @@ export class NotificationCenterComponent extends React.Component<NotificationCen
 
     protected onHide = () => {
         this.props.manager.hideCenter();
-    }
+    };
 
     protected onClearAll = () => {
         this.props.manager.clearAll();
-    }
+    };
 
 }

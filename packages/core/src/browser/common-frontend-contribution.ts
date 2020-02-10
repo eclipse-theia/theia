@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable max-len, @typescript-eslint/indent */
+
 import debounce = require('lodash.debounce');
 import { injectable, inject, postConstruct } from 'inversify';
 import { TabBar, Widget, Title } from '@phosphor/widgets';
@@ -724,7 +726,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 command: CommonCommands.TOGGLE_MAXIMIZED.id,
-                keybinding: 'ctrl+m',
+                keybinding: 'alt+m',
             },
             // Saving
             {
@@ -976,7 +978,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'list.hoverForeground', description: 'List/Tree foreground when hovering over items using the mouse.' },
             { id: 'list.filterMatchBackground', defaults: { dark: 'editor.findMatchHighlightBackground', light: 'editor.findMatchHighlightBackground' }, description: 'Background color of the filtered match.' },
 
-            // Edito Group & Tabs colors should be aligned with https://code.visualstudio.com/api/references/theme-color#editor-groups-tabs
+            // Editor Group & Tabs colors should be aligned with https://code.visualstudio.com/api/references/theme-color#editor-groups-tabs
             {
                 id: 'editorGroup.border',
                 defaults: {
@@ -1564,7 +1566,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: 'editorWarning.foreground',
                     light: 'editorWarning.foreground',
                     hc: 'editorWarning.foreground'
-                }, description: 'Background of hovered statusbar item in case the theia server is offlline.'
+                }, description: 'Background of hovered statusbar item in case the theia server is offline.'
             },
             {
                 id: 'statusBar.offlineForeground',
@@ -1572,7 +1574,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: 'editor.background',
                     light: 'editor.background',
                     hc: 'editor.background'
-                }, description: 'Background of hovered statusbar item in case the theia server is offlline.'
+                }, description: 'Background of hovered statusbar item in case the theia server is offline.'
             },
             {
                 id: 'statusBarItem.offlineHoverBackground',
@@ -1580,7 +1582,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: Color.lighten('statusBar.offlineBackground', 0.4),
                     light: Color.lighten('statusBar.offlineBackground', 0.4),
                     hc: Color.lighten('statusBar.offlineBackground', 0.4)
-                }, description: 'Background of hovered statusbar item in case the theia server is offlline.'
+                }, description: 'Background of hovered statusbar item in case the theia server is offline.'
             },
             {
                 id: 'statusBarItem.offlineActiveBackground',
@@ -1588,7 +1590,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: Color.lighten('statusBar.offlineBackground', 0.6),
                     light: Color.lighten('statusBar.offlineBackground', 0.6),
                     hc: Color.lighten('statusBar.offlineBackground', 0.6)
-                }, description: 'Background of active statusbar item in case the theia server is offlline.'
+                }, description: 'Background of active statusbar item in case the theia server is offline.'
             },
             // Buttons
             {

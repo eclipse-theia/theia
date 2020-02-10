@@ -28,7 +28,7 @@ export class QuickFileOpenFrontendContribution implements CommandContribution, K
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickFileOpen, {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             execute: (...args: any[]) => {
                 let fileURI: string | undefined;
                 if (args) {

@@ -445,7 +445,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             },
             description: 'The color of the border that separates split panes within the terminal. This defaults to panel.border.'
         });
-        // tslint:disable-next-line:forin
+        // eslint-disable-next-line guard-for-in
         for (const id in terminalAnsiColorMap) {
             const entry = terminalAnsiColorMap[id];
             const colorName = id.substring(13);

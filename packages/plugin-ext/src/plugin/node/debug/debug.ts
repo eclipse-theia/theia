@@ -32,7 +32,7 @@ import { connectDebugAdapter, startDebugAdapter } from './plugin-debug-adapter-s
 import { PluginDebugAdapterTracker } from './plugin-debug-adapter-tracker';
 import uuid = require('uuid');
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // TODO: rename file to `debug-ext.ts`
 
@@ -189,7 +189,7 @@ export class DebugExtImpl implements DebugExt {
         providers.add(provider);
 
         return Disposable.create(() => {
-            // tslint:disable-next-line:no-shadowed-variable
+            // eslint-disable-next-line no-shadow
             const providers = this.configurationProviders.get(debugType);
             if (providers) {
                 providers.delete(provider);

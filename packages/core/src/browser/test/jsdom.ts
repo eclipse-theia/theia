@@ -24,8 +24,8 @@ import { JSDOM } from 'jsdom';
  * ```
  */
 export function enableJSDOM(): () => void {
-    // tslint:disable:no-any
-    // tslint:disable:no-unused-expression
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    /* eslint-disable no-unused-expressions */
 
     // do nothing if running in browser
     try {

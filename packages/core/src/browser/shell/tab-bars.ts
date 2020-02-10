@@ -73,7 +73,7 @@ export class TabBarRenderer extends TabBar.Renderer {
 
     // TODO refactor shell, rendered should only receive props with event handlers
     // events should be handled by clients, like ApplicationShell
-    // right now it is mess: (1) client logic belong to renderer, (2) cyclic dependencies between renderes and clients
+    // right now it is mess: (1) client logic belong to renderer, (2) cyclic dependencies between renderers and clients
     constructor(
         protected readonly contextMenuRenderer?: ContextMenuRenderer,
         protected readonly decoratorService?: TabBarDecoratorService,
@@ -234,7 +234,7 @@ export class TabBarRenderer extends TabBar.Renderer {
      */
     protected getDecorations(title: Title<Widget>): WidgetDecoration.Data[] {
         if (this.tabBar && this.decoratorService) {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const owner: { resetTabBarDecorations?: () => void; } & Widget = title.owner;
             if (!owner.resetTabBarDecorations) {
                 owner.resetTabBarDecorations = () => this.decorations.delete(title);
@@ -416,7 +416,7 @@ export class TabBarRenderer extends TabBar.Renderer {
 
             if (this.tabBar) {
                 const id = event.currentTarget.id;
-                // tslint:disable-next-line:no-null-keyword
+                // eslint-disable-next-line no-null/no-null
                 const title = this.tabBar.titles.find(t => this.createTabId(t) === id) || null;
                 this.tabBar.currentTitle = title;
                 this.tabBar.activate();
@@ -427,19 +427,19 @@ export class TabBarRenderer extends TabBar.Renderer {
 
             this.contextMenuRenderer.render(this.contextMenuPath, event);
         }
-    }
+    };
 
     protected handleDblClickEvent = (event: MouseEvent) => {
         if (this.tabBar && event.currentTarget instanceof HTMLElement) {
             const id = event.currentTarget.id;
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             const title = this.tabBar.titles.find(t => this.createTabId(t) === id) || null;
             const area = title && title.owner.parent;
             if (area instanceof TheiaDockPanel && (area.id === BOTTOM_AREA_ID || area.id === MAIN_AREA_ID)) {
                 area.toggleMaximized();
             }
         }
-    }
+    };
 
 }
 

@@ -37,7 +37,7 @@ import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { InPluginFileSystemWatcherProxy } from './in-plugin-filesystem-watcher-proxy';
 import URI from 'vscode-uri';
 import { FileStat } from '@theia/filesystem/lib/common';
-import { normalize } from '../common/paths';
+import { normalize } from '@theia/languages/lib/common/language-selector/paths';
 import { relative } from '../common/paths-util';
 import { Schemes } from '../common/uri-components';
 import { toWorkspaceFolder } from './type-converters';
@@ -362,7 +362,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         this.workspaceDidRenameFileEmitter.fire(Object.freeze({ oldUri: URI.revive(event.oldUri), newUri: URI.revive(event.newUri) }));
     }
 
-    /* tslint:disable-next-line:no-any */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $onWillRename(event: FileWillMoveEvent): Promise<any> {
         return this.workspaceWillRenameFileEmitter.fire({
             oldUri: URI.revive(event.oldUri),

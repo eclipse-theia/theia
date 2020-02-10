@@ -18,7 +18,7 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { visit } from 'jsonc-parser';
 import URI from '@theia/core/lib/common/uri';

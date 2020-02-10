@@ -1,16 +1,16 @@
 {
   "name": "@theia/typescript",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Theia - Typescript Extension",
   "dependencies": {
-    "@theia/application-package": "^0.14.0",
-    "@theia/callhierarchy": "^0.14.0",
-    "@theia/core": "^0.14.0",
-    "@theia/editor": "^0.14.0",
-    "@theia/filesystem": "^0.14.0",
-    "@theia/languages": "^0.14.0",
-    "@theia/monaco": "^0.14.0",
-    "@theia/workspace": "^0.14.0",
+    "@theia/application-package": "^0.15.0",
+    "@theia/callhierarchy": "^0.15.0",
+    "@theia/core": "^0.15.0",
+    "@theia/editor": "^0.15.0",
+    "@theia/filesystem": "^0.15.0",
+    "@theia/languages": "^0.15.0",
+    "@theia/monaco": "^0.15.0",
+    "@theia/workspace": "^0.15.0",
     "command-exists": "^1.2.8",
     "typescript-language-server": "^0.4.0"
   },
@@ -41,14 +41,14 @@
     "data"
   ],
   "scripts": {
-    "prepare": "yarn run clean && yarn run build",
-    "clean": "theiaext clean",
+    "lint": "theiaext lint",
     "build": "theiaext build",
     "watch": "theiaext watch",
+    "clean": "theiaext clean",
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.14.0"
+    "@theia/ext-scripts": "^0.15.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

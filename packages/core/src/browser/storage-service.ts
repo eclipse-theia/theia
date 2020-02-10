@@ -39,7 +39,7 @@ export interface StorageService {
 }
 
 interface LocalStorage {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
 }
 

@@ -32,14 +32,14 @@ export class FrontendApplicationConfigProvider {
         if (FrontendApplicationConfigProvider.doGet() !== undefined) {
             throw new Error('The configuration is already set.');
         }
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalObject = window as any;
         const key = FrontendApplicationConfigProvider.KEY;
         globalObject[key] = config;
     }
 
     private static doGet(): FrontendApplicationConfig | undefined {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalObject = window as any;
         const key = FrontendApplicationConfigProvider.KEY;
         return globalObject[key];

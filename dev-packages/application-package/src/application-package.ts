@@ -23,7 +23,7 @@ import { ApplicationProps } from './application-props';
 
 // tslint:disable:no-implicit-dependencies
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
 export class ApplicationPackageOptions {
     readonly projectPath: string;

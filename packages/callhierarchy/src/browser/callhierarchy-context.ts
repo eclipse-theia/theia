@@ -17,7 +17,7 @@
 import { ILanguageClient } from '@theia/languages/lib/browser';
 import {
     ReferencesRequest, DocumentSymbolRequest, DefinitionRequest, TextDocumentPositionParams,
-    TextDocumentIdentifier, SymbolInformation, Location, Position, DocumentSymbol, ReferenceParams, LocationLink
+    TextDocumentIdentifier, SymbolInformation, Location, Position, DocumentSymbol, ReferenceParams, LocationLink, DocumentUri
 } from 'monaco-languageclient/lib/services';
 import * as utils from './utils';
 import { ILogger, Disposable } from '@theia/core';
@@ -53,25 +53,23 @@ export class CallHierarchyContext implements Disposable {
         return model;
     }
 
-    async getDefinitionLocation(location: Location): Promise<Location | undefined> {
-        const uri = location.uri;
-        const { line, character } = location.range.start;
+    async getDefinitionLocation(uri: DocumentUri, position: Position): Promise<Location | undefined> {
 
         // Definition can be null
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         let locations: Location | Location[] | LocationLink[] | null = null;
         try {
             locations = await this.languageClient.sendRequest(DefinitionRequest.type, <TextDocumentPositionParams>{
-                position: Position.create(line, character),
+                position: position,
                 textDocument: { uri }
             });
         } catch (error) {
-            this.logger.error(`Error from definitions request: ${uri}#${line}/${character}`, error);
+            this.logger.error(`Error from definitions request: ${uri}#${position.line}/${position.character}`, error);
         }
         if (!locations) {
             return undefined;
         }
-        const targetLocation =  Array.isArray(locations) ? locations[0] : locations;
+        const targetLocation = Array.isArray(locations) ? locations[0] : locations;
         return LocationLink.is(targetLocation) ? {
             uri: targetLocation.targetUri,
             range: targetLocation.targetSelectionRange

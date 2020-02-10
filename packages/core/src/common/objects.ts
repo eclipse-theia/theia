@@ -21,10 +21,10 @@ export function deepClone<T>(obj: T): T {
     if (obj instanceof RegExp) {
         return obj;
     }
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result: any = Array.isArray(obj) ? [] : {};
     Object.keys(obj).forEach((key: string) => {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const prop = (<any>obj)[key];
         if (prop && typeof prop === 'object') {
             result[key] = deepClone(prop);
@@ -39,7 +39,7 @@ export function deepFreeze<T>(obj: T): T {
     if (!obj || typeof obj !== 'object') {
         return obj;
     }
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const stack: any[] = [obj];
     while (stack.length > 0) {
         const objectToFreeze = stack.shift();
@@ -59,6 +59,7 @@ export function deepFreeze<T>(obj: T): T {
 const _hasOwnProperty = Object.prototype.hasOwnProperty;
 
 export function notEmpty<T>(arg: T | undefined | null): arg is T {
+    // eslint-disable-next-line no-null/no-null
     return arg !== undefined && arg !== null;
 }
 

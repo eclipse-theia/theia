@@ -102,7 +102,7 @@ type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '6
 
 export type TerminalRendererType = 'canvas' | 'dom';
 export const DEFAULT_TERMINAL_RENDERER_TYPE = 'canvas';
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isTerminalRendererType(arg: any): arg is TerminalRendererType {
     return typeof arg === 'string' && (arg === 'canvas' || arg === 'dom');
 }

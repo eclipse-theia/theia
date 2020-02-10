@@ -17,7 +17,7 @@
 import { Emitter } from '../../../common';
 import { PreferenceChange } from '../preference-service';
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function createMockPreferenceProxy(preferences: { [p: string]: any }): any {
     const unsupportedOperation = (_: any, __: string) => {
         throw new Error('Unsupported operation');
@@ -33,6 +33,7 @@ export function createMockPreferenceProxy(preferences: { [p: string]: any }): an
             if (property === 'ready') {
                 return Promise.resolve();
             }
+            // eslint-disable-next-line no-null/no-null
             if (preferences[property] !== undefined && preferences[property] !== null) {
                 return preferences[property];
             }

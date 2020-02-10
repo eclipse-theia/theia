@@ -50,7 +50,7 @@ export class MonacoCommandService implements ICommandService {
         }
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async executeCommand(commandId: any, ...args: any[]): Promise<any> {
         const handler = this.commandRegistry.getActiveHandler(commandId, ...args);
         if (handler) {
@@ -60,7 +60,7 @@ export class MonacoCommandService implements ICommandService {
         return this.executeMonacoCommand(commandId, ...args);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async executeMonacoCommand(commandId: any, ...args: any[]): Promise<any> {
         if (this.delegate) {
             return this.delegate.executeCommand(commandId, ...args);

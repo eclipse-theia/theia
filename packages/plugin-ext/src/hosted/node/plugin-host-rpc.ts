@@ -40,7 +40,7 @@ export class PluginHostRPC {
 
     private pluginManager: PluginManagerExtImpl;
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(protected readonly rpc: any) {
     }
 
@@ -76,7 +76,7 @@ export class PluginHostRPC {
         );
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     initContext(contextPath: string, plugin: Plugin): any {
         const { name, version } = plugin.rawModel;
         console.log('PLUGIN_HOST(' + process.pid + '): initializing(' + name + '@' + version + ' with ' + contextPath + ')');
@@ -90,7 +90,7 @@ export class PluginHostRPC {
 
     createPluginManager(
         envExt: EnvExtImpl, storageProxy: KeyValueStorageProxy, preferencesManager: PreferenceRegistryExtImpl, webview: WebviewsExtImpl,
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         rpc: any): PluginManagerExtImpl {
         const { extensionTestsPath } = process.env;
         const self = this;
@@ -195,7 +195,7 @@ export class PluginHostRPC {
                 }
             },
             loadTests: extensionTestsPath ? async () => {
-                // tslint:disable:no-any
+                /* eslint-disable @typescript-eslint/no-explicit-any */
                 // Require the test runner via node require from the provided path
                 let testRunner: any;
                 let requireError: Error | undefined;

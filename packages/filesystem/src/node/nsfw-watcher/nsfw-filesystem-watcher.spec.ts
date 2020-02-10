@@ -22,7 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
 import { NsfwFileSystemWatcherServer } from './nsfw-filesystem-watcher';
 import { DidFilesChangedParams } from '../../common/filesystem-watcher-protocol';
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 const expect = chai.expect;
 const track = temp.track();
@@ -126,7 +126,7 @@ describe('nsfw-filesystem-watcher', function (): void {
 
 });
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 process.on('unhandledRejection', (reason: any) => {
     console.error('Unhandled promise rejection: ' + reason);
 });

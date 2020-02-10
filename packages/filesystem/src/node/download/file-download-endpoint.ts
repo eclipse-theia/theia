@@ -14,12 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as url from 'url';
 import { injectable, inject, named } from 'inversify';
 import { json } from 'body-parser';
-// tslint:disable-next-line:no-implicit-dependencies
 import { Application, Router } from 'express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { FileUri } from '@theia/core/lib/node/file-uri';

@@ -43,7 +43,7 @@ export interface StatefulWidget {
 }
 
 export namespace StatefulWidget {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(arg: any): arg is StatefulWidget {
         return arg !== undefined && typeof arg['storeState'] === 'function' && typeof arg['restoreState'] === 'function';
     }
@@ -223,7 +223,7 @@ export class ShellLayoutRestorer implements CommandContribution {
         const parseContext = new ShellLayoutRestorer.ParseContext();
         const layout = this.parse<ApplicationShell.LayoutData>(layoutData, parseContext);
 
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let layoutVersion: number | any;
         try {
             layoutVersion = 'version' in layout && Number(layout.version);
@@ -274,7 +274,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                 }
                 return widgets;
             } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-                // tslint:disable-next-line:no-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const copy: any = {};
                 for (const p in value) {
                     if (this.isWidgetProperty(p)) {

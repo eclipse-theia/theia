@@ -198,10 +198,6 @@
     color: var(--theia-list-inactiveSelectionForeground);
 }
 
-.theia-scm .scmItem .file-icon {
-    display: initial;
-}
-
 .theia-scm .scmItem .path {
     font-size: var(--theia-ui-font-size0);
     margin-left: var(--theia-ui-padding);
@@ -215,6 +211,7 @@
     padding-bottom: 2px;
     font-size: var(--theia-ui-font-size0);
 }
+
 .scm-change-count {
     float: right;
 }
@@ -245,6 +242,10 @@
 .theia-scm-inline-actions {
     display: flex;
     margin: 0 3px;
+}
+
+.theia-scm-inline-actions a {
+    color: var(--theia-icon-foreground);
 }
 
 .theia-scm-inline-action {

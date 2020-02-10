@@ -46,7 +46,7 @@ export class MockPreferenceService implements PreferenceService {
     } | undefined {
         return undefined;
     }
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     set(preferenceName: string, value: any): Promise<void> { return Promise.resolve(); }
     ready: Promise<void> = Promise.resolve();
     readonly onPreferenceChanged: Event<PreferenceChange> = new Emitter<PreferenceChange>().event;
@@ -58,6 +58,6 @@ export class MockPreferenceService implements PreferenceService {
         return undefined;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     validate(name: string, value: any): boolean { return true; }
 }

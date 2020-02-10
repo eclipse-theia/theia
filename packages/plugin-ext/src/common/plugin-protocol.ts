@@ -219,7 +219,7 @@ export interface PluginTaskDefinitionContribution {
         [name: string]: {
             type: string;
             description?: string;
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             [additionalProperty: string]: any;
         }
     }
@@ -726,9 +726,9 @@ export interface PluginServer {
 
 export const ServerPluginRunner = Symbol('ServerPluginRunner');
 export interface ServerPluginRunner {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     acceptMessage(jsonMessage: any): boolean;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onMessage(jsonMessage: any): void;
     setClient(client: HostedPluginClient): void;
     setDefault(defaultRunner: ServerPluginRunner): void;

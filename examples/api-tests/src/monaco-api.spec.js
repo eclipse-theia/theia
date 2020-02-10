@@ -25,12 +25,13 @@ describe('Monaco API', async function () {
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
     const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
     const { MonacoResolvedKeybinding } = require('@theia/monaco/lib/browser/monaco-resolved-keybinding');
+    const { MonacoTextmateService } = require('@theia/monaco/lib/browser/textmate/monaco-textmate-service');
 
     /** @type {import('inversify').Container} */
     const container = window['theia'].container;
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
-
+    const textmateService = container.get(MonacoTextmateService);
     /** @type {MonacoEditor} */
     let monacoEditor;
 
@@ -85,6 +86,26 @@ describe('Monaco API', async function () {
         } else {
             assert.fail(`resolvedKeybinding must be of ${MonacoResolvedKeybinding.name} type`);
         }
+    });
+
+    it('TokenizationRegistry.getColorMap', async () => {
+        if (textmateService['monacoThemeRegistry'].getThemeData().base !== 'vs') {
+            const didChangeColorMap = new Promise(resolve => {
+                const toDispose = monaco.modes.TokenizationRegistry.onDidChange(() => {
+                    toDispose.dispose();
+                    resolve();
+                })
+            });
+            textmateService['themeService'].setCurrentTheme('light');
+            await didChangeColorMap;
+        }
+
+        const textMateColorMap = textmateService['grammarRegistry'].getColorMap();
+        assert.notEqual(textMateColorMap.indexOf('#795E26'), -1, 'Expected custom toke colors for the ligth theme to be enabled.')
+
+        const monacoColorMap = monaco.modes.TokenizationRegistry.getColorMap().
+            splice(0, textMateColorMap.length).map(c => c.toString().toUpperCase());
+        assert.deepStrictEqual(monacoColorMap, textMateColorMap, 'Expected textmate colors to have the same index in the monaco color map.');
     });
 
 });

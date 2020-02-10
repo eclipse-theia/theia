@@ -61,7 +61,7 @@ export class FileDownloadService {
                 this.messageService.showProgress({
                     text: `Preparing download${copyLink ? ' link' : ''}...`, options: { cancelable: true }
                 }, () => { cancel = true; }),
-                // tslint:disable-next-line:no-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 new Promise<{ response: Response, jsonResponse: any }>(async resolve => {
                     const resp = await fetch(this.request(uris));
                     const jsonResp = await resp.json();

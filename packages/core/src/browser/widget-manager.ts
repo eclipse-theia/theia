@@ -18,7 +18,7 @@ import { inject, named, injectable } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import { ILogger, Emitter, Event, ContributionProvider, MaybePromise } from '../common';
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const WidgetFactory = Symbol('WidgetFactory');
 /**
  * `OpenHandler` should be implemented to provide a new opener.

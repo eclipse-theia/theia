@@ -34,10 +34,6 @@
     flex-direction: column;
 }
 
-.pluginHeaderContainer {
-    margin-bottom: 5px;
-}
-
 .theia-plugin-test-tab-icon {
     -webkit-mask: url('test.svg');
     mask: url('test.svg');

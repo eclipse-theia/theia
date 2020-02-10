@@ -46,7 +46,7 @@ describe('browser keyboard layout provider', function (): void {
                 stubOSX = sinon.stub(os, 'isOSX').value(false);
                 stubWindows = sinon.stub(os, 'isWindows').value(false);
         }
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         stubNavigator = sinon.stub(global, 'navigator' as any).value({});
         const container = new Container();
         container.bind(BrowserKeyboardLayoutProvider).toSelf();

@@ -226,7 +226,7 @@ export class SearchBox extends BaseWidget {
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.addEventListener(this.input, 'selectstart' as any, () => false);
     }
 

@@ -70,7 +70,7 @@ export interface TreeDecoratorService extends Disposable {
      * Counterpart of the [deflateDecorators](#deflateDecorators) method. Restores the argument into a Map
      * of tree node IDs and the corresponding decorations data array.
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     inflateDecorators(state: any): Map<string, TreeDecoration.Data[]>;
 
 }
@@ -89,7 +89,7 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
         this.emitter.dispose();
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getDecorations(): Map<any, any> {
         return new Map();
     }
@@ -143,7 +143,7 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
     }
 
     deflateDecorators(decorations: Map<string, TreeDecoration.Data[]>): object {
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         const state = Object.create(null);
         for (const [id, data] of decorations) {
             state[id] = data;
@@ -151,7 +151,7 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
         return state;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     inflateDecorators(state: any): Map<string, TreeDecoration.Data[]> {
         const decorators = new Map<string, TreeDecoration.Data[]>();
         for (const id of Object.keys(state)) {

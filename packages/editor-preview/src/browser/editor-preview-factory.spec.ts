@@ -16,9 +16,9 @@
 
 // This file is strictly for testing; disable no-any so we can mock out objects not under test
 // disable no-unused-expression for chai.
-// tslint:disable:no-any no-unused-expression
+/* eslint-disable no-unused-expressions, @typescript-eslint/no-explicit-any */
 
-import {enableJSDOM} from '@theia/core/lib/browser/test/jsdom';
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJsDom = enableJSDOM();
 
 import { Container } from 'inversify';
@@ -31,7 +31,7 @@ import * as previewFrontEndModule from './editor-preview-frontend-module';
 
 const mockEditorWidget = sinon.createStubInstance(EditorWidget);
 const mockEditorManager = {
-    getOrCreateByUri: () => {}
+    getOrCreateByUri: () => { }
 };
 const getOrCreateStub = sinon.stub(mockEditorManager, 'getOrCreateByUri').returns(mockEditorWidget);
 

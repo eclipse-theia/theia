@@ -31,7 +31,7 @@ import { setInterval, clearInterval } from 'timers';
 
 const debounce = require('lodash.debounce');
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface WatcherOptions {
     ignored: IMinimatch[]
@@ -125,12 +125,12 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
                 }
             }
         }, {
-                errorCallback: error => {
-                    // see https://github.com/atom/github/issues/342
-                    console.warn(`Failed to watch "${basePath}":`, error);
-                    this.unwatchFileChanges(watcherId);
-                }
-            });
+            errorCallback: error => {
+                // see https://github.com/atom/github/issues/342
+                console.warn(`Failed to watch "${basePath}":`, error);
+                this.unwatchFileChanges(watcherId);
+            }
+        });
         await watcher.start();
         this.options.info('Started watching:', basePath);
         if (toDisposeWatcher.disposed) {

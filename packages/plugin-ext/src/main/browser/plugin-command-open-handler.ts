@@ -33,7 +33,7 @@ export class PluginCommandOpenHandler implements OpenHandler {
     }
 
     async open(uri: URI): Promise<boolean> {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let args: any = [];
         try {
             args = JSON.parse(uri.query);

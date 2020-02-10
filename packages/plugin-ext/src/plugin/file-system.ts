@@ -85,7 +85,6 @@ export class FileSystemExtImpl implements FileSystemExt {
 
     $writeFile(handle: number, resource: UriComponents, content: string, options?: { encoding?: string }): Promise<void> {
         this.checkProviderExists(handle);
-
         const uri = URI.revive(resource);
         const encoding = options === null ? undefined : options && options.encoding;
         const buffer = Buffer.from(content, encoding);

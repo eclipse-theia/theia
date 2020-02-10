@@ -74,7 +74,7 @@ export class HostedPluginSupport {
 
     onMessage(message: string): void {
         // need to perform routing
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const jsonMessage: any = JSON.parse(message);
         if (this.pluginRunners.length > 0) {
             this.pluginRunners.forEach(runner => {

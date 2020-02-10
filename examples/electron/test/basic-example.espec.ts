@@ -36,7 +36,7 @@ describe.skip('basic-example-spec', () => {
             mainWindow.webContents.openDevTools();
             mainWindow.loadURL(`file://${path.join(__dirname, 'index.html')}`);
 
-            // tslint:disable-next-line:no-unused-expression
+            // eslint-disable-next-line no-unused-expressions
             expect(mainWindow.isVisible()).to.be.true;
         });
     });

@@ -17,7 +17,7 @@
 import { DebugExtImpl } from '../../../plugin/node/debug/debug';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function createDebugExtStub(rpc: RPCProtocol): DebugExtImpl {
     return new Proxy(new DebugExtImpl(rpc), {
         apply: function (target, that, args): void {

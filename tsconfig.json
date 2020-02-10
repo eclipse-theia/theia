@@ -1,47 +1,101 @@
 {
-  "extends": "./configs/base.tsconfig",
+  "README": [
+    "THIS FILE SHOULD NOT BE USED FOR COMPILATION.",
+    "THIS FILE IS WRITTEN FOR TSSERVER TO UNDERSTAND OUR MONOREPO.",
+    "SEE `compile.tsconfig.json` FOR COMPILATION CONFIGURATION."
+  ],
+  "extends": "./configs/base.tsconfig.json",
+  "include": [
+    "dev-packages/*/src",
+    "packages/*/src",
+    "examples/*/src"
+  ],
   "compilerOptions": {
-    "skipLibCheck": false,
     "baseUrl": ".",
     "paths": {
-      "@theia/application-package": [
-        "dev-packages/application-package/src"
-      ],
-      "@theia/application-package/lib/*": [
-        "dev-packages/application-package/src/*"
-      ],
-      "@theia/core": [
-        "packages/core/src/common"
-      ],
-      "@theia/core/lib/*": [
-        "packages/core/src/*"
-      ],
-      "@theia/filesystem/lib/*": [
-        "packages/filesystem/src/*"
-      ],
       "mv": [
         "packages/filesystem/src/typings/mv"
       ],
       "trash": [
         "packages/filesystem/src/typings/trash"
       ],
-      "@theia/navigator/lib/*": [
-        "packages/navigator/src/*"
+      "@theia/application-manager/lib/*": [
+        "dev-packages/application-manager/src/*"
       ],
-      "@theia/preferences/lib/*": [
-        "packages/preferences/src/*"
+      "@theia/application-package/lib/*": [
+        "dev-packages/application-package/src/*"
       ],
-      "@theia/workspace/lib/*": [
-        "packages/workspace/src/*"
+      "@theia/cli/lib/*": [
+        "dev-packages/cli/src/*"
       ],
-      "@theia/terminal/lib/*": [
-        "packages/terminal/src/*"
+      "@theia/electron/*": [
+        "dev-packages/electron/*"
+      ],
+      "@theia/ext-scripts/*": [
+        "dev-packages/ext-scripts/*"
+      ],
+      "@theia/callhierarchy/lib/*": [
+        "packages/callhierarchy/src/*"
+      ],
+      "@theia/console/lib/*": [
+        "packages/console/src/*"
+      ],
+      "@theia/core/lib/*": [
+        "packages/core/src/*"
+      ],
+      "@theia/debug-nodejs/lib/*": [
+        "packages/debug-nodejs/src/*"
+      ],
+      "@theia/debug/lib/*": [
+        "packages/debug/src/*"
+      ],
+      "@theia/editor-preview/lib/*": [
+        "packages/editor-preview/src/*"
+      ],
+      "@theia/editor/lib/*": [
+        "packages/editor/src/*"
+      ],
+      "@theia/editorconfig/lib/*": [
+        "packages/editorconfig/src/*"
+      ],
+      "@theia/file-search/lib/*": [
+        "packages/file-search/src/*"
+      ],
+      "@theia/filesystem/lib/*": [
+        "packages/filesystem/src/*"
+      ],
+      "@theia/getting-started/lib/*": [
+        "packages/getting-started/src/*"
+      ],
+      "@theia/git/lib/*": [
+        "packages/git/src/*"
+      ],
+      "@theia/java-debug/lib/*": [
+        "packages/java-debug/src/*"
+      ],
+      "@theia/java/lib/*": [
+        "packages/java/src/*"
+      ],
+      "@theia/json/lib/*": [
+        "packages/json/src/*"
+      ],
+      "@theia/keymaps/lib/*": [
+        "packages/keymaps/src/*"
       ],
       "@theia/languages/lib/*": [
         "packages/languages/src/*"
       ],
-      "@theia/editor/lib/*": [
-        "packages/editor/src/*"
+      "@theia/markers/lib/*": [
+        "packages/markers/src/*"
+      ],
+      "@theia/merge-conflicts/lib/*": [
+        "packages/merge-conflicts/src/*"
+      ],
+      "@theia/messages/lib/*": [
+        "packages/messages/src/*"
+      ],
+      "@theia/metrics/lib/*": [
+        "packages/metrics/src/*"
       ],
       "@theia/mini-browser/lib/*": [
         "packages/mini-browser/src/*"
@@ -49,98 +103,87 @@
       "@theia/monaco/lib/*": [
         "packages/monaco/src/*"
       ],
-      "@theia/java/lib/*": [
-        "packages/java/src/*"
-      ],
-      "@theia/java-debug/lib/*": [
-        "packages/java-debug/src/*"
-      ],
-      "@theia/debug/lib/*": [
-        "packages/debug/src/*"
-      ],
-      "@theia/debug-nodejs/lib/*": [
-        "packages/debug-nodejs/src/*"
-      ],
-      "@theia/python/lib/*": [
-        "packages/python/src/*"
-      ],
-      "@theia/git/lib/*": [
-        "packages/git/src/*"
-      ],
-      "@theia/process/lib*": [
-        "packages/process/src/*"
-      ],
-      "@theia/markers/lib/*": [
-        "packages/markers/src/*"
+      "@theia/navigator/lib/*": [
+        "packages/navigator/src/*"
       ],
       "@theia/outline-view/lib/*": [
         "packages/outline-view/src/*"
       ],
-      "@theia/messages/lib/*": [
-        "packages/messages/src/*"
-      ],
-      "@theia/merge-conflicts/lib/*": [
-        "packages/merge-conflicts/src/*"
-      ],
       "@theia/output/lib/*": [
         "packages/output/src/*"
-      ],
-      "@theia/callhierarchy/lib/*": [
-        "packages/callhierarchy/src/*"
-      ],
-      "@theia/typehierarchy/lib/*": [
-        "packages/typehierarchy/src/*"
-      ],
-      "@theia/variable-resolver/lib/*": [
-        "packages/variable-resolver/src/*"
-      ],
-      "@theia/editorconfig/lib/*": [
-        "packages/editorconfig/src/*"
-      ],
-      "@theia/console/lib/*": [
-        "packages/console/src/*"
-      ],
-      "@theia/scm/lib/*": [
-        "packages/scm/src/*"
-      ],
-      "@theia/getting-started/lib/*": [
-        "packages/getting-started/src/*"
-      ],
-      "@theia/file-search/lib/*": [
-        "packages/file-search/src/*"
       ],
       "@theia/plugin-dev/lib/*": [
         "packages/plugin-dev/src/*"
       ],
-      "@theia/plugin-ext/lib/*": [
-        "packages/plugin-ext/src/*"
-      ],
       "@theia/plugin-ext-vscode/lib/*": [
         "packages/plugin-ext-vscode/src/*"
+      ],
+      "@theia/plugin-ext/lib/*": [
+        "packages/plugin-ext/src/*"
       ],
       "@theia/plugin-metrics/lib/*": [
         "packages/plugin-metrics/src/*"
       ],
-      "@theia/userstorage/lib/*": [
-        "packages/userstorage/src/*"
+      "@theia/plugin/lib/*": [
+        "packages/plugin/src/*"
+      ],
+      "@theia/preferences/lib/*": [
+        "packages/preferences/src/*"
+      ],
+      "@theia/preview/lib/*": [
+        "packages/preview/src/*"
+      ],
+      "@theia/process/lib/*": [
+        "packages/process/src/*"
+      ],
+      "@theia/python/lib/*": [
+        "packages/python/src/*"
+      ],
+      "@theia/scm/lib/*": [
+        "packages/scm/src/*"
+      ],
+      "@theia/search-in-workspace/lib/*": [
+        "packages/search-in-workspace/src/*"
       ],
       "@theia/task/lib/*": [
         "packages/task/src/*"
       ],
+      "@theia/terminal/lib/*": [
+        "packages/terminal/src/*"
+      ],
+      "@theia/textmate-grammars/lib/*": [
+        "packages/textmate-grammars/src/*"
+      ],
+      "@theia/tslint/lib/*": [
+        "packages/tslint/src/*"
+      ],
+      "@theia/typehierarchy/lib/*": [
+        "packages/typehierarchy/src/*"
+      ],
+      "@theia/typescript/lib/*": [
+        "packages/typescript/src/*"
+      ],
+      "@theia/userstorage/lib/*": [
+        "packages/userstorage/src/*"
+      ],
+      "@theia/variable-resolver/lib/*": [
+        "packages/variable-resolver/src/*"
+      ],
+      "@theia/workspace/lib/*": [
+        "packages/workspace/src/*"
+      ],
       "@theia/api-samples/lib/*": [
         "examples/api-samples/src/*"
+      ],
+      "@theia/api-tests/*": [
+        "examples/api-tests/*"
+      ],
+      "@theia/example-browser/*": [
+        "examples/browser/*"
+      ],
+      "@theia/example-electron/*": [
+        "examples/electron/*"
       ]
-    },
-    "plugins": [
-      {
-        "name": "tslint-language-service"
-      }
-    ]
-  },
-  "include": [
-    "dev-packages/*/src",
-    "packages/*/src",
-    "examples/*/src",
-    "examples/*/test"
-  ]
+    }
+  }
 }

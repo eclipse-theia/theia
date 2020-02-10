@@ -26,11 +26,11 @@ import { Disposable } from './types-impl';
 import { DisposableCollection } from '@theia/core';
 import { KnownCommands } from '../common/known-commands';
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T | undefined>;
 
 export interface ArgumentProcessor {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     processArgument(arg: any): any;
 }
 
@@ -52,7 +52,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         return this.commandsConverter;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     registerCommand(command: theia.CommandDescription, handler?: Handler, thisArg?: any): Disposable {
         if (this.commands.has(command.id)) {
             throw new Error(`Command ${command.id} already exist`);
@@ -71,13 +71,13 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         return Disposable.from(...toDispose);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     registerHandler(commandId: string, handler: Handler, thisArg?: any): Disposable {
         if (this.handlers.has(commandId)) {
             throw new Error(`Command "${commandId}" already has handler`);
         }
         this.proxy.$registerHandler(commandId);
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.handlers.set(commandId, (...args: any[]) => handler.apply(thisArg, args));
         return Disposable.create(() => {
             this.handlers.delete(commandId);
@@ -89,7 +89,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         throw new Error('Method not implemented.');
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
         if (this.handlers.has(id)) {
             return this.executeLocalCommand(id, ...args);
@@ -98,7 +98,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         }
     }
 
-    // tslint:disable:no-any
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
         if (this.handlers.has(id)) {
             return this.executeLocalCommand(id, ...args);
@@ -110,13 +110,13 @@ export class CommandRegistryImpl implements CommandRegistryExt {
             return this.proxy.$executeCommand(id, ...args);
         }
     }
-    // tslint:enable:no-any
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     getKeyBinding(commandId: string): PromiseLike<theia.CommandKeyBinding[] | undefined> {
         return this.proxy.$getKeyBinding(commandId);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private async executeLocalCommand<T>(id: string, ...args: any[]): Promise<T | undefined> {
         const handler = this.handlers.get(id);
         if (handler) {
@@ -188,7 +188,7 @@ export class CommandsConverter {
     protected toInternalCommand(external: theia.Command): model.Command {
         // we're deprecating Command.id, so it has to be optional.
         // Existing code will have compiled against a non - optional version of the field, so asserting it to exist is ok
-        // tslint:disable-next-line: no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return KnownCommands.map((external.command || external.id)!, external.arguments, (mappedId: string, mappedArgs: any[]) =>
             ({
                 id: mappedId,
@@ -198,7 +198,7 @@ export class CommandsConverter {
             }));
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private executeSafeCommand<R>(...args: any[]): PromiseLike<R | undefined> {
         const command = this.commandsMap.get(args[0]);
         if (!command || !command.command) {

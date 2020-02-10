@@ -46,13 +46,13 @@ export class MarkdownString {
     }
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isMarkdownString(thing: any): thing is IMarkdownString {
     if (thing instanceof MarkdownString) {
         return true;
     } else if (thing && typeof thing === 'object') {
         return typeof (<MarkdownString>thing).value === 'string'
-            && (typeof (<MarkdownString>thing).isTrusted === 'boolean' || (<MarkdownString>thing).isTrusted === void 0);
+            && (typeof (<MarkdownString>thing).isTrusted === 'boolean' || (<MarkdownString>thing).isTrusted === undefined);
     }
     return false;
 }

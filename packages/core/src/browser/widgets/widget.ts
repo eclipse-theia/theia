@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, decorate, unmanaged } from 'inversify';
 import { Widget } from '@phosphor/widgets';
@@ -181,13 +181,13 @@ export function createIconButton(...classNames: string[]): HTMLSpanElement {
     return button;
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type EventListener<K extends keyof HTMLElementEventMap> = (this: HTMLElement, event: HTMLElementEventMap[K]) => any;
 export interface EventListenerObject<K extends keyof HTMLElementEventMap> {
     handleEvent(evt: HTMLElementEventMap[K]): void;
 }
 export namespace EventListenerObject {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is<K extends keyof HTMLElementEventMap>(listener: any | undefined): listener is EventListenerObject<K> {
         return !!listener && 'handleEvent' in listener;
     }
@@ -227,7 +227,7 @@ export function addKeyListener<K extends keyof HTMLElementEventMap>(
     }));
     for (const type of additionalEventTypes) {
         toDispose.push(addEventListener(element, type, e => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const event = (type as any)['keydown'];
             const result = action(event);
             if (typeof result !== 'boolean' || result) {

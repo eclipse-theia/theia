@@ -22,7 +22,7 @@ import { Widget } from './widgets';
 import { ApplicationShell } from './shell/application-shell';
 import { ShellLayoutRestorer, ApplicationShellLayoutMigrationError } from './shell/shell-layout-restorer';
 import { FrontendApplicationStateService } from './frontend-application-state';
-import { preventNavigation, parseCssTime } from './browser';
+import { preventNavigation, parseCssTime, animationFrame } from './browser';
 import { CorePreferences } from './core-preferences';
 
 /**
@@ -125,7 +125,7 @@ export class FrontendApplication {
 
         const host = await this.getHost();
         this.attachShell(host);
-        await new Promise(resolve => requestAnimationFrame(() => resolve()));
+        await animationFrame();
         this.stateService.state = 'attached_shell';
 
         await this.initializeLayout();
@@ -166,7 +166,7 @@ export class FrontendApplication {
     /**
      * Register composition related event listeners.
      */
-    protected registerComositionEventListeners(): void {
+    protected registerCompositionEventListeners(): void {
         window.document.addEventListener('compositionstart', event => {
             this.inComposition = true;
         });
@@ -180,7 +180,7 @@ export class FrontendApplication {
      * Register global event listeners.
      */
     protected registerEventListeners(): void {
-        this.registerComositionEventListeners(); /* Hotfix. See above. */
+        this.registerCompositionEventListeners(); /* Hotfix. See above. */
 
         window.addEventListener('beforeunload', () => {
             this.stateService.state = 'closing_window';

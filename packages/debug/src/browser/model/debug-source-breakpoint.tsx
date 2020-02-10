@@ -141,7 +141,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
 
     protected readonly setBreakpointEnabled = (event: React.ChangeEvent<HTMLInputElement>) => {
         this.setEnabled(event.target.checked);
-    }
+    };
 
     protected doRender(): React.ReactNode {
         return <React.Fragment>

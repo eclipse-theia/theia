@@ -1,6 +1,7 @@
 {
   "extends": "../../configs/base.tsconfig",
   "compilerOptions": {
+    "composite": true,
     "rootDir": "src",
     "outDir": "lib",
     "lib": [
@@ -11,6 +12,25 @@
   },
   "include": [
     "src"
+  ],
+  "references": [
+    {
+      "path": "../core/compile.tsconfig.json"
+    },
+    {
+      "path": "../editor/compile.tsconfig.json"
+    },
+    {
+      "path": "../monaco/compile.tsconfig.json"
+    },
+    {
+      "path": "../plugin/compile.tsconfig.json"
+    },
+    {
+      "path": "../plugin-ext/compile.tsconfig.json"
+    },
+    {
+      "path": "../workspace/compile.tsconfig.json"
+    }
   ]
 }
-

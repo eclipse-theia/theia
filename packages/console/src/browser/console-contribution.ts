@@ -115,7 +115,7 @@ export class ConsoleContribution implements FrontendApplicationContribution, Com
     }
 
 }
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ConsoleExecuteFunction = (console: ConsoleWidget, ...args: any[]) => any;
 export class ConsoleCommandHandler implements CommandHandler {
 
@@ -132,7 +132,7 @@ export class ConsoleCommandHandler implements CommandHandler {
         return !!this.manager.currentConsole;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute(...args: any[]): any {
         const { currentConsole } = this.manager;
         if (currentConsole) {

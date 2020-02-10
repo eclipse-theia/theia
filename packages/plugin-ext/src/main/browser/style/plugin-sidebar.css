@@ -28,7 +28,7 @@
 }
 
 .theia-plugins .pluginHeaderContainer {
-    padding: 3px 15px;
+    padding: 5px 15px;
     font-size: var(--theia-ui-font-size0);
     border-bottom: 1px solid;
 }

@@ -1,6 +1,6 @@
 {
   "name": "@theia/application-package",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Theia application package API.",
   "publishConfig": {
     "access": "public"
@@ -21,10 +21,10 @@
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "scripts": {
-    "prepare": "yarn run clean && yarn run build",
-    "clean": "theiaext clean",
+    "lint": "theiaext lint",
     "build": "theiaext build",
     "watch": "theiaext watch",
+    "clean": "theiaext clean",
     "test": "theiaext test"
   },
   "dependencies": {
@@ -40,7 +40,7 @@
     "write-json-file": "^2.2.0"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.14.0"
+    "@theia/ext-scripts": "^0.15.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

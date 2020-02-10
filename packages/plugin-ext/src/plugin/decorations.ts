@@ -55,7 +55,7 @@ export class DecorationsExtImpl implements DecorationsExt {
                 if (res) {
                     let color;
                     if (res.color) {
-                        // tslint:disable:no-any
+                        /* eslint-disable @typescript-eslint/no-explicit-any */
                         const ob: any = res.color;
                         color = { id: ob.id };
                     }

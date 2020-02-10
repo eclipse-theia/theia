@@ -59,7 +59,7 @@ export const EDITOR_MODEL_DEFAULTS = {
     largeFileOptimizations: true
 };
 
-// tslint:disable:no-null-keyword
+/* eslint-disable no-null/no-null */
 // should be in sync with https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/editor/common/config/editorOptions.ts#L2612
 // 1. Copy
 // 2. Inline values
@@ -205,9 +205,9 @@ export const EDITOR_DEFAULTS = {
         codeActionsOnSaveTimeout: 750
     },
 };
-// tslint:enable:no-null-keyword
+/* eslint-enable no-null/no-null */
 
-// tslint:disable:max-line-length
+/* eslint-disable max-len */
 // should be in sync with https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/editor/common/config/commonEditorConfig.ts#L232
 // 1. Copy
 // 2. Find -> Use Regular Expressions -> nls\.localize\(.*, "(.*)"\) -> "$1"
@@ -1023,7 +1023,7 @@ const codeEditorPreferenceProperties = {
         'description': 'Controls whether the diff editor shows +/- indicators for added/removed changes.'
     }
 };
-// tslint:enable:max-line-length
+/* eslint-enable max-len */
 
 export const editorPreferenceSchema: PreferenceSchema = {
     'type': 'object',
@@ -1083,8 +1083,8 @@ type CodeEditorPreferenceProperties = typeof codeEditorPreferenceProperties;
 export type CodeEditorConfiguration = {
     [P in keyof CodeEditorPreferenceProperties]:
     CodeEditorPreferenceProperties[P] extends { enum: string[] } ?
-    CodeEditorPreferenceProperties[P]['enum'][number] :
-    CodeEditorPreferenceProperties[P]['default'];
+    CodeEditorPreferenceProperties[P]['enum'][number] : // eslint-disable-line @typescript-eslint/indent
+    CodeEditorPreferenceProperties[P]['default']; // eslint-disable-line @typescript-eslint/indent
 };
 
 export interface EditorConfiguration extends CodeEditorConfiguration {

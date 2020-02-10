@@ -1,0 +1,6 @@
+{
+  "rules": {
+    "@typescript-eslint/await-thenable": "warn",
+    "no-return-await": "warn"
+  }
+}

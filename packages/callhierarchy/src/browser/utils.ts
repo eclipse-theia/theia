@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Location, Range } from 'vscode-languageserver-types';
+import { Location, Range, Position } from 'vscode-languageserver-types';
 
 /**
  * Test if `otherRange` is in `range`. If the ranges are equal, will return true.
@@ -35,6 +35,10 @@ export function containsRange(range: Range, otherRange: Range): boolean {
     return true;
 }
 
+export function containsPosition(range: Range, position: Position): boolean {
+    return comparePosition(range.start, position) >= 0 && comparePosition(range.end, position) <= 0;
+}
+
 function sameStart(a: Range, b: Range): boolean {
     const pos1 = a.start;
     const pos2 = b.start;
@@ -46,6 +50,14 @@ export function filterSame(locations: Location[], definition: Location): Locatio
     return locations.filter(candidate => candidate.uri !== definition.uri
         || !sameStart(candidate.range, definition.range)
     );
+}
+
+export function comparePosition(left: Position, right: Position): number {
+    const diff = right.line - left.line;
+    if (diff !== 0) {
+        return diff;
+    }
+    return right.character - left.character;
 }
 
 export function filterUnique(locations: Location[] | null): Location[] {

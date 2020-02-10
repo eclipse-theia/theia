@@ -24,7 +24,7 @@ import { DefinitionNode, CallerNode } from './callhierarchy-tree';
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
 import { CALLHIERARCHY_ID, Definition, Caller } from '../callhierarchy';
 import URI from '@theia/core/lib/common/uri';
-import { Location, Range, SymbolKind } from 'vscode-languageserver-types';
+import { Location, Range, SymbolKind, DocumentUri } from 'vscode-languageserver-types';
 import { EditorManager } from '@theia/editor/lib/browser';
 import * as React from 'react';
 
@@ -65,7 +65,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
     }
 
     initializeModel(selection: Location | undefined, languageId: string | undefined): void {
-        this.model.initializeCallHierarchy(languageId, selection);
+        this.model.initializeCallHierarchy(languageId, selection ? selection.uri : undefined, selection ? selection.range.start : undefined);
     }
 
     protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
@@ -165,25 +165,27 @@ export class CallHierarchyTreeWidget extends TreeWidget {
     }
 
     private openEditor(node: TreeNode, keepFocus: boolean): void {
-        let location: Location | undefined;
+
         if (DefinitionNode.is(node)) {
-            location = node.definition.location;
+            const def = node.definition;
+            this.doOpenEditor(node.definition.location.uri, def.selectionRange ? def.selectionRange : def.location.range, keepFocus);
         }
         if (CallerNode.is(node)) {
-            location = node.caller.references[0];
+            this.doOpenEditor(node.caller.callerDefinition.location.uri, node.caller.references[0], keepFocus);
         }
-        if (location) {
-            this.editorManager.open(
-                new URI(location.uri), {
-                    mode: keepFocus ? 'reveal' : 'activate',
-                    selection: Range.create(location.range.start, location.range.end)
-                }
-            ).then(editorWidget => {
-                if (editorWidget.parent instanceof DockPanel) {
-                    editorWidget.parent.selectWidget(editorWidget);
-                }
-            });
-        }
+    }
+
+    private doOpenEditor(uri: DocumentUri, range: Range, keepFocus: boolean): void {
+        this.editorManager.open(
+            new URI(uri), {
+                mode: keepFocus ? 'reveal' : 'activate',
+                selection: range
+            }
+        ).then(editorWidget => {
+            if (editorWidget.parent instanceof DockPanel) {
+                editorWidget.parent.selectWidget(editorWidget);
+            }
+        });
     }
 
     storeState(): object {
@@ -191,7 +193,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         if (this.model.root && callHierarchyService) {
             return {
                 root: this.deflateForStorage(this.model.root),
-                languageId: callHierarchyService.languageId,
+                languageId: this.model.languageId,
             };
         } else {
             return {};
@@ -199,12 +201,12 @@ export class CallHierarchyTreeWidget extends TreeWidget {
     }
 
     restoreState(oldState: object): void {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         if ((oldState as any).root && (oldState as any).languageId) {
-            // tslint:disable-next-line:no-any
-            this.model.root = this.inflateFromStorage((oldState as any).root);
-            // tslint:disable-next-line:no-any
-            this.model.initializeCallHierarchy((oldState as any).languageId, (this.model.root as DefinitionNode).definition.location);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const root = this.inflateFromStorage((oldState as any).root) as DefinitionNode;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this.model.initializeCallHierarchy((oldState as any).languageId, root.definition.location.uri, root.definition.location.range.start);
         }
     }
 }

@@ -21,7 +21,7 @@ import { createTreeTestContainer } from './test/tree-test-container';
 import { SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeModel } from './tree-model';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 namespace TreeSelectionState {
 

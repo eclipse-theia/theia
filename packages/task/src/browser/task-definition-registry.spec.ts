@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 describe('TaskDefinitionRegistry', () => {
     let registry: TaskDefinitionRegistry;
     const definitionContributionA = {

@@ -51,20 +51,18 @@ export class ModelReferenceCollection {
 
     add(ref: Reference<MonacoEditorModel>): void {
         const length = ref.object.textEditorModel.getValueLength();
-        // tslint:disable-next-line: no-any
-        let handle: any;
-        let entry: { length: number, dispose(): void };
-        const _dispose = () => {
-            const idx = this.data.indexOf(entry);
+        const handle = setTimeout(_dispose, this.maxAge);
+        const entry = { length, dispose: _dispose };
+        const self = this;
+        function _dispose(): void {
+            const idx = self.data.indexOf(entry);
             if (idx >= 0) {
-                this.length -= length;
+                self.length -= length;
                 ref.dispose();
                 clearTimeout(handle);
-                this.data.splice(idx, 1);
+                self.data.splice(idx, 1);
             }
         };
-        handle = setTimeout(_dispose, this.maxAge);
-        entry = { length, dispose: _dispose };
 
         this.data.push(entry);
         this.length += length;

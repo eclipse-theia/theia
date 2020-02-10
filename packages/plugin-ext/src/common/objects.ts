@@ -1,4 +1,4 @@
-// tslint:disable
+/* eslint-disable */
 // copied from https://github.com/microsoft/vscode/blob/1.37.0/src/vs/base/common/objects.ts
 /*---------------------------------------------------------------------------------------------
 *  Copyright (c) Microsoft Corporation. All rights reserved.

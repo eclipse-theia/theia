@@ -923,7 +923,7 @@ export class ViewContainerPart extends BaseWidget {
     protected onAfterAttach(msg: Message): void {
         if (!this.wrapped.isAttached) {
             MessageLoop.sendMessage(this.wrapped, Widget.Msg.BeforeAttach);
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             this.body.insertBefore(this.wrapped.node, null);
             MessageLoop.sendMessage(this.wrapped, Widget.Msg.AfterAttach);
         }
@@ -954,7 +954,7 @@ export class ViewContainerPart extends BaseWidget {
     }
 
     protected onBeforeHide(msg: Message): void {
-        if (this.wrapped.isAttached && this.collapsed) {
+        if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
         super.onBeforeShow(msg);
@@ -962,7 +962,7 @@ export class ViewContainerPart extends BaseWidget {
 
     protected onAfterHide(msg: Message): void {
         super.onAfterHide(msg);
-        if (this.wrapped.isAttached && this.collapsed) {
+        if (this.wrapped.isAttached && !this.collapsed) {
             MessageLoop.sendMessage(this.wrapped, msg);
         }
     }
@@ -1018,7 +1018,7 @@ export class ViewContainerLayout extends SplitLayout {
     }
 
     protected get items(): ReadonlyArray<LayoutItem & ViewContainerLayout.Item> {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (this as any)._items as Array<LayoutItem & ViewContainerLayout.Item>;
     }
 
@@ -1226,7 +1226,7 @@ export class ViewContainerLayout extends SplitLayout {
             } else {
                 const minSize = `${this.options.headerSize + part.minSize}px`;
                 style.minHeight = minSize;
-                // tslint:disable-next-line:no-null-keyword
+                // eslint-disable-next-line no-null/no-null
                 style.maxHeight = null;
             }
         }
@@ -1245,7 +1245,7 @@ export class ViewContainerLayout extends SplitLayout {
             referenceWidget: this.widgets[index],
             duration: 0
         };
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return this.splitPositionHandler.setSplitHandlePosition(this.parent as SplitPanel, index, position, options) as Promise<any>;
     }
 

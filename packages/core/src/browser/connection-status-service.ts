@@ -125,7 +125,7 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
         this.statusChangeEmitter.fire(status);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected setTimeout(handler: (...args: any[]) => void, timeout: number): number {
         return window.setTimeout(handler, timeout);
     }

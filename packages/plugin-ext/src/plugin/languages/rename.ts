@@ -117,7 +117,7 @@ export class RenameAdapter {
         });
     }
 
-    /* tslint:disable-next-line:no-any */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private static asMessage(err: any): string | undefined {
         if (typeof err === 'string') {
             return err;

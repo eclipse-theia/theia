@@ -88,7 +88,7 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
 
     protected readonly setBreakpointEnabled = (event: React.ChangeEvent<HTMLInputElement>) => {
         this.setEnabled(event.target.checked);
-    }
+    };
 
     render(): React.ReactNode {
         const classNames = ['theia-source-breakpoint'];

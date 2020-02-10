@@ -46,7 +46,7 @@ export class WebviewsExtImpl implements WebviewsExt {
         this.initData = initData;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $onMessage(handle: string, message: any): void {
         const panel = this.getWebviewPanel(handle);
         if (panel) {
@@ -76,7 +76,7 @@ export class WebviewsExtImpl implements WebviewsExt {
     $deserializeWebviewPanel(viewId: string,
         viewType: string,
         title: string,
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         state: any,
         viewState: WebviewPanelViewState,
         options: theia.WebviewOptions & theia.WebviewPanelOptions): PromiseLike<void> {
@@ -148,10 +148,10 @@ export class WebviewImpl implements theia.Webview {
     private _html: string;
     private _options: theia.WebviewOptions;
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public readonly onMessageEmitter = new Emitter<any>();
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public readonly onDidReceiveMessage: Event<any> = this.onMessageEmitter.event;
 
     constructor(
@@ -210,7 +210,7 @@ export class WebviewImpl implements theia.Webview {
         this._options = newOptions;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     postMessage(message: any): PromiseLike<boolean> {
         this.checkIsDisposed();
         return this.proxy.$postMessage(this.viewId, message);
@@ -264,7 +264,7 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         }
 
         this.isDisposed = true;
-        this.onDisposeEmitter.fire(void 0);
+        this.onDisposeEmitter.fire(undefined);
 
         this.proxy.$disposeWebview(this.viewId);
         this._webview.dispose();
@@ -378,7 +378,7 @@ export class WebviewPanelImpl implements theia.WebviewPanel {
         });
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     postMessage(message: any): PromiseLike<boolean> {
         this.checkIsDisposed();
         return this.proxy.$postMessage(this.viewId, message);

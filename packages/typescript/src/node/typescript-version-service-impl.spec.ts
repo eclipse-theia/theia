@@ -29,7 +29,7 @@ describe('TypescriptVersionServiceImpl', function (): void {
 
     beforeEach(() => {
         impl = new TypescriptVersionServiceImpl();
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (impl as any).applicationPackage = {
             projectPath: FileUri.fsPath(projectUri)
         };

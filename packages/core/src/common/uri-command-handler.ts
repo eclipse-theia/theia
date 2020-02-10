@@ -22,13 +22,13 @@ import URI from './uri';
 
 export interface UriCommandHandler<T extends MaybeArray<URI>> {
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute(uri: T, ...args: any[]): any;
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isEnabled?(uri: T, ...args: any[]): boolean;
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isVisible?(uri: T, ...args: any[]): boolean;
 
 }
@@ -77,7 +77,7 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements Comman
         protected readonly options?: UriAwareCommandHandler.Options
     ) { }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected getUri(...args: any[]): T | undefined {
         if (args && args[0] instanceof URI) {
             // @ts-ignore we want to always return URIs
@@ -91,13 +91,13 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements Comman
         return uris as T;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute(...args: any[]): object | undefined {
         const uri = this.getUri(...args);
         return uri ? this.handler.execute(uri, ...args) : undefined;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isVisible(...args: any[]): boolean {
         const uri = this.getUri(...args);
         if (uri) {
@@ -109,7 +109,7 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements Comman
         return false;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isEnabled(...args: any[]): boolean {
         const uri = this.getUri(...args);
         if (uri) {

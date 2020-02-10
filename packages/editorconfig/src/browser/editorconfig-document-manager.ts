@@ -126,7 +126,7 @@ export class EditorconfigDocumentManager {
     /**
      * Determines whether property is set.
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isSet(property: any): boolean {
         if (!property || 'unset' === property) {
             return false;

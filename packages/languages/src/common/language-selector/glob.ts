@@ -23,9 +23,9 @@
 import * as strings from './strings';
 import * as paths from './paths';
 import { CharCode } from './char-code';
-/* tslint:disable:no-null-keyword no-shadowed-variable one-variable-per-declaration */
+/* eslint-disable no-shadow, no-null/no-null */
 export interface IExpression {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [pattern: string]: boolean | SiblingClause | any;
 }
 
@@ -120,7 +120,7 @@ function parseRegExp(pattern: string): string {
     let regEx = '';
 
     // Split up into segments for each slash found
-    // tslint:disable-next-line:prefer-const
+    // eslint-disable-next-line prefer-const
     let segments = splitGlobAware(pattern, GLOB_SPLIT);
 
     // Special case where we only have globstars
@@ -205,11 +205,11 @@ function parseRegExp(pattern: string): string {
                         continue;
 
                     case '}':
-                        // tslint:disable-next-line:prefer-const
+                        // eslint-disable-next-line prefer-const
                         let choices = splitGlobAware(braceVal, ',');
 
                         // Converts {foo,bar} => [foo|bar]
-                        // tslint:disable-next-line:prefer-const
+                        // eslint-disable-next-line prefer-const
                         let braceRegExp = `(?:${choices.map(c => parseRegExp(c)).join('|')})`;
 
                         regEx += braceRegExp;
@@ -268,7 +268,7 @@ const T5 = /^([\w\.-]+(\/[\w\.-]+)*)\/?$/;                                    //
 export type ParsedPattern = (path: string, basename?: string) => boolean;
 
 // The ParsedExpression returns a Promise iff hasSibling returns a Promise.
-// tslint:disable-next-line:max-line-length
+// eslint-disable-next-line max-len
 export type ParsedExpression = (path: string, basename?: string, hasSibling?: (name: string) => boolean | Promise<boolean>) => string | Promise<string> /* the matching pattern */;
 
 export interface IGlobOptions {
@@ -428,10 +428,10 @@ function trivia3(pattern: string, options: IGlobOptions): ParsedStringPattern {
 function trivia4and5(path: string, pattern: string, matchPathEnds: boolean): ParsedStringPattern {
     const nativePath = paths.nativeSep !== paths.sep ? path.replace(ALL_FORWARD_SLASHES, paths.nativeSep) : path;
     const nativePathEnd = paths.nativeSep + nativePath;
-    // tslint:disable-next-line:no-shadowed-variable
+    // eslint-disable-next-line no-shadow
     const parsedPattern: ParsedStringPattern = matchPathEnds ? function (path, basename): string {
         return path && (path === nativePath || strings.endsWith(path, nativePathEnd)) ? pattern : null!;
-        // tslint:disable-next-line:no-shadowed-variable
+        // eslint-disable-next-line no-shadow
     } : function (path, basename): string {
         return path && path === nativePath ? pattern : null!;
     };
@@ -461,7 +461,7 @@ function toRegExp(pattern: string): ParsedStringPattern {
  */
 export function match(pattern: string | IRelativePattern, path: string): boolean;
 export function match(expression: IExpression, path: string, hasSibling?: (name: string) => boolean): string /* the matching pattern */;
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function match(arg1: string | IExpression | IRelativePattern, path: string, hasSibling?: (name: string) => boolean): any {
     if (!arg1 || !path) {
         return false;
@@ -480,7 +480,7 @@ export function match(arg1: string | IExpression | IRelativePattern, path: strin
  */
 export function parse(pattern: string | IRelativePattern, options?: IGlobOptions): ParsedPattern;
 export function parse(expression: IExpression, options?: IGlobOptions): ParsedExpression;
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function parse(arg1: string | IExpression | IRelativePattern, options: IGlobOptions = {}): any {
     if (!arg1) {
         return FALSE;
@@ -496,11 +496,11 @@ export function parse(arg1: string | IExpression | IRelativePattern, options: IG
             return !!parsedPattern(path, basename);
         };
         if (parsedPattern.allBasenames) {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (<ParsedStringPattern><any>resultPattern).allBasenames = parsedPattern.allBasenames;
         }
         if (parsedPattern.allPaths) {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (<ParsedStringPattern><any>resultPattern).allPaths = parsedPattern.allPaths;
         }
         return resultPattern;
@@ -548,7 +548,7 @@ function listToMap(list: string[]): Record<string, true> {
     return map;
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isRelativePattern(obj: any): obj is IRelativePattern {
     const rp = obj as IRelativePattern;
 
@@ -559,7 +559,7 @@ export function isRelativePattern(obj: any): obj is IRelativePattern {
  * Same as `parse`, but the ParsedExpression is guaranteed to return a Promise
  */
 export function parseToAsync(expression: IExpression, options?: IGlobOptions): ParsedExpression {
-    // tslint:disable-next-line:no-shadowed-variable
+    // eslint-disable-next-line no-shadow
     const parsedExpression = parse(expression, options);
     return (path: string, basename?: string, hasSibling?: (name: string) => boolean | Promise<boolean>): string | Promise<string> => {
         const result = parsedExpression(path, basename, hasSibling);
@@ -590,9 +590,9 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
             return <ParsedStringPattern>parsedPatterns[0];
         }
 
-        // tslint:disable-next-line:no-shadowed-variable
+        // eslint-disable-next-line no-shadow
         const resultExpression: ParsedStringPattern = function (path: string, basename: string): string | Promise<string> {
-            // tslint:disable-next-line:no-shadowed-variable
+            // eslint-disable-next-line no-shadow
             // tslint:disable-next-line:one-variable-per-declaration
             for (let i = 0, n = parsedPatterns.length; i < n; i++) {
                 // Pattern matches path
@@ -605,13 +605,13 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
             return null!;
         };
 
-        // tslint:disable-next-line:no-shadowed-variable
+        // eslint-disable-next-line no-shadow
         const withBasenames = parsedPatterns.find(pattern => !!(<ParsedStringPattern>pattern).allBasenames);
         if (withBasenames) {
             resultExpression.allBasenames = (<ParsedStringPattern>withBasenames).allBasenames;
         }
 
-        // tslint:disable-next-line:no-shadowed-variable
+        // eslint-disable-next-line no-shadow
         const allPaths = parsedPatterns.reduce((all, current) => current.allPaths ? all.concat(current.allPaths) : all, <string[]>[]);
         if (allPaths.length) {
             resultExpression.allPaths = allPaths;
@@ -623,7 +623,7 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
     const resultExpression: ParsedStringPattern = function (path: string, basename: string, hasSibling?: (name: string) => boolean | Promise<boolean>): string | Promise<string> {
         let name: string = null!;
 
-        // tslint:disable-next-line:no-shadowed-variable
+        // eslint-disable-next-line no-shadow
         for (let i = 0, n = parsedPatterns.length; i < n; i++) {
             // Pattern matches path
             const parsedPattern = (<ParsedExpressionPattern>parsedPatterns[i]);
@@ -657,7 +657,7 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
     return resultExpression;
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseExpressionPattern(pattern: string, value: any, options: IGlobOptions): (ParsedStringPattern | ParsedExpressionPattern) {
     if (value === false) {
         return NULL; // pattern is disabled

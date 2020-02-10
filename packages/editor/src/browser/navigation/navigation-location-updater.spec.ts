@@ -19,7 +19,7 @@ import { NavigationLocation, Range } from './navigation-location';
 import { TextDocumentContentChangeDelta } from '../editor';
 import { MockNavigationLocationUpdater } from './test/mock-navigation-location-updater';
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 describe('navigation-location-updater', () => {
 
@@ -137,7 +137,7 @@ describe('navigation-location-updater', () => {
                 } else if (expected === undefined) {
                     expect(actual).to.be.undefined;
                 } else {
-                    // tslint:disable-next-line:no-any
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     expect((actual as any).context).to.be.deep.equal(expected);
                 }
             });

@@ -17,7 +17,6 @@
 import * as path from 'path';
 const psList: () => Promise<[{ pid: number, cmd: string }]> = require('ps-list'); // FIXME use import, provide proper d.ts file
 import { injectable } from 'inversify';
-// tslint:disable-next-line:no-implicit-dependencies
 import { FileUri } from '@theia/core/lib/node';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { AbstractVSCodeDebugAdapterContribution } from '@theia/debug/lib/node/vscode/vscode-debug-adapter-contribution';

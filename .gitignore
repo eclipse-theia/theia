@@ -23,3 +23,5 @@ plugins
 gh-pages
 .vscode/ipch
 dev-packages/electron/compile_commands.json
+*.tsbuildinfo
+.eslintcache

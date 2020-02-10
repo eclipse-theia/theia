@@ -22,11 +22,15 @@
 
 .theia-console-input {
     padding-left: 20px;
-	border-top: var(--theia-panel-border-width) solid var(--theia-panel-border);
+    border-top: var(--theia-panel-border-width) solid var(--theia-panel-border);
+    height: calc(var(--theia-content-line-height)*2);
+    display: flex;
+    align-items: center;
 }
 
 .theia-console-input:before {
-	left: 8px;
+    left: 8px;
+    top: 3px;
 	position: absolute;
     content: '\276f';
 	line-height: 18px;

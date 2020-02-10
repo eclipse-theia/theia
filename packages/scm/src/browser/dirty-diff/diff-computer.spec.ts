@@ -27,7 +27,7 @@ before(() => {
     diffComputer = new DiffComputer();
 });
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 describe('dirty-diff-computer', () => {
 

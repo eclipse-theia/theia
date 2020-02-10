@@ -28,7 +28,7 @@ export class TerminalCopyOnSelectionHandler {
             ev.clipboardData.setData('text/plain', this.textToCopy);
             ev.preventDefault();
         }
-    }
+    };
 
     @postConstruct()
     protected init(): void {
@@ -41,7 +41,7 @@ export class TerminalCopyOnSelectionHandler {
             return true;
         }
         try {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const permissions = (navigator as any).permissions;
             const { state } = await permissions.query({ name: 'clipboard-write' });
             if (state === 'granted') {
@@ -63,7 +63,7 @@ export class TerminalCopyOnSelectionHandler {
     }
 
     private async writeToClipBoard(): Promise<void> {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const clipboard = (navigator as any).clipboard;
 
         if (!clipboard) {
@@ -81,7 +81,7 @@ export class TerminalCopyOnSelectionHandler {
     async copy(text: string): Promise<void> {
         this.textToCopy = text;
 
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const permissions = (navigator as any).permissions;
         if (permissions && permissions.query && await this.clipBoardCopyIsGranted()) {
             await this.writeToClipBoard();

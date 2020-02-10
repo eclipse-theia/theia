@@ -19,7 +19,6 @@ import * as url from 'url';
 import * as http from 'http';
 import * as https from 'https';
 import { injectable, inject, named, postConstruct, interfaces } from 'inversify';
-// tslint:disable-next-line:no-implicit-dependencies
 import { MessageConnection } from 'vscode-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';

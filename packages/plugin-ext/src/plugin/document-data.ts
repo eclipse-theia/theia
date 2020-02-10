@@ -362,6 +362,6 @@ export function regExpLeadsToEndlessLoop(regexp: RegExp): boolean {
     // We check against an empty string. If the regular expression doesn't advance
     // (e.g. ends in an endless loop) it will match an empty string.
     const match = regexp.exec('');
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (match && <any>regexp.lastIndex === 0)!;
 }

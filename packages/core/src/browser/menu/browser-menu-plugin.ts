@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject } from 'inversify';
 import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
@@ -207,6 +207,9 @@ class DynamicMenuWidget extends MenuWidget {
         super(options);
         if (menu.label) {
             this.title.label = menu.label;
+        }
+        if (menu.iconClass) {
+            this.title.iconClass = menu.iconClass;
         }
         this.updateSubMenus(this, this.menu, this.options.commands);
     }

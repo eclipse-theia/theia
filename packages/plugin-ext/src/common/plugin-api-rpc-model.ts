@@ -156,7 +156,7 @@ export interface Command {
     id: string;
     title: string;
     tooltip?: string;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     arguments?: any[];
 }
 
@@ -504,4 +504,18 @@ export interface RenameLocation {
 export interface RenameProvider {
     provideRenameEdits(model: monaco.editor.ITextModel, position: Position, newName: string): PromiseLike<WorkspaceEdit & Rejection>;
     resolveRenameLocation?(model: monaco.editor.ITextModel, position: Position): PromiseLike<RenameLocation & Rejection>;
+}
+
+export interface CallHierarchyDefinition {
+    name: string;
+    kind: SymbolKind;
+    detail?: string;
+    uri: UriComponents;
+    range: Range;
+    selectionRange: Range;
+}
+
+export interface CallHierarchyReference {
+    callerDefinition: CallHierarchyDefinition,
+    references: Range[]
 }

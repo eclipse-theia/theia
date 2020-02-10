@@ -39,7 +39,7 @@ export namespace EditorDecorationStyle {
 
     export function copyStyle(from: CSSStyleDeclaration, to: CSSStyleDeclaration): void {
         Object.keys(from).forEach(key => {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (<any>to)[key] = (<any>from)[key];
         });
     }

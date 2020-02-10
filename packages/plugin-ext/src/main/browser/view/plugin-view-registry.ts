@@ -210,18 +210,18 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             id: toggleCommandId,
             label: 'Toggle ' + options.label + ' View'
         }, {
-                execute: async () => {
-                    let widget = await this.getPluginViewContainer(id);
+            execute: async () => {
+                let widget = await this.getPluginViewContainer(id);
+                if (widget) {
+                    widget.dispose();
+                } else {
+                    widget = await this.openViewContainer(id);
                     if (widget) {
-                        widget.dispose();
-                    } else {
-                        widget = await this.openViewContainer(id);
-                        if (widget) {
-                            this.shell.activateWidget(widget.id);
-                        }
+                        this.shell.activateWidget(widget.id);
                     }
                 }
-            }));
+            }
+        }));
         toDispose.push(this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
             commandId: toggleCommandId,
             label: options.label

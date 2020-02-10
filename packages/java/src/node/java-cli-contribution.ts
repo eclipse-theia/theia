@@ -41,7 +41,7 @@ export class JavaCliContribution implements CliContribution {
         return this._lsPort;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected setLsPort(port: any): void {
         if (port !== undefined) {
             const error = new Error(`The port for the Java LS must be an integer between 1 and 65535. It was: ${port}.`);

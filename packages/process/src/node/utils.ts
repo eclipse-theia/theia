@@ -30,12 +30,12 @@ export function parseArgs(line: string | undefined): string[] {
 }
 
 // Polyfill for Object.entries, until we upgrade to ES2017.
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function objectEntries(obj: any): any[] {
     const props = Object.keys(obj);
     const result = new Array(props.length);
     for (let i = 0; i < props.length; i++) {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         result[i] = [props[i], obj[props[i]]];
     }
 

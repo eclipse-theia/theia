@@ -1,14 +1,14 @@
 {
   "name": "@theia/plugin-ext-vscode",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Theia - Plugin Extension for VsCode",
   "dependencies": {
-    "@theia/core": "^0.14.0",
-    "@theia/editor": "^0.14.0",
-    "@theia/monaco": "^0.14.0",
-    "@theia/plugin": "^0.14.0",
-    "@theia/plugin-ext": "^0.14.0",
-    "@theia/workspace": "^0.14.0",
+    "@theia/core": "^0.15.0",
+    "@theia/editor": "^0.15.0",
+    "@theia/monaco": "^0.15.0",
+    "@theia/plugin": "^0.15.0",
+    "@theia/plugin-ext": "^0.15.0",
+    "@theia/workspace": "^0.15.0",
     "@types/request": "^2.0.3",
     "request": "^2.82.0"
   },
@@ -38,14 +38,14 @@
     "src"
   ],
   "scripts": {
-    "prepare": "yarn run clean && yarn run build",
-    "clean": "theiaext clean",
+    "lint": "theiaext lint",
     "build": "theiaext build",
     "watch": "theiaext watch",
+    "clean": "theiaext clean",
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.14.0"
+    "@theia/ext-scripts": "^0.15.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

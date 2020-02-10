@@ -82,7 +82,7 @@ export class WebviewThemeDataProvider {
 
     protected computeThemeData(): WebviewThemeData {
         const styles: { [key: string]: string | number; } = {};
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const addStyle = (id: string, rawValue: any) => {
             if (rawValue) {
                 const value = typeof rawValue === 'number' || typeof rawValue === 'string' ? rawValue : String(rawValue);

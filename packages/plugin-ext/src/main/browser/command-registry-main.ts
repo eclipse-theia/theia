@@ -71,7 +71,7 @@ export class CommandRegistryMainImpl implements CommandRegistryMain, Disposable 
         }
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async $executeCommand<T>(id: string, ...args: any[]): Promise<T | undefined> {
         if (!this.delegate.getCommand(id)) {
             throw new Error(`Command with id '${id}' is not registered.`);

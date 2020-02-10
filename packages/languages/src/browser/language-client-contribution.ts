@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject } from 'inversify';
 import { MaybePromise, MessageService, CommandRegistry } from '@theia/core';
@@ -70,9 +70,9 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return this._languageClient ? Promise.resolve(this._languageClient) : this.ready;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     waitForActivation(app: FrontendApplication): Promise<any> {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const activationPromises: Promise<any>[] = [];
         const workspaceContains = this.workspaceContains;
         if (workspaceContains.length !== 0) {
@@ -236,7 +236,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return undefined;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected get initializationOptions(): any | (() => any) | undefined {
         return undefined;
     }
@@ -274,7 +274,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     /**
      * Check to see if one of the paths is in the current workspace.
      */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected async waitForItemInWorkspace(): Promise<any> {
         const doesContain = await this.workspaceService.containsSome(this.workspaceContains);
         if (!doesContain) {

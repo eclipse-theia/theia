@@ -16,7 +16,7 @@
 
 import URI from '@theia/core/lib/common/uri';
 import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser';
-import { MaybePromise } from  '@theia/core/lib/common/types';
+import { MaybePromise } from '@theia/core/lib/common/types';
 import { EditorPreviewWidget } from './editor-preview-widget';
 import { inject, injectable } from 'inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -52,8 +52,9 @@ export class EditorPreviewWidgetFactory implements WidgetFactory {
     }
 
     protected async doCreate(options: EditorPreviewWidgetOptions): Promise<EditorPreviewWidget> {
-        const widget = (options.session === EditorPreviewWidgetFactory.sessionId) ?
-             await this.editorManager.getOrCreateByUri(new URI(options.initialUri)) : undefined;
+        const widget = (options.session === EditorPreviewWidgetFactory.sessionId)
+            ? await this.editorManager.getOrCreateByUri(new URI(options.initialUri))
+            : undefined;
         const previewWidget = new EditorPreviewWidget(this.widgetManager, widget);
         previewWidget.id = options.id;
         return previewWidget;

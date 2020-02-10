@@ -30,7 +30,7 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
     @inject(TreeLabelProvider)
     protected readonly treeLabelProvider: TreeLabelProvider;
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     canHandle(element: TreeViewNode | any): number {
         if (TreeNode.is(element) && ('resourceUri' in element || 'themeIconId' in element)) {
             return this.treeLabelProvider.canHandle(element) + 1;

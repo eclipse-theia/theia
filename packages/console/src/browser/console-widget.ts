@@ -244,12 +244,12 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     restoreState(oldState: object): void {
         if ('history' in oldState) {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.history.restore((<any>oldState)['history']);
         }
         this.input.getControl().setValue(this.history.current || '');
         if ('input' in oldState) {
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             this.input.restoreViewState((<any>oldState)['input']);
         }
     }

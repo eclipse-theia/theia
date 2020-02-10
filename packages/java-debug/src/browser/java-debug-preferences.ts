@@ -27,7 +27,6 @@ import {
     PreferenceContribution,
     PreferenceSchema,
     PreferenceChangeEvent
-    // tslint:disable-next-line:no-implicit-dependencies
 } from '@theia/core/lib/browser/preferences';
 
 export const javaDebugPreferenceSchema: PreferenceSchema = {
@@ -61,7 +60,7 @@ export const javaDebugPreferenceSchema: PreferenceSchema = {
         },
         'java.debug.settings.maxStringLength': {
             'type': 'number',
-            // tslint:disable-next-line:max-line-length
+            // eslint-disable-next-line max-len
             'description': 'The maximum length of strings displayed in \"Variables\" or \"Debug Console\" viewlet, strings longer than this length will be trimmed, if 0 no trim is performed.',
             'default': 0
         },

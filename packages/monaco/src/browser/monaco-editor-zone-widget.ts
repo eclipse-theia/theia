@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
- /*---------------------------------------------------------------------------------------------
+/*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation and others. All rights reserved.
  *  Licensed under the MIT License. See https://github.com/Microsoft/vscode/blob/master/LICENSE.txt for license information.
  *--------------------------------------------------------------------------------------------*/
@@ -95,7 +95,7 @@ export class MonacoEditorZoneWidget implements Disposable {
             const widget: monaco.editor.IOverlayWidget = {
                 getId: () => 'editor-zone-widget-' + id,
                 getDomNode: () => this.zoneNode,
-                // tslint:disable-next-line:no-null-keyword
+                // eslint-disable-next-line no-null/no-null
                 getPosition: () => null!
             };
             this.editor.addOverlayWidget(widget);

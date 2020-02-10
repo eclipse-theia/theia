@@ -17,7 +17,7 @@
 import { injectable } from 'inversify';
 import { Emitter, Event } from '../common/event';
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface SelectionProvider<T> {
     onSelectionChanged: Event<T | undefined>;

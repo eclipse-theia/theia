@@ -14,8 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions, @typescript-eslint/no-explicit-any */
 
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJSDOM = enableJSDOM();
@@ -236,7 +235,7 @@ describe('Launch Preferences', () => {
 
     testSuite({
         name: 'Null Bogus Launch Configuration',
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         launch: null,
         expectation: {
             'compounds': [],
@@ -246,7 +245,7 @@ describe('Launch Preferences', () => {
     testSuite({
         name: 'Null Bogus Settings Configuration',
         settings: {
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             'launch': null
         },
         expectation: {}
@@ -333,12 +332,12 @@ describe('Launch Preferences', () => {
     function testLaunchAndSettingsSuite({
         name, expectation, launch, only, configMode
     }: {
-            name: string,
-            expectation: any,
-            launch?: any,
-            only?: boolean,
-            configMode?: ConfigMode
-        }): void {
+        name: string,
+        expectation: any,
+        launch?: any,
+        only?: boolean,
+        configMode?: ConfigMode
+    }): void {
         testSuite({
             name: name + ' Launch Configuration',
             launch,
@@ -398,13 +397,13 @@ describe('Launch Preferences', () => {
     function testConfigSuite({
         configMode, expectation, inspectExpectation, settings, launch, only
     }: {
-            configMode: ConfigMode
-            expectation: any,
-            inspectExpectation?: any,
-            launch?: any,
-            settings?: any,
-            only?: boolean
-        }): void {
+        configMode: ConfigMode
+        expectation: any,
+        inspectExpectation?: any,
+        launch?: any,
+        settings?: any,
+        only?: boolean
+    }): void {
 
         describe(JSON.stringify(configMode, undefined, 2), () => {
 
@@ -625,6 +624,7 @@ describe('Launch Preferences', () => {
                     }
                     if (settings) {
                         let _settingsLaunch = undefined;
+                        // eslint-disable-next-line no-null/no-null
                         if (typeof settingsLaunch === 'object' && !Array.isArray(settings['launch']) && settings['launch'] !== null) {
                             _settingsLaunch = settingsLaunch;
                         } else {

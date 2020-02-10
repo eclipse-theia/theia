@@ -19,16 +19,14 @@
 
 // https://github.com/Microsoft/vscode-java-debug/blob/master/src/configurationProvider.ts adjusted to Theia APIs
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as path from 'path';
 import * as _ from 'lodash';
 import { injectable, inject } from 'inversify';
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { JavaExtensionContribution } from '@theia/java/lib/node';
-// tslint:disable-next-line:no-implicit-dependencies
 import { MessageService, CommandService } from '@theia/core/lib/common';
-// tslint:disable-next-line:no-implicit-dependencies
 import { QuickPickService, QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
 import { AbstractVSCodeDebugAdapterContribution } from '@theia/debug/lib/node/vscode/vscode-debug-adapter-contribution';
 
@@ -70,7 +68,7 @@ export class JavaDebugExtensionContribution extends AbstractVSCodeDebugAdapterCo
     async getExtensionBundles(): Promise<string[]> {
         const debuggerContribution: {
             contributes: { javaExtensions: string[] }
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } = <any>(await this.pck);
         return debuggerContribution.contributes.javaExtensions.map(javaExtPath =>
             path.resolve(this.extensionPath, javaExtPath)

@@ -55,7 +55,7 @@ export class NodeFileUpload implements Disposable {
     }
 
     dispose(): void {
-        fs.unlink(this.uploadPath).catch(() => {/*no-op*/ });
+        fs.unlink(this.uploadPath).catch(() => {/* no-op */ });
     }
 
 }

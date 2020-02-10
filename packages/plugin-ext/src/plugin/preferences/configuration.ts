@@ -19,7 +19,7 @@ import { isObject } from '../../common/types';
 import cloneDeep = require('lodash.clonedeep');
 import URI from 'vscode-uri';
 
-/* tslint:disable:no-any */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export class Configuration {
 
@@ -49,8 +49,8 @@ export class Configuration {
         return {
             default: this.defaultConfiguration.getValue(key),
             user: this.userConfiguration.getValue(key),
-            workspace: workspace ? this.workspaceConfiguration.getValue(key) : void 0,
-            workspaceFolder: folderConfiguration ? folderConfiguration.getValue(key) : void 0,
+            workspace: workspace ? this.workspaceConfiguration.getValue(key) : undefined,
+            workspaceFolder: folderConfiguration ? folderConfiguration.getValue(key) : undefined,
             value: combinedConfiguration.getValue(key)
         };
     }

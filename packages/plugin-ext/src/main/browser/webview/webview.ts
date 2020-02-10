@@ -49,7 +49,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const enum WebviewMessageChannels {
     onmessage = 'onmessage',
@@ -92,7 +92,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected element: HTMLIFrameElement | undefined;
 
-    // tslint:disable-next-line:max-line-length
+    // eslint-disable-next-line max-len
     // XXX This is a hack to be able to tack the mouse events when drag and dropping the widgets.
     // On `mousedown` we put a transparent div over the `iframe` to avoid losing the mouse tacking.
     protected transparentOverlay: HTMLElement;

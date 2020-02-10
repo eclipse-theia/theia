@@ -49,7 +49,7 @@ export interface SearchInWorkspaceRoot extends CompositeTreeNode {
     children: SearchInWorkspaceRootFolderNode[];
 }
 export namespace SearchInWorkspaceRoot {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(node: any): node is SearchInWorkspaceRoot {
         return CompositeTreeNode.is(node) && node.id === ROOT_ID;
     }
@@ -63,7 +63,7 @@ export interface SearchInWorkspaceRootFolderNode extends ExpandableTreeNode, Sel
     folderUri: string;
 }
 export namespace SearchInWorkspaceRootFolderNode {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(node: any): node is SearchInWorkspaceRootFolderNode {
         return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node && 'folderUri' in node && !('fileUri' in node);
     }
@@ -78,7 +78,7 @@ export interface SearchInWorkspaceFileNode extends ExpandableTreeNode, Selectabl
     fileUri: string;
 }
 export namespace SearchInWorkspaceFileNode {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(node: any): node is SearchInWorkspaceFileNode {
         return ExpandableTreeNode.is(node) && SelectableTreeNode.is(node) && 'path' in node && 'fileUri' in node && !('folderUri' in node);
     }
@@ -88,7 +88,7 @@ export interface SearchInWorkspaceResultLineNode extends SelectableTreeNode, Sea
     parent: SearchInWorkspaceFileNode
 }
 export namespace SearchInWorkspaceResultLineNode {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(node: any): node is SearchInWorkspaceResultLineNode {
         return SelectableTreeNode.is(node) && 'line' in node && 'character' in node && 'lineText' in node;
     }
@@ -108,7 +108,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     cancelIndicator?: CancellationTokenSource;
 
     protected changeEmitter = new Emitter<Map<string, SearchInWorkspaceRootFolderNode>>();
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected focusInputEmitter = new Emitter<any>();
 
     @inject(SearchInWorkspaceService) protected readonly searchService: SearchInWorkspaceService;
@@ -216,7 +216,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             this.changeEmitter.fire(this.resultTree);
         });
         const progress = await this.progressService.showProgress({ text: `search: ${searchTerm}`, options: { location: 'search' } });
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let pendingRefreshTimeout: any;
         const searchId = await this.searchService.search(searchTerm, {
             onResult: (aSearchId: number, result: SearchInWorkspaceResult) => {
@@ -259,7 +259,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     });
                 this.refreshModelChildren();
             }
-        }, searchOptions).catch(e => { return; });
+        }, searchOptions).catch(() => undefined);
         token.onCancellationRequested(() => {
             progress.cancel();
             if (searchId) {

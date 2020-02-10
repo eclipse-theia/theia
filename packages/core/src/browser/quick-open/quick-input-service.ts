@@ -151,17 +151,17 @@ export class QuickInputService {
                 currentText = lookFor;
             }
         }, {
-                prefix: options.value,
-                placeholder: options.placeHolder,
-                password: options.password,
-                ignoreFocusOut: options.ignoreFocusOut,
-                enabled: options.enabled,
-                valueSelection: options.valueSelection,
-                onClose: () => {
-                    result.resolve(undefined);
-                    this.quickTitleBar.hide();
-                }
-            });
+            prefix: options.value,
+            placeholder: options.placeHolder,
+            password: options.password,
+            ignoreFocusOut: options.ignoreFocusOut,
+            enabled: options.enabled,
+            valueSelection: options.valueSelection,
+            onClose: () => {
+                result.resolve(undefined);
+                this.quickTitleBar.hide();
+            }
+        });
 
         if (options && this.quickTitleBar.shouldShowTitleBar(options.title, options.step)) {
             this.quickTitleBar.attachTitleBar(this.quickOpenService.widgetNode, options.title, options.step, options.totalSteps, options.buttons);

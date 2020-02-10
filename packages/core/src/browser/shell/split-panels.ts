@@ -179,6 +179,7 @@ export class SplitPositionHandler {
         } else {
             pos = layout.handles[move.index].offsetTop;
         }
+        // eslint-disable-next-line no-null/no-null
         if (pos !== null) {
             return pos;
         } else {

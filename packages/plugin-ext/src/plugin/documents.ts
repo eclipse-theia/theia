@@ -120,15 +120,15 @@ export class DocumentsExtImpl implements DocumentsExt {
         return operations;
     }
 
-    // tslint:disable:no-any
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     protected async fireTextDocumentWillSaveEvent({
         document, reason, fireEvent, accept
     }: {
-            document: theia.TextDocument,
-            reason: theia.TextDocumentSaveReason,
-            fireEvent: (e: theia.TextDocumentWillSaveEvent) => any,
-            accept: (operation: SingleEditOperation) => void
-        }): Promise<void> {
+        document: theia.TextDocument,
+        reason: theia.TextDocumentSaveReason,
+        fireEvent: (e: theia.TextDocumentWillSaveEvent) => any,
+        accept: (operation: SingleEditOperation) => void
+    }): Promise<void> {
 
         const promises: PromiseLike<TextEdit[] | any>[] = [];
         fireEvent(Object.freeze({
@@ -152,7 +152,7 @@ export class DocumentsExtImpl implements DocumentsExt {
             }
         }));
     }
-    // tslint:enable:no-any
+    /* eslint-enable  @typescript-eslint/no-explicit-any */
 
     $acceptDirtyStateChanged(strUrl: UriComponents, isDirty: boolean): void {
         const uri = URI.revive(strUrl);

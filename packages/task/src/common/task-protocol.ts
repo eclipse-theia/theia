@@ -36,11 +36,11 @@ export enum RevealKind {
 export interface TaskOutputPresentation {
     focus?: boolean;
     reveal?: RevealKind;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
 export namespace TaskOutputPresentation {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function fromJson(task: any): TaskOutputPresentation {
         if (task && task.presentation) {
             let reveal = RevealKind.Always;
@@ -76,7 +76,7 @@ export interface TaskCustomization {
     /** The order the dependsOn tasks should be executed in. */
     dependsOrder?: DependsOrder;
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
 export namespace TaskCustomization {
@@ -134,7 +134,7 @@ export interface TaskInfo {
     /** task config used for launching a task */
     readonly config: TaskConfiguration,
     /** Additional properties specific for a particular Task Runner. */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly [key: string]: any;
 }
 
@@ -161,7 +161,7 @@ export interface TaskServer extends JsonRpcServer<TaskClient> {
 export interface TaskCustomizationData {
     type: string;
     problemMatcher?: ProblemMatcher[];
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
 

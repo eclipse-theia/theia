@@ -175,10 +175,10 @@ export class TerminalThemeService {
             cursorAccent: cursorAccentColor,
             selection: selectionColor
         };
-        // tslint:disable-next-line:forin
+        // eslint-disable-next-line guard-for-in
         for (const id in terminalAnsiColorMap) {
             const colorName = id.substring(13);
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (theme as any)[colorName] = this.colorRegistry.getCurrentColor(id);
         }
         return theme;

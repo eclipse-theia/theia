@@ -1,10 +1,10 @@
 {
   "name": "@theia/filesystem",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Theia - FileSystem Extension",
   "dependencies": {
-    "@theia/application-package": "^0.14.0",
-    "@theia/core": "^0.14.0",
+    "@theia/application-package": "^0.15.0",
+    "@theia/core": "^0.15.0",
     "@types/body-parser": "^1.17.0",
     "@types/rimraf": "^2.0.2",
     "@types/tar-fs": "^1.16.1",
@@ -58,15 +58,15 @@
     "src"
   ],
   "scripts": {
-    "prepare": "yarn run clean && yarn run build",
-    "clean": "theiaext clean",
+    "lint": "theiaext lint",
     "build": "theiaext build",
     "watch": "theiaext watch",
+    "clean": "theiaext clean",
     "test": "theiaext test",
     "test:watch": "theiaext test:watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.14.0"
+    "@theia/ext-scripts": "^0.15.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

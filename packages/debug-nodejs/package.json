@@ -1,9 +1,9 @@
 {
   "name": "@theia/debug-nodejs",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Theia - NodeJS Debug Extension",
   "dependencies": {
-    "@theia/debug": "^0.14.0",
+    "@theia/debug": "^0.15.0",
     "ps-list": "5.0.1",
     "vscode-debugprotocol": "^1.32.0"
   },
@@ -36,14 +36,14 @@
   ],
   "scripts": {
     "postinstall": "download-debug-adapters",
-    "prepare": "yarn run clean && yarn run build",
-    "clean": "theiaext clean",
+    "lint": "theiaext lint",
     "build": "theiaext build",
     "watch": "theiaext watch",
+    "clean": "theiaext clean",
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.14.0"
+    "@theia/ext-scripts": "^0.15.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

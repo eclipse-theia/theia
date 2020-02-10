@@ -17,12 +17,16 @@
 import { injectable, inject } from 'inversify';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import * as path from 'path';
+import { readdir, remove } from 'fs-extra';
 import * as crypto from 'crypto';
 import URI from '@theia/core/lib/common/uri';
-import { isWindows } from '@theia/core';
+import { ILogger, isWindows } from '@theia/core';
 import { PluginPaths } from './const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
 import { THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '@theia/workspace/lib/common';
+import { PluginCliContribution } from '../plugin-cli-contribution';
+
+const SESSION_TIMESTAMP_PATTERN = /^\d{8}T\d{6}$/;
 
 // Service to provide configuration paths for plugin api.
 @injectable()
@@ -30,8 +34,14 @@ export class PluginPathsServiceImpl implements PluginPathsService {
 
     private readonly windowsDataFolders = [PluginPaths.WINDOWS_APP_DATA_DIR, PluginPaths.WINDOWS_ROAMING_DIR];
 
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
+
+    @inject(PluginCliContribution)
+    protected readonly cliContribution: PluginCliContribution;
 
     async getHostLogPath(): Promise<string> {
         const parentLogsDir = await this.getLogsDirPath();
@@ -40,9 +50,10 @@ export class PluginPathsServiceImpl implements PluginPathsService {
             throw new Error('Unable to get parent log directory');
         }
 
-        const pluginDirPath = path.join(parentLogsDir, this.gererateTimeFolderName(), 'host');
+        const pluginDirPath = path.join(parentLogsDir, this.generateTimeFolderName(), 'host');
         await this.fileSystem.createFolder(pluginDirPath);
-
+        // no `await` as We should never wait for the cleanup
+        this.cleanupOldLogs(parentLogsDir);
         return new URI(pluginDirPath).path.toString();
     }
 
@@ -94,8 +105,14 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     /**
      * Generate time folder name in format: YYYYMMDDTHHMMSS, for example: 20181205T093828
      */
-    private gererateTimeFolderName(): string {
-        return new Date().toISOString().replace(/[-:]|(\..*)/g, '');
+    private generateTimeFolderName(): string {
+        const timeStamp = new Date().toISOString().replace(/[-:]|(\..*)/g, '');
+        // Helps ensure our timestamp generation logic is "valid".
+        // Changes to the timestamp structure may break old logs deletion logic.
+        if (!SESSION_TIMESTAMP_PATTERN.test(timeStamp)) {
+            this.logger.error(`Generated log folder name: "${timeStamp}" does not match expected pattern: ${SESSION_TIMESTAMP_PATTERN}`);
+        }
+        return timeStamp;
     }
 
     private async getLogsDirPath(): Promise<string> {
@@ -124,6 +141,33 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         }
         const homeDirPath = await this.fileSystem.getFsPath(homeDirStat.uri);
         return homeDirPath!;
+    }
+
+    private async cleanupOldLogs(parentLogsDir: string): Promise<void> {
+        // @ts-ignore - fs-extra types (Even latest version) is not updated with the `withFileTypes` option.
+        const dirEntries = await readdir(parentLogsDir, { withFileTypes: true });
+        // `Dirent` type is defined in @types/node since 10.10.0
+        // However, upgrading the @types/node in theia to 10.11 (as defined in engine field)
+        // Causes other packages to break in compilation, so we are using the infamous `any` type...
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const subDirEntries = dirEntries.filter((dirent: any) => dirent.isDirectory() );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const subDirNames = subDirEntries.map((dirent: any) => dirent.name);
+        // We never clean a folder that is not a Theia logs session folder.
+        // Even if it does appears under the `parentLogsDir`...
+        const sessionSubDirNames = subDirNames.filter((dirName: string) => SESSION_TIMESTAMP_PATTERN.test(dirName));
+        // [].sort is ascending order and we need descending order (newest first).
+        const sortedSessionSubDirNames = sessionSubDirNames.sort().reverse();
+        const maxSessionLogsFolders = this.cliContribution.maxSessionLogsFolders();
+        // [5,4,3,2,1].slice(2) --> [2,1] --> only keep N latest session folders.
+        const oldSessionSubDirNames = sortedSessionSubDirNames.slice(maxSessionLogsFolders);
+
+        oldSessionSubDirNames.forEach((sessionDir: string) => {
+            const sessionDirPath = path.resolve(parentLogsDir, sessionDir);
+            // we are not waiting for the async `remove` to finish before returning
+            // in order to minimize impact on Theia startup time.
+            remove(sessionDirPath);
+        });
     }
 
 }

@@ -388,7 +388,7 @@ function getLayoutId(layout: KeyboardLayoutData): string {
 }
 
 /**
- * Keyboard layout files are expexted to have the following name scheme:
+ * Keyboard layout files are expected to have the following name scheme:
  *     `language-name-hardware.json`
  *
  * - `language`: A language subtag according to IETF BCP 47

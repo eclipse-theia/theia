@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 declare module 'macaddress' {
     export type MacAddresCallback = (err: any, data: any) => void;
     export type MacAddressOneCallback = (err: any, mac: string) => void;

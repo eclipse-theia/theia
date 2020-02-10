@@ -18,9 +18,12 @@ import * as theia from '@theia/plugin';
 import { Position as P, Range as R, SymbolInformation, SymbolKind as S } from 'vscode-languageserver-types';
 import URI from 'vscode-uri';
 import * as rpc from '../common/plugin-api-rpc';
-import { DecorationOptions, EditorPosition, PickOpenItem, Plugin, Position, ResourceFileEditDto, ResourceTextEditDto, Selection, TaskDto, WorkspaceEditDto } from '../common/plugin-api-rpc';
+import {
+    DecorationOptions, EditorPosition, PickOpenItem, Plugin, Position, ResourceFileEditDto,
+    ResourceTextEditDto, Selection, TaskDto, WorkspaceEditDto
+} from '../common/plugin-api-rpc';
 import * as model from '../common/plugin-api-rpc-model';
-import { LanguageFilter, LanguageSelector, RelativePattern } from './languages';
+import { LanguageFilter, LanguageSelector, RelativePattern } from '@theia/languages/lib/common/language-selector';
 import { isMarkdownString, MarkdownString } from './markdown-string';
 import { Item } from './quick-open';
 import * as types from './types-impl';
@@ -135,7 +138,7 @@ export function toPosition(position: Position): types.Position {
     return new types.Position(position.lineNumber - 1, position.column - 1);
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isDecorationOptions(something: any): something is theia.DecorationOptions {
     return (typeof something.range !== 'undefined');
 }
@@ -162,7 +165,7 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
             return {
                 range: fromRange(r.range)!,
                 hoverMessage: hoverMessage,
-                // tslint:disable-next-line:no-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 renderOptions: <any> /* URI vs Uri */r.renderOptions
             };
         });
@@ -183,7 +186,7 @@ interface Codeblock {
     value: string;
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isCodeblock(thing: any): thing is Codeblock {
     return thing && typeof thing === 'object'
         && typeof (<Codeblock>thing).language === 'string'
@@ -495,7 +498,7 @@ export namespace SignatureHelp {
     }
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): WorkspaceEditDto {
     const result: WorkspaceEditDto = {
         edits: []
@@ -515,7 +518,6 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
 }
 
 export namespace SymbolKind {
-    // tslint:disable-next-line:no-null-keyword
     const fromMapping: { [kind: number]: model.SymbolKind } = Object.create(null);
     fromMapping[model.SymbolKind.File] = model.SymbolKind.File;
     fromMapping[model.SymbolKind.Module] = model.SymbolKind.Module;
@@ -749,9 +751,9 @@ export function getShellArgs(args: undefined | (string | theia.ShellQuotedString
     return result;
 }
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getShellExecutionOptions(options: theia.ShellExecutionOptions): { [key: string]: any } {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = {} as { [key: string]: any };
 
     const env = options.env;

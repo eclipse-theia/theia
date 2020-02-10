@@ -160,7 +160,7 @@ export class TabBarToolbar extends ReactWidget {
             anchor: event.nativeEvent,
             onHide: () => toDisposeOnHide.dispose()
         });
-    }
+    };
 
     shouldHandleMouseEvent(event: MouseEvent): boolean {
         return event.target instanceof Element && (!!this.inline.get(event.target.id) || event.target.id === '__more__');
@@ -178,17 +178,17 @@ export class TabBarToolbar extends ReactWidget {
         if (TabBarToolbarItem.is(item)) {
             this.commands.executeCommand(item.command, this.current);
         }
-    }
+    };
 
     protected onMouseDownEvent = (e: React.MouseEvent<HTMLElement>) => {
         if (e.button === 0) {
             e.currentTarget.classList.add('active');
         }
-    }
+    };
 
     protected onMouseUpEvent = (e: React.MouseEvent<HTMLElement>) => {
         e.currentTarget.classList.remove('active');
-    }
+    };
 
 }
 
@@ -335,7 +335,7 @@ export namespace TabBarToolbarItem {
     };
 
     export function is(arg: Object | undefined): arg is TabBarToolbarItem {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return !!arg && 'command' in arg && typeof (arg as any).command === 'string';
     }
 

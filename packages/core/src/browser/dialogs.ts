@@ -61,7 +61,7 @@ export class DialogOverlayService implements FrontendApplicationContribution {
         return DialogOverlayService.INSTANCE;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected readonly dialogs: AbstractDialog<any>[] = [];
 
     constructor() {
@@ -73,12 +73,12 @@ export class DialogOverlayService implements FrontendApplicationContribution {
         DialogOverlayService.INSTANCE = this;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected get currentDialog(): AbstractDialog<any> | undefined {
         return this.dialogs[0];
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     push(dialog: AbstractDialog<any>): Disposable {
         this.dialogs.unshift(dialog);
         return Disposable.create(() => {
@@ -117,7 +117,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected readonly errorMessageNode: HTMLDivElement;
 
     protected resolve: undefined | ((value: T | undefined) => void);
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected reject: undefined | ((reason: any) => void);
 
     protected closeButton: HTMLButtonElement | undefined;
@@ -305,7 +305,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         if (this.acceptButton) {
             this.acceptButton.disabled = !DialogError.getResult(error);
         }
-        this.errorMessageNode.innerHTML = DialogError.getMessage(error);
+        this.errorMessageNode.innerText = DialogError.getMessage(error);
     }
 
     protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {

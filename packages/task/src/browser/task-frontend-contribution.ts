@@ -224,7 +224,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_RUN,
             {
                 isEnabled: () => true,
-                // tslint:disable-next-line:no-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 execute: (...args: any[]) => {
                     const [source, label, scope] = args;
                     if (source && label) {
@@ -238,7 +238,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_RUN_BUILD,
             {
                 isEnabled: () => this.workspaceService.opened,
-                // tslint:disable-next-line:no-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 execute: (...args: any[]) =>
                     this.quickOpenTask.runBuildOrTestTask('build')
             }
@@ -247,7 +247,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_RUN_TEST,
             {
                 isEnabled: () => this.workspaceService.opened,
-                // tslint:disable-next-line:no-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 execute: (...args: any[]) =>
                     this.quickOpenTask.runBuildOrTestTask('test')
             }

@@ -34,33 +34,33 @@ export class MessageService {
 
     log<T extends string>(message: string, ...actions: T[]): Promise<T | undefined>;
     log<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     log(message: string, ...args: any[]): Promise<string | undefined> {
         return this.processMessage(MessageType.Log, message, args);
     }
 
     info<T extends string>(message: string, ...actions: T[]): Promise<T | undefined>;
     info<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     info(message: string, ...args: any[]): Promise<string | undefined> {
         return this.processMessage(MessageType.Info, message, args);
     }
 
     warn<T extends string>(message: string, ...actions: T[]): Promise<T | undefined>;
     warn<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     warn(message: string, ...args: any[]): Promise<string | undefined> {
         return this.processMessage(MessageType.Warning, message, args);
     }
 
     error<T extends string>(message: string, ...actions: T[]): Promise<T | undefined>;
     error<T extends string>(message: string, options?: MessageOptions, ...actions: T[]): Promise<T | undefined>;
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error(message: string, ...args: any[]): Promise<string | undefined> {
         return this.processMessage(MessageType.Error, message, args);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected processMessage(type: MessageType, text: string, args?: any[]): Promise<string | undefined> {
         if (!!args && args.length > 0) {
             const first = args[0];

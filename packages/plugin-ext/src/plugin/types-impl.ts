@@ -19,20 +19,22 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
+/* eslint-disable no-null/no-null */
+
 import { UUID } from '@phosphor/coreutils/lib/uuid';
 import { illegalArgument } from '../common/errors';
 import * as theia from '@theia/plugin';
 import * as crypto from 'crypto';
 import URI from 'vscode-uri';
 import { relative } from '../common/paths-util';
-import { startsWithIgnoreCase } from '../common/strings';
+import { startsWithIgnoreCase } from '@theia/languages/lib/common/language-selector/strings';
 import { MarkdownString, isMarkdownString } from './markdown-string';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
 
 export class Disposable {
     private disposable: undefined | (() => void);
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static from(...disposables: { dispose(): any }[]): Disposable {
         return new Disposable(() => {
             if (disposables) {
@@ -716,7 +718,7 @@ export enum CompletionItemKind {
     Enum = 12,
     Keyword = 13,
     Snippet = 14,
-    Color = 15,
+    Color = 15, // eslint-disable-line no-shadow
     File = 16,
     Reference = 17,
     Folder = 18,
@@ -1132,7 +1134,7 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
         return this.entries().length;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     toJSON(): any {
         return this.entries();
     }
@@ -1203,7 +1205,7 @@ export class SymbolInformation {
         SymbolInformation.validate(this);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     toJSON(): any {
         return {
             name: this.name,
@@ -1620,7 +1622,7 @@ export class Task {
         problemMatchers?: string | string[],
     );
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(...args: any[]) {
         let taskDefinition: theia.TaskDefinition;
         let scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace | undefined;
@@ -2008,4 +2010,42 @@ export enum WebviewPanelTargetArea {
     Left = 'left',
     Right = 'right',
     Bottom = 'bottom'
+}
+export class CallHierarchyItem {
+    kind: SymbolKind;
+    name: string;
+    detail?: string;
+    uri: URI;
+    range: Range;
+    selectionRange: Range;
+
+    constructor(kind: SymbolKind, name: string, detail: string, uri: URI, range: Range, selectionRange: Range) {
+        this.kind = kind;
+        this.name = name;
+        this.detail = detail;
+        this.uri = uri;
+        this.range = range;
+        this.selectionRange = selectionRange;
+    }
+}
+
+export class CallHierarchyIncomingCall {
+
+    from: theia.CallHierarchyItem;
+    fromRanges: theia.Range[];
+
+    constructor(item: theia.CallHierarchyItem, fromRanges: theia.Range[]) {
+        this.fromRanges = fromRanges;
+        this.from = item;
+    }
+}
+export class CallHierarchyOutgoingCall {
+
+    to: theia.CallHierarchyItem;
+    fromRanges: theia.Range[];
+
+    constructor(item: theia.CallHierarchyItem, fromRanges: theia.Range[]) {
+        this.fromRanges = fromRanges;
+        this.to = item;
+    }
 }

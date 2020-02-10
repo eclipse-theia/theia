@@ -31,7 +31,7 @@ export class PluginVsCodeCliContribution implements CliContribution, PluginHostE
 
     configure(conf: Argv): void {
         conf.option(PluginVsCodeCliContribution.VSCODE_API_VERSION, {
-            // tslint:disable-next-line:max-line-length
+            // eslint-disable-next-line max-len
             description: `Overrides the version returned by VSCode API 'vscode.version'. Example: --${PluginVsCodeCliContribution.VSCODE_API_VERSION}=<Wanted Version>. Default [${VSCODE_DEFAULT_API_VERSION}]`,
             type: 'string',
             nargs: 1

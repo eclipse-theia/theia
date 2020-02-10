@@ -14,9 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as idb from 'idb';
 import { injectable, inject } from 'inversify';
 import * as jsoncparser from 'jsonc-parser';
 import * as plistparser from 'fast-plist';
@@ -24,7 +23,8 @@ import { ThemeService, BuiltinThemeProvider } from '@theia/core/lib/browser/them
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
-import { MonacoThemeRegistry, ThemeMix } from './textmate/monaco-theme-registry';
+import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
+import { getThemes, putTheme, MonacoThemeState } from './monaco-indexed-db';
 
 export interface MonacoTheme {
     id?: string;
@@ -55,24 +55,13 @@ export interface MonacoThemeJson {
     includes?: { [includePath: string]: any }
 }
 
-let monacoDB: Promise<idb.IDBPDatabase> | undefined;
-if ('indexedDB' in window) {
-    monacoDB = idb.openDB('theia-monaco', 1, {
-        upgrade: db => {
-            if (!db.objectStoreNames.contains('themes')) {
-                db.createObjectStore('themes', { keyPath: 'id' });
-            }
-        }
-    });
-}
-
 @injectable()
 export class MonacoThemingService {
 
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     register(theme: MonacoTheme, pending: { [uri: string]: Promise<any> } = {}): Disposable {
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
         this.doRegister(theme, pending, toDispose);
@@ -103,7 +92,7 @@ export class MonacoThemingService {
         pending: { [uri: string]: Promise<any> },
         toDispose: DisposableCollection
     ): Promise<any> {
-        // tslint:enabled:no-any
+        /* eslint-enable @typescript-eslint/no-explicit-any */
         const { content } = await this.fileSystem.resolveContent(uri);
         if (toDispose.disposed) {
             return;
@@ -133,6 +122,7 @@ export class MonacoThemingService {
         return json;
     }
 
+    /* eslint-disable @typescript-eslint/no-explicit-any */
     protected doLoadTheme(
         themeUri: URI,
         referencedPath: string,
@@ -146,6 +136,7 @@ export class MonacoThemingService {
         }
         return pending[referencedUri];
     }
+    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     static init(): void {
         this.updateBodyUiTheme();
@@ -171,68 +162,38 @@ export class MonacoThemingService {
         this.toUpdateUiTheme.push(Disposable.create(() => document.body.classList.remove(uiTheme)));
     }
 
-    protected static doRegister(state: MonacoThemingService.MonacoThemeState): Disposable {
+    protected static doRegister(state: MonacoThemeState): Disposable {
         const { id, label, description, uiTheme, data } = state;
         const type = uiTheme === 'vs' ? 'light' : uiTheme === 'vs-dark' ? 'dark' : 'hc';
         const builtInTheme = uiTheme === 'vs' ? BuiltinThemeProvider.lightCss : BuiltinThemeProvider.darkCss;
-        const toDispose = new DisposableCollection(ThemeService.get().register({
-            type,
-            id,
-            label,
-            description: description,
-            editorTheme: data.name!,
-            activate(): void {
-                builtInTheme.use();
-            },
-            deactivate(): void {
-                builtInTheme.unuse();
-            }
-        }));
-        this.storeTheme(state, toDispose);
-        return toDispose;
+        return new DisposableCollection(
+            ThemeService.get().register({
+                type,
+                id,
+                label,
+                description: description,
+                editorTheme: data.name!,
+                activate(): void {
+                    builtInTheme.use();
+                },
+                deactivate(): void {
+                    builtInTheme.unuse();
+                }
+            }),
+            putTheme(state)
+        );
     }
 
     protected static async restore(): Promise<void> {
-        if (!monacoDB) {
-            return;
-        }
         try {
-            const db = await monacoDB;
-            const themes = await db.transaction('themes', 'readonly').objectStore('themes').getAll();
+            const themes = await getThemes();
             for (const state of themes) {
-                if (MonacoThemingService.MonacoThemeState.is(state)) {
-                    MonacoThemeRegistry.SINGLETON.setTheme(state.data.name!, state.data);
-                    MonacoThemingService.doRegister(state);
-                }
+                MonacoThemeRegistry.SINGLETON.setTheme(state.data.name!, state.data);
+                MonacoThemingService.doRegister(state);
             }
         } catch (e) {
             console.error('Failed to restore monaco themes', e);
         }
-    }
-
-    protected static async storeTheme(state: MonacoThemingService.MonacoThemeState, toDispose: DisposableCollection): Promise<void> {
-        if (!monacoDB) {
-            return;
-        }
-        const db = await monacoDB;
-        if (toDispose.disposed) {
-            return;
-        }
-        const id = state.id;
-        await db.transaction('themes', 'readwrite').objectStore('themes').put(state);
-        if (toDispose.disposed) {
-            await this.cleanTheme(id);
-            return;
-        }
-        toDispose.push(Disposable.create(() => this.cleanTheme(id)));
-    }
-
-    protected static async cleanTheme(id: string): Promise<void> {
-        if (!monacoDB) {
-            return;
-        }
-        const db = await monacoDB;
-        await db.transaction('themes', 'readwrite').objectStore('themes').delete(id);
     }
 
     /* remove all characters that are not allowed in css */
@@ -244,18 +205,4 @@ export class MonacoThemingService {
         return str;
     }
 
-}
-export namespace MonacoThemingService {
-    export interface MonacoThemeState {
-        id: string,
-        label: string,
-        description?: string,
-        uiTheme: monaco.editor.BuiltinTheme
-        data: ThemeMix
-    }
-    export namespace MonacoThemeState {
-        export function is(state: Object | undefined): state is MonacoThemeState {
-            return !!state && typeof state === 'object' && 'id' in state && 'label' in state && 'uiTheme' in state && 'data' in state;
-        }
-    }
 }

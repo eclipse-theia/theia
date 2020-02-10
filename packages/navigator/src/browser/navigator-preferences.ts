@@ -17,8 +17,6 @@
 import { interfaces } from 'inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 
-// tslint:disable:max-line-length
-
 export const FileNavigatorConfigSchema: PreferenceSchema = {
     'type': 'object',
     properties: {

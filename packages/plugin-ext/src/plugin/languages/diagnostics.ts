@@ -126,7 +126,7 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
         this.proxy.$clearDiagnostics(this.name);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     forEach(callback: (uri: URI, diagnostics: theia.Diagnostic[], collection: theia.DiagnosticCollection) => any, thisArg?: any): void {
         this.ensureNotDisposed();
         this.diagnostics.forEach((diagnostics, uriString) => {

@@ -102,12 +102,12 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
         });
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $setItems(items: PickOpenItem[]): Promise<any> {
         this.items = [];
         for (const i of items) {
             let item: QuickOpenItem | QuickOpenGroupItem;
-            // tslint:disable-next-line: no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const options: any = {
                 label: i.label,
                 description: i.description,
@@ -153,7 +153,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
         return convertedItems;
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $setError(error: Error): Promise<any> {
         throw new Error('Method not implemented.');
     }
@@ -252,7 +252,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
         });
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private findChangedKey(key: string, value: any): void {
         switch (key) {
             case 'title': {
@@ -294,7 +294,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
         }
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $setQuickInputChanged(changed: any): void {
         for (const key in changed) {
             if (changed.hasOwnProperty(key)) {

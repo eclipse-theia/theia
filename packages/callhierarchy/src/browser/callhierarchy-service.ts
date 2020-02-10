@@ -14,17 +14,24 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named } from 'inversify';
-import { Location } from 'vscode-languageserver-types';
-import { Definition, Caller } from './callhierarchy';
+import { injectable, inject, named, postConstruct } from 'inversify';
+import { Position, DocumentUri } from 'vscode-languageserver-types';
+import { Definition, Caller, Callee } from './callhierarchy';
 import { ContributionProvider } from '@theia/core/lib/common';
+import { LanguageSelector, score } from '@theia/languages/lib/common/language-selector';
+import URI from '@theia/core/lib/common/uri';
+import { Disposable } from '@theia/core/lib/common';
+import { CancellationToken } from '@theia/core';
 
 export const CallHierarchyService = Symbol('CallHierarchyService');
 
 export interface CallHierarchyService {
-    readonly languageId: string
-    getRootDefinition(location: Location): Promise<Definition | undefined>
-    getCallers(definition: Definition): Promise<Caller[] | undefined>
+
+    readonly selector: LanguageSelector;
+
+    getRootDefinition(uri: DocumentUri, position: Position, cancellationToken: CancellationToken): Promise<Definition | undefined>
+    getCallers(definition: Definition, cancellationToken: CancellationToken): Promise<Caller[] | undefined>
+    getCallees?(definition: Definition, cancellationToken: CancellationToken): Promise<Callee[] | undefined>
 }
 
 @injectable()
@@ -33,7 +40,33 @@ export class CallHierarchyServiceProvider {
     @inject(ContributionProvider) @named(CallHierarchyService)
     protected readonly contributions: ContributionProvider<CallHierarchyService>;
 
-    get(languageId: string): CallHierarchyService | undefined {
-        return this.contributions.getContributions().find(service => languageId === service.languageId);
+    private services: CallHierarchyService[] = [];
+
+    @postConstruct()
+    init(): void {
+        this.services = this.services.concat(this.contributions.getContributions());
+    }
+
+    get(languageId: string, uri: URI): CallHierarchyService | undefined {
+
+        return this.services.sort(
+            (left, right) =>
+                score(right.selector, uri.scheme, uri.path.toString(), languageId, true) - score(left.selector, uri.scheme, uri.path.toString(), languageId, true))[0];
+    }
+
+    add(service: CallHierarchyService): Disposable {
+        this.services.push(service);
+        const that = this;
+        return {
+            dispose: () => {
+                that.remove(service);
+            }
+        };
+    }
+
+    private remove(service: CallHierarchyService): boolean {
+        const length = this.services.length;
+        this.services = this.services.filter(value => value !== service);
+        return length !== this.services.length;
     }
 }

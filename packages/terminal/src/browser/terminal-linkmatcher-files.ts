@@ -52,6 +52,7 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
                 if (toOpen) {
                     // TODO: would be better to ask the opener service, but it returns positively even for unknown files.
                     const f = await this.fileSystem.getFileStat(toOpen.toString());
+                    // eslint-disable-next-line no-null/no-null
                     return f !== undefined && f !== null && !f.isDirectory;
                 }
             } catch (err) {

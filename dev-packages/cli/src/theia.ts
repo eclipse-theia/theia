@@ -230,7 +230,7 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
         });
 
     // see https://github.com/yargs/yargs/issues/287#issuecomment-314463783
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const commands = (yargs as any).getCommandInstance().getCommands();
     const argv = yargs.demandCommand(1).argv;
     const command = argv._[0];

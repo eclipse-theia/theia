@@ -34,10 +34,14 @@ export interface MenuAction {
 
 export namespace MenuAction {
     /* Determine whether object is a MenuAction */
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(arg: MenuAction | any): arg is MenuAction {
         return !!arg && arg === Object(arg) && 'commandId' in arg;
     }
+}
+
+export interface SubMenuOptions {
+    iconClass: string
 }
 
 export type MenuPath = string[];
@@ -79,7 +83,7 @@ export class MenuModelRegistry {
         return parent.addNode(actionNode);
     }
 
-    registerSubmenu(menuPath: MenuPath, label: string): Disposable {
+    registerSubmenu(menuPath: MenuPath, label: string, options?: SubMenuOptions): Disposable {
         if (menuPath.length === 0) {
             throw new Error('The sub menu path cannot be empty.');
         }
@@ -89,13 +93,16 @@ export class MenuModelRegistry {
         const parent = this.findGroup(groupPath);
         let groupNode = this.findSubMenu(parent, menuId);
         if (!groupNode) {
-            groupNode = new CompositeMenuNode(menuId, label);
+            groupNode = new CompositeMenuNode(menuId, label, options ? options.iconClass : undefined);
             return parent.addNode(groupNode);
         } else {
             if (!groupNode.label) {
                 groupNode.label = label;
             } else if (groupNode.label !== label) {
                 throw new Error("The group '" + menuPath.join('/') + "' already has a different label.");
+            }
+            if (!groupNode.iconClass && options) {
+                groupNode.iconClass = options.iconClass;
             }
             return { dispose: () => { } };
         }
@@ -182,7 +189,8 @@ export class CompositeMenuNode implements MenuNode {
     protected readonly _children: MenuNode[] = [];
     constructor(
         public readonly id: string,
-        public label?: string
+        public label?: string,
+        public iconClass?: string
     ) { }
 
     get children(): ReadonlyArray<MenuNode> {

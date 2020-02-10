@@ -39,7 +39,7 @@ export namespace NpmRegistryProps {
  */
 export interface ApplicationProps extends NpmRegistryProps {
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly [key: string]: any;
 
     /**
@@ -90,7 +90,7 @@ export namespace ApplicationProps {
  * Base configuration for the Theia application.
  */
 export interface ApplicationConfig {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly [key: string]: any;
 }
 
@@ -108,6 +108,12 @@ export interface FrontendApplicationConfig extends ApplicationConfig {
      * The name of the application. `Theia` by default.
      */
     readonly applicationName: string;
+
+    /**
+     * If set to `true`, reloading the current browser window won't be possible with the `Ctrl/Cmd + R` keybinding.
+     * It is `false` by default. Has no effect if not in an electron environment.
+     */
+    readonly disallowReloadKeybinding?: boolean;
 
 }
 

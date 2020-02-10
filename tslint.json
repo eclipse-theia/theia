@@ -1,9 +1,0 @@
-{
-  "//": [
-    "Lint rules expected to be used in interactive editors."
-  ],
-  "extends": [
-    "./configs/errors.tslint.json",
-    "./configs/warnings.tslint.json"
-  ]
-}

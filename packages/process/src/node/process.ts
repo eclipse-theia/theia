@@ -60,7 +60,7 @@ export interface ProcessOptions<T = string> {
     readonly command: string,
     args?: T[],
     options?: {
-        // tslint:disable-next-line:no-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         [key: string]: any
     }
 }
@@ -192,7 +192,7 @@ export abstract class Process {
         this.logger.error(error);
     }
 
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected isForkOptions(options: any): options is ForkOptions {
         return !!options && !!options.modulePath;
     }

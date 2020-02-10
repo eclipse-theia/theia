@@ -24,6 +24,7 @@ import {
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { RecursivePartial, MaybePromise, Event as CommonEvent, DisposableCollection, Disposable } from '../../common';
+import { animationFrame } from '../browser';
 import { Saveable } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
@@ -48,7 +49,7 @@ const MAIN_AREA_CLASS = 'theia-app-main';
 const BOTTOM_AREA_CLASS = 'theia-app-bottom';
 
 export type ApplicationShellLayoutVersion =
-    /** layout versioning is introduced, unversiouned layout are not compatible */
+    /** layout versioning is introduced, unversioned layout are not compatible */
     2.0 |
     /** view containers are introduced, backward compatible to 2.0 */
     3.0;
@@ -339,6 +340,7 @@ export class ApplicationShell extends Widget {
                 && clientX >= offsetLeft + clientWidth - this.options.rightPanel.expandThreshold;
             const expBottom = allowExpansion && !expLeft && !expRight && clientY <= offsetTop + clientHeight
                 && clientY >= offsetTop + clientHeight - this.options.bottomPanel.expandThreshold;
+            // eslint-disable-next-line no-null/no-null
             if (expLeft && !state.leftExpanded && this.leftPanelHandler.tabBar.currentTitle === null) {
                 // The mouse cursor is moved close to the left border
                 this.leftPanelHandler.expand();
@@ -349,6 +351,7 @@ export class ApplicationShell extends Widget {
                 this.leftPanelHandler.collapse();
                 state.leftExpanded = false;
             }
+            // eslint-disable-next-line no-null/no-null
             if (expRight && !state.rightExpanded && this.rightPanelHandler.tabBar.currentTitle === null) {
                 // The mouse cursor is moved close to the right border
                 this.rightPanelHandler.expand();
@@ -381,7 +384,7 @@ export class ApplicationShell extends Widget {
             const { clientX, clientY } = this.dragState.lastDragOver;
             const event = document.createEvent('MouseEvent');
             event.initMouseEvent('mousemove', true, true, window, 0, 0, 0,
-                // tslint:disable-next-line:no-null-keyword
+                // eslint-disable-next-line no-null/no-null
                 clientX, clientY, false, false, false, false, 0, null);
             document.dispatchEvent(event);
         }
@@ -666,7 +669,7 @@ export class ApplicationShell extends Widget {
             this.bottomPanelState.pendingUpdate,
             this.leftPanelHandler.state.pendingUpdate,
             this.rightPanelHandler.state.pendingUpdate
-            // tslint:disable-next-line:no-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ]) as Promise<any>;
     }
 
@@ -860,7 +863,7 @@ export class ApplicationShell extends Widget {
                 w = w.parent;
             }
             // Reset the z-index to the default
-            // tslint:disable-next-line:no-null-keyword
+            // eslint-disable-next-line no-null/no-null
             this.setZIndex(oldValue.node, null);
         }
         if (newValue) {
@@ -1198,17 +1201,14 @@ export class ApplicationShell extends Widget {
      * Collapse the named side panel area. This makes sure that the panel is hidden,
      * increasing the space that is available for other shell areas.
      */
-    collapsePanel(area: ApplicationShell.Area): void {
+    collapsePanel(area: ApplicationShell.Area): Promise<void> {
         switch (area) {
             case 'bottom':
-                this.collapseBottomPanel();
-                break;
+                return this.collapseBottomPanel();
             case 'left':
-                this.leftPanelHandler.collapse();
-                break;
+                return this.leftPanelHandler.collapse();
             case 'right':
-                this.rightPanelHandler.collapse();
-                break;
+                return this.rightPanelHandler.collapse();
             default:
                 throw new Error('Area cannot be collapsed: ' + area);
         }
@@ -1218,18 +1218,20 @@ export class ApplicationShell extends Widget {
      * Collapse the bottom panel. All contained widgets are hidden, but not closed.
      * They can be restored by calling `expandBottomPanel`.
      */
-    protected collapseBottomPanel(): void {
+    protected collapseBottomPanel(): Promise<void> {
         const bottomPanel = this.bottomPanel;
-        if (!bottomPanel.isHidden) {
-            if (this.bottomPanelState.expansion === SidePanel.ExpansionState.expanded) {
-                const size = this.getBottomPanelSize();
-                if (size) {
-                    this.bottomPanelState.lastPanelSize = size;
-                }
-            }
-            this.bottomPanelState.expansion = SidePanel.ExpansionState.collapsed;
-            bottomPanel.hide();
+        if (bottomPanel.isHidden) {
+            return Promise.resolve();
         }
+        if (this.bottomPanelState.expansion === SidePanel.ExpansionState.expanded) {
+            const size = this.getBottomPanelSize();
+            if (size) {
+                this.bottomPanelState.lastPanelSize = size;
+            }
+        }
+        this.bottomPanelState.expansion = SidePanel.ExpansionState.collapsed;
+        bottomPanel.hide();
+        return animationFrame();
     }
 
     /**
@@ -1324,40 +1326,39 @@ export class ApplicationShell extends Widget {
      * Determine the name of the shell area where the given widget resides. The result is
      * undefined if the widget does not reside directly in the shell.
      */
-    getAreaFor(input: Widget): ApplicationShell.Area | undefined {
+    getAreaFor(input: TabBar<Widget> | Widget): ApplicationShell.Area | undefined {
+        if (input instanceof TabBar) {
+            if (find(this.mainPanel.tabBars(), tb => tb === input)) {
+                return 'main';
+            }
+            if (find(this.bottomPanel.tabBars(), tb => tb === input)) {
+                return 'bottom';
+            }
+            if (this.leftPanelHandler.tabBar === input) {
+                return 'left';
+            }
+            if (this.rightPanelHandler.tabBar === input) {
+                return 'right';
+            }
+        }
         const widget = this.toTrackedStack(input.id).pop();
         if (!widget) {
             return undefined;
         }
-        if (widget instanceof TabBar) {
-            if (find(this.mainPanel.tabBars(), tb => tb === widget)) {
-                return 'main';
-            }
-            if (find(this.bottomPanel.tabBars(), tb => tb === widget)) {
-                return 'bottom';
-            }
-            if (this.leftPanelHandler.tabBar === widget) {
-                return 'left';
-            }
-            if (this.rightPanelHandler.tabBar === widget) {
-                return 'right';
-            }
-        } else {
-            const title = widget.title;
-            const mainPanelTabBar = this.mainPanel.findTabBar(title);
-            if (mainPanelTabBar) {
-                return 'main';
-            }
-            const bottomPanelTabBar = this.bottomPanel.findTabBar(title);
-            if (bottomPanelTabBar) {
-                return 'bottom';
-            }
-            if (ArrayExt.firstIndexOf(this.leftPanelHandler.tabBar.titles, title) > -1) {
-                return 'left';
-            }
-            if (ArrayExt.firstIndexOf(this.rightPanelHandler.tabBar.titles, title) > -1) {
-                return 'right';
-            }
+        const title = widget.title;
+        const mainPanelTabBar = this.mainPanel.findTabBar(title);
+        if (mainPanelTabBar) {
+            return 'main';
+        }
+        const bottomPanelTabBar = this.bottomPanel.findTabBar(title);
+        if (bottomPanelTabBar) {
+            return 'bottom';
+        }
+        if (ArrayExt.firstIndexOf(this.leftPanelHandler.tabBar.titles, title) > -1) {
+            return 'left';
+        }
+        if (ArrayExt.firstIndexOf(this.rightPanelHandler.tabBar.titles, title) > -1) {
+            return 'right';
         }
         return undefined;
     }
@@ -1653,7 +1654,7 @@ export namespace ApplicationShell {
      * Whether a widget should be opened to the side tab bar relatively to the reference widget.
      */
     export type OpenToSideMode = 'open-to-left' | 'open-to-right';
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function isOpenToSideMode(mode: OpenToSideMode | any): mode is OpenToSideMode {
         return mode === 'open-to-left' || mode === 'open-to-right';
     }

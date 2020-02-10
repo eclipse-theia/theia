@@ -37,7 +37,7 @@ export class DebugExpressionProvider {
         // Some example supported expressions: myVar.prop, a.b.c.d, myVar?.prop, myVar->prop, MyClass::StaticProp, *myVar
         // Match any character except a set of characters which often break interesting sub-expressions
         const expression = /([^()\[\]{}<>\s+\-/%~#^;=|,`!]|\->)+/g;
-        // tslint:disable-next-line
+        // eslint-disable-next-line no-null/no-null
         let result: RegExpExecArray | null = null;
 
         // First find the full expression under the cursor
@@ -56,7 +56,7 @@ export class DebugExpressionProvider {
         // For example in expression 'a.b.c.d', if the focus was under 'b', 'a.b' would be evaluated.
         if (matchingExpression) {
             const subExpression: RegExp = /\w+/g;
-            // tslint:disable-next-line
+            // eslint-disable-next-line no-null/no-null
             let subExpressionResult: RegExpExecArray | null = null;
             while (subExpressionResult = subExpression.exec(matchingExpression)) {
                 const subEnd = subExpressionResult.index + 1 + startOffset + subExpressionResult[0].length;

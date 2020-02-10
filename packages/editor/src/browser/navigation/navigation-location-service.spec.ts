@@ -31,7 +31,7 @@ import { NavigationLocationService } from './navigation-location-service';
 
 disableJSDOM();
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 describe('navigation-location-service', () => {
 

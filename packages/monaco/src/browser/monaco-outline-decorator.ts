@@ -19,7 +19,7 @@ import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
 import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
-import { MonacoOutlineSymbolInformationNode} from './monaco-outline-contribution';
+import { MonacoOutlineSymbolInformationNode } from './monaco-outline-contribution';
 
 @injectable()
 export class MonacoOutlineDecorator implements TreeDecorator {
@@ -37,7 +37,7 @@ export class MonacoOutlineDecorator implements TreeDecorator {
     }
 
     protected collectDecorations(tree: Tree): Map<string, TreeDecoration.Data> {
-      const result = new Map();
+        const result = new Map();
         if (tree.root === undefined) {
             return result;
         }
@@ -53,14 +53,14 @@ export class MonacoOutlineDecorator implements TreeDecorator {
 
     protected toDecoration(node: MonacoOutlineSymbolInformationNode): TreeDecoration.Data {
         const captionSuffixes: TreeDecoration.CaptionAffix[] = [{
-                data: (node.detail || ''),
-                fontData: {
-                    color: 'var(--theia-descriptionForeground)',
-                }
-            }];
+            data: (node.detail || ''),
+            fontData: {
+                color: 'var(--theia-descriptionForeground)',
+            }
+        }];
 
         return {
-                captionSuffixes
-            };
+            captionSuffixes
+        };
     }
 }

@@ -31,8 +31,8 @@ import * as sinon from 'sinon';
 
 disableJSDOM();
 
-// tslint:disable:no-any
-// tslint:disable:no-unused-expression
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-unused-expressions */
 
 let root: CompositeTreeNode;
 let workspaceRootFolder: DirNode;

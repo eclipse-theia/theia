@@ -251,7 +251,7 @@ export namespace WidgetDecoration {
             /**
              * Has to be highlighted if defined.
              */
-            readonly highligh?: true;
+            readonly highlight?: true;
         }
         /**
          * Splits the `caption` argument based on the ranges from the `highlight` argument.
@@ -270,7 +270,7 @@ export namespace WidgetDecoration {
                         result.push({ data });
                     }
                     const { length } = ranges.splice(containerIndex, 1).shift()!;
-                    result.push({ data: caption.substr(i, length), highligh: true });
+                    result.push({ data: caption.substr(i, length), highlight: true });
                     data = '';
                     i = i + length - 1;
                 }

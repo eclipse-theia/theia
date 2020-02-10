@@ -25,7 +25,7 @@ import { MessageService, LogLevel } from '@theia/core/lib/common';
 import { MessageClient } from '@theia/core';
 import { ILogger } from '@theia/core/lib/common/logger';
 
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function initializeBindings(): { container: Container, bind: interfaces.Bind } {
     const container = new Container();
     const bind = container.bind.bind(container);

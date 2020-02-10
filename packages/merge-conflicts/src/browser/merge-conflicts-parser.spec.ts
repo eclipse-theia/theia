@@ -28,7 +28,7 @@ before(() => {
     parser = new MergeConflictsParser();
 });
 
-// tslint:disable:no-unused-expression
+/* eslint-disable no-unused-expressions */
 
 function parse(contents: string): MergeConflict[] {
     const splitted = contents.split('\n');

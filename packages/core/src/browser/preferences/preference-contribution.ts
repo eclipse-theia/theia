@@ -28,8 +28,7 @@ import { bindPreferenceConfigurations, PreferenceConfigurations } from './prefer
 export { PreferenceSchema, PreferenceSchemaProperties, PreferenceDataSchema, PreferenceItem, PreferenceSchemaProperty, PreferenceDataProperty, JsonType };
 import { Mutable } from '../../common/types';
 
-// tslint:disable:no-any
-// tslint:disable:forin
+/* eslint-disable guard-for-in, @typescript-eslint/no-explicit-any */
 
 export const PreferenceContribution = Symbol('PreferenceContribution');
 export interface PreferenceContribution {
@@ -47,7 +46,7 @@ export interface OverridePreferenceName {
     overrideIdentifier: string
 }
 export namespace OverridePreferenceName {
-    // tslint:disable-next-line:no-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(arg: any): arg is OverridePreferenceName {
         return !!arg && typeof arg === 'object' && 'preferenceName' in arg && 'overrideIdentifier' in arg;
     }
@@ -242,7 +241,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
             case 'object':
                 return {};
         }
-        // tslint:disable-next-line:no-null-keyword
+        // eslint-disable-next-line no-null/no-null
         return null;
     }
 
@@ -279,15 +278,15 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         let property;
         const overridden = this.overriddenPreferenceName(preferenceName);
         if (overridden) {
-            // try from overriden schema
+            // try from overridden schema
             property = this.overridePatternProperties[`[${overridden.overrideIdentifier}]`];
             property = property && property[overridden.preferenceName];
             if (!property) {
-                // try from overriden identifier
+                // try from overridden identifier
                 property = this.overridePatternProperties[overridden.preferenceName];
             }
             if (!property) {
-                // try from overriden value
+                // try from overridden value
                 property = this.combinedSchema.properties[overridden.preferenceName];
             }
         } else {

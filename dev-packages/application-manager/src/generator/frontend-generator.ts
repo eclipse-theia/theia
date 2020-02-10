@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable @typescript-eslint/indent */
+
 import { AbstractGenerator } from './abstract-generator';
 import { existsSync, readFileSync } from 'fs';
 
@@ -44,7 +46,7 @@ export class FrontendGenerator extends AbstractGenerator {
 
     protected compileIndexHtml(frontendModules: Map<string, string>): string {
         return `<!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>${this.compileIndexHead(frontendModules)}
   <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
@@ -59,7 +61,8 @@ export class FrontendGenerator extends AbstractGenerator {
 
     protected compileIndexHead(frontendModules: Map<string, string>): string {
         return `
-  <meta charset="UTF-8">`;
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">`;
     }
 
     protected compileIndexJs(frontendModules: Map<string, string>): string {
@@ -69,7 +72,9 @@ require('reflect-metadata');
 const { Container } = require('inversify');
 const { FrontendApplication } = require('@theia/core/lib/browser');
 const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
-const { messagingFrontendModule } = require('@theia/core/lib/${this.pck.isBrowser() ? 'browser/messaging/messaging-frontend-module' : 'electron-browser/messaging/electron-messaging-frontend-module'}');
+const { messagingFrontendModule } = require('@theia/core/lib/${this.pck.isBrowser()
+                ? 'browser/messaging/messaging-frontend-module'
+                : 'electron-browser/messaging/electron-messaging-frontend-module'}');
 const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
 const { ThemeService } = require('@theia/core/lib/browser/theming');
 const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/frontend-application-config-provider');
@@ -127,10 +132,11 @@ process.env.LC_NUMERIC = 'C';
 const electron = require('electron');
 const { join, resolve } = require('path');
 const { fork } = require('child_process');
-const { app, dialog, shell, BrowserWindow, ipcMain, Menu } = electron;
+const { app, dialog, shell, BrowserWindow, ipcMain, Menu, globalShortcut } = electron;
 
 const applicationName = \`${this.pck.props.frontend.config.applicationName}\`;
 const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
+const disallowReloadKeybinding = ${this.pck.props.frontend.config.disallowReloadKeybinding === true ? 'true' : 'false'};
 
 if (isSingleInstance && !app.requestSingleInstanceLock()) {
     // There is another instance running, exit now. The other instance will request focus.
@@ -143,6 +149,11 @@ const Storage = require('electron-store');
 const electronStore = new Storage();
 
 app.on('ready', () => {
+
+    if (disallowReloadKeybinding) {
+        globalShortcut.register('CmdOrCtrl+R', () => {});
+    }
+
     // Explicitly set the app name to have better menu items on macOS. ("About", "Hide", and "Quit")
     // See: https://github.com/electron-userland/electron-builder/issues/2468
     app.setName(applicationName);

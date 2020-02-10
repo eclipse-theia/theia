@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable:no-any
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /// <reference types='@typefox/monaco-editor-core/monaco'/>
 
 declare module monaco.instantiation {
@@ -438,6 +438,11 @@ declare module monaco.keybindings {
 
 declare module monaco.services {
 
+    export class TokenizationSupport2Adapter implements monaco.modes.ITokenizationSupport {
+        constructor(standaloneThemeService: IStandaloneThemeService, languageIdentifier: LanguageIdentifier, actual: monaco.languages.TokensProvider)
+        tokenize(line: string, state: monaco.languages.IState, offsetDelta: number): any;
+    }
+
     export const ICodeEditorService: any;
     export const IConfigurationService: any;
 
@@ -481,10 +486,12 @@ declare module monaco.services {
     }
 
     export interface IStandaloneThemeService extends monaco.theme.IThemeService {
+        readonly _knownThemes: Map<string, IStandaloneTheme>;
         getTheme(): IStandaloneTheme;
     }
 
     export interface IStandaloneTheme {
+        themeData: monaco.editor.IStandaloneThemeData
         tokenTheme: TokenTheme;
         getColor(color: string): Color | undefined;
     }
@@ -511,7 +518,8 @@ declare module monaco.services {
 
     // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/editor/common/services/modeService.ts#L30
     export interface IModeService {
-        createByFilepathOrFirstLine(rsource: monaco.Uri | null, firstLine?: string): ILanguageSelection
+        createByFilepathOrFirstLine(rsource: monaco.Uri | null, firstLine?: string): ILanguageSelection;
+        getLanguageIdentifier(modeId: string): LanguageIdentifier | null;
     }
 
     export interface ILanguageSelection {
@@ -846,6 +854,16 @@ declare module monaco.editorExtensions {
     }
 }
 declare module monaco.modes {
+
+    export interface ITokenizationSupport {
+        tokenize(line: string, state: monaco.languages.IState, offsetDelta: number): any;
+    }
+    export interface TokenizationRegistry {
+        get(language: string): ITokenizationSupport | null;
+        getColorMap(): monaco.color.Color[] | null;
+        readonly onDidChange: monaco.IEvent<any>;
+    }
+    export const TokenizationRegistry: TokenizationRegistry;
 
     export class TokenMetadata {
 

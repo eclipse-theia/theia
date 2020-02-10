@@ -22,8 +22,8 @@ import { DepthFirstTreeIterator, BreadthFirstTreeIterator, BottomUpTreeIterator,
 import { createTreeTestContainer } from './test/tree-test-container';
 import { ExpandableTreeNode } from './tree-expansion';
 
-// tslint:disable:no-unused-expression
-// tslint:disable:max-line-length
+/* eslint-disable no-unused-expressions */
+/* eslint-disable max-len */
 
 describe('tree-iterator', () => {
 

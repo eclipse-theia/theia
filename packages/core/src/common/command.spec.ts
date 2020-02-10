@@ -21,7 +21,7 @@ import * as chai from 'chai';
 const expect = chai.expect;
 let commandRegistry: CommandRegistry;
 
-/* tslint:disable:no-unused-expression */
+/* eslint-disable no-unused-expressions */
 
 describe('Commands', () => {
 

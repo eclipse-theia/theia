@@ -1,0 +1,25 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 6,
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "@typescript-eslint/tslint",
+    "import",
+    "no-null"
+  ],
+  "env": {
+    "browser": true,
+    "mocha": true,
+    "node": true
+  },
+  "ignorePatterns": [
+    "node_modules",
+    "*.d.ts"
+  ]
+}

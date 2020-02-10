@@ -23,6 +23,7 @@ describe('Views', function () {
     const { FileNavigatorContribution } = require('@theia/navigator/lib/browser/navigator-contribution');
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
     const { OutlineViewContribution } = require('@theia/outline-view/lib/browser/outline-view-contribution');
+    const { ProblemContribution } = require('@theia/markers/lib/browser/problem/problem-contribution');
 
     /** @type {import('inversify').Container} */
     const container = window['theia'].container;
@@ -30,12 +31,13 @@ describe('Views', function () {
     const navigatorContribution = container.get(FileNavigatorContribution);
     const scmContribution = container.get(ScmContribution);
     const outlineContribution = container.get(OutlineViewContribution);
+    const problemContribution = container.get(ProblemContribution);
 
     before(() => {
         shell.leftPanelHandler.collapse();
     });
 
-    for (const contribution of [navigatorContribution, scmContribution, outlineContribution]) {
+    for (const contribution of [navigatorContribution, scmContribution, outlineContribution, problemContribution]) {
         it(`should toggle ${contribution.viewLabel}`, async () => {
             let view = await contribution.closeView();
             if (view) {
@@ -48,13 +50,14 @@ describe('Views', function () {
             assert.notEqual(view, undefined);
             assert.equal(shell.getAreaFor(view), contribution.defaultViewOptions.area);
             assert.isDefined(shell.getTabBarFor(view));
+            assert.equal(shell.getAreaFor(shell.getTabBarFor(view)), contribution.defaultViewOptions.area);
             assert.isTrue(view.isVisible);
             assert.equal(view, shell.activeWidget);
 
             view = await contribution.toggleView();
             assert.notEqual(view, undefined);
-            assert.isUndefined(shell.getAreaFor(view));
-            assert.isUndefined(shell.getTabBarFor(view));
+            assert.equal(shell.getAreaFor(view), contribution.defaultViewOptions.area);
+            assert.isDefined(shell.getTabBarFor(view));
             assert.isFalse(view.isVisible);
             assert.notEqual(view, shell.activeWidget);
         });

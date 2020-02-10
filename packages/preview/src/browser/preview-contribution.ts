@@ -50,7 +50,7 @@ export interface PreviewOpenerOptions extends WidgetOpenerOptions {
 }
 
 @injectable()
-// tslint:disable-next-line:max-line-length
+// eslint-disable-next-line max-len
 export class PreviewContribution extends NavigatableWidgetOpenHandler<PreviewWidget> implements CommandContribution, MenuContribution, FrontendApplicationContribution, TabBarToolbarContribution {
 
     readonly id = PreviewUri.id;

@@ -22,7 +22,6 @@ import taskBackendModule from '../task-backend-module';
 import filesystemBackendModule from '@theia/filesystem/lib/node/filesystem-backend-module';
 import workspaceServer from '@theia/workspace/lib/node/workspace-backend-module';
 import { messagingBackendModule } from '@theia/core/lib/node/messaging/messaging-backend-module';
-// tslint:disable-next-line:no-implicit-dependencies
 import { ApplicationPackage } from '@theia/application-package/lib/application-package';
 
 export function createTaskTestContainer(): Container {

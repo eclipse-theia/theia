@@ -63,7 +63,7 @@ export class ConnectionErrorHandler {
         }
         const diff = this.restarts[this.restarts.length - 1] - this.restarts[0];
         if (diff <= this.options.restartInterval * 60 * 1000) {
-            // tslint:disable-next-line:max-line-length
+            // eslint-disable-next-line max-len
             this.options.logger.error(`The ${this.options.serverName} server crashed ${this.options.maxRestarts} times in the last ${this.options.restartInterval} minutes. The server will not be restarted.`);
             return false;
         }

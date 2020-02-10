@@ -40,8 +40,8 @@ import { FrontendApplicationStateService } from '@theia/core/lib/browser/fronten
 
 disableJSDOM();
 
-// tslint:disable:no-any
-// tslint:disable:no-unused-expression
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-unused-expressions */
 
 let root: CompositeTreeNode;
 let workspaceRootFolder: DirNode;

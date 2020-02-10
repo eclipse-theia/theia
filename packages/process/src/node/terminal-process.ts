@@ -43,7 +43,7 @@ export const ShellQuoting = <RuntimeQuotingTypes>{
  * Map of `Runtime (string) -> ShellQuoting`, trying to cover the
  * different ways in which each runtime manages quoting and escaping.
  */
-// tslint:disable-next-line:no-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const RuntimeQuotingMap: { [key in string]: RuntimeQuotingTypes | undefined } = {
     'bash': ShellQuoting,
     'sh': ShellQuoting,
@@ -181,7 +181,7 @@ export class TerminalProcess extends Process {
     readonly errorStream = new DevNullStream({ autoDestroy: true });
     readonly inputStream: Writable;
 
-    constructor(
+    constructor( // eslint-disable-next-line @typescript-eslint/indent
         @inject(TerminalProcessOptions) options: TerminalProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,

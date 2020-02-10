@@ -22,7 +22,7 @@ import * as browser from '@theia/core/lib/browser';
 
 const KeyCode = monaco.KeyCode;
 
-export let KEY_CODE_MAP: monaco.KeyCode[] = [];
+export const KEY_CODE_MAP: monaco.KeyCode[] = [];
 (function (): void {
     KEY_CODE_MAP[3] = KeyCode.PauseBreak; // VK_CANCEL 0x03 Control-break processing
     KEY_CODE_MAP[8] = KeyCode.Backspace;

@@ -69,5 +69,5 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
         if (channelName !== this.NONE) {
             this.outputChannelManager.selectedChannel = this.outputChannelManager.getChannel(channelName);
         }
-    }
+    };
 }

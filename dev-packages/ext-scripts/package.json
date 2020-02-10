@@ -1,30 +1,24 @@
 {
   "private": true,
   "name": "@theia/ext-scripts",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "description": "NPM scripts for Theia packages.",
-  "files": [
-    "theiaext"
-  ],
   "bin": {
-    "theiaext": "theiaext",
-    "run": "theia-run"
+    "theiaext": "theia-ext.js",
+    "run": "theia-run.js"
   },
-  "scripts": {
-    "prepare": "echo 'skip'",
-    "clean": "echo 'skip'",
-    "build": "echo 'skip'",
-    "watch": "echo 'skip'",
-    "test": "echo 'skip'",
-    "ext:clean": "theiaext compile:clean && theiaext test:clean",
+  "theia-monorepo-scripts": {
+    "ext:clean": "theiaext compile:clean && theiaext lint:clean && theiaext test:clean",
     "ext:build": "concurrently -n compile,lint -c blue,green \"theiaext compile\" \"theiaext lint\"",
-    "ext:compile": "tsc -p compile.tsconfig.json",
-    "ext:compile:clean": "rimraf lib",
-    "ext:lint": "tslint -c ../../configs/build.tslint.json --project compile.tsconfig.json",
-    "ext:watch": "tsc -w -p compile.tsconfig.json",
+    "ext:compile": "tsc -b compile.tsconfig.json --verbose",
+    "ext:compile:clean": "rimraf lib *.tsbuildinfo",
+    "ext:lint": "eslint --cache=true --no-error-on-unmatched-pattern=true \"{src,test}/**/*.{ts,tsx}\"",
+    "ext:lint:clean": "rimraf .eslintcache",
+    "ext:watch": "tsc -p compile.tsconfig.json -w",
+    "ext:watch:slow": "tsc -b compile.tsconfig.json -w",
     "ext:test": "nyc mocha --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",
     "ext:test:watch": "mocha -w --opts ../../configs/mocha.opts \"./lib/**/*.*spec.js\"",
-    "ext:test:clean": "rimraf .nyc_output && rimraf coverage"
+    "ext:test:clean": "rimraf .nyc_output coverage"
   }
 }
