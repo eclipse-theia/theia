@@ -197,10 +197,13 @@ export class PluginContributionHandler {
                     getInjections: (scopeName: string) =>
                         this.injections.get(scopeName)!
                 }));
-
-                // load grammars on next tick to await registration of languages from all plugins in current tick
-                // see https://github.com/eclipse-theia/theia/issues/6907#issuecomment-578600243
-                setTimeout(() => {
+            }
+        }
+        // load grammars on next tick to await registration of languages from all plugins in current tick
+        // see https://github.com/eclipse-theia/theia/issues/6907#issuecomment-578600243
+        setTimeout(() => {
+            if (grammars && grammars.length) {
+                for (const grammar of grammars) {
                     const language = grammar.language;
                     if (language) {
                         pushContribution(`grammar.language.${language}.scope`, () => this.grammarsRegistry.mapLanguageIdToTextmateGrammar(language, grammar.scope));
@@ -208,13 +211,16 @@ export class PluginContributionHandler {
                             embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages, logError),
                             tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
                         }));
-                        pushContribution(`grammar.language.${language}.activation`,
-                            () => this.onDidActivateLanguage(language, () => this.monacoTextmateService.activateLanguage(language))
-                        );
                     }
-                });
+                }
             }
-        }
+            if (languages && languages.length) {
+                for (const lang of languages) {
+                    pushContribution(`language.${lang.id}.activation`,
+                        () => this.onDidActivateLanguage(lang.id, () => this.monacoTextmateService.activateLanguage(lang.id)));
+                }
+            }
+        });
 
         pushContribution('commands', () => this.registerCommands(contributions));
         pushContribution('menus', () => this.menusContributionHandler.handle(contributions));
