@@ -31,7 +31,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
     protected readonly logger: ILogger;
 
     @inject(MetadataScanner)
-    private readonly scanner: MetadataScanner;
+    protected readonly scanner: MetadataScanner;
 
     @optional()
     @multiInject(MetadataProcessor) private readonly metadataProcessors: MetadataProcessor[];
