@@ -23,6 +23,20 @@ import { FrontendApplicationContribution } from './frontend-application';
 @injectable()
 export class DialogProps {
     readonly title: string;
+    /**
+     * Determines the maximum width of the dialog in pixels.
+     * Default value is undefined, which would result in the css property 'max-width: none' being applied to the dialog.
+     */
+    maxWidth?: number;
+    /**
+     * Determine the word wrapping behavior for content in the dialog.
+     * - `normal`: breaks words at allowed break points.
+     * - `break-word`: breaks otherwise unbreakable words.
+     * - `initial`: sets the property to it's default value.
+     * - `inherit`: inherit this property from it's parent element.
+     * Default value is undefined, which would result in the css property 'word-wrap' not being applied to the dialog.
+     */
+    wordWrap?: 'normal' | 'break-word' | 'initial' | 'inherit';
 }
 
 export type DialogMode = 'open' | 'preview';
@@ -138,6 +152,11 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         }));
         const container = document.createElement('div');
         container.classList.add('dialogBlock');
+        if (props.maxWidth === undefined) {
+            container.setAttribute('style', 'max-width: none');
+        } else {
+            container.setAttribute('style', `max-width: ${props.maxWidth}px; min-width: 0px`);
+        }
         this.node.appendChild(container);
 
         const titleContentNode = document.createElement('div');
@@ -156,6 +175,9 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
         this.contentNode = document.createElement('div');
         this.contentNode.classList.add('dialogContent');
+        if (props.wordWrap !== undefined) {
+            this.contentNode.setAttribute('style', `word-wrap: ${props.wordWrap}`);
+        }
         container.appendChild(this.contentNode);
 
         this.controlPanel = document.createElement('div');
