@@ -516,8 +516,15 @@ declare module monaco.services {
         readonly language: string;
     }
 
+    export interface IMode {
+        getId(): string;
+        getLanguageIdentifier(): LanguageIdentifier;
+    }
+
     // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/editor/common/services/modeService.ts#L30
     export interface IModeService {
+        private readonly _instantiatedModes: { [modeId: string]: IMode; };
+        readonly onDidCreateMode: monaco.IEvent<IMode>;
         createByFilepathOrFirstLine(rsource: monaco.Uri | null, firstLine?: string): ILanguageSelection;
         getLanguageIdentifier(modeId: string): LanguageIdentifier | null;
     }
