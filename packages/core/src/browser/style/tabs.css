@@ -7,6 +7,7 @@
   --theia-private-horizontal-tab-height: 28.5px;
   --theia-private-horizontal-tab-scrollbar-rail-height: 7px;
   --theia-private-horizontal-tab-scrollbar-height: 5px;
+  --theia-tabbar-toolbar-z-index: 1001;
 }
 
 /*-----------------------------------------------------------------------------
@@ -291,7 +292,7 @@ body.theia-editor-highlightModifiedTabs
 |----------------------------------------------------------------------------*/
 
 .p-TabBar-toolbar {
-  z-index: 1001; /* Due to the scrollbar (`z-index: 1000;`) it has a greater `z-index`. */
+  z-index: var(--theia-tabbar-toolbar-z-index); /* Due to the scrollbar (`z-index: 1000;`) it has a greater `z-index`. */
   display: flex;
   flex-direction: row-reverse;
   padding: 4px;
