@@ -3,6 +3,9 @@
   "version": "0.16.0",
   "description": "Theia - Git Integration",
   "dependencies": {
+    "@phosphor/domutils": "1",
+    "@phosphor/messaging": "1",
+    "@phosphor/widgets": "1",
     "@theia/core": "^0.16.0",
     "@theia/editor": "^0.16.0",
     "@theia/filesystem": "^0.16.0",
@@ -17,9 +20,13 @@
     "dugite-extra": "0.1.12",
     "find-git-exec": "^0.0.2",
     "find-git-repositories": "^0.1.1",
+    "fs-extra": "^4.0.2",
+    "inversify": "^5.0.1",
     "moment": "^2.21.0",
     "octicons": "^7.1.0",
     "p-queue": "^2.4.2",
+    "react": "^16.4.1",
+    "react-virtualized": "^9.20.0",
     "ts-md5": "^1.2.2"
   },
   "publishConfig": {

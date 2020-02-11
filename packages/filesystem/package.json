@@ -3,6 +3,8 @@
   "version": "0.16.0",
   "description": "Theia - FileSystem Extension",
   "dependencies": {
+    "@phosphor/messaging": "1",
+    "@phosphor/widgets": "1",
     "@theia/application-package": "^0.16.0",
     "@theia/core": "^0.16.0",
     "@types/body-parser": "^1.17.0",
@@ -12,17 +14,35 @@
     "@types/uuid": "^3.4.3",
     "body-parser": "^1.18.3",
     "drivelist": "^6.4.3",
+    "express": "^4.16.3",
+    "fs-extra": "^4.0.2",
     "http-status-codes": "^1.3.0",
     "iconv-lite": "0.4.23",
+    "inversify": "^5.0.1",
     "jschardet": "1.6.0",
+    "lodash.debounce": "^4.0.8",
     "minimatch": "^3.0.4",
     "mv": "^2.1.1",
+    "nsfw": "^1.2.2",
+    "react": "^16.4.1",
     "rimraf": "^2.6.2",
     "tar-fs": "^1.16.2",
     "touch": "^3.1.0",
     "trash": "^4.0.1",
     "uuid": "^3.2.1",
+    "vscode-languageserver-protocol": "3.15.0-next.15",
+    "vscode-languageserver-types": "^3.15.0-next",
+    "ws": "^7.1.2",
+    "yargs": "^11.1.0",
     "zip-dir": "^1.0.2"
+  },
+  "peerDependencies": {
+    "electron": "*"
+  },
+  "peerDependenciesMeta": {
+    "electron": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

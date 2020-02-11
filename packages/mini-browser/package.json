@@ -3,9 +3,14 @@
   "version": "0.16.0",
   "description": "Theia - Mini-Browser Extension",
   "dependencies": {
+    "@phosphor/messaging": "1",
+    "@phosphor/widgets": "1",
     "@theia/core": "^0.16.0",
     "@theia/filesystem": "^0.16.0",
     "@types/mime-types": "^2.1.0",
+    "express": "^4.16.3",
+    "fs-extra": "^4.0.2",
+    "inversify": "^5.0.1",
     "mime-types": "^2.1.18",
     "pdfobject": "^2.0.201604172"
   },

@@ -4,7 +4,8 @@
   "description": "Theia - User Storage Extension",
   "dependencies": {
     "@theia/core": "^0.16.0",
-    "@theia/filesystem": "^0.16.0"
+    "@theia/filesystem": "^0.16.0",
+    "inversify": "^5.0.1"
   },
   "publishConfig": {
     "access": "public"

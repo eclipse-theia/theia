@@ -3,9 +3,14 @@
   "version": "0.16.0",
   "description": "Theia - Console Extension",
   "dependencies": {
+    "@phosphor/domutils": "1",
+    "@phosphor/messaging": "1",
     "@theia/core": "^0.16.0",
     "@theia/monaco": "^0.16.0",
-    "anser": "^1.4.7"
+    "anser": "^1.4.7",
+    "inversify": "^5.0.1",
+    "monaco-languageclient": "^0.10.2",
+    "react": "^16.4.1"
   },
   "publishConfig": {
     "access": "public"

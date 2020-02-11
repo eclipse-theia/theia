@@ -5,6 +5,8 @@
   "dependencies": {
     "@theia/application-package": "^0.16.0",
     "@theia/core": "^0.16.0",
+    "express": "^4.16.3",
+    "inversify": "^5.0.1",
     "prom-client": "^10.2.0"
   },
   "publishConfig": {

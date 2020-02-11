@@ -5,6 +5,8 @@
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
+    "@phosphor/commands": "1",
+    "@phosphor/widgets": "1",
     "@theia/core": "^0.16.0",
     "@theia/debug": "^0.16.0",
     "@theia/filesystem": "^0.16.0",
@@ -13,6 +15,7 @@
     "@theia/preferences": "^0.16.0",
     "@theia/workspace": "^0.16.0",
     "@types/request": "^2.0.3",
+    "inversify": "^5.0.1",
     "ps-tree": "^1.2.0",
     "request": "^2.82.0"
   },

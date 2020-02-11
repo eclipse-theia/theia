@@ -27,9 +27,11 @@ const YARN_WORKSPACES = JSON.parse(cp.execSync('yarn --silent workspaces info').
 /**
  * Data structure storing each dependencies as:
  *
- * dependencyPackage -> dependencyRange -> workspacePackage[]
+ * dependencyPackageName -> dependencyRange -> workspacePackage[]
  *
- * If our setup is correct, we should have only 1 `dependencyRange` key per `dependencyPackage`.
+ * If our setup is correct, we should have only 1 `dependencyRange` key per `dependencyPackageName`.
+ * 
+ * The associated `workspacePackage` array is useful to trace which package defines which range.
  *
  * @type {{ [packageName: string]: { [packageVersion: string]: string[] } }}
  */

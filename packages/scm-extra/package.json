@@ -3,11 +3,18 @@
   "version": "0.16.0",
   "description": "Theia - Source control extras Extension",
   "dependencies": {
+    "@phosphor/domutils": "1",
+    "@phosphor/messaging": "1",
     "@theia/core": "^0.16.0",
     "@theia/editor": "^0.16.0",
     "@theia/filesystem": "^0.16.0",
     "@theia/navigator": "^0.16.0",
-    "@theia/scm": "^0.16.0"
+    "@theia/scm": "^0.16.0",
+    "@theia/monaco": "^0.16.0",
+    "inversify": "^5.0.1",
+    "react": "^16.4.1",
+    "react-virtualized": "^9.20.0",
+    "vscode-textmate": "^4.0.1"
   },
   "publishConfig": {
     "access": "public"

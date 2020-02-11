@@ -10,8 +10,14 @@
     "@theia/workspace": "^0.16.0",
     "@typefox/monaco-editor-core": "^0.18.0-next",
     "@types/uuid": "^3.4.3",
+    "inversify": "^5.0.1",
     "monaco-languageclient": "^0.10.2",
-    "uuid": "^3.2.1"
+    "uuid": "^3.2.1",
+    "vscode-jsonrpc": "^4.1.0-next",
+    "vscode-languageserver": "^5.3.0-next",
+    "vscode-languageserver-protocol": "3.15.0-next.15",
+    "vscode-languageserver-types": "^3.15.0-next",
+    "vscode-ws-jsonrpc": "0.1.1"
   },
   "publishConfig": {
     "access": "public"

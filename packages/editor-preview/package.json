@@ -3,8 +3,12 @@
   "version": "0.16.0",
   "description": "Theia - Editor Preview Extension",
   "dependencies": {
+    "@phosphor/algorithm": "1",
+    "@phosphor/coreutils": "1",
+    "@phosphor/messaging": "1",
     "@theia/core": "^0.16.0",
-    "@theia/editor": "^0.16.0"
+    "@theia/editor": "^0.16.0",
+    "inversify": "^5.0.1"
   },
   "publishConfig": {
     "access": "public"

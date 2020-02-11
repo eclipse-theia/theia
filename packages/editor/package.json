@@ -7,7 +7,9 @@
     "@theia/languages": "^0.16.0",
     "@theia/variable-resolver": "^0.16.0",
     "@types/base64-arraybuffer": "0.1.0",
-    "base64-arraybuffer": "^0.1.5"
+    "base64-arraybuffer": "^0.1.5",
+    "inversify": "^5.0.1",
+    "vscode-languageserver-types": "^3.15.0-next"
   },
   "publishConfig": {
     "access": "public"

@@ -3,7 +3,10 @@
   "version": "0.16.0",
   "description": "Theia - Output Extension",
   "dependencies": {
-    "@theia/core": "^0.16.0"
+    "@theia/core": "^0.16.0",
+    "inversify": "^5.0.1",
+    "react": "^16.4.1",
+    "vscode-ws-jsonrpc": "0.1.1"
   },
   "publishConfig": {
     "access": "public"

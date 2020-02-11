@@ -1,4 +1,16 @@
+
 {
+  "overrides": [
+    {
+      "files": [
+        "**/test/**/*.ts",
+        "*.*spec.ts"
+      ],
+      "rules": {
+        "import/no-extraneous-dependencies": "off"
+      }
+    }
+  ],
   "rules": {
     "@typescript-eslint/class-name-casing": "error",
     "@typescript-eslint/consistent-type-definitions": "error",
@@ -36,7 +48,15 @@
     "id-blacklist": "off",
     "id-match": "off",
     "import/no-deprecated": "error",
-    "import/no-extraneous-dependencies": "off",
+    "import/no-extraneous-dependencies": [
+      "error",
+      {
+        "bundledDependencies": true,
+        "devDependencies": false,
+        "optionalDependencies": true,
+        "peerDependencies": true
+      }
+    ],
     "max-len": [
       "error",
       {

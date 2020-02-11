@@ -30,5 +30,8 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
+  },
+  "dependencies": {
+    "inversify": "^5.0.1"
   }
 }

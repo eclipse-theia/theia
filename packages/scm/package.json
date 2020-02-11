@@ -3,6 +3,9 @@
   "version": "0.16.0",
   "description": "Theia - Source control Extension",
   "dependencies": {
+    "@phosphor/coreutils": "1",
+    "@phosphor/domutils": "1",
+    "@phosphor/messaging": "1",
     "@theia/core": "^0.16.0",
     "@theia/editor": "^0.16.0",
     "@theia/filesystem": "^0.16.0",
@@ -10,7 +13,9 @@
     "@types/diff": "^3.2.2",
     "@types/p-debounce": "^1.0.1",
     "diff": "^3.4.0",
+    "inversify": "^5.0.1",
     "p-debounce": "^2.1.0",
+    "react": "^16.4.1",
     "react-autosize-textarea": "^7.0.0",
     "ts-md5": "^1.2.2"
   },

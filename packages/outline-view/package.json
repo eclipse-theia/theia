@@ -3,7 +3,11 @@
   "version": "0.16.0",
   "description": "Theia - Outline View Extension",
   "dependencies": {
-    "@theia/core": "^0.16.0"
+    "@phosphor/messaging": "1",
+    "@phosphor/widgets": "1",
+    "@theia/core": "^0.16.0",
+    "inversify": "^5.0.1",
+    "react": "^16.4.1"
   },
   "publishConfig": {
     "access": "public"

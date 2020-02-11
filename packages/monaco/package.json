@@ -3,6 +3,10 @@
   "version": "0.16.0",
   "description": "Theia - Monaco Extension",
   "dependencies": {
+    "@phosphor/commands": "1",
+    "@phosphor/coreutils": "1",
+    "@phosphor/domutils": "1",
+    "@phosphor/widgets": "1",
     "@theia/core": "^0.16.0",
     "@theia/editor": "^0.16.0",
     "@theia/filesystem": "^0.16.0",
@@ -13,11 +17,16 @@
     "deepmerge": "2.0.1",
     "fast-plist": "^0.1.2",
     "idb": "^4.0.5",
+    "inversify": "^5.0.1",
     "jsonc-parser": "^2.0.2",
     "monaco-css": "^2.5.0",
     "monaco-html": "^2.5.2",
+    "monaco-languageclient": "^0.10.2",
     "onigasm": "2.2.1",
-    "vscode-textmate": "^4.0.1"
+    "vscode-languageserver-protocol": "3.15.0-next.15",
+    "vscode-languageserver-types": "^3.15.0-next",
+    "vscode-textmate": "^4.0.1",
+    "vscode-uri": "^1.0.8"
   },
   "publishConfig": {
     "access": "public"

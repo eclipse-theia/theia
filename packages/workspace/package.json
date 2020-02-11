@@ -7,9 +7,12 @@
     "@theia/filesystem": "^0.16.0",
     "@theia/variable-resolver": "^0.16.0",
     "ajv": "^6.5.3",
+    "fs-extra": "^4.0.2",
+    "inversify": "^5.0.1",
     "jsonc-parser": "^2.0.2",
     "moment": "^2.21.0",
-    "valid-filename": "^2.0.1"
+    "valid-filename": "^2.0.1",
+    "yargs": "^11.1.0"
   },
   "publishConfig": {
     "access": "public"

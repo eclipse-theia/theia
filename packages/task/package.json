@@ -14,8 +14,10 @@
     "@theia/variable-resolver": "^0.16.0",
     "@theia/workspace": "^0.16.0",
     "ajv": "^6.5.3",
+    "inversify": "^5.0.1",
     "jsonc-parser": "^2.0.2",
     "p-debounce": "^2.1.0",
+    "vscode-languageserver-types": "^3.15.0-next",
     "vscode-uri": "^1.0.8"
   },
   "publishConfig": {
