@@ -829,6 +829,30 @@ export class ApplicationShell extends Widget {
     }
 
     /**
+     * Returns the last active widget in the given shell area.
+     */
+    getCurrentWidget(area: ApplicationShell.Area): Widget | undefined {
+        let title: Title<Widget> | null | undefined;
+        switch (area) {
+            case 'main':
+                title = this.mainPanel.currentTitle;
+                break;
+            case 'bottom':
+                title = this.bottomPanel.currentTitle;
+                break;
+            case 'left':
+                title = this.leftPanelHandler.tabBar.currentTitle;
+                break;
+            case 'right':
+                title = this.rightPanelHandler.tabBar.currentTitle;
+                break;
+            default:
+                throw new Error('Illegal argument: ' + area);
+        }
+        return title ? title.owner : undefined;
+    }
+
+    /**
      * A signal emitted whenever the `currentWidget` property is changed.
      *
      * @deprecated since 0.11.0, use `onDidChangeActiveWidget` instead
