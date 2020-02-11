@@ -149,6 +149,21 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Close All Tabs'
     };
+    export const CLOSE_MAIN_TAB: Command = {
+        id: 'core.close.main.tab',
+        category: VIEW_CATEGORY,
+        label: 'Close Tab in Main Area'
+    };
+    export const CLOSE_OTHER_MAIN_TABS: Command = {
+        id: 'core.close.other.main.tabs',
+        category: VIEW_CATEGORY,
+        label: 'Close Other Tabs in Main Area'
+    };
+    export const CLOSE_ALL_MAIN_TABS: Command = {
+        id: 'core.close.all.main.tabs',
+        category: VIEW_CATEGORY,
+        label: 'Close All Tabs in Main Area'
+    };
     export const COLLAPSE_PANEL: Command = {
         id: 'core.collapse.tab',
         category: VIEW_CATEGORY,
@@ -509,7 +524,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: (event?: Event) => {
                 const tabBar = this.findTabBar(event)!;
                 const currentTitle = this.findTitle(tabBar, event);
-                this.shell.closeTabs(tabBar, (title, index) => title === currentTitle);
+                this.shell.closeTabs(tabBar, title => title === currentTitle);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS, {
@@ -521,7 +536,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 const tabBar = this.findTabBar(event)!;
                 const currentTitle = this.findTitle(tabBar, event);
                 const area = this.shell.getAreaFor(tabBar)!;
-                this.shell.closeTabs(area, (title, index) => title !== currentTitle);
+                this.shell.closeTabs(area, title => title !== currentTitle);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
@@ -536,31 +551,37 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: (event?: Event) => {
                 const tabBar = this.findTabBar(event)!;
                 const currentIndex = tabBar.currentIndex;
-                this.shell.closeTabs(tabBar, (title, index) => index > currentIndex);
+                this.shell.closeTabs(tabBar, (_, index) => index > currentIndex);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, {
-            isEnabled: (event?: Event) => {
-                if (event) {
-                    return this.findTabBar(event) !== undefined;
-                } else {
-                    return this.shell.mainAreaTabBars.find(tb => tb.titles.length > 0) !== undefined;
-                }
+            isEnabled: (event?: Event) => this.findTabBar(event) !== undefined,
+            execute: (event?: Event) => this.shell.closeTabs(this.findTabArea(event)!)
+        });
+        commandRegistry.registerCommand(CommonCommands.CLOSE_MAIN_TAB, {
+            isEnabled: () => this.shell.getCurrentWidget('main') !== undefined,
+            execute: () => this.shell.getCurrentWidget('main')!.close()
+        });
+        commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_MAIN_TABS, {
+            isEnabled: () => {
+                const tabBars = this.shell.mainAreaTabBars;
+                return tabBars.length > 1 || tabBars.length === 1 && tabBars[0].titles.length > 1;
             },
-            execute: (event?: Event) => {
-                if (event) {
-                    this.shell.closeTabs(this.findTabArea(event)!);
-                } else {
-                    this.shell.closeTabs('main');
+            execute: () => {
+                const currentWidget = this.shell.getCurrentWidget('main');
+                if (currentWidget !== undefined) {
+                    this.shell.closeTabs('main', title => title.owner !== currentWidget);
                 }
             }
+        });
+        commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_MAIN_TABS, {
+            isEnabled: () => this.shell.mainAreaTabBars.find(tb => tb.titles.length > 0) !== undefined,
+            execute: () => this.shell.closeTabs('main')
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_PANEL, {
             isEnabled: (event?: Event) => ApplicationShell.isSideArea(this.findTabArea(event)),
             isVisible: (event?: Event) => ApplicationShell.isSideArea(this.findTabArea(event)),
-            execute: (event?: Event) => {
-                this.shell.collapsePanel(this.findTabArea(event)!);
-            }
+            execute: (event?: Event) => this.shell.collapsePanel(this.findTabArea(event)!)
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_ALL_PANELS, {
             execute: () => {
@@ -700,15 +721,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 keybinding: 'ctrlcmd+alt+a'
             },
             {
-                command: CommonCommands.CLOSE_TAB.id,
-                keybinding: (!this.isElectron() ? 'alt+w' : (isWindows ? 'ctrl+f4' : 'ctrlcmd+w'))
+                command: CommonCommands.CLOSE_MAIN_TAB.id,
+                keybinding: this.isElectron() ? (isWindows ? 'ctrl+f4' : 'ctrlcmd+w') : 'alt+w'
             },
             {
-                command: CommonCommands.CLOSE_OTHER_TABS.id,
+                command: CommonCommands.CLOSE_OTHER_MAIN_TABS.id,
                 keybinding: 'ctrlcmd+alt+t'
             },
             {
-                command: CommonCommands.CLOSE_ALL_TABS.id,
+                command: CommonCommands.CLOSE_ALL_MAIN_TABS.id,
                 keybinding: this.isElectron() ? 'ctrlCmd+k ctrlCmd+w' : 'alt+shift+w'
             },
             // Panels
