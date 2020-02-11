@@ -20,6 +20,7 @@ import { DialogProps } from './dialogs';
 import { ReactDialog } from './dialogs/react-dialog';
 import { ApplicationServer, ApplicationInfo, ExtensionInfo } from '../common/application-protocol';
 import { Message } from './widgets/widget';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 
 export const ABOUT_CONTENT_CLASS = 'theia-aboutDialog';
 export const ABOUT_EXTENSIONS_CLASS = 'theia-aboutExtensions';
@@ -41,7 +42,7 @@ export class AboutDialog extends ReactDialog<void> {
         @inject(AboutDialogProps) protected readonly props: AboutDialogProps
     ) {
         super({
-            title: props.title
+            title: FrontendApplicationConfigProvider.get().applicationName,
         });
         this.appendAcceptButton('Ok');
     }
