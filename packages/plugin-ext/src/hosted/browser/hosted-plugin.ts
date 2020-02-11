@@ -43,7 +43,6 @@ import { MainPluginApiProvider } from '../../common/plugin-ext-api-contribution'
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
 import { getPreferences } from '../../main/browser/preference-registry-main';
 import { PluginServer } from '../../common/plugin-protocol';
-import { MonacoTextmateService } from '@theia/monaco/lib/browser/textmate';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
@@ -101,9 +100,6 @@ export class HostedPluginSupport {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(MonacoTextmateService)
-    protected readonly monacoTextmateService: MonacoTextmateService;
-
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
@@ -156,10 +152,12 @@ export class HostedPluginSupport {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
         this.workspaceService.onWorkspaceChanged(() => this.updateStoragePath());
 
-        for (const id of this.monacoTextmateService.activatedLanguages) {
-            this.activateByLanguage(id);
+        const modeService = monaco.services.StaticServices.modeService.get();
+        for (const modeId of Object.keys(modeService['_instantiatedModes'])) {
+            const mode = modeService['_instantiatedModes'][modeId];
+            this.activateByLanguage(mode.getId());
         }
-        this.monacoTextmateService.onDidActivateLanguage(id => this.activateByLanguage(id));
+        modeService.onDidCreateMode(mode => this.activateByLanguage(mode.getId()));
         this.commands.onWillExecuteCommand(event => this.ensureCommandHandlerRegistration(event));
         this.debugSessionManager.onWillStartDebugSession(event => this.ensureDebugActivation(event));
         this.debugSessionManager.onWillResolveDebugConfiguration(event => this.ensureDebugActivation(event, 'onDebugResolve', event.debugType));
