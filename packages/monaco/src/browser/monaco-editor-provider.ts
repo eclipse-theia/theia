@@ -105,6 +105,10 @@ export class MonacoEditorProvider {
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
         const reference = await this.textModelService.createModelReference(uri);
+        if (!reference.object.valid) {
+            reference.dispose();
+            throw Object.assign(new Error(`'${uri.toString()}' is invalid`), { code: 'MODEL_IS_INVALID' });
+        }
         toDispose.push(reference);
         return reference.object;
     }

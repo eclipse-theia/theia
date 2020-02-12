@@ -202,6 +202,9 @@ export class DirtyDiffModel implements Disposable {
     }
 
     handleDocumentChanged(document: TextEditorDocument): void {
+        if (this.toDispose.disposed) {
+            return;
+        }
         this.currentContent = DirtyDiffModel.documentContentLines(document);
         this.update();
     }

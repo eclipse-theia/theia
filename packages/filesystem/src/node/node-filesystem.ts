@@ -170,11 +170,19 @@ export class FileSystemNode implements FileSystem {
 
     async move(sourceUri: string, targetUri: string, options?: FileMoveOptions): Promise<FileStat> {
         if (this.client) {
-            this.client.onWillMove(sourceUri, targetUri);
+            await this.client.willMove(sourceUri, targetUri);
         }
-        const result = await this.doMove(sourceUri, targetUri, options);
-        if (this.client) {
-            this.client.onDidMove(sourceUri, targetUri);
+        let result: FileStat;
+        let failed = false;
+        try {
+            result = await this.doMove(sourceUri, targetUri, options);
+        } catch (e) {
+            failed = true;
+            throw e;
+        } finally {
+            if (this.client) {
+                await this.client.didMove(sourceUri, targetUri, failed);
+            }
         }
         return result;
     }

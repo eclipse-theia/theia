@@ -158,32 +158,34 @@ export class DocumentsExtImpl implements DocumentsExt {
         const uri = URI.revive(strUrl);
         const uriString = uri.toString();
         const data = this.editorsAndDocuments.getDocument(uriString);
-        if (data) {
-            data.acceptIsDirty(isDirty);
-            this._onDidChangeDocument.fire({
-                document: data.document,
-                contentChanges: []
-            });
+        if (!data) {
+            throw new Error('unknown document');
         }
+        data.acceptIsDirty(isDirty);
+        this._onDidChangeDocument.fire({
+            document: data.document,
+            contentChanges: []
+        });
     }
     $acceptModelChanged(strUrl: UriComponents, e: ModelChangedEvent, isDirty: boolean): void {
         const uri = URI.revive(strUrl);
         const uriString = uri.toString();
         const data = this.editorsAndDocuments.getDocument(uriString);
-        if (data) {
-            data.acceptIsDirty(isDirty);
-            data.onEvents(e);
-            this._onDidChangeDocument.fire({
-                document: data.document,
-                contentChanges: e.changes.map(change =>
-                    ({
-                        range: Converter.toRange(change.range),
-                        rangeOffset: change.rangeOffset,
-                        rangeLength: change.rangeLength,
-                        text: change.text
-                    }))
-            });
+        if (!data) {
+            throw new Error('unknown document');
         }
+        data.acceptIsDirty(isDirty);
+        data.onEvents(e);
+        this._onDidChangeDocument.fire({
+            document: data.document,
+            contentChanges: e.changes.map(change =>
+                ({
+                    range: Converter.toRange(change.range),
+                    rangeOffset: change.rangeOffset,
+                    rangeLength: change.rangeLength,
+                    text: change.text
+                }))
+        });
     }
     getAllDocumentData(): DocumentDataExt[] {
         return this.editorsAndDocuments.allDocuments();

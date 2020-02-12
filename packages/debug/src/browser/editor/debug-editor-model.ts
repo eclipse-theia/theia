@@ -106,6 +106,9 @@ export class DebugEditorModel implements Disposable {
     }
 
     protected readonly renderFrames = debounce(() => {
+        if (this.toDispose.disposed) {
+            return;
+        }
         this.toggleExceptionWidget();
         const decorations = this.createFrameDecorations();
         this.frameDecorations = this.deltaDecorations(this.frameDecorations, decorations);
