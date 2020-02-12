@@ -180,6 +180,24 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
                     return createPreferenceProxy(preferences, schema, { prefix: newPrefix, resourceUri: opts.resourceUri, overrideIdentifier: opts.overrideIdentifier, style });
                 }
             }
+
+            let value;
+            let parentSegment = fullProperty;
+            const segments = [];
+            do {
+                const index = parentSegment.lastIndexOf('.');
+                segments.push(parentSegment.substring(index + 1));
+                parentSegment = parentSegment.substring(0, index);
+                if (parentSegment in schema.properties) {
+                    value = get(_, parentSegment);
+                }
+            } while (parentSegment && value === undefined);
+
+            let segment;
+            while (typeof value === 'object' && (segment = segments.pop())) {
+                value = value[segment];
+            }
+            return segments.length ? undefined : value;
         }
         return undefined;
     };
