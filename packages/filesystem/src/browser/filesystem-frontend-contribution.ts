@@ -22,7 +22,7 @@ import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/c
 import {
     FrontendApplicationContribution, ApplicationShell,
     NavigatableWidget, NavigatableWidgetOptions,
-    Saveable, WidgetManager, StatefulWidget, FrontendApplication, ExpandableTreeNode
+    Saveable, WidgetManager, StatefulWidget, FrontendApplication, ExpandableTreeNode, waitForClosed
 } from '@theia/core/lib/browser';
 import { FileSystemWatcher, FileChangeEvent, FileMoveEvent, FileChangeType } from './filesystem-watcher';
 import { MimeService } from '@theia/core/lib/browser/mime-service';
@@ -39,6 +39,11 @@ export namespace FileSystemCommands {
         label: 'Upload Files...'
     };
 
+}
+
+export interface NavigatableWidgetMoveSnapshot {
+    dirty?: object,
+    view?: object
 }
 
 @injectable()
@@ -67,7 +72,9 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
 
     initialize(): void {
         this.fileSystemWatcher.onFilesChanged(event => this.run(() => this.updateWidgets(event)));
-        this.fileSystemWatcher.onDidMove(event => this.run(() => this.moveWidgets(event)));
+        this.fileSystemWatcher.onWillMove(event => event.waitUntil(this.runEach((uri, widget) => this.pushMove(uri, widget, event))));
+        this.fileSystemWatcher.onDidFailMove(event => event.waitUntil(this.runEach((uri, widget) => this.revertMove(uri, widget, event))));
+        this.fileSystemWatcher.onDidMove(event => event.waitUntil(this.runEach((uri, widget) => this.applyMove(uri, widget, event))));
     }
 
     onStart?(app: FrontendApplication): MaybePromise<void> {
@@ -117,18 +124,80 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         });
     }
 
-    protected async moveWidgets(event: FileMoveEvent): Promise<void> {
-        const promises: Promise<void>[] = [];
-        for (const [resourceUri, widget] of NavigatableWidget.get(this.shell.widgets)) {
-            promises.push(this.moveWidget(resourceUri, widget, event));
-        }
-        await Promise.all(promises);
+    protected runEach(participant: (resourceUri: URI, widget: NavigatableWidget) => Promise<void>): Promise<void> {
+        return this.run(async () => {
+            const promises: Promise<void>[] = [];
+            for (const [resourceUri, widget] of NavigatableWidget.get(this.shell.widgets)) {
+                promises.push(participant(resourceUri, widget));
+            }
+            await Promise.all(promises);
+        });
     }
-    protected async moveWidget(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): Promise<void> {
+
+    protected readonly moveSnapshots = new Map<string, NavigatableWidgetMoveSnapshot>();
+
+    protected popMoveSnapshot(resourceUri: URI): NavigatableWidgetMoveSnapshot | undefined {
+        const snapshotKey = resourceUri.toString();
+        const snapshot = this.moveSnapshots.get(snapshotKey);
+        if (snapshot) {
+            this.moveSnapshots.delete(snapshotKey);
+        }
+        return snapshot;
+    }
+
+    protected applyMoveSnapshot(widget: NavigatableWidget, snapshot: NavigatableWidgetMoveSnapshot | undefined): void {
+        if (!snapshot) {
+            return undefined;
+        }
+        if (snapshot.dirty) {
+            const saveable = Saveable.get(widget);
+            if (saveable && saveable.applySnapshot) {
+                saveable.applySnapshot(snapshot.dirty);
+            }
+        }
+        if (snapshot.view && StatefulWidget.is(widget)) {
+            widget.restoreState(snapshot.view);
+        }
+    }
+
+    protected async pushMove(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): Promise<void> {
         const newResourceUri = this.createMoveToUri(resourceUri, widget, event);
         if (!newResourceUri) {
             return;
         }
+        const snapshot: NavigatableWidgetMoveSnapshot = {};
+        const saveable = Saveable.get(widget);
+        if (StatefulWidget.is(widget)) {
+            snapshot.view = widget.storeState();
+        }
+        if (saveable && saveable.dirty) {
+            if (saveable.createSnapshot) {
+                snapshot.dirty = saveable.createSnapshot();
+            }
+            if (saveable.revert) {
+                await saveable.revert({ soft: true });
+            }
+        }
+        this.moveSnapshots.set(newResourceUri.toString(), snapshot);
+    }
+
+    protected async revertMove(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): Promise<void> {
+        const newResourceUri = this.createMoveToUri(resourceUri, widget, event);
+        if (!newResourceUri) {
+            return;
+        }
+        const snapshot = this.popMoveSnapshot(newResourceUri);
+        this.applyMoveSnapshot(widget, snapshot);
+    }
+
+    protected async applyMove(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): Promise<void> {
+        const newResourceUri = this.createMoveToUri(resourceUri, widget, event);
+        if (!newResourceUri) {
+            return;
+        }
+
+        const snapshot = this.popMoveSnapshot(newResourceUri);
+
         const description = this.widgetManager.getDescription(widget);
         if (!description) {
             return;
@@ -137,23 +206,24 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         if (!NavigatableWidgetOptions.is(options)) {
             return;
         }
-        const newWidget = await this.widgetManager.getOrCreateWidget(factoryId, <NavigatableWidgetOptions>{
+
+        const newWidget = await this.widgetManager.getOrCreateWidget<NavigatableWidget>(factoryId, <NavigatableWidgetOptions>{
             ...options,
             uri: newResourceUri.toString()
         });
-        const oldState = StatefulWidget.is(widget) ? widget.storeState() : undefined;
-        if (oldState && StatefulWidget.is(newWidget)) {
-            newWidget.restoreState(oldState);
-        }
+        this.applyMoveSnapshot(newWidget, snapshot);
         const area = this.shell.getAreaFor(widget) || 'main';
-        this.shell.addWidget(newWidget, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pending: Promise<any>[] = [this.shell.addWidget(newWidget, {
             area, ref: widget
-        });
+        })];
         if (this.shell.activeWidget === widget) {
-            this.shell.activateWidget(newWidget.id);
+            pending.push(this.shell.activateWidget(newWidget.id));
         } else if (widget.isVisible) {
-            this.shell.revealWidget(newWidget.id);
+            pending.push(this.shell.revealWidget(newWidget.id));
         }
+        pending.push(this.shell.closeWidget(widget.id, { save: false }));
+        await Promise.all(pending);
     }
     protected createMoveToUri(resourceUri: URI, widget: NavigatableWidget, event: FileMoveEvent): URI | undefined {
         const path = event.sourceUri.relative(resourceUri);
@@ -162,13 +232,16 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
     }
 
     protected readonly deletedSuffix = ' (deleted from disk)';
-    protected updateWidgets(event: FileChangeEvent): void {
+    protected async updateWidgets(event: FileChangeEvent): Promise<void> {
         const relevantEvent = event.filter(({ type }) => type !== FileChangeType.UPDATED);
         if (relevantEvent.length) {
-            this.doUpdateWidgets(relevantEvent);
+            return this.doUpdateWidgets(relevantEvent);
         }
     }
-    protected doUpdateWidgets(event: FileChangeEvent): void {
+    protected async doUpdateWidgets(event: FileChangeEvent): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pending: Promise<any>[] = [];
+
         const dirty = new Set<string>();
         const toClose = new Map<string, NavigatableWidget[]>();
         for (const [uri, widget] of NavigatableWidget.get(this.shell.widgets)) {
@@ -178,9 +251,12 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
             if (!dirty.has(uriString)) {
                 for (const widget of widgets) {
                     widget.close();
+                    pending.push(waitForClosed(widget));
                 }
             }
         }
+
+        await Promise.all(pending);
     }
     protected updateWidget(uri: URI, widget: NavigatableWidget, event: FileChangeEvent, { dirty, toClose }: {
         dirty: Set<string>;

@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Emitter, Event, WaitUntilEvent } from '@theia/core/lib/common/event';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileShouldOverwrite } from '../common/filesystem';
 import { DidFilesChangedParams, FileChangeType, FileSystemWatcherServer, WatchOptions } from '../common/filesystem-watcher-protocol';
@@ -66,7 +67,7 @@ export namespace FileChangeEvent {
     }
 }
 
-export interface FileMoveEvent {
+export interface FileMoveEvent extends WaitUntilEvent {
     sourceUri: URI
     targetUri: URI
 }
@@ -76,9 +77,7 @@ export namespace FileMoveEvent {
     }
 }
 
-export interface FileWillMoveEvent {
-    sourceUri: URI
-    targetUri: URI
+export interface FileWillMoveEvent extends FileMoveEvent {
 }
 
 @injectable()
@@ -90,11 +89,14 @@ export class FileSystemWatcher implements Disposable {
     protected readonly onFileChangedEmitter = new Emitter<FileChangeEvent>();
     readonly onFilesChanged: Event<FileChangeEvent> = this.onFileChangedEmitter.event;
 
-    protected readonly onDidMoveEmitter = new Emitter<FileMoveEvent>();
-    readonly onDidMove: Event<FileMoveEvent> = this.onDidMoveEmitter.event;
-
     protected readonly onWillMoveEmitter = new Emitter<FileWillMoveEvent>();
     readonly onWillMove: Event<FileWillMoveEvent> = this.onWillMoveEmitter.event;
+
+    protected readonly onDidFailMoveEmitter = new Emitter<FileMoveEvent>();
+    readonly onDidFailMove: Event<FileMoveEvent> = this.onDidFailMoveEmitter.event;
+
+    protected readonly onDidMoveEmitter = new Emitter<FileMoveEvent>();
+    readonly onDidMove: Event<FileMoveEvent> = this.onDidMoveEmitter.event;
 
     @inject(FileSystemWatcherServer)
     protected readonly server: FileSystemWatcherServer;
@@ -113,6 +115,7 @@ export class FileSystemWatcher implements Disposable {
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.onFileChangedEmitter);
+        this.toDispose.push(this.onDidFailMoveEmitter);
         this.toDispose.push(this.onDidMoveEmitter);
 
         this.toDispose.push(this.server);
@@ -128,8 +131,8 @@ export class FileSystemWatcher implements Disposable {
 
         this.filesystem.setClient({
             shouldOverwrite: this.shouldOverwrite.bind(this),
-            onDidMove: this.fireDidMove.bind(this),
-            onWillMove: this.fireWillMove.bind(this)
+            willMove: this.fireWillMove.bind(this),
+            didMove: this.fireDidMove.bind(this)
         });
     }
 
@@ -188,15 +191,16 @@ export class FileSystemWatcher implements Disposable {
         return Object.keys(patterns).filter(pattern => patterns[pattern]);
     }
 
-    protected fireDidMove(sourceUri: string, targetUri: string): void {
-        this.onDidMoveEmitter.fire({
+    protected fireWillMove(sourceUri: string, targetUri: string): Promise<void> {
+        return WaitUntilEvent.fire(this.onWillMoveEmitter, {
             sourceUri: new URI(sourceUri),
             targetUri: new URI(targetUri)
         });
     }
 
-    protected fireWillMove(sourceUri: string, targetUri: string): void {
-        this.onWillMoveEmitter.fire({
+    protected fireDidMove(sourceUri: string, targetUri: string, failed: boolean): Promise<void> {
+        const onDidMoveEmitter = failed ? this.onDidFailMoveEmitter : this.onDidMoveEmitter;
+        return WaitUntilEvent.fire(onDidMoveEmitter, {
             sourceUri: new URI(sourceUri),
             targetUri: new URI(targetUri)
         });

@@ -212,9 +212,9 @@ export interface FileSystemClient {
      */
     shouldOverwrite: FileShouldOverwrite;
 
-    onDidMove(sourceUri: string, targetUri: string): void;
+    willMove(sourceUri: string, targetUri: string): Promise<void>;
 
-    onWillMove(sourceUri: string, targetUri: string): void;
+    didMove(sourceUri: string, targetUri: string, failed: boolean): Promise<void>;
 }
 
 @injectable()
@@ -228,12 +228,12 @@ export class DispatchingFileSystemClient implements FileSystemClient {
         );
     }
 
-    onDidMove(sourceUri: string, targetUri: string): void {
-        this.clients.forEach(client => client.onDidMove(sourceUri, targetUri));
+    async willMove(sourceUri: string, targetUri: string): Promise<void> {
+        await Promise.all([...this.clients].map(client => client.willMove(sourceUri, targetUri)));
     }
 
-    onWillMove(sourceUri: string, targetUri: string): void {
-        this.clients.forEach(client => client.onWillMove(sourceUri, targetUri));
+    async didMove(sourceUri: string, targetUri: string, failed: boolean): Promise<void> {
+        await Promise.all([...this.clients].map(client => client.didMove(sourceUri, targetUri, failed)));
     }
 
 }

@@ -135,8 +135,10 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      */
     protected async delete(uri: URI): Promise<void> {
         try {
-            this.closeWithoutSaving(uri);
-            await this.fileSystem.delete(uri.toString());
+            await Promise.all([
+                this.closeWithoutSaving(uri),
+                this.fileSystem.delete(uri.toString())
+            ]);
         } catch (e) {
             console.error(e);
         }
@@ -148,13 +150,12 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      * @param uri URI of a selected resource.
      */
     protected async closeWithoutSaving(uri: URI): Promise<void> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const pending: Promise<any>[] = [];
         for (const [, widget] of NavigatableWidget.getAffected(this.shell.widgets, uri)) {
-            if (SaveableWidget.is(widget)) {
-                widget.closeWithoutSaving();
-            } else {
-                widget.close();
-            }
+            pending.push(this.shell.closeWidget(widget.id, { save: false }));
         }
+        await Promise.all(pending);
     }
 
 }

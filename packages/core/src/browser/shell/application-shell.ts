@@ -25,7 +25,7 @@ import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { RecursivePartial, MaybePromise, Event as CommonEvent, DisposableCollection, Disposable } from '../../common';
 import { animationFrame } from '../browser';
-import { Saveable } from '../saveable';
+import { Saveable, SaveableWidget } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { TheiaDockPanel, BOTTOM_AREA_ID, MAIN_AREA_ID } from './theia-dock-panel';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory } from './side-panel-handler';
@@ -1322,15 +1322,25 @@ export class ApplicationShell extends Widget {
         }
     }
 
-    async closeWidget(id: string): Promise<Widget | undefined> {
+    async closeWidget(id: string, options?: ApplicationShell.CloseOptions): Promise<Widget | undefined> {
         const stack = this.toTrackedStack(id);
         const widget = this.toTrackedStack(id).pop();
         if (!widget) {
             return undefined;
         }
-        widget.close();
+        let pendingClose;
+        if (SaveableWidget.is(widget)) {
+            let shouldSave;
+            if (options && 'save' in options) {
+                shouldSave = () => options.save;
+            }
+            pendingClose = widget.closeWithSaving({ shouldSave });
+        } else {
+            widget.close();
+            pendingClose = waitForClosed(widget);
+        };
         await Promise.all([
-            waitForClosed(widget),
+            pendingClose,
             this.pendingUpdates
         ]);
         return stack[0] || widget;
@@ -1703,6 +1713,16 @@ export namespace ApplicationShell {
          * The default is `undefined`.
          */
         ref?: Widget;
+    }
+
+    export interface CloseOptions {
+        /**
+         * if optional then a user will be prompted
+         * if undefined then close will be canceled
+         * if true then will be saved on close
+         * if falase then won't be saved on close
+         */
+        save?: boolean | undefined
     }
 
     /**

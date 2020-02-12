@@ -18,13 +18,18 @@ import { Position } from 'vscode-languageserver-types';
 import { TextDocumentSaveReason, TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import { TextEditorDocument } from '@theia/editor/lib/browser';
-import { DisposableCollection, Disposable, Emitter, Event, Resource, CancellationTokenSource, CancellationToken, ResourceError } from '@theia/core';
-import ITextEditorModel = monaco.editor.ITextEditorModel;
+import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
+import { Emitter, Event } from '@theia/core/lib/common/event';
+import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
+import { Resource, ResourceError, ResourceVersion } from '@theia/core/lib/common/resource';
 import { Range } from 'vscode-languageserver-types';
+import { Saveable } from '@theia/core/lib/browser/saveable';
 
 export {
     TextDocumentSaveReason
 };
+
+type ITextEditorModel = monaco.editor.ITextEditorModel;
 
 export interface WillSaveMonacoModelEvent {
     readonly model: MonacoEditorModel;
@@ -66,6 +71,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     private preferredEncoding: string | undefined = undefined;
     private readonly defaultEncoding: string | undefined;
 
+    protected resourceVersion: ResourceVersion | undefined;
+
     constructor(
         protected readonly resource: Resource,
         protected readonly m2p: MonacoToProtocolConverter,
@@ -79,6 +86,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.toDispose.push(this.onWillSaveModelEmitter);
         this.toDispose.push(this.onDirtyChangedEmitter);
         this.toDispose.push(this.onDidChangeValidEmitter);
+        this.toDispose.push(Disposable.create(() => this.cancelSave()));
+        this.toDispose.push(Disposable.create(() => this.cancelSync()));
         this.defaultEncoding = options && options.encoding ? options.encoding : undefined;
         this.resolveModel = this.readContents().then(
             content => this.initialize(content || ''),
@@ -118,6 +127,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected initialize(content: string): void {
         if (!this.toDispose.disposed) {
             this.model = monaco.editor.createModel(content, undefined, monaco.Uri.parse(this.resource.uri.toString()));
+            this.resourceVersion = this.resource.version;
             this.updateSavedVersionId();
             this.toDispose.push(this.model);
             this.toDispose.push(this.model.onDidChangeContent(event => this.fireDidChangeContent(event)));
@@ -151,6 +161,9 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this._dirty;
     }
     protected setDirty(dirty: boolean): void {
+        if (dirty === this._dirty) {
+            return;
+        }
         this._dirty = dirty;
         if (dirty === false) {
             this.updateSavedVersionId();
@@ -243,7 +256,10 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     protected pendingOperation = Promise.resolve();
-    run(operation: () => Promise<void>): Promise<void> {
+    protected async run(operation: () => Promise<void>): Promise<void> {
+        if (this.toDispose.disposed) {
+            return;
+        }
         return this.pendingOperation = this.pendingOperation.then(async () => {
             try {
                 await operation();
@@ -265,7 +281,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.run(() => this.doSync(token));
     }
     protected async doSync(token: CancellationToken): Promise<void> {
-        if (token.isCancellationRequested || this._dirty) {
+        if (token.isCancellationRequested) {
             return;
         }
 
@@ -273,6 +289,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         if (newText === undefined || token.isCancellationRequested || this._dirty) {
             return;
         }
+        this.resourceVersion = this.resource.version;
 
         const value = this.model.getValue();
         if (value === newText) {
@@ -334,18 +351,11 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     protected ignoreContentChanges = false;
-    protected contentChanges: TextDocumentContentChangeEvent[] = [];
+    protected readonly contentChanges: TextDocumentContentChangeEvent[] = [];
     protected pushContentChanges(contentChanges: TextDocumentContentChangeEvent[]): void {
         if (!this.ignoreContentChanges) {
             this.contentChanges.push(...contentChanges);
         }
-    }
-    protected popContentChanges(): TextDocumentContentChangeEvent[] {
-        const contentChanges = this.contentChanges;
-        if (contentChanges.length !== 0) {
-            this.contentChanges = [];
-        }
-        return contentChanges;
     }
 
     protected fireDidChangeContent(event: monaco.editor.IModelContentChangedEvent): void {
@@ -400,20 +410,31 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             return;
         }
 
-        const changes = this.popContentChanges();
+        const changes = [...this.contentChanges];
         if (changes.length === 0 && overwriteEncoding === undefined) {
             return;
         }
 
         const content = this.model.getValue();
-        await Resource.save(this.resource, { changes, content, options: { encoding: this.getEncoding(), overwriteEncoding } }, token);
-        this.setValid(true);
-        if (token.isCancellationRequested) {
-            return;
-        }
+        try {
+            const encoding = this.getEncoding();
+            const version = this.resourceVersion;
+            await Resource.save(this.resource, { changes, content, options: { encoding, overwriteEncoding, version } }, token);
+            this.contentChanges.splice(0, changes.length);
+            this.resourceVersion = this.resource.version;
+            this.setValid(true);
 
-        this.setDirty(false);
-        this.fireDidSaveModel();
+            if (token.isCancellationRequested) {
+                return;
+            }
+
+            this.setDirty(false);
+            this.fireDidSaveModel();
+        } catch (e) {
+            if (!ResourceError.OutOfSync.is(e)) {
+                throw e;
+            }
+        }
     }
 
     protected async fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
@@ -480,6 +501,32 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected fireDidSaveModel(): void {
         this.onDidSaveModelEmitter.fire(this.model);
     }
+
+    async revert(options?: Saveable.RevertOptions): Promise<void> {
+        this.cancelSave();
+        const soft = options && options.soft;
+        if (soft !== true) {
+            const dirty = this._dirty;
+            this._dirty = false;
+            try {
+                await this.sync();
+            } finally {
+                this._dirty = dirty;
+            }
+        }
+        this.setDirty(false);
+    }
+
+    createSnapshot(): object {
+        return {
+            value: this.getText()
+        };
+    }
+
+    applySnapshot(snapshot: { value: string }): void {
+        this.model.setValue(snapshot.value);
+    }
+
 }
 export namespace MonacoEditorModel {
     export interface ApplyEditsOptions {

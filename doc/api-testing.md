@@ -123,7 +123,7 @@ describe('Editors', function () {
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
 
-    before(() => editorManager.closeAll());
+    before(() => editorManager.closeAll({ save: false });
 
     it('open', async () => {
         const root = (await workspaceService.roots)[0];

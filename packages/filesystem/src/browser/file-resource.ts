@@ -16,12 +16,21 @@
 
 import { injectable, inject } from 'inversify';
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
-import {
-    Resource, ResourceResolver, Emitter, Event, DisposableCollection, ResourceError
-} from '@theia/core';
+import { Resource, ResourceVersion, ResourceResolver, ResourceError, ResourceSaveOptions } from '@theia/core/lib/common/resource';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileStat, FileSystemError } from '../common/filesystem';
 import { FileSystemWatcher, FileChangeEvent } from './filesystem-watcher';
+
+export interface FileResourceVersion extends ResourceVersion {
+    readonly stat: FileStat
+}
+export namespace FileResourceVersion {
+    export function is(version: ResourceVersion | undefined): version is FileResourceVersion {
+        return !!version && 'stat' in version && FileStat.is(version['stat']);
+    }
+}
 
 export class FileResource implements Resource {
 
@@ -29,7 +38,11 @@ export class FileResource implements Resource {
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
     readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmitter.event;
 
-    protected stat: FileStat | undefined;
+    protected _version: FileResourceVersion | undefined;
+    get version(): FileResourceVersion | undefined {
+        return this._version;
+    }
+
     protected uriString: string;
 
     constructor(
@@ -46,7 +59,6 @@ export class FileResource implements Resource {
         if (stat && stat.isDirectory) {
             throw new Error('The given uri is a directory: ' + this.uriString);
         }
-        this.stat = stat;
 
         this.toDispose.push(this.fileSystemWatcher.onFilesChanged(event => {
             if (FileChangeEvent.isAffected(event, this.uri)) {
@@ -67,11 +79,11 @@ export class FileResource implements Resource {
     async readContents(options?: { encoding?: string }): Promise<string> {
         try {
             const { stat, content } = await this.fileSystem.resolveContent(this.uriString, options);
-            this.stat = stat;
+            this._version = { stat };
             return content;
         } catch (e) {
             if (FileSystemError.FileNotFound.is(e)) {
-                this.stat = undefined;
+                this._version = undefined;
                 throw ResourceError.NotFound({
                     ...e.toJson(),
                     data: {
@@ -83,37 +95,66 @@ export class FileResource implements Resource {
         }
     }
 
-    async saveContents(content: string, options?: { encoding?: string, overwriteEncoding?: string }): Promise<void> {
-        if (options && options.overwriteEncoding) {
-            this.stat = await this.doSaveContents(content, { encoding: options.overwriteEncoding });
-        } else {
-            this.stat = await this.doSaveContents(content, options);
+    async saveContents(content: string, options?: ResourceSaveOptions): Promise<void> {
+        try {
+            let resolvedOptions = options;
+            if (options && options.overwriteEncoding) {
+                resolvedOptions = {
+                    ...options,
+                    encoding: options.overwriteEncoding
+                };
+                delete resolvedOptions.overwriteEncoding;
+            }
+            const stat = await this.doSaveContents(content, resolvedOptions);
+            this._version = { stat };
+        } catch (e) {
+            if (FileSystemError.FileIsOutOfSync.is(e)) {
+                throw ResourceError.OutOfSync({ ...e.toJson(), data: { uri: this.uri } });
+            }
+            throw e;
         }
     }
-    protected async doSaveContents(content: string, options?: { encoding?: string }): Promise<FileStat> {
-        const stat = await this.getFileStat();
+    protected async doSaveContents(content: string, options?: { encoding?: string, version?: ResourceVersion }): Promise<FileStat> {
+        const version = options && options.version || this._version;
+        const stat = FileResourceVersion.is(version) && version.stat || await this.getFileStat();
         if (stat) {
-            return this.fileSystem.setContent(stat, content, options);
+            try {
+                return await this.fileSystem.setContent(stat, content, options);
+            } catch (e) {
+                if (!FileSystemError.FileNotFound.is(e)) {
+                    throw e;
+                }
+            }
         }
         return this.fileSystem.createFile(this.uriString, { content, ...options });
     }
 
-    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: { encoding?: string, overwriteEncoding?: string }): Promise<void> {
-        if (!this.stat) {
-            throw new Error(this.uriString + ' has not been read yet');
+    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: ResourceSaveOptions): Promise<void> {
+        const version = options && options.version || this._version;
+        const currentStat = FileResourceVersion.is(version) && version.stat;
+        if (!currentStat) {
+            throw ResourceError.NotFound({ message: 'has not been read yet', data: { uri: this.uri } });
         }
-        this.stat = await this.fileSystem.updateContent(this.stat, changes, options);
+        try {
+            const stat = await this.fileSystem.updateContent(currentStat, changes, options);
+            this._version = { stat };
+        } catch (e) {
+            if (FileSystemError.FileNotFound.is(e)) {
+                throw ResourceError.NotFound({ ...e.toJson(), data: { uri: this.uri } });
+            }
+            if (FileSystemError.FileIsOutOfSync.is(e)) {
+                throw ResourceError.OutOfSync({ ...e.toJson(), data: { uri: this.uri } });
+            }
+            throw e;
+        }
     }
 
     async guessEncoding(): Promise<string | undefined> {
-        if (!this.stat) {
-            return undefined;
-        }
         return this.fileSystem.guessEncoding(this.uriString);
     }
 
     protected async sync(): Promise<void> {
-        if (await this.isInSync(this.stat)) {
+        if (await this.isInSync(this.version && this.version.stat)) {
             return;
         }
         this.onDidChangeContentsEmitter.fire(undefined);

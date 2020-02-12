@@ -24,11 +24,58 @@ import { MaybePromise } from './types';
 import { CancellationToken } from './cancellation';
 import { ApplicationError } from './application-error';
 
+export interface ResourceVersion {
+}
+
+export interface ResourceReadOptions {
+    encoding?: string
+}
+
+export interface ResourceSaveOptions {
+    encoding?: string,
+    overwriteEncoding?: string,
+    version?: ResourceVersion
+}
+
 export interface Resource extends Disposable {
     readonly uri: URI;
-    readContents(options?: { encoding?: string }): Promise<string>;
-    saveContents?(content: string, options?: { encoding?: string }): Promise<void>;
-    saveContentChanges?(changes: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<void>;
+    /**
+     * Latest read version of this resource.
+     *
+     * Optional if a resource does not support versioning, check with `in` operator`.
+     * Undefined if a resource did not read content yet.
+     */
+    readonly version?: ResourceVersion | undefined;
+    /**
+     * Reads latest content of this resouce.
+     *
+     * If a resource supports versioning it updates version to latest.
+     *
+     * @throws `ResourceError.NotFound` if a resource not found
+     */
+    readContents(options?: ResourceReadOptions): Promise<string>;
+    /**
+     * Rewrites the complete content for this resource.
+     * If a resource does not exist it will be created.
+     *
+     * If a resource supports versioning clients can pass some version
+     * to check against it, if it is not provided latest version is used.
+     * It updates version to latest.
+     *
+     * @throws `ResourceError.OutOfSync` if latest resource version is out of sync with the given
+     */
+    saveContents?(content: string, options?: ResourceSaveOptions): Promise<void>;
+    /**
+     * Applies incemental content changes to this resource.
+     *
+     * If a resource supports versioning clients can pass some version
+     * to check against it, if it is not provided latest version is used.
+     * It updates version to latest.
+     *
+     * @throws `ResourceError.NotFound` if a resource not found or was not read yet
+     * @throws `ResourceError.OutOfSync` if latest resource version is out of sync with the given
+     */
+    saveContentChanges?(changes: TextDocumentContentChangeEvent[], options?: ResourceSaveOptions): Promise<void>;
     readonly onDidChangeContents?: Event<void>;
     guessEncoding?(): Promise<string | undefined>
 }
@@ -36,7 +83,7 @@ export namespace Resource {
     export interface SaveContext {
         content: string
         changes?: TextDocumentContentChangeEvent[]
-        options?: { encoding?: string, overwriteEncoding?: string }
+        options?: ResourceSaveOptions
     }
     export async function save(resource: Resource, context: SaveContext, token?: CancellationToken): Promise<void> {
         if (!resource.saveContents) {
@@ -56,11 +103,13 @@ export namespace Resource {
         }
         try {
             await resource.saveContentChanges(context.changes, context.options);
+            return true;
         } catch (e) {
-            console.error(e);
+            if (!ResourceError.NotFound.is(e) && !ResourceError.OutOfSync.is(e)) {
+                console.error(`Failed to apply incremenal changes to '${resource.uri.toString()}':`, e);
+            }
             return false;
         }
-        return true;
     }
     export function shouldSaveContent({ content, changes }: SaveContext): boolean {
         if (!changes) {
@@ -80,6 +129,7 @@ export namespace Resource {
 
 export namespace ResourceError {
     export const NotFound = ApplicationError.declare(-40000, (raw: ApplicationError.Literal<{ uri: URI }>) => raw);
+    export const OutOfSync = ApplicationError.declare(-40001, (raw: ApplicationError.Literal<{ uri: URI }>) => raw);
 }
 
 export const ResourceResolver = Symbol('ResourceResolver');

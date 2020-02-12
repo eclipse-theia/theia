@@ -390,6 +390,54 @@ describe('Launch Preferences', function () {
 
     }
 
+    const rootUri = new Uri.default(workspaceService.tryGetRoots()[0].uri);
+
+    function deleteWorkspacePreferences() {
+        const promises = [];
+        for (const configPath of ['.theia', '.vscode']) {
+            for (const name of ['settings', 'launch']) {
+                promises.push((async () => {
+                    try {
+                        const reference = await textModelService.createModelReference(rootUri.resolve(configPath + '/' + name + '.json'));
+                        try {
+                            if (!reference.object.valid) {
+                                return;
+                            }
+                            await new Promise(resolve => {
+                                const listener = reference.object.onDidChangeValid(() => {
+                                    listener.dispose();
+                                    resolve();
+                                });
+                            });
+                        } finally {
+                            reference.dispose();
+                        }
+                    } catch (e) {
+                        console.error(e);
+                    }
+                })());
+            }
+        }
+        return Promise.all([
+            ...promises,
+            fileSystem.delete(rootUri.resolve('.theia').toString(), { moveToTrash: false }).catch(() => { }),
+            fileSystem.delete(rootUri.resolve('.vscode').toString(), { moveToTrash: false }).catch(() => { })
+        ]);
+    }
+
+    const client = fileSystem.getClient();
+    const originalShouldOverwrite = client.shouldOverwrite;
+
+    before(async () => {
+        // fail tests if out of async happens
+        client.shouldOverwrite = async () => (assert.fail('should be in sync'), false);
+        await deleteWorkspacePreferences();
+    });
+
+    after(() => {
+        client.shouldOverwrite = originalShouldOverwrite;
+    });
+
     /**
      * @typedef {Object} ConfigSuiteOptions
      * @property {any} expectation
@@ -409,11 +457,9 @@ describe('Launch Preferences', function () {
         describe(JSON.stringify(configMode, undefined, 2), () => {
             const configPaths = Array.isArray(configMode) ? configMode : [configMode];
 
-            const rootUri = new Uri.default(workspaceService.tryGetRoots()[0].uri);
-
             /** @typedef {monaco.editor.IReference<import('@theia/monaco/lib/browser/monaco-editor-model').MonacoEditorModel>} ConfigModelReference */
             /** @type {ConfigModelReference[]} */
-            beforeEach(() => {
+            beforeEach(async () => {
                 const promises = [];
                 /**
                  * @param {string} name
@@ -445,50 +491,10 @@ describe('Launch Preferences', function () {
                 if (launch) {
                     ensureConfigModel('launch', JSON.stringify(launch));
                 }
-                return Promise.all(promises);
+                await Promise.all(promises);
             });
 
-            after(() => {
-                const promises = [];
-                /**
-                 * @param {string} name
-                 */
-                const ensureReleaseModel = name => {
-                    for (const configPath of configPaths) {
-                        promises.push((async () => {
-                            try {
-                                const reference = await textModelService.createModelReference(rootUri.resolve(configPath + '/' + name + '.json'));
-                                try {
-                                    if (!reference.object.valid) {
-                                        return;
-                                    }
-                                    await new Promise(resolve => {
-                                        const listener = reference.object.onDidChangeValid(() => {
-                                            listener.dispose();
-                                            resolve();
-                                        });
-                                    });
-                                } finally {
-                                    reference.dispose();
-                                }
-                            } catch (e) {
-                                console.error(e);
-                            }
-                        })());
-                    }
-                };
-                if (settings) {
-                    ensureReleaseModel('settings');
-                }
-                if (launch) {
-                    ensureReleaseModel('launch');
-                }
-                return Promise.all([
-                    ...promises,
-                    fileSystem.delete(rootUri.resolve('.theia').toString(), { moveToTrash: false }).catch(() => { }),
-                    fileSystem.delete(rootUri.resolve('.vscode').toString(), { moveToTrash: false }).catch(() => { })
-                ]);
-            });
+            after(() => deleteWorkspacePreferences());
 
             const testItOnly = !!only ? it.only : it;
             const testIt = testItOnly;
