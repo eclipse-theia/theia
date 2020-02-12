@@ -1116,7 +1116,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                     }))
                 ));
             }
-            this.update();
+            this.doFocus();
         }
         event.stopPropagation();
         event.preventDefault();
