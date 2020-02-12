@@ -46,6 +46,10 @@ export class TextmateRegistry {
     protected readonly languageToConfig = new Map<string, TextmateGrammarConfiguration[]>();
     protected readonly languageIdToScope = new Map<string, string[]>();
 
+    get languages(): IterableIterator<string> {
+        return this.languageIdToScope.keys();
+    }
+
     registerTextmateGrammarScope(scope: string, provider: GrammarDefinitionProvider): Disposable {
         const providers = this.scopeToProvider.get(scope) || [];
         const existingProvider = providers[0];

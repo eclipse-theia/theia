@@ -96,8 +96,6 @@ export class PluginContributionHandler {
     protected readonly onDidRegisterCommandHandlerEmitter = new Emitter<string>();
     readonly onDidRegisterCommandHandler = this.onDidRegisterCommandHandlerEmitter.event;
 
-    protected readonly activatedLanguages = new Set<string>();
-
     /**
      * Always synchronous in order to simplify handling disconnections.
      * @throws never, loading of each contribution should handle errors
@@ -137,12 +135,6 @@ export class PluginContributionHandler {
         const languages = contributions.languages;
         if (languages && languages.length) {
             for (const lang of languages) {
-                /*
-                 * Monaco guesses a language for opened plain text models on `monaco.languages.register`.
-                 * It can trigger language activation before grammars are registered.
-                 * Install onLanguage listener earlier in order to catch such activations and activate grammars as well.
-                 */
-                monaco.languages.onLanguage(lang.id, () => this.activatedLanguages.add(lang.id));
                 // it is not possible to unregister a language
                 monaco.languages.register({
                     id: lang.id,
@@ -209,7 +201,7 @@ export class PluginContributionHandler {
                             tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
                         }));
                         pushContribution(`grammar.language.${language}.activation`,
-                            () => this.onDidActivateLanguage(language, () => this.monacoTextmateService.activateLanguage(language))
+                            () => this.monacoTextmateService.activateLanguage(language)
                         );
                     }
                 });
@@ -354,14 +346,6 @@ export class PluginContributionHandler {
 
     hasCommandHandler(id: string): boolean {
         return !!this.commandHandlers.get(id);
-    }
-
-    protected onDidActivateLanguage(language: string, cb: () => {}): Disposable {
-        if (this.activatedLanguages.has(language)) {
-            cb();
-            return Disposable.NULL;
-        }
-        return monaco.languages.onLanguage(language, cb);
     }
 
     protected updateDefaultOverridesSchema(configurationDefaults: PreferenceSchemaProperties): Disposable {

@@ -16,7 +16,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { Registry, IOnigLib, IRawGrammar, parseRawGrammar } from 'vscode-textmate';
-import { ILogger, ContributionProvider, Emitter, DisposableCollection, Disposable } from '@theia/core';
+import { ILogger, ContributionProvider, DisposableCollection, Disposable } from '@theia/core';
 import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './textmate-contribution';
@@ -31,12 +31,6 @@ export type OnigasmPromise = Promise<IOnigLib>;
 export class MonacoTextmateService implements FrontendApplicationContribution {
 
     protected readonly _activatedLanguages = new Set<string>();
-    get activatedLanguages(): ReadonlySet<string> {
-        return this._activatedLanguages;
-    }
-
-    protected readonly onDidActivateLanguageEmitter = new Emitter<string>();
-    readonly onDidActivateLanguage = this.onDidActivateLanguageEmitter.event;
 
     protected grammarRegistry: Registry;
 
@@ -101,8 +95,8 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         this.updateTheme();
         this.themeService.onThemeChange(() => this.updateTheme());
 
-        for (const { id } of monaco.languages.getLanguages()) {
-            monaco.languages.onLanguage(id, () => this.activateLanguage(id));
+        for (const id of this.textmateRegistry.languages) {
+            this.activateLanguage(id);
         }
     }
 
@@ -129,44 +123,70 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         return this.themeService.getCurrentTheme().editorTheme || MonacoThemeRegistry.DARK_DEFAULT_THEME;
     }
 
-    async activateLanguage(languageId: string): Promise<void> {
+    activateLanguage(language: string): Disposable {
+        const toDispose = new DisposableCollection(
+            Disposable.create(() => { /* mark as not disposed */ })
+        );
+        toDispose.push(this.waitForLanguage(language, () =>
+            this.doActivateLanguage(language, toDispose)
+        ));
+        return toDispose;
+    }
+
+    protected async doActivateLanguage(languageId: string, toDispose: DisposableCollection): Promise<void> {
         if (this._activatedLanguages.has(languageId)) {
             return;
         }
         this._activatedLanguages.add(languageId);
-        try {
-            const scopeName = this.textmateRegistry.getScope(languageId);
-            if (!scopeName) {
-                return;
-            }
-            const provider = this.textmateRegistry.getProvider(scopeName);
-            if (!provider) {
-                return;
-            }
+        toDispose.push(Disposable.create(() => this._activatedLanguages.delete(languageId)));
 
-            const configuration = this.textmateRegistry.getGrammarConfiguration(languageId);
-            const initialLanguage = getEncodedLanguageId(languageId);
-
-            await this.onigasmPromise;
-            try {
-                const grammar = await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, initialLanguage, configuration);
-                if (!grammar) {
-                    throw new Error(`no grammar for ${scopeName}, ${initialLanguage}, ${JSON.stringify(configuration)}`);
-                }
-                const options = configuration.tokenizerOption ? configuration.tokenizerOption : TokenizerOption.DEFAULT;
-                const tokenizer = createTextmateTokenizer(grammar, options);
-                monaco.languages.setTokensProvider(languageId, tokenizer);
-                const support = monaco.modes.TokenizationRegistry.get(languageId);
-                const themeService = monaco.services.StaticServices.standaloneThemeService.get();
-                const languageIdentifier = monaco.services.StaticServices.modeService.get().getLanguageIdentifier(languageId);
-                const adapter = new monaco.services.TokenizationSupport2Adapter(themeService, languageIdentifier!, tokenizer);
-                support!.tokenize = adapter.tokenize.bind(adapter);
-            } catch (error) {
-                this.logger.warn('No grammar for this language id', languageId, error);
-            }
-        } finally {
-            this.onDidActivateLanguageEmitter.fire(languageId);
+        const scopeName = this.textmateRegistry.getScope(languageId);
+        if (!scopeName) {
+            return;
         }
+        const provider = this.textmateRegistry.getProvider(scopeName);
+        if (!provider) {
+            return;
+        }
+
+        const configuration = this.textmateRegistry.getGrammarConfiguration(languageId);
+        const initialLanguage = getEncodedLanguageId(languageId);
+
+        await this.onigasmPromise;
+        if (toDispose.disposed) {
+            return;
+        }
+        try {
+            const grammar = await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, initialLanguage, configuration);
+            if (toDispose.disposed) {
+                return;
+            }
+            if (!grammar) {
+                throw new Error(`no grammar for ${scopeName}, ${initialLanguage}, ${JSON.stringify(configuration)}`);
+            }
+            const options = configuration.tokenizerOption ? configuration.tokenizerOption : TokenizerOption.DEFAULT;
+            const tokenizer = createTextmateTokenizer(grammar, options);
+            toDispose.push(monaco.languages.setTokensProvider(languageId, tokenizer));
+            const support = monaco.modes.TokenizationRegistry.get(languageId);
+            const themeService = monaco.services.StaticServices.standaloneThemeService.get();
+            const languageIdentifier = monaco.services.StaticServices.modeService.get().getLanguageIdentifier(languageId);
+            const adapter = new monaco.services.TokenizationSupport2Adapter(themeService, languageIdentifier!, tokenizer);
+            support!.tokenize = adapter.tokenize.bind(adapter);
+        } catch (error) {
+            this.logger.warn('No grammar for this language id', languageId, error);
+        }
+    }
+
+    protected waitForLanguage(language: string, cb: () => {}): Disposable {
+        const modeService = monaco.services.StaticServices.modeService.get();
+        for (const modeId of Object.keys(modeService['_instantiatedModes'])) {
+            const mode = modeService['_instantiatedModes'][modeId];
+            if (mode.getId() === language) {
+                cb();
+                return Disposable.NULL;
+            }
+        }
+        return monaco.languages.onLanguage(language, cb);
     }
 
 }
