@@ -176,4 +176,62 @@ describe('Preference Proxy', () => {
             a: 'a'
         }, undefined, 2), 'there should not be foo.bar.x to avoid sending excessive data to remote clients');
     });
+
+    it('get nested default', () => {
+        const proxy = getProxy({
+            properties: {
+                'foo': {
+                    'anyOf': [
+                        {
+                            'enum': [
+                                false
+                            ]
+                        },
+                        {
+                            'properties': {
+                                'bar': {
+                                    'anyOf': [
+                                        {
+                                            'enum': [
+                                                false
+                                            ]
+                                        },
+                                        {
+                                            'properties': {
+                                                'x': {
+                                                    type: 'boolean'
+                                                },
+                                                'y': {
+                                                    type: 'boolean'
+                                                }
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    default: {
+                        bar: {
+                            x: true,
+                            y: false
+                        }
+                    }
+                }
+            }
+        }, { style: 'both' });
+        assert.deepStrictEqual(proxy['foo'], {
+            bar: {
+                x: true,
+                y: false
+            }
+        });
+        assert.deepStrictEqual(proxy['foo.bar'], {
+            x: true,
+            y: false
+        });
+        assert.strictEqual(proxy['foo.bar.x'], true);
+        assert.strictEqual(proxy['foo.bar.y'], false);
+    });
+
 });
