@@ -46,6 +46,8 @@ export interface MessagingService {
     ws(path: string, callback: (params: MessagingService.PathParams, socket: ws) => void): void;
 }
 export namespace MessagingService {
+    /** Inversify container identifier for the `MessagingService` component. */
+    export const Identifier = Symbol('MessagingService');
     export interface PathParams {
         [name: string]: string
     }

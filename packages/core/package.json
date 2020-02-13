@@ -10,6 +10,7 @@
     "@primer/octicons-react": "^9.0.0",
     "@theia/application-package": "^0.15.0",
     "@types/body-parser": "^1.16.4",
+    "@types/cookie": "^0.3.3",
     "@types/express": "^4.16.0",
     "@types/fs-extra": "^4.0.2",
     "@types/lodash.debounce": "4.0.3",
@@ -22,6 +23,7 @@
     "@types/yargs": "^11.1.0",
     "ajv": "^6.5.3",
     "body-parser": "^1.17.2",
+    "cookie": "^0.4.0",
     "es6-promise": "^4.2.4",
     "express": "^4.16.3",
     "file-icons-js": "^1.0.3",
@@ -61,6 +63,9 @@
       "frontend": "lib/browser/keyboard/browser-keyboard-module",
       "frontendElectron": "lib/electron-browser/keyboard/electron-keyboard-module",
       "backendElectron": "lib/electron-node/keyboard/electron-backend-keyboard-module"
+    },
+    {
+      "backendElectron": "lib/electron-node/token/electron-token-backend-module"
     }
   ],
   "keywords": [
