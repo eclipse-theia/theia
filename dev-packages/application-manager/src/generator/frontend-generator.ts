@@ -99,7 +99,7 @@ function start() {
     themeService.loadUserTheme();
 
     const application = container.get(FrontendApplication);
-    application.start();
+    return application.start();
 }
 
 module.exports = Promise.resolve()${this.compileFrontendModuleImports(frontendModules)}
@@ -129,10 +129,12 @@ if (process.env.LC_ALL) {
 }
 process.env.LC_NUMERIC = 'C';
 
+const uuid = require('uuid');
 const electron = require('electron');
 const { join, resolve } = require('path');
 const { fork } = require('child_process');
 const { app, dialog, shell, BrowserWindow, ipcMain, Menu, globalShortcut } = electron;
+const { ElectronSecurityToken } = require('@theia/core/lib/electron-common/electron-token');
 
 const applicationName = \`${this.pck.props.frontend.config.applicationName}\`;
 const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
@@ -147,6 +149,10 @@ if (isSingleInstance && !app.requestSingleInstanceLock()) {
 const nativeKeymap = require('native-keymap');
 const Storage = require('electron-store');
 const electronStore = new Storage();
+
+const electronSecurityToken = {
+    value: uuid.v4(),
+};
 
 app.on('ready', () => {
 
@@ -300,7 +306,17 @@ app.on('ready', () => {
 
     const loadMainWindow = (port) => {
         if (!mainWindow.isDestroyed()) {
-            mainWindow.loadURL('file://' + join(__dirname, '../../lib/index.html') + '?port=' + port);
+            mainWindow.webContents.session.cookies.set({
+                url: \`http://localhost:\${port}/\`,
+                name: ElectronSecurityToken,
+                value: JSON.stringify(electronSecurityToken),
+            }, error => {
+                if (error) {
+                    console.error(error);
+                } else {
+                    mainWindow.loadURL('file://' + join(__dirname, '../../lib/index.html') + '?port=' + port);
+                }
+            });
         }
     };
 
@@ -322,6 +338,7 @@ app.on('ready', () => {
     // We need to distinguish between bundled application and development mode when starting the clusters.
     // See: https://github.com/electron/electron/issues/6337#issuecomment-230183287
     if (devMode) {
+        process.env[ElectronSecurityToken] = JSON.stringify(electronSecurityToken);
         require(mainPath).then(address => {
             loadMainWindow(address.port);
         }).catch((error) => {
@@ -329,7 +346,9 @@ app.on('ready', () => {
             app.exit(1);
         });
     } else {
-        const cp = fork(mainPath, [], { env: Object.assign({}, process.env) });
+        const cp = fork(mainPath, [], { env: Object.assign({
+            [ElectronSecurityToken]: JSON.stringify(electronSecurityToken),
+        }, process.env) });
         cp.on('message', (address) => {
             loadMainWindow(address.port);
         });
