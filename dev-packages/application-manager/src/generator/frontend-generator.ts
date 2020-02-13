@@ -132,7 +132,8 @@ process.env.LC_NUMERIC = 'C';
 const electron = require('electron');
 const { join, resolve } = require('path');
 const { fork } = require('child_process');
-const { app, dialog, shell, BrowserWindow, ipcMain, Menu, globalShortcut } = electron;
+const { app, dialog, shell, BrowserWindow, ipcMain, Menu, globalShortcut } = electron;${this.ifElectron(`
+const { ElectronSecurityToken } = require('@theia/core/lib/electron-common/electron-token');`)}
 
 const applicationName = \`${this.pck.props.frontend.config.applicationName}\`;
 const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};

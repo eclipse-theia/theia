@@ -27,3 +27,31 @@ export class Deferred<T> {
         this.reject = reject;
     });
 }
+
+/**
+ * DeferredSync exposes an async value in a synchronous way.
+ */
+export class DeferredSync<T> {
+
+    resolved: boolean;
+    value?: T;
+    error?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+    resolve: (value?: T) => void;
+    reject: (error?: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+    promise = new Promise<T>((resolve, reject) => {
+        this.resolve = (value: T) => {
+            if (!this.resolved) {
+                this.resolved = true;
+                resolve(this.value = value);
+            }
+        };
+        this.reject = (error: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+            if (!this.resolved) {
+                this.resolved = true;
+                reject(this.error = error);
+            }
+        };
+    });
+}

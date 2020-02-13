@@ -14,18 +14,28 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import URI from '../../common/uri';
+import { injectable, inject, named } from 'inversify';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { WebSocketConnectionProvider, WebSocketOptions } from '../../browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '../../browser/frontend-application';
+import { ElectronSecurityToken } from '../../electron-common/electron-token';
+import { DeferredSync } from '../../common/promise-util';
 
 @injectable()
 export class ElectronWebSocketConnectionProvider extends WebSocketConnectionProvider implements FrontendApplicationContribution {
+
+    @inject(DeferredSync) @named(ElectronSecurityToken)
+    protected readonly tokenRequest: DeferredSync<ElectronSecurityToken>;
 
     /**
      * Do not try to reconnect when the frontend application is stopping. The browser is navigating away from this page.
      */
     protected stopping = false;
+
+    async configure(): Promise<void> {
+        await this.tokenRequest.promise;
+    }
 
     onStop(): void {
         this.stopping = true;
@@ -42,6 +52,14 @@ export class ElectronWebSocketConnectionProvider extends WebSocketConnectionProv
         if (!this.stopping) {
             super.openChannel(path, handler, options);
         }
+    }
+
+    protected createWebSocketUrl(path: string): string {
+        const token = this.tokenRequest.value!;
+        const uri = new URI(path);
+        const query = uri.query.split('&');
+        query.push(`${encodeURIComponent(ElectronSecurityToken)}=${encodeURIComponent(token.value)}`);
+        return super.createWebSocketUrl(uri.withQuery(query.join('&')).toString());
     }
 
 }
