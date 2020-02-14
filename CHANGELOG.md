@@ -2,6 +2,7 @@
 
 ## v0.16.0
 
+- [monaco] close an active menubar dropdown when the quick palette is launched [#7136](https://github.com/eclipse-theia/theia/pull/7136)
 - [core] added a new React-based dialog type `ReactDialog` [#6855](https://github.com/eclipse-theia/theia/pull/6855)
 - [repo] added 2 new npm scripts:
   - `test:references`: fails if typescript references are out of sync.

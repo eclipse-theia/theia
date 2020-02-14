@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, optional, postConstruct } from 'inversify';
 import { MessageType } from '@theia/core/lib/common/message-service-protocol';
 import {
     QuickOpenService, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem,
@@ -25,6 +25,7 @@ import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { MonacoContextKeyService } from './monaco-context-key-service';
 import { QuickOpenHideReason } from '@theia/core/lib/common/quick-open-service';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
+import { BrowserMenuBarContribution } from '@theia/core/lib/browser/menu/browser-menu-plugin';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     valueSelection?: Readonly<[number, number]>;
@@ -50,6 +51,9 @@ export class MonacoQuickOpenService extends QuickOpenService {
 
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
+
+    @inject(BrowserMenuBarContribution) @optional()
+    protected readonly browserMenuBarContribution?: BrowserMenuBarContribution;
 
     protected inQuickOpenKey: ContextKey<boolean>;
 
@@ -113,6 +117,17 @@ export class MonacoQuickOpenService extends QuickOpenService {
     }
 
     internalOpen(opts: MonacoQuickOpenControllerOpts): void {
+        const browserMenuBarContribution = this.browserMenuBarContribution;
+        if (browserMenuBarContribution) {
+            const browserMenuBar = browserMenuBarContribution.menuBar;
+            if (browserMenuBar) {
+                const activeMenu = browserMenuBar.activeMenu;
+                if (activeMenu) {
+                    activeMenu.close();
+                }
+            }
+        }
+
         // eslint-disable-next-line no-null/no-null
         if (this.widgetNode && this.widgetNode.offsetParent !== null) {
             this.hide();
