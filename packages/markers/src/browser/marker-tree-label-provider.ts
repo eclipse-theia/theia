@@ -18,6 +18,7 @@ import { injectable, inject } from 'inversify';
 import { LabelProvider, LabelProviderContribution, DidChangeLabelEvent } from '@theia/core/lib/browser/label-provider';
 import { MarkerInfoNode } from './marker-tree';
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 @injectable()
 export class MarkerTreeLabelProvider implements LabelProviderContribution {
@@ -27,6 +28,9 @@ export class MarkerTreeLabelProvider implements LabelProviderContribution {
 
     @inject(TreeLabelProvider)
     protected readonly treeLabelProvider: TreeLabelProvider;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     canHandle(element: object): number {
         return MarkerInfoNode.is(element) ?
@@ -40,6 +44,18 @@ export class MarkerTreeLabelProvider implements LabelProviderContribution {
 
     getName(node: MarkerInfoNode): string {
         return this.labelProvider.getName(node.uri);
+    }
+
+    getLongName(node: MarkerInfoNode): string {
+        const description: string[] = [];
+        if (this.workspaceService.isMultiRootWorkspaceOpened) {
+            const rootUri = this.workspaceService.getWorkspaceRootUri(node.uri);
+            if (rootUri) {
+                description.push(this.labelProvider.getName(rootUri));
+            }
+        }
+        description.push(this.labelProvider.getLongName(node.uri.parent));
+        return description.join(' ● ');
     }
 
     getDescription(node: MarkerInfoNode): string {
