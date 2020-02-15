@@ -2,6 +2,7 @@
 
 ## v0.16.0
 
+- [documentation] updated code of conduct [#7161](https://github.com/eclipse-theia/theia/pull/7161)
 - [monaco] code snippets: add support for an array of prefixes [#7177](https://github.com/eclipse-theia/theia/pull/7177)
 - [monaco] close an active menubar dropdown when the quick palette is launched [#7136](https://github.com/eclipse-theia/theia/pull/7136)
 - [core] added a new React-based dialog type `ReactDialog` [#6855](https://github.com/eclipse-theia/theia/pull/6855)
