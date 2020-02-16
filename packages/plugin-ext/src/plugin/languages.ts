@@ -104,7 +104,6 @@ type Adapter = CompletionAdapter |
     CodeLensAdapter |
     CodeActionAdapter |
     OutlineAdapter |
-    LinkProviderAdapter |
     ReferenceAdapter |
     WorkspaceSymbolAdapter |
     FoldingProviderAdapter |
@@ -117,7 +116,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     private proxy: LanguagesMain;
 
-    private diagnostics: Diagnostics;
+    private readonly diagnostics: Diagnostics;
 
     private callId = 0;
     private adaptersMap = new Map<number, Adapter>();
