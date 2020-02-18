@@ -110,7 +110,7 @@ export class TaskConfigurations implements Disposable {
     }
 
     @postConstruct()
-    protected init(): void {
+    protected async init(): Promise<void> {
         this.toDispose.push(
             this.taskConfigurationManager.onDidChangeTaskConfig(async change => {
                 try {
@@ -123,6 +123,7 @@ export class TaskConfigurations implements Disposable {
                 }
             })
         );
+        this.taskFilePath = await this.envServer.getDataFolderName();
         this.reorganizeTasks();
         this.toDispose.push(this.taskSchemaUpdater.onDidChangeTaskSchema(() => this.reorganizeTasks()));
     }
