@@ -212,6 +212,10 @@ export interface FileSystemClient {
      */
     shouldOverwrite: FileShouldOverwrite;
 
+    willDelete(uri: string): Promise<void>;
+
+    didDelete(uri: string, failed: boolean): Promise<void>;
+
     willMove(sourceUri: string, targetUri: string): Promise<void>;
 
     didMove(sourceUri: string, targetUri: string, failed: boolean): Promise<void>;
@@ -226,6 +230,14 @@ export class DispatchingFileSystemClient implements FileSystemClient {
         return Promise.race([...this.clients].map(client =>
             client.shouldOverwrite(originalStat, currentStat))
         );
+    }
+
+    async willDelete(uri: string): Promise<void> {
+        await Promise.all([...this.clients].map(client => client.willDelete(uri)));
+    }
+
+    async didDelete(uri: string, failed: boolean): Promise<void> {
+        await Promise.all([...this.clients].map(client => client.didDelete(uri, failed)));
     }
 
     async willMove(sourceUri: string, targetUri: string): Promise<void> {
