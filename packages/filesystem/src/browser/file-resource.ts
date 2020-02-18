@@ -65,6 +65,16 @@ export class FileResource implements Resource {
                 this.sync();
             }
         }));
+        this.toDispose.push(this.fileSystemWatcher.onDidDelete(event => {
+            if (event.uri.isEqualOrParent(this.uri)) {
+                this.sync();
+            }
+        }));
+        this.toDispose.push(this.fileSystemWatcher.onDidMove(event => {
+            if (event.sourceUri.isEqualOrParent(this.uri) || event.targetUri.isEqualOrParent(this.uri)) {
+                this.sync();
+            }
+        }));
         try {
             this.toDispose.push(await this.fileSystemWatcher.watchFileChanges(this.uri));
         } catch (e) {

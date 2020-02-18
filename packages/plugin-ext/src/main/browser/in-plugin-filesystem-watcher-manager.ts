@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { parse, ParsedPattern, IRelativePattern } from '@theia/languages/lib/common/language-selector';
-import { FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange, FileMoveEvent, FileWillMoveEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
+import { FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange, FileMoveEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceExt } from '../../common/plugin-api-rpc';
 import { FileWatcherSubscriberOptions } from '../../common/plugin-api-rpc-model';
 import { RelativePattern } from '../../plugin/types-impl';
@@ -85,7 +85,7 @@ export class InPluginFileSystemWatcherManager {
     }
 
     // Filter file system changes according to subscribers settings here to avoid unneeded traffic.
-    protected onWillMoveEventHandler(change: FileWillMoveEvent): void {
+    protected onWillMoveEventHandler(change: FileMoveEvent): void {
         for (const [id, subscriber] of this.subscribers) {
             subscriber.proxy.$onWillRename({
                 subscriberId: id,

@@ -320,6 +320,23 @@ export class FileSystemNode implements FileSystem {
     }
 
     async delete(uri: string, options?: FileDeleteOptions): Promise<void> {
+        if (this.client) {
+            await this.client.willDelete(uri);
+        }
+        let failed = false;
+        try {
+            await this.doDelete(uri, options);
+        } catch (e) {
+            failed = true;
+            throw e;
+        } finally {
+            if (this.client) {
+                await this.client.didDelete(uri, failed);
+            }
+        }
+    }
+
+    protected async doDelete(uri: string, options?: FileDeleteOptions): Promise<void> {
         const _uri = new URI(uri);
         const stat = await this.doGetStat(_uri, 0);
         if (!stat) {
@@ -335,7 +352,13 @@ export class FileSystemNode implements FileSystem {
             const filePath = FileUri.fsPath(_uri);
             const outputRootPath = paths.join(os.tmpdir(), v4());
             try {
-                await fs.rename(filePath, outputRootPath);
+                await new Promise((resolve, reject) => mv(filePath, outputRootPath, { mkdirp: true, clobber: true }, async error => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(undefined);
+                }));
                 // There is no reason for the promise returned by this function not to resolve
                 // as soon as the move is complete.  Clearing up the temporary files can be
                 // done in the background.
