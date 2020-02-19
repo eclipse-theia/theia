@@ -472,7 +472,6 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         }
     }
 
-
     protected withProgress<T>(task: () => Promise<T>): Promise<T> {
         return this.progressService.withProgress('', 'scm', task);
     }
