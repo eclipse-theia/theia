@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as path from 'path';
 import { interfaces } from 'inversify';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { CliContribution } from '@theia/core/lib/node/cli';
@@ -26,7 +27,7 @@ import { HostedPluginSupport } from './hosted-plugin';
 import { TheiaPluginScanner } from './scanners/scanner-theia';
 import { HostedPluginServer, PluginScanner, HostedPluginClient, hostedServicePath, PluginDeployerHandler, PluginHostEnvironmentVariable } from '../../common/plugin-protocol';
 import { GrammarsReader } from './scanners/grammars-reader';
-import { HostedPluginProcess } from './hosted-plugin-process';
+import { HostedPluginProcess, HostedPluginProcessConfiguration } from './hosted-plugin-process';
 import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginDeployerHandler } from './hosted-plugin-deployer-handler';
@@ -59,6 +60,7 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
     bind(PluginDeployerHandler).toService(HostedPluginDeployerHandler);
 
     bind(GrammarsReader).toSelf().inSingletonScope();
+    bind(HostedPluginProcessConfiguration).toConstantValue({ path: path.resolve(__dirname, 'plugin-host.js') });
 
     bind(ConnectionContainerModule).toConstantValue(commonHostedConnectionModule);
 }
