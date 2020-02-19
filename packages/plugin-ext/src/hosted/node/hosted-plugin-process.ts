@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as path from 'path';
 import * as cp from 'child_process';
 import { injectable, inject, named } from 'inversify';
 import { ILogger, ConnectionErrorHandler, ContributionProvider, MessageService } from '@theia/core/lib/common';
@@ -32,8 +31,16 @@ export interface IPCConnectionOptions {
     readonly errorHandler?: ConnectionErrorHandler;
 }
 
+export const HostedPluginProcessConfiguration = Symbol('HostedPluginProcessConfiguration');
+export interface HostedPluginProcessConfiguration {
+    readonly path: string
+}
+
 @injectable()
 export class HostedPluginProcess implements ServerPluginRunner {
+
+    @inject(HostedPluginProcessConfiguration)
+    protected configuration: HostedPluginProcessConfiguration;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -180,7 +187,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
             forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substr(inspectArgPrefix.length)}`];
         }
 
-        const childProcess = cp.fork(path.resolve(__dirname, 'plugin-host.js'), options.args, forkOptions);
+        const childProcess = cp.fork(this.configuration.path, options.args, forkOptions);
         childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
         childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
 
