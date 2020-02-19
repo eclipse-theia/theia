@@ -38,7 +38,7 @@ export class FrontendApplicationConfigProvider {
         globalObject[key] = config;
     }
 
-    private static doGet(): FrontendApplicationConfig | undefined {
+    static doGet(): FrontendApplicationConfig | undefined {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalObject = window as any;
         const key = FrontendApplicationConfigProvider.KEY;

@@ -16,7 +16,9 @@
 
 import { interfaces } from 'inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from './preferences';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 
+const cfg = FrontendApplicationConfigProvider.doGet();
 export const corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
@@ -52,10 +54,12 @@ export const corePreferenceSchema: PreferenceSchema = {
         },
         'workbench.colorTheme': {
             type: 'string',
+            default: cfg && cfg.defaultTheme || 'dark',
             description: 'Specifies the color theme used in the workbench.'
         },
         'workbench.iconTheme': {
             type: ['string', 'null'],
+            default: cfg && cfg.defaultIconTheme || 'none',
             description: "Specifies the icon theme used in the workbench or 'null' to not show any file icons."
         }
     }

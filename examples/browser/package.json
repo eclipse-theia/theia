@@ -7,6 +7,8 @@
     "frontend": {
       "config": {
         "applicationName": "Theia Browser Example",
+        "defaultTheme": "dark",
+        "defaultIconTheme": "theia-file-icons",
         "preferences": {
           "files.enableTrash": false
         }

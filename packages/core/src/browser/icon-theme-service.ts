@@ -18,6 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { LabelProviderContribution, DidChangeLabelEvent } from './label-provider';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 
 export interface IconThemeDefinition {
     readonly id: string
@@ -94,13 +95,13 @@ export class IconThemeService {
     protected readonly onDidChangeCurrentEmitter = new Emitter<string>();
     readonly onDidChangeCurrent = this.onDidChangeCurrentEmitter.event;
 
-    protected _default: IconTheme;
+    protected _defaultId: string;
 
     protected readonly toDeactivate = new DisposableCollection();
 
     @postConstruct()
     protected init(): void {
-        this._default = this.noneIconTheme;
+        this._defaultId = FrontendApplicationConfigProvider.get().defaultIconTheme || this.noneIconTheme.id;
         this.register(this.noneIconTheme);
     }
 
@@ -124,31 +125,35 @@ export class IconThemeService {
             return undefined;
         }
         this._iconThemes.delete(id);
-        if (this._default === iconTheme) {
-            this._default = this.noneIconTheme;
-        }
         if (window.localStorage.getItem('iconTheme') === id) {
             window.localStorage.removeItem('iconTheme');
-            this.onDidChangeCurrentEmitter.fire(this._default.id);
+            this.onDidChangeCurrentEmitter.fire(this.defaultId);
         }
         this.onDidChangeEmitter.fire(undefined);
         return iconTheme;
     }
 
     get current(): string {
-        return this.getCurrent().id;
+        if (!this.getCurrent()) {
+            this.current = this.defaultId;
+        }
+        return this.getCurrent() && this.getCurrent()!.id || this.defaultId;
     }
 
     set current(id: string) {
-        const newCurrent = this._iconThemes.get(id) || this._default;
-        if (this.getCurrent().id !== newCurrent.id) {
+        if (!id) {
+            return;
+        }
+        const newCurrent = this._iconThemes.get(id) || this.default;
+        const oldCurrent = this.getCurrent();
+        if (!oldCurrent || (oldCurrent && oldCurrent.id !== newCurrent.id)) {
             this.setCurrent(newCurrent);
         }
     }
 
-    protected getCurrent(): IconTheme {
+    protected getCurrent(): IconTheme | undefined {
         const id = window.localStorage.getItem('iconTheme');
-        return id && this._iconThemes.get(id) || this._default;
+        return id ? this._iconThemes.get(id) : undefined;
     }
 
     protected setCurrent(current: IconTheme): void {
@@ -158,19 +163,12 @@ export class IconThemeService {
         this.onDidChangeCurrentEmitter.fire(current.id);
     }
 
-    get default(): string {
-        return this._default.id;
+    get default(): IconTheme {
+        return this._iconThemes.get(this.defaultId) || this.noneIconTheme;
     }
 
-    set default(id: string) {
-        const newDefault = this._iconThemes.get(id) || this.noneIconTheme;
-        if (this._default.id === newDefault.id) {
-            return;
-        }
-        this._default = newDefault;
-        if (!window.localStorage.getItem('iconTheme')) {
-            this.onDidChangeCurrentEmitter.fire(newDefault.id);
-        }
+    get defaultId(): string {
+        return this._iconThemes.has(this._defaultId) ? this._defaultId : this.noneIconTheme.id;
     }
 
     protected load(): string | undefined {

@@ -105,6 +105,11 @@ export interface FrontendApplicationConfig extends ApplicationConfig {
     readonly defaultTheme?: string;
 
     /**
+     * The default icon theme for the application. If not give, defaults to `none`. If invalid theme is given, also defaults to `none`.
+     */
+    readonly defaultIconTheme?: string;
+
+    /**
      * The name of the application. `Theia` by default.
      */
     readonly applicationName: string;

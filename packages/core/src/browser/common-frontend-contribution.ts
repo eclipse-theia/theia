@@ -47,6 +47,7 @@ import { ColorRegistry, Color } from './color-registry';
 import { CorePreferences } from './core-preferences';
 import { ThemeService } from './theming';
 import { PreferenceService, PreferenceScope } from './preferences';
+import { FrontendApplicationStateService } from './frontend-application-state';
 
 export namespace CommonMenus {
 
@@ -289,6 +290,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(FrontendApplicationStateService)
+    protected readonly frontendApplicationStateService: FrontendApplicationStateService;
+
     @postConstruct()
     protected init(): void {
         this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);
@@ -299,17 +303,19 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.registerCtrlWHandling();
 
         this.updateStyles();
-        this.updateThemeFromPreference('workbench.colorTheme');
-        this.updateThemeFromPreference('workbench.iconTheme');
-        this.preferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'workbench.editor.highlightModifiedTabs') {
-                this.updateStyles();
-            } else if (e.preferenceName === 'workbench.colorTheme' || e.preferenceName === 'workbench.iconTheme') {
-                this.updateThemeFromPreference(e.preferenceName);
-            }
+        this.frontendApplicationStateService.reachedState('ready').then(() => {
+            this.updateThemeFromPreference('workbench.colorTheme');
+            this.updateThemeFromPreference('workbench.iconTheme');
+            this.preferences.onPreferenceChanged(e => {
+                if (e.preferenceName === 'workbench.editor.highlightModifiedTabs') {
+                    this.updateStyles();
+                } else if (e.preferenceName === 'workbench.colorTheme' || e.preferenceName === 'workbench.iconTheme') {
+                    this.updateThemeFromPreference(e.preferenceName);
+                }
+            });
+            this.themeService.onThemeChange(() => this.updateThemePreference('workbench.colorTheme'));
+            this.iconThemes.onDidChangeCurrent(() => this.updateThemePreference('workbench.iconTheme'));
         });
-        this.themeService.onThemeChange(() => this.updateThemePreference('workbench.colorTheme'));
-        this.iconThemes.onDidChangeCurrent(() => this.updateThemePreference('workbench.iconTheme'));
     }
 
     protected updateStyles(): void {
