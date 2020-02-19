@@ -585,7 +585,10 @@ export class HostedPluginSupport {
         return () => {
             performance.mark(endMarker);
             performance.measure(name, startMarker, endMarker);
-            const duration = performance.getEntriesByName(name)[0].duration;
+
+            const entries = performance.getEntriesByName(name);
+            const duration = entries.length > 0 ? entries[0].duration : Number.NaN;
+
             performance.clearMeasures(name);
             performance.clearMarks(startMarker);
             performance.clearMarks(endMarker);
@@ -594,8 +597,14 @@ export class HostedPluginSupport {
     }
 
     protected logMeasurement(prefix: string, count: number, measurement: () => number): void {
+        const duration = measurement();
+        if (duration === Number.NaN) {
+          // Measurement was prevented by native API, do not log NaN duration
+          return;
+        }
+
         const pluginCount = `${count} plugin${count === 1 ? '' : 's'}`;
-        console.log(`[${this.clientId}] ${prefix} of ${pluginCount} took: ${measurement().toFixed(1)} ms`);
+        console.log(`[${this.clientId}] ${prefix} of ${pluginCount} took: ${duration.toFixed(1)} ms`);
     }
 
     protected readonly webviewsToRestore = new Set<WebviewWidget>();
