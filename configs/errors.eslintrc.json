@@ -44,7 +44,12 @@
       }
     ],
     "no-magic-numbers": "off",
-    "no-multiple-empty-lines": "error",
+    "no-multiple-empty-lines": [
+      "error",
+      {
+        "max": 1
+      }
+    ],
     "no-new-wrappers": "error",
     "no-null/no-null": "error",
     "no-shadow": [
