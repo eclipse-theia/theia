@@ -71,7 +71,6 @@
 .theia-marker-container .markerNode .position,
 .theia-marker-container .markerNode .owner,
 .theia-marker-container .markerNode .code {
-    color: var(--theia-descriptionForeground);
     white-space: nowrap;
 }
 

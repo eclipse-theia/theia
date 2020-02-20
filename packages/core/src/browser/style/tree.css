@@ -140,3 +140,7 @@
 .theia-tree-element-node {
     width: 100%
 }
+
+.theia-TreeNodeSubLabel:active{
+    color: var(--theia-list-activeSelectionForeground) !important;
+}

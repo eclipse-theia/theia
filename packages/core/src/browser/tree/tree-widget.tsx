@@ -52,7 +52,7 @@ export const TREE_NODE_SEGMENT_GROW_CLASS = 'theia-TreeNodeSegmentGrow';
 export const EXPANDABLE_TREE_NODE_CLASS = 'theia-ExpandableTreeNode';
 export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
-
+export const TREE_NODE_SUBLABEL_CLASS = 'theia-TreeNodeSubLabel';
 export const TreeProps = Symbol('TreeProps');
 
 /**
@@ -782,7 +782,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             return undefined;
         }
         const attributes = this.createNodeAttributes(node, props);
-        const content = <div className={TREE_NODE_CONTENT_CLASS}>
+        const content = <div className={`${TREE_NODE_CONTENT_CLASS} ${TREE_NODE_SUBLABEL_CLASS}`}>
             {this.renderExpansionToggle(node, props)}
             {this.decorateIcon(node, this.renderIcon(node, props))}
             {this.renderCaptionAffixes(node, props, 'captionPrefixes')}
