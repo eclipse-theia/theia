@@ -154,11 +154,11 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
     fromJSON(snippets: JsonSerializedSnippets | undefined, { language, source }: SnippetLoadOptions): Disposable {
         const toDispose = new DisposableCollection();
         this.parseSnippets(snippets, (name, snippet) => {
-            let { prefix, body, description } = snippet;
-            if (Array.isArray(body)) {
-                body = body.join('\n');
-            }
-            if (typeof prefix !== 'string' || typeof body !== 'string') {
+            const { prefix, body, description } = snippet;
+            const parsedBody = Array.isArray(body) ? body.join('\n') : body;
+            const parsedPrefixes = Array.isArray(prefix) ? prefix : [prefix];
+
+            if (typeof parsedBody !== 'string') {
                 return;
             }
             const scopes: string[] = [];
@@ -176,14 +176,14 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
                     }
                 }
             }
-            toDispose.push(this.push({
+            parsedPrefixes.forEach(parsedPrefix => toDispose.push(this.push({
                 scopes,
                 name,
-                prefix,
+                prefix: parsedPrefix,
                 description,
-                body,
+                body: parsedBody,
                 source
-            }));
+            })));
         });
         return toDispose;
     }
@@ -242,7 +242,7 @@ export interface JsonSerializedSnippets {
 export interface JsonSerializedSnippet {
     body: string | string[];
     scope: string;
-    prefix: string;
+    prefix: string | string[];
     description: string;
 }
 export namespace JsonSerializedSnippet {
