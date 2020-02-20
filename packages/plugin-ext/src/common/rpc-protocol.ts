@@ -61,6 +61,20 @@ export function createProxyIdentifier<T>(identifier: string): ProxyIdentifier<T>
     return new ProxyIdentifier(false, identifier);
 }
 
+export interface ConnectionClosedError extends Error {
+    code: 'RPC_PROTOCOL_CLOSED'
+}
+export namespace ConnectionClosedError {
+    const code: ConnectionClosedError['code'] = 'RPC_PROTOCOL_CLOSED';
+    export function create(message: string = 'connection is closed'): ConnectionClosedError {
+        return Object.assign(new Error(message), { code });
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function is(error: any): error is ConnectionClosedError {
+        return !!error && typeof error === 'object' && 'code' in error && error['code'] === code;
+    }
+}
+
 export class RPCProtocolImpl implements RPCProtocol {
 
     private readonly locals = new Map<string, any>();
@@ -82,7 +96,7 @@ export class RPCProtocolImpl implements RPCProtocol {
         this.toDispose.push(Disposable.create(() => {
             this.proxies.clear();
             for (const reply of this.pendingRPCReplies.values()) {
-                reply.reject(new Error('connection is closed'));
+                reply.reject(ConnectionClosedError.create());
             }
             this.pendingRPCReplies.clear();
         }));
@@ -98,7 +112,7 @@ export class RPCProtocolImpl implements RPCProtocol {
 
     getProxy<T>(proxyId: ProxyIdentifier<T>): T {
         if (this.isDisposed) {
-            throw new Error('connection is closed');
+            throw ConnectionClosedError.create();
         }
         let proxy = this.proxies.get(proxyId.id);
         if (!proxy) {
@@ -110,7 +124,7 @@ export class RPCProtocolImpl implements RPCProtocol {
 
     set<T, R extends T>(identifier: ProxyIdentifier<T>, instance: R): R {
         if (this.isDisposed) {
-            throw new Error('connection is closed');
+            throw ConnectionClosedError.create();
         }
         this.locals.set(identifier.id, instance);
         if (Disposable.is(instance)) {
@@ -135,7 +149,7 @@ export class RPCProtocolImpl implements RPCProtocol {
 
     private remoteCall(proxyId: string, methodName: string, args: any[]): Promise<any> {
         if (this.isDisposed) {
-            return Promise.reject(new Error('connection is closed'));
+            return Promise.reject(ConnectionClosedError.create());
         }
         const cancellationToken: CancellationToken | undefined = args.length && CancellationToken.is(args[args.length - 1]) ? args.pop() : undefined;
         if (cancellationToken && cancellationToken.isCancellationRequested) {
@@ -320,7 +334,7 @@ class RPCMultiplexer implements Disposable {
 
     public send(msg: string): void {
         if (this.toDispose.disposed) {
-            throw new Error('connection is closed');
+            throw ConnectionClosedError.create();
         }
         if (this.messagesToSend.length === 0) {
             if (typeof setImmediate !== 'undefined') {
@@ -460,11 +474,13 @@ function isSerializedObject(obj: any): obj is SerializedObject {
     return obj && obj.$type !== undefined && obj.data !== undefined;
 }
 
-const enum MessageType {
+export const enum MessageType {
     Request = 1,
     Reply = 2,
     ReplyErr = 3,
-    Cancel = 4
+    Cancel = 4,
+    Terminate = 5,
+    Terminated = 6
 }
 
 class CancelMessage {

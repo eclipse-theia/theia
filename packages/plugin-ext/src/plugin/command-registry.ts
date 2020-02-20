@@ -85,10 +85,6 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         });
     }
 
-    dispose(): void {
-        throw new Error('Method not implemented.');
-    }
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     $executeCommand<T>(id: string, ...args: any[]): PromiseLike<T | undefined> {
         if (this.handlers.has(id)) {

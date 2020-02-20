@@ -30,7 +30,6 @@ import {
 import { PluginMetadata } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 import { join } from 'path';
-import { dispose } from '../common/disposable-util';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvExtImpl } from './env';
 import { PreferenceRegistryExtImpl } from './preference-registry';
@@ -55,7 +54,16 @@ export interface PluginHost {
 }
 
 interface StopFn {
-    (): void;
+    (): void | Promise<void>;
+}
+
+interface StopOptions {
+    /**
+     * if terminating then stopping will ignore all errors,
+     * since the main side is already gone and any requests are likely to fail
+     * or hang
+     */
+    terminating: boolean
 }
 
 class ActivatedPlugin {
@@ -107,8 +115,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
     async $stop(pluginId?: string): Promise<void> {
         if (!pluginId) {
-            this.stopAll();
-            return;
+            return this.stopAll();
         }
         this.registry.delete(pluginId);
         this.pluginActivationPromises.delete(pluginId);
@@ -119,28 +126,58 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             return;
         }
         this.activatedPlugins.delete(pluginId);
-        this.stopPlugin(plugin);
+        return this.stopPlugin(pluginId, plugin);
     }
 
-    protected stopAll(): void {
-        this.activatedPlugins.forEach(plugin => this.stopPlugin(plugin));
+    async terminate(): Promise<void> {
+        return this.stopAll({ terminating: true });
+    }
+
+    protected async stopAll(options: StopOptions = { terminating: false }): Promise<void> {
+        const promises = [];
+        for (const [id, plugin] of this.activatedPlugins) {
+            promises.push(this.stopPlugin(id, plugin, options));
+        }
 
         this.registry.clear();
         this.loadedPlugins.clear();
         this.activatedPlugins.clear();
         this.pluginActivationPromises.clear();
         this.pluginContextsMap.clear();
+        await Promise.all(promises);
     }
 
-    protected stopPlugin(plugin: ActivatedPlugin): void {
+    protected async stopPlugin(id: string, plugin: ActivatedPlugin, options: StopOptions = { terminating: false }): Promise<void> {
+        let result;
         if (plugin.stopFn) {
-            plugin.stopFn();
+            try {
+                result = plugin.stopFn();
+            } catch (e) {
+                if (!options.terminating) {
+                    console.error(`[${id}]: failed to stop:`, e);
+                }
+            }
         }
 
-        // dispose any objects
         const pluginContext = plugin.pluginContext;
         if (pluginContext) {
-            dispose(pluginContext.subscriptions);
+            for (const subscription of pluginContext.subscriptions) {
+                try {
+                    subscription.dispose();
+                } catch (e) {
+                    if (!options.terminating) {
+                        console.error(`[${id}]: failed to dispose subscription:`, e);
+                    }
+                }
+            }
+        }
+
+        try {
+            await result;
+        } catch (e) {
+            if (!options.terminating) {
+                console.error(`[${id}]: failed to stop:`, e);
+            }
         }
     }
 

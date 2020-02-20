@@ -76,6 +76,10 @@ export class PluginHostRPC {
         );
     }
 
+    async terminate(): Promise<void> {
+        await this.pluginManager.terminate();
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     initContext(contextPath: string, plugin: Plugin): any {
         const { name, version } = plugin.rawModel;

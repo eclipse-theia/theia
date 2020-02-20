@@ -18,13 +18,12 @@ import * as path from 'path';
 import * as cp from 'child_process';
 import { injectable, inject, named } from 'inversify';
 import { ILogger, ConnectionErrorHandler, ContributionProvider, MessageService } from '@theia/core/lib/common';
-import { Emitter } from '@theia/core/lib/common/event';
 import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { HostedPluginClient, ServerPluginRunner, PluginHostEnvironmentVariable, DeployedPlugin } from '../../common/plugin-protocol';
-import { RPCProtocolImpl } from '../../common/rpc-protocol';
-import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import { MessageType } from '../../common/rpc-protocol';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import * as psTree from 'ps-tree';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -83,7 +82,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
     }
 
-    public terminatePluginServer(): void {
+    async terminatePluginServer(): Promise<void> {
         if (this.childProcess === undefined) {
             return;
         }
@@ -93,32 +92,47 @@ export class HostedPluginProcess implements ServerPluginRunner {
         const cp = this.childProcess;
         this.childProcess = undefined;
 
-        const emitter = new Emitter();
+        const waitForTerminated = new Deferred<void>();
         cp.on('message', message => {
-            emitter.fire(JSON.parse(message));
-        });
-        const rpc = new RPCProtocolImpl({
-            onMessage: emitter.event,
-            send: (m: {}) => {
-                if (cp.send) {
-                    cp.send(JSON.stringify(m));
-                }
+            const msg = JSON.parse(message);
+            if ('type' in msg && msg.type === MessageType.Terminated) {
+                waitForTerminated.resolve();
             }
         });
-        const hostedPluginManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
-        hostedPluginManager.$stop().then(() => {
-            emitter.dispose();
-            this.killProcessTree(cp.pid);
-        });
+        const stopTimeout = this.cli.pluginHostStopTimeout;
+        cp.send(JSON.stringify({ type: MessageType.Terminate, stopTimeout }));
+
+        const terminateTimeout = this.cli.pluginHostTerminateTimeout;
+        if (terminateTimeout) {
+            await Promise.race([
+                waitForTerminated.promise,
+                new Promise(resolve => setTimeout(resolve, terminateTimeout))
+            ]);
+        } else {
+            await waitForTerminated.promise;
+        }
+
+        this.killProcessTree(cp.pid);
     }
 
     private killProcessTree(parentPid: number): void {
-        psTree(parentPid, (err: Error, childProcesses: Array<psTree.PS>) => {
-            childProcesses.forEach((p: psTree.PS) => {
-                process.kill(parseInt(p.PID));
-            });
-            process.kill(parentPid);
+        psTree(parentPid, (_, childProcesses) => {
+            childProcesses.forEach(childProcess =>
+                this.killProcess(parseInt(childProcess.PID))
+            );
+            this.killProcess(parentPid);
         });
+    }
+
+    protected killProcess(pid: number): void {
+        try {
+            process.kill(pid);
+        } catch (e) {
+            if (e && 'code' in e && e.code === 'ESRCH') {
+                return;
+            }
+            this.logger.error(`[${pid}] failed to kill`, e);
+        }
     }
 
     public runPluginServer(): void {
