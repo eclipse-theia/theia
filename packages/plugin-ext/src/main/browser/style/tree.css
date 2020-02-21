@@ -38,3 +38,9 @@
     align-items: center;
     height: 100%;
 }
+
+.theia-tree-view .theia-TreeNodeSegmentEllipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

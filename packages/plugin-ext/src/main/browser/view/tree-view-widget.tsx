@@ -281,8 +281,7 @@ export class TreeViewWidget extends TreeWidget {
             });
         }
 
-        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS].join(' ');
-        nodes.push(<div className={className}>{work}</div >);
+        nodes.push(<div className='theia-TreeNodeSegmentEllipsis'>{work}</div >);
         if (description) {
             nodes.push(<div className='theia-tree-view-description'>
                 {description}
