@@ -23,12 +23,12 @@ export class MockEnvVariablesServerImpl implements EnvVariablesServer {
         return '.theia';
     }
 
-    async getUserHomeFolderPath(): Promise<string> {
-        return '/home/test';
+    async getUserHomeFolder(): Promise<string> {
+        return 'file:///home/test';
     }
 
-    async getUserDataFolderPath(): Promise<string> {
-        return '/home/test/.theia';
+    async getUserDataFolder(): Promise<string> {
+        return 'file:///home/test/.theia';
     }
 
     getExecPath(): Promise<string> {
@@ -40,7 +40,7 @@ export class MockEnvVariablesServerImpl implements EnvVariablesServer {
     getValue(key: string): Promise<EnvVariable | undefined> {
         throw new Error('Method not implemented.');
     }
-    getAppDataPath(): Promise<string> {
+    getAppDataFolder(): Promise<string> {
         throw new Error('Method not implemented.');
     }
 }

@@ -380,8 +380,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async getUntitledWorkspace(): Promise<URI | undefined> {
-        const userDataDirPath = await this.envServer.getUserDataFolderPath();
-        return getTemporaryWorkspaceFileUri(userDataDirPath);
+        return getTemporaryWorkspaceFileUri(await this.envServer.getUserDataFolder());
     }
 
     private async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {

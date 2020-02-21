@@ -39,7 +39,7 @@ export class EnvVariablesServerExt implements EnvVariablesServer {
         return { name, value };
     }
 
-    getUserHomeFolderPath(): Promise<string> {
+    getUserHomeFolder(): Promise<string> {
         return this.proxy.$getUserHomeFolderPath();
     }
 
@@ -47,11 +47,11 @@ export class EnvVariablesServerExt implements EnvVariablesServer {
         return this.proxy.$getDataFolderName();
     }
 
-    getUserDataFolderPath(): Promise<string> {
+    getUserDataFolder(): Promise<string> {
         return this.proxy.$getUserDataFolderPath();
     }
 
-    getAppDataPath(): Promise<string> {
+    getAppDataFolder(): Promise<string> {
         return this.proxy.$getAppDataPath();
     }
 

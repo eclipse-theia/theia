@@ -39,9 +39,8 @@ export class QuickOpenWorkspace implements QuickOpenModel {
 
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
-        const homeDirPath = await this.envServer.getUserHomeFolderPath();
-        const userDataDirPath = await this.envServer.getUserDataFolderPath();
-        const tempWorkspaceFile = getTemporaryWorkspaceFileUri(userDataDirPath);
+        const homeDirPath: string = (await this.fileSystem.getFsPath(await this.envServer.getUserHomeFolder()))!;
+        const tempWorkspaceFile = getTemporaryWorkspaceFileUri(await this.envServer.getUserDataFolder());
         await this.preferences.ready;
         if (!workspaces.length) {
             this.items.push(new QuickOpenGroupItem({

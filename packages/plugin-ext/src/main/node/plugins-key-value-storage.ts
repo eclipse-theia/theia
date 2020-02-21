@@ -17,6 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -42,9 +43,9 @@ export class PluginsKeyValueStorage {
     @postConstruct()
     protected async init(): Promise<void> {
         try {
-            const theiaDirPath = await this.envServer.getUserDataFolderPath();
-            await this.fileSystem.createFolder(theiaDirPath);
-            const globalDataPath = path.join(theiaDirPath, PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR, 'global-state.json');
+            const theiaDataFolderPath = FileUri.fsPath(await this.envServer.getUserDataFolder());
+            await this.fileSystem.createFolder(theiaDataFolderPath);
+            const globalDataPath = path.join(theiaDataFolderPath, PluginPaths.PLUGINS_GLOBAL_STORAGE_DIR, 'global-state.json');
             await this.fileSystem.createFolder(path.dirname(globalDataPath));
             this.deferredGlobalDataPath.resolve(globalDataPath);
         } catch (e) {

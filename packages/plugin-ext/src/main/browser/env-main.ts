@@ -53,7 +53,7 @@ export class EnvMainImpl implements EnvMain {
     }
 
     $getUserHomeFolderPath(): Promise<string> {
-        return this.envVariableServer.getUserHomeFolderPath();
+        return this.envVariableServer.getUserHomeFolder();
     }
 
     $getDataFolderName(): Promise<string> {
@@ -61,11 +61,11 @@ export class EnvMainImpl implements EnvMain {
     }
 
     $getUserDataFolderPath(): Promise<string> {
-        return this.envVariableServer.getUserDataFolderPath();
+        return this.envVariableServer.getUserDataFolder();
     }
 
     $getAppDataPath(): Promise<string> {
-        return this.envVariableServer.getAppDataPath();
+        return this.envVariableServer.getAppDataFolder();
     }
 }
 

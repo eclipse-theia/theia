@@ -14,17 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as path from 'path';
 import * as os from 'os';
 import { injectable } from 'inversify';
 import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
 import { isWindows } from '../../common/os';
+import { FileUri } from '../file-uri';
 
 const THEIA_DATA_FOLDER = '.theia';
 
 const WINDOWS_APP_DATA_DIR = 'AppData';
 const WINDOWS_ROAMING_DIR = 'Roaming';
-const WINDOWS_DATA_FOLDERS = [WINDOWS_APP_DATA_DIR, WINDOWS_ROAMING_DIR];
 
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {
@@ -53,24 +52,26 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         return this.envs[key];
     }
 
-    async getUserHomeFolderPath(): Promise<string> {
-        return os.homedir();
+    async getUserHomeFolder(): Promise<string> {
+        return FileUri.create(os.homedir()).toString();
     }
 
     async getDataFolderName(): Promise<string> {
         return THEIA_DATA_FOLDER;
     }
 
-    async getUserDataFolderPath(): Promise<string> {
-        return path.join(await this.getUserHomeFolderPath(), await this.getDataFolderName());
+    async getUserDataFolder(): Promise<string> {
+        return FileUri.create(await this.getUserHomeFolder()).resolve(await this.getDataFolderName()).toString();
     }
 
-    async getAppDataPath(): Promise<string> {
-        return path.join(
-            await this.getUserHomeFolderPath(),
-            ...(isWindows ? WINDOWS_DATA_FOLDERS : ['']),
-            await this.getDataFolderName()
-        );
+    async getAppDataFolder(): Promise<string> {
+        const dataFolderUriBuilder = FileUri.create(await this.getUserHomeFolder());
+        if (isWindows) {
+            dataFolderUriBuilder.resolve(WINDOWS_APP_DATA_DIR);
+            dataFolderUriBuilder.resolve(WINDOWS_ROAMING_DIR);
+        }
+        dataFolderUriBuilder.resolve(await this.getDataFolderName());
+        return dataFolderUriBuilder.toString();
     }
 
 }

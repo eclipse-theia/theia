@@ -470,7 +470,8 @@ export class HostedPluginSupport {
     }
 
     protected async getHostGlobalStoragePath(): Promise<string> {
-        const globalStorageFolderPath = new Path(await this.envServer.getUserDataFolderPath()).join('globalStorage').toString();
+        const userDataFolderPath: string = (await this.fileSystem.getFsPath(await this.envServer.getUserDataFolder()))!;
+        const globalStorageFolderPath = new Path(userDataFolderPath).join('globalStorage').toString();
 
         // Make sure that folder by the path exists
         if (! await this.fileSystem.exists(globalStorageFolderPath)) {

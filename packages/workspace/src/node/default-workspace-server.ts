@@ -166,7 +166,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     }
 
     protected async getUserStoragePath(): Promise<string> {
-        return path.resolve(await this.envServer.getUserDataFolderPath(), 'recentworkspace.json');
+        return path.resolve(FileUri.fsPath(await this.envServer.getUserDataFolder()), 'recentworkspace.json');
     }
 }
 

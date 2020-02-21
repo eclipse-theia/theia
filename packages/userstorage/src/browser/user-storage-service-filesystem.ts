@@ -36,13 +36,13 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(EnvVariablesServer) protected readonly envServer: EnvVariablesServer
     ) {
-        this.userStorageFolder = this.envServer.getUserDataFolderPath().then(userDataFolderPath => {
-            const userStorageFolderUri = new URI('file://' + userDataFolderPath);
-            watcher.watchFileChanges(userStorageFolderUri).then(disposable =>
+        this.userStorageFolder = this.envServer.getUserDataFolder().then(userDataFolder => {
+            const userDataFolderUri = new URI(userDataFolder);
+            watcher.watchFileChanges(userDataFolderUri).then(disposable =>
                 this.toDispose.push(disposable)
             );
             this.toDispose.push(this.watcher.onFilesChanged(changes => this.onDidFilesChanged(changes)));
-            return userStorageFolderUri;
+            return userDataFolderUri;
         });
 
         this.toDispose.push(this.onUserStorageChangedEmitter);

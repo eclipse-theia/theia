@@ -21,10 +21,11 @@ export interface EnvVariablesServer {
     getExecPath(): Promise<string>
     getVariables(): Promise<EnvVariable[]>
     getValue(key: string): Promise<EnvVariable | undefined>
-    getUserHomeFolderPath(): Promise<string>
+    getUserHomeFolder(): Promise<string>
     getDataFolderName(): Promise<string>
-    getUserDataFolderPath(): Promise<string>
-    getAppDataPath(): Promise<string>
+    getUserDataFolder(): Promise<string>
+    /** Windows specific. Returns system data folder of Theia. On other than Windows systems is the same as getUserDataFolder */
+    getAppDataFolder(): Promise<string>
 }
 
 export interface EnvVariable {

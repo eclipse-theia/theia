@@ -20,6 +20,7 @@ import * as path from 'path';
 import { readdir, remove } from 'fs-extra';
 import * as crypto from 'crypto';
 import URI from '@theia/core/lib/common/uri';
+import { FileUri } from '@theia/core/lib/node';
 import { ILogger } from '@theia/core';
 import { PluginPaths } from './const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
@@ -84,8 +85,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     }
 
     protected async buildWorkspaceId(workspace: FileStat, roots: FileStat[]): Promise<string> {
-        const userDataDirPath = await this.envServer.getUserDataFolderPath();
-        const untitledWorkspace = getTemporaryWorkspaceFileUri(userDataDirPath);
+        const untitledWorkspace = getTemporaryWorkspaceFileUri(await this.envServer.getUserDataFolder());
 
         if (untitledWorkspace.toString() === workspace.uri) {
             // if workspace is temporary
@@ -105,13 +105,13 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     }
 
     private async getLogsDirPath(): Promise<string> {
-        const theiaDir = await this.envServer.getUserDataFolderPath();
-        return path.join(theiaDir, PluginPaths.PLUGINS_LOGS_DIR);
+        const theiaDirPath = FileUri.fsPath(await this.envServer.getUserDataFolder());
+        return path.join(theiaDirPath, PluginPaths.PLUGINS_LOGS_DIR);
     }
 
     private async getWorkspaceStorageDirPath(): Promise<string> {
-        const theiaDir = await this.envServer.getUserDataFolderPath();
-        return path.join(theiaDir, PluginPaths.PLUGINS_WORKSPACE_STORAGE_DIR);
+        const theiaDirPath = FileUri.fsPath(await this.envServer.getUserDataFolder());
+        return path.join(theiaDirPath, PluginPaths.PLUGINS_WORKSPACE_STORAGE_DIR);
     }
 
     /**
