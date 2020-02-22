@@ -32,6 +32,7 @@ import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFA
 import { TerminalContribution } from './terminal-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
+import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/terminal-search-widget';
 import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
 import { TerminalThemeService } from './terminal-theme-service';
 
@@ -49,6 +50,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected terminalId = -1;
     protected term: Xterm.Terminal;
+    protected searchBox: TerminalSearchWidget;
     protected restored = false;
     protected closeOnDispose = true;
     protected waitForConnection: Deferred<MessageConnection> | undefined;
@@ -65,6 +67,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
     @inject(TerminalService) protected readonly terminalService: TerminalService;
+    @inject(TerminalSearchWidgetFactory) protected readonly terminalSearchBoxFactory: TerminalSearchWidgetFactory;
     @inject(TerminalCopyOnSelectionHandler) protected readonly copyOnSelectionHandler: TerminalCopyOnSelectionHandler;
     @inject(TerminalThemeService) protected readonly themeService: TerminalThemeService;
 
@@ -193,6 +196,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         for (const contribution of this.terminalContributionProvider.getContributions()) {
             contribution.onCreate(this);
         }
+
+        this.searchBox = this.terminalSearchBoxFactory(this.term);
+        this.toDispose.push(this.searchBox);
     }
 
     /**
@@ -220,6 +226,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     getTerminal(): Xterm.Terminal {
         return this.term;
+    }
+
+    getSearchBox(): TerminalSearchWidget {
+        return this.searchBox;
     }
 
     get cwd(): Promise<URI> {
@@ -341,6 +351,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.update();
     }
     protected onAfterAttach(msg: Message): void {
+        Widget.attach(this.searchBox, this.node);
         super.onAfterAttach(msg);
         this.update();
     }

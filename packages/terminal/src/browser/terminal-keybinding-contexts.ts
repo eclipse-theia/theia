@@ -20,6 +20,7 @@ import { TerminalWidget } from './base/terminal-widget';
 
 export namespace TerminalKeybindingContexts {
     export const terminalActive = 'terminalActive';
+    export const terminalHideSearch = 'hideSearch';
 }
 
 @injectable()
@@ -31,5 +32,21 @@ export class TerminalActiveContext implements KeybindingContext {
 
     isEnabled(): boolean {
         return this.shell.activeWidget instanceof TerminalWidget;
+    }
+}
+
+@injectable()
+export class TerminalSearchVisibleContext implements KeybindingContext {
+    readonly id: string = TerminalKeybindingContexts.terminalHideSearch;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
+    isEnabled(): boolean {
+        if (!(this.shell.activeWidget instanceof TerminalWidget)) {
+            return false;
+        }
+        const searchWidget = this.shell.activeWidget.getSearchBox();
+        return searchWidget.isVisible;
     }
 }
