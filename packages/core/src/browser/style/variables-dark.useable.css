@@ -55,6 +55,8 @@ is not optimized for dense, information rich UIs.
 
   /* Icons */
   --theia-icon-close: url(../icons/close-dark.svg);
+  --theia-icon-arrow-up: url(../icons/arrow-up-dark.svg);
+  --theia-icon-arrow-down: url(../icons/arrow-down-dark.svg);
   --theia-sprite-y-offset: -20px;
   --theia-icon-circle: url(../icons/circle-dark.svg);
   --theia-preloader: url(../icons/spinner.gif);

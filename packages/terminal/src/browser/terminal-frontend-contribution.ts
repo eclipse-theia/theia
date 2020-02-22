@@ -83,6 +83,16 @@ export namespace TerminalCommands {
         category: TERMINAL_CATEGORY,
         label: 'Split Terminal'
     };
+    export const TERMINAL_FIND_TEXT: Command = {
+        id: 'terminal:find',
+        category: TERMINAL_CATEGORY,
+        label: 'Find'
+    };
+    export const TERMINAL_FIND_TEXT_CANCEL: Command = {
+        id: 'terminal:find:cancel',
+        category: TERMINAL_CATEGORY,
+        label: 'Hide find widget'
+    };
     /**
      * Command that displays all terminals that are currently opened
      */
@@ -205,6 +215,35 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                 this.activateTerminal(termWidget);
             }
         }));
+
+        commands.registerCommand(TerminalCommands.TERMINAL_FIND_TEXT);
+        commands.registerHandler(TerminalCommands.TERMINAL_FIND_TEXT.id, {
+            isEnabled: () => {
+                if (this.shell.activeWidget instanceof TerminalWidget) {
+                    return !this.shell.activeWidget.getSearchBox().isVisible;
+                }
+                return false;
+            } ,
+            execute: () => {
+                const termWidget = (this.shell.activeWidget as TerminalWidget);
+                const terminalSearchBox = termWidget.getSearchBox();
+                terminalSearchBox.show();
+            }
+        });
+        commands.registerCommand(TerminalCommands.TERMINAL_FIND_TEXT_CANCEL);
+        commands.registerHandler(TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id, {
+            isEnabled: () => {
+                if (this.shell.activeWidget instanceof TerminalWidget) {
+                    return this.shell.activeWidget.getSearchBox().isVisible;
+                }
+                return false;
+            },
+            execute: () => {
+                const termWidget = (this.shell.activeWidget as TerminalWidget);
+                const terminalSearchBox = termWidget.getSearchBox();
+                terminalSearchBox.hide();
+            }
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -246,6 +285,17 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             command: TerminalCommands.TERMINAL_CLEAR.id,
             keybinding: 'ctrlcmd+k',
             context: TerminalKeybindingContexts.terminalActive
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.TERMINAL_FIND_TEXT.id,
+            keybinding: 'ctrlcmd+f',
+            context: TerminalKeybindingContexts.terminalActive
+        });
+
+        keybindings.registerKeybinding({
+            command: TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id,
+            keybinding: 'esc',
+            context: TerminalKeybindingContexts.terminalHideSearch
         });
 
         /* Register passthrough keybindings for combinations recognized by

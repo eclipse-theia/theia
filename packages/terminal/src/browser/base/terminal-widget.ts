@@ -16,6 +16,7 @@
 
 import { Event } from '@theia/core';
 import { BaseWidget } from '@theia/core/lib/browser';
+import { TerminalSearchWidget } from '../search/terminal-search-widget';
 
 /**
  * Terminal UI widget.
@@ -48,6 +49,10 @@ export abstract class TerminalWidget extends BaseWidget {
      */
     abstract clearOutput(): void;
 
+    /**
+     * Return Terminal search box widget.
+     */
+    abstract getSearchBox(): TerminalSearchWidget;
     /**
      * Whether the terminal process has child processes.
      */
