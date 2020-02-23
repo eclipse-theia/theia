@@ -48,17 +48,16 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             return new Promise<MaybeArray<URI> | undefined>(resolve => {
-                remote.dialog.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props), (filePaths: string[] | undefined) => {
+                remote.dialog.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props), async (filePaths: string[] | undefined) => {
                     if (!filePaths || filePaths.length === 0) {
                         resolve(undefined);
                         return;
                     }
+
                     const uris = filePaths.map(path => FileUri.create(path));
-                    if (this.canReadWrite(uris)) {
-                        resolve(uris.length === 1 ? uris[0] : uris);
-                    } else {
-                        resolve(undefined);
-                    }
+                    const canAccess = await this.canReadWrite(uris);
+                    const result = canAccess ? uris.length === 1 ? uris[0] : uris : undefined;
+                    resolve(result);
                 });
             });
         }
@@ -69,17 +68,21 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
             return new Promise<URI | undefined>(resolve => {
-                remote.dialog.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props), (filename: string | undefined) => {
+                remote.dialog.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props), async (filename: string | undefined) => {
                     if (!filename) {
                         resolve(undefined);
                         return;
                     }
+
                     const uri = FileUri.create(filename);
-                    if (this.canReadWrite(uri)) {
+                    const exists = await this.fileSystem.exists(uri.toString());
+                    if (!exists) {
                         resolve(uri);
-                    } else {
-                        resolve(undefined);
+                        return;
                     }
+
+                    const canAccess = await this.canReadWrite(uri);
+                    resolve(canAccess ? uri : undefined);
                 });
             });
         }
