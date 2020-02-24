@@ -19,6 +19,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { ThemeService, Theme } from '@theia/core/lib/browser/theming';
 import { IconUrl } from '../../common/plugin-protocol';
 import { Reference, SyncReferenceCollection } from '@theia/core/lib/common/reference';
+import { Endpoint } from '@theia/core/lib/browser';
 
 export interface PluginIconKey {
     url: IconUrl
@@ -105,14 +106,18 @@ export class PluginSharedStyle {
         const lightIconUrl = typeof iconUrl === 'object' ? iconUrl.light : iconUrl;
         const iconClass = 'plugin-icon-' + this.iconSequence++;
         const toDispose = new DisposableCollection();
-        toDispose.push(this.insertRule('.' + iconClass, theme => `
+        toDispose.push(this.insertRule('.' + iconClass, theme => {
+            const endpoint = new Endpoint({ path: 'file' }).getRestUrl();
+            const resolvedUrl = endpoint.withQuery(theme.type === 'light' ? lightIconUrl : darkIconUrl);
+            return `
                 display: inline-block;
                 background-position: 2px;
                 width: ${size}px;
                 height: ${size}px;
-                background: no-repeat url("${theme.type === 'light' ? lightIconUrl : darkIconUrl}");
+                background: no-repeat url("${resolvedUrl}");
                 background-size: ${size}px;
-            `));
+            `;
+        }));
         return {
             iconClass,
             dispose: () => toDispose.dispose()

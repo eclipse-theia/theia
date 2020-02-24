@@ -29,12 +29,12 @@ class ElectronEnv {
     /**
      * `true` if running in electron. Otherwise, `false`.
      *
-     * Can be called from both the `main` and the render process. Also works for forked cluster workers.
+     * Can be called from both the `main` and render processes. Also works for forked cluster workers and VS Code extension processes.
      */
     is(): boolean {
         // When forking a new process from the cluster, we can rely neither on `process.versions` nor `process.argv`.
-        // Se we look into the `process.env` as well. `is-electron` does not do it for us.
-        return isElectron() || typeof process !== 'undefined' && typeof process.env === 'object' && !!process.env.THEIA_ELECTRON_VERSION;
+        // So we look into the `process.env` as well. `is-electron` does not do it for us.
+        return isElectron() || typeof process !== 'undefined' && typeof process.env === 'object' && (!!process.env.THEIA_ELECTRON_VERSION || !!process.env.ELECTRON_RUN_AS_NODE);
     }
 
     /**

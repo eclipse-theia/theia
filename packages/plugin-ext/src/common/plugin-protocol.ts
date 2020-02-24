@@ -13,6 +13,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
+import URI from 'vscode-uri';
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from './rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
@@ -58,7 +60,7 @@ export interface PluginPackage {
 }
 export namespace PluginPackage {
     export function toPluginUrl(pck: PluginPackage, relativePath: string): string {
-        return `hostedPlugin/${getPluginId(pck)}/${encodeURIComponent(relativePath)}`;
+        return URI.file(pck.packagePath + '/' + relativePath).toString();
     }
 }
 
