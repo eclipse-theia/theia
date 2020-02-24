@@ -54,6 +54,9 @@ export namespace FileUri {
                     return fsPathFromVsCodeUri + '\\';
                 }
             }
+            if (fsPathFromVsCodeUri.startsWith('/file:')) {
+                return fsPathFromVsCodeUri.substring('/file:'.length);
+            }
             return fsPathFromVsCodeUri;
         }
     }
