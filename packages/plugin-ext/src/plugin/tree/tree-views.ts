@@ -35,7 +35,7 @@ export class TreeViewsExtImpl implements TreeViewsExt {
 
     private proxy: TreeViewsMain;
 
-    private treeViews: Map<string, TreeViewExtImpl<any>> = new Map<string, TreeViewExtImpl<any>>();
+    private readonly treeViews = new Map<string, TreeViewExtImpl<any>>();
 
     constructor(rpc: RPCProtocol, readonly commandRegistry: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TREE_VIEWS_MAIN);
@@ -112,19 +112,13 @@ export class TreeViewsExtImpl implements TreeViewsExt {
     }
 
     async $getChildren(treeViewId: string, treeItemId: string): Promise<TreeViewItem[] | undefined> {
-        const treeView = this.treeViews.get(treeViewId);
-        if (!treeView) {
-            throw new Error('No tree view with id' + treeViewId);
-        }
+        const treeView = this.getTreeView(treeViewId);
 
         return treeView.getChildren(treeItemId);
     }
 
     async $setExpanded(treeViewId: string, treeItemId: string, expanded: boolean): Promise<any> {
-        const treeView = this.treeViews.get(treeViewId);
-        if (!treeView) {
-            throw new Error('No tree view with id' + treeViewId);
-        }
+        const treeView = this.getTreeView(treeViewId);
 
         if (expanded) {
             return treeView.onExpanded(treeItemId);
@@ -134,19 +128,19 @@ export class TreeViewsExtImpl implements TreeViewsExt {
     }
 
     async $setSelection(treeViewId: string, treeItemIds: string[]): Promise<void> {
-        const treeView = this.treeViews.get(treeViewId);
-        if (!treeView) {
-            throw new Error('No tree view with id' + treeViewId);
-        }
-        treeView.setSelection(treeItemIds);
+        this.getTreeView(treeViewId).setSelection(treeItemIds);
     }
 
     async $setVisible(treeViewId: string, isVisible: boolean): Promise<void> {
+        this.getTreeView(treeViewId).setVisible(isVisible);
+    }
+
+    protected getTreeView(treeViewId: string): TreeViewExtImpl<any> {
         const treeView = this.treeViews.get(treeViewId);
         if (!treeView) {
-            throw new Error('No tree view with id' + treeViewId);
+            throw new Error(`No tree view with id '${treeViewId}' registered.`);
         }
-        treeView.setVisible(isVisible);
+        return treeView;
     }
 
 }
