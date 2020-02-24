@@ -22,12 +22,16 @@ import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
 import { Container } from 'inversify';
 import { ContributionProvider } from '@theia/core/lib/common';
-import { FileStat } from '@theia/filesystem/lib/common';
-import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from '@theia/core/lib/browser';
+import { FileStat, FileSystem } from '@theia/filesystem/lib/common';
+import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution, ApplicationShell } from '@theia/core/lib/browser';
 import { MarkerInfoNode } from './marker-tree';
 import { MarkerTreeLabelProvider } from './marker-tree-label-provider';
+import { Signal } from '@phosphor/signaling';
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { WorkspaceUriLabelProviderContribution } from '@theia/workspace/lib/browser/workspace-uri-contribution';
+import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
+import { MockFilesystem } from '@theia/filesystem/lib/common/test/mock-filesystem';
 
 disableJSDOM();
 
@@ -40,8 +44,15 @@ before(() => {
 
     workspaceService = new WorkspaceService();
     testContainer.bind(WorkspaceService).toConstantValue(workspaceService);
+    testContainer.bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
+    testContainer.bind(ApplicationShell).toConstantValue({
+        currentChanged: new Signal({})
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    testContainer.bind(FileSystem).to(MockFilesystem).inSingletonScope();
 
     testContainer.bind(DefaultUriLabelProviderContribution).toSelf().inSingletonScope();
+    testContainer.bind(WorkspaceUriLabelProviderContribution).toSelf().inSingletonScope();
     testContainer.bind(LabelProvider).toSelf().inSingletonScope();
     testContainer.bind(MarkerTreeLabelProvider).toSelf().inSingletonScope();
     testContainer.bind(TreeLabelProvider).toSelf().inSingletonScope();
@@ -51,6 +62,7 @@ before(() => {
             return [
                 ctx.container.get<MarkerTreeLabelProvider>(MarkerTreeLabelProvider),
                 ctx.container.get<TreeLabelProvider>(TreeLabelProvider),
+                ctx.container.get<WorkspaceUriLabelProviderContribution>(WorkspaceUriLabelProviderContribution),
                 ctx.container.get<DefaultUriLabelProviderContribution>(DefaultUriLabelProviderContribution)
             ];
         }
@@ -66,101 +78,145 @@ after(() => {
 
 describe('Marker Tree Label Provider', () => {
 
-    it('should return the filename and extension for #getName', () => {
-        const label = markerTreeLabelProvider.getName(
-            createMarkerInfoNode('a/b/c/foo.ts')
-        );
-        expect(label).equals('foo.ts');
+    describe('#getName', () => {
+        it('should return the correct filename and extension', () => {
+            const label = markerTreeLabelProvider.getName(
+                createMarkerInfoNode('a/b/c/foo.ts')
+            );
+            expect(label).equals('foo.ts');
+        });
     });
 
-    it('should return the folder name for #getLongName', async () => {
-
-        // Verify that the label provider successfully returns the directory name.
-        let label = markerTreeLabelProvider.getLongName(
-            createMarkerInfoNode('a/b/c/foo.ts')
-        );
-        expect(label).equals('/a/b/c');
-
-        // Verify that the label provider successfully returns the directory name (starting with a period).
-        label = markerTreeLabelProvider.getLongName(
-            createMarkerInfoNode('a/b/.c/foo.ts')
-        );
-        expect(label).equals('/a/b/.c');
-
-        // Verify that the label provider successfully returns the directory name (at the root).
-        label = markerTreeLabelProvider.getLongName(
-            createMarkerInfoNode('foo.ts')
-        );
-        expect(label).equals('/');
-
-        // Verify that the label provider successfully returns the directory and root name for a multiple root workspace.
-        const uri: string = 'file:///file';
-        const file = <FileStat>{
-            uri: uri,
-            lastModification: 0,
-            isDirectory: false
-        };
-        const root1 = <FileStat>{
-            uri: 'file:///root1',
-            lastModification: 0,
-            isDirectory: true
-        };
-        const root2 = <FileStat>{
-            uri: 'file:///root2',
-            lastModification: 0,
-            isDirectory: true
-        };
-        workspaceService['_workspace'] = file;
-        workspaceService['_roots'] = [root1, root2];
-        label = markerTreeLabelProvider.getLongName(
-            createMarkerInfoNode('file:///root1/foo/foo.ts')
-        );
-        expect(label).equals('root1 ● /root1/foo');
-
-        label = markerTreeLabelProvider.getLongName(
-            createMarkerInfoNode('file:///root2/foo/foo.ts')
-        );
-        expect(label).equals('root2 ● /root2/foo');
+    describe('getLongName', () => {
+        describe('single-root workspace', () => {
+            beforeEach(() => {
+                const root = <FileStat>{
+                    uri: 'file:///home/a',
+                    lastModification: 0,
+                    isDirectory: true
+                };
+                workspaceService['_workspace'] = root;
+                workspaceService['_roots'] = [root];
+            });
+            it('should return the proper label for a directory', () => {
+                const label = markerTreeLabelProvider.getLongName(
+                    createMarkerInfoNode('file:///home/a/b/c/foo.ts')
+                );
+                expect(label).equals('b/c');
+            });
+            it('should return the proper label for a directory starting with \'.\'', () => {
+                const label = markerTreeLabelProvider.getLongName(
+                    createMarkerInfoNode('file:///home/a/b/.c/foo.ts')
+                );
+                expect(label).equals('b/.c');
+            });
+            it('should return the proper label when the resource is located at the workspace root', () => {
+                const label = markerTreeLabelProvider.getLongName(
+                    createMarkerInfoNode('file:///home/a/foo.ts')
+                );
+                expect(label).equals('');
+            });
+            it('should return the full path when the resource does not exist in the workspace root', () => {
+                const label = markerTreeLabelProvider.getLongName(
+                    createMarkerInfoNode('file:///home/b/foo.ts')
+                );
+                expect(label).equals('/home/b');
+            });
+        });
+        describe('multi-root workspace', () => {
+            beforeEach(() => {
+                const uri: string = 'file:///file';
+                const file = <FileStat>{
+                    uri: uri,
+                    lastModification: 0,
+                    isDirectory: false
+                };
+                const root1 = <FileStat>{
+                    uri: 'file:///root1',
+                    lastModification: 0,
+                    isDirectory: true
+                };
+                const root2 = <FileStat>{
+                    uri: 'file:///root2',
+                    lastModification: 0,
+                    isDirectory: true
+                };
+                workspaceService['_workspace'] = file;
+                workspaceService['_roots'] = [root1, root2];
+            });
+            it('should return the proper root \'root1\' and directory', () => {
+                const label = markerTreeLabelProvider.getLongName(
+                    createMarkerInfoNode('file:///root1/foo/foo.ts')
+                );
+                expect(label).equals('root1 ● foo');
+            });
+            it('should return the proper root \'root2\' and directory', () => {
+                const label = markerTreeLabelProvider.getLongName(
+                    createMarkerInfoNode('file:///root2/foo/foo.ts')
+                );
+                expect(label).equals('root2 ● foo');
+            });
+            it('should only return the root when the resource is located at the workspace root', () => {
+                const label = markerTreeLabelProvider.getLongName(
+                    createMarkerInfoNode('file:///root1/foo.ts')
+                );
+                expect(label).equals('root1');
+            });
+            it('should return the full path when the resource does not exist in any workspace root', () => {
+                const label = markerTreeLabelProvider.getLongName(
+                    createMarkerInfoNode('file:///home/a/b/foo.ts')
+                );
+                expect(label).equals('/home/a/b');
+            });
+        });
     });
 
-    it('should return the filename and extension for #getIcon', () => {
-
-        // Verify that a typescript icon is returned for a typescript file.
-        const typescriptIcon = markerTreeLabelProvider.getIcon(
-            createMarkerInfoNode('a/b/c/foo.ts')
-        );
-        expect(typescriptIcon).contain('ts-icon');
-
-        // Verify that a json icon is returned for a json file.
-        const jsonIcon = markerTreeLabelProvider.getIcon(
-            createMarkerInfoNode('a/b/c/foo.json')
-        );
-        expect(jsonIcon).contain('database-icon');
-
-        // Verify that a markdown icon is returned for a markdown file.
-        const markdownIcon = markerTreeLabelProvider.getIcon(
-            createMarkerInfoNode('a/b/c/foo.md')
-        );
-        expect(markdownIcon).contain('markdown-icon');
+    describe('#getIcon', () => {
+        it('should return a typescript icon for a typescript file', () => {
+            const icon = markerTreeLabelProvider.getIcon(
+                createMarkerInfoNode('a/b/c/foo.ts')
+            );
+            expect(icon).contain('ts-icon');
+        });
+        it('should return a json icon for a json file', () => {
+            const icon = markerTreeLabelProvider.getIcon(
+                createMarkerInfoNode('a/b/c/foo.json')
+            );
+            expect(icon).contain('database-icon');
+        });
+        it('should return a generic icon for a file with no extension', () => {
+            const icon = markerTreeLabelProvider.getIcon(
+                createMarkerInfoNode('a/b/c/foo.md')
+            );
+            expect(icon).contain('markdown-icon');
+        });
     });
 
-    it('should return the parent\'s long name for #getDescription', () => {
-
-        let label = markerTreeLabelProvider.getDescription(
-            createMarkerInfoNode('a/b/c/foo.ts')
-        );
-        expect(label).equals('/a/b/c');
-
-        label = markerTreeLabelProvider.getDescription(
-            createMarkerInfoNode('foo.ts')
-        );
-        expect(label).equals('/');
+    describe('#getDescription', () => {
+        beforeEach(() => {
+            const root = <FileStat>{
+                uri: 'file:///home/a',
+                lastModification: 0,
+                isDirectory: true
+            };
+            workspaceService['_workspace'] = root;
+            workspaceService['_roots'] = [root];
+        });
+        it('should return the parent\' long name', () => {
+            const label = markerTreeLabelProvider.getDescription(
+                createMarkerInfoNode('file:///home/a/b/c/foo.ts')
+            );
+            expect(label).equals('b/c');
+        });
     });
 
-    it('should successfully handle \'MarkerInfoNodes\'', () => {
-        const node = createMarkerInfoNode('a/b/c/foo.ts');
-        expect(markerTreeLabelProvider.canHandle(node)).greaterThan(0);
+    describe('#canHandle', () => {
+        it('should successfully handle \'MarkerInfoNodes\'', () => {
+            const node = createMarkerInfoNode('a/b/c/foo.ts');
+            expect(markerTreeLabelProvider.canHandle(node)).greaterThan(0);
+        });
     });
+
 });
 
 /**
