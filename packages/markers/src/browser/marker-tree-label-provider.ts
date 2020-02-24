@@ -48,13 +48,19 @@ export class MarkerTreeLabelProvider implements LabelProviderContribution {
 
     getLongName(node: MarkerInfoNode): string {
         const description: string[] = [];
-        if (this.workspaceService.isMultiRootWorkspaceOpened) {
-            const rootUri = this.workspaceService.getWorkspaceRootUri(node.uri);
-            if (rootUri) {
-                description.push(this.labelProvider.getName(rootUri));
-            }
+        const rootUri = this.workspaceService.getWorkspaceRootUri(node.uri);
+        // In a multiple-root workspace include the root name to the label before the parent directory.
+        if (this.workspaceService.isMultiRootWorkspaceOpened && rootUri) {
+            description.push(this.labelProvider.getName(rootUri));
         }
-        description.push(this.labelProvider.getLongName(node.uri.parent));
+        // If the given resource is not at the workspace root, include the parent directory to the label.
+        if (rootUri && rootUri.toString() !== node.uri.parent.toString()) {
+            description.push(this.labelProvider.getLongName(node.uri.parent));
+        }
+        // Get the full path of a resource which does not exist in the given workspace.
+        if (!rootUri) {
+            description.push(this.labelProvider.getLongName(node.uri.parent.withScheme('markers')));
+        }
         return description.join(' ● ');
     }
 
