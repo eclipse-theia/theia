@@ -20,7 +20,7 @@ import { DisposableCollection, Disposable } from '@theia/core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
-import { createUntitledResource } from './editor/untitled-resource';
+import { UntitledResourceResolver } from './editor/untitled-resource';
 import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import CodeURI from 'vscode-uri';
@@ -30,6 +30,7 @@ import { Range } from 'vscode-languageserver-types';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
 import { Reference } from '@theia/core/lib/common/reference';
 import { dispose } from '../../common/disposable-util';
+import { FileResourceResolver } from '@theia/filesystem/lib/browser';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -92,7 +93,9 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         rpc: RPCProtocol,
         private editorManager: EditorManager,
         private openerService: OpenerService,
-        private shell: ApplicationShell
+        private shell: ApplicationShell,
+        private untitledResourceResolver: UntitledResourceResolver,
+        private fileResourceResolver: FileResourceResolver
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
@@ -178,7 +181,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
     async $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {
         const language = options && options.language;
         const content = options && options.content;
-        const resource = createUntitledResource(content, language);
+        const resource = await this.untitledResourceResolver.createUntitledResource(this.fileResourceResolver, content, language);
         return monaco.Uri.parse(resource.uri.toString());
     }
 

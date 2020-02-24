@@ -14,39 +14,119 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ResourceResolver, Resource } from '@theia/core';
+import { Emitter, Event } from '@theia/core/lib/common/event';
+import { injectable, inject } from 'inversify';
+import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import { Resource, ResourceResolver, ResourceVersion } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { injectable } from 'inversify';
 import { Schemes } from '../../../common/uri-components';
+import { FileResource, FileResourceResolver } from '@theia/filesystem/lib/browser';
 
-const resources = new Map<string, UntitledResource>();
 let index = 0;
+
 @injectable()
 export class UntitledResourceResolver implements ResourceResolver {
-    resolve(uri: URI): Resource | Promise<Resource> {
-        if (uri.scheme === Schemes.UNTITLED) {
-            return resources.get(uri.toString())!;
+
+    @inject(FileResourceResolver)
+    protected readonly fileResourceResolver: FileResourceResolver;
+
+    protected readonly resources = new Map<string, UntitledResource>();
+
+    async resolve(uri: URI): Promise<UntitledResource> {
+        if (uri.scheme !== Schemes.UNTITLED) {
+            throw new Error('The given uri is not untitled file uri: ' + uri);
+        } else {
+            const untitledResource = this.resources.get(uri.toString());
+            if (!untitledResource) {
+                return this.createUntitledResource(this.fileResourceResolver, '', '', uri);
+            } else {
+                return untitledResource;
+            }
         }
-        throw new Error(`scheme ${uri.scheme} is not '${Schemes.UNTITLED}'`);
+    }
+
+    async  createUntitledResource(fileResourceResolver: FileResourceResolver, content?: string, language?: string, uri?: URI): Promise<UntitledResource> {
+        let extension;
+        if (language) {
+            for (const lang of monaco.languages.getLanguages()) {
+                if (lang.id === language) {
+                    if (lang.extensions) {
+                        extension = lang.extensions[0];
+                        break;
+                    }
+                }
+            }
+        }
+        return new UntitledResource(this.resources, uri ? uri : new URI().withScheme(Schemes.UNTITLED).withPath(`/Untitled-${index++}${extension ? extension : ''}`),
+            fileResourceResolver, content);
     }
 }
 
 export class UntitledResource implements Resource {
 
-    constructor(public uri: URI, private content?: string) {
-        resources.set(this.uri.toString(), this);
-    }
+    private fileResource?: FileResource;
 
-    readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
-        return Promise.resolve(this.content ? this.content : '');
+    protected readonly onDidChangeContentsEmitter = new Emitter<void>();
+    readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmitter.event;
+
+    constructor(private resources: Map<string, UntitledResource>, public uri: URI, private fileResourceResolver: FileResourceResolver, private content?: string) {
+        this.resources.set(this.uri.toString(), this);
     }
 
     dispose(): void {
-        resources.delete(this.uri.toString());
+        this.resources.delete(this.uri.toString());
+        this.onDidChangeContentsEmitter.dispose();
+        if (this.fileResource) {
+            this.fileResource.dispose();
+        }
+    }
+
+    async readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
+        if (this.fileResource) {
+            return this.fileResource.readContents(options);
+        } else if (this.content) {
+            return this.content;
+        } else {
+            return '';
+        }
+    }
+
+    async saveContents(content: string, options?: { encoding?: string, overwriteEncoding?: string }): Promise<void> {
+        if (!this.fileResource) {
+            this.fileResource = await this.fileResourceResolver.resolve(new URI(this.uri.path.toString()));
+            if (this.fileResource.onDidChangeContents) {
+                this.fileResource.onDidChangeContents(() => this.fireDidChangeContents());
+            }
+        }
+        await this.fileResource.saveContents(content, options);
+    }
+
+    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: { encoding?: string, overwriteEncoding?: string }): Promise<void> {
+        if (!this.fileResource) {
+            throw new Error('FileResource is not available for: ' + this.uri.path.toString());
+        }
+        await this.fileResource.saveContentChanges(changes, options);
+    }
+
+    async guessEncoding(): Promise<string | undefined> {
+        if (this.fileResource) {
+            return this.fileResource.guessEncoding();
+        }
+    }
+
+    protected fireDidChangeContents(): void {
+        this.onDidChangeContentsEmitter.fire(undefined);
+    }
+
+    get version(): ResourceVersion | undefined {
+        if (this.fileResource) {
+            return this.fileResource.version;
+        }
+        return undefined;
     }
 }
 
-export function createUntitledResource(content?: string, language?: string): UntitledResource {
+export function createUntitledURI(language?: string): URI {
     let extension;
     if (language) {
         for (const lang of monaco.languages.getLanguages()) {
@@ -58,5 +138,5 @@ export function createUntitledResource(content?: string, language?: string): Unt
             }
         }
     }
-    return new UntitledResource(new URI().withScheme(Schemes.UNTITLED).withPath(`/Untitled-${index++}${extension ? extension : ''}`), content);
+    return new URI().withScheme(Schemes.UNTITLED).withPath(`/Untitled-${index++}${extension ? extension : ''}`);
 }

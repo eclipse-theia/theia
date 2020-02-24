@@ -32,7 +32,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { CodeEditorWidget } from '@theia/plugin-ext/lib/main/browser/menus/menus-contribution-handler';
 import { TextDocumentShowOptions } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
-import { createUntitledResource } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
+import { createUntitledURI } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
 import { toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -172,7 +172,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
          * and apply actions only to them
          */
         commands.registerCommand({ id: 'workbench.action.files.newUntitledFile' }, {
-            execute: () => open(this.openerService, createUntitledResource().uri)
+            execute: () => open(this.openerService, createUntitledURI())
         });
         commands.registerCommand({ id: 'workbench.action.files.openFile' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.OPEN_FILE.id)
