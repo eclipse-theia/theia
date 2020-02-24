@@ -15,9 +15,26 @@
  ********************************************************************************/
 
 import * as assert from 'assert';
-import { Prioritizeable } from './types';
+import { Prioritizeable, RecursivePartial } from './types';
 
 describe('types', () => {
+
+    describe('recursive-partial', () => {
+        it('should handle nested arrays', () => {
+            interface Bar {
+                readonly arr: Array<string>;
+            }
+            interface Foo {
+                readonly bar: Bar;
+            }
+            const myArr: Array<string> = [];
+            const myFoo: RecursivePartial<Foo> = {};
+            if (myFoo.bar && myFoo.bar.arr) {
+                const x = Array.from(new Set(myFoo.bar.arr));
+                myArr.push(...x);
+            }
+        });
+    });
 
     describe('Prioritizeable', () => {
         it('prioritizeAll #01', () => {
