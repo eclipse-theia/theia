@@ -20,7 +20,9 @@ export type Deferred<T> = {
     [P in keyof T]: Promise<T[P]>
 };
 export type RecursivePartial<T> = {
-    [P in keyof T]?: RecursivePartial<T[P]>;
+    [P in keyof T]?: T[P] extends Array<infer I>
+    ? Array<RecursivePartial<I>>
+    : RecursivePartial<T[P]>;
 };
 export type MaybeArray<T> = T | T[];
 export type MaybePromise<T> = T | Promise<T> | PromiseLike<T>;
