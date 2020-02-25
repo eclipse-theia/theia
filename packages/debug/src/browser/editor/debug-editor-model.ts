@@ -216,13 +216,14 @@ export class DebugEditorModel implements Disposable {
         const column = breakpoint.column;
         const range = typeof column === 'number' ? new monaco.Range(lineNumber, column, lineNumber, column + 1) : new monaco.Range(lineNumber, 1, lineNumber, 1);
         const { className, message } = breakpoint.getDecoration();
+        const renderInline = typeof column === 'number' && (column > this.editor.getControl().getModel()!.getLineFirstNonWhitespaceColumn(lineNumber));
         return {
             range,
             options: {
                 glyphMarginClassName: className,
                 glyphMarginHoverMessage: message.map(value => ({ value })),
                 stickiness: DebugEditorModel.STICKINESS,
-                beforeContentClassName: typeof column === 'number' ? `theia-debug-breakpoint-column ${className}-column` : undefined
+                beforeContentClassName: renderInline ? `theia-debug-breakpoint-column ${className}-column` : undefined
             }
         };
     }
