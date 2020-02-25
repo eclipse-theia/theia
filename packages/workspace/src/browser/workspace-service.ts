@@ -67,7 +67,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
     protected readonly schemaProvider: PreferenceSchemaProvider;
 
     @inject(EnvVariablesServer)
-    protected readonly envServer: EnvVariablesServer;
+    protected readonly envVariableServer: EnvVariablesServer;
 
     protected applicationName: string;
 
@@ -380,7 +380,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async getUntitledWorkspace(): Promise<URI | undefined> {
-        return getTemporaryWorkspaceFileUri(await this.envServer.getUserDataFolder());
+        return getTemporaryWorkspaceFileUri(this.envVariableServer);
     }
 
     private async writeWorkspaceFile(workspaceFile: FileStat | undefined, workspaceData: WorkspaceData): Promise<FileStat | undefined> {

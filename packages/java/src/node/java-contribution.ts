@@ -104,7 +104,9 @@ export class JavaContribution extends BaseLanguageServerContribution {
         this.activeDataFolders.add(dataFolderSuffix);
         clientConnection.onClose(() => this.activeDataFolders.delete(dataFolderSuffix));
 
-        const workspacePath = path.resolve(FileUri.fsPath(await this.envServer.getUserDataFolder()), 'jdt.ls', '_ws_' + dataFolderSuffix);
+        const configDirUri = await this.envServer.getConfigDirUri();
+        const configDirFsPath = FileUri.fsPath(configDirUri);
+        const workspacePath = path.resolve(configDirFsPath, 'jdt.ls', '_ws_' + dataFolderSuffix);
         const configuration = configurations.get(process.platform);
         if (!configuration) {
             throw new Error('Cannot find Java server configuration for ' + process.platform);

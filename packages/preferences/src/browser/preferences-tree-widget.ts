@@ -454,7 +454,8 @@ export class PreferencesEditorsContainer extends DockPanel {
 
         let uri = preferenceUri;
         if (preferenceUri.scheme === UserStorageUri.SCHEME && homeUri) {
-            uri = homeUri.resolve(await this.envServer.getDataFolderName()).resolve(preferenceUri.path);
+            const configDirUri = await this.envServer.getConfigDirUri();
+            uri = new URI(configDirUri).resolve(preferenceUri.path);
         }
         return homeUri
             ? FileSystemUtils.tildifyPath(uri.path.toString(), homeUri.path.toString())
@@ -473,8 +474,6 @@ export class PreferencesTreeWidget extends TreeWidget {
     private readonly onPreferenceSelectedEmitter: Emitter<{ [key: string]: string }>;
     readonly onPreferenceSelected: Event<{ [key: string]: string }>;
 
-    protected readonly toDispose: DisposableCollection;
-
     @inject(PreferencesMenuFactory) protected readonly preferencesMenuFactory: PreferencesMenuFactory;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(PreferencesDecorator) protected readonly decorator: PreferencesDecorator;
@@ -490,14 +489,12 @@ export class PreferencesTreeWidget extends TreeWidget {
 
         this.onPreferenceSelectedEmitter = new Emitter<{ [key: string]: string }>();
         this.onPreferenceSelected = this.onPreferenceSelectedEmitter.event;
-        this.toDispose = new DisposableCollection();
         this.toDispose.push(this.onPreferenceSelectedEmitter);
 
         this.id = PreferencesTreeWidget.ID;
     }
 
     dispose(): void {
-        this.toDispose.dispose();
         super.dispose();
     }
 

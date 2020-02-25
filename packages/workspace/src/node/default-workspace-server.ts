@@ -123,8 +123,8 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         return listUri;
     }
 
-    protected workspaceStillExist(wspath: string): boolean {
-        return fs.pathExistsSync(FileUri.fsPath(wspath));
+    protected workspaceStillExist(workspaceRootUri: string): boolean {
+        return fs.pathExistsSync(FileUri.fsPath(workspaceRootUri));
     }
 
     protected async getWorkspaceURIFromCli(): Promise<string | undefined> {
@@ -141,32 +141,33 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         await this.writeToFile(file, data);
     }
 
-    protected async writeToFile(filePath: string, data: object): Promise<void> {
-        if (!await fs.pathExists(filePath)) {
-            await fs.mkdirs(path.resolve(filePath, '..'));
+    protected async writeToFile(fsPath: string, data: object): Promise<void> {
+        if (!await fs.pathExists(fsPath)) {
+            await fs.mkdirs(path.resolve(fsPath, '..'));
         }
-        await fs.writeJson(filePath, data);
+        await fs.writeJson(fsPath, data);
     }
 
     /**
      * Reads the most recently used workspace root from the user's home directory.
      */
     protected async readRecentWorkspacePathsFromUserHome(): Promise<RecentWorkspacePathsData | undefined> {
-        const filePath = await this.getUserStoragePath();
-        const data = await this.readJsonFromFile(filePath);
+        const fsPath = await this.getUserStoragePath();
+        const data = await this.readJsonFromFile(fsPath);
         return RecentWorkspacePathsData.is(data) ? data : undefined;
     }
 
-    protected async readJsonFromFile(filePath: string): Promise<object | undefined> {
-        if (await fs.pathExists(filePath)) {
-            const rawContent = await fs.readFile(filePath, 'utf-8');
+    protected async readJsonFromFile(fsPath: string): Promise<object | undefined> {
+        if (await fs.pathExists(fsPath)) {
+            const rawContent = await fs.readFile(fsPath, 'utf-8');
             const strippedContent = jsoncparser.stripComments(rawContent);
             return jsoncparser.parse(strippedContent);
         }
     }
 
     protected async getUserStoragePath(): Promise<string> {
-        return path.resolve(FileUri.fsPath(await this.envServer.getUserDataFolder()), 'recentworkspace.json');
+        const configDirUri = await this.envServer.getConfigDirUri();
+        return path.resolve(FileUri.fsPath(configDirUri), 'recentworkspace.json');
     }
 }
 

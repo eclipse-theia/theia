@@ -78,7 +78,7 @@ export interface LabelProviderContribution {
     /**
      * Check whether the given element is affected by the given change event.
      * Contributions delegating to the label provider can use this hook
-     * to perfrom a recursive check.
+     * to perform a recursive check.
      */
     affects?(element: object, event: DidChangeLabelEvent): boolean;
 

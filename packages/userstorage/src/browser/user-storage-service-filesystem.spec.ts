@@ -16,6 +16,7 @@
 
 import { Container } from 'inversify';
 import * as chai from 'chai';
+import * as temp from 'temp';
 import { UserStorageServiceFilesystemImpl } from './user-storage-service-filesystem';
 import { UserStorageService } from './user-storage-service';
 import { UserStorageResource } from './user-storage-resource';
@@ -33,6 +34,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
 import { UserStorageUri } from './user-storage-uri';
 import URI from '@theia/core/lib/common/uri';
+import { FileUri } from '@theia/core/lib/node';
 
 import * as sinon from 'sinon';
 
@@ -41,9 +43,10 @@ let testContainer: Container;
 
 let userStorageService: UserStorageServiceFilesystemImpl;
 
-const homeDir = '/home/test';
-const THEIA_USER_STORAGE_FOLDER = '.theia';
-const userStorageFolder = new URI('file://' + homeDir).resolve(THEIA_USER_STORAGE_FOLDER);
+const track = temp.track();
+const userStorageFolder = FileUri.create(track.mkdirSync());
+const envVariableServer = new MockEnvVariablesServerImpl(userStorageFolder);
+
 const mockOnFileChangedEmitter = new Emitter<FileChange[]>();
 let files: { [key: string]: string; } = {};
 
@@ -82,13 +85,6 @@ before(async () => {
     testContainer.bind(FileSystem).toDynamicValue(ctx => {
         const fs = new MockFilesystem();
 
-        sinon.stub(fs, 'getCurrentUserHome').callsFake(() => Promise.resolve(
-            {
-                uri: 'file://' + homeDir,
-                lastModification: 0,
-                isDirectory: true
-            }));
-
         sinon.stub(fs, 'resolveContent').callsFake((uri): Promise<{ stat: FileStat, content: string }> => {
             const content = files[uri];
             return Promise.resolve(
@@ -107,8 +103,12 @@ before(async () => {
 
         return fs;
     }).inSingletonScope();
-    testContainer.bind(EnvVariablesServer).to(MockEnvVariablesServerImpl).inSingletonScope();
+    testContainer.bind(EnvVariablesServer).toConstantValue(envVariableServer);
     testContainer.bind(UserStorageService).to(UserStorageServiceFilesystemImpl);
+});
+
+after(() => {
+    track.cleanupSync();
 });
 
 describe('User Storage Service (Filesystem implementation)', () => {
@@ -128,21 +128,20 @@ describe('User Storage Service (Filesystem implementation)', () => {
 
     it('Should return a user storage uri from a filesystem uri', () => {
 
-        const test = UserStorageServiceFilesystemImpl.toUserStorageUri(userStorageFolder, new URI('file://' + homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile));
+        const test = UserStorageServiceFilesystemImpl.toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile));
         expect(test.scheme).eq(UserStorageUri.SCHEME);
         expect(test.toString()).eq(UserStorageUri.SCHEME + ':' + testFile);
 
         const testFragment = UserStorageServiceFilesystemImpl.
-            toUserStorageUri(userStorageFolder, new URI('file://' + homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile + '#test'));
+            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile).withFragment('test'));
         expect(testFragment.fragment).eq('test');
 
         const testQuery = UserStorageServiceFilesystemImpl.
-            toUserStorageUri(userStorageFolder, new URI('file://' + homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile + '?test=1'));
+            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile).withQuery('test=1'));
         expect(testQuery.query).eq('test=1');
 
         const testQueryAndFragment = UserStorageServiceFilesystemImpl.
-            toUserStorageUri(userStorageFolder, new URI('file://' + homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile
-                + '?test=1' + '#test'));
+            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile).withQuery('test=1').withFragment('test'));
         expect(testQueryAndFragment.fragment).eq('test');
         expect(testQueryAndFragment.query).eq('test=1');
     });
@@ -151,10 +150,10 @@ describe('User Storage Service (Filesystem implementation)', () => {
         const test = UserStorageServiceFilesystemImpl.toFilesystemURI(userStorageFolder, new URI(UserStorageUri.SCHEME + ':' + testFile));
 
         expect(test.scheme).eq('file');
-        expect(test.path.toString()).eq(homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile);
+        expect(test.path.toString()).eq(userStorageFolder.resolve(testFile).path.toString());
     });
 
-    it('Should register a client and notifies it of the fs changesby converting them to user storage changes', done => {
+    it('Should register a client and notifies it of the fs changes by converting them to user storage changes', done => {
         userStorageService.onUserStorageChanged(event => {
             const userStorageUri = event.uris[0];
             expect(userStorageUri.scheme).eq(UserStorageUri.SCHEME);
@@ -174,7 +173,7 @@ describe('User Storage Service (Filesystem implementation)', () => {
     it('Should save the contents correctly using a user storage uri to a filesystem uri', async () => {
 
         const userStorageUri = UserStorageServiceFilesystemImpl.
-            toUserStorageUri(userStorageFolder, new URI('file://' + homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile));
+            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile));
 
         await userStorageService.saveContents(userStorageUri, 'test content');
 
@@ -197,7 +196,7 @@ describe('User Storage Resource (Filesystem implementation)', () => {
         testFile = 'test.json';
         userStorageService = testContainer.get<UserStorageServiceFilesystemImpl>(UserStorageService);
         const userStorageUriTest = UserStorageServiceFilesystemImpl.
-            toUserStorageUri(userStorageFolder, new URI('file://' + homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile));
+            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile));
         userStorageResource = new UserStorageResource(userStorageUriTest, userStorageService);
     });
 

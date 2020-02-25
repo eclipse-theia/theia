@@ -41,7 +41,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     protected async init(): Promise<void> {
         await this.workspaceService.roots;
 
-        await this.updateProviders();
+        this.updateProviders();
         this.workspaceService.onWorkspaceChanged(() => this.updateProviders());
 
         const readyPromises: Promise<void>[] = [];
@@ -51,13 +51,13 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         Promise.all(readyPromises).then(() => this._ready.resolve());
     }
 
-    protected async updateProviders(): Promise<void> {
+    protected updateProviders(): void {
         const roots = this.workspaceService.tryGetRoots();
         const toDelete = new Set(this.providers.keys());
         for (const folder of roots) {
-            for (const configPath of await this.configurations.getPaths()) {
+            for (const configPath of this.configurations.getPaths()) {
                 for (const configName of [...this.configurations.getSectionNames(), this.configurations.getConfigName()]) {
-                    const configUri = await this.configurations.createUri(new URI(folder.uri), configPath, configName);
+                    const configUri = this.configurations.createUri(new URI(folder.uri), configPath, configName);
                     const key = configUri.toString();
                     toDelete.delete(key);
                     if (!this.providers.has(key)) {
