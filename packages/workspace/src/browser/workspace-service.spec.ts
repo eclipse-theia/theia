@@ -37,10 +37,13 @@ import * as jsoncparser from 'jsonc-parser';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
 import * as assert from 'assert';
+import * as temp from 'temp';
+import { FileUri } from '@theia/core/lib/node';
 import URI from '@theia/core/lib/common/uri';
 const expect = chai.expect;
 
 disableJSDOM();
+const track = temp.track();
 
 const folderA = Object.freeze(<FileStat>{
     uri: 'file:///home/folderA',
@@ -88,6 +91,7 @@ describe('WorkspaceService', () => {
 
     after(() => {
         disableJSDOM();
+        track.cleanupSync();
     });
 
     beforeEach(() => {
@@ -109,7 +113,7 @@ describe('WorkspaceService', () => {
         testContainer.bind(WindowService).toConstantValue(mockWindowService);
         testContainer.bind(ILogger).toConstantValue(mockILogger);
         testContainer.bind(WorkspacePreferences).toConstantValue(mockPref);
-        testContainer.bind(EnvVariablesServer).to(MockEnvVariablesServerImpl);
+        testContainer.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(FileUri.create(track.mkdirSync())));
         testContainer.bind(PreferenceServiceImpl).toConstantValue(mockPreferenceServiceImpl);
         testContainer.bind(PreferenceSchemaProvider).toConstantValue(mockPreferenceSchemaProvider);
 

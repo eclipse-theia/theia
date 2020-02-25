@@ -14,33 +14,27 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import URI from '../../common/uri';
 import { EnvVariablesServer, EnvVariable } from '../../common/env-variables';
 
-@injectable()
 export class MockEnvVariablesServerImpl implements EnvVariablesServer {
-    async getDataFolderName(): Promise<string> {
-        return '.theia';
-    }
 
-    async getUserHomeFolder(): Promise<string> {
-        return 'file:///home/test';
-    }
+    constructor(protected readonly configDirUri: URI) { }
 
-    async getUserDataFolder(): Promise<string> {
-        return 'file:///home/test/.theia';
+    async getConfigDirUri(): Promise<string> {
+        return this.configDirUri.toString();
     }
 
     getExecPath(): Promise<string> {
         throw new Error('Method not implemented.');
     }
+
     getVariables(): Promise<EnvVariable[]> {
         throw new Error('Method not implemented.');
     }
+
     getValue(key: string): Promise<EnvVariable | undefined> {
         throw new Error('Method not implemented.');
     }
-    getAppDataFolder(): Promise<string> {
-        throw new Error('Method not implemented.');
-    }
+
 }

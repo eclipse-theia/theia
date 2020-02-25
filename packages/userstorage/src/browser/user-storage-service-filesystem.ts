@@ -28,16 +28,17 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly onUserStorageChangedEmitter = new Emitter<UserStorageChangeEvent>();
-    protected userStorageFolder: Promise<URI | undefined>;
+    protected readonly userStorageFolder: Promise<URI | undefined>;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(EnvVariablesServer) protected readonly envServer: EnvVariablesServer
+
     ) {
-        this.userStorageFolder = this.envServer.getUserDataFolder().then(userDataFolder => {
-            const userDataFolderUri = new URI(userDataFolder);
+        this.userStorageFolder = this.envServer.getConfigDirUri().then(configDirUri => {
+            const userDataFolderUri = new URI(configDirUri);
             watcher.watchFileChanges(userDataFolderUri).then(disposable =>
                 this.toDispose.push(disposable)
             );
@@ -46,6 +47,7 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
         });
 
         this.toDispose.push(this.onUserStorageChangedEmitter);
+
     }
 
     dispose(): void {

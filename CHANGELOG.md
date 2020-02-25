@@ -10,6 +10,33 @@
   - `test:references`: fails if typescript references are out of sync.
   - `prepare:references`: updates typescript references, if required.
 - [repo] the `prepare` script now updates typescript references.
+- [core] From now on, downstream projects can refine where the configuration files (such as `settings.json`, `keymaps.json`, `recentworkspace.json`, etc.) will be stored by Theia. [#4488](https://github.com/eclipse-theia/theia/pull/4488)  
+The default location remains the same: `~/.theia`, however it can be customized by overriding the `#getConfigDirUri` method of the `EnvVariablesServer` API. The easiest way is to subclass the `EnvVariablesServerImpl` and rebind it in your backend module:
+  ```ts
+  // your-env-variables-server.ts:
+
+  import { injectable } from 'inversify';
+  import { EnvVariablesServerImpl } from '@theia/core/lib/node/env-variables';
+
+  @injectable()
+  export class YourEnvVariableServer extends EnvVariablesServerImpl {
+
+      async getConfigDirUri(): Promise<string> {
+          return 'file:///path/to/your/desired/config/dir';
+      }
+
+  }
+
+  // your-backend-application-module.ts:
+
+  import { ContainerModule } from 'inversify';
+  import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+  import { YourEnvVariableServer } from './your-env-variables-server';
+
+  export default new ContainerModule((bind, unbind, isBound, rebind) => {
+      rebind(EnvVariablesServer).to(YourEnvVariableServer).inSingletonScope();
+  });
+  ```
 
 Breaking changes:
 

@@ -33,7 +33,7 @@ import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection,
     ILogger, ContributionProvider, CommandRegistry, WillExecuteCommandEvent,
-    CancellationTokenSource, JsonRpcProxy, ProgressService, Path
+    CancellationTokenSource, JsonRpcProxy, ProgressService
 } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -58,6 +58,7 @@ import { WebviewWidget } from '../../main/browser/webview/webview';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import URI from '@theia/core/lib/common/uri';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -348,9 +349,9 @@ export class HostedPluginSupport {
         }
         const thenable: Promise<void>[] = [];
         const configStorage: ConfigStorage = {
-            hostLogPath: hostLogPath!,
-            hostStoragePath: hostStoragePath,
-            hostGlobalStoragePath: hostGlobalStoragePath!
+            hostLogPath,
+            hostStoragePath,
+            hostGlobalStoragePath
         };
         for (const [host, hostContributions] of contributionsByHost) {
             const manager = await this.obtainManager(host, hostContributions, toDisconnect);
@@ -470,15 +471,18 @@ export class HostedPluginSupport {
     }
 
     protected async getHostGlobalStoragePath(): Promise<string> {
-        const userDataFolderPath: string = (await this.fileSystem.getFsPath(await this.envServer.getUserDataFolder()))!;
-        const globalStorageFolderPath = new Path(userDataFolderPath).join('globalStorage').toString();
+        const configDirUri = await this.envServer.getConfigDirUri();
+        const globalStorageFolderUri = new URI(configDirUri).resolve('globalStorage').toString();
 
         // Make sure that folder by the path exists
-        if (! await this.fileSystem.exists(globalStorageFolderPath)) {
-            await this.fileSystem.createFolder(globalStorageFolderPath);
+        if (!await this.fileSystem.exists(globalStorageFolderUri)) {
+            await this.fileSystem.createFolder(globalStorageFolderUri);
         }
-
-        return globalStorageFolderPath;
+        const globalStorageFolderFsPath = await this.fileSystem.getFsPath(globalStorageFolderUri);
+        if (!globalStorageFolderFsPath) {
+            throw new Error(`Could not resolve the FS path for URI: ${globalStorageFolderUri}`);
+        }
+        return globalStorageFolderFsPath;
     }
 
     async activateByEvent(activationEvent: string): Promise<void> {
@@ -624,8 +628,8 @@ export class HostedPluginSupport {
     protected logMeasurement(prefix: string, count: number, measurement: () => number): void {
         const duration = measurement();
         if (duration === Number.NaN) {
-          // Measurement was prevented by native API, do not log NaN duration
-          return;
+            // Measurement was prevented by native API, do not log NaN duration
+            return;
         }
 
         const pluginCount = `${count} plugin${count === 1 ? '' : 's'}`;

@@ -20,8 +20,8 @@ import * as path from 'path';
 import { readdir, remove } from 'fs-extra';
 import * as crypto from 'crypto';
 import URI from '@theia/core/lib/common/uri';
-import { FileUri } from '@theia/core/lib/node';
 import { ILogger } from '@theia/core';
+import { FileUri } from '@theia/core/lib/node';
 import { PluginPaths } from './const';
 import { PluginPathsService } from '../../common/plugin-paths-protocol';
 import { THEIA_EXT, VSCODE_EXT, getTemporaryWorkspaceFileUri } from '@theia/workspace/lib/common';
@@ -85,7 +85,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     }
 
     protected async buildWorkspaceId(workspace: FileStat, roots: FileStat[]): Promise<string> {
-        const untitledWorkspace = getTemporaryWorkspaceFileUri(await this.envServer.getUserDataFolder());
+        const untitledWorkspace = await getTemporaryWorkspaceFileUri(this.envServer);
 
         if (untitledWorkspace.toString() === workspace.uri) {
             // if workspace is temporary
@@ -104,16 +104,6 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         }
     }
 
-    private async getLogsDirPath(): Promise<string> {
-        const theiaDirPath = FileUri.fsPath(await this.envServer.getUserDataFolder());
-        return path.join(theiaDirPath, PluginPaths.PLUGINS_LOGS_DIR);
-    }
-
-    private async getWorkspaceStorageDirPath(): Promise<string> {
-        const theiaDirPath = FileUri.fsPath(await this.envServer.getUserDataFolder());
-        return path.join(theiaDirPath, PluginPaths.PLUGINS_WORKSPACE_STORAGE_DIR);
-    }
-
     /**
      * Generate time folder name in format: YYYYMMDDTHHMMSS, for example: 20181205T093828
      */
@@ -125,6 +115,16 @@ export class PluginPathsServiceImpl implements PluginPathsService {
             this.logger.error(`Generated log folder name: "${timeStamp}" does not match expected pattern: ${SESSION_TIMESTAMP_PATTERN}`);
         }
         return timeStamp;
+    }
+
+    private async getLogsDirPath(): Promise<string> {
+        const configDirUri = await this.envServer.getConfigDirUri();
+        return path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_LOGS_DIR);
+    }
+
+    private async getWorkspaceStorageDirPath(): Promise<string> {
+        const configDirUri = await this.envServer.getConfigDirUri();
+        return path.join(FileUri.fsPath(configDirUri), PluginPaths.PLUGINS_WORKSPACE_STORAGE_DIR);
     }
 
     private async cleanupOldLogs(parentLogsDir: string): Promise<void> {

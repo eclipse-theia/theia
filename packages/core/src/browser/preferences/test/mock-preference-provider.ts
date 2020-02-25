@@ -20,8 +20,6 @@ import { interfaces } from 'inversify';
 import { PreferenceProvider } from '../';
 import { PreferenceScope } from '../preference-scope';
 import { PreferenceProviderDataChanges, PreferenceProviderDataChange } from '../preference-provider';
-import { EnvVariablesServer } from '../../../common/env-variables/env-variables-protocol';
-import { MockEnvVariablesServerImpl } from '../../test/mock-env-variables-server';
 
 export class MockPreferenceProvider extends PreferenceProvider {
     readonly prefs: { [p: string]: any } = {};
@@ -51,9 +49,6 @@ export class MockPreferenceProvider extends PreferenceProvider {
 
 export function bindMockPreferenceProviders(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     unbind(PreferenceProvider);
-
-    // Needed for PreferenceConfigurations in PreferenceSchemaProvider
-    bind(EnvVariablesServer).to(MockEnvVariablesServerImpl).inSingletonScope();
 
     bind(PreferenceProvider).toDynamicValue(ctx => new MockPreferenceProvider(PreferenceScope.User)).inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bind(PreferenceProvider).toDynamicValue(ctx => new MockPreferenceProvider(PreferenceScope.Workspace)).inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);

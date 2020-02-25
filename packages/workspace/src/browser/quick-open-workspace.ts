@@ -39,8 +39,11 @@ export class QuickOpenWorkspace implements QuickOpenModel {
 
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
-        const homeDirPath: string = (await this.fileSystem.getFsPath(await this.envServer.getUserHomeFolder()))!;
-        const tempWorkspaceFile = getTemporaryWorkspaceFileUri(await this.envServer.getUserDataFolder());
+        const [homeDirUri, tempWorkspaceFile] = await Promise.all([
+            this.fileSystem.getCurrentUserHome(),
+            getTemporaryWorkspaceFileUri(this.envServer)
+        ]);
+        const home = homeDirUri ? await this.fileSystem.getFsPath(homeDirUri.uri) : undefined;
         await this.preferences.ready;
         if (!workspaces.length) {
             this.items.push(new QuickOpenGroupItem({
@@ -55,14 +58,14 @@ export class QuickOpenWorkspace implements QuickOpenModel {
                 !this.preferences['workspace.supportMultiRootWorkspace'] && !stat.isDirectory) {
                 continue; // skip the workspace files if multi root is not supported
             }
-            if (tempWorkspaceFile && uri.toString() === tempWorkspaceFile.toString()) {
+            if (uri.toString() === tempWorkspaceFile.toString()) {
                 continue; // skip the temporary workspace files
             }
             const icon = this.labelProvider.getIcon(stat);
             const iconClass = icon === '' ? undefined : icon + ' file-icon';
             this.items.push(new QuickOpenGroupItem({
                 label: uri.path.base,
-                description: (homeDirPath) ? FileSystemUtils.tildifyPath(uri.path.toString(), homeDirPath) : uri.path.toString(),
+                description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
                 groupLabel: `last modified ${moment(stat.lastModification).fromNow()}`,
                 iconClass,
                 run: (mode: QuickOpenMode): boolean => {
