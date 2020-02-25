@@ -926,7 +926,7 @@ export class ApplicationShell extends Widget {
                     if (recentlyUsedInTabBar && recentlyUsedInTabBar.owner !== newValue) {
                         currentTabBar.currentIndex = ArrayExt.firstIndexOf(currentTabBar.titles, recentlyUsedInTabBar);
                         if (currentTabBar.currentTitle) {
-                            currentTabBar.currentTitle.owner.activate();
+                            this.activateWidget(currentTabBar.currentTitle.owner.id);
                         }
                     } else if (!this.activateNextTabInTabBar(currentTabBar)) {
                         if (!this.activatePreviousTabBar(currentTabBar)) {
@@ -1533,7 +1533,7 @@ export class ApplicationShell extends Widget {
         }
         current.currentIndex = index;
         if (current.currentTitle) {
-            current.currentTitle.owner.activate();
+            this.activateWidget(current.currentTitle.owner.id);
         }
         return true;
     }
@@ -1560,7 +1560,7 @@ export class ApplicationShell extends Widget {
                 if (ci < current.titles.length - 1) {
                     current.currentIndex += 1;
                     if (current.currentTitle) {
-                        current.currentTitle.owner.activate();
+                        this.activateWidget(current.currentTitle.owner.id);
                     }
                     return true;
                 } else if (ci === current.titles.length - 1) {
@@ -1576,7 +1576,7 @@ export class ApplicationShell extends Widget {
         if (nextBar) {
             nextBar.currentIndex = 0;
             if (nextBar.currentTitle) {
-                nextBar.currentTitle.owner.activate();
+                this.activateWidget(nextBar.currentTitle.owner.id);
             }
             return true;
         }
@@ -1614,7 +1614,7 @@ export class ApplicationShell extends Widget {
         }
         current.currentIndex = index;
         if (current.currentTitle) {
-            current.currentTitle.owner.activate();
+            this.activateWidget(current.currentTitle.owner.id);
         }
         return true;
     }
@@ -1633,7 +1633,7 @@ export class ApplicationShell extends Widget {
         return current.titles.length - 1;
     }
 
-    activatePreviousTab(): void {
+    activatePreviousTab(): boolean {
         const current = this.currentTabBar;
         if (current) {
             const ci = current.currentIndex;
@@ -1641,13 +1641,15 @@ export class ApplicationShell extends Widget {
                 if (ci > 0) {
                     current.currentIndex -= 1;
                     if (current.currentTitle) {
-                        current.currentTitle.owner.activate();
+                        this.activateWidget(current.currentTitle.owner.id);
                     }
+                    return true;
                 } else if (ci === 0) {
-                    this.activatePreviousTabBar(current);
+                    return this.activatePreviousTabBar(current);
                 }
             }
         }
+        return false;
     }
 
     activatePreviousTabBar(current: TabBar<Widget> | undefined = this.currentTabBar): boolean {
@@ -1658,7 +1660,7 @@ export class ApplicationShell extends Widget {
         const len = prevBar.titles.length;
         prevBar.currentIndex = len - 1;
         if (prevBar.currentTitle) {
-            prevBar.currentTitle.owner.activate();
+            this.activateWidget(prevBar.currentTitle.owner.id);
         }
         return true;
     }

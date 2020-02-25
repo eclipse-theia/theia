@@ -65,6 +65,11 @@ export namespace FileNavigatorCommands {
     export const ADD_ROOT_FOLDER: Command = {
         id: 'navigator.addRootFolder'
     };
+    export const FOCUS: Command = {
+        id: 'workbench.files.action.focusFilesExplorer',
+        category: 'File',
+        label: 'Focus on Files Explorer'
+    };
 }
 
 /**
@@ -180,6 +185,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
+        registry.registerCommand(FileNavigatorCommands.FOCUS, {
+            execute: () => this.openView({ activate: true })
+        });
         registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, {
             execute: () => this.openView({ activate: true }).then(() => this.selectWidgetFileNode(this.shell.currentWidget)),
             isEnabled: () => Navigatable.is(this.shell.currentWidget),

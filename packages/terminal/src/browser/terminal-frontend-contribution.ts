@@ -285,21 +285,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         });
 
         commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, new UriAwareCommandHandler<URI>(this.selectionService, {
-            execute: async uri => {
-                // Determine folder path of URI
-                const stat = await this.fileSystem.getFileStat(uri.toString());
-                if (!stat) {
-                    return;
-                }
-
-                // Use folder if a file was selected
-                const cwd = (stat.isDirectory) ? uri.toString() : uri.parent.toString();
-
-                // Open terminal
-                const termWidget = await this.newTerminal({ cwd });
-                termWidget.start();
-                this.activateTerminal(termWidget);
-            }
+            execute: uri => this.openInTerminal(uri)
         }));
 
         commands.registerCommand(TerminalCommands.TERMINAL_FIND_TEXT);
@@ -366,6 +352,22 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                 (this.shell.activeWidget as TerminalWidget).scrollPageDown();
             }
         });
+    }
+
+    async openInTerminal(uri: URI): Promise<void> {
+        // Determine folder path of URI
+        const stat = await this.fileSystem.getFileStat(uri.toString());
+        if (!stat) {
+            return;
+        }
+
+        // Use folder if a file was selected
+        const cwd = (stat.isDirectory) ? uri.toString() : uri.parent.toString();
+
+        // Open terminal
+        const termWidget = await this.newTerminal({ cwd });
+        termWidget.start();
+        this.activateTerminal(termWidget);
     }
 
     registerMenus(menus: MenuModelRegistry): void {

@@ -52,6 +52,7 @@ import { inject, injectable } from 'inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from 'vscode-uri';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -87,6 +88,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly quickOpen: PrefixQuickOpenService;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+    @inject(TerminalFrontendContribution)
+    protected readonly terminalContribution: TerminalFrontendContribution;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -209,7 +212,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: () => this.shell.saveAll()
         });
         commands.registerCommand({ id: 'workbench.action.closeActiveEditor' }, {
-            execute: (uri?: monaco.Uri) => {
+            execute: async (uri?: monaco.Uri) => {
                 let widget = this.editorManager.currentEditor || this.shell.currentWidget;
                 if (uri) {
                     const uriString = uri.toString();
@@ -219,12 +222,12 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     });
                 }
                 if (CodeEditorWidget.is(widget)) {
-                    widget.close();
+                    await this.shell.closeWidget(widget.id);
                 }
             }
         });
         commands.registerCommand({ id: 'workbench.action.closeOtherEditors' }, {
-            execute: (uri?: monaco.Uri) => {
+            execute: async (uri?: monaco.Uri) => {
                 let editor = this.editorManager.currentEditor || this.shell.currentWidget;
                 if (uri) {
                     const uriString = uri.toString();
@@ -235,7 +238,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 }
                 for (const widget of this.shell.widgets) {
                     if (CodeEditorWidget.is(widget) && widget !== editor) {
-                        widget.close();
+                        await this.shell.closeWidget(widget.id);
                     }
                 }
             }
@@ -316,13 +319,25 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             }
         });
         commands.registerCommand({ id: 'workbench.action.closeAllEditors' }, {
-            execute: () => {
+            execute: async () => {
+                const promises = [];
                 for (const widget of this.shell.widgets) {
                     if (CodeEditorWidget.is(widget)) {
-                        widget.close();
+                        promises.push(this.shell.closeWidget(widget.id));
                     }
                 }
+                await Promise.all(promises);
             }
+        });
+        commands.registerCommand({ id: 'workbench.action.nextEditor' }, {
+            execute: () => this.shell.activateNextTab()
+        });
+        commands.registerCommand({ id: 'workbench.action.previousEditor' }, {
+            execute: () => this.shell.activatePreviousTab()
+        });
+
+        commands.registerCommand({ id: 'openInTerminal' }, {
+            execute: (resource: URI) => this.terminalContribution.openInTerminal(new TheiaURI(resource.toString()))
         });
 
         commands.registerCommand({ id: 'workbench.action.reloadWindow' }, {
