@@ -1173,8 +1173,10 @@ export interface LanguagesExt {
     ): Promise<TextEdit[] | undefined>;
     $provideDocumentLinks(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentLink[] | undefined>;
     $resolveDocumentLink(handle: number, link: DocumentLink, token: CancellationToken): Promise<DocumentLink | undefined>;
+    $releaseDocumentLinks(handle: number, ids: number[]): void;
     $provideCodeLenses(handle: number, resource: UriComponents, token: CancellationToken): Promise<CodeLensSymbol[] | undefined>;
     $resolveCodeLens(handle: number, resource: UriComponents, symbol: CodeLensSymbol, token: CancellationToken): Promise<CodeLensSymbol | undefined>;
+    $releaseCodeLenses(handle: number, ids: number[]): void;
     $provideCodeActions(
         handle: number,
         resource: UriComponents,

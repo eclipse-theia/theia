@@ -16,12 +16,9 @@
 
 import * as theia from '@theia/plugin';
 import * as Converter from '../type-converters';
-import { ObjectIdentifier } from '../../common/object-identifier';
 import { TaskDto } from '../../common';
 
 export class TaskProviderAdapter {
-    private cacheId = 0;
-    private cache = new Map<number, theia.Task>();
 
     constructor(private readonly provider: theia.TaskProvider) { }
 
@@ -37,9 +34,6 @@ export class TaskProviderAdapter {
                     continue;
                 }
 
-                const id = this.cacheId++;
-                ObjectIdentifier.mixin(data, id);
-                this.cache.set(id, task);
                 result.push(data);
             }
             return result;
@@ -50,9 +44,8 @@ export class TaskProviderAdapter {
         if (typeof this.provider.resolveTask !== 'function') {
             return Promise.resolve(undefined);
         }
-        const id = ObjectIdentifier.of(task);
-        const cached = this.cache.get(id);
-        const item = cached ? cached : Converter.toTask(task);
+
+        const item = Converter.toTask(task);
         if (!item) {
             return Promise.resolve(undefined);
         }

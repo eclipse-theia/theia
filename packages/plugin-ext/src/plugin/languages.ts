@@ -422,6 +422,11 @@ export class LanguagesExtImpl implements LanguagesExt {
         this.proxy.$registerDocumentLinkProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
+
+    $releaseDocumentLinks(handle: number, ids: number[]): void {
+        this.withAdapter(handle, LinkProviderAdapter, async adapter => adapter.releaseDocumentLinks(ids));
+    }
+
     // ### Document Link Provider end
 
     // ### Code Actions Provider begin
@@ -473,6 +478,10 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     $resolveCodeLens(handle: number, resource: UriComponents, symbol: CodeLensSymbol, token: theia.CancellationToken): Promise<CodeLensSymbol | undefined> {
         return this.withAdapter(handle, CodeLensAdapter, adapter => adapter.resolveCodeLens(URI.revive(resource), symbol, token));
+    }
+
+    $releaseCodeLenses(handle: number, ids: number[]): void {
+        this.withAdapter(handle, CodeLensAdapter, async adapter => adapter.releaseCodeLenses(ids));
     }
     // ### Code Lens Provider end
 

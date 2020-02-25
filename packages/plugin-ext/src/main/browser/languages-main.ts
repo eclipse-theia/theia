@@ -55,6 +55,7 @@ import { LanguageSelector } from '@theia/languages/lib/common/language-selector'
 import { CallHierarchyService, CallHierarchyServiceProvider, Caller, Definition } from '@theia/callhierarchy/lib/browser';
 import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller } from './callhierarchy/callhierarchy-type-converters';
 import { Position, DocumentUri } from 'vscode-languageserver-types';
+import { ObjectIdentifier } from '../../common/object-identifier';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -380,7 +381,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return {
             links: links.map(link => this.toMonacoLink(link)),
             dispose: () => {
-                // TODO this.proxy.$releaseDocumentLinks(handle, links.cacheId);
+                if (links && Array.isArray(links)) {
+                    this.proxy.$releaseDocumentLinks(handle, links.map(link => ObjectIdentifier.of(link)));
+                }
             }
         };
     }
@@ -427,7 +430,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return {
             lenses,
             dispose: () => {
-                // TODO this.proxy.$releaseCodeLenses
+                if (lenses && Array.isArray(lenses)) {
+                    this.proxy.$releaseCodeLenses(handle, lenses.map(symbol => ObjectIdentifier.of(symbol)));
+                }
             }
         };
     }

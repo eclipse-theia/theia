@@ -70,4 +70,10 @@ export class LinkProviderAdapter {
             return undefined;
         });
     }
+
+    releaseDocumentLinks(ids: number[]): void {
+        ids.forEach(id => {
+            this.cache.delete(id);
+        });
+    }
 }
