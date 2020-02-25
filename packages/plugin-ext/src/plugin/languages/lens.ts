@@ -55,7 +55,6 @@ export class CodeLensAdapter {
                         range: Converter.fromRange(lens.range)!,
                         command: this.commands.converter.toSafeCommand(lens.command, toDispose)
                     }, cacheId);
-                    // TODO: invalidate caches and dispose command handlers
                     this.cache.set(cacheId, lens);
                     this.disposables.set(cacheId, toDispose);
                     return lensSymbol;
@@ -88,5 +87,16 @@ export class CodeLensAdapter {
         }
         symbol.command = this.commands.converter.toSafeCommand(newLens.command ? newLens.command : CodeLensAdapter.BAD_CMD, disposables);
         return symbol;
+    }
+
+    releaseCodeLenses(ids: number[]): void {
+        ids.forEach(id => {
+            this.cache.delete(id);
+            const toDispose = this.disposables.get(id);
+            if (toDispose) {
+                toDispose.dispose();
+                this.disposables.delete(id);
+            }
+        });
     }
 }
