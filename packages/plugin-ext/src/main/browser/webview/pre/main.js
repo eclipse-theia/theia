@@ -271,6 +271,7 @@
 		 * @param {KeyboardEvent} e
 		 */
         const handleInnerKeydown = (e) => {
+            e.preventDefault();
             host.postMessage('did-keydown', {
                 key: e.key,
                 keyCode: e.keyCode,
