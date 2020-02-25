@@ -125,6 +125,7 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
         }
         w.parent = this;
         this.onDidChangeTrackableWidgetsEmitter.fire([w]);
+        this.activate();
     }
 
     protected onAfterAttach(msg: Message): void {
