@@ -546,11 +546,6 @@ export namespace Git {
              * Decides whether the commit hash should be the abbreviated version.
              */
             readonly shortSha?: boolean;
-
-            /**
-             * Return only commits reached by following the first parent, giving a linear list of commits.
-             */
-            readonly firstParent?: boolean;
         }
 
         /**

@@ -438,7 +438,6 @@ export class GitAmendSupport implements ScmAmendSupport {
             this.repository,
             {
                 range: { toRevision: amendingHeadCommitSha, fromRevision: latestCommitSha },
-                firstParent: true,
                 maxCount: 50
             }
         );

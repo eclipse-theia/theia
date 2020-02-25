@@ -645,11 +645,8 @@ export class DugiteGit implements Git {
         if (options && options.branch) {
             args.push(options.branch);
         }
-        if (options && options.firstParent) {
-            args.push('--first-parent');
-        }
         const range = this.mapRange((options || {}).range);
-        args.push(...[range, '-C', '-M', '-m']);
+        args.push(...[range, '-C', '-M', '-m', '--first-parent']);
         const maxCount = options && options.maxCount ? options.maxCount : 0;
         if (Number.isInteger(maxCount) && maxCount > 0) {
             args.push(...['-n', `${maxCount}`]);
