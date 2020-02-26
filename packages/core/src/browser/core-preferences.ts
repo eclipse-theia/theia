@@ -17,7 +17,7 @@
 import { interfaces } from 'inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from './preferences';
 
-export const corePreferenceSchema: PreferenceSchema = {
+export let corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
         'workbench.list.openMode': {
