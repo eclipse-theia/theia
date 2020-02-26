@@ -24,8 +24,11 @@ import {
     DocumentSelector
 } from '@theia/languages/lib/browser';
 import { JSON_LANGUAGE_ID, JSON_LANGUAGE_NAME, JSONC_LANGUAGE_ID } from '../common';
-import { ResourceProvider, DisposableCollection } from '@theia/core';
+import { ResourceProvider } from '@theia/core';
+import { DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
+import * as path from 'path';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 import { JsonPreferences } from './json-preferences';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { Endpoint } from '@theia/core/lib/browser';
@@ -49,19 +52,40 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
     }
 
     protected updateSchemas(client: ILanguageClient): void {
-        const allConfigs = [...this.jsonSchemaStore.getJsonSchemaConfigurations()];
-        const config = this.preferences['json.schemas'];
-        if (config instanceof Array) {
-            allConfigs.push(...config);
-        }
         const registry: { [pattern: string]: string[] } = {};
-        for (const s of allConfigs) {
-            if (s.fileMatch) {
-                for (let fileMatch of s.fileMatch) {
-                    if (fileMatch.charAt(0) !== '/' && !fileMatch.match(/\w+:/)) {
+
+        const schemaStoreConfigs = [...this.jsonSchemaStore.getJsonSchemaConfigurations()];
+        for (const schemaConfig of schemaStoreConfigs) {
+            if (schemaConfig.fileMatch) {
+                for (let fileMatch of schemaConfig.fileMatch) {
+                    if (!fileMatch.startsWith('/') && !fileMatch.match(/\w+:/)) {
                         fileMatch = '/' + fileMatch;
                     }
-                    registry[fileMatch] = [s.url];
+                    registry[fileMatch] = [schemaConfig.url];
+                }
+            }
+        }
+
+        const preferenceConfigs = this.preferences['json.schemas'];
+        for (const schemaConfig of preferenceConfigs) {
+            if (schemaConfig.fileMatch) {
+                for (let fileMatch of schemaConfig.fileMatch) {
+                    if (!fileMatch.startsWith('/') && !fileMatch.match(/\w+:/)) {
+                        fileMatch = '/' + fileMatch;
+                    }
+
+                    const fileUri = new URI(schemaConfig.url);
+                    if (fileUri.scheme === 'file') {
+                        const filePath = fileUri.path.toString();
+                        const workspaceRootPath = this.workspace.rootPath;
+                        if (workspaceRootPath && !filePath.startsWith(workspaceRootPath)) {
+                            registry[fileMatch] = [FileUri.create(path.join(workspaceRootPath, filePath)).toString()];
+                        } else {
+                            registry[fileMatch] = [FileUri.create(filePath).toString()];
+                        }
+                    } else {
+                        registry[fileMatch] = [schemaConfig.url];
+                    }
                 }
             }
         }
