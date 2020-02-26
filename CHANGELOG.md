@@ -14,6 +14,7 @@
 Breaking changes:
 
 - [core] fixed typo (highligh -> highlight) in caption highlight fragment [#7050](https://github.com/eclipse-theia/theia/pull/7050)
+- [terminal] added new abstract methods to the TerminalWidget[#7179]: `scrollLineUp`, `scrollLineDown`, `scrollToTop`, `scrollPageUp`, `scrollPageDown`
 
 ## v0.15.0
 

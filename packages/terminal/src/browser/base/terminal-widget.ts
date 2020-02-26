@@ -39,6 +39,16 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract onDidOpen: Event<void>;
 
+    abstract scrollLineUp(): void;
+
+    abstract scrollLineDown(): void;
+
+    abstract scrollToTop(): void;
+
+    abstract scrollPageUp(): void;
+
+    abstract scrollPageDown(): void;
+
     /**
      * Event which fires when terminal did closed. Event value contains closed terminal widget definition.
      */
