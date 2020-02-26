@@ -453,6 +453,26 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
     }
 
+    scrollLineUp(): void {
+        this.term.scrollLines(-1);
+    }
+
+    scrollLineDown(): void {
+        this.term.scrollLines(1);
+    }
+
+    scrollToTop(): void {
+        this.term.scrollToTop();
+    }
+
+    scrollPageUp(): void {
+        this.term.scrollPages(-1);
+    }
+
+    scrollPageDown(): void {
+        this.term.scrollPages(1);
+    }
+
     get onTerminalDidClose(): Event<TerminalWidget> {
         return this.onTermDidClose.event;
     }
