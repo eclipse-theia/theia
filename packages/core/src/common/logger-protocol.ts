@@ -16,6 +16,7 @@
 
 import { injectable } from 'inversify';
 import { JsonRpcServer } from './messaging/proxy-factory';
+import * as moment from 'moment';
 
 export const ILoggerServer = Symbol('ILoggerServer');
 
@@ -109,6 +110,6 @@ export namespace ConsoleLogger {
     export function log(name: string, logLevel: number, message: string, params: any[]): void {
         const console = consoles.get(logLevel) || originalConsoleLog;
         const severity = (LogLevel.strings.get(logLevel) || 'unknown').toUpperCase();
-        console(`${name} ${severity} ${message}`, ...params);
+        console(`${moment().format('MMM Do YYYY, HH:mm:ss.SSS')} - ${name} ${severity} ${message}`, ...params);
     }
 }
