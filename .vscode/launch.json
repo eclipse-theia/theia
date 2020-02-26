@@ -24,9 +24,10 @@
       "windows": {
         "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
       },
-      "program": "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
+      "cwd": "${workspaceRoot}/examples/electron",
       "protocol": "inspector",
       "args": [
+        ".",
         "--log-level=debug",
         "--hostname=localhost",
         "--no-cluster",
