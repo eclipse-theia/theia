@@ -78,7 +78,21 @@ export class ApplicationPackageManager {
     }
 
     startElectron(args: string[]): cp.ChildProcess {
-        const { mainArgs, options } = this.adjustArgs([this.pck.frontend('electron-main.js'), ...args]);
+        // If possible, pass the project root directory to electron rather than the script file so that Electron
+        // can determine the app name. This requires that the package.json has a main field.
+        let appPath = this.pck.projectPath;
+
+        if (!this.pck.pck.main) {
+            appPath = this.pck.frontend('electron-main.js');
+
+            console.warn(
+                `WARNING: ${this.pck.packagePath} does not have a "main" entry.\n` +
+                'Please add the following line:\n' +
+                '    "main": "src-gen/frontend/electron-main.js"'
+            );
+        }
+
+        const { mainArgs, options } = this.adjustArgs([ appPath, ...args ]);
         const electronCli = require.resolve('electron/cli.js', { paths: [this.pck.projectPath] });
         return this.__process.fork(electronCli, mainArgs, options);
     }
