@@ -84,7 +84,7 @@ export class FSResourceResolver implements ResourceResolver, Disposable {
     resolve(uri: URI): Resource {
         const provider = this.providers.get(uri.scheme);
         if (provider) {
-            return provider.get(uri);
+            return provider.create(uri);
         }
         throw new Error(`Unable to find a Resource Provider for scheme '${uri.scheme}'`);
     }
@@ -102,7 +102,6 @@ export class FSResourceResolver implements ResourceResolver, Disposable {
         this.providers.set(scheme, provider);
 
         const disposable = Disposable.create(() => {
-            provider.dispose();
             this.providers.delete(scheme);
         });
         this.toDispose.push(disposable);
@@ -110,23 +109,12 @@ export class FSResourceResolver implements ResourceResolver, Disposable {
     }
 }
 
-class FSResourceProvider implements Disposable {
-
-    private resourceCache = new Map<string, FSResource>();
+class FSResourceProvider {
 
     constructor(private handle: number, private proxy: FileSystemExt) { }
 
-    get(uri: URI): Resource {
-        let resource = this.resourceCache.get(uri.toString());
-        if (!resource) {
-            resource = new FSResource(this.handle, uri, this.proxy);
-            this.resourceCache.set(uri.toString(), resource);
-        }
-        return resource;
-    }
-
-    dispose(): void {
-        this.resourceCache.clear();
+    create(uri: URI): Resource {
+        return new FSResource(this.handle, uri, this.proxy);
     }
 }
 
