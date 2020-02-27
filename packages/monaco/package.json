@@ -1,15 +1,15 @@
 {
   "name": "@theia/monaco",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Theia - Monaco Extension",
   "dependencies": {
-    "@theia/core": "^0.15.0",
-    "@theia/editor": "^0.15.0",
-    "@theia/filesystem": "^0.15.0",
-    "@theia/languages": "^0.15.0",
-    "@theia/markers": "^0.15.0",
-    "@theia/outline-view": "^0.15.0",
-    "@theia/workspace": "^0.15.0",
+    "@theia/core": "^0.16.0",
+    "@theia/editor": "^0.16.0",
+    "@theia/filesystem": "^0.16.0",
+    "@theia/languages": "^0.16.0",
+    "@theia/markers": "^0.16.0",
+    "@theia/outline-view": "^0.16.0",
+    "@theia/workspace": "^0.16.0",
     "deepmerge": "2.0.1",
     "fast-plist": "^0.1.2",
     "idb": "^4.0.5",
@@ -53,7 +53,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.15.0"
+    "@theia/ext-scripts": "^0.16.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

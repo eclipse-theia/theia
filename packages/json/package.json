@@ -1,16 +1,16 @@
 {
   "name": "@theia/json",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Theia - JSON Extension",
   "dependencies": {
-    "@theia/application-package": "^0.15.0",
-    "@theia/core": "^0.15.0",
-    "@theia/languages": "^0.15.0",
-    "@theia/monaco": "^0.15.0",
+    "@theia/application-package": "^0.16.0",
+    "@theia/core": "^0.16.0",
+    "@theia/languages": "^0.16.0",
+    "@theia/monaco": "^0.16.0",
     "vscode-json-languageserver": "^1.2.1"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.15.0"
+    "@theia/ext-scripts": "^0.16.0"
   },
   "scripts": {
     "lint": "theiaext lint",
