@@ -1,10 +1,10 @@
 {
   "private": true,
   "name": "@theia/api-samples",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Theia - Example code to demonstrate Theia API",
   "dependencies": {
-    "@theia/core": "^0.15.0"
+    "@theia/core": "^0.16.0"
   },
   "theiaExtensions": [
     {
@@ -34,6 +34,6 @@
     "clean": "theiaext clean"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.15.0"
+    "@theia/ext-scripts": "^0.16.0"
   }
 }
