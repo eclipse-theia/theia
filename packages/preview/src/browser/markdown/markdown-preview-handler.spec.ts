@@ -105,6 +105,14 @@ describe('markdown-preview-handler', () => {
             expect(line).to.be.equal(expectedLine);
         }
     });
+
+    it('can handle \'.md\' files', () => {
+        expect(previewHandler.canHandle(new URI('a.md'))).greaterThan(0);
+    });
+
+    it('can handle \'.markdown\' files', () => {
+        expect(previewHandler.canHandle(new URI('a.markdown'))).greaterThan(0);
+    });
 });
 
 async function assertRenderedContent(source: string, expectation: string): Promise<void> {
