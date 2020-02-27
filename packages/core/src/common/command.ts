@@ -87,6 +87,8 @@ export namespace Command {
 export interface CommandHandler {
     /**
      * Execute this handler.
+     *
+     * Don't call it directly, use `CommandService.executeCommand` instead.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute(...args: any[]): any;
@@ -118,8 +120,13 @@ export interface CommandContribution {
     registerCommands(commands: CommandRegistry): void;
 }
 
-export interface WillExecuteCommandEvent extends WaitUntilEvent {
+export interface CommandEvent {
     commandId: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args: any[]
+}
+
+export interface WillExecuteCommandEvent extends WaitUntilEvent, CommandEvent {
 }
 
 export const commandServicePath = '/services/commands';
@@ -141,6 +148,10 @@ export interface CommandService {
      * It can be used to install or activate a command handler.
      */
     readonly onWillExecuteCommand: Event<WillExecuteCommandEvent>;
+    /**
+     * An event is emitted when a command was executed.
+     */
+    readonly onDidExecuteCommand: Event<CommandEvent>;
 }
 
 /**
@@ -159,6 +170,9 @@ export class CommandRegistry implements CommandService {
 
     protected readonly onWillExecuteCommandEmitter = new Emitter<WillExecuteCommandEvent>();
     readonly onWillExecuteCommand = this.onWillExecuteCommandEmitter.event;
+
+    protected readonly onDidExecuteCommandEmitter = new Emitter<CommandEvent>();
+    readonly onDidExecuteCommand = this.onDidExecuteCommandEmitter.event;
 
     constructor(
         @inject(ContributionProvider) @named(CommandContribution)
@@ -270,10 +284,11 @@ export class CommandRegistry implements CommandService {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async executeCommand<T>(commandId: string, ...args: any[]): Promise<T | undefined> {
-        await this.fireWillExecuteCommand(commandId);
         const handler = this.getActiveHandler(commandId, ...args);
         if (handler) {
+            await this.fireWillExecuteCommand(commandId, args);
             const result = await handler.execute(...args);
+            this.onDidExecuteCommandEmitter.fire({ commandId, args });
             const command = this.getCommand(commandId);
             if (command) {
                 this.addRecentCommand(command);
@@ -285,8 +300,9 @@ export class CommandRegistry implements CommandService {
         throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.${argsMessage}`), { code: 'NO_ACTIVE_HANDLER' });
     }
 
-    protected async fireWillExecuteCommand(commandId: string): Promise<void> {
-        await WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId }, 30000);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected async fireWillExecuteCommand(commandId: string, args: any[] = []): Promise<void> {
+        await WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId, args }, 30000);
     }
 
     /**

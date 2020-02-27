@@ -15,7 +15,9 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { CommandRegistry, Emitter, DisposableCollection } from '@theia/core/lib/common';
+import { CommandRegistry } from '@theia/core/lib/common/command';
+import { Emitter } from '@theia/core/lib/common/event';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import ICommandEvent = monaco.commands.ICommandEvent;
 import ICommandService = monaco.commands.ICommandService;
 
@@ -25,39 +27,64 @@ export interface MonacoCommandServiceFactory {
 }
 
 @injectable()
-export class MonacoCommandService implements ICommandService {
+export class MonacoCommandService implements ICommandService, Disposable {
 
-    readonly _onWillExecuteCommand = new Emitter<ICommandEvent>();
+    protected readonly onWillExecuteCommandEmitter = new Emitter<ICommandEvent>();
+    protected readonly onDidExecuteCommandEmitter = new Emitter<ICommandEvent>();
+    protected readonly toDispose = new DisposableCollection(
+        this.onWillExecuteCommandEmitter,
+        this.onDidExecuteCommandEmitter
+    );
 
-    protected delegate: ICommandService | undefined;
+    protected delegate: monaco.services.StandaloneCommandService | undefined;
     protected readonly delegateListeners = new DisposableCollection();
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry
-    ) { }
-
-    get onWillExecuteCommand(): monaco.IEvent<ICommandEvent> {
-        return this._onWillExecuteCommand.event;
+    ) {
+        this.toDispose.push(this.commandRegistry.onWillExecuteCommand(e => this.onWillExecuteCommandEmitter.fire(e)));
+        this.toDispose.push(this.commandRegistry.onDidExecuteCommand(e => this.onDidExecuteCommandEmitter.fire(e)));
     }
 
-    setDelegate(delegate: ICommandService | undefined): void {
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    get onWillExecuteCommand(): monaco.IEvent<ICommandEvent> {
+        return this.onWillExecuteCommandEmitter.event;
+    }
+
+    get onDidExecuteCommand(): monaco.IEvent<ICommandEvent> {
+        return this.onDidExecuteCommandEmitter.event;
+    }
+
+    setDelegate(delegate: monaco.services.StandaloneCommandService | undefined): void {
+        if (this.toDispose.disposed) {
+            return;
+        }
         this.delegateListeners.dispose();
+        this.toDispose.push(this.delegateListeners);
         this.delegate = delegate;
         if (this.delegate) {
-            this.delegateListeners.push(this.delegate._onWillExecuteCommand.event(event =>
-                this._onWillExecuteCommand.fire(event)
+            this.delegateListeners.push(this.delegate['_onWillExecuteCommand'].event(event =>
+                this.onWillExecuteCommandEmitter.fire(event)
+            ));
+            this.delegateListeners.push(this.delegate['_onDidExecuteCommand'].event(event =>
+                this.onDidExecuteCommandEmitter.fire(event)
             ));
         }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async executeCommand(commandId: any, ...args: any[]): Promise<any> {
-        const handler = this.commandRegistry.getActiveHandler(commandId, ...args);
-        if (handler) {
-            this._onWillExecuteCommand.fire({ commandId });
-            return handler.execute(...args);
+        try {
+            await this.commandRegistry.executeCommand(commandId, ...args);
+        } catch (e) {
+            if (e.code === 'NO_ACTIVE_HANDLER') {
+                return this.executeMonacoCommand(commandId, ...args);
+            }
+            throw e;
         }
-        return this.executeMonacoCommand(commandId, ...args);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
