@@ -254,7 +254,7 @@ export class TreeViewWidget extends TreeWidget {
         return React.createElement('div', attrs, ...children);
     }
 
-    protected getCaption(node: TreeNode): React.ReactNode[] {
+    protected getCaption(node: TreeNode): React.ReactNode {
         const nodes: React.ReactNode[] = [];
 
         const name = this.toNodeName(node) || '';
@@ -266,29 +266,28 @@ export class TreeViewWidget extends TreeWidget {
         const matchResult = work.match(regex);
 
         if (matchResult) {
-            matchResult.forEach(match => {
-                const part = work.substring(0, work.indexOf(match));
-                nodes.push(part);
+            matchResult.forEach((match, index) => {
+                nodes.push(<span key={`m${index}`}>{work.substring(0, work.indexOf(match))}</span>);
 
                 const execResult = regex.exec(name);
-                const link = <a href={execResult![2]}
+                nodes.push(<a key={`l${index}`}
+                    href={execResult![2]}
                     target='_blank'
                     className={TREE_NODE_HYPERLINK}
-                    onClick={e => e.stopPropagation()}>{execResult![1]}</a >;
-                nodes.push(link);
+                    onClick={e => e.stopPropagation()}>{execResult![1]}</a>
+                );
 
                 work = work.substring(work.indexOf(match) + match.length);
             });
         }
 
-        const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS].join(' ');
-        nodes.push(<div className={className}>{work}</div >);
-        if (description) {
-            nodes.push(<div className='theia-tree-view-description'>
+        return <div className='noWrapInfo'>
+            {...nodes}
+            {work && <span>{work}</span>}
+            {description && <span className='theia-tree-view-description'>
                 {description}
-            </div>);
-        }
-        return nodes;
+            </span>}
+        </div>;
     }
 
     protected renderTailDecorations(node: TreeViewNode, props: NodeProps): React.ReactNode {
