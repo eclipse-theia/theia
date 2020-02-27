@@ -26,6 +26,7 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
         protected readonly selectionService: SelectionService
     ) {
         super(editor);
+        this.addClass('theia-editor');
         this.toDispose.push(this.editor);
         this.toDispose.push(this.editor.onSelectionChanged(() => {
             if (this.editor.isFocused()) {
