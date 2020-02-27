@@ -42,32 +42,34 @@ Breaking changes:
 
 - [core] fixed typo (highligh -> highlight) in caption highlight fragment [#7050](https://github.com/eclipse-theia/theia/pull/7050)
 - [terminal] added new abstract methods to the TerminalWidget[#7179]: `scrollLineUp`, `scrollLineDown`, `scrollToTop`, `scrollPageUp`, `scrollPageDown`
-- [debug-nodejs] removed the `@theia/debug-nodejs` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
-  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
-- [editorconfig] removed the `@theia/editorconfig` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
-  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
-- [java] removed the `@theia/java` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
-  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
-  - Please view the `theia-apps` [theia-java](https://github.com/theia-ide/theia-apps/tree/master/theia-java-docker) image for an example application which has been updated to
-  use VS Code extensions instead of `@theia/java`.
-- [java-debug] removed the `@theia/java-debug` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
-  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
-  - Please view the `theia-apps` [theia-java](https://github.com/theia-ide/theia-apps/tree/master/theia-java-docker) image for an example application which has been updated to
-  use VS Code extensions instead of `@theia/java-debug`.
-- [merge-conflicts] removed the `@theia/merge-conflicts` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
-  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
-- [python] removed the `@theia/python` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
-  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
-  - Please view the `theia-apps` [theia-python](https://github.com/theia-ide/theia-apps/tree/master/theia-python-docker) image for an example application which has been updated to
-  use VS Code extensions instead of `@theia/python`.
-- [textmate-grammars] removed the `@theia/textmate-grammars` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
-  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
-- [tslint] removed the `@theia/tslint` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
-  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
-- [typescript] removed the `@theia/typescript` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
-  - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
-  - Please view the `theia-apps` [theia-typescript](https://github.com/theia-ide/theia-apps/tree/master/theia-docker) image for an example application which has been updated to
-  use VS Code extensions instead of `@theia/typescript`.
+- The release includes the removal of language-specific Theia extensions and other Theia extensions that are or can be replaced by equivalent VS Code extensions.
+  - Migration steps are available at the following wiki page [`Consuming Builtin and External VS Code Extensions`](https://github.com/eclipse-theia/theia/wiki/Consuming-Builtin-and-External-VS-Code-Extensions).
+  - [debug-nodejs] removed the `@theia/debug-nodejs` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+      - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+  - [editorconfig] removed the `@theia/editorconfig` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+      - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+  - [java] removed the `@theia/java` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+      - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+      - Please view the `theia-apps` [theia-java](https://github.com/theia-ide/theia-apps/tree/master/theia-java-docker) image for an example application which has been updated to
+      use VS Code extensions instead of `@theia/java`.
+  - [java-debug] removed the `@theia/java-debug` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+      - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+      - Please view the `theia-apps` [theia-java](https://github.com/theia-ide/theia-apps/tree/master/theia-java-docker) image for an example application which has been updated to
+      use VS Code extensions instead of `@theia/java-debug`.
+  - [merge-conflicts] removed the `@theia/merge-conflicts` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+      - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+  - [python] removed the `@theia/python` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+      - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+      - Please view the `theia-apps` [theia-python](https://github.com/theia-ide/theia-apps/tree/master/theia-python-docker) image for an example application which has been updated to
+      use VS Code extensions instead of `@theia/python`.
+  - [textmate-grammars] removed the `@theia/textmate-grammars` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+      - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+  - [tslint] removed the `@theia/tslint` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+      - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+  - [typescript] removed the `@theia/typescript` extension [#6933](https://github.com/eclipse-theia/theia/pull/6933)
+      - The extension will no longer be maintained by the project and remains in the Git history for anyone who would like to reference it or maintain it.
+      - Please view the `theia-apps` [theia-typescript](https://github.com/theia-ide/theia-apps/tree/master/theia-docker) image for an example application which has been updated to
+      use VS Code extensions instead of `@theia/typescript`.
 
 ## v0.15.0
 
