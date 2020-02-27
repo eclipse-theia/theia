@@ -54,6 +54,7 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
 
     constructor(protected widgetManager: WidgetManager, protected editorWidget_?: EditorWidget) {
         super();
+        this.addClass('theia-editor-preview');
         this.title.closable = true;
         this.title.className += PREVIEW_TITLE_CLASS;
         this.layout = new PanelLayout();
