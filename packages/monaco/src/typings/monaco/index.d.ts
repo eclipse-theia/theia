@@ -288,12 +288,14 @@ declare module monaco.commands {
 
     export interface ICommandEvent {
         commandId: string;
+        args: any[];
     }
 
+    // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/platform/commands/common/commands.ts#L21
     export interface ICommandService {
-        readonly _onWillExecuteCommand: monaco.Emitter<ICommandEvent>;
-        executeCommand<T>(commandId: string, ...args: any[]): Promise<T>;
-        executeCommand(commandId: string, ...args: any[]): Promise<any>;
+        onWillExecuteCommand: monaco.Event<ICommandEvent>;
+        onDidExecuteCommand: monaco.Event<ICommandEvent>;
+        executeCommand<T = any>(commandId: string, ...args: any[]): Promise<T | undefined>;
     }
 
 }
@@ -474,9 +476,12 @@ declare module monaco.services {
         resolveDecorationOptions: monaco.editor.ICodeEditorService['resolveDecorationOptions'];
     }
 
+    // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/editor/standalone/browser/simpleServices.ts#L233
     export class StandaloneCommandService implements monaco.commands.ICommandService {
         constructor(instantiationService: monaco.instantiation.IInstantiationService);
-        readonly _onWillExecuteCommand: monaco.Emitter<monaco.commands.ICommandEvent>;
+        private readonly _onWillExecuteCommand: monaco.Emitter<monaco.commands.ICommandEvent>;
+        private readonly _onDidExecuteCommand: monaco.Emitter<monaco.commands.ICommandEvent>;
+
         executeCommand<T>(commandId: string, ...args: any[]): Promise<T>;
         executeCommand(commandId: string, ...args: any[]): Promise<any>;
     }

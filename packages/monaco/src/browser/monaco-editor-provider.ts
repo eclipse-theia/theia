@@ -123,7 +123,7 @@ export class MonacoEditorProvider {
         const contextKeyService = this.contextKeyService.createScoped();
         const { codeEditorService, textModelService, contextMenuService } = this;
         const IWorkspaceEditService = this.bulkEditService;
-        const toDispose = new DisposableCollection();
+        const toDispose = new DisposableCollection(commandService);
         const editor = await factory({
             codeEditorService,
             textModelService,
