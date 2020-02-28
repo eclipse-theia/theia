@@ -20,6 +20,7 @@ import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
+import { performance, PerformanceObserver } from 'perf_hooks';
 import { inject, named, injectable, postConstruct } from 'inversify';
 import { ILogger, ContributionProvider, MaybePromise } from '../common';
 import { CliContribution } from './cli';
@@ -46,6 +47,8 @@ const defaultHost = 'localhost';
 const defaultSSL = false;
 
 const appProjectPath = 'app-project-path';
+
+const TIMER_WARNING_THRESHOLD = 50;
 
 @injectable()
 export class BackendApplicationCliContribution implements CliContribution {
@@ -120,10 +123,30 @@ export class BackendApplication {
         // Handles `kill pid`.
         process.on('SIGTERM', () => process.exit(0));
 
+        // Create performance observer
+        new PerformanceObserver(list => {
+            for (const item of list.getEntries()) {
+                const contribution = `Backend ${item.name}`;
+                if (item.duration > TIMER_WARNING_THRESHOLD) {
+                    this.logger.warn(`${contribution} is slow, took: ${item.duration.toFixed(1)} ms`);
+                } else {
+                    this.logger.debug(`${contribution} took: ${item.duration.toFixed(1)} ms`);
+                }
+            }
+        }).observe({
+            entryTypes: ['measure']
+        });
+
+        this.initialize();
+    }
+
+    protected async initialize(): Promise<void> {
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.initialize) {
                 try {
-                    contribution.initialize();
+                    await this.measure(contribution.constructor.name + '.initialize',
+                        () => contribution.initialize!()
+                    );
                 } catch (error) {
                     this.logger.error('Could not initialize contribution', error);
                 }
@@ -132,7 +155,7 @@ export class BackendApplication {
     }
 
     @postConstruct()
-    protected init(): void {
+    protected async configure(): Promise<void> {
         this.app.get('*.js', this.serveGzipped.bind(this, 'text/javascript'));
         this.app.get('*.js.map', this.serveGzipped.bind(this, 'application/json'));
         this.app.get('*.css', this.serveGzipped.bind(this, 'text/css'));
@@ -144,7 +167,9 @@ export class BackendApplication {
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.configure) {
                 try {
-                    contribution.configure(this.app);
+                    await this.measure(contribution.constructor.name + '.configure',
+                        () => contribution.configure!(this.app)
+                    );
                 } catch (error) {
                     this.logger.error('Could not configure contribution', error);
                 }
@@ -209,10 +234,12 @@ export class BackendApplication {
         /* Allow any number of websocket servers.  */
         server.setMaxListeners(0);
 
-        for (const contrib of this.contributionsProvider.getContributions()) {
-            if (contrib.onStart) {
+        for (const contribution of this.contributionsProvider.getContributions()) {
+            if (contribution.onStart) {
                 try {
-                    await contrib.onStart(server);
+                    await this.measure(contribution.constructor.name + '.onStart',
+                        () => contribution.onStart!(server)
+                    );
                 } catch (error) {
                     this.logger.error('Could not start contribution', error);
                 }
@@ -222,6 +249,7 @@ export class BackendApplication {
     }
 
     protected onStop(): void {
+        this.logger.info('>>> Stopping backend contributions...');
         for (const contrib of this.contributionsProvider.getContributions()) {
             if (contrib.onStop) {
                 try {
@@ -231,6 +259,7 @@ export class BackendApplication {
                 }
             }
         }
+        this.logger.info('<<< All backend contributions have been stopped.');
     }
 
     protected async serveGzipped(contentType: string, req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
@@ -249,6 +278,18 @@ export class BackendApplication {
         res.set('Content-Type', contentType);
 
         next();
+    }
+
+    protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {
+        const startMark = name + '-start';
+        const endMark = name + '-end';
+        performance.mark(startMark);
+        const result = await fn();
+        performance.mark(endMark);
+        performance.measure(name, startMark, endMark);
+        // Observer should immediately log the measurement, so we can clear it
+        performance.clearMarks(name);
+        return result;
     }
 
 }
