@@ -72,14 +72,14 @@ export class PluginDeployerEntryImpl implements PluginDeployerEntry {
     }
     isFile(): boolean {
         try {
-            return fs.lstatSync(this.currentPath).isFile();
+            return fs.statSync(this.currentPath).isFile();
         } catch (e) {
             return false;
         }
     }
     isDirectory(): boolean {
         try {
-            return fs.lstatSync(this.currentPath).isDirectory();
+            return fs.statSync(this.currentPath).isDirectory();
         } catch (e) {
             return false;
         }
