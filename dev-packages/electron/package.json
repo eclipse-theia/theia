@@ -16,7 +16,6 @@
   "homepage": "https://github.com/eclipse-theia/theia",
   "bin": {
     "electron": "electron-cli.js",
-    "electron-h264-test": "electron-h264-test.js",
     "electron-codecs-test": "electron-codecs-test.js",
     "electron-replace-ffmpeg": "electron-replace-ffmpeg.js"
   },
