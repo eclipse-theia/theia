@@ -49,3 +49,13 @@
 .theia-add-icon {
 	background: var(--theia-icon-add) center center no-repeat;
 }
+
+@keyframes theia-spin {
+	100% {
+		transform:rotate(360deg);
+	}
+}
+
+.theia-animation-spin {
+	animation: theia-spin 1.5s linear infinite;
+}

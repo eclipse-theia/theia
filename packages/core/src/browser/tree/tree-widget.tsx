@@ -20,7 +20,7 @@ import { Disposable, MenuPath, SelectionService } from '../../common';
 import { Key, KeyCode, KeyModifier } from '../keyboard/keys';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { StatefulWidget } from '../shell';
-import { EXPANSION_TOGGLE_CLASS, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, Widget } from '../widgets';
+import { EXPANSION_TOGGLE_CLASS, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, Widget, BUSY_CLASS } from '../widgets';
 import { TreeNode, CompositeTreeNode } from './tree';
 import { TreeModel } from './tree-model';
 import { ExpandableTreeNode } from './tree-expansion';
@@ -218,6 +218,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.model,
             this.model.onChanged(() => this.updateRows()),
             this.model.onSelectionChanged(() => this.updateScrollToRow({ resize: false })),
+            this.model.onDidChangeBusy(() => this.update()),
             this.model.onNodeRefreshed(() => this.updateDecorations()),
             this.model.onExpansionChanged(() => this.updateDecorations()),
             this.decoratorService,
@@ -520,6 +521,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         const classes = [TREE_NODE_SEGMENT_CLASS, EXPANSION_TOGGLE_CLASS];
         if (!node.expanded) {
             classes.push(COLLAPSED_CLASS);
+        }
+        if (node.busy) {
+            classes.push(BUSY_CLASS);
         }
         const className = classes.join(' ');
         return <div
@@ -1171,6 +1175,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         if ('nextSibling' in copy) {
             delete copy.nextSibling;
+        }
+        if ('busy' in copy) {
+            delete copy.busy;
         }
         if (CompositeTreeNode.is(node)) {
             copy.children = [];

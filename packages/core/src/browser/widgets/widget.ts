@@ -33,6 +33,7 @@ export * from '@phosphor/messaging';
 export const DISABLED_CLASS = 'theia-mod-disabled';
 export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
 export const COLLAPSED_CLASS = 'theia-mod-collapsed';
+export const BUSY_CLASS = 'theia-mod-busy';
 export const SELECTED_CLASS = 'theia-mod-selected';
 export const FOCUS_CLASS = 'theia-mod-focus';
 
