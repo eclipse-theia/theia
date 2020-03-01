@@ -74,10 +74,7 @@ export class ProgressService {
     async withProgress<T>(text: string, locationId: string, task: () => Promise<T>): Promise<T> {
         const progress = await this.showProgress({ text, options: { cancelable: true, location: locationId } });
         try {
-            const result = task();
-            return result;
-        } catch (error) {
-            throw error;
+            return await task();
         } finally {
             progress.cancel();
         }

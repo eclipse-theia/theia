@@ -18,7 +18,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { Container } from 'inversify';
-import { Emitter, ILogger, Logger } from '@theia/core';
+import { Event, Emitter, ILogger, Logger } from '@theia/core';
 import {
     CompositeTreeNode, DefaultOpenerService, ExpandableTreeNode, LabelProvider, OpenerService,
     Tree, TreeNode, TreeSelectionService, TreeExpansionService, TreeExpansionServiceImpl,
@@ -37,6 +37,7 @@ import { expect } from 'chai';
 import URI from '@theia/core/lib/common/uri';
 import * as sinon from 'sinon';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { ProgressService } from '@theia/core/lib/common/progress-service';
 
 disableJSDOM();
 
@@ -113,6 +114,7 @@ const setup = () => {
     });
 };
 
+// TODO rewrite as integration tests instead of testing mocks
 describe('FileNavigatorModel', () => {
     let testContainer: Container;
 
@@ -177,12 +179,16 @@ describe('FileNavigatorModel', () => {
         testContainer.bind(TreeSearch).toConstantValue(mockTreeSearch);
         testContainer.bind(CorePreferences).toConstantValue(mockPreferences);
         testContainer.bind(FrontendApplicationStateService).toConstantValue(mockApplicationStateService);
+        testContainer.bind(ProgressService).toConstantValue(<ProgressService>{
+            withProgress: (_, __, task) => task()
+        });
 
         sinon.stub(mockWorkspaceService, 'onWorkspaceChanged').value(mockWorkspaceServiceEmitter.event);
         sinon.stub(mockWorkspaceService, 'onWorkspaceLocationChanged').value(mockWorkspaceOnLocationChangeEmitter.event);
         sinon.stub(mockFileSystemWatcher, 'onFilesChanged').value(mockFileChangeEmitter.event);
         sinon.stub(mockFileSystemWatcher, 'onDidMove').value(mockFileMoveEmitter.event);
         sinon.stub(mockFileNavigatorTree, 'onChanged').value(mockTreeChangeEmitter.event);
+        sinon.stub(mockFileNavigatorTree, 'onDidChangeBusy').value(Event.None);
         sinon.stub(mockTreeExpansionService, 'onExpansionChanged').value(mockExpansionChangeEmitter.event);
 
         setup();

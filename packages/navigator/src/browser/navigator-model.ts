@@ -21,6 +21,9 @@ import { OpenerService, open, TreeNode, ExpandableTreeNode, CompositeTreeNode, S
 import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
+import { ProgressService } from '@theia/core/lib/common/progress-service';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { Disposable } from '@theia/core/lib/common/disposable';
 
 @injectable()
 export class FileNavigatorModel extends FileTreeModel {
@@ -30,10 +33,39 @@ export class FileNavigatorModel extends FileTreeModel {
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FrontendApplicationStateService) protected readonly applicationState: FrontendApplicationStateService;
 
+    @inject(ProgressService)
+    protected readonly progressService: ProgressService;
+
     @postConstruct()
     protected init(): void {
         super.init();
+        this.reportBusyProgress();
         this.initializeRoot();
+    }
+
+    protected readonly pendingBusyProgress = new Map<string, Deferred<void>>();
+    protected reportBusyProgress(): void {
+        this.toDispose.push(this.onDidChangeBusy(node => {
+            const pending = this.pendingBusyProgress.get(node.id);
+            if (pending) {
+                if (!node.busy) {
+                    pending.resolve();
+                    this.pendingBusyProgress.delete(node.id);
+                }
+                return;
+            }
+            if (node.busy) {
+                const progress = new Deferred<void>();
+                this.pendingBusyProgress.set(node.id, progress);
+                this.progressService.withProgress('', 'explorer', () => progress.promise);
+            }
+        }));
+        this.toDispose.push(Disposable.create(() => {
+            for (const pending of this.pendingBusyProgress.values()) {
+                pending.resolve();
+            }
+            this.pendingBusyProgress.clear();
+        }));
     }
 
     protected async initializeRoot(): Promise<void> {

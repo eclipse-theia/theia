@@ -117,7 +117,7 @@ export interface TreeNode {
      */
     readonly nextSibling?: TreeNode;
     /**
-     * Whether this node is busy. Greater than 0 than busy; otherwise not.
+     * Whether this node is busy. Greater than 0 then busy; otherwise not.
      */
     readonly busy?: number;
 }

@@ -30,6 +30,10 @@ export class Deferred<T> {
     });
 }
 
+/**
+ * @returns resolves after a specified number of milliseconds
+ * @throws cancelled if a given token is cancelled before a specified number of milliseconds
+ */
 export function timeout(ms: number, token = CancellationToken.None): Promise<void> {
     const deferred = new Deferred<void>();
     const handle = setTimeout(() => deferred.resolve(), ms);
