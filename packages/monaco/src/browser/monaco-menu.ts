@@ -75,6 +75,10 @@ export class MonacoEditorMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry): void {
         for (const item of MenuRegistry.getMenuItems(7)) {
+            // todo
+            if (!item.command) {
+                continue;
+            }
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
                 const menuPath = [...EDITOR_CONTEXT_MENU, (item.group || '')];

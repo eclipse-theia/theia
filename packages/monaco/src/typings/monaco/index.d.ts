@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/// <reference types='@typefox/monaco-editor-core/monaco'/>
+/// <reference types='@theia/monaco-editor-core/monaco'/>
 
 declare module monaco.instantiation {
     export interface IInstantiationService {

@@ -70,7 +70,8 @@ export namespace MonacoCommands {
     ]);
     const iconClasses = new Map<string, string>();
     for (const menuItem of MenuRegistry.getMenuItems(7)) {
-        if (menuItem.command.iconClass) {
+        // todo
+        if (menuItem.command && menuItem.command.iconClass) {
             iconClasses.set(menuItem.command.id, menuItem.command.iconClass);
         }
     }

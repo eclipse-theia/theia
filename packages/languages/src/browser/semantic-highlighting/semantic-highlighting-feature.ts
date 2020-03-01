@@ -30,7 +30,7 @@ import { SemanticHighlight, SemanticHighlightingParams } from './semantic-highli
 // NOTE: This module can be removed, or at least can be simplified once the semantic highlighting will become the part of the LSP.
 // https://github.com/Microsoft/vscode-languageserver-node/issues/368
 
-export class SemanticHighlightFeature extends TextDocumentFeature<{}, TextDocumentRegistrationOptions> {
+export class SemanticHighlightFeature extends TextDocumentFeature<{}, TextDocumentRegistrationOptions, {}> {
 
     protected readonly languageId: string;
     protected readonly toDispose: DisposableCollection;
@@ -73,9 +73,9 @@ export class SemanticHighlightFeature extends TextDocumentFeature<{}, TextDocume
         }
     }
 
-    protected registerLanguageProvider(): Disposable {
+    protected registerLanguageProvider(): [Disposable, {}] {
         this._client.onNotification(SemanticHighlight.type, this.consumeSemanticHighlighting.bind(this));
-        return Disposable.create(() => this.toDispose.dispose());
+        return [Disposable.create(() => this.toDispose.dispose()), {}];
     }
 
     protected consumeSemanticHighlighting(params: SemanticHighlightingParams): void {

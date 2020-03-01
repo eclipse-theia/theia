@@ -8,9 +8,9 @@
     "@theia/output": "^1.0.0",
     "@theia/process": "^1.0.0",
     "@theia/workspace": "^1.0.0",
-    "@typefox/monaco-editor-core": "^0.18.0-next",
+    "@theia/monaco-editor-core": "^0.19.3",
     "@types/uuid": "^3.4.3",
-    "monaco-languageclient": "^0.10.2",
+    "monaco-languageclient": "^0.12.0",
     "uuid": "^3.2.1"
   },
   "publishConfig": {

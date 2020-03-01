@@ -109,7 +109,12 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         const input = this._input = await this.createInput(inputWidget.node);
         this.toDispose.push(input);
         this.toDispose.push(input.getControl().onDidLayoutChange(() => this.resizeContent()));
-        this.toDispose.push(input.getControl().onDidChangeConfiguration(({ fontInfo }) => fontInfo && this.updateFont()));
+
+        // todo update font if fontInfo was changed only
+        // it's impossible at the moment, but will be fixed for next upgrade of monaco version
+        // see https://github.com/microsoft/vscode/commit/5084e8ca1935698c98c163e339ca664818786c6d
+        this.toDispose.push(input.getControl().onDidChangeConfiguration(() => this.updateFont()));
+
         this.updateFont();
         if (inputFocusContextKey) {
             this.toDispose.push(input.onFocusChanged(() => inputFocusContextKey.set(this.hasInputFocus())));
@@ -121,7 +126,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected updateFont(): void {
-        const { fontFamily, fontSize, lineHeight } = this._input.getControl().getConfiguration().fontInfo;
+        const { fontFamily, fontSize, lineHeight } = this._input.getControl().getOption(monaco.editor.EditorOption.fontInfo);
         this.content.node.style.fontFamily = fontFamily;
         this.content.node.style.fontSize = fontSize + 'px';
         this.content.node.style.lineHeight = lineHeight + 'px';

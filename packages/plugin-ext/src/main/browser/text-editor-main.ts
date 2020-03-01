@@ -383,9 +383,10 @@ export class TextEditorPropertiesMain {
         let cursorStyle: TextEditorCursorStyle;
         let lineNumbers: TextEditorLineNumbersStyle;
         if (editor) {
-            const editorOptions = editor.getControl().getConfiguration();
-            cursorStyle = editorOptions.viewInfo.cursorStyle;
-            switch (editorOptions.viewInfo.renderLineNumbers) {
+            const editorOptions = editor.getControl().getOptions();
+            const lineNumbersOpts = editorOptions.get(monaco.editor.EditorOption.lineNumbers);
+            cursorStyle = editorOptions.get(monaco.editor.EditorOption.cursorStyle);
+            switch (lineNumbersOpts.renderType) {
                 case monaco.editor.RenderLineNumbersType.Off:
                     lineNumbers = TextEditorLineNumbersStyle.Off;
                     break;

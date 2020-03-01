@@ -566,6 +566,7 @@ export function fromDocumentSymbol(info: theia.DocumentSymbol): model.DocumentSy
         name: info.name,
         detail: info.detail,
         range: fromRange(info.range)!,
+        tags: info.tags ? info.tags.map(fromSymbolTag) : [],
         selectionRange: fromRange(info.selectionRange)!,
         kind: SymbolKind.fromSymbolKind(info.kind)
     };
@@ -580,10 +581,23 @@ export function toDocumentSymbol(symbol: model.DocumentSymbol): theia.DocumentSy
         name: symbol.name,
         detail: symbol.detail,
         range: toRange(symbol.range)!,
+        tags: symbol.tags && symbol.tags.length > 0 ? symbol.tags.map(toSymbolTag) : [],
         selectionRange: toRange(symbol.selectionRange)!,
         children: symbol.children ? symbol.children.map(toDocumentSymbol) : [],
         kind: SymbolKind.toSymbolKind(symbol.kind)
     };
+}
+
+export function fromSymbolTag(kind: types.SymbolTag): model.SymbolTag {
+    switch (kind) {
+        case types.SymbolTag.Deprecated: return model.SymbolTag.Deprecated;
+    }
+}
+
+export function toSymbolTag(kind: model.SymbolTag): types.SymbolTag {
+    switch (kind) {
+        case model.SymbolTag.Deprecated: return types.SymbolTag.Deprecated;
+    }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -54,7 +54,7 @@ export enum TextEditorCursorStyle {
     UnderlineThin = 6
 }
 
-export function cursorStyleToString(cursorStyle: TextEditorCursorStyle): string {
+export function cursorStyleToString(cursorStyle: TextEditorCursorStyle): 'line' | 'block' | 'underline' | 'line-thin' | 'block-outline' | 'underline-thin' {
     switch (cursorStyle) {
         case TextEditorCursorStyle.Line:
             return 'line';

@@ -43,7 +43,7 @@
     "route-parser": "^0.0.5",
     "vscode-languageserver-types": "^3.15.0-next",
     "vscode-uri": "^1.0.8",
-    "vscode-ws-jsonrpc": "^0.1.1",
+    "vscode-ws-jsonrpc": "^0.2.0",
     "ws": "^7.1.2",
     "yargs": "^11.1.0"
   },

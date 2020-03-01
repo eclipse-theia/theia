@@ -33,7 +33,7 @@ import { TypeHierarchyRequest } from './typehierarchy-protocol';
 /**
  * Text document feature for handling super- and subtype hierarchies through the LSP.
  */
-export class TypeHierarchyFeature extends TextDocumentFeature<{}, TextDocumentRegistrationOptions> {
+export class TypeHierarchyFeature extends TextDocumentFeature<{}, TextDocumentRegistrationOptions, {}> {
 
     constructor(readonly client: ILanguageClient) {
         super(client, TypeHierarchyRequest.type);
@@ -63,8 +63,7 @@ export class TypeHierarchyFeature extends TextDocumentFeature<{}, TextDocumentRe
         }
     }
 
-    protected registerLanguageProvider(): Disposable {
-        return Disposable.create(() => { /* NOOP */ });
+    protected registerLanguageProvider(): [Disposable, {}] {
+        return [Disposable.create(() => { /* NOOP */ }), {}];
     }
-
 }

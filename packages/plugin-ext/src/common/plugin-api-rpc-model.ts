@@ -136,7 +136,10 @@ export interface Completion {
     preselect?: boolean;
     insertText: string;
     insertTextRules?: CompletionItemInsertTextRule;
-    range: Range;
+    range: Range | {
+        insert: Range;
+        replace: Range;
+    };
     commitCharacters?: string[];
     additionalTextEdits?: SingleEditOperation[];
     command?: Command;
@@ -414,10 +417,15 @@ export enum SymbolKind {
     TypeParameter = 25
 }
 
+export enum SymbolTag {
+    Deprecated = 1
+}
+
 export interface DocumentSymbol {
     name: string;
     detail: string;
     kind: SymbolKind;
+    tags: ReadonlyArray<SymbolTag>;
     containerName?: string;
     range: Range;
     selectionRange: Range;
