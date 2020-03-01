@@ -58,28 +58,27 @@
 }
 
 .theia-ExpansionToggle {
-    min-width: 10px;
     display: flex;
     justify-content: center;
-    padding-left: calc(var(--theia-ui-padding)*2/3);
-    padding-right: calc(var(--theia-ui-padding)*2/3);
+    padding-left: calc(var(--theia-ui-padding)/2);
+    padding-right: calc(var(--theia-ui-padding)/2);
+    min-width: var(--theia-icon-size);
+    min-height: var(--theia-icon-size);
+    background-size: var(--theia-icon-size);
+    background: var(--theia-icon-chevron-right) center center no-repeat;
 }
 
-.theia-ExpansionToggle:hover {
+.theia-ExpansionToggle.theia-mod-busy {
+    background: var(--theia-icon-loading) center center no-repeat;
+    animation: theia-spin 1.25s linear infinite;
+}
+
+.theia-ExpansionToggle:not(.theia-mod-busy):hover {
     cursor: pointer;
 }
 
-.theia-ExpansionToggle.theia-mod-collapsed::before {
-    font-family: FontAwesome;
-    font-size: calc(var(--theia-content-font-size) * 0.8);
-    content: "\f0da";
-}
-
-.theia-ExpansionToggle:not(.theia-mod-collapsed)::before {
-    font-family: FontAwesome;
-    font-size: calc(var(--theia-content-font-size) * 0.8);
-    content: "\f0da";
-    transform: rotate(45deg);
+.theia-ExpansionToggle:not(.theia-mod-busy):not(.theia-mod-collapsed) {
+    transform: rotate(90deg);
 }
 
 .theia-Tree:focus .theia-TreeNode.theia-mod-selected,

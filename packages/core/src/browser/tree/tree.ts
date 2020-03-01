@@ -15,7 +15,11 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { Event, Emitter, Disposable, DisposableCollection, WaitUntilEvent, Mutable } from '../../common';
+import { Event, Emitter, WaitUntilEvent } from '../../common/event';
+import { Disposable, DisposableCollection } from '../../common/disposable';
+import { CancellationToken, CancellationTokenSource } from '../../common/cancellation';
+import { Mutable } from '../../common/types';
+import { timeout } from '../../common/promise-util';
 
 export const Tree = Symbol('Tree');
 
@@ -57,6 +61,15 @@ export interface Tree extends Disposable {
      * Emit when the children of the given node are refreshed.
      */
     readonly onNodeRefreshed: Event<Readonly<CompositeTreeNode> & WaitUntilEvent>;
+    /**
+     * Emits when the busy state of the given node is changed.
+     */
+    readonly onDidChangeBusy: Event<TreeNode>;
+    /**
+     * Marks the give node as busy after a specified number of milliseconds.
+     * A token source of the given token should be canceled to unmark.
+     */
+    markAsBusy(node: Readonly<TreeNode>, ms: number, token: CancellationToken): Promise<void>;
 }
 
 /**
@@ -103,6 +116,10 @@ export interface TreeNode {
      * A next sibling of this tree node.
      */
     readonly nextSibling?: TreeNode;
+    /**
+     * Whether this node is busy. Greater than 0 than busy; otherwise not.
+     */
+    readonly busy?: number;
 }
 
 export namespace TreeNode {
@@ -219,6 +236,9 @@ export class TreeImpl implements Tree {
     protected readonly onNodeRefreshedEmitter = new Emitter<CompositeTreeNode & WaitUntilEvent>();
     protected readonly toDispose = new DisposableCollection();
 
+    protected readonly onDidChangeBusyEmitter = new Emitter<TreeNode>();
+    readonly onDidChangeBusy = this.onDidChangeBusyEmitter.event;
+
     protected nodes: {
         [id: string]: Mutable<TreeNode> | undefined
     } = {};
@@ -226,6 +246,7 @@ export class TreeImpl implements Tree {
     constructor() {
         this.toDispose.push(this.onChangedEmitter);
         this.toDispose.push(this.onNodeRefreshedEmitter);
+        this.toDispose.push(this.onDidChangeBusyEmitter);
     }
 
     dispose(): void {
@@ -274,9 +295,15 @@ export class TreeImpl implements Tree {
         const parent = !raw ? this._root : this.validateNode(raw);
         let result: CompositeTreeNode | undefined;
         if (CompositeTreeNode.is(parent)) {
-            result = parent;
-            const children = await this.resolveChildren(parent);
-            result = await this.setChildren(parent, children);
+            const busySource = new CancellationTokenSource();
+            this.doMarkAsBusy(parent, 800, busySource.token);
+            try {
+                result = parent;
+                const children = await this.resolveChildren(parent);
+                result = await this.setChildren(parent, children);
+            } finally {
+                busySource.cancel();
+            }
         }
         this.fireChanged();
         return result;
@@ -327,6 +354,31 @@ export class TreeImpl implements Tree {
                 this.addNode(child);
             });
         }
+    }
+
+    async markAsBusy(raw: TreeNode, ms: number, token: CancellationToken): Promise<void> {
+        const node = this.validateNode(raw);
+        if (node) {
+            await this.markAsBusy(node, ms, token);
+        }
+    }
+    protected async doMarkAsBusy(node: Mutable<TreeNode>, ms: number, token: CancellationToken): Promise<void> {
+        try {
+            await timeout(ms, token);
+            this.doSetBusy(node, true);
+            token.onCancellationRequested(() => this.doSetBusy(node, false));
+        } catch {
+            /* no-op */
+        }
+    }
+    protected doSetBusy(node: Mutable<TreeNode>, busy: boolean): void {
+        const oldBusy = node.busy || 0;
+        const newBusy = oldBusy + (busy ? 1 : oldBusy ? -1 : 0);
+        if (!!oldBusy === !!newBusy) {
+            return;
+        }
+        node.busy = newBusy;
+        this.onDidChangeBusyEmitter.fire(node);
     }
 
 }

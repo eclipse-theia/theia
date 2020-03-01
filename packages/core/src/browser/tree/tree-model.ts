@@ -15,7 +15,11 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { DisposableCollection, Event, Emitter, SelectionProvider, ILogger, WaitUntilEvent } from '../../common';
+import { Event, Emitter, WaitUntilEvent } from '../../common/event';
+import { DisposableCollection } from '../../common/disposable';
+import { CancellationToken } from '../../common/cancellation';
+import { ILogger } from '../../common/logger';
+import { SelectionProvider, } from '../../common/selection-service';
 import { Tree, TreeNode, CompositeTreeNode } from './tree';
 import { TreeSelectionService, SelectableTreeNode, TreeSelection } from './tree-selection';
 import { TreeExpansionService, ExpandableTreeNode } from './tree-expansion';
@@ -130,7 +134,6 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
      * If no node was selected previously, invoking this method does nothing.
      */
     selectRange(node: Readonly<SelectableTreeNode>): void;
-
 }
 
 @injectable()
@@ -429,6 +432,14 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         if (state.selection) {
             this.selectionService.restoreState(state.selection);
         }
+    }
+
+    get onDidChangeBusy(): Event<TreeNode> {
+        return this.tree.onDidChangeBusy;
+    }
+
+    markAsBusy(node: Readonly<TreeNode>, ms: number, token: CancellationToken): Promise<void> {
+        return this.tree.markAsBusy(node, ms, token);
     }
 
 }

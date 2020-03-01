@@ -54,6 +54,8 @@ is not optimized for dense, information rich UIs.
   --theia-ui-padding: 6px;
 
   /* Icons */
+  --theia-icon-chevron-right: url(../icons/chevron-right-light.svg);
+  --theia-icon-loading: url(../icons/loading-light.svg);
   --theia-icon-close: url(../icons/close-bright.svg);
   --theia-icon-arrow-up: url(../icons/arrow-up-bright.svg);
   --theia-icon-arrow-down: url(../icons/arrow-down-bright.svg);

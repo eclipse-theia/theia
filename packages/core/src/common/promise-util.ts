@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { CancellationToken, cancelled } from './cancellation';
+
 /**
  * Simple implementation of the deferred pattern.
  * An object that exposes a promise and functions to resolve and reject it.
@@ -26,4 +28,14 @@ export class Deferred<T> {
         this.resolve = resolve;
         this.reject = reject;
     });
+}
+
+export function timeout(ms: number, token = CancellationToken.None): Promise<void> {
+    const deferred = new Deferred<void>();
+    const handle = setTimeout(() => deferred.resolve(), ms);
+    token.onCancellationRequested(() => {
+        clearTimeout(handle);
+        deferred.reject(cancelled());
+    });
+    return deferred.promise;
 }
