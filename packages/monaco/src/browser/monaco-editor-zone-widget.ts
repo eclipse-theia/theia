@@ -21,7 +21,7 @@
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core';
 
 export interface MonacoEditorViewZone extends monaco.editor.IViewZone {
-    id: number
+    id: string;
 }
 
 export class MonacoEditorZoneWidget implements Disposable {
@@ -66,7 +66,7 @@ export class MonacoEditorZoneWidget implements Disposable {
 
     show(options: MonacoEditorZoneWidget.Options): void {
         let { afterLineNumber, afterColumn, heightInLines } = this._options = { showFrame: true, ...options };
-        const lineHeight = this.editor.getConfiguration().lineHeight;
+        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
         const maxHeightInLines = (this.editor.getLayoutInfo().height / lineHeight) * .8;
         if (heightInLines >= maxHeightInLines) {
             heightInLines = maxHeightInLines;
@@ -140,7 +140,7 @@ export class MonacoEditorZoneWidget implements Disposable {
         height: number,
         frameWidth: number
     } {
-        const lineHeight = this.editor.getConfiguration().lineHeight;
+        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
         const frameWidth = this._options && this._options.frameWidth;
         const frameThickness = this._options && this._options.showFrame ? Math.round(lineHeight / 9) : 0;
         return {

@@ -158,10 +158,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
                 if (!help) {
                     return undefined;
                 }
-                return {
-                    value: this.p2m.asSignatureHelp(help),
-                    dispose: () => { }
-                };
+                return this.p2m.asSignatureHelpResult(help);
             }
         };
     }
@@ -177,10 +174,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
                 if (!actions) {
                     return undefined!;
                 }
-                return {
-                    actions: this.p2m.asCodeActions(actions),
-                    dispose: () => { }
-                };
+                return this.p2m.asCodeActionList(actions);
             }
         };
     }
@@ -196,10 +190,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
                 if (!lenses) {
                     return undefined;
                 }
-                return {
-                    lenses: this.p2m.asCodeLenses(lenses),
-                    dispose: () => { }
-                };
+                return this.p2m.asCodeLensList(lenses);
             },
             resolveCodeLens: provider.resolveCodeLens ? async (model, codeLens, token) => {
                 if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
