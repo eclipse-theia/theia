@@ -56,7 +56,10 @@ export default new ContainerModule(bind => {
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: EXPLORER_VIEW_CONTAINER_ID,
         createWidget: async () => {
-            const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({ id: EXPLORER_VIEW_CONTAINER_ID });
+            const viewContainer = container.get<ViewContainer.Factory>(ViewContainer.Factory)({
+                id: EXPLORER_VIEW_CONTAINER_ID,
+                progressLocationId: 'explorer'
+            });
             viewContainer.setTitleOptions(EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS);
             const widget = await container.get(WidgetManager).getOrCreateWidget(FILE_NAVIGATOR_ID);
             viewContainer.addWidget(widget, {
