@@ -831,16 +831,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-                placeholder: 'Select File Icon Theme',
-                fuzzyMatchLabel: true,
-                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-                onClose: () => {
-                    if (resetTo) {
-                        previewTheme.cancel();
-                        this.iconThemes.current = resetTo;
-                    }
+            placeholder: 'Select File Icon Theme',
+            fuzzyMatchLabel: true,
+            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+            onClose: () => {
+                if (resetTo) {
+                    previewTheme.cancel();
+                    this.iconThemes.current = resetTo;
                 }
-            });
+            }
+        });
     }
 
     protected selectColorTheme(): void {
@@ -870,19 +870,19 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-                placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
-                fuzzyMatchLabel: true,
-                selectIndex: () => {
-                    const current = this.themeService.getCurrentTheme().id;
-                    return items.findIndex(item => item.id === current);
-                },
-                onClose: () => {
-                    if (resetTo) {
-                        previewTheme.cancel();
-                        this.themeService.setCurrentTheme(resetTo);
-                    }
+            placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
+            fuzzyMatchLabel: true,
+            selectIndex: () => {
+                const current = this.themeService.getCurrentTheme().id;
+                return items.findIndex(item => item.id === current);
+            },
+            onClose: () => {
+                if (resetTo) {
+                    previewTheme.cancel();
+                    this.themeService.setCurrentTheme(resetTo);
                 }
-            });
+            }
+        });
     }
 
     registerColors(colors: ColorRegistry): void {
@@ -918,13 +918,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: '#2C2C2C',
                     hc: '#000000'
                 }, description: 'Activity bar background color. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
-            }, {
+            },
+            {
                 id: 'activityBar.foreground', defaults: {
                     dark: Color.white,
                     light: Color.white,
                     hc: Color.white
                 }, description: 'Activity bar item foreground color when it is active. The activity bar is showing on the far left or right and allows to switch between views of the side bar.',
-            }, {
+            },
+            {
                 id: 'activityBar.inactiveForeground', defaults: {
                     dark: Color.transparent('activityBar.foreground', 0.4),
                     light: Color.transparent('activityBar.foreground', 0.4),
@@ -1123,7 +1125,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'tab.hoverBackground',
                 description: 'Tab background color when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
-            }, {
+            },
+            {
                 id: 'tab.unfocusedHoverBackground', defaults: {
                     dark: Color.transparent('tab.hoverBackground', 0.5),
                     light: Color.transparent('tab.hoverBackground', 0.7)
@@ -1132,7 +1135,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'tab.hoverBorder',
                 description: 'Border to highlight tabs when hovering. Tabs are the containers for editors in the editor area. Multiple tabs can be opened in one editor group. There can be multiple editor groups.'
-            }, {
+            },
+            {
                 id: 'tab.unfocusedHoverBorder', defaults: {
                     dark: Color.transparent('tab.hoverBorder', 0.5),
                     light: Color.transparent('tab.hoverBorder', 0.7)
@@ -1293,18 +1297,21 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: Color.transparent('titleBar.activeForeground', 0.6),
                     light: Color.transparent('titleBar.activeForeground', 0.6)
                 }, description: 'Title bar foreground when the window is inactive. Note that this color is currently only supported on macOS.'
-            }, {
+            },
+            {
                 id: 'titleBar.activeBackground', defaults: {
                     dark: '#3C3C3C',
                     light: '#DDDDDD',
                     hc: '#000000'
                 }, description: 'Title bar background when the window is active. Note that this color is currently only supported on macOS.'
-            }, {
+            },
+            {
                 id: 'titleBar.inactiveBackground', defaults: {
                     dark: Color.transparent('titleBar.activeBackground', 0.6),
                     light: Color.transparent('titleBar.activeBackground', 0.6)
                 }, description: 'Title bar background when the window is inactive. Note that this color is currently only supported on macOS.'
-            }, {
+            },
+            {
                 id: 'titleBar.border', defaults: {
                     hc: 'contrastBorder'
                 }, description: 'Title bar border color. Note that this color is currently only supported on macOS.'
@@ -1317,12 +1324,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: 'titleBar.activeForeground',
                     hc: 'titleBar.activeForeground'
                 }, description: 'Foreground color of the selected menu item in the menubar.'
-            }, {
+            },
+            {
                 id: 'menubar.selectionBackground', defaults: {
                     dark: Color.transparent('#ffffff', 0.1),
                     light: Color.transparent('#000000', 0.1)
                 }, description: 'Background color of the selected menu item in the menubar.'
-            }, {
+            },
+            {
                 id: 'menubar.selectionBorder', defaults: {
                     hc: 'activeContrastBorder'
                 }, description: 'Border color of the selected menu item in the menubar.'
@@ -1331,16 +1340,19 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 id: 'menu.border', defaults: {
                     hc: 'contrastBorder'
                 }, description: 'Border color of menus.'
-            }, {
+            },
+            {
                 id: 'menu.foreground', defaults: {
                     dark: 'dropdown.foreground', light: 'foreground', hc: 'dropdown.foreground'
                 },
                 description: 'Foreground color of menu items.'
-            }, {
+            },
+            {
                 id: 'menu.background', defaults: {
                     dark: 'dropdown.background', light: 'dropdown.background', hc: 'dropdown.background'
                 }, description: 'Background color of menu items.'
-            }, {
+            },
+            {
                 id: 'menu.selectionForeground', defaults: {
                     dark: 'list.activeSelectionForeground', light: 'list.activeSelectionForeground', hc: 'list.activeSelectionForeground'
                 }, description: 'Foreground color of the selected menu item in menus.'
@@ -1373,17 +1385,20 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 id: 'settings.headerForeground', defaults: {
                     light: '#444444', dark: '#e7e7e7', hc: '#ffffff'
                 }, description: 'The foreground color for a section header or active title.'
-            }, {
+            },
+            {
                 id: 'settings.modifiedItemIndicator', defaults: {
                     light: Color.rgba(102, 175, 224),
                     dark: Color.rgba(12, 125, 157),
                     hc: Color.rgba(0, 73, 122)
                 }, description: 'The color of the modified setting indicator.'
-            }, {
+            },
+            {
                 id: 'settings.dropdownBackground', defaults:
                     { dark: 'dropdown.background', light: 'dropdown.background', hc: 'dropdown.background' },
                 description: 'Settings editor dropdown background.'
-            }, {
+            },
+            {
                 id: 'settings.dropdownForeground', defaults: {
                     dark: 'dropdown.foreground', light: 'dropdown.foreground', hc: 'dropdown.foreground'
                 }, description: 'Settings editor dropdown foreground.'
@@ -1402,32 +1417,39 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 id: 'settings.checkboxBackground', defaults: {
                     dark: 'checkbox.background', light: 'checkbox.background', hc: 'checkbox.background'
                 }, description: 'Settings editor checkbox background.'
-            }, {
+            },
+            {
                 id: 'settings.checkboxForeground', defaults: {
                     dark: 'checkbox.foreground', light: 'checkbox.foreground', hc: 'checkbox.foreground'
                 }, description: 'Settings editor checkbox foreground.'
-            }, {
+            },
+            {
                 id: 'settings.checkboxBorder', defaults:
                 {
                     dark: 'checkbox.border', light: 'checkbox.border', hc: 'checkbox.border'
                 }, description: 'Settings editor checkbox border.'
-            }, {
+            },
+            {
                 id: 'settings.textInputBackground', defaults: {
                     dark: 'input.background', light: 'input.background', hc: 'input.background'
                 }, description: 'Settings editor text input box background.'
-            }, {
+            },
+            {
                 id: 'settings.textInputForeground', defaults: {
                     dark: 'input.foreground', light: 'input.foreground', hc: 'input.foreground'
                 }, description: 'Settings editor text input box foreground.'
-            }, {
+            },
+            {
                 id: 'settings.textInputBorder', defaults: {
                     dark: 'input.border', light: 'input.border', hc: 'input.border'
                 }, description: 'Settings editor text input box border.'
-            }, {
+            },
+            {
                 id: 'settings.numberInputBackground', defaults: {
                     dark: 'input.background', light: 'input.background', hc: 'input.background'
                 }, description: 'Settings editor number input box background.'
-            }, {
+            },
+            {
                 id: 'settings.numberInputForeground', defaults: {
                     dark: 'input.foreground', light: 'input.foreground', hc: 'input.foreground'
                 }, description: 'Settings editor number input box foreground.'
