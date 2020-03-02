@@ -163,7 +163,8 @@ export class MonacoEditorProvider {
      */
     protected suppressMonacoKeybindingListener(editor: MonacoEditor): void {
         let keydownListener: monaco.IDisposable | undefined;
-        for (const listener of editor.getControl()._standaloneKeybindingService._store._toDispose) {
+        const keybindingService = editor.getControl()._standaloneKeybindingService;
+        for (const listener of keybindingService._store._toDispose) {
             if ('_type' in listener && listener['_type'] === 'keydown') {
                 keydownListener = listener;
                 break;
@@ -353,8 +354,10 @@ export class MonacoEditorProvider {
     protected installReferencesController(editor: MonacoEditor): void {
         const control = editor.getControl();
         const referencesController = control._contributions['editor.contrib.referencesController'];
-        referencesController._gotoReference = ref => {
-            referencesController._widget.hide();
+        referencesController._gotoReference = async ref => {
+            if (referencesController._widget) {
+                referencesController._widget.hide();
+            }
 
             referencesController._ignoreModelChangeEvent = true;
             const range = monaco.Range.lift(ref.range).collapseToStart();
@@ -385,9 +388,7 @@ export class MonacoEditorProvider {
 
                     const modelPromise = Promise.resolve(model) as any;
                     modelPromise.cancel = () => { };
-                    openedEditor._contributions['editor.contrib.referencesController'].toggleWidget(range, modelPromise, {
-                        getMetaTitle: m => m.references.length > 1 ? ` – ${m.references.length} references` : ''
-                    });
+                    openedEditor._contributions['editor.contrib.referencesController'].toggleWidget(range, modelPromise, true);
                     return;
                 }
 
