@@ -47,8 +47,9 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
     private readonly TERMINAL = 'Terminal';
+    protected terminalKind = 'user';
+    protected _terminalId = -1;
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
-    protected terminalId = -1;
     protected fitAddon: FitAddon;
     protected term: Terminal;
     protected searchBox: TerminalSearchWidget;
@@ -75,13 +76,19 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected readonly onDidOpenEmitter = new Emitter<void>();
     readonly onDidOpen: Event<void> = this.onDidOpenEmitter.event;
 
+    protected readonly onDidOpenFailureEmitter = new Emitter<void>();
+    readonly onDidOpenFailure: Event<void> = this.onDidOpenFailureEmitter.event;
+
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
     @postConstruct()
     protected init(): void {
-        this.title.caption = this.options.title || this.TERMINAL;
-        this.title.label = this.options.title || this.TERMINAL;
+        this.setTitle(this.options.title || this.TERMINAL);
         this.title.iconClass = 'fa fa-terminal';
+
+        if (this.options.kind) {
+            this.terminalKind = this.options.kind;
+        }
 
         if (this.options.destroyTermOnClose === true) {
             this.toDispose.push(Disposable.create(() =>
@@ -190,6 +197,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }));
         this.toDispose.push(this.onTermDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
+        this.toDispose.push(this.onDidOpenFailureEmitter);
 
         const touchEndListener = (event: TouchEvent) => {
             if (this.node.contains(event.target as Node)) {
@@ -213,6 +221,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.searchBox = this.terminalSearchBoxFactory(this.term);
         this.toDispose.push(this.searchBox);
+    }
+
+    get kind(): 'user' | string {
+        return this.terminalKind;
     }
 
     /**
@@ -273,6 +285,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.shellTerminalServer.getProcessId(this.terminalId);
     }
 
+    get terminalId(): number {
+        return this._terminalId;
+    }
+
     get lastTouchEndEvent(): TouchEvent | undefined {
         return this.lastTouchEnd;
     }
@@ -310,13 +326,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
      * If id is provided attach to the terminal for this id.
      */
     async start(id?: number): Promise<number> {
-        this.terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
+        this._terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
         this.resizeTerminalProcess();
         this.connectTerminalProcess();
         if (IBaseTerminalServer.validateId(this.terminalId)) {
             this.onDidOpenEmitter.fire(undefined);
             return this.terminalId;
         }
+        this.onDidOpenFailureEmitter.fire(undefined);
         throw new Error('Failed to start terminal' + (id ? ` for id: ${id}.` : '.'));
     }
 
@@ -326,7 +343,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return terminalId;
         }
         this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
-        return this.createTerminal();
+        if (this.kind === 'user') {
+            return this.createTerminal();
+        } else {
+            return -1;
+        }
     }
 
     protected async createTerminal(): Promise<number> {
@@ -411,7 +432,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
-        this.term.reset();
         const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
@@ -490,12 +510,24 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.scrollToTop();
     }
 
+    scrollToBottom(): void {
+        this.term.scrollToBottom();
+    }
+
     scrollPageUp(): void {
         this.term.scrollPages(-1);
     }
 
     scrollPageDown(): void {
         this.term.scrollPages(1);
+    }
+
+    resetTerminal(): void {
+        this.term.reset();
+    }
+
+    writeLine(text: string): void {
+        this.term.writeln(text);
     }
 
     get onTerminalDidClose(): Event<TerminalWidget> {
@@ -508,7 +540,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
             this.shellTerminalServer.close(this.terminalId);
             this.onTermDidClose.fire(this);
-            this.onTermDidClose.dispose();
         }
         super.dispose();
     }
@@ -558,4 +589,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.attachCustomKeyEventHandler(e => this.customKeyHandler(e));
     }
 
+    setTitle(title: string): void {
+        this.title.caption = title;
+        this.title.label = title;
+    }
 }

@@ -162,6 +162,7 @@ export class TaskSchemaUpdater {
                 customizedDetectedTask.properties![taskProp] = { ...def.properties.schema.properties![taskProp] };
             });
             customizedDetectedTask.properties!.problemMatcher = problemMatcher;
+            customizedDetectedTask.properties!.presentation = presentation;
             customizedDetectedTask.properties!.options = commandOptionsSchema;
             customizedDetectedTask.properties!.group = group;
             customizedDetectedTask.additionalProperties = true;
@@ -538,7 +539,8 @@ const presentation: IJSONSchema = {
     type: 'object',
     default: {
         reveal: 'always',
-        focus: false
+        focus: false,
+        panel: 'shared'
     },
     description: 'Configures the panel that is used to present the task\'s output and reads its input.',
     additionalProperties: true,
@@ -558,6 +560,18 @@ const presentation: IJSONSchema = {
             ],
             default: 'always',
             description: 'Controls whether the terminal running the task is revealed or not. May be overridden by option \"revealProblems\". Default is \"always\".'
+        },
+        panel: {
+            type: 'string',
+            enum: ['shared', 'dedicated', 'new'],
+            enumDescriptions: [
+                'The terminal is shared and the output of other task runs are added to the same terminal.',
+                // eslint-disable-next-line max-len
+                'The terminal is dedicated to a specific task. If that task is executed again, the terminal is reused. However, the output of a different task is presented in a different terminal.',
+                'Every execution of that task is using a new clean terminal.'
+            ],
+            default: 'shared',
+            description: 'Controls if the panel is shared between tasks, dedicated to this task or a new one is created on every run.'
         }
     }
 };

@@ -46,8 +46,12 @@ export class BaseWidget extends Widget {
     readonly onScrollUp: Event<void> = this.onScrollUpEmitter.event;
     protected readonly onDidChangeVisibilityEmitter = new Emitter<boolean>();
     readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
+    protected readonly onDidDisposeEmitter = new Emitter<void>();
+    readonly onDidDispose = this.onDidDisposeEmitter.event;
 
     protected readonly toDispose = new DisposableCollection(
+        this.onDidDisposeEmitter,
+        Disposable.create(() => this.onDidDisposeEmitter.fire()),
         this.onScrollYReachEndEmitter,
         this.onScrollUpEmitter,
         this.onDidChangeVisibilityEmitter
