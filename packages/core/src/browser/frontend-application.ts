@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, ILogger, isOSX } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, isOSX } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from './widgets';
@@ -100,7 +100,6 @@ export class FrontendApplication {
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
         @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry,
         @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry,
-        @inject(ILogger) protected readonly logger: ILogger,
         @inject(ShellLayoutRestorer) protected readonly layoutRestorer: ShellLayoutRestorer,
         @inject(ContributionProvider) @named(FrontendApplicationContribution)
         protected readonly contributions: ContributionProvider<FrontendApplicationContribution>,
@@ -265,10 +264,10 @@ export class FrontendApplication {
             return await this.layoutRestorer.restoreLayout(this);
         } catch (error) {
             if (ApplicationShellLayoutMigrationError.is(error)) {
-                this.logger.warn(error.message);
-                this.logger.info('Initializing the default layout instead...');
+                console.warn(error.message);
+                console.info('Initializing the default layout instead...');
             } else {
-                this.logger.error('Could not restore layout', error);
+                console.error('Could not restore layout', error);
             }
             return false;
         }
@@ -309,7 +308,7 @@ export class FrontendApplication {
                         () => contribution.initialize!()
                     );
                 } catch (error) {
-                    this.logger.error('Could not initialize contribution', error);
+                    console.error('Could not initialize contribution', error);
                 }
             }
         }
@@ -321,7 +320,7 @@ export class FrontendApplication {
                         () => contribution.configure!(this)
                     );
                 } catch (error) {
-                    this.logger.error('Could not configure contribution', error);
+                    console.error('Could not configure contribution', error);
                 }
             }
         }
@@ -347,7 +346,7 @@ export class FrontendApplication {
                         () => contribution.onStart!(this)
                     );
                 } catch (error) {
-                    this.logger.error('Could not start contribution', error);
+                    console.error('Could not start contribution', error);
                 }
             }
         }
@@ -357,17 +356,17 @@ export class FrontendApplication {
      * Stop the frontend application contributions. This is called when the window is unloaded.
      */
     protected stopContributions(): void {
-        this.logger.info('>>> Stopping frontend contributions...');
+        console.info('>>> Stopping frontend contributions...');
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onStop) {
                 try {
                     contribution.onStop(this);
                 } catch (error) {
-                    this.logger.error('Could not stop contribution', error);
+                    console.error('Could not stop contribution', error);
                 }
             }
         }
-        this.logger.info('<<< All frontend contributions have been stopped.');
+        console.info('<<< All frontend contributions have been stopped.');
     }
 
     protected async measure<T>(name: string, fn: () => MaybePromise<T>): Promise<T> {
@@ -380,9 +379,9 @@ export class FrontendApplication {
         for (const item of performance.getEntriesByName(name)) {
             const contribution = `Frontend ${item.name}`;
             if (item.duration > TIMER_WARNING_THRESHOLD) {
-                this.logger.warn(`${contribution} is slow, took: ${item.duration.toFixed(1)} ms`);
+                console.warn(`${contribution} is slow, took: ${item.duration.toFixed(1)} ms`);
             } else {
-                this.logger.debug(`${contribution} took: ${item.duration.toFixed(1)} ms`);
+                console.debug(`${contribution} took: ${item.duration.toFixed(1)} ms`);
             }
         }
         performance.clearMeasures(name);

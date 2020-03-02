@@ -22,7 +22,7 @@ import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
 import { performance, PerformanceObserver } from 'perf_hooks';
 import { inject, named, injectable, postConstruct } from 'inversify';
-import { ILogger, ContributionProvider, MaybePromise } from '../common';
+import { ContributionProvider, MaybePromise } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
@@ -104,14 +104,13 @@ export class BackendApplication {
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
-        @inject(BackendApplicationCliContribution) protected readonly cliParams: BackendApplicationCliContribution,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(BackendApplicationCliContribution) protected readonly cliParams: BackendApplicationCliContribution
     ) {
         process.on('uncaughtException', error => {
             if (error) {
-                logger.error('Uncaught Exception: ', error.toString());
+                console.error('Uncaught Exception: ', error.toString());
                 if (error.stack) {
-                    logger.error(error.stack);
+                    console.error(error.stack);
                 }
             }
         });
@@ -128,9 +127,9 @@ export class BackendApplication {
             for (const item of list.getEntries()) {
                 const contribution = `Backend ${item.name}`;
                 if (item.duration > TIMER_WARNING_THRESHOLD) {
-                    this.logger.warn(`${contribution} is slow, took: ${item.duration.toFixed(1)} ms`);
+                    console.warn(`${contribution} is slow, took: ${item.duration.toFixed(1)} ms`);
                 } else {
-                    this.logger.debug(`${contribution} took: ${item.duration.toFixed(1)} ms`);
+                    console.debug(`${contribution} took: ${item.duration.toFixed(1)} ms`);
                 }
             }
         }).observe({
@@ -148,7 +147,7 @@ export class BackendApplication {
                         () => contribution.initialize!()
                     );
                 } catch (error) {
-                    this.logger.error('Could not initialize contribution', error);
+                    console.error('Could not initialize contribution', error);
                 }
             }
         }
@@ -171,7 +170,7 @@ export class BackendApplication {
                         () => contribution.configure!(this.app)
                     );
                 } catch (error) {
-                    this.logger.error('Could not configure contribution', error);
+                    console.error('Could not configure contribution', error);
                 }
             }
         }
@@ -203,14 +202,14 @@ export class BackendApplication {
             try {
                 key = await fs.readFile(this.cliParams.certkey as string);
             } catch (err) {
-                await this.logger.error("Can't read certificate key");
+                console.error("Can't read certificate key");
                 throw err;
             }
 
             try {
                 cert = await fs.readFile(this.cliParams.cert as string);
             } catch (err) {
-                await this.logger.error("Can't read certificate");
+                console.error("Can't read certificate");
                 throw err;
             }
             server = https.createServer({ key, cert }, this.app);
@@ -227,7 +226,7 @@ export class BackendApplication {
 
         server.listen(port, hostname, () => {
             const scheme = this.cliParams.ssl ? 'https' : 'http';
-            this.logger.info(`Theia app listening on ${scheme}://${hostname || 'localhost'}:${(server.address() as AddressInfo).port}.`);
+            console.info(`Theia app listening on ${scheme}://${hostname || 'localhost'}:${(server.address() as AddressInfo).port}.`);
             deferred.resolve(server);
         });
 
@@ -241,7 +240,7 @@ export class BackendApplication {
                         () => contribution.onStart!(server)
                     );
                 } catch (error) {
-                    this.logger.error('Could not start contribution', error);
+                    console.error('Could not start contribution', error);
                 }
             }
         }
@@ -249,17 +248,17 @@ export class BackendApplication {
     }
 
     protected onStop(): void {
-        this.logger.info('>>> Stopping backend contributions...');
+        console.info('>>> Stopping backend contributions...');
         for (const contrib of this.contributionsProvider.getContributions()) {
             if (contrib.onStop) {
                 try {
                     contrib.onStop(this.app);
                 } catch (error) {
-                    this.logger.error('Could not stop contribution', error);
+                    console.error('Could not stop contribution', error);
                 }
             }
         }
-        this.logger.info('<<< All backend contributions have been stopped.');
+        console.info('<<< All backend contributions have been stopped.');
     }
 
     protected async serveGzipped(contentType: string, req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
