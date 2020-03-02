@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>THEIA - EDITOR EXTENSION</h2>
+<h2>THEIA - SCM-EXTRA EXTENSION</h2>
 
 <hr />
 
@@ -12,11 +12,13 @@
 
 ## Description
 
-The `@theia/editor` extension contributed functionality such as the `editor` widget, menu, keybindings, and navigation.
+The `@theia/scm-extra` extension contributes additional functionality compared to the base `@theia/scm` extension.
+This includes:
+- `SCM History`: a dedicated view to visualize a repository's commit history.
 
 ## Additional Information
 
-- [API documentation for `@theia/editor`](https://eclipse-theia.github.io/theia/docs/next/modules/editor.html)
+- [API documentation for `@theia/scm-extra`](https://eclipse-theia.github.io/theia/docs/next/modules/scm_extra.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

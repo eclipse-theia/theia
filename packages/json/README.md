@@ -1,8 +1,18 @@
-## JSON Extension for Theia
+<div align='center'>
 
-## Capabilities
+<br />
 
-The JSON extension supports the following features:
+<img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
+
+<h2>THEIA - JSON EXTENSION</h2>
+
+<hr />
+
+</div>
+
+## Description
+
+The `@theia/json` extension contributes the following features:
 - Syntax Coloring for JSON including support for jsonc (i.e. comments)
 - [Code completion](https://microsoft.github.io/language-server-protocol/specification#textDocument_completion) for JSON properties and values based on the document's [JSON schema](http://json-schema.org/) or based on existing properties and values used at other places in the document. JSON schemas are configured through the server configuration options.
 - [Hover](https://microsoft.github.io/language-server-protocol/specification#textDocument_hover) for values based on descriptions in the document's [JSON schema](http://json-schema.org/).
@@ -14,8 +24,6 @@ The JSON extension supports the following features:
    - structural validation based on the document's [JSON schema](http://json-schema.org/).
 
 In order to load JSON schemas, the JSON server uses NodeJS `http` and `fs` modules. For all other features, the JSON server only relies on the documents and settings provided by the client through the LSP.
-
-## Configuration
 
 ### Settings
 
@@ -107,3 +115,22 @@ The server will, as a response, clear the schema content from the cache and relo
 Notification:
 - method: 'json/schemaContent'
 - params: `string` the URL of the schema that has changed.
+
+## Additional Information
+
+- [API documentation for `@theia/json`](https://eclipse-theia.github.io/theia/docs/next/modules/json.html)
+- [Theia - GitHub](https://github.com/eclipse-theia/theia)
+- [Theia - Website](https://theia-ide.org/)
+
+## License
+
+- [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+
+## Trademark
+"Theia" is a trademark of the Eclipse Foundation
+https://www.eclipse.org/theia
+
+
+
+

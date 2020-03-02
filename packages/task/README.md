@@ -1,6 +1,18 @@
-# Theia - Task Extension
+<div align='center'>
 
-This extension permits executing scripts or binaries in Theia's backend.
+<br />
+
+<img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
+
+<h2>THEIA - TASK EXTENSION</h2>
+
+<hr />
+
+</div>
+
+## Description
+
+The `@theia/task` extension extension permits executing scripts or binaries in the application's backend.
 
 Tasks launch configurations can be defined independently for each workspace, under `.theia/tasks.json`. When present, they are automatically picked-up when a client opens a workspace, and watches for changes. A task can be executed by triggering the "Run Task" command (shortcut F1). A list of known tasks will then be available, one of which can be selected to trigger execution.
 
@@ -165,6 +177,17 @@ export interface TaskRunnerContribution {
 }
 ```
 
+## Additional Information
+
+- [API documentation for `@theia/task`](https://eclipse-theia.github.io/theia/docs/next/modules/task.html)
+- [Theia - GitHub](https://github.com/eclipse-theia/theia)
+- [Theia - Website](https://theia-ide.org/)
+
 ## License
+
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+
+## Trademark
+"Theia" is a trademark of the Eclipse Foundation
+https://www.eclipse.org/theia

@@ -1,8 +1,20 @@
-# Theia - Variable Resolver Extension
+<div align='center'>
 
-The extension provides variable substitution mechanism inside of strings using `${variableName}` syntax.
+<br />
 
-## Variable Contribution Point
+<img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
+
+<h2>THEIA - VARIABLE-RESOLVER EXTENSION</h2>
+
+<hr />
+
+</div>
+
+## Description
+
+The `@theia/variable-resolved` extension provides variable substitution mechanism inside of strings using `${variableName}` syntax.
+
+### Variable Contribution Point
 Extension provides a hook that allows any extensions to contribute its own variables.
 Here's the example of contributing two variables:
 - `${file}` - returns the name of the file opened in the current editor
@@ -53,7 +65,7 @@ export class EditorVariableContribution implements VariableContribution {
 
 Note that a Variable is resolved to `MaybePromise<string | undefined>` which means that it can be resolved synchronously or within a Promise.
 
-## Using the Variable Resolver Service
+### Using the Variable Resolver Service
 
 There's the example of how one can use Variable Resolver Service in its own plugin:
 ```typescript
@@ -76,6 +88,26 @@ If `package.json` file is currently opened and cursor is on line 5 then the foll
 ```
 cursor is in file package.json on line 5
 ```
+
+## Additional Information
+
+- [API documentation for `@theia/variable-resolver`](https://eclipse-theia.github.io/theia/docs/next/modules/variable_resolver.html)
+- [Theia - GitHub](https://github.com/eclipse-theia/theia)
+- [Theia - Website](https://theia-ide.org/)
+
+## License
+
+- [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+
+## Trademark
+"Theia" is a trademark of the Eclipse Foundation
+https://www.eclipse.org/theia
+
+
+# Theia - Variable Resolver Extension
+
+The extension
 
 ## License
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)

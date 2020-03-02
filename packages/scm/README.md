@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>THEIA - EDITOR EXTENSION</h2>
+<h2>THEIA - SCM EXTENSION</h2>
 
 <hr />
 
@@ -12,13 +12,14 @@
 
 ## Description
 
-The `@theia/editor` extension contributed functionality such as the `editor` widget, menu, keybindings, and navigation.
+The `@theia/scm` extension adds support for handling multiple source control managers, and includes a `SCM` (Source Control Manager) View which different source control providers (such as `Git` and `Mercurial`) can contribute to.
 
 ## Additional Information
 
-- [API documentation for `@theia/editor`](https://eclipse-theia.github.io/theia/docs/next/modules/editor.html)
+- [API documentation for `@theia/scm`](https://eclipse-theia.github.io/theia/docs/next/modules/scm.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
+- [VS Code SCM Documentation](https://code.visualstudio.com/docs/editor/versioncontrol)
 
 ## License
 

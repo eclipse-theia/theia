@@ -1,6 +1,23 @@
-# Theia - Core extension
+<div align='center'>
 
-See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
+<br />
+
+<img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
+
+<h2>THEIA - CORE EXTENSION</h2>
+
+<hr />
+
+</div>
+
+## Description
+
+The `@theia/core` extension is the main extension for all Theia-based applications, and provides the main framework for all dependent extensions.
+The extension provides the base APIs for all Theia-based applications, including:
+- Application APIs
+- Shell APIs
+- Base Widgets
+- Contribution Points (ex: commands, menu items, keybindings)
 
 ## Theia Extension
 
@@ -32,7 +49,7 @@ An extension module should have a default export of `ContainerModule | Promise<C
 
 A Theia application is a node package listing [Theia extensions](#theia-extension) as dependencies and managed with [Theia CLI](../../dev-packages/cli/README.md).
 
-## Logging configuration
+## Logging Configuration
 
 It's possible to change the log level for the entire Theia application by
 passing it the `--log-level={fatal,error,warn,info,debug,trace}` option.  For
@@ -67,6 +84,17 @@ root INFO [nsfw-watcher: 10734] Started watching: /Users/captain.future/git/thei
 ```
 Where `root` is the name of the logger and `INFO` is the log level. These are optionally followed by the name of a child process and the process ID.
 
+## Additional Information
+
+- [API documentation for `@theia/core`](https://eclipse-theia.github.io/theia/docs/next/modules/core.html)
+- [Theia - GitHub](https://github.com/eclipse-theia/theia)
+- [Theia - Website](https://theia-ide.org/)
+
 ## License
+
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+
+## Trademark
+"Theia" is a trademark of the Eclipse Foundation
+https://www.eclipse.org/theia

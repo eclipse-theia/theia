@@ -1,43 +1,102 @@
-# Theia CLI
+<div align='center'>
 
-`theia` is a command line tool to manage Theia applications.
+<br />
 
-- [**Getting started**](#getting-started)
+<img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
+
+<h2>THEIA - CLI</h2>
+
+<hr />
+
+</div>
+
+## Outline
+
+- [**Description**](#description)
+- [**Getting Started**](#getting-started)
 - [**Configure**](#configure)
   - [**Build Target**](#build-target)
-  - [**Using latest builds**](#using-latest-builds)
+  - [**Application Properties**](#application-properties)
+  - [**Default Preferences**](#default-preferences)
+  - [**Using Latest Builds**](#using-latest-builds)
 - [**Building**](#building)
-- [**Rebuilding native modules**](#rebuilding-native-modules)
+  - [**Build**](#build)
+  - [**Watch**](#watch)
+  - [**Clean**](#clean)
+- [**Rebuilding Native Modules**](#rebuilding-native-modules)
 - [**Running**](#running)
 - [**Debugging**](#debugging)
 - [**Testing**](#testing)
-  - [**Enabling tests**](#enabling-tests)
-  - [**Writing tests**](#writing-tests)
-  - [**Running tests**](#running-tests)
-  - [**Configuring tests**](#configuring-tests)
-  - [**Inspecting tests**](#inspecting-tests)
-  - [**Reporting test coverage**](#reporting-test-coverage)
+  - [**Enabling Tests**](#enabling-tests)
+  - [**Writing Tests**](#writing-tests)
+  - [**Running Tests**](#running-tests)
+  - [**Configuring Tests**](#configuring-tests)
+  - [**Inspecting Tests**](#inspecting-tests)
+  - [**Reporting Test Coverage**](#reporting-test-coverage)
+- [**Downloading Plugins**](#downloading-plugins)
 
-## Getting started
+## Description
+
+The `@theia/cli` package provides helpful scripts and commands for extension and application development.
+The contributed `theia`, is a command line tool to manage Theia-based applications.
+
+## Getting Started
 
 Install `@theia/cli` as a dev dependency in your application.
 
 With yarn:
 
-    yarn add @theia/cli@next --dev
+```bash
+yarn add @theia/cli@next --dev
+```
 
 With npm:
 
-    npm install @theia/cli@next --save-dev
+```bash
+npm install @theia/cli@next --save-dev
+```
 
 ## Configure
 
-A Theia application is configured via `theia` property in package.json.
+A Theia-based application can be configured via the `theia` property as described in the application's `package.json`.
+
+### Application Properties
+
+It is possible `Application Properties` for a given application.\
+For example, an application can define it's `applicationName` using the following syntax:
+
+```json
+"theia": {
+    "frontend": {
+      "config": {
+        "applicationName": "Custom Application Name",
+      }
+    }
+  },
+```
+
+### Default Preferences
+
+If required, an application can define for a given preference, the default value.
+For example, an application can update the preference value for `files.enableTrash` based on it's requirements:
+
+```json
+
+"theia": {
+    "frontend": {
+      "config": {
+        "preferences": {
+          "files.enableTrash": false
+        }
+      }
+    }
+  },
+```
 
 ### Build Target
 
 The following targets are supported: `browser` and `electron`. By default `browser` target is used.
-The target can be configured in package.json via `theia/target` property, e.g:
+The target can be configured in the `package.json` via `theia/target` property, e.g:
 
 ```json
 {
@@ -50,9 +109,9 @@ The target can be configured in package.json via `theia/target` property, e.g:
 }
 ```
 
-For `electron` target make sure to install required Electron runtime dependenices. The easiest way is to install `@theia/electron` package.
+For `electron` target applications, is it mandatory to include **Electron** runtime dependencies. The `@theia/electron` package is the easiest way to install the necessary dependencies.
 
-### Using latest builds
+### Using Latest Builds
 
 If you set `next` in your theia config, then Theia will prefer `next` over `latest` as the latest tag.
 
@@ -66,31 +125,41 @@ If you set `next` in your theia config, then Theia will prefer `next` over `late
 
 ## Building
 
-To build once:
+### Build
+
+The following command can be used to build the application:
+
+**Development**
 
     theia build --mode development
 
-In order to rebuild on each change:
+**Production**
+
+    theia build
+
+### Watch
+
+The following command can be used to rebuild the application on each change:
 
     theia build --watch --mode development
 
-To build for production:
+### Clean
 
-    theia build
+The following command can be used to clean up the build result:
 
 In order to clean up the build result:
 
     theia clean
 
-Arguments are passed directly to [webpack](https://webpack.js.org/), use `--help` to learn which options are supported.
+Arguments are passed directly to [webpack](https://webpack.js.org/). Use `--help` to learn which options are supported.
 
-## Rebuilding native modules
+## Rebuilding Native Modules
 
-In order to run electron one should rebuild native node modules for an electron version:
+In order to run Electron targets, one should rebuild native node modules for an electron version:
 
     theia rebuild
 
-To rollback native modules change the target to `browser` and run the command again.
+To rollback native modules, change the target to `browser` and run the command again.
 
 ## Running
 
@@ -114,11 +183,11 @@ Theia CLI accepts `--inspect` node flag: https://nodejs.org/en/docs/inspector/#c
 
 ## Testing
 
-### Enabling tests
+### Enabling Tests
 
 First enable `expose-loader` in `webpack.config.js`
 to expose modules from bundled code to tests
-by uncommenting:
+by un-commenting:
 
 ```js
 /**
@@ -133,11 +202,11 @@ config.module.rules.push({
 
 After that run `theia build` again to expose modules in generated bundle files.
 
-### Writing tests
+### Writing Tests
 
-See [API integrationg testing](../../doc/api-testing.md) docs.
+See [API Integration Testing](../../doc/api-testing.md) docs.
 
-### Running tests
+### Running Tests
 
 To start the backend server and run API tests against it:
 
@@ -146,7 +215,7 @@ To start the backend server and run API tests against it:
 After running test this command terminates. It accepts the same arguments as `start` command,
 but as well additional arguments to specify test files, enable inspection or generate test coverage.
 
-### Configuring tests
+### Configuring Tests
 
 To specify test files:
 
@@ -158,22 +227,59 @@ and run test files matching `./test/*.spec.js` glob.
 
 Use `theia test --help` to learn more options. Test specific options start with `--test-`.
 
-### Inspecting tests
+### Inspecting Tests
 
 To inspect tests:
 
     theia test . --test-spec=./test/*.spec.js --test-inspect --inspect
 
-This command starts the application server in the debug mode 
+This command starts the application server in the debug mode
 as well as open the Chrome devtools to debug frontend code and test files.
 One can reload/rerun code and tests by simply reloading the page.
 
 > Important! Since tests are relying on focus, while running tests keep the page focused.
 
-### Reporting test coverage
+### Reporting Test Coverage
 
 To report test coverage:
 
     theia test . --test-spec=./test/*.spec.js --test-coverage
 
-This command executes tests and generate test coverage files consumable by istanbyl.
+This command executes tests and generate test coverage files consumable by [Istanbul](https://github.com/istanbuljs/istanbuljs).
+
+## Downloading Plugins
+
+The `@theia/cli` package provides a utility for applications to define and download a list of plugins it requires as part of their application using the command:
+
+    theia download:plugins
+
+This utility works by declaring in the `package.json` a location to store downloaded plugins, as well defining each plugin the application wishes to download.
+
+The property `theiaPluginsDir` describes the location of which to download plugins (relative to the `package.json`), for example:
+
+```json
+"theiaPluginsDir": "plugins",
+```
+
+The property `theiaPlugins` describes the list of plugins to download, for example:
+
+```json
+"theiaPlugins": {
+    "vscode-builtin-bat": "https://github.com/theia-ide/vscode-builtin-extensions/releases/download/v1.39.1-prel/bat-1.39.1-prel.vsix",
+    "vscode-builtin-clojure": "https://github.com/theia-ide/vscode-builtin-extensions/releases/download/v1.39.1-prel/clojure-1.39.1-prel.vsix",
+}
+```
+
+## Additional Information
+
+- [Theia - GitHub](https://github.com/eclipse-theia/theia)
+- [Theia - Website](https://theia-ide.org/)
+
+## License
+
+- [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+
+## Trademark
+"Theia" is a trademark of the Eclipse Foundation
+https://www.eclipse.org/theia

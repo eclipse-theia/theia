@@ -1,7 +1,19 @@
-# Theia - Editor Preview Extension
+<div align='center'>
 
-A Preview Editor supports the same functionality as a regular editor widget with the exception: if
-a preview editor has not "transitioned to a permanent editor" at the time an additional request to
+<br />
+
+<img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
+
+<h2>THEIA - EDITOR-PREVIEW EXTENSION</h2>
+
+<hr />
+
+</div>
+
+## Description
+
+The `@theia/editor-preview` extension contributes the preview editor which  supports the same functionality as a regular editor widget with the exception:
+- if a preview editor has not "transitioned to a permanent editor" at the time an additional request to
 preview a file is received, instead of opening a new editor, it will display the contents of the
 newly requested file.
 
@@ -24,8 +36,17 @@ list.openMode
 ```
 must be set to "singleClick" to enable opening files in preview mode.
 
-See [here](https://www.theia-ide.org/doc/index.html) for a detailed documentation.
+## Additional Information
+
+- [API documentation for `@theia/editor-preview`](https://eclipse-theia.github.io/theia/docs/next/modules/editor_preview.html)
+- [Theia - GitHub](https://github.com/eclipse-theia/theia)
+- [Theia - Website](https://theia-ide.org/)
 
 ## License
+
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+
+## Trademark
+"Theia" is a trademark of the Eclipse Foundation
+https://www.eclipse.org/theia
