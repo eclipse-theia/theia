@@ -27,7 +27,9 @@ import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-comm
 import MenuRegistry = monaco.actions.MenuRegistry;
 import { MonacoCommandService } from './monaco-command-service';
 
-export type MonacoCommand = Command & { delegate?: string };
+// vs code doesn't use iconClass anymore, but icon instead, so some adaptation is required to reuse it on theia side
+export type MonacoIcon = { dark?: monaco.Uri; light?: monaco.Uri } | monaco.theme.ThemeIcon;
+export type MonacoCommand = Command & { icon?: MonacoIcon, delegate?: string };
 export namespace MonacoCommands {
 
     export const UNDO = 'undo';
@@ -68,19 +70,20 @@ export namespace MonacoCommands {
         'editor.action.clipboardCopyAction',
         'editor.action.clipboardPasteAction'
     ]);
-    const iconClasses = new Map<string, string>();
+    const icons = new Map<string, MonacoIcon>();
     for (const menuItem of MenuRegistry.getMenuItems(7)) {
-        // todo
-        if (menuItem.command && menuItem.command.iconClass) {
-            iconClasses.set(menuItem.command.id, menuItem.command.iconClass);
+
+        const commandItem = menuItem.command;
+        if (commandItem && commandItem.icon) {
+            icons.set(commandItem.id, commandItem.icon);
         }
     }
     for (const command of monaco.editorExtensions.EditorExtensionsRegistry.getEditorActions()) {
         const id = command.id;
         if (!EXCLUDE_ACTIONS.has(id)) {
             const label = command.label;
-            const iconClass = iconClasses.get(id);
-            ACTIONS.set(id, { id, label, iconClass });
+            const icon = icons.get(id);
+            ACTIONS.set(id, { id, label, icon });
         }
     }
     for (const keybinding of monaco.keybindings.KeybindingsRegistry.getDefaultKeybindings()) {
@@ -280,7 +283,12 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 
     protected newKeyboardHandler(action: string): MonacoEditorCommandHandler {
         return {
-            execute: (editor, ...args) => editor.getControl()._modelData.cursor.trigger('keyboard', action, args)
+            execute: (editor, ...args) => {
+                const modelData = editor.getControl()._modelData;
+                if (modelData) {
+                    modelData.cursor.trigger('keyboard', action, args);
+                }
+            }
         };
     }
     protected newCommandHandler(action: string): MonacoEditorCommandHandler {

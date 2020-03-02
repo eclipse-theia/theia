@@ -421,8 +421,8 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
         return this.item.getLabel();
     }
 
-    getAriaLabel(): string | undefined {
-        return this.item.getTooltip();
+    getAriaLabel(): string {
+        return this.item.getTooltip() || '';
     }
 
     getDetail(): string | undefined {
@@ -500,7 +500,7 @@ export class QuickOpenEntryGroup extends monaco.quickOpen.QuickOpenEntryGroup {
 
 }
 
-export class MonacoQuickOpenAction implements monaco.quickOpen.IAction {
+export class MonacoQuickOpenAction implements monaco.editor.IAction {
     constructor(public readonly action: QuickOpenAction) { }
 
     get id(): string {
@@ -527,12 +527,8 @@ export class MonacoQuickOpenAction implements monaco.quickOpen.IAction {
         return this.action.checked || false;
     }
 
-    get radio(): boolean {
-        return this.action.radio || false;
-    }
-
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    run(entry: QuickOpenEntry | QuickOpenEntryGroup): PromiseLike<any> {
+    run(entry: QuickOpenEntry | QuickOpenEntryGroup): Promise<any> {
         return this.action.run(entry.item);
     }
 
@@ -550,7 +546,7 @@ export class MonacoQuickOpenActionProvider implements monaco.quickOpen.IActionPr
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getActions(element: any, entry: QuickOpenEntry | QuickOpenEntryGroup): ReadonlyArray<monaco.quickOpen.IAction> {
+    getActions(element: any, entry: QuickOpenEntry | QuickOpenEntryGroup): ReadonlyArray<monaco.editor.IAction> {
         const actions = this.provider.getActions(entry.item);
         return actions.map(action => new MonacoQuickOpenAction(action));
     }

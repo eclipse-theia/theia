@@ -131,7 +131,7 @@ export class MonacoSemanticHighlightingService extends SemanticHighlightingServi
         // TODO: why for-of? How to pick the right scope? Is it fine to get the first element (with the narrowest scope)?
         for (const scope of scopes) {
             const tokenTheme = this.tokenTheme();
-            const metadata = tokenTheme.match(undefined, scope);
+            const metadata = tokenTheme.match(monaco.services.LanguageId.Null, scope);
             // Don't use the inlineClassName from the TokenMetadata, because this
             // will conflict with styles used for TM scopes
             // (https://github.com/Microsoft/monaco-editor/issues/1070).

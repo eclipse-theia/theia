@@ -121,11 +121,10 @@ export interface QuickOpenActionOptions {
     class?: string | undefined;
     enabled?: boolean;
     checked?: boolean;
-    radio?: boolean;
 }
 
 export interface QuickOpenAction extends QuickOpenActionOptions, Disposable {
-    run(item?: QuickOpenItem): PromiseLike<void>;
+    run(item?: QuickOpenItem): Promise<void>;
 }
 
 export enum QuickTitleButtonSide {

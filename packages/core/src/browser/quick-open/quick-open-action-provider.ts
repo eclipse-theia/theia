@@ -82,15 +82,7 @@ export abstract class QuickOpenBaseAction implements QuickOpenAction {
         this.options.checked = value;
     }
 
-    get radio(): boolean {
-        return this.options.radio || false;
-    }
-
-    set radio(value: boolean) {
-        this.options.radio = value;
-    }
-
-    abstract run(item?: QuickOpenItem): PromiseLike<void>;
+    abstract run(item?: QuickOpenItem): Promise<void>;
 
     dispose(): void { }
 }
