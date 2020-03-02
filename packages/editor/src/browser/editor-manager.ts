@@ -17,7 +17,7 @@
 import { injectable, postConstruct, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event } from '@theia/core/lib/common';
-import { WidgetOpenerOptions, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser';
+import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, Widget } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
@@ -51,8 +51,9 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     protected init(): void {
         super.init();
         this.shell.activeChanged.connect(() => this.updateActiveEditor());
-        this.shell.currentChanged.connect(() => this.updateCurrentEditor());
-        this.onCreated(widget => widget.disposed.connect(() => this.updateCurrentEditor()));
+        this.shell.currentChanged.connect((sender, args) => this.updateCurrentEditor(args));
+        // eslint-disable-next-line no-null/no-null
+        this.onCreated(widget => widget.disposed.connect((sender, args) => this.updateCurrentEditor({ oldValue: null, newValue: null })));
     }
 
     protected _activeEditor: EditorWidget | undefined;
@@ -88,8 +89,8 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             this.onCurrentEditorChangedEmitter.fire(this._currentEditor);
         }
     }
-    protected updateCurrentEditor(): void {
-        const widget = this.shell.currentWidget;
+    protected updateCurrentEditor(arg: { oldValue: Widget | null, newValue: Widget | null }): void {
+        const widget = arg.newValue ? arg.newValue : this.shell.currentWidget;
         if (widget instanceof EditorWidget) {
             this.setCurrentEditor(widget);
         } else if (!this._currentEditor || !this._currentEditor.isVisible) {

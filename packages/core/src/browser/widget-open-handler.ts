@@ -93,6 +93,14 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
             await this.shell.activateWidget(widget.id);
         } else if (op.mode === 'reveal') {
             await this.shell.revealWidget(widget.id);
+            this.shell.currentChanged.emit({
+                // eslint-disable-next-line no-null/no-null
+                oldValue: this.shell.currentWidget || null,
+
+                // eslint-disable-next-line no-null/no-null
+                newValue: widget || null,
+
+            });
         }
     }
 
