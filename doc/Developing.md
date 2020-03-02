@@ -65,6 +65,7 @@ Some additional tools and libraries are needed depending on your platform:
   - [make](https://www.gnu.org/software/make/)
   - [gcc](https://gcc.gnu.org/) (or another compiling toolchain)
   - [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
+  - build-essential: `sudo apt-get install build-essential`
   - Dependencies for `native-keymap` node native extension:
     - Debian-based: `sudo apt-get install libx11-dev libxkbfile-dev`
     - Red Hat-based: `sudo yum install libX11-devel.x86_64 libxkbfile-devel.x86_64 # or .i686`
