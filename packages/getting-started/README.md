@@ -10,7 +10,6 @@
 
 </div>
 
-
 ## Description
 
 The `@theia/getting-started` extension contributes a default `getting-started` widget which is displayed whenever
@@ -22,7 +21,6 @@ The `getting-started` widget provides useful commands and functionality for quic
 - `settings commands`: commands which are used to open the preferences and keyboard shortcuts widgets.
 - `help`: useful links pointing to documentation and/or guides.
 
-
 ## Additional Information
 
 - [API documentation for `@theia/getting-started`](https://eclipse-theia.github.io/theia/docs/next/modules/getting_started.html)
@@ -33,7 +31,6 @@ The `getting-started` widget provides useful commands and functionality for quic
 
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
-
 
 ## Trademark
 "Theia" is a trademark of the Eclipse Foundation
