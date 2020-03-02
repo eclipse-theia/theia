@@ -19,11 +19,13 @@ import {
     CommandContribution,
     Command,
     CommandRegistry,
+    DisposableCollection,
     MenuContribution,
     MenuModelRegistry,
     isOSX,
     SelectionService,
-    Emitter, Event
+    Emitter,
+    Event
 } from '@theia/core/lib/common';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import {
@@ -166,6 +168,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             if (widget instanceof TerminalWidget) {
                 this.updateCurrentTerminal();
                 this.onDidCreateTerminalEmitter.fire(widget);
+                this.setLastUsedTerminal(widget);
             }
         });
 
@@ -191,6 +194,58 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             this.setCurrentTerminal(widget);
         } else if (!this._currentTerminal || !this._currentTerminal.isVisible) {
             this.setCurrentTerminal(undefined);
+        }
+    }
+
+    // IDs of the most recently used terminals
+    protected mostRecentlyUsedTerminalEntries: { id: string, disposables: DisposableCollection }[] = [];
+
+    protected getLastUsedTerminalId(): string | undefined {
+        const mostRecent = this.mostRecentlyUsedTerminalEntries[this.mostRecentlyUsedTerminalEntries.length - 1];
+        if (mostRecent) {
+            return mostRecent.id;
+        }
+    }
+
+    get lastUsedTerminal(): TerminalWidget | undefined {
+        const id = this.getLastUsedTerminalId();
+        if (id) {
+            return this.getById(id);
+        }
+    }
+
+    protected setLastUsedTerminal(lastUsedTerminal: TerminalWidget): void {
+        const lastUsedTerminalId = lastUsedTerminal.id;
+        const entryIndex = this.mostRecentlyUsedTerminalEntries.findIndex(entry => entry.id === lastUsedTerminalId);
+        let toDispose: DisposableCollection | undefined;
+        if (entryIndex >= 0) {
+            toDispose = this.mostRecentlyUsedTerminalEntries[entryIndex].disposables;
+            this.mostRecentlyUsedTerminalEntries.splice(entryIndex, 1);
+        } else {
+            toDispose = new DisposableCollection();
+            toDispose.push(
+                lastUsedTerminal.onDidChangeVisibility((isVisible: boolean) => {
+                    if (isVisible) {
+                        this.setLastUsedTerminal(lastUsedTerminal);
+                    }
+                })
+            );
+            toDispose.push(
+                lastUsedTerminal.onDidDispose(() => {
+                    const index = this.mostRecentlyUsedTerminalEntries.findIndex(entry => entry.id === lastUsedTerminalId);
+                    if (index >= 0) {
+                        this.mostRecentlyUsedTerminalEntries[index].disposables.dispose();
+                        this.mostRecentlyUsedTerminalEntries.splice(index, 1);
+                    }
+                })
+            );
+        }
+
+        const newEntry = { id: lastUsedTerminalId, disposables: toDispose };
+        if (lastUsedTerminal.isVisible) {
+            this.mostRecentlyUsedTerminalEntries.push(newEntry);
+        } else {
+            this.mostRecentlyUsedTerminalEntries = [newEntry, ...this.mostRecentlyUsedTerminalEntries];
         }
     }
 
@@ -250,7 +305,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                     return !this.shell.activeWidget.getSearchBox().isVisible;
                 }
                 return false;
-            } ,
+            },
             execute: () => {
                 const termWidget = (this.shell.activeWidget as TerminalWidget);
                 const terminalSearchBox = termWidget.getSearchBox();
@@ -273,11 +328,11 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         });
 
         commands.registerCommand(TerminalCommands.SCROLL_LINE_UP, {
-                isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
-                isVisible: () => false,
-                execute: () => {
-                    (this.shell.activeWidget as TerminalWidget).scrollLineUp();
-                }
+            isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,
+            isVisible: () => false,
+            execute: () => {
+                (this.shell.activeWidget as TerminalWidget).scrollLineUp();
+            }
         });
         commands.registerCommand(TerminalCommands.SCROLL_LINE_DOWN, {
             isEnabled: () => this.shell.activeWidget instanceof TerminalWidget,

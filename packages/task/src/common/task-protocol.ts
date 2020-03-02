@@ -33,31 +33,49 @@ export enum RevealKind {
     Never
 }
 
+export enum PanelKind {
+    Shared,
+    Dedicated,
+    New
+}
+
 export interface TaskOutputPresentation {
     focus?: boolean;
     reveal?: RevealKind;
+    panel?: PanelKind;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [name: string]: any;
 }
 export namespace TaskOutputPresentation {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function fromJson(task: any): TaskOutputPresentation {
-        if (task && task.presentation) {
-            let reveal = RevealKind.Always;
-            if (task.presentation.reveal === 'silent') {
-                reveal = RevealKind.Silent;
-            } else if (task.presentation.reveal === 'never') {
-                reveal = RevealKind.Never;
-            }
-            return {
-                reveal,
-                focus: !!task.presentation.focus
-            };
-        }
-        return {
+        let outputPresentation = {
             reveal: RevealKind.Always,
-            focus: false
+            focus: false,
+            panel: PanelKind.Shared
         };
+        if (task && task.presentation) {
+            if (task.presentation.reveal) {
+                let reveal = RevealKind.Always;
+                if (task.presentation.reveal === 'silent') {
+                    reveal = RevealKind.Silent;
+                } else if (task.presentation.reveal === 'never') {
+                    reveal = RevealKind.Never;
+                }
+                outputPresentation = { ...outputPresentation, reveal };
+            }
+            if (task.presentation.panel) {
+                let panel = PanelKind.Shared;
+                if (task.presentation.panel === 'dedicated') {
+                    panel = PanelKind.Dedicated;
+                } else if (task.presentation.panel === 'new') {
+                    panel = PanelKind.New;
+                }
+                outputPresentation = { ...outputPresentation, panel };
+            }
+            outputPresentation = { ...outputPresentation, focus: !!task.presentation.focus };
+        }
+        return outputPresentation;
     }
 }
 

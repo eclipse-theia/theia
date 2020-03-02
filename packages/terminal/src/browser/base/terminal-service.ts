@@ -56,4 +56,6 @@ export interface TerminalService {
     readonly currentTerminal: TerminalWidget | undefined;
 
     readonly onDidChangeCurrentTerminal: Event<TerminalWidget | undefined>;
+
+    readonly lastUsedTerminal: TerminalWidget | undefined;
 }
