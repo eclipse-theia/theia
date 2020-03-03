@@ -62,6 +62,12 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'boolean',
             default: false,
             description: 'Controls whether to suppress notification popups.'
+        },
+        'workbench.tree.renderIndentGuides': {
+            type: 'string',
+            enum: ['onHover', 'none', 'always'],
+            default: 'onHover',
+            description: 'Controls whether the three should render indent guides.'
         }
     }
 };
@@ -74,6 +80,7 @@ export interface CoreConfiguration {
     'workbench.colorTheme'?: string;
     'workbench.iconTheme'?: string | null;
     'workbench.silentNotifications': boolean;
+    'workbench.tree.renderIndentGuides'?: 'onHover' | 'none' | 'always';
 }
 
 export const CorePreferences = Symbol('CorePreferences');

@@ -235,6 +235,15 @@ export class FileTreeWidget extends TreeWidget {
         return super.getPaddingLeft(node, props);
     }
 
+    protected needsRootLevelIconPadding(node: TreeNode, props: NodeProps): boolean {
+        const theme = this.iconThemeService.getDefinition(this.iconThemeService.current);
+        if (theme && (theme.hidesExplorerArrows || (theme.hasFileIcons && !theme.hasFolderIcons))) {
+            return false;
+        }
+        return super.needsRootLevelIconPadding(node, props);
+    }
+
+    // Code is kept here to prevent broken api
     protected needsExpansionTogglePadding(node: TreeNode): boolean {
         const theme = this.iconThemeService.getDefinition(this.iconThemeService.current);
         if (theme && (theme.hidesExplorerArrows || (theme.hasFileIcons && !theme.hasFolderIcons))) {

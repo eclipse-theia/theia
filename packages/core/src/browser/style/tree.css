@@ -139,3 +139,33 @@
 .theia-tree-element-node {
     width: 100%
 }
+
+.theia-TreeNodeIndent {
+    display: flex;
+}
+
+.theia-treeNodeIndentBlock {
+    width: 8px;
+    border-right: 1px solid transparent;
+    height: 22px;
+}
+
+.theia-treeNodeChildPadding {
+    margin-right: 3px;
+}
+
+.theia-TreeContainer:hover .theia-treeNodeIndentBlock.theia-indentGuideOnHover {
+    border-right: 1px solid var(--theia-tree-indentGuidesStrokeHover);
+}
+
+.theia-TreeContainer .theia-treeNodeIndentBlock.theia-treeNodeActive.theia-indentGuideOnHover {
+    border-right: 1px solid var(--theia-tree-indentGuidesStrokeActive);
+}
+
+.theia-TreeContainer .theia-treeNodeIndentBlock.theia-indentGuideAlways {
+    border-right: 1px solid var(--theia-tree-indentGuidesStrokeHover);
+}
+
+.theia-TreeContainer .theia-treeNodeIndentBlock.theia-treeNodeActive.theia-indentGuideAlways {
+    border-right: 1px solid var(--theia-tree-indentGuidesStrokeActive);
+}

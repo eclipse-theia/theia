@@ -1005,7 +1005,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // if not yet contributed by Monaco, check runtime css variables to learn.
             // TODO: Following are not yet supported/no respective elements in theia:
             // list.focusBackground, list.focusForeground, list.inactiveFocusBackground, list.filterMatchBorder,
-            // list.dropBackground, listFilterWidget.outline, listFilterWidget.noMatchesOutline, tree.indentGuidesStroke
+            // list.dropBackground, listFilterWidget.outline, listFilterWidget.noMatchesOutline
             // list.invalidItemForeground,
             // list.warningForeground, list.errorForeground => tree node needs an respective class
             { id: 'list.activeSelectionBackground', defaults: { dark: '#094771', light: '#0074E8' }, description: 'List/Tree background color for the selected item when the list/tree is active. An active list/tree has keyboard focus, an inactive does not.' },
@@ -1015,6 +1015,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             { id: 'list.hoverBackground', defaults: { dark: '#2A2D2E', light: '#F0F0F0' }, description: 'List/Tree background when hovering over items using the mouse.' },
             { id: 'list.hoverForeground', description: 'List/Tree foreground when hovering over items using the mouse.' },
             { id: 'list.filterMatchBackground', defaults: { dark: 'editor.findMatchHighlightBackground', light: 'editor.findMatchHighlightBackground' }, description: 'Background color of the filtered match.' },
+            { id: 'tree.indentGuidesStrokeActive', defaults: { dark: '#585858', light: '#a9a9a9', hc: '#a9a9a9' }, description: "Tree Widget's stroke color for active indent guides." },
+            { id: 'tree.indentGuidesStrokeHover', defaults: { dark: Color.rgba(88, 88, 88, 0.4), light: Color.rgba(169, 169, 169, 0.4), hc: Color.rgba(169, 169, 169, 0.4) }, description: 'Tree Widget\'s stroke color for hovered indent guides.' },
 
             // Editor Group & Tabs colors should be aligned with https://code.visualstudio.com/api/references/theme-color#editor-groups-tabs
             {
