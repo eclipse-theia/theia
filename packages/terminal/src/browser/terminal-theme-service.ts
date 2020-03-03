@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as Xterm from 'xterm';
+import { ITheme } from 'xterm';
 import { injectable, inject } from 'inversify';
 import { ColorRegistry, ColorDefaults } from '@theia/core/lib/browser/color-registry';
 import { ThemeService } from '@theia/core/lib/browser/theming';
@@ -161,14 +161,14 @@ export class TerminalThemeService {
 
     readonly onDidChange = ThemeService.get().onThemeChange;
 
-    get theme(): Xterm.ITheme {
+    get theme(): ITheme {
         const foregroundColor = this.colorRegistry.getCurrentColor('terminal.foreground');
         const backgroundColor = this.colorRegistry.getCurrentColor('terminal.background') || this.colorRegistry.getCurrentColor('panel.background');
         const cursorColor = this.colorRegistry.getCurrentColor('terminalCursor.foreground') || foregroundColor;
         const cursorAccentColor = this.colorRegistry.getCurrentColor('terminalCursor.background') || backgroundColor;
         const selectionColor = this.colorRegistry.getCurrentColor('terminal.selectionBackground');
 
-        const theme: Xterm.ITheme = {
+        const theme: ITheme = {
             background: backgroundColor,
             foreground: foregroundColor,
             cursor: cursorColor,

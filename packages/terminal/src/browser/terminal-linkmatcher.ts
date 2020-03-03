@@ -50,7 +50,7 @@ export abstract class AbstractCmdClickTerminalContribution implements TerminalCo
                     terminalWidget.showHoverMessage(event.clientX, event.clientY, this.getHoverMessage());
                 }
             },
-            leaveCallback: (event: MouseEvent, uri: string) => {
+            leaveCallback: () => {
                 terminalWidget.hideHover();
             },
             validationCallback: async (uri: string, callBack: (isValid: boolean) => void) => {
