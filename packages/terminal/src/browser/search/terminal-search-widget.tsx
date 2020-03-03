@@ -19,8 +19,7 @@ import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from 'react';
 import '../../../src/browser/style/terminal-search.css';
 import { Terminal } from 'xterm';
-import { findNext, findPrevious } from 'xterm/lib/addons/search/search';
-import { ISearchOptions } from 'xterm/lib/addons/search/Interfaces';
+import { SearchAddon, ISearchOptions } from 'xterm-addon-search';
 import { Key } from '@theia/core/lib/browser';
 
 export const TERMINAL_SEARCH_WIDGET_FACTORY_ID = 'terminal-search';
@@ -33,6 +32,7 @@ export class TerminalSearchWidget extends ReactWidget {
     private searchInput: HTMLInputElement | null;
     private searchBox: HTMLDivElement | null;
     private searchOptions: ISearchOptions = {};
+    private searchAddon: SearchAddon;
 
     @inject(Terminal)
     protected terminal: Terminal;
@@ -40,6 +40,9 @@ export class TerminalSearchWidget extends ReactWidget {
     @postConstruct()
     protected init(): void {
         this.node.classList.add('theia-search-terminal-widget-parent');
+
+        this.searchAddon = new SearchAddon();
+        this.terminal.loadAddon(this.searchAddon);
 
         this.hide();
         this.update();
@@ -128,11 +131,11 @@ export class TerminalSearchWidget extends ReactWidget {
             const searchText = this.searchInput.value;
 
             if (searchDirection === 'next') {
-                findNext(this.terminal, searchText, this.searchOptions);
+                this.searchAddon.findNext(searchText, this.searchOptions);
             }
 
             if (searchDirection === 'previous') {
-                findPrevious(this.terminal, searchText, this.searchOptions);
+                this.searchAddon.findPrevious(searchText, this.searchOptions);
             }
         }
     }

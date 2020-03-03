@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as Xterm from 'xterm';
-import { proposeGeometry } from 'xterm/lib/addons/fit/fit';
+import { Terminal, RendererType } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
@@ -49,7 +49,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     private readonly TERMINAL = 'Terminal';
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected terminalId = -1;
-    protected term: Xterm.Terminal;
+    protected fitAddon: FitAddon;
+    protected term: Terminal;
     protected searchBox: TerminalSearchWidget;
     protected restored = false;
     protected closeOnDispose = true;
@@ -91,8 +92,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.title.closable = true;
         this.addClass('terminal-container');
 
-        this.term = new Xterm.Terminal({
-            experimentalCharAtlas: 'dynamic',
+        this.term = new Terminal({
             cursorBlink: false,
             fontFamily: this.preferences['terminal.integrated.fontFamily'],
             fontSize: this.preferences['terminal.integrated.fontSize'],
@@ -104,6 +104,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             rendererType: this.getTerminalRendererType(this.preferences['terminal.integrated.rendererType']),
             theme: this.themeService.theme
         });
+
+        this.fitAddon = new FitAddon();
+        this.term.loadAddon(this.fitAddon);
 
         this.hoverMessage = document.createElement('div');
         this.hoverMessage.textContent = 'Cmd + click to follow link';
@@ -206,7 +209,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
      *
      * @param terminalRendererType desired terminal renderer type
      */
-    private getTerminalRendererType(terminalRendererType?: string | TerminalRendererType): Xterm.RendererType {
+    private getTerminalRendererType(terminalRendererType?: string | TerminalRendererType): RendererType {
         if (terminalRendererType && isTerminalRendererType(terminalRendererType)) {
             return terminalRendererType;
         }
@@ -224,7 +227,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.hoverMessage.style.display = 'none';
     }
 
-    getTerminal(): Xterm.Terminal {
+    getTerminal(): Terminal {
         return this.term;
     }
 
@@ -434,7 +437,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         if (isFirefox) {
             // The software scrollbars don't work with xterm.js, so we disable the scrollbar if we are on firefox.
-            (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
+            if (this.term.element) {
+                (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
+            }
         }
     }
     protected write(data: string): void {
@@ -489,7 +494,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected resizeTerminal(): void {
-        const geo = proposeGeometry(this.term);
+        const geo = this.fitAddon.proposeDimensions();
         const cols = geo.cols;
         const rows = geo.rows - 1; // subtract one row for margin
         this.term.resize(cols, rows);
