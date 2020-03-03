@@ -22,7 +22,7 @@ describe('Menus', function () {
     const { CallHierarchyContribution } = require('@theia/callhierarchy/lib/browser/callhierarchy-contribution');
     const { FileNavigatorContribution } = require('@theia/navigator/lib/browser/navigator-contribution');
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
-    const { GitHistoryContribution } = require('@theia/git/lib/browser/history/git-history-contribution');
+    const { ScmHistoryContribution } = require('@theia/scm-extra/lib/browser/history/scm-history-contribution');
     const { OutlineViewContribution } = require('@theia/outline-view/lib/browser/outline-view-contribution');
     const { OutputContribution } = require('@theia/output/lib/browser/output-contribution');
     const { PluginFrontendViewContribution } = require('@theia/plugin-ext/lib/main/browser/plugin-frontend-view-contribution');
@@ -39,7 +39,7 @@ describe('Menus', function () {
         container.get(CallHierarchyContribution),
         container.get(FileNavigatorContribution),
         container.get(ScmContribution),
-        container.get(GitHistoryContribution),
+        container.get(ScmHistoryContribution),
         container.get(OutlineViewContribution),
         container.get(OutputContribution),
         container.get(PluginFrontendViewContribution),
