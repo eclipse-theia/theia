@@ -948,6 +948,12 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 id: 'activityBar.activeFocusBorder',
                 description: 'Activity bar focus border color for the active item. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
             },
+            {
+                id: 'activityBar.focusBorder', defaults: {
+                    dark: 'focusBorder',
+                    light: '#33AAEE'
+                }, description: 'Activity bar focus border color for the active item on the bar. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
+            },
             { id: 'activityBar.activeBackground', description: 'Activity bar background color for the active item. The activity bar is showing on the far left or right and allows to switch between views of the side bar.' },
             {
                 id: 'activityBar.dropBackground', defaults: {
