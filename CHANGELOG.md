@@ -2,6 +2,8 @@
 
 ## v0.17.0
 
+- [preferences] add a new preference to silence notifications [#7195](https://github.com/eclipse-theia/theia/pull/7195)
+
 Breaking changes:
 
 - [scm][git] the History view (GitHistoryWidget) has moved from the git package to a new   package, scm-extra, and
