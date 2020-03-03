@@ -57,6 +57,11 @@ export const corePreferenceSchema: PreferenceSchema = {
         'workbench.iconTheme': {
             type: ['string', 'null'],
             description: "Specifies the icon theme used in the workbench or 'null' to not show any file icons."
+        },
+        'workbench.silentNotifications': {
+            type: 'boolean',
+            default: false,
+            description: 'Controls whether to suppress notification popups.'
         }
     }
 };
@@ -68,6 +73,7 @@ export interface CoreConfiguration {
     'workbench.editor.highlightModifiedTabs': boolean;
     'workbench.colorTheme'?: string;
     'workbench.iconTheme'?: string | null;
+    'workbench.silentNotifications': boolean;
 }
 
 export const CorePreferences = Symbol('CorePreferences');

@@ -17,7 +17,7 @@
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
 import { injectable, inject, postConstruct } from 'inversify';
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { ApplicationShell, CorePreferences } from '@theia/core/lib/browser';
 import { NotificationManager } from './notifications-manager';
 import { NotificationCenterComponent } from './notification-center-component';
 import { NotificationToastsComponent } from './notification-toasts-component';
@@ -30,6 +30,9 @@ export class NotificationsRenderer {
 
     @inject(NotificationManager)
     protected readonly manager: NotificationManager;
+
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
 
     @postConstruct()
     protected init(): void {
@@ -48,7 +51,7 @@ export class NotificationsRenderer {
 
     protected render(): void {
         ReactDOM.render(<div>
-            <NotificationToastsComponent manager={this.manager} />
+            <NotificationToastsComponent manager={this.manager} corePreferences={this.corePreferences} />
             <NotificationCenterComponent manager={this.manager} />
         </div>, this.container);
     }

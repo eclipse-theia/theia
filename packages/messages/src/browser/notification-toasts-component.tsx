@@ -18,9 +18,11 @@ import * as React from 'react';
 import { DisposableCollection } from '@theia/core';
 import { NotificationManager, NotificationUpdateEvent } from './notifications-manager';
 import { NotificationComponent } from './notification-component';
+import { CorePreferences } from '@theia/core/lib/browser';
 
 export interface NotificationToastsComponentProps {
     readonly manager: NotificationManager;
+    readonly corePreferences: CorePreferences;
 }
 
 type NotificationToastsComponentState = Pick<NotificationUpdateEvent, Exclude<keyof NotificationUpdateEvent, 'notifications'>>;
@@ -40,6 +42,7 @@ export class NotificationToastsComponent extends React.Component<NotificationToa
     async componentDidMount(): Promise<void> {
         this.toDisposeOnUnmount.push(
             this.props.manager.onUpdated(({ toasts, visibilityState }) => {
+                visibilityState = this.props.corePreferences['workbench.silentNotifications'] ? 'hidden' : visibilityState;
                 this.setState({
                     toasts: toasts.slice(-3),
                     visibilityState
