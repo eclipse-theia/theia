@@ -140,9 +140,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
     }
 
     protected pendingFetch = Promise.resolve<DebugStackFrame[]>([]);
-    protected _pendingFetchCount: number = 0;
     async fetchFrames(levels: number = 20): Promise<DebugStackFrame[]> {
-        this._pendingFetchCount += 1;
         return this.pendingFetch = this.pendingFetch.then(async () => {
             try {
                 const start = this.frameCount;
@@ -151,13 +149,8 @@ export class DebugThread extends DebugThreadData implements TreeElement {
             } catch (e) {
                 console.error(e);
                 return [];
-            } finally {
-                this._pendingFetchCount -= 1;
             }
         });
-    }
-    get pendingFrameCount(): number {
-        return this._pendingFetchCount;
     }
     protected async doFetchFrames(startFrame: number, levels: number): Promise<DebugProtocol.StackFrame[]> {
         try {
