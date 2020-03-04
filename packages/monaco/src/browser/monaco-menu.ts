@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR } from '@theia/core/lib/common';
+import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, MenuPath } from '@theia/core/lib/common';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
@@ -64,6 +64,8 @@ export namespace MonacoMenus {
         SELECTION_MOVE_GROUP,
         SELECTION_CURSOR_GROUP
     ];
+
+    export const PEEK_CONTEXT_SUBMENU: MenuPath = [...EDITOR_CONTEXT_MENU, 'navigation', 'peek_submenu'];
 }
 
 @injectable()
@@ -75,7 +77,6 @@ export class MonacoEditorMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry): void {
         for (const item of MenuRegistry.getMenuItems(7)) {
-            // todo handle submenu
             if (!monaco.actions.isIMenuItem(item)) {
                 continue;
             }
@@ -85,6 +86,8 @@ export class MonacoEditorMenuContribution implements MenuContribution {
                 registry.registerMenuAction(menuPath, { commandId });
             }
         }
+
+        this.registerPeekSubmenu(registry);
 
         registry.registerSubmenu(MonacoMenus.SELECTION, 'Selection');
         for (const group of MonacoMenus.SELECTION_GROUPS) {
@@ -96,6 +99,18 @@ export class MonacoEditorMenuContribution implements MenuContribution {
                     registry.registerMenuAction(path, { commandId, order });
                 }
             });
+        }
+    }
+
+    protected registerPeekSubmenu(registry: MenuModelRegistry): void {
+        registry.registerSubmenu(MonacoMenus.PEEK_CONTEXT_SUBMENU, 'Peek');
+
+        for (const item of MenuRegistry.getMenuItems(8)) {
+            const commandId = this.commands.validate(item.command.id);
+            if (commandId) {
+                const order = item.order ? String(item.order) : '';
+                registry.registerMenuAction([...MonacoMenus.PEEK_CONTEXT_SUBMENU, item.group || ''], { commandId, order });
+            }
         }
     }
 }
