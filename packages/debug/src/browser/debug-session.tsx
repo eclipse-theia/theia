@@ -93,10 +93,7 @@ export class DebugSession implements CompositeTreeElement {
                 }
             }),
             this.on('stopped', async ({ body }) => {
-                // Update thread list
                 await this.updateThreads(body);
-
-                // Update current thread's frames immediately
                 await this.updateFrames();
             }),
             this.on('thread', ({ body: { reason, threadId } }) => {
@@ -224,9 +221,6 @@ export class DebugSession implements CompositeTreeElement {
         this.fireDidChange();
         if (thread) {
             this.toDisposeOnCurrentThread.push(thread.onDidChanged(() => this.fireDidChange()));
-
-            // If this thread is missing stack frame information, then load that.
-            this.updateFrames();
         }
     }
 
@@ -471,7 +465,7 @@ export class DebugSession implements CompositeTreeElement {
 
     protected async updateFrames(): Promise<void> {
         const thread = this._currentThread;
-        if (!thread || thread.pendingFrameCount || thread.frameCount) {
+        if (!thread || thread.frameCount) {
             return;
         }
         if (this.capabilities.supportsDelayedStackTraceLoading) {
