@@ -1,5 +1,9 @@
 # Change Log
 
+## v0.16.1
+
+-[debug] Revert: "Lazily update frames of all threads in all-stop mode" [#7272](https://github.com/eclipse-theia/theia/pull/7272)
+
 ## v0.16.0
 
 - [cli] added an additional flag to the `download:plugins` script [#7123](https://github.com/eclipse-theia/theia/pull/7123)
