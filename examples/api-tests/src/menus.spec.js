@@ -17,7 +17,7 @@
 // @ts-check
 describe('Menus', function () {
 
-    const { BrowserMenuBarContribution } = require('@theia/core/lib/browser/menu/browser-menu-plugin');
+    const { BrowserMenuContribution } = require('@theia/core/lib/browser/menu/browser-menu-contribution');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
     const { CallHierarchyContribution } = require('@theia/callhierarchy/lib/browser/callhierarchy-contribution');
     const { FileNavigatorContribution } = require('@theia/navigator/lib/browser/navigator-contribution');
@@ -32,8 +32,8 @@ describe('Menus', function () {
     /** @type {import('inversify').Container} */
     const container = window['theia'].container;
     const shell = container.get(ApplicationShell);
-    const menuBarContribution = container.get(BrowserMenuBarContribution);
-    const menuBar = menuBarContribution.menuBar;
+    const menuContribution = container.get(BrowserMenuContribution);
+    const menuBar = menuContribution.menuBar;
 
     for (const contribution of [
         container.get(CallHierarchyContribution),

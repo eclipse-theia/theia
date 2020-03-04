@@ -2,10 +2,13 @@
 
 ## v0.17.0
 
+- [core] From now on, one can dynamically create and remove menu actions and arbitrary submenu items at runtime. [#7276](https://github.com/eclipse-theia/theia/pull/7276)
 - [preferences] add a new preference to silence notifications [#7195](https://github.com/eclipse-theia/theia/pull/7195)
 
 Breaking changes:
 
+- [core] Renamed the `browser-menu-plugin.ts` module to `browser-main-menu-factory.ts`. From now on, both the `BrowserMainMenuFactory` and the `ElectronMainMenuFactory`
+have a no-args `constructor`. Renamed `BrowserMenuBarContribution` to `BrowserMenuContribution`. `BrowserMenuContribution` was moved to its own `browser-menu-contribution.ts` module. Renamed the `browserMenuBarContribution` field to `browserMenuContribution` in the `MonacoQuickOpenService`.
 - [scm][git] the History view (GitHistoryWidget) has moved from the git package to a new   package, scm-extra, and
   renamed to ScmHistoryWidget.  GitNavigableListWidget has also moved.
   CSS classes have been moved renamed accordingly.  [6381](https://github.com/eclipse-theia/theia/pull/6381)

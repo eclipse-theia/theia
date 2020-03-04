@@ -19,7 +19,7 @@
 import { inject, injectable } from 'inversify';
 import { MenuPath } from '../../common/menu';
 import { ContextMenuRenderer, Anchor, RenderContextMenuOptions } from '../context-menu-renderer';
-import { BrowserMainMenuFactory } from './browser-menu-plugin';
+import { BrowserMainMenuFactory } from './browser-main-menu-factory';
 
 @injectable()
 export class BrowserContextMenuRenderer implements ContextMenuRenderer {

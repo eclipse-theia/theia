@@ -16,11 +16,12 @@
 
 import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
+import debounce = require('lodash.debounce');
 import {
     Command, CommandContribution, CommandRegistry,
     isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable
 } from '../../common';
-import { KeybindingContribution, KeybindingRegistry } from '../../browser';
+import { KeybindingContribution, KeybindingRegistry, PreferenceService } from '../../browser';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
@@ -71,25 +72,45 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
 
-    constructor(
-        @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory
-    ) { }
+    @inject(ElectronMainMenuFactory)
+    protected readonly factory: ElectronMainMenuFactory;
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(PreferenceService)
+    protected readonly preferencesService: PreferenceService;
+
+    @inject(MenuModelRegistry)
+    protected readonly menuModelRegistry: MenuModelRegistry;
+
+    @inject(KeybindingRegistry)
+    protected readonly keybindingRegistry: KeybindingRegistry;
 
     onStart(app: FrontendApplication): void {
+        const update = debounce(() => this.update(), 100);
+        this.preferencesService.onPreferenceChanged(update);
+        this.keybindingRegistry.onKeybindingsChanged(update);
+        this.menuModelRegistry.onChanged(update);
+        this.commandRegistry.onWillExecuteCommand(({ commandId }) => {
+            if (this.commandRegistry.getToggledHandler(commandId)) {
+                update();
+            }
+        });
         this.hideTopPanel(app);
-        this.setMenu();
+        this.update();
         if (isOSX) {
             // OSX: Recreate the menus when changing windows.
             // OSX only has one menu bar for all windows, so we need to swap
             // between them as the user switches windows.
-            electron.remote.getCurrentWindow().on('focus', () => this.setMenu());
+            electron.remote.getCurrentWindow().on('focus', () => this.update());
         }
         // Make sure the application menu is complete, once the frontend application is ready.
         // https://github.com/theia-ide/theia/issues/5100
         let onStateChange: Disposable | undefined = undefined;
         const stateServiceListener = (state: FrontendApplicationState) => {
             if (state === 'ready') {
-                this.setMenu();
+                this.update();
             }
             if (state === 'closing_window') {
                 if (!!onStateChange) {
@@ -120,7 +141,9 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         }
     }
 
-    private setMenu(menu: electron.Menu = this.factory.createMenuBar(), electronWindow: electron.BrowserWindow = electron.remote.getCurrentWindow()): void {
+    protected update(): void {
+        const menu = this.factory.createMenuBar();
+        const electronWindow = electron.remote.getCurrentWindow();
         if (isOSX) {
             electron.remote.Menu.setApplicationMenu(menu);
         } else {

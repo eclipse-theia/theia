@@ -25,7 +25,7 @@ import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { MonacoContextKeyService } from './monaco-context-key-service';
 import { QuickOpenHideReason } from '@theia/core/lib/common/quick-open-service';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
-import { BrowserMenuBarContribution } from '@theia/core/lib/browser/menu/browser-menu-plugin';
+import { BrowserMenuContribution } from '@theia/core/lib/browser/menu/browser-menu-contribution';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     valueSelection?: Readonly<[number, number]>;
@@ -52,8 +52,8 @@ export class MonacoQuickOpenService extends QuickOpenService {
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
 
-    @inject(BrowserMenuBarContribution) @optional()
-    protected readonly browserMenuBarContribution?: BrowserMenuBarContribution;
+    @inject(BrowserMenuContribution) @optional()
+    protected readonly browserMenuContribution?: BrowserMenuContribution;
 
     protected inQuickOpenKey: ContextKey<boolean>;
 
@@ -117,9 +117,9 @@ export class MonacoQuickOpenService extends QuickOpenService {
     }
 
     internalOpen(opts: MonacoQuickOpenControllerOpts): void {
-        const browserMenuBarContribution = this.browserMenuBarContribution;
-        if (browserMenuBarContribution) {
-            const browserMenuBar = browserMenuBarContribution.menuBar;
+        const browserMenuContribution = this.browserMenuContribution;
+        if (browserMenuContribution) {
+            const browserMenuBar = browserMenuContribution.menuBar;
             if (browserMenuBar) {
                 const activeMenu = browserMenuBar.activeMenu;
                 if (activeMenu) {
