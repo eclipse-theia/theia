@@ -413,12 +413,12 @@ export function fromLocation(location: theia.Location): model.Location {
     };
 }
 
-export function fromDefinitionLink(definitionLink: theia.DefinitionLink): model.DefinitionLink {
-    return <model.DefinitionLink>{
+export function fromDefinitionLink(definitionLink: theia.DefinitionLink): model.LocationLink {
+    return <model.LocationLink>{
         uri: definitionLink.targetUri,
         range: fromRange(definitionLink.targetRange),
-        origin: definitionLink.originSelectionRange ? fromRange(definitionLink.originSelectionRange) : undefined,
-        selectionRange: definitionLink.targetSelectionRange ? fromRange(definitionLink.targetSelectionRange) : undefined
+        originSelectionRange: definitionLink.originSelectionRange ? fromRange(definitionLink.originSelectionRange) : undefined,
+        targetSelectionRange: definitionLink.targetSelectionRange ? fromRange(definitionLink.targetSelectionRange) : undefined
     };
 }
 

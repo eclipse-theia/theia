@@ -47,7 +47,6 @@ import {
     TextEdit,
     FormattingOptions,
     Definition,
-    DefinitionLink,
     DocumentLink,
     CodeLensSymbol,
     DocumentSymbol,
@@ -247,7 +246,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Completion end
 
     // ### Definition provider begin
-    $provideDefinition(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | DefinitionLink[] | undefined> {
+    $provideDefinition(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | undefined> {
         return this.withAdapter(handle, DefinitionAdapter, adapter => adapter.provideDefinition(URI.revive(resource), position, token));
     }
 
@@ -259,7 +258,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Definition provider end
 
     // ### Declaration provider begin
-    $provideDeclaration(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | DefinitionLink[] | undefined> {
+    $provideDeclaration(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | undefined> {
         return this.withAdapter(handle, DeclarationAdapter, adapter => adapter.provideDeclaration(URI.revive(resource), position, token));
     }
 
@@ -300,7 +299,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Diagnostics end
 
     // ### Implementation provider begin
-    $provideImplementation(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | DefinitionLink[] | undefined> {
+    $provideImplementation(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | undefined> {
         return this.withAdapter(handle, ImplementationAdapter, adapter => adapter.provideImplementation(URI.revive(resource), position, token));
     }
 
@@ -312,7 +311,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Implementation provider end
 
     // ### Type Definition provider begin
-    $provideTypeDefinition(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | DefinitionLink[] | undefined> {
+    $provideTypeDefinition(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | undefined> {
         return this.withAdapter(handle, TypeDefinitionAdapter, adapter => adapter.provideTypeDefinition(URI.revive(resource), position, token));
     }
 

@@ -20,7 +20,7 @@ import { DocumentsExtImpl } from '../documents';
 import * as types from '../types-impl';
 import * as Converter from '../type-converters';
 import { Position } from '../../common/plugin-api-rpc';
-import { Definition, DefinitionLink, Location } from '../../common/plugin-api-rpc-model';
+import { Definition, LocationLink, Location } from '../../common/plugin-api-rpc-model';
 import { isDefinitionLinkArray, isLocationArray } from './util';
 
 export class TypeDefinitionAdapter {
@@ -30,7 +30,7 @@ export class TypeDefinitionAdapter {
         private readonly documents: DocumentsExtImpl
     ) { }
 
-    provideTypeDefinition(resource: URI, position: Position, token: theia.CancellationToken): Promise<Definition | DefinitionLink[] | undefined> {
+    provideTypeDefinition(resource: URI, position: Position, token: theia.CancellationToken): Promise<Definition | undefined> {
         const documentData = this.documents.getDocumentData(resource);
         if (!documentData) {
             return Promise.reject(new Error(`There is no document for ${resource}`));
@@ -59,7 +59,7 @@ export class TypeDefinitionAdapter {
             }
 
             if (isDefinitionLinkArray(definition)) {
-                const definitionLinks: DefinitionLink[] = [];
+                const definitionLinks: LocationLink[] = [];
 
                 for (const definitionLink of definition) {
                     definitionLinks.push(Converter.fromDefinitionLink(definitionLink));
