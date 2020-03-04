@@ -303,21 +303,21 @@ export interface Location {
     range: Range;
 }
 
-export type Definition = Location | Location[];
+export type Definition = Location | Location[] | LocationLink[];
 
-export interface DefinitionLink {
+export interface LocationLink {
     uri: UriComponents;
     range: Range;
-    origin?: Range;
-    selectionRange?: Range;
+    originSelectionRange?: Range;
+    targetSelectionRange?: Range;
 }
 
 export interface DefinitionProvider {
-    provideDefinition(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | DefinitionLink[] | undefined;
+    provideDefinition(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | undefined;
 }
 
 export interface DeclarationProvider {
-    provideDeclaration(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | DefinitionLink[] | undefined;
+    provideDeclaration(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Definition | undefined;
 }
 
 /**
