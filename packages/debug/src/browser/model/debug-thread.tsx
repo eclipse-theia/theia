@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { Event, Emitter } from '@theia/core';
+import { CancellationTokenSource, Emitter, Event } from '@theia/core';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugStackFrame } from './debug-stack-frame';
@@ -140,17 +140,32 @@ export class DebugThread extends DebugThreadData implements TreeElement {
     }
 
     protected pendingFetch = Promise.resolve<DebugStackFrame[]>([]);
+    protected _pendingFetchCount: number = 0;
+    protected pendingFetchCancel = new CancellationTokenSource();
     async fetchFrames(levels: number = 20): Promise<DebugStackFrame[]> {
+        const cancel = this.pendingFetchCancel.token;
+        this._pendingFetchCount += 1;
+
         return this.pendingFetch = this.pendingFetch.then(async () => {
             try {
                 const start = this.frameCount;
                 const frames = await this.doFetchFrames(start, levels);
+                if (cancel.isCancellationRequested) {
+                    return [];
+                }
                 return this.doUpdateFrames(frames);
             } catch (e) {
                 console.error(e);
                 return [];
+            } finally {
+                if (!cancel.isCancellationRequested) {
+                    this._pendingFetchCount -= 1;
+                }
             }
         });
+    }
+    get pendingFrameCount(): number {
+        return this._pendingFetchCount;
     }
     protected async doFetchFrames(startFrame: number, levels: number): Promise<DebugProtocol.StackFrame[]> {
         try {
@@ -181,7 +196,17 @@ export class DebugThread extends DebugThreadData implements TreeElement {
         return [...result.values()];
     }
     protected clearFrames(): void {
+        // Clear all frames
         this._frames.clear();
+
+        // Cancel all request promises
+        this.pendingFetchCancel.cancel();
+        this.pendingFetchCancel = new CancellationTokenSource();
+
+        // Empty all current requests
+        this.pendingFetch = Promise.resolve([]);
+        this._pendingFetchCount = 0;
+
         this.updateCurrentFrame();
     }
     protected updateCurrentFrame(): void {
