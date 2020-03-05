@@ -54,6 +54,11 @@ export const TerminalConfigSchema: PreferenceSchema = {
             description: 'The font weight to use within the terminal for bold text.',
             default: 'bold'
         },
+        'terminal.integrated.drawBoldTextInBrightColors': {
+            description: 'Controls whether to draw bold text in bright colors.',
+            type: 'boolean',
+            default: true,
+        },
         'terminal.integrated.letterSpacing': {
             description: 'Controls the letter spacing of the terminal, this is an integer value which represents the amount of additional pixels to add between characters.',
             type: 'number',
@@ -70,6 +75,11 @@ export const TerminalConfigSchema: PreferenceSchema = {
             type: 'number',
             default: 1000
         },
+        'terminal.integrated.fastScrollSensitivity': {
+            description: 'Controls the scrolling speed when pressing \'alt\'.',
+            type: 'number',
+            default: 5,
+        },
         'terminal.integrated.rendererType': {
             description: 'Controls how the terminal is rendered.',
             type: 'string',
@@ -80,7 +90,22 @@ export const TerminalConfigSchema: PreferenceSchema = {
             description: 'Controls whether text selected in the terminal will be copied to the clipboard.',
             type: 'boolean',
             default: false,
-        }
+        },
+        'terminal.integrated.cursorBlinking': {
+            description: 'Controls whether the terminal cursor blinks.',
+            type: 'boolean',
+            default: false
+        },
+        'terminal.integrated.cursorStyle': {
+            description: 'Controls the style of the terminal cursor/',
+            enum: ['block', 'underline', 'line'],
+            default: 'block'
+        },
+        'terminal.integrated.cursorWidth': {
+            description: 'Controls the width of the cursor when \'cursorStyle\' is set to \'line\'.',
+            type: 'number',
+            default: 1
+        },
     }
 };
 
@@ -90,16 +115,23 @@ export interface TerminalConfiguration {
     'terminal.integrated.fontFamily': string
     'terminal.integrated.fontSize': number
     'terminal.integrated.fontWeight': FontWeight
-    'terminal.integrated.fontWeightBold': FontWeight
+    'terminal.integrated.fontWeightBold': FontWeight,
+    'terminal.integrated.drawBoldTextInBrightColors': boolean,
     'terminal.integrated.letterSpacing': number
     'terminal.integrated.lineHeight': number,
     'terminal.integrated.scrollback': number,
+    'terminal.integrated.fastScrollSensitivity': number,
     'terminal.integrated.rendererType': TerminalRendererType,
     'terminal.integrated.copyOnSelection': boolean,
+    'terminal.integrated.cursorBlinking': boolean,
+    'terminal.integrated.cursorStyle': CursorStyleVSCode,
+    'terminal.integrated.cursorWidth': number
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
-
+export type CursorStyle = 'block' | 'underline' | 'bar';
+// VS Code uses 'line' to represent 'bar'. The following conversion is necessary to support their preferences.
+export type CursorStyleVSCode = CursorStyle | 'line';
 export type TerminalRendererType = 'canvas' | 'dom';
 export const DEFAULT_TERMINAL_RENDERER_TYPE = 'canvas';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

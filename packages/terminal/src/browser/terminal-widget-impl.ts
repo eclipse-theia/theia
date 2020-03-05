@@ -28,7 +28,7 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE } from './terminal-preferences';
+import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
@@ -93,14 +93,18 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.addClass('terminal-container');
 
         this.term = new Terminal({
-            cursorBlink: false,
+            cursorBlink: this.preferences['terminal.integrated.cursorBlinking'],
+            cursorStyle: this.getCursorStyle(),
+            cursorWidth: this.preferences['terminal.integrated.cursorWidth'],
             fontFamily: this.preferences['terminal.integrated.fontFamily'],
             fontSize: this.preferences['terminal.integrated.fontSize'],
             fontWeight: this.preferences['terminal.integrated.fontWeight'],
             fontWeightBold: this.preferences['terminal.integrated.fontWeightBold'],
+            drawBoldTextInBrightColors: this.preferences['terminal.integrated.drawBoldTextInBrightColors'],
             letterSpacing: this.preferences['terminal.integrated.letterSpacing'],
             lineHeight: this.preferences['terminal.integrated.lineHeight'],
             scrollback: this.preferences['terminal.integrated.scrollback'],
+            fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
             rendererType: this.getTerminalRendererType(this.preferences['terminal.integrated.rendererType']),
             theme: this.themeService.theme
         });
@@ -128,7 +132,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             const lastSeparator = change.preferenceName.lastIndexOf('.');
             if (lastSeparator > 0) {
-                const preferenceName = change.preferenceName.substr(lastSeparator + 1);
+                let preferenceName = change.preferenceName.substr(lastSeparator + 1);
                 let preferenceValue = this.preferences[change.preferenceName];
 
                 if (preferenceName === 'rendererType') {
@@ -137,6 +141,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                         // given terminal renderer type is not supported or invalid
                         preferenceValue = DEFAULT_TERMINAL_RENDERER_TYPE;
                     }
+                }
+
+                // Convert the terminal preference into a valid `xterm` option.
+                if (preferenceName === 'cursorBlinking') {
+                    preferenceName = 'cursorBlink';
+                } else if (preferenceName === 'cursorStyle') {
+                    preferenceValue = this.getCursorStyle();
                 }
 
                 this.term.setOption(preferenceName, preferenceValue);
@@ -202,6 +213,15 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.searchBox = this.terminalSearchBoxFactory(this.term);
         this.toDispose.push(this.searchBox);
+    }
+
+    /**
+     * Get the cursor style compatible with `xterm`.
+     * @returns CursorStyle
+     */
+    private getCursorStyle(): CursorStyle {
+        const value = this.preferences['terminal.integrated.cursorStyle'];
+        return value === 'line' ? 'bar' : value;
     }
 
     /**
