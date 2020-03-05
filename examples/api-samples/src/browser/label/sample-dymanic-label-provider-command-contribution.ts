@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, interfaces } from 'inversify';
 import { Command, CommandContribution, CommandRegistry, CommandHandler } from '@theia/core';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { SampleDynamicLabelProviderContribution } from './sample-dynamic-label-provider-contribution';
 
 export namespace ExampleLabelProviderCommands {
@@ -29,7 +29,7 @@ export namespace ExampleLabelProviderCommands {
 }
 
 @injectable()
-export class ApiSamplesContribution implements FrontendApplicationContribution, CommandContribution {
+export class SampleDynamicLabelProviderCommandContribution implements FrontendApplicationContribution, CommandContribution {
 
     @inject(SampleDynamicLabelProviderContribution)
     protected readonly labelProviderContribution: SampleDynamicLabelProviderContribution;
@@ -53,3 +53,10 @@ export class ExampleLabelProviderCommandHandler implements CommandHandler {
     }
 
 }
+
+export const bindDynamicLabelProvider = (bind: interfaces.Bind) => {
+    bind(SampleDynamicLabelProviderContribution).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(SampleDynamicLabelProviderContribution);
+    bind(CommandContribution).to(SampleDynamicLabelProviderCommandContribution).inSingletonScope();
+};
+
