@@ -15,14 +15,10 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { CommandContribution } from '@theia/core';
-import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
-import { ApiSamplesContribution } from './api-samples-contribution';
-import { SampleDynamicLabelProviderContribution } from './sample-dynamic-label-provider-contribution';
+import { bindDynamicLabelProvider } from './label/sample-dymanic-label-provider-command-contribution';
+import { bindSampleUnclosableView } from './view/sample-unclosable-view-contribution';
 
 export default new ContainerModule(bind => {
-    bind(CommandContribution).to(ApiSamplesContribution).inSingletonScope();
-
-    bind(SampleDynamicLabelProviderContribution).toSelf().inSingletonScope();
-    bind(LabelProviderContribution).toService(SampleDynamicLabelProviderContribution);
+    bindDynamicLabelProvider(bind);
+    bindSampleUnclosableView(bind);
 });
