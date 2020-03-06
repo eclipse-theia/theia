@@ -20,12 +20,12 @@ import { deepClone } from '@theia/core/lib/common/objects';
 import { Emitter } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Md5 } from 'ts-md5';
-import * as markdownit from 'markdown-it';
 import throttle = require('lodash.throttle');
 import { NotificationPreferences } from './notification-preferences';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { OpenerService } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
+import { NotificationContentRenderer } from './notification-content-renderer';
 
 export interface NotificationUpdateEvent {
     readonly notifications: Notification[];
@@ -59,6 +59,9 @@ export class NotificationManager extends MessageClient {
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+
+    @inject(NotificationContentRenderer)
+    protected readonly contentRenderer: NotificationContentRenderer;
 
     protected readonly onUpdatedEmitter = new Emitter<NotificationUpdateEvent>();
     readonly onUpdated = this.onUpdatedEmitter.event;
@@ -164,7 +167,7 @@ export class NotificationManager extends MessageClient {
 
         let notification = this.notifications.get(messageId);
         if (!notification) {
-            const message = this.renderMessage(plainMessage.text);
+            const message = this.contentRenderer.renderMessage(plainMessage.text);
             const type = this.toNotificationType(plainMessage.type);
             const actions = Array.from(new Set(plainMessage.actions));
             const source = plainMessage.source;
@@ -208,11 +211,6 @@ export class NotificationManager extends MessageClient {
         }
         return plainMessage.options && plainMessage.options.timeout || this.preferences['notification.timeout'];
     }
-    protected readonly mdEngine = markdownit({ html: true });
-    protected renderMessage(content: string): string {
-        const contentWithoutNewlines = content.replace(/(\r)?\n/gm, ' ');
-        return this.mdEngine.renderInline(contentWithoutNewlines);
-    }
     protected isExpandable(message: string, source: string | undefined, actions: string[]): boolean {
         if (!actions.length && source) {
             return true;
@@ -238,7 +236,7 @@ export class NotificationManager extends MessageClient {
     async showProgress(messageId: string, plainMessage: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
         let notification = this.notifications.get(messageId);
         if (!notification) {
-            const message = this.renderMessage(plainMessage.text);
+            const message = this.contentRenderer.renderMessage(plainMessage.text);
             const type = this.toNotificationType(plainMessage.type);
             const actions = Array.from(new Set(plainMessage.actions));
             const source = plainMessage.source;
