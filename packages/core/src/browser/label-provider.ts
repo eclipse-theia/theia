@@ -118,8 +118,11 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
             return this.defaultFolderIcon;
         }
         const uri = URIIconReference.is(element) ? element.uri : element;
-        const iconClass = uri && this.getFileIcon(uri);
-        return iconClass || this.defaultFileIcon;
+        if (uri) {
+            const iconClass = uri && this.getFileIcon(uri);
+            return iconClass || this.defaultFileIcon;
+        }
+        return '';
     }
 
     get defaultFolderIcon(): string {

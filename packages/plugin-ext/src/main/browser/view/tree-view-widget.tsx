@@ -130,7 +130,7 @@ export class PluginTree extends TreeImpl {
     protected createTreeNode(item: TreeViewItem, parent: CompositeTreeNode): TreeNode {
         const icon = this.toIconClass(item);
         const resourceUri = item.resourceUri && URI.revive(item.resourceUri).toString();
-        const themeIconId = item.themeIconId || item.collapsibleState !== TreeViewItemCollapsibleState.None ? 'folder' : 'file';
+        const themeIconId = item.themeIconId ? item.themeIconId : item.collapsibleState !== TreeViewItemCollapsibleState.None ? 'folder' : 'file';
         const update: Partial<TreeViewNode> = {
             name: item.label,
             icon,
