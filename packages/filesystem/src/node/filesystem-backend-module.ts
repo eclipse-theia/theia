@@ -23,6 +23,7 @@ import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
 import { NsfwFileSystemWatcherServer } from './nsfw-watcher/nsfw-filesystem-watcher';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { NodeFileUploadService } from './node-file-upload-service';
+import { NsfwOptions } from './nsfw-watcher/nsfw-options';
 
 const SINGLE_THREADED = process.argv.indexOf('--no-cluster') !== -1;
 
@@ -39,10 +40,14 @@ export function bindFileSystem(bind: interfaces.Bind, props?: {
 }
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind, { singleThreaded }: { singleThreaded: boolean } = { singleThreaded: SINGLE_THREADED }): void {
+    bind(NsfwOptions).toConstantValue({});
+
     if (singleThreaded) {
         bind(FileSystemWatcherServer).toDynamicValue(ctx => {
             const logger = ctx.container.get<ILogger>(ILogger);
+            const nsfwOptions = ctx.container.get<NsfwOptions>(NsfwOptions);
             return new NsfwFileSystemWatcherServer({
+                nsfwOptions,
                 info: (message, ...args) => logger.info(message, ...args),
                 error: (message, ...args) => logger.error(message, ...args)
             });

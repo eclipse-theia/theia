@@ -19,6 +19,7 @@ import { injectable, inject } from 'inversify';
 import { JsonRpcProxyFactory, ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from '@theia/core';
 import { IPCConnectionProvider } from '@theia/core/lib/node/messaging';
 import { FileSystemWatcherServer, WatchOptions, FileSystemWatcherClient, ReconnectingFileSystemWatcherServer } from '../common/filesystem-watcher-protocol';
+import { NsfwOptions } from './nsfw-watcher/nsfw-options';
 
 export const NSFW_WATCHER = 'nsfw-watcher';
 
@@ -32,7 +33,8 @@ export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
 
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,
-        @inject(IPCConnectionProvider) protected readonly ipcConnectionProvider: IPCConnectionProvider
+        @inject(IPCConnectionProvider) protected readonly ipcConnectionProvider: IPCConnectionProvider,
+        @inject(NsfwOptions) protected readonly nsfwOptions: NsfwOptions
     ) {
         this.remote.setClient({
             onDidFilesChanged: e => {
@@ -70,6 +72,9 @@ export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
                 serverName: NSFW_WATCHER,
                 logger: this.logger
             }),
+            args: [
+                `--nsfwOptions=${JSON.stringify(this.nsfwOptions)}`
+            ],
             env: process.env
         }, connection => this.proxyFactory.listen(connection));
     }
