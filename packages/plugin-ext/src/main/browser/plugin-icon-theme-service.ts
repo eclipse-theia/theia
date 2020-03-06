@@ -514,8 +514,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         if (uri) {
             const language = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(monaco.Uri.parse(uri));
             classNames.push(this.languageIcon(language.languageIdentifier.language));
+            classNames.unshift(this.fileIcon);
         }
-        classNames.unshift(this.fileIcon);
         return classNames;
     }
 
