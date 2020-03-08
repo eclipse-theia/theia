@@ -39,21 +39,6 @@ export enum ExtensionKind {
 export const doInitialization: BackendInitializationFn = (apiFactory: PluginAPIFactory, plugin: Plugin) => {
     const vscode = Object.assign(apiFactory(plugin), { ExtensionKind });
 
-    // replace command API as it will send only the ID as a string parameter
-    const registerCommand = vscode.commands.registerCommand;
-    vscode.commands.registerCommand = function (command: theia.CommandDescription | string, handler?: <T>(...args: any[]) => T | Thenable<T>, thisArg?: any): any {
-        // use of the ID when registering commands
-        if (typeof command === 'string') {
-            const rawCommands = plugin.rawModel.contributes && plugin.rawModel.contributes.commands;
-            const commands = rawCommands ? Array.isArray(rawCommands) ? rawCommands : [rawCommands] : undefined;
-            if (handler && commands && commands.some(item => item.command === command)) {
-                return vscode.commands.registerHandler(command, handler, thisArg);
-            }
-            return registerCommand({ id: command }, handler, thisArg);
-        }
-        return registerCommand(command, handler, thisArg);
-    };
-
     // use Theia plugin api instead vscode extensions
     (<any>vscode).extensions = {
         get all(): any[] {

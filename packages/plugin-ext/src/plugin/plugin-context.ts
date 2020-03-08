@@ -184,7 +184,16 @@ export function createAPIFactory(
     return function (plugin: InternalPlugin): typeof theia {
         const commands: typeof theia.commands = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            registerCommand(command: theia.CommandDescription, handler?: <T>(...args: any[]) => T | Thenable<T | undefined>, thisArg?: any): Disposable {
+            registerCommand(command: theia.CommandDescription | string, handler?: <T>(...args: any[]) => T | Thenable<T | undefined>, thisArg?: any): Disposable {
+                // use of the ID when registering commands
+                if (typeof command === 'string') {
+                    const rawCommands = plugin.rawModel.contributes && plugin.rawModel.contributes.commands;
+                    const contributedCommands = rawCommands ? Array.isArray(rawCommands) ? rawCommands : [rawCommands] : undefined;
+                    if (handler && contributedCommands && contributedCommands.some(item => item.command === command)) {
+                        return commandRegistry.registerHandler(command, handler, thisArg);
+                    }
+                    return commandRegistry.registerCommand({ id: command }, handler, thisArg);
+                }
                 return commandRegistry.registerCommand(command, handler, thisArg);
             },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

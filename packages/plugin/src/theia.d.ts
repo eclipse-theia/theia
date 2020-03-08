@@ -2239,7 +2239,7 @@ declare module '@theia/plugin' {
          *
          * Throw if a command is already registered for the given command identifier.
          */
-        export function registerCommand(command: CommandDescription, handler?: (...args: any[]) => any, thisArg?: any): Disposable;
+        export function registerCommand(command: CommandDescription | string, handler?: (...args: any[]) => any, thisArg?: any): Disposable;
 
         /**
          * Register the given handler for the given command identifier.
@@ -9233,3 +9233,4 @@ declare module '@theia/plugin' {
         provideCallHierarchyOutgoingCalls(item: CallHierarchyItem, token: CancellationToken): ProviderResult<CallHierarchyOutgoingCall[]>;
     }
 }
+
