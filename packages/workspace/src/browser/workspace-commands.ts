@@ -464,8 +464,8 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected getUri(...args: any[]): URI | undefined {
         const uri = super.getUri(...args);
-        // If the URI is available, return it immediately.
-        if (uri) {
+        // Return the `uri` immediately if the resource exists in any of the workspace roots and is of `file` scheme.
+        if (uri && uri.scheme === 'file' && this.workspaceService.getWorkspaceRootUri(uri)) {
             return uri;
         }
         // Return the first root if available.
