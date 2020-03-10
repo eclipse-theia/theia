@@ -16,6 +16,7 @@
 
 import * as http from 'http';
 import * as cookie from 'cookie';
+import * as crypto from 'crypto';
 import { injectable } from 'inversify';
 import { ElectronSecurityToken } from '../../electron-common/electron-token';
 
@@ -41,8 +42,26 @@ export class ElectronTokenValidator {
         return false;
     }
 
-    isTokenValid(token: ElectronSecurityToken): boolean {
-        return typeof token === 'object' && token.value === this.electronSecurityToken!.value;
+    /**
+     * Validates a token.
+     *
+     * This method both checks the shape of the parsed token data and its actual value.
+     *
+     * @param token Parsed object sent by the client as the token.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    isTokenValid(token: any): boolean {
+        // eslint-disable-next-line no-null/no-null
+        if (typeof token === 'object' && token !== null && typeof token.value === 'string') {
+            try {
+                const received = Buffer.from(token.value, 'utf8');
+                const expected = Buffer.from(this.electronSecurityToken!.value, 'utf8');
+                return received.byteLength === expected.byteLength && crypto.timingSafeEqual(received, expected);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+        return false;
     }
 
     /**
