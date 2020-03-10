@@ -24,10 +24,14 @@ import {
 } from '../../common';
 import { PreferenceService, KeybindingRegistry, Keybinding } from '../../browser';
 import { ContextKeyService } from '../../browser/context-key-service';
+import debounce = require('lodash.debounce');
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 
 @injectable()
 export class ElectronMainMenuFactory {
+
+    protected _menu: Electron.Menu | undefined;
+    protected _toggledCommands: Set<string> = new Set();
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -35,30 +39,45 @@ export class ElectronMainMenuFactory {
     @inject(ContextMenuContext)
     protected readonly context: ContextMenuContext;
 
-    @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
-
-    @inject(PreferenceService)
-    protected readonly preferencesService: PreferenceService;
-
-    @inject(MenuModelRegistry)
-    protected readonly menuModelRegistry: MenuModelRegistry;
-
-    @inject(KeybindingRegistry)
-    protected readonly keybindingRegistry: KeybindingRegistry;
+    constructor(
+        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
+        @inject(PreferenceService) protected readonly preferencesService: PreferenceService,
+        @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry,
+        @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry
+    ) {
+        preferencesService.onPreferenceChanged(debounce(() => {
+            if (this._menu) {
+                for (const item of this._toggledCommands) {
+                    this._menu.getMenuItemById(item).checked = this.commandRegistry.isToggled(item);
+                }
+                electron.remote.getCurrentWindow().setMenu(this._menu);
+            }
+        }, 10));
+        keybindingRegistry.onKeybindingsChanged(() => {
+            const createdMenuBar = this.createMenuBar();
+            if (isOSX) {
+                electron.remote.Menu.setApplicationMenu(createdMenuBar);
+            } else {
+                electron.remote.getCurrentWindow().setMenu(createdMenuBar);
+            }
+        });
+    }
 
     createMenuBar(): Electron.Menu {
-        const menuModel = this.menuModelRegistry.getMenu(MAIN_MENU_BAR);
+        const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
         const template = this.fillMenuTemplate([], menuModel);
         if (isOSX) {
             template.unshift(this.createOSXMenu());
         }
-        return electron.remote.Menu.buildFromTemplate(template);
+        const menu = electron.remote.Menu.buildFromTemplate(template);
+        this._menu = menu;
+        return menu;
     }
 
     createContextMenu(menuPath: MenuPath, args?: any[]): Electron.Menu {
-        const menuModel = this.menuModelRegistry.getMenu(menuPath);
+        const menuModel = this.menuProvider.getMenu(menuPath);
         const template = this.fillMenuTemplate([], menuModel, args);
+
         return electron.remote.Menu.buildFromTemplate(template);
     }
 
@@ -137,6 +156,9 @@ export class ElectronMainMenuFactory {
                     click: () => this.execute(commandId, args),
                     accelerator
                 });
+                if (this.commandRegistry.getToggledHandler(commandId, ...args)) {
+                    this._toggledCommands.add(commandId);
+                }
             }
         }
         return items;
@@ -167,6 +189,10 @@ export class ElectronMainMenuFactory {
             // We need to check if we can execute it.
             if (this.commandRegistry.isEnabled(command, ...args)) {
                 await this.commandRegistry.executeCommand(command, ...args);
+                if (this._menu && this.commandRegistry.isVisible(command, ...args)) {
+                    this._menu.getMenuItemById(command).checked = this.commandRegistry.isToggled(command, ...args);
+                    electron.remote.getCurrentWindow().setMenu(this._menu);
+                }
             }
         } catch {
             // no-op

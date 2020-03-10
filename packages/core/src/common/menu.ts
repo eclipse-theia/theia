@@ -16,7 +16,6 @@
 
 import { injectable, inject, named } from 'inversify';
 import { Disposable } from './disposable';
-import { Event, Emitter } from './event';
 import { CommandRegistry, Command } from './command';
 import { ContributionProvider } from './contribution-provider';
 
@@ -42,7 +41,7 @@ export namespace MenuAction {
 }
 
 export interface SubMenuOptions {
-    iconClass: string | undefined;
+    iconClass: string
 }
 
 export type MenuPath = string[];
@@ -65,7 +64,6 @@ export interface MenuContribution {
 @injectable()
 export class MenuModelRegistry {
     protected readonly root = new CompositeMenuNode('');
-    protected readonly onChangedEmitter = new Emitter<void>();
 
     constructor(
         @inject(ContributionProvider) @named(MenuContribution)
@@ -82,9 +80,7 @@ export class MenuModelRegistry {
     registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
         const parent = this.findGroup(menuPath);
         const actionNode = new ActionMenuNode(item, this.commands);
-        const toDispose = parent.addNode(actionNode);
-        this.fireChanged();
-        return toDispose;
+        return parent.addNode(actionNode);
     }
 
     registerSubmenu(menuPath: MenuPath, label: string, options?: SubMenuOptions): Disposable {
@@ -98,25 +94,15 @@ export class MenuModelRegistry {
         let groupNode = this.findSubMenu(parent, menuId);
         if (!groupNode) {
             groupNode = new CompositeMenuNode(menuId, label, options ? options.iconClass : undefined);
-            const toDispose = parent.addNode(groupNode);
-            this.fireChanged();
-            return toDispose;
+            return parent.addNode(groupNode);
         } else {
-            let hasChanged = false;
             if (!groupNode.label) {
-                hasChanged = true;
                 groupNode.label = label;
             } else if (groupNode.label !== label) {
                 throw new Error("The group '" + menuPath.join('/') + "' already has a different label.");
             }
-            if (options) {
-                if (groupNode.iconClass !== options.iconClass) {
-                    groupNode.iconClass = options.iconClass;
-                    hasChanged = true;
-                }
-            }
-            if (hasChanged) {
-                this.fireChanged();
+            if (!groupNode.iconClass && options) {
+                groupNode.iconClass = options.iconClass;
             }
             return { dispose: () => { } };
         }
@@ -147,10 +133,7 @@ export class MenuModelRegistry {
 
         if (menuPath) {
             const parent = this.findGroup(menuPath);
-            const hasChanged = parent.removeNode(id);
-            if (hasChanged) {
-                this.fireChanged();
-            }
+            parent.removeNode(id);
             return;
         }
 
@@ -158,10 +141,7 @@ export class MenuModelRegistry {
         const recurse = (root: CompositeMenuNode) => {
             root.children.forEach(node => {
                 if (node instanceof CompositeMenuNode) {
-                    const hasChanged = node.removeNode(id);
-                    if (hasChanged) {
-                        this.fireChanged();
-                    }
+                    node.removeNode(id);
                     recurse(node);
                 }
             });
@@ -193,18 +173,6 @@ export class MenuModelRegistry {
     getMenu(menuPath: MenuPath = []): CompositeMenuNode {
         return this.findGroup(menuPath);
     }
-
-    protected fireChanged(): void {
-        this.onChangedEmitter.fire();
-    }
-
-    /**
-     * An `onChanged` event is emitted when either the menu parentage or one of the menu node's property has changed.
-     */
-    get onChanged(): Event<void> {
-        return this.onChangedEmitter.event;
-    }
-
 }
 
 export interface MenuNode {
@@ -257,19 +225,14 @@ export class CompositeMenuNode implements MenuNode {
         };
     }
 
-    /**
-     * `true` if the composite node contained a child node with this `id`. Otherwise, `false`.
-     */
-    public removeNode(id: string): boolean {
+    public removeNode(id: string): void {
         const node = this._children.find(n => n.id === id);
         if (node) {
             const idx = this._children.indexOf(node);
             if (idx >= 0) {
                 this._children.splice(idx, 1);
-                return true;
             }
         }
-        return false;
     }
 
     get sortString(): string {
