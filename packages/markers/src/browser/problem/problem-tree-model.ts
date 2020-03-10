@@ -20,15 +20,54 @@ import { MarkerNode, MarkerTree, MarkerOptions, MarkerInfoNode } from '../marker
 import { MarkerTreeModel } from '../marker-tree-model';
 import { injectable, inject } from 'inversify';
 import { OpenerOptions, TreeNode } from '@theia/core/lib/browser';
+import { Marker } from '../../common/marker';
 import { Diagnostic } from 'vscode-languageserver-types';
+import { ProblemUtils } from './problem-utils';
 
 @injectable()
 export class ProblemTree extends MarkerTree<Diagnostic> {
+
     constructor(
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,
         @inject(MarkerOptions) protected readonly markerOptions: MarkerOptions) {
         super(problemManager, markerOptions);
     }
+
+    protected getMarkerNodes(parent: MarkerInfoNode, markers: Marker<Diagnostic>[]): MarkerNode[] {
+        const nodes = super.getMarkerNodes(parent, markers);
+        return nodes.sort((a, b) => this.sortMarkers(a, b));
+    }
+
+    /**
+     * Sort markers based on the following rules:
+     * - Markers are fist sorted by `severity`.
+     * - Markers are sorted by `line number` if applicable.
+     * - Markers are sorted by `column number` if
+     * @param a the first marker for comparison.
+     * @param b the second marker for comparison.
+     */
+    protected sortMarkers(a: MarkerNode, b: MarkerNode): number {
+        const markerA = a.marker as Marker<Diagnostic>;
+        const markerB = b.marker as Marker<Diagnostic>;
+
+        // Determine the marker with the highest severity.
+        const severity = ProblemUtils.severityCompare(markerA, markerB);
+        if (severity !== 0) {
+            return severity;
+        }
+        // Determine the marker with the lower line number.
+        const lineNumber = ProblemUtils.lineNumberCompare(markerA, markerB);
+        if (lineNumber !== 0) {
+            return lineNumber;
+        }
+        // Determine the marker with the lower column number.
+        const columnNumber = ProblemUtils.columnNumberCompare(markerA, markerB);
+        if (columnNumber !== 0) {
+            return columnNumber;
+        }
+        return 0;
+    }
+
 }
 
 @injectable()

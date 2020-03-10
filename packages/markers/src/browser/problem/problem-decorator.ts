@@ -27,6 +27,7 @@ import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
 import { ProblemPreferences, ProblemConfiguration } from './problem-preferences';
 import { PreferenceChangeEvent } from '@theia/core/lib/browser';
+import { ProblemUtils } from './problem-utils';
 
 @injectable()
 export class ProblemDecorator implements TreeDecorator {
@@ -182,7 +183,6 @@ export class ProblemDecorator implements TreeDecorator {
 export namespace ProblemDecorator {
 
     // Highest severities (errors) come first, then the others. Undefined severities treated as the last ones.
-    export const severityCompare = (left: Marker<Diagnostic>, right: Marker<Diagnostic>): number =>
-        (left.data.severity || Number.MAX_SAFE_INTEGER) - (right.data.severity || Number.MAX_SAFE_INTEGER);
+    export const severityCompare = ProblemUtils.severityCompare;
 
 }
