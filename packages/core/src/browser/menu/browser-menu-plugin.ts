@@ -17,16 +17,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject } from 'inversify';
-import { MenuBar, Menu as MenuWidget } from '@phosphor/widgets';
+import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
 import {
     CommandRegistry, ActionMenuNode, CompositeMenuNode,
-    MenuModelRegistry, MAIN_MENU_BAR, MenuPath
+    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, ILogger
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
+import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 import { ContextKeyService } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
 import { waitForRevealed } from '../widgets';
+import { ApplicationShell } from '../shell';
 
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
@@ -36,20 +38,20 @@ export abstract class MenuBarWidget extends MenuBar {
 @injectable()
 export class BrowserMainMenuFactory {
 
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
     @inject(ContextMenuContext)
     protected readonly context: ContextMenuContext;
 
-    @inject(CommandRegistry)
-    protected readonly commandRegistry: CommandRegistry;
-
-    @inject(KeybindingRegistry)
-    protected readonly keybindingRegistry: KeybindingRegistry;
-
-    @inject(MenuModelRegistry)
-    protected readonly menuRegistry: MenuModelRegistry;
+    constructor(
+        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
+        @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry,
+        @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry
+    ) { }
 
     createMenuBar(): MenuBarWidget {
         const menuBar = new DynamicMenuBarWidget();
@@ -63,8 +65,8 @@ export class BrowserMainMenuFactory {
         return menuBar;
     }
 
-    fillMenuBar(menuBar: MenuBarWidget): void {
-        const menuModel = this.menuRegistry.getMenu(MAIN_MENU_BAR);
+    protected fillMenuBar(menuBar: MenuBarWidget): void {
+        const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
         const phosphorCommands = this.createPhosphorCommands(menuModel);
         // for the main menu we want all items to be visible.
         phosphorCommands.isVisible = () => true;
@@ -78,7 +80,7 @@ export class BrowserMainMenuFactory {
     }
 
     createContextMenu(path: MenuPath, args?: any[]): MenuWidget {
-        const menuModel = this.menuRegistry.getMenu(path);
+        const menuModel = this.menuProvider.getMenu(path);
         const phosphorCommands = this.createPhosphorCommands(menuModel, args);
 
         const contextMenu = new DynamicMenuWidget(menuModel, { commands: phosphorCommands }, this.contextKeyService, this.context);
@@ -295,4 +297,33 @@ class DynamicMenuWidget extends MenuWidget {
         return items;
     }
 
+}
+
+@injectable()
+export class BrowserMenuBarContribution implements FrontendApplicationContribution {
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
+    constructor(
+        @inject(BrowserMainMenuFactory) protected readonly factory: BrowserMainMenuFactory
+    ) { }
+
+    onStart(app: FrontendApplication): void {
+        const logo = this.createLogo();
+        app.shell.addWidget(logo, { area: 'top' });
+        const menu = this.factory.createMenuBar();
+        app.shell.addWidget(menu, { area: 'top' });
+    }
+
+    get menuBar(): MenuBarWidget | undefined {
+        return this.shell.topPanel.widgets.find(w => w instanceof MenuBarWidget) as MenuBarWidget | undefined;
+    }
+
+    protected createLogo(): Widget {
+        const logo = new Widget();
+        logo.id = 'theia:icon';
+        logo.addClass('theia-icon');
+        return logo;
+    }
 }
