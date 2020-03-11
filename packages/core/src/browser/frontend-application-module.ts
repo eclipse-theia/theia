@@ -89,6 +89,8 @@ import { ExternalUriService } from './external-uri-service';
 import { IconThemeService, NoneIconTheme } from './icon-theme-service';
 import { IconThemeApplicationContribution, IconThemeContribution, DefaultFileIconThemeContribution } from './icon-theme-contribution';
 import { TreeLabelProvider } from './tree/tree-label-provider';
+import { ProgressBar } from './progress-bar';
+import { ProgressBarFactory, ProgressBarOptions } from './progress-bar-factory';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -308,6 +310,12 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ProgressStatusBarItem).toSelf().inSingletonScope();
     bind(ProgressClient).toService(DispatchingProgressClient);
     bind(ProgressService).toSelf().inSingletonScope();
+    bind(ProgressBarFactory).toFactory(context => (options: ProgressBarOptions) => {
+        const childContainer = context.container.createChild();
+        childContainer.bind(ProgressBarOptions).toConstantValue(options);
+        childContainer.bind(ProgressBar).toSelf().inSingletonScope();
+        return childContainer.get(ProgressBar);
+    });
 
     bind(ContextMenuContext).toSelf().inSingletonScope();
 });
