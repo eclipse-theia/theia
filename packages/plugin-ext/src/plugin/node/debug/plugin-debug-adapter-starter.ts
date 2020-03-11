@@ -16,8 +16,8 @@
 
 import * as net from 'net';
 import * as theia from '@theia/plugin';
-import { CommunicationProvider, DebugAdapterForkExecutable } from '@theia/debug/lib/common/debug-model';
-import { ChildProcess, spawn, fork } from 'child_process';
+import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
+import { ChildProcess, spawn, fork, ForkOptions } from 'child_process';
 
 /**
  * Starts debug adapter process.
@@ -37,16 +37,26 @@ export function startDebugAdapter(executable: theia.DebugAdapterExecutable): Com
     }
 
     let childProcess: ChildProcess;
-    if ('command' in executable) {
-        const { command, args } = executable;
-        childProcess = spawn(command, args, options);
-    } else if ('modulePath' in executable) {
-        const forkExecutable = <DebugAdapterForkExecutable>executable;
-        const { modulePath, args } = forkExecutable;
-        options.stdio.push('ipc');
-        childProcess = fork(modulePath, args, options);
+    const { command, args } = executable;
+    if (command === 'node') {
+        if (Array.isArray(args) && args.length > 0) {
+            const isElectron = !!process.env['ELECTRON_RUN_AS_NODE'];
+            const forkOptions: ForkOptions = {
+                env: options.env,
+                execArgv: isElectron ? ['-e', 'delete process.env.ELECTRON_RUN_AS_NODE;require(process.argv[1])'] : [],
+                silent: true
+            };
+            if (options.cwd) {
+                forkOptions.cwd = options.cwd;
+            }
+            options.stdio.push('ipc');
+            forkOptions.stdio = options.stdio;
+            childProcess = fork(args[0], args.slice(1), forkOptions);
+        } else {
+            throw new Error(`It is not possible to launch debug adapter with the command: ${JSON.stringify(executable)}`);
+        }
     } else {
-        throw new Error(`It is not possible to launch debug adapter with the command: ${JSON.stringify(executable)}`);
+        childProcess = spawn(command, args, options);
     }
 
     return {
