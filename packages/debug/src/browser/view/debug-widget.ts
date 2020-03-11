@@ -22,8 +22,7 @@ import { DebugSessionWidget } from './debug-session-widget';
 import { DebugConfigurationWidget } from './debug-configuration-widget';
 import { DebugViewModel } from './debug-view-model';
 import { DebugSessionManager } from '../debug-session-manager';
-import { ProgressLocationService } from '@theia/core/lib/browser/progress-location-service';
-import { ProgressBar } from '@theia/core/lib/browser/progress-bar';
+import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 
 @injectable()
 export class DebugWidget extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider {
@@ -53,8 +52,8 @@ export class DebugWidget extends BaseWidget implements StatefulWidget, Applicati
     @inject(DebugSessionWidget)
     protected readonly sessionWidget: DebugSessionWidget;
 
-    @inject(ProgressLocationService)
-    protected readonly progressLocationService: ProgressLocationService;
+    @inject(ProgressBarFactory)
+    protected readonly progressBarFactory: ProgressBarFactory;
 
     @postConstruct()
     protected init(): void {
@@ -78,8 +77,7 @@ export class DebugWidget extends BaseWidget implements StatefulWidget, Applicati
         layout.addWidget(this.toolbar);
         layout.addWidget(this.sessionWidget);
 
-        const onProgress = this.progressLocationService.onProgress('debug');
-        this.toDispose.push(new ProgressBar({ container: this.node, insertMode: 'prepend' }, onProgress));
+        this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: 'debug' }));
     }
 
     protected onActivateRequest(msg: Message): void {

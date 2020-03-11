@@ -14,11 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ProgressLocationEvent } from './progress-location-service';
+import { LocationProgress, ProgressLocationService } from './progress-location-service';
 import { DisposableCollection, Disposable } from '../common';
-import { Event } from '../common/event';
+import { injectable, inject, postConstruct } from 'inversify';
+import { ProgressBarOptions } from './progress-bar-factory';
 
+@injectable()
 export class ProgressBar implements Disposable {
+
+    @inject(ProgressLocationService)
+    protected readonly progressLocationService: ProgressLocationService;
+
+    @inject(ProgressBarOptions)
+    protected readonly options: ProgressBarOptions;
 
     protected readonly toDispose = new DisposableCollection();
     dispose(): void {
@@ -26,27 +34,35 @@ export class ProgressBar implements Disposable {
     }
 
     protected progressBar: HTMLDivElement;
+    protected progressBarContainer: HTMLDivElement;
 
-    constructor(protected options: ProgressBar.Options, onProgress: Event<ProgressLocationEvent>) {
+    constructor() {
         this.progressBar = document.createElement('div');
         this.progressBar.className = 'theia-progress-bar';
         this.progressBar.style.display = 'none';
-        const progressBarContainer = document.createElement('div');
-        progressBarContainer.className = 'theia-progress-bar-container';
-        progressBarContainer.append(this.progressBar);
-        const { container, insertMode } = this.options;
-        if (insertMode === 'prepend') {
-            container.prepend(progressBarContainer);
-        } else {
-            container.append(progressBarContainer);
-        }
-        this.toDispose.pushAll([
-            Disposable.create(() => progressBarContainer.remove()),
-            onProgress(event => this.onProgress(event))
-        ]);
+        this.progressBarContainer = document.createElement('div');
+        this.progressBarContainer.className = 'theia-progress-bar-container';
+        this.progressBarContainer.append(this.progressBar);
     }
 
-    protected onProgress(event: ProgressLocationEvent): void {
+    @postConstruct()
+    protected init(): void {
+        const { container, insertMode, locationId } = this.options;
+        if (insertMode === 'prepend') {
+            container.prepend(this.progressBarContainer);
+        } else {
+            container.append(this.progressBarContainer);
+        }
+        this.toDispose.push(Disposable.create(() => this.progressBarContainer.remove()));
+        const onProgress = this.progressLocationService.onProgress(locationId);
+        this.toDispose.push(onProgress(event => this.onProgress(event)));
+        const current = this.progressLocationService.getProgress(locationId);
+        if (current) {
+            this.onProgress(current);
+        }
+    }
+
+    protected onProgress(event: LocationProgress): void {
         if (this.toDispose.disposed) {
             return;
         }
@@ -57,10 +73,4 @@ export class ProgressBar implements Disposable {
         this.progressBar.style.display = visible ? 'block' : 'none';
     }
 
-}
-export namespace ProgressBar {
-    export interface Options {
-        container: HTMLElement;
-        insertMode: 'append' | 'prepend';
-    }
 }

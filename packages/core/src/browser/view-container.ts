@@ -33,8 +33,7 @@ import { parseCssMagnitude } from './browser';
 import { WidgetManager } from './widget-manager';
 import { TabBarToolbarRegistry, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
 import { Key } from './keys';
-import { ProgressLocationService } from './progress-location-service';
-import { ProgressBar } from './progress-bar';
+import { ProgressBarFactory } from './progress-bar-factory';
 
 export interface ViewContainerTitleOptions {
     label: string;
@@ -92,8 +91,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     protected readonly onDidChangeTrackableWidgetsEmitter = new Emitter<Widget[]>();
     readonly onDidChangeTrackableWidgets = this.onDidChangeTrackableWidgetsEmitter.event;
 
-    @inject(ProgressLocationService)
-    protected readonly progressLocationService: ProgressLocationService;
+    @inject(ProgressBarFactory)
+    protected readonly progressBarFactory: ProgressBarFactory;
 
     @postConstruct()
     protected init(): void {
@@ -145,8 +144,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             this.onDidChangeTrackableWidgetsEmitter
         ]);
         if (this.options.progressLocationId) {
-            const onProgress = this.progressLocationService.onProgress(this.options.progressLocationId);
-            this.toDispose.push(new ProgressBar({ container: this.node, insertMode: 'prepend' }, onProgress));
+            this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: this.options.progressLocationId }));
         }
     }
 

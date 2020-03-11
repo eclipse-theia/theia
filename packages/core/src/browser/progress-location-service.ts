@@ -20,24 +20,26 @@ import { ProgressClient } from '../common/progress-service-protocol';
 import { ProgressMessage, ProgressUpdate } from '../common/message-service-protocol';
 import { Deferred } from '../common/promise-util';
 import { Event, Emitter } from '../common/event';
-import throttle = require('lodash.throttle');
 
-export interface ProgressLocationEvent {
-    message?: string;
+export interface LocationProgress {
     show: boolean;
 }
 
 @injectable()
 export class ProgressLocationService implements ProgressClient {
 
-    protected emitters = new Map<string, Emitter<ProgressLocationEvent>[]>();
+    protected emitters = new Map<string, Emitter<LocationProgress>[]>();
+    protected lastEvents = new Map<string, LocationProgress>();
 
-    onProgress(locationId: string): Event<ProgressLocationEvent> {
+    getProgress(locationId: string): LocationProgress | undefined {
+        return this.lastEvents.get(locationId);
+    }
+    onProgress(locationId: string): Event<LocationProgress> {
         const emitter = this.addEmitter(locationId);
         return emitter.event;
     }
-    protected addEmitter(locationId: string): Emitter<ProgressLocationEvent> {
-        const emitter = new Emitter<ProgressLocationEvent>();
+    protected addEmitter(locationId: string): Emitter<LocationProgress> {
+        const emitter = new Emitter<LocationProgress>();
         const list = this.emitters.get(locationId) || [];
         list.push(emitter);
         this.emitters.set(locationId, list);
@@ -67,13 +69,21 @@ export class ProgressLocationService implements ProgressClient {
         const show = !!progressSet.size;
         this.fireEvent(locationId, show);
     }
-    protected readonly fireEvent = throttle((locationId: string, show: boolean) => {
+    protected fireEvent(locationId: string, show: boolean): void {
+        const lastEvent = this.lastEvents.get(locationId);
+        const shouldFire = !lastEvent || lastEvent.show !== show;
+        if (shouldFire) {
+            this.lastEvents.set(locationId, { show });
+            this.getOrCreateEmitters(locationId).forEach(e => e.fire({ show }));
+        }
+    }
+    protected getOrCreateEmitters(locationId: string): Emitter<LocationProgress>[] {
         let emitters = this.emitters.get(locationId);
         if (!emitters) {
-            emitters = [ this.addEmitter(locationId) ];
+            emitters = [this.addEmitter(locationId)];
         }
-        emitters.forEach(e => e.fire({ show }));
-    }, 250);
+        return emitters;
+    }
 
     protected getLocationId(message: ProgressMessage): string {
         return message.options && message.options.location || 'unknownLocation';

@@ -21,8 +21,7 @@ import { PluginMetadata } from '../../common/plugin-protocol';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { HostedPluginSupport, PluginProgressLocation } from '../../hosted/browser/hosted-plugin';
-import { ProgressLocationService } from '@theia/core/lib/browser/progress-location-service';
-import { ProgressBar } from '@theia/core/lib/browser/progress-bar';
+import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 @injectable()
@@ -31,8 +30,8 @@ export class PluginWidget extends ReactWidget {
     @inject(HostedPluginSupport)
     protected readonly pluginService: HostedPluginSupport;
 
-    @inject(ProgressLocationService)
-    protected readonly progressLocationService: ProgressLocationService;
+    @inject(ProgressBarFactory)
+    protected readonly progressBarFactory: ProgressBarFactory;
 
     constructor() {
         super();
@@ -64,8 +63,7 @@ export class PluginWidget extends ReactWidget {
             this.toDisposeProgress.dispose();
             this.toDispose.push(this.toDisposeProgress);
             if (ref) {
-                const onProgress = this.progressLocationService.onProgress(PluginProgressLocation);
-                this.toDisposeProgress.push(new ProgressBar({ container: ref, insertMode: 'prepend' }, onProgress));
+                this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: PluginProgressLocation }));
             }
         }}>{this.doRender()}</div>;
     }

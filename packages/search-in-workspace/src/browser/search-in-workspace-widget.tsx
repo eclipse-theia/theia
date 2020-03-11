@@ -23,9 +23,8 @@ import * as ReactDOM from 'react-dom';
 import { Event, Emitter, Disposable } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
-import { ProgressLocationService } from '@theia/core/lib/browser/progress-location-service';
-import { ProgressBar } from '@theia/core/lib/browser/progress-bar';
 import { CancellationTokenSource } from '@theia/core';
+import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 
 export interface SearchFieldState {
     className: string;
@@ -84,8 +83,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     @inject(SearchInWorkspaceContextKeyService)
     protected readonly contextKeyService: SearchInWorkspaceContextKeyService;
 
-    @inject(ProgressLocationService)
-    protected readonly progressLocationService: ProgressLocationService;
+    @inject(ProgressBarFactory)
+    protected readonly progressBarFactory: ProgressBarFactory;
 
     @postConstruct()
     protected init(): void {
@@ -146,8 +145,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
         this.toDispose.push(this.resultTreeWidget);
 
-        const onProgress = this.progressLocationService.onProgress('search');
-        this.toDispose.push(new ProgressBar({ container: this.node, insertMode: 'prepend' }, onProgress));
+        this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: 'search' }));
     }
 
     storeState(): object {
