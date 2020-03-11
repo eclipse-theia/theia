@@ -202,6 +202,9 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.quickOpen' }, {
             execute: () => this.quickOpen.open('')
         });
+        commands.registerCommand({ id: 'workbench.action.openSettings' }, {
+            execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)
+        });
         commands.registerCommand({ id: 'default:type' }, {
             execute: args => {
                 const editor = MonacoEditor.getCurrent(this.editorManager);
