@@ -14,18 +14,40 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as path from 'path';
 import { PluginDeployerEntry, PluginDeployerFileHandlerContext } from '../../common/plugin-protocol';
 import * as decompress from 'decompress';
 
 export class PluginDeployerFileHandlerContextImpl implements PluginDeployerFileHandlerContext {
+
+    /**
+     * For testing: set to false to disable zip-slip prevention.
+     */
+    private _safeUnzip = true;
 
     constructor(private readonly pluginDeployerEntry: PluginDeployerEntry) {
 
     }
 
     async unzip(sourcePath: string, destPath: string): Promise<void> {
-        await decompress(sourcePath, destPath);
-        return Promise.resolve();
+        const absoluteDestPath = path.resolve(process.cwd(), destPath);
+        await decompress(sourcePath, absoluteDestPath, {
+            /**
+             * Prevent zip-slip: https://snyk.io/research/zip-slip-vulnerability
+             */
+            filter: (file: decompress.File) => {
+                if (this._safeUnzip) {
+                    const expectedFilePath = path.join(absoluteDestPath, file.path);
+                    // If dest is not found in the expected path, it means file will be unpacked somewhere else.
+                    if (!expectedFilePath.startsWith(path.join(absoluteDestPath, path.sep))) {
+                        throw new Error(`Detected a zip-slip exploit in archive "${sourcePath}"\n` +
+                            `  File "${file.path}" was going to write to "${expectedFilePath}"\n` +
+                            '  See: https://snyk.io/research/zip-slip-vulnerability');
+                    }
+                }
+                return true;
+            }
+        });
     }
 
     pluginEntry(): PluginDeployerEntry {
