@@ -43,7 +43,10 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
             },
             entryPoint: {
                 backend: plugin.main
-            }
+            },
+            iconUrl: plugin.icon && PluginPackage.toPluginUrl(plugin, plugin.icon),
+            readmeUrl: PluginPackage.toPluginUrl(plugin, './README.md'),
+            licenseUrl: PluginPackage.toPluginUrl(plugin, './LICENSE')
         };
         return result;
     }
@@ -65,7 +68,7 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
             }
         }
         // Return the map of dependencies if present, else `undefined`.
-        return dependencies.size > 0 ? dependencies : undefined ;
+        return dependencies.size > 0 ? dependencies : undefined;
     }
 
     getLifecycle(plugin: PluginPackage): PluginLifecycle {

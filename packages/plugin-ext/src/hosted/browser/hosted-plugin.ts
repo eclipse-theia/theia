@@ -202,6 +202,11 @@ export class HostedPluginSupport {
         return plugins;
     }
 
+    getPlugin(id: string): DeployedPlugin | undefined {
+        const contributions = this.contributions.get(id);
+        return contributions && contributions.plugin;
+    }
+
     /** do not call it, except from the plugin frontend contribution */
     onStart(container: interfaces.Container): void {
         this.container = container;
