@@ -50,6 +50,7 @@ export interface VSCodeDebuggerContribution extends VSCodePlatformSpecificAdapte
     label?: string
     languages?: string[]
     configurationSnippets?: IJSONSchemaSnippet[]
+    variables?: Record<string, string>
     configurationAttributes?: {
         [request: string]: IJSONSchema
     }
@@ -178,7 +179,7 @@ export abstract class AbstractVSCodeDebugAdapterContribution implements DebugAda
             };
             properties['postDebugTask'] = {
                 anyOf: [taskSchema, {
-                    type: ['string', ],
+                    type: ['string'],
                 }],
                 default: '',
                 defaultSnippets: [{ body: { task: '', type: '' } }],
@@ -211,6 +212,11 @@ export abstract class AbstractVSCodeDebugAdapterContribution implements DebugAda
 
             return attributes;
         });
+    }
+
+    async getVariables(): Promise<Record<string, string> | undefined> {
+        const debuggerContribution = await this.debuggerContribution;
+        return debuggerContribution.variables;
     }
 
     async getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]> {

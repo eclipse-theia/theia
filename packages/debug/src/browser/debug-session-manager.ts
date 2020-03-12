@@ -203,9 +203,11 @@ export class DebugSessionManager {
         }
         const { workspaceFolderUri } = options;
         const resolvedConfiguration = await this.resolveDebugConfiguration(options.configuration, workspaceFolderUri);
+        const variables = await this.debug.getVariables(options.configuration.type);
         const configuration = await this.variableResolver.resolve(resolvedConfiguration, {
             context: options.workspaceFolderUri ? new URI(options.workspaceFolderUri) : undefined,
-            configurationSection: 'launch'
+            configurationSection: 'launch',
+            variableToCommand: variables
         });
         const key = configuration.name + workspaceFolderUri;
         const id = this.configurationIds.has(key) ? this.configurationIds.get(key)! + 1 : 0;

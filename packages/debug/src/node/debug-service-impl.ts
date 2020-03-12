@@ -46,6 +46,10 @@ export class DebugServiceImpl implements DebugService {
         return this.registry.getDebuggersForLanguage(language);
     }
 
+    getVariables(debugType: string): Promise<Record<string, string> | undefined> {
+        return this.registry.getVariables(debugType);
+    }
+
     getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
         return this.registry.getSchemaAttributes(debugType);
     }

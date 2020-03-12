@@ -147,6 +147,23 @@ export class DebugAdapterContributionRegistry {
         return schemas;
     }
 
+    async getVariables(debugType: string): Promise<Record<string, string> | undefined> {
+        let result: Record<string, string> | undefined;
+        for (const contribution of this.getContributions(debugType)) {
+            if (contribution.getVariables) {
+                try {
+                    const variables = await contribution.getVariables();
+                    if (variables) {
+                        result = Object.assign(result || {}, variables);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+        return result;
+    }
+
     /**
      * Provides a [debug adapter executable](#DebugAdapterExecutable)
      * based on [debug configuration](#DebugConfiguration) to launch a new debug adapter.

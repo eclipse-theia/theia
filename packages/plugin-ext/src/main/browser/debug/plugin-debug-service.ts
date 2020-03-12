@@ -156,6 +156,17 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
         return debuggers;
     }
 
+    async getVariables(debugType: string): Promise<Record<string, string> | undefined> {
+        let result = await this.delegated.getVariables(debugType);
+        for (const contribution of this.debuggers) {
+            if (contribution.variables &&
+                (contribution.type === debugType || contribution.type === '*' || debugType === '*')) {
+                result = Object.assign(result || {}, contribution.variables);
+            }
+        }
+        return result;
+    }
+
     async getSchemaAttributes(debugType: string): Promise<IJSONSchema[]> {
         let schemas = await this.delegated.getSchemaAttributes(debugType);
         for (const contribution of this.debuggers) {

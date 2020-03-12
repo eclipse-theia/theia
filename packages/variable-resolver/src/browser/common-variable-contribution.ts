@@ -71,9 +71,12 @@ export class CommonVariableContribution implements VariableContribution {
         });
         variables.registerVariable({
             name: 'command',
-            resolve: async (_, command) =>
+            resolve: async (_, name, __, variableToCommand) => {
+                // use the name as a command ID https://github.com/microsoft/vscode/issues/12735
+                const command = name && ((variableToCommand ? variableToCommand[name] : undefined) || name);
                 // eslint-disable-next-line no-return-await
-                command && await this.commands.executeCommand(command)
+                return command && await this.commands.executeCommand(command);
+            }
         });
         variables.registerVariable({
             name: 'input',

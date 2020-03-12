@@ -27,6 +27,7 @@ export interface VariableResolveOptions {
      * Used for resolving inputs, see https://code.visualstudio.com/docs/editor/variables-reference#_input-variables
      */
     configurationSection?: string;
+    variableToCommand?: Record<string, string>;
 }
 
 /**
@@ -146,7 +147,7 @@ export namespace VariableResolverService {
                     argument = parts[1];
                 }
                 const variable = this.variableRegistry.getVariable(variableName);
-                const value = variable && await variable.resolve(this.options.context, argument, this.options.configurationSection);
+                const value = variable && await variable.resolve(this.options.context, argument, this.options.configurationSection, this.options.variableToCommand);
                 // eslint-disable-next-line no-null/no-null
                 const stringValue = value !== undefined && value !== null && JSONExt.isPrimitive(value as ReadonlyJSONValue) ? String(value) : undefined;
                 this.resolved.set(name, stringValue);

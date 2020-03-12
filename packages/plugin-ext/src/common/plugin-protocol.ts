@@ -179,7 +179,7 @@ export interface PluginPackageDebuggersContribution extends PlatformSpecificAdap
     enableBreakpointsFor?: { languageIds: string[] };
     configurationAttributes: { [request: string]: IJSONSchema };
     configurationSnippets: IJSONSchemaSnippet[];
-    variables?: ScopeMap;
+    variables?: Record<string, string>;
     adapterExecutableCommand?: string;
     win?: PlatformSpecificAdapterContribution;
     winx86?: PlatformSpecificAdapterContribution;
@@ -515,7 +515,7 @@ export interface DebuggerContribution extends PlatformSpecificAdapterContributio
     },
     configurationAttributes?: IJSONSchema[],
     configurationSnippets?: IJSONSchemaSnippet[],
-    variables?: ScopeMap,
+    variables?: Record<string, string>,
     adapterExecutableCommand?: string
     win?: PlatformSpecificAdapterContribution;
     winx86?: PlatformSpecificAdapterContribution;

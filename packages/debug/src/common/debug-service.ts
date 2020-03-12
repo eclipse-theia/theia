@@ -61,6 +61,8 @@ export interface DebugService extends Disposable {
      */
     getSchemaAttributes(debugType: string): Promise<IJSONSchema[]>;
 
+    getVariables(debugType: string): Promise<Record<string, string> | undefined>;
+
     getConfigurationSnippets(): Promise<IJSONSchemaSnippet[]>;
 
     /**

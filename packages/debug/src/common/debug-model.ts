@@ -144,6 +144,8 @@ export interface DebugAdapterContribution {
      */
     getSchemaAttributes?(): MaybePromise<IJSONSchema[]>;
 
+    getVariables?(): MaybePromise<Record<string, string> | undefined>;
+
     getConfigurationSnippets?(): MaybePromise<IJSONSchemaSnippet[]>;
 
     /**
