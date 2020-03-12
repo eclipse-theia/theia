@@ -267,8 +267,6 @@ export interface PluginScanner {
     getDependencies(plugin: PluginPackage): Map<string, string> | undefined;
 }
 
-export const PluginDeployer = Symbol('PluginDeployer');
-
 /**
  * A plugin resolver is handling how to resolve a plugin link into a local resource.
  */
@@ -315,10 +313,24 @@ export interface PluginDeployerResolverContext {
 
 }
 
+export interface PluginDeployerStartContext {
+    readonly userEntries: string[]
+    readonly systemEntries: string[]
+}
+
+export const PluginDeployer = Symbol('PluginDeployer');
 export interface PluginDeployer {
 
     start(): void;
 
+}
+
+export const PluginDeployerParticipant = Symbol('PluginDeployerParticipant');
+/**
+ * A participant can hook into the plugin deployer lifecycle.
+ */
+export interface PluginDeployerParticipant {
+    onWillStart?(context: PluginDeployerStartContext): Promise<void>;
 }
 
 export enum PluginDeployerEntryType {
@@ -327,6 +339,14 @@ export enum PluginDeployerEntryType {
 
     BACKEND
 }
+
+/**
+ * Whether a plugin installed by a user or system.
+ */
+export enum PluginType {
+    System,
+    User
+};
 
 export interface PluginDeployerEntry {
 
@@ -341,7 +361,7 @@ export interface PluginDeployerEntry {
     originalPath(): string;
 
     /**
-     * Local path on the filesystem
+     * Local path on the filesystem.
      */
     path(): string;
 
@@ -381,6 +401,15 @@ export interface PluginDeployerEntry {
     accept(...types: PluginDeployerEntryType[]): void;
 
     hasError(): boolean;
+
+    type: PluginType
+    /**
+     * A fs path to a directory where a plugin is located.
+     * Depending on a plugin format it can be different from `path`.
+     * Use `path` if you want to resolve something within a plugin, like `README.md` file.
+     * Use `rootPath` if you want to manipulate the entire plugin location, like delete or move it.
+     */
+    rootPath: string
 }
 
 export interface PluginDeployerFileHandlerContext {
@@ -675,6 +704,8 @@ export interface PluginDeployerHandler {
     deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
     deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
 
+    undeployPlugin(pluginId: string): Promise<boolean>;
+
     getPluginDependencies(pluginToBeInstalled: PluginDeployerEntry): Promise<PluginDependencies | undefined>
 }
 
@@ -683,6 +714,10 @@ export interface GetDeployedPluginsParams {
 }
 
 export interface DeployedPlugin {
+    /**
+     * defaults to system
+     */
+    type?: PluginType;
     metadata: PluginMetadata;
     contributes?: PluginContribution;
 }
@@ -715,9 +750,13 @@ export const PluginServer = Symbol('PluginServer');
 export interface PluginServer {
 
     /**
-     * Deploy a plugin
+     * Deploy a plugin.
+     *
+     * @param type whether a plugin is installed by a system or a user, defaults to a user
      */
-    deploy(pluginEntry: string): Promise<void>;
+    deploy(pluginEntry: string, type?: PluginType): Promise<void>;
+
+    undeploy(pluginId: string): Promise<void>;
 
     setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean>;
     getStorageValue(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues>;

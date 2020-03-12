@@ -16,11 +16,12 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable, optional, multiInject, inject } from 'inversify';
+import { injectable, optional, multiInject, inject, named } from 'inversify';
 import {
     PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler,
-    PluginDeployerEntry, PluginDeployer, PluginDeployerResolverInit, PluginDeployerFileHandlerContext,
-    PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginDeployerHandler
+    PluginDeployerEntry, PluginDeployer, PluginDeployerParticipant, PluginDeployerStartContext,
+    PluginDeployerResolverInit, PluginDeployerFileHandlerContext,
+    PluginDeployerDirectoryHandlerContext, PluginDeployerEntryType, PluginDeployerHandler, PluginType
 } from '../../common/plugin-protocol';
 import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
 import {
@@ -30,7 +31,7 @@ import {
 import { ProxyPluginDeployerEntry } from './plugin-deployer-proxy-entry-impl';
 import { PluginDeployerFileHandlerContextImpl } from './plugin-deployer-file-handler-context-impl';
 import { PluginDeployerDirectoryHandlerContextImpl } from './plugin-deployer-directory-handler-context-impl';
-import { ILogger, Emitter } from '@theia/core';
+import { ILogger, Emitter, ContributionProvider } from '@theia/core';
 import { PluginCliContribution } from './plugin-cli-contribution';
 import { performance } from 'perf_hooks';
 
@@ -67,6 +68,9 @@ export class PluginDeployerImpl implements PluginDeployer {
     @optional() @multiInject(PluginDeployerDirectoryHandler)
     private pluginDeployerDirectoryHandlers: PluginDeployerDirectoryHandler[];
 
+    @inject(ContributionProvider) @named(PluginDeployerParticipant)
+    protected readonly participants: ContributionProvider<PluginDeployerParticipant>;
+
     public start(): void {
         this.logger.debug('Starting the deployer with the list of resolvers', this.pluginResolvers);
         this.doStart();
@@ -102,26 +106,62 @@ export class PluginDeployerImpl implements PluginDeployer {
         // transform it to array
         const defaultPluginIdList = defaultPluginsValue ? defaultPluginsValue.split(',') : [];
         const pluginIdList = pluginsValue ? pluginsValue.split(',') : [];
-        const pluginsList = defaultPluginIdList.concat(pluginIdList).concat(defaultPluginsValueViaCli ? defaultPluginsValueViaCli.split(',') : []);
+        const systemEntries = defaultPluginIdList.concat(pluginIdList).concat(defaultPluginsValueViaCli ? defaultPluginsValueViaCli.split(',') : []);
+
+        const userEntries: string[] = [];
+        const context: PluginDeployerStartContext = { userEntries, systemEntries };
+
+        for (const contribution of this.participants.getContributions()) {
+            if (contribution.onWillStart) {
+                await contribution.onWillStart(context);
+            }
+        }
 
         const startDeployTime = performance.now();
-        await this.deployMultipleEntries(pluginsList);
+        const [userPlugins, systemPlugins] = await Promise.all([
+            this.resolvePlugins(context.userEntries, PluginType.User),
+            this.resolvePlugins(context.systemEntries, PluginType.System)
+        ]);
+        await this.deployPlugins([...userPlugins, ...systemPlugins]);
         this.logMeasurement('Deploy plugins list', startDeployTime);
     }
 
-    public async deploy(pluginEntry: string): Promise<void> {
+    async undeploy(pluginId: string): Promise<void> {
+        if (await this.pluginDeployerHandler.undeployPlugin(pluginId)) {
+            this.onDidDeployEmitter.fire();
+        }
+    }
+
+    async deploy(pluginEntry: string, type: PluginType = PluginType.System): Promise<void> {
         const startDeployTime = performance.now();
-        await this.deployMultipleEntries([pluginEntry]);
+        await this.deployMultipleEntries([pluginEntry], type);
         this.logMeasurement('Deploy plugin entry', startDeployTime);
     }
 
-    protected async deployMultipleEntries(pluginEntries: ReadonlyArray<string>): Promise<void> {
+    protected async deployMultipleEntries(pluginEntries: ReadonlyArray<string>, type: PluginType = PluginType.System): Promise<void> {
+        const pluginsToDeploy = await this.resolvePlugins(pluginEntries, type);
+        await this.deployPlugins(pluginsToDeploy);
+    }
+
+    /**
+     * Resolves plugins for the given type.
+     *
+     * One can call it multiple times for different types before triggering a single deploy, i.e.
+     * ```ts
+     * const deployer: PluginDeployer;
+     * deployer.deployPlugins([
+     *     ...await deployer.resolvePlugins(userEntries, PluginType.User),
+     *     ...await deployer.resolvePlugins(systemEntries, PluginType.System)
+     * ]);
+     * ```
+     */
+    async resolvePlugins(pluginEntries: ReadonlyArray<string>, type: PluginType): Promise<PluginDeployerEntry[]> {
         const visited = new Set<string>();
         const pluginsToDeploy = new Map<string, PluginDeployerEntry>();
 
         let queue = [...pluginEntries];
         while (queue.length) {
-            const dependenciesChunk: Array< Map<string, string>> = [];
+            const dependenciesChunk: Array<Map<string, string>> = [];
             const workload: string[] = [];
             while (queue.length) {
                 const current = queue.shift()!;
@@ -135,7 +175,7 @@ export class PluginDeployerImpl implements PluginDeployer {
             queue = [];
             await Promise.all(workload.map(async current => {
                 try {
-                    const pluginDeployerEntries = await this.resolvePlugin(current);
+                    const pluginDeployerEntries = await this.resolvePlugin(current, type);
                     await this.applyFileHandlers(pluginDeployerEntries);
                     await this.applyDirectoryFileHandlers(pluginDeployerEntries);
                     for (const deployerEntry of pluginDeployerEntries) {
@@ -159,8 +199,7 @@ export class PluginDeployerImpl implements PluginDeployer {
                 }
             }
         }
-
-        await this.deployPlugins([...pluginsToDeploy.values()]);
+        return [...pluginsToDeploy.values()];
     }
 
     /**
@@ -234,7 +273,7 @@ export class PluginDeployerImpl implements PluginDeployer {
     /**
      * Check a plugin ID see if there are some resolvers that can handle it. If there is a matching resolver, then we resolve the plugin
      */
-    public async resolvePlugin(pluginId: string): Promise<PluginDeployerEntry[]> {
+    public async resolvePlugin(pluginId: string, type: PluginType = PluginType.System): Promise<PluginDeployerEntry[]> {
         const pluginDeployerEntries: PluginDeployerEntry[] = [];
         const foundPluginResolver = this.pluginResolvers.find(pluginResolver => pluginResolver.accept(pluginId));
         // there is a resolver for the input
@@ -245,11 +284,16 @@ export class PluginDeployerImpl implements PluginDeployer {
 
             await foundPluginResolver.resolve(context);
 
-            context.getPlugins().forEach(entry => pluginDeployerEntries.push(entry));
+            context.getPlugins().forEach(entry => {
+                entry.type = type;
+                pluginDeployerEntries.push(entry);
+            });
         } else {
             // log it for now
             this.logger.error('No plugin resolver found for the entry', pluginId);
-            pluginDeployerEntries.push(new PluginDeployerEntryImpl(pluginId, pluginId));
+            const unresolvedEntry = new PluginDeployerEntryImpl(pluginId, pluginId);
+            unresolvedEntry.type = type;
+            pluginDeployerEntries.push(unresolvedEntry);
         }
 
         return pluginDeployerEntries;

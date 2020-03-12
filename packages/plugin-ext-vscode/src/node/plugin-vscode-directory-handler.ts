@@ -67,6 +67,7 @@ export class PluginVsCodeDirectoryHandler implements PluginDeployerDirectoryHand
         }
         if (options) {
             plugin.storeValue('package.json', pck);
+            plugin.rootPath = plugin.path();
             plugin.updatePath(pluginPath);
         }
         console.log(`Resolved "${plugin.id()}" to a VS Code extension "${pck.name}@${pck.version}" with engines:`, pck.engines);
