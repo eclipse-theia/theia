@@ -156,6 +156,22 @@ export class HostedPluginSupport {
     protected readonly onDidChangePluginsEmitter = new Emitter<void>();
     readonly onDidChangePlugins = this.onDidChangePluginsEmitter.event;
 
+    protected readonly deferredWillStart = new Deferred<void>();
+    /**
+     * Resolves when the initial plugins are loaded and about to be started.
+     */
+    get willStart(): Promise<void> {
+        return this.deferredWillStart.promise;
+    }
+
+    protected readonly deferredDidStart = new Deferred<void>();
+    /**
+     * Resolves when the initial plugins are started.
+     */
+    get didStart(): Promise<void> {
+        return this.deferredDidStart.promise;
+    }
+
     @postConstruct()
     protected init(): void {
         this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready, this.workspaceService.roots]);
@@ -232,6 +248,10 @@ export class HostedPluginSupport {
         // process empty plugins as well in order to properly remove stale plugin widgets
         await this.syncPlugins();
 
+        // it has to be resolved before awaiting layout is initilization
+        // otherwise clients can hang forever in the initializatin phase
+        this.deferredWillStart.resolve();
+
         // make sure that the previous state, including plugin widgets, is restored
         // and core layout is initialized, i.e. explorer, scm, debug views are already added to the shell
         // but shell is not yet revealed
@@ -253,6 +273,9 @@ export class HostedPluginSupport {
             return;
         }
         await this.startPlugins(contributionsByHost, toDisconnect);
+
+        this.deferredDidStart.resolve();
+
         this.restoreWebviews();
     }
 
