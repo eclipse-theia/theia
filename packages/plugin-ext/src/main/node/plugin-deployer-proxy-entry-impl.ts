@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { injectable } from 'inversify';
-import { PluginDeployerEntry, PluginDeployerEntryType } from '../../common/plugin-protocol';
+import { PluginDeployerEntry, PluginDeployerEntryType, PluginType } from '../../common/plugin-protocol';
 import { PluginDeployerEntryImpl } from './plugin-deployer-entry-impl';
 
 /**
@@ -75,6 +75,22 @@ export class ProxyPluginDeployerEntry<T> implements PluginDeployerEntry {
     }
     resolvedBy(): string {
         return this.delegate.resolvedBy();
+    }
+
+    get type(): PluginType {
+        return this.delegate.type;
+    }
+
+    set type(type: PluginType) {
+        this.delegate.type = type;
+    }
+
+    get rootPath(): string {
+        return this.delegate.rootPath;
+    }
+
+    set rootPath(rootPath: string) {
+        this.delegate.rootPath = rootPath;
     }
 
 }

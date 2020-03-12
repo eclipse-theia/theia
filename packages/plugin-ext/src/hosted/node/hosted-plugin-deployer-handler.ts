@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as fs from 'fs-extra';
 import { injectable, inject } from 'inversify';
 import { ILogger } from '@theia/core';
 import { PluginDeployerHandler, PluginDeployerEntry, PluginEntryPoint, DeployedPlugin, PluginDependencies } from '../../common/plugin-protocol';
@@ -28,6 +29,8 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
 
     @inject(HostedPluginReader)
     private readonly reader: HostedPluginReader;
+
+    private readonly deployedLocations = new Map<string, Set<string>>();
 
     /**
      * Managed plugin metadata backend entries.
@@ -113,17 +116,42 @@ export class HostedPluginDeployerHandler implements PluginDeployerHandler {
             }
 
             const metadata = this.reader.readMetadata(manifest);
-            if (this.deployedBackendPlugins.has(metadata.model.id)) {
+
+            const deployedLocations = this.deployedLocations.get(metadata.model.id) || new Set<string>();
+            deployedLocations.add(entry.rootPath);
+            this.deployedLocations.set(metadata.model.id, deployedLocations);
+
+            const deployedPlugins = entryPoint === 'backend' ? this.deployedBackendPlugins : this.deployedFrontendPlugins;
+            if (deployedPlugins.has(metadata.model.id)) {
                 return;
             }
 
-            const deployed: DeployedPlugin = { metadata };
+            const { type } = entry;
+            const deployed: DeployedPlugin = { metadata, type };
             deployed.contributes = this.reader.readContribution(manifest);
-            this.deployedBackendPlugins.set(metadata.model.id, deployed);
+            deployedPlugins.set(metadata.model.id, deployed);
             this.logger.info(`Deploying ${entryPoint} plugin "${metadata.model.name}@${metadata.model.version}" from "${metadata.model.entryPoint[entryPoint] || pluginPath}"`);
         } catch (e) {
             console.error(`Failed to deploy ${entryPoint} plugin from '${pluginPath}' path`, e);
         }
+    }
+
+    async undeployPlugin(pluginId: string): Promise<boolean> {
+        this.deployedBackendPlugins.delete(pluginId);
+        this.deployedFrontendPlugins.delete(pluginId);
+        const deployedLocations = this.deployedLocations.get(pluginId);
+        if (!deployedLocations) {
+            return false;
+        }
+        this.deployedLocations.delete(pluginId);
+        for (const location of deployedLocations) {
+            try {
+                await fs.remove(location);
+            } catch (e) {
+                console.error(`[${pluginId}]: failed to undeploy from "${location}", reason`, e);
+            }
+        }
+        return true;
     }
 
 }
