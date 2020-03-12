@@ -14,11 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, TransferInputBox, Plugin, TransferQuickPick, QuickInputTitleButtonHandle } from '../common/plugin-api-rpc';
+import * as theia from '@theia/plugin';
 import { QuickPickOptions, QuickPickItem, InputBoxOptions, InputBox, QuickPick, QuickInput } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { anyPromise } from '../common/async-util';
-import { hookCancellationToken } from '../common/async-util';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { QuickInputButtons, QuickInputButton, ThemeIcon } from './types-impl';
@@ -53,14 +52,16 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         return undefined;
     }
 
-    showQuickPick(promiseOrItems: QuickPickItem[] | PromiseLike<QuickPickItem[]>, options?: QuickPickOptions, token?: CancellationToken): PromiseLike<QuickPickItem | undefined>;
-    // eslint-disable-next-line max-len
-    showQuickPick(promiseOrItems: QuickPickItem[] | PromiseLike<QuickPickItem[]>, options?: QuickPickOptions & { canSelectMany: true; }, token?: CancellationToken): PromiseLike<QuickPickItem[] | undefined>;
-    showQuickPick(promiseOrItems: string[] | PromiseLike<string[]>, options?: QuickPickOptions, token?: CancellationToken): PromiseLike<string | undefined>;
-    // eslint-disable-next-line max-len
-    showQuickPick(promiseOrItems: Item[] | PromiseLike<Item[]>, options?: QuickPickOptions, token: CancellationToken = CancellationToken.None): PromiseLike<Item | Item[] | undefined> {
+    /* eslint-disable max-len */
+    showQuickPick(promiseOrItems: QuickPickItem[] | PromiseLike<QuickPickItem[]>, options?: QuickPickOptions, token?: theia.CancellationToken): PromiseLike<QuickPickItem | undefined>;
+    showQuickPick(promiseOrItems: QuickPickItem[] | PromiseLike<QuickPickItem[]>, options?: QuickPickOptions & { canSelectMany: true; }, token?: theia.CancellationToken): PromiseLike<QuickPickItem[] | undefined>;
+    showQuickPick(promiseOrItems: string[] | PromiseLike<string[]>, options?: QuickPickOptions, token?: theia.CancellationToken): PromiseLike<string | undefined>;
+    showQuickPick(itemsOrItemsPromise: Item[] | PromiseLike<Item[]>, options?: QuickPickOptions, token: theia.CancellationToken = CancellationToken.None): PromiseLike<Item | Item[] | undefined> {
+        /* eslint-enable max-len */
         this.selectItemHandler = undefined;
-        const itemPromise = Promise.resolve(promiseOrItems);
+
+        const itemsPromise = <Promise<Item[]>>Promise.resolve(itemsOrItemsPromise);
+
         const widgetPromise = this.proxy.$show({
             canSelectMany: options && options.canPickMany,
             placeHolder: options && options.placeHolder,
@@ -68,13 +69,16 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             matchOnDescription: options && options.matchOnDescription,
             matchOnDetail: options && options.matchOnDetail,
             ignoreFocusLost: options && options.ignoreFocusOut
-        });
+        }, token);
 
-        const promise = anyPromise(<PromiseLike<number | Item[]>[]>[widgetPromise, itemPromise]).then(values => {
-            if (values.key === 0) {
+        const widgetClosedMarker = {};
+        const widgetClosedPromise = widgetPromise.then(() => widgetClosedMarker);
+
+        return Promise.race([widgetClosedPromise, itemsPromise]).then(result => {
+            if (result === widgetClosedMarker) {
                 return undefined;
             }
-            return itemPromise.then(items => {
+            return itemsPromise.then(items => {
 
                 const pickItems = quickPickItemToPickOpenItem(items);
 
@@ -99,12 +103,8 @@ export class QuickOpenExtImpl implements QuickOpenExt {
                     }
                     return undefined;
                 });
-            }, err => {
-                this.proxy.$setError(err);
-                return Promise.reject(err);
             });
         });
-        return hookCancellationToken<Item | Item[] | undefined>(token, promise);
     }
 
     showCustomQuickPick<T extends QuickPickItem>(options: TransferQuickPick<T>): void {
@@ -118,7 +118,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         return newQuickInput;
     }
 
-    showInput(options?: InputBoxOptions, token: CancellationToken = CancellationToken.None): PromiseLike<string | undefined> {
+    showInput(options?: InputBoxOptions, token: theia.CancellationToken = CancellationToken.None): PromiseLike<string | undefined> {
         this.validateInputHandler = options && options.validateInput;
 
         if (!options) {
@@ -127,8 +127,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             };
         }
 
-        const promise = this.proxy.$input(options, typeof this.validateInputHandler === 'function');
-        return hookCancellationToken(token, promise);
+        return this.proxy.$input(options, typeof this.validateInputHandler === 'function', token);
     }
 
     hide(): void {

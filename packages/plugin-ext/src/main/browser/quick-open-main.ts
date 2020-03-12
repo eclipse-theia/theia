@@ -42,6 +42,7 @@ import { QuickPickService, QuickPickItem, QuickPickValue } from '@theia/core/lib
 import { QuickTitleBar } from '@theia/core/lib/browser/quick-open/quick-title-bar';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { QuickTitleButtonSide, QuickOpenGroupItem } from '@theia/core/lib/common/quick-open-model';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
 
 export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposable {
 
@@ -84,21 +85,29 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
         this.activeElement = undefined;
     }
 
-    $show(options: PickOptions): Promise<number | number[]> {
-        this.activeElement = window.document.activeElement as HTMLElement;
-        this.delegate.open(this, {
-            fuzzyMatchDescription: options.matchOnDescription,
-            fuzzyMatchLabel: true,
-            fuzzyMatchDetail: options.matchOnDetail,
-            placeholder: options.placeHolder,
-            ignoreFocusOut: options.ignoreFocusLost,
-            onClose: () => {
-                this.cleanUp();
-            }
-        });
-
+    $show(options: PickOptions, token: CancellationToken): Promise<number | number[]> {
         return new Promise((resolve, reject) => {
+            if (token.isCancellationRequested) {
+                resolve(undefined);
+                return;
+            }
             this.doResolve = resolve;
+            this.activeElement = window.document.activeElement as HTMLElement;
+            const toDispose = token.onCancellationRequested(() =>
+                this.delegate.hide()
+            );
+            this.delegate.open(this, {
+                fuzzyMatchDescription: options.matchOnDescription,
+                fuzzyMatchLabel: true,
+                fuzzyMatchDetail: options.matchOnDetail,
+                placeholder: options.placeHolder,
+                ignoreFocusOut: options.ignoreFocusLost,
+                onClose: () => {
+                    this.doResolve(undefined);
+                    toDispose.dispose();
+                    this.cleanUp();
+                }
+            });
         });
     }
 
@@ -153,17 +162,12 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
         return convertedItems;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    $setError(error: Error): Promise<any> {
-        throw new Error('Method not implemented.');
-    }
-
-    $input(options: InputBoxOptions, validateInput: boolean): Promise<string | undefined> {
+    $input(options: InputBoxOptions, validateInput: boolean, token: CancellationToken): Promise<string | undefined> {
         if (validateInput) {
             options.validateInput = val => this.proxy.$validateInput(val);
         }
 
-        return this.quickInput.open(options);
+        return this.quickInput.open(options, token);
     }
 
     protected convertQuickInputButton(quickInputButton: QuickInputButton, index: number, toDispose: DisposableCollection): QuickInputTitleButtonHandle {
