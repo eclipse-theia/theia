@@ -110,7 +110,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             }, this.splitPositionHandler)
         });
         this.panel.node.tabIndex = -1;
-        layout.addWidget(this.panel);
+        this.configureLayout(layout);
 
         const { commandRegistry, menuRegistry, contextMenuRenderer } = this;
         this.toDispose.pushAll([
@@ -146,6 +146,10 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         if (this.options.progressLocationId) {
             this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: this.options.progressLocationId }));
         }
+    }
+
+    protected configureLayout(layout: PanelLayout): void {
+        layout.addWidget(this.panel);
     }
 
     protected readonly toDisposeOnCurrentPart = new DisposableCollection();
