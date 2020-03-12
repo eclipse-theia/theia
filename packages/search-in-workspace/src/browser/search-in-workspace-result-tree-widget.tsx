@@ -761,7 +761,9 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     },
                     options: {
                         overviewRuler: {
-                            color: this.colorRegistry.getCurrentColor('editor.findMatchHighlightBackground') || '',
+                            color: {
+                                id: 'editor.findMatchHighlightBackground'
+                            },
                             position: OverviewRulerLane.Center
                         },
                         className: res.selected ? 'current-search-in-workspace-editor-match' : 'search-in-workspace-editor-match',

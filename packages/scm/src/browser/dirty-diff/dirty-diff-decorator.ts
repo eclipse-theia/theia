@@ -36,11 +36,15 @@ export enum DirtyDiffDecorationType {
 const AddedLineDecoration = <EditorDecorationOptions>{
     linesDecorationsClassName: 'dirty-diff-glyph dirty-diff-added-line',
     overviewRuler: {
-        color: 'editorOverviewRuler.addedForeground',
+        color: {
+            id: 'editorOverviewRuler.addedForeground'
+        },
         position: OverviewRulerLane.Left,
     },
     minimap: {
-        color: 'minimapGutter.addedBackground',
+        color: {
+            id: 'minimapGutter.addedBackground'
+        },
         position: MinimapPosition.Gutter
     },
     isWholeLine: true
@@ -49,11 +53,15 @@ const AddedLineDecoration = <EditorDecorationOptions>{
 const RemovedLineDecoration = <EditorDecorationOptions>{
     linesDecorationsClassName: 'dirty-diff-glyph dirty-diff-removed-line',
     overviewRuler: {
-        color: 'editorOverviewRuler.deletedForeground',
+        color: {
+            id: 'editorOverviewRuler.deletedForeground'
+        },
         position: OverviewRulerLane.Left,
     },
     minimap: {
-        color: 'minimapGutter.deletedBackground',
+        color: {
+            id: 'minimapGutter.deletedBackground'
+        },
         position: MinimapPosition.Gutter
     },
     isWholeLine: false
@@ -62,11 +70,15 @@ const RemovedLineDecoration = <EditorDecorationOptions>{
 const ModifiedLineDecoration = <EditorDecorationOptions>{
     linesDecorationsClassName: 'dirty-diff-glyph dirty-diff-modified-line',
     overviewRuler: {
-        color: 'editorOverviewRuler.modifiedForeground',
+        color: {
+            id: 'editorOverviewRuler.modifiedForeground'
+        },
         position: OverviewRulerLane.Left,
     },
     minimap: {
-        color: 'minimapGutter.modifiedBackground',
+        color: {
+            id: 'minimapGutter.modifiedBackground'
+        },
         position: MinimapPosition.Gutter
     },
     isWholeLine: true

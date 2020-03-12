@@ -88,7 +88,7 @@ export interface DecorationOptions {
      * color of the decoration in the overview ruler.
      * use `rgba` values to play well with other decorations.
      */
-    color: string;
+    color: string | { id: string };
 }
 
 export enum MinimapPosition {
