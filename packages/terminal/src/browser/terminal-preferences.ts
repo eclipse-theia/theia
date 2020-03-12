@@ -97,12 +97,13 @@ export const TerminalConfigSchema: PreferenceSchema = {
             default: false
         },
         'terminal.integrated.cursorStyle': {
-            description: 'Controls the style of the terminal cursor/',
+            description: 'Controls the style of the terminal cursor.',
             enum: ['block', 'underline', 'line'],
             default: 'block'
         },
         'terminal.integrated.cursorWidth': {
-            description: 'Controls the width of the cursor when \'cursorStyle\' is set to \'line\'.',
+            description: 'Controls the width of the cursor when \'terminal.integrated.cursorStyle\' is set to \'line\'.',
+            markdownDescription: 'Controls the width of the cursor when `#terminal.integrated.cursorStyle#` is set to `line`.',
             type: 'number',
             default: 1
         },
