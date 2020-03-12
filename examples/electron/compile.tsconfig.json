@@ -121,6 +121,9 @@
     },
     {
       "path": "../../packages/workspace/compile.tsconfig.json"
+    },
+    {
+      "path": "../../packages/vsx-registry/compile.tsconfig.json"
     }
   ]
 }

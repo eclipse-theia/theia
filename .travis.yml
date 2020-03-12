@@ -55,6 +55,7 @@ cache:
     - packages/typehierarchy/node_modules
     - packages/userstorage/node_modules
     - packages/variable-resolver/node_modules
+    - packages/vsx-registry/node_modules
     - packages/workspace/node_modules
     # end_cache_directories
 before_cache:
