@@ -159,6 +159,9 @@
       ],
       "@theia/example-electron/*": [
         "examples/electron/*"
+      ],
+      "@theia/vsx-registry/lib/*": [
+        "packages/vsx-registry/src/*"
       ]
     }
   }
