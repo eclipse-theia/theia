@@ -55,6 +55,7 @@ export interface PluginPackage {
     activationEvents?: string[];
     extensionDependencies?: string[];
     extensionPack?: string[];
+    icon?: string;
 }
 export namespace PluginPackage {
     export function toPluginUrl(pck: PluginPackage, relativePath: string): string {
@@ -442,6 +443,9 @@ export interface PluginModel {
     };
     entryPoint: PluginEntryPoint;
     packagePath: string;
+    iconUrl?: string;
+    readmeUrl?: string;
+    licenseUrl?: string;
 }
 
 export interface PluginEntryPoint {
