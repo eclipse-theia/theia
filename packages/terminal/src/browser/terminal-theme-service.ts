@@ -177,7 +177,8 @@ export class TerminalThemeService {
         };
         // eslint-disable-next-line guard-for-in
         for (const id in terminalAnsiColorMap) {
-            const colorName = id.substring(13);
+            const colorId = id.substring(13);
+            const colorName = colorId.charAt(0).toLowerCase() + colorId.slice(1);
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (theme as any)[colorName] = this.colorRegistry.getCurrentColor(id);
         }
