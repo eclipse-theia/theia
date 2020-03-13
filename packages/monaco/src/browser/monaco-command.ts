@@ -23,21 +23,24 @@ import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-
 import { QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { EditorCommands } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
-import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
+import { MonacoCommandRegistry, MonacoEditorCommandHandler, MonacoEditorOrNativeTextInputCommandHandler } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
 import { MonacoCommandService } from './monaco-command-service';
 
-export type MonacoCommand = Command & { delegate?: string };
+export interface MonacoCommand extends Command {
+    readonly delegate?: string;
+    readonly domCommandId?: string;
+};
 export namespace MonacoCommands {
 
     export const UNDO = 'undo';
     export const REDO = 'redo';
     export const COMMON_KEYBOARD_ACTIONS = new Set([UNDO, REDO]);
     export const COMMON_ACTIONS: {
-        [action: string]: string
+        [action: string]: string | MonacoCommand
     } = {};
-    COMMON_ACTIONS[UNDO] = CommonCommands.UNDO.id;
-    COMMON_ACTIONS[REDO] = CommonCommands.REDO.id;
+    COMMON_ACTIONS[UNDO] = { ...CommonCommands.UNDO, domCommandId: UNDO };
+    COMMON_ACTIONS[REDO] = { ...CommonCommands.REDO, domCommandId: REDO };
     COMMON_ACTIONS['actions.find'] = CommonCommands.FIND.id;
     COMMON_ACTIONS['editor.action.startFindReplaceAction'] = CommonCommands.REPLACE.id;
 
@@ -60,7 +63,12 @@ export namespace MonacoCommands {
     export const GO_TO_DEFINITION = 'editor.action.revealDefinition';
 
     export const ACTIONS = new Map<string, MonacoCommand>();
-    ACTIONS.set(SELECTION_SELECT_ALL, { id: SELECTION_SELECT_ALL, label: 'Select All', delegate: 'editor.action.selectAll' });
+    ACTIONS.set(SELECTION_SELECT_ALL, {
+        id: SELECTION_SELECT_ALL,
+        label: 'Select All',
+        delegate: 'editor.action.selectAll',
+        domCommandId: 'selectAll'
+    });
     export const EXCLUDE_ACTIONS = new Set([
         ...Object.keys(COMMON_ACTIONS),
         'editor.action.quickCommand',
@@ -138,10 +146,14 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         for (const action in MonacoCommands.COMMON_ACTIONS) {
             const command = MonacoCommands.COMMON_ACTIONS[action];
             const handler = this.newCommonActionHandler(action);
-            this.monacoCommandRegistry.registerHandler(command, handler);
+            if (Command.is(command) && command.domCommandId) {
+                handler.domCommandId = command.domCommandId;
+            }
+            const commandId = Command.is(command) ? command.id : command;
+            this.monacoCommandRegistry.registerHandler(commandId, handler);
         }
     }
-    protected newCommonActionHandler(action: string): MonacoEditorCommandHandler {
+    protected newCommonActionHandler(action: string): MonacoEditorCommandHandler & Partial<MonacoEditorOrNativeTextInputCommandHandler> {
         return this.isCommonKeyboardAction(action) ? this.newKeyboardHandler(action) : this.newActionHandler(action);
     }
     protected isCommonKeyboardAction(action: string): boolean {
@@ -269,10 +281,14 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     protected registerMonacoActionCommands(): void {
         for (const action of MonacoCommands.ACTIONS.values()) {
             const handler = this.newMonacoActionHandler(action);
+            if (action.domCommandId) {
+                const { domCommandId } = action;
+                handler.domCommandId = domCommandId;
+            }
             this.monacoCommandRegistry.registerCommand(action, handler);
         }
     }
-    protected newMonacoActionHandler(action: MonacoCommand): MonacoEditorCommandHandler {
+    protected newMonacoActionHandler(action: MonacoCommand): MonacoEditorCommandHandler & Partial<MonacoEditorOrNativeTextInputCommandHandler> {
         const delegate = action.delegate;
         return delegate ? this.newDelegateHandler(delegate) : this.newActionHandler(action.id);
     }
@@ -280,11 +296,6 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     protected newKeyboardHandler(action: string): MonacoEditorCommandHandler {
         return {
             execute: (editor, ...args) => editor.getControl()._modelData.cursor.trigger('keyboard', action, args)
-        };
-    }
-    protected newCommandHandler(action: string): MonacoEditorCommandHandler {
-        return {
-            execute: (editor, ...args) => editor.commandService.executeCommand(action, ...args)
         };
     }
     protected newActionHandler(action: string): MonacoEditorCommandHandler {
