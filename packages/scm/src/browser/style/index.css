@@ -102,7 +102,11 @@
 }
 
 .theia-scm-input-message-container textarea:not(:focus) {
-    border: none;
+    border: var(--theia-border-width) solid var(--theia-input-background);
+}
+
+.theia-scm-input-message-container textarea:focus {
+    border: var(--theia-border-width) solid var(--theia-focusBorder);
 }
 
 .theia-scm-input-message {
@@ -114,15 +118,15 @@
 }
 
 .theia-scm-input-message-info {
-    border-color: var(--theia-inputValidation-infoBorder);
+    border-color: var(--theia-inputValidation-infoBorder) !important;
 }
 
 .theia-scm-input-message-success {
-    border-color: var(--theia-successBackground);
+    border-color: var(--theia-successBackground) !important;
 }
 
 .theia-scm-input-message-warning {
-    border-color: var(--theia-inputValidation-warningBorder);
+    border-color: var(--theia-inputValidation-warningBorder) !important;
 }
 
 .theia-scm-input-message-error {
