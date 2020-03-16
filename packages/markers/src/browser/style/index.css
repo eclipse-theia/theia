@@ -69,14 +69,9 @@
 }
 
 .theia-marker-container .markerNode .position,
-.theia-marker-container .markerNode .owner,
-.theia-marker-container .markerNode .code {
+.theia-marker-container .markerNode .owner {
     color: var(--theia-descriptionForeground);
     white-space: nowrap;
-}
-
-.theia-marker-container .markerNode .position,
-.theia-marker-container .markerNode .code {
     margin-left: 5px;
 }
 
