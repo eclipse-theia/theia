@@ -84,6 +84,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onWebviewPanel'
     ]);
 
+    private configStorage: ConfigStorage | undefined;
     private readonly registry = new Map<string, Plugin>();
     private readonly activations = new Map<string, (() => Promise<void>)[] | undefined>();
     /** promises to whether loading each plugin has been successful */
@@ -196,14 +197,16 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     async $start(params: PluginManagerStartParams): Promise<void> {
+        this.configStorage = params.configStorage;
+
         const [plugins, foreignPlugins] = await this.host.init(params.plugins);
         // add foreign plugins
         for (const plugin of foreignPlugins) {
-            this.registerPlugin(plugin, params.configStorage);
+            this.registerPlugin(plugin);
         }
         // add own plugins, before initialization
         for (const plugin of plugins) {
-            this.registerPlugin(plugin, params.configStorage);
+            this.registerPlugin(plugin);
         }
 
         // run eager plugins
@@ -219,15 +222,10 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.fireOnDidChange();
     }
 
-    protected registerPlugin(plugin: Plugin, configStorage: ConfigStorage): void {
+    protected registerPlugin(plugin: Plugin): void {
         this.registry.set(plugin.model.id, plugin);
         if (plugin.pluginPath && Array.isArray(plugin.rawModel.activationEvents)) {
-            const activation = async () => {
-                const title = `Activating ${plugin.model.displayName || plugin.model.name}`;
-                const id = await this.notificationMain.$startProgress({ title, location: 'window' });
-                await this.loadPlugin(plugin, configStorage);
-                this.notificationMain.$stopProgress(id);
-            };
+            const activation = () => this.$activatePlugin(plugin.model.id);
             // an internal activation event is a subject to change
             this.setActivation(`onPlugin:${plugin.model.id}`, activation);
             const unsupportedActivationEvents = plugin.rawModel.activationEvents.filter(e => !PluginManagerExtImpl.SUPPORTED_ACTIVATION_EVENTS.has(e.split(':')[0]));
@@ -261,31 +259,39 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         let loading = this.loadedPlugins.get(plugin.model.id);
         if (!loading) {
             loading = (async () => {
-                if (plugin.rawModel.extensionDependencies) {
-                    for (const dependencyId of plugin.rawModel.extensionDependencies) {
-                        const dependency = this.registry.get(dependencyId.toLowerCase());
-                        const id = plugin.model.displayName || plugin.model.id;
-                        if (dependency) {
-                            const depId = dependency.model.displayName || dependency.model.id;
-                            const loadedSuccessfully = await this.loadPlugin(dependency, configStorage, visited);
-                            if (!loadedSuccessfully) {
-                                const message = `Cannot activate extension '${id}' because it depends on extension '${depId}', which failed to activate.`;
+                const progressId = await this.notificationMain.$startProgress({
+                    title: `Activating ${plugin.model.displayName || plugin.model.name}`,
+                    location: 'window'
+                });
+                try {
+                    if (plugin.rawModel.extensionDependencies) {
+                        for (const dependencyId of plugin.rawModel.extensionDependencies) {
+                            const dependency = this.registry.get(dependencyId.toLowerCase());
+                            const id = plugin.model.displayName || plugin.model.id;
+                            if (dependency) {
+                                const depId = dependency.model.displayName || dependency.model.id;
+                                const loadedSuccessfully = await this.loadPlugin(dependency, configStorage, visited);
+                                if (!loadedSuccessfully) {
+                                    const message = `Cannot activate extension '${id}' because it depends on extension '${depId}', which failed to activate.`;
+                                    this.messageRegistryProxy.$showMessage(MainMessageType.Error, message, {}, []);
+                                    return false;
+                                }
+                            } else {
+                                const message = `Cannot activate the '${id}' extension because it depends on the '${dependencyId}' extension, which is not installed.`;
                                 this.messageRegistryProxy.$showMessage(MainMessageType.Error, message, {}, []);
+                                console.warn(message);
                                 return false;
                             }
-                        } else {
-                            const message = `Cannot activate the '${id}' extension because it depends on the '${dependencyId}' extension, which is not installed.`;
-                            this.messageRegistryProxy.$showMessage(MainMessageType.Error, message, {}, []);
-                            console.warn(message);
-                            return false;
                         }
                     }
-                }
 
-                let pluginMain = this.host.loadPlugin(plugin);
-                // see https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/workbench/api/common/extHostExtensionService.ts#L372-L376
-                pluginMain = pluginMain || {};
-                return this.startPlugin(plugin, configStorage, pluginMain);
+                    let pluginMain = this.host.loadPlugin(plugin);
+                    // see https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/workbench/api/common/extHostExtensionService.ts#L372-L376
+                    pluginMain = pluginMain || {};
+                    return await this.startPlugin(plugin, configStorage, pluginMain);
+                } finally {
+                    this.notificationMain.$stopProgress(progressId);
+                }
             })();
         }
         this.loadedPlugins.set(plugin.model.id, loading);
@@ -293,6 +299,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     async $updateStoragePath(path: string | undefined): Promise<void> {
+        if (this.configStorage) {
+            this.configStorage.hostStoragePath = path;
+        }
         this.pluginContextsMap.forEach((pluginContext: theia.PluginContext, pluginId: string) => {
             pluginContext.storagePath = path ? join(path, pluginId) : undefined;
         });
@@ -306,6 +315,13 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.activations.set(activationEvent, undefined);
         while (activations.length) {
             await activations.pop()!();
+        }
+    }
+
+    async $activatePlugin(id: string): Promise<void> {
+        const plugin = this.registry.get(id);
+        if (plugin && this.configStorage) {
+            await this.loadPlugin(plugin, this.configStorage);
         }
     }
 

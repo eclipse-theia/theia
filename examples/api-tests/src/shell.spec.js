@@ -22,8 +22,7 @@ describe('Shell', function () {
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
     const { StatusBarImpl } = require('@theia/core/lib/browser/status-bar');
 
-    /** @type {import('inversify').Container} */
-    const container = window['theia'].container;
+    const container = window.theia.container;
     const shell = container.get(ApplicationShell);
     const statusBar = container.get(StatusBarImpl);
 

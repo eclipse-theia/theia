@@ -190,6 +190,8 @@ export interface PluginManagerExt {
     $updateStoragePath(path: string | undefined): Promise<void>;
 
     $activateByEvent(event: string): Promise<void>;
+
+    $activatePlugin(id: string): Promise<void>;
 }
 
 export interface CommandRegistryMain {
@@ -1147,7 +1149,7 @@ export interface PluginInfo {
 export interface LanguagesExt {
     $provideCompletionItems(handle: number, resource: UriComponents, position: Position,
         context: CompletionContext, token: CancellationToken): Promise<CompletionResultDto | undefined>;
-    $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion, token: CancellationToken): Promise<Completion>;
+    $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion, token: CancellationToken): Promise<Completion | undefined>;
     $releaseCompletionItems(handle: number, id: number): void;
     $provideImplementation(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | undefined>;
     $provideTypeDefinition(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | undefined>;
@@ -1187,7 +1189,7 @@ export interface LanguagesExt {
     ): Promise<CodeAction[] | undefined>;
     $provideDocumentSymbols(handle: number, resource: UriComponents, token: CancellationToken): Promise<DocumentSymbol[] | undefined>;
     $provideWorkspaceSymbols(handle: number, query: string, token: CancellationToken): PromiseLike<SymbolInformation[]>;
-    $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: CancellationToken): PromiseLike<SymbolInformation>;
+    $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: CancellationToken): PromiseLike<SymbolInformation | undefined>;
     $provideFoldingRange(
         handle: number,
         resource: UriComponents,

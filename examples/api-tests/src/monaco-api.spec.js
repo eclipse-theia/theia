@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 // @ts-check
-/// <reference types='@theia/monaco/src/typings/monaco'/>
 describe('Monaco API', async function () {
+    this.timeout(5000);
 
     const { assert } = chai;
 
@@ -27,8 +27,7 @@ describe('Monaco API', async function () {
     const { MonacoResolvedKeybinding } = require('@theia/monaco/lib/browser/monaco-resolved-keybinding');
     const { MonacoTextmateService } = require('@theia/monaco/lib/browser/textmate/monaco-textmate-service');
 
-    /** @type {import('inversify').Container} */
-    const container = window['theia'].container;
+    const container = window.theia.container;
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
     const textmateService = container.get(MonacoTextmateService);
@@ -40,7 +39,7 @@ describe('Monaco API', async function () {
         const editor = await editorManager.open(new Uri.default(root.uri).resolve('package.json'), {
             mode: 'reveal'
         });
-        monacoEditor = MonacoEditor.get(editor);
+        monacoEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editor));
     });
 
     it('KeybindingService.resolveKeybinding', () => {
@@ -65,24 +64,25 @@ describe('Monaco API', async function () {
             assert.deepStrictEqual({
                 label, ariaLabel, electronAccelerator, userSettingsLabel, WYSIWYG, chord, parts, dispatchParts
             }, {
-                    label: "Ctrl+Shift+Alt+K",
-                    ariaLabel: "Ctrl+Shift+Alt+K",
-                    electronAccelerator: null,
-                    userSettingsLabel: "ctrl+shift+alt+K",
-                    WYSIWYG: true,
-                    chord: false,
-                    parts: [{
-                        altKey: true,
-                        ctrlKey: true,
-                        keyAriaLabel: "K",
-                        keyLabel: "K",
-                        metaKey: false,
-                        shiftKey: true
-                    }],
-                    dispatchParts: [
-                        "ctrl+shift+alt+K"
-                    ]
-                });
+                label: 'Ctrl+Shift+Alt+K',
+                ariaLabel: 'Ctrl+Shift+Alt+K',
+                // eslint-disable-next-line no-null/no-null
+                electronAccelerator: null,
+                userSettingsLabel: 'ctrl+shift+alt+K',
+                WYSIWYG: true,
+                chord: false,
+                parts: [{
+                    altKey: true,
+                    ctrlKey: true,
+                    keyAriaLabel: 'K',
+                    keyLabel: 'K',
+                    metaKey: false,
+                    shiftKey: true
+                }],
+                dispatchParts: [
+                    'ctrl+shift+alt+K'
+                ]
+            });
         } else {
             assert.fail(`resolvedKeybinding must be of ${MonacoResolvedKeybinding.name} type`);
         }
@@ -94,16 +94,16 @@ describe('Monaco API', async function () {
                 const toDispose = monaco.modes.TokenizationRegistry.onDidChange(() => {
                     toDispose.dispose();
                     resolve();
-                })
+                });
             });
             textmateService['themeService'].setCurrentTheme('light');
             await didChangeColorMap;
         }
 
         const textMateColorMap = textmateService['grammarRegistry'].getColorMap();
-        assert.notEqual(textMateColorMap.indexOf('#795E26'), -1, 'Expected custom toke colors for the ligth theme to be enabled.')
+        assert.notEqual(textMateColorMap.indexOf('#795E26'), -1, 'Expected custom toke colors for the ligth theme to be enabled.');
 
-        const monacoColorMap = monaco.modes.TokenizationRegistry.getColorMap().
+        const monacoColorMap = (monaco.modes.TokenizationRegistry.getColorMap() || []).
             splice(0, textMateColorMap.length).map(c => c.toString().toUpperCase());
         assert.deepStrictEqual(monacoColorMap, textMateColorMap, 'Expected textmate colors to have the same index in the monaco color map.');
     });

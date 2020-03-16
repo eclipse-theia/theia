@@ -132,16 +132,8 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
     protected abstract createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): Object;
 
     async closeAll(options?: ApplicationShell.CloseOptions): Promise<W[]> {
-        const allClosed: W[] = [];
-        await Promise.all(
-            [this.all.map(async widget => {
-                const closed = await this.shell.closeWidget(widget.id, options);
-                if (closed) {
-                    allClosed.push(closed as W);
-                }
-            })]
-        );
-        return allClosed;
+        const closed = await Promise.all(this.all.map(widget => this.shell.closeWidget(widget.id, options)));
+        return closed.filter(widget => !!widget) as W[];
     }
 
 }

@@ -53,7 +53,7 @@ export = function (this: webpack.loader.LoaderContext, source: string, sourceMap
         this.cacheable();
     }
 
-    let modulePackage = modulePackages.find(({ dir }) => this.resourcePath.startsWith(dir));
+    let modulePackage = modulePackages.find(({ dir }) => this.resourcePath.startsWith(dir + '/'));
     if (modulePackage) {
         this.callback(undefined, exposeModule(modulePackage, this.resourcePath, source), sourceMap);
         return;

@@ -121,4 +121,25 @@ describe('reference', () => {
         result.forEach(v => assert.ok(result[0].object === v.object));
     });
 
+    it('should not dispose an object if a reference is pending', async () => {
+        let disposed = false;
+        const references = new ReferenceCollection<string, Disposable>(async key => ({
+            key, dispose: () => {
+                disposed = true;
+            }
+        }));
+        assert.ok(!disposed);
+
+        let reference = await references.acquire('a');
+
+        const pendingReference = references.acquire('a');
+        reference.dispose();
+
+        assert.ok(!disposed);
+
+        reference = await pendingReference;
+        reference.dispose();
+        assert.ok(disposed);
+    });
+
 });

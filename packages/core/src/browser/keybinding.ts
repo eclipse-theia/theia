@@ -571,6 +571,29 @@ export class KeybindingRegistry {
         return true;
     }
 
+    dispatchKeyDown(input: KeyboardEventInit | KeyCode | string, target: EventTarget = document.activeElement || window): void {
+        const eventInit = this.asKeyboardEventInit(input);
+        const emulatedKeyboardEvent = new KeyboardEvent('keydown', eventInit);
+        target.dispatchEvent(emulatedKeyboardEvent);
+    }
+    protected asKeyboardEventInit(input: KeyboardEventInit | KeyCode | string): KeyboardEventInit & Partial<{ keyCode: number }> {
+        if (typeof input === 'string') {
+            return this.asKeyboardEventInit(KeyCode.createKeyCode(input));
+        }
+        if (input instanceof KeyCode) {
+            return {
+                metaKey: input.meta,
+                shiftKey: input.shift,
+                altKey: input.alt,
+                ctrlKey: input.ctrl,
+                code: input.key && input.key.code,
+                key: (input && input.character) || (input.key && input.key.code),
+                keyCode: input.key && input.key.keyCode
+            };
+        }
+        return input;
+    }
+
     /**
      * Run the command matching to the given keyboard event.
      */
