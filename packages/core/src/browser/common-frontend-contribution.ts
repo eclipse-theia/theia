@@ -986,13 +986,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }, description: 'Activity notification badge foreground color. The activity bar is showing on the far left or right and allows to switch between views of the side bar.'
             },
 
-            // Input control colors should be aligned with https://code.visualstudio.com/api/references/theme-color#input-control
-            // if not yet contributed by Monaco, check runtime css variables to learn
-            { id: 'input.border', defaults: { hc: 'contrastBorder' }, description: 'Input box border.' },
-            { id: 'inputValidation.errorForeground', defaults: { dark: 'errorForeground', light: 'errorForeground', hc: 'errorForeground' }, description: 'Input validation foreground color for error severity.' },
-            { id: 'inputValidation.infoForeground', description: 'Input validation foreground color for information severity.' },
-            { id: 'inputValidation.warningForeground', description: 'Input validation foreground color for warning severity.' },
-
             // Side Bar should be aligned with https://code.visualstudio.com/api/references/theme-color#side-bar
             // if not yet contributed by Monaco, check runtime css variables to learn
             { id: 'sideBar.background', defaults: { dark: '#252526', light: '#F3F3F3', hc: '#000000' }, description: 'Side bar background color. The side bar is the container for views like explorer and search.' },

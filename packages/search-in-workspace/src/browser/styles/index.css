@@ -112,7 +112,7 @@
     border-style: solid;
     border-width: var(--theia-border-width);
     margin: -1px;
-    border-color: var(--theia-editorWarning-foreground);
+    border-color: var(--theia-inputValidation-warningBorder);
 }
 
 .t-siw-search-container .searchHeader .search-field-container .search-notification {
@@ -127,10 +127,10 @@
 }
 
 .t-siw-search-container .searchHeader .search-notification div{
-    background-color: var(--theia-editorWarning-foreground);
+    background-color: var(--theia-inputValidation-warningBackground);
     width: calc(100% + 2px);
     margin-left: -1px;
-    color: var(--theia-inputValidation-warningBackground);
+    color: var(--theia-inputValidation-warningForeground);
     z-index: 1000;
     position: absolute;
     border: 1px solid var(--theia-inputValidation-warningBorder);
