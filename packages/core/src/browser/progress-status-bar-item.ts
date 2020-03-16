@@ -30,6 +30,14 @@ export class ProgressStatusBarItem implements ProgressClient {
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
 
+    protected messagesByProgress = new Map<string, string | undefined>();
+
+    protected incomingQueue = new Array<string>();
+
+    get currentProgress(): string | undefined {
+        return this.incomingQueue.slice(-1)[0];
+    }
+
     showProgress(progressId: string, message: ProgressMessage, cancellationToken: CancellationToken): Promise<string | undefined> {
         const result = new Deferred<string | undefined>();
         cancellationToken.onCancellationRequested(() => {
@@ -39,21 +47,19 @@ export class ProgressStatusBarItem implements ProgressClient {
         this.processEvent(progressId, 'start', message.text);
         return result.promise;
     }
-    protected messagesByProgress = new Map<string, string | undefined>();
-    protected incomingQueue = new Array<string>();
+
     protected processEvent(progressId: string, event: 'start' | 'done', message?: string): void {
         if (event === 'start') {
             this.incomingQueue.push(progressId);
             this.messagesByProgress.set(progressId, message);
         } else {
             this.incomingQueue = this.incomingQueue.filter(id => id !== progressId);
+            this.messagesByProgress.delete(progressId);
         }
         this.triggerUpdate();
     }
-    protected readonly triggerUpdate = throttle(() => {
-        const pick: string | undefined = this.incomingQueue.slice(-1)[0];
-        this.update(pick);
-    }, 250, { leading: true, trailing: true });
+
+    protected readonly triggerUpdate = throttle(() => this.update(this.currentProgress), 250, { leading: true, trailing: true });
 
     async reportProgress(progressId: string, update: ProgressUpdate, originalMessage: ProgressMessage, _cancellationToken: CancellationToken): Promise<void> {
         const newMessage = update.message ? `${originalMessage.text}: ${update.message}` : originalMessage.text;

@@ -631,6 +631,14 @@ export class HostedPluginSupport {
         }
     }
 
+    async activatePlugin(id: string): Promise<void> {
+        const activation = [];
+        for (const manager of this.managers.values()) {
+            activation.push(manager.$activatePlugin(id));
+        }
+        await Promise.all(activation);
+    }
+
     protected createMeasurement(name: string): () => number {
         const startMarker = `${name}-start`;
         const endMarker = `${name}-end`;

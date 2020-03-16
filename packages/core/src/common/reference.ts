@@ -116,13 +116,17 @@ export class ReferenceCollection<K, V extends Disposable> extends AbstractRefere
 
     async acquire(args: K): Promise<Reference<V>> {
         const key = this.toKey(args);
+        const existing = this._values.get(key);
+        if (existing) {
+            return this.doAcquire(key, existing);
+        }
         const object = await this.getOrCreateValue(key, args);
         return this.doAcquire(key, object);
     }
 
     protected readonly pendingValues = new Map<string, MaybePromise<V>>();
     protected async getOrCreateValue(key: string, args: K): Promise<V> {
-        const existing = this._values.get(key) || this.pendingValues.get(key);
+        const existing = this.pendingValues.get(key);
         if (existing) {
             return existing;
         }

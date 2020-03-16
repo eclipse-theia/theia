@@ -105,6 +105,9 @@ export namespace Saveable {
         saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
         const closeWidget = widget.close.bind(widget);
         const closeWithoutSaving: SaveableWidget['closeWithoutSaving'] = async () => {
+            if (saveable.dirty && saveable.revert) {
+                await saveable.revert();
+            }
             closeWidget();
             return waitForClosed(widget);
         };

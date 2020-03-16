@@ -15,8 +15,6 @@
  ********************************************************************************/
 
 // @ts-check
-/// <reference types='@theia/monaco/src/typings/monaco'/>
-
 /* eslint-disable no-unused-expressions, @typescript-eslint/no-explicit-any */
 
 /**
@@ -28,6 +26,7 @@
  * See https://github.com/akosyakov/vscode-launch/blob/master/src/test/extension.test.ts
  */
 describe('Launch Preferences', function () {
+    this.timeout(5000);
 
     const { assert } = chai;
 
@@ -38,8 +37,7 @@ describe('Launch Preferences', function () {
     const { MonacoTextModelService } = require('@theia/monaco/lib/browser/monaco-text-model-service');
     const { MonacoWorkspace } = require('@theia/monaco/lib/browser/monaco-workspace');
 
-    /** @type {import('inversify').Container} */
-    const container = window['theia'].container;
+    const container = window.theia.container;
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
     const preferences = container.get(PreferenceService);
     const workspaceService = container.get(WorkspaceService);
@@ -425,7 +423,7 @@ describe('Launch Preferences', function () {
         ]);
     }
 
-    const client = fileSystem.getClient();
+    const client = /** @type {import('@theia/filesystem/lib/common/filesystem').FileSystemClient} */ (fileSystem.getClient());
     const originalShouldOverwrite = client.shouldOverwrite;
 
     before(async () => {
@@ -460,6 +458,7 @@ describe('Launch Preferences', function () {
             /** @typedef {monaco.editor.IReference<import('@theia/monaco/lib/browser/monaco-editor-model').MonacoEditorModel>} ConfigModelReference */
             /** @type {ConfigModelReference[]} */
             beforeEach(async () => {
+                /** @type {Promise<void>[]} */
                 const promises = [];
                 /**
                  * @param {string} name
@@ -507,11 +506,13 @@ describe('Launch Preferences', function () {
             });
 
             testIt('get from undefined', () => {
+                /** @type {any} */
                 const config = preferences.get('launch', undefined, undefined);
                 assert.deepStrictEqual(JSON.parse(JSON.stringify(config)), expectation);
             });
 
             testIt('get from rootUri', () => {
+                /** @type {any} */
                 const config = preferences.get('launch', undefined, rootUri.toString());
                 assert.deepStrictEqual(JSON.parse(JSON.stringify(config)), expectation);
             });

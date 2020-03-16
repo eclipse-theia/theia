@@ -28,7 +28,7 @@ export interface Language {
 }
 
 export interface WorkspaceSymbolProvider extends services.WorkspaceSymbolProvider {
-    resolveWorkspaceSymbol?(symbol: services.SymbolInformation, token: services.CancellationToken): Thenable<services.SymbolInformation>
+    resolveWorkspaceSymbol?(symbol: services.SymbolInformation, token: services.CancellationToken): Thenable<services.SymbolInformation | undefined>
 }
 
 export const Languages = Symbol('Languages');

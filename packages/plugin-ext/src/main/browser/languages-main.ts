@@ -36,7 +36,7 @@ import {
 } from '../../common/plugin-api-rpc';
 import { injectable, inject } from 'inversify';
 import {
-    SerializedDocumentFilter, MarkerData, Range, WorkspaceSymbolProvider, RelatedInformation,
+    SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
     MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
@@ -56,6 +56,7 @@ import { CallHierarchyService, CallHierarchyServiceProvider, Caller, Definition 
 import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller } from './callhierarchy/callhierarchy-type-converters';
 import { Position, DocumentUri } from 'vscode-languageserver-types';
 import { ObjectIdentifier } from '../../common/object-identifier';
+import { WorkspaceSymbolProvider } from '@theia/languages/lib/browser/language-client-services';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -355,7 +356,7 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return this.proxy.$provideWorkspaceSymbols(handle, params.query, token);
     }
 
-    protected resolveWorkspaceSymbol(handle: number, symbol: vst.SymbolInformation, token: monaco.CancellationToken): Thenable<vst.SymbolInformation> {
+    protected resolveWorkspaceSymbol(handle: number, symbol: vst.SymbolInformation, token: monaco.CancellationToken): Thenable<vst.SymbolInformation | undefined> {
         return this.proxy.$resolveWorkspaceSymbol(handle, symbol, token);
     }
 

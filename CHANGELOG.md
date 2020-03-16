@@ -1,5 +1,12 @@
 # Change Log
 
+## v1.1.0
+
+Breaking changes:
+
+- [plugin] removed `configStorage` argument from `PluginManager.registerPlugin`.
+Use `PluginManager.configStorage` property instead. [#7265](https://github.com/eclipse-theia/theia/pull/7265#discussion_r399956070)
+
 ## v1.0.0
 
 - [core] added functionality to ensure that nodes are refreshed properly on tree expansion [#7400](https://github.com/eclipse-theia/theia/pull/7400)

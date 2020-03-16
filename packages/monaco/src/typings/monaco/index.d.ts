@@ -68,10 +68,48 @@ declare module monaco.editor {
         readonly _contributions: {
             'editor.controller.quickOpenController': monaco.quickOpen.QuickOpenController
             'editor.contrib.referencesController': monaco.referenceSearch.ReferencesController
+            'editor.contrib.hover': ModesHoverController
+            'css.editor.codeLens': CodeLensContribution
+            'editor.contrib.quickFixController': QuickFixController
         }
         readonly _modelData: {
             cursor: ICursor
         } | null;
+    }
+
+    // https://github.com/theia-ide/vscode/blob/d24b5f70c69b3e75cd10c6b5247a071265ccdd38/src/vs/editor/contrib/codeAction/codeActionCommands.ts#L69
+    export interface QuickFixController {
+        readonly _ui: {
+            rawValue?: CodeActionUi
+        }
+    }
+    export interface CodeActionUi {
+        readonly _lightBulbWidget: {
+            rawValue?: LightBulbWidget
+        }
+    }
+    export interface LightBulbWidget {
+        readonly _domNode: HTMLDivElement;
+    }
+
+    // https://github.com/theia-ide/vscode/blob/d24b5f70c69b3e75cd10c6b5247a071265ccdd38/src/vs/editor/contrib/codelens/codelensController.ts#L24
+    export interface CodeLensContribution {
+        readonly _lenses: CodeLensWidget[];
+    }
+    export interface CodeLensWidget {
+        readonly _contentWidget?: CodeLensContentWidget;
+    }
+    export interface CodeLensContentWidget {
+        readonly _domNode: HTMLElement;
+    }
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/contrib/hover/hover.ts#L31
+    export interface ModesHoverController {
+        readonly contentWidget: ModesContentHoverWidget
+    }
+    export interface ModesContentHoverWidget {
+        readonly isVisible: boolean;
+        readonly _domNode: HTMLElement;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/controller/cursor.ts#L169
@@ -733,7 +771,12 @@ declare module monaco.referenceSearch {
         show(range: IRange): void;
         hide(): void;
         focus(): void;
+        _tree: ReferenceTree
     }
+    export interface ReferenceTree {
+        getFocus(): ReferenceTreeElement[]
+    }
+    export interface ReferenceTreeElement { }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/contrib/gotoSymbol/peek/referencesController.ts#L30
     export interface ReferencesController extends IDisposable {

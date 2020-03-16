@@ -97,11 +97,11 @@ export class DebugMainImpl implements DebugMain, Disposable {
             );
         };
         this.debugExt.$breakpointsDidChange(this.toTheiaPluginApiBreakpoints(this.breakpointsManager.getBreakpoints()), [], []);
-        this.breakpointsManager.onDidChangeBreakpoints(fireDidChangeBreakpoints);
         this.debugExt.$breakpointsDidChange(this.toTheiaPluginApiBreakpoints(this.breakpointsManager.getFunctionBreakpoints()), [], []);
-        this.breakpointsManager.onDidChangeFunctionBreakpoints(fireDidChangeBreakpoints);
 
         this.toDispose.pushAll([
+            this.breakpointsManager.onDidChangeBreakpoints(fireDidChangeBreakpoints),
+            this.breakpointsManager.onDidChangeFunctionBreakpoints(fireDidChangeBreakpoints),
             this.sessionManager.onDidCreateDebugSession(debugSession => this.debugExt.$sessionDidCreate(debugSession.id)),
             this.sessionManager.onDidDestroyDebugSession(debugSession => this.debugExt.$sessionDidDestroy(debugSession.id)),
             this.sessionManager.onDidChangeActiveDebugSession(event => this.debugExt.$sessionDidChange(event.current && event.current.id)),

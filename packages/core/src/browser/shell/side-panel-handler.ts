@@ -138,6 +138,7 @@ export class SidePanelHandler {
             suppressScrollX: true
         });
         tabBarRenderer.tabBar = sideBar;
+        sideBar.disposed.connect(() => tabBarRenderer.dispose());
         tabBarRenderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         sideBar.addClass('theia-app-' + side);
         sideBar.addClass(LEFT_RIGHT_AREA_CLASS);

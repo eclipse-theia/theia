@@ -94,6 +94,10 @@ export class TabBarRenderer extends TabBar.Renderer {
         }
     }
 
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
     protected _tabBar?: TabBar<Widget>;
     protected readonly toDisposeOnTabBar = new DisposableCollection();
     /**
@@ -101,6 +105,9 @@ export class TabBarRenderer extends TabBar.Renderer {
      * is requested.
      */
     set tabBar(tabBar: TabBar<Widget> | undefined) {
+        if (this.toDispose.disposed) {
+            throw new Error('disposed');
+        }
         if (this._tabBar === tabBar) {
             return;
         }
@@ -453,9 +460,19 @@ export class ScrollableTabBar extends TabBar<Widget> {
     private scrollBarFactory: () => PerfectScrollbar;
     private pendingReveal?: Promise<void>;
 
+    protected readonly toDispose = new DisposableCollection();
+
     constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
         super(options);
         this.scrollBarFactory = () => new PerfectScrollbar(this.scrollbarHost, options);
+    }
+
+    dispose(): void {
+        if (this.isDisposed) {
+            return;
+        }
+        super.dispose();
+        this.toDispose.dispose();
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -571,7 +588,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
 
         super(options);
         this.rewireDOM();
-        this.tabBarToolbarRegistry.onDidChange(() => this.update());
+        this.toDispose.push(this.tabBarToolbarRegistry.onDidChange(() => this.update()));
     }
 
     /**

@@ -280,7 +280,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             // Electron: workaround for https://github.com/electron/electron/issues/14258
             // We have to detect keyboard events in the <webview> and dispatch them to our
             // keybinding service because these events do not bubble to the parent window anymore.
-            this.dispatchKeyDown(data);
+            this.keybindings.dispatchKeyDown(data, this.element);
         }));
 
         this.style();
@@ -393,17 +393,6 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     protected style(): void {
         const { styles, activeTheme } = this.themeDataProvider.getThemeData();
         this.doSend('styles', { styles, activeTheme });
-    }
-
-    protected dispatchKeyDown(event: KeyboardEventInit): void {
-        // Create a fake KeyboardEvent from the data provided
-        const emulatedKeyboardEvent = new KeyboardEvent('keydown', event);
-        // Force override the target
-        Object.defineProperty(emulatedKeyboardEvent, 'target', {
-            get: () => this.element,
-        });
-        // And re-dispatch
-        this.keybindings.run(emulatedKeyboardEvent);
     }
 
     protected openLink(link: URI): void {

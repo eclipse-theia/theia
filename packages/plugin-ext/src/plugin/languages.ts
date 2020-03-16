@@ -187,12 +187,15 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private withAdapter<A, R>(handle: number, ctor: { new(...args: any[]): A }, callback: (adapter: A) => Promise<R>): Promise<R> {
+    private async withAdapter<A, R>(handle: number, ctor: { new(...args: any[]): A }, callback: (adapter: A) => Promise<R>, fallbackValue: R): Promise<R> {
         const adapter = this.adaptersMap.get(handle);
-        if (!(adapter instanceof ctor)) {
-            return Promise.reject(new Error('no adapter found'));
+        if (!adapter) {
+            return fallbackValue;
         }
-        return callback(<A>adapter);
+        if (adapter instanceof ctor) {
+            return callback(<A>adapter);
+        }
+        throw new Error('no adapter found');
     }
 
     private transformDocumentSelector(selector: theia.DocumentSelector): SerializedDocumentFilter[] {
@@ -226,15 +229,15 @@ export class LanguagesExtImpl implements LanguagesExt {
     // ### Completion begin
     $provideCompletionItems(handle: number, resource: UriComponents, position: Position,
         context: CompletionContext, token: theia.CancellationToken): Promise<CompletionResultDto | undefined> {
-        return this.withAdapter(handle, CompletionAdapter, adapter => adapter.provideCompletionItems(URI.revive(resource), position, context, token));
+        return this.withAdapter(handle, CompletionAdapter, adapter => adapter.provideCompletionItems(URI.revive(resource), position, context, token), undefined);
     }
 
-    $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion, token: theia.CancellationToken): Promise<Completion> {
-        return this.withAdapter(handle, CompletionAdapter, adapter => adapter.resolveCompletionItem(URI.revive(resource), position, completion, token));
+    $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion, token: theia.CancellationToken): Promise<Completion | undefined> {
+        return this.withAdapter(handle, CompletionAdapter, adapter => adapter.resolveCompletionItem(URI.revive(resource), position, completion, token), undefined);
     }
 
     $releaseCompletionItems(handle: number, id: number): void {
-        this.withAdapter(handle, CompletionAdapter, async adapter => adapter.releaseCompletionItems(id));
+        this.withAdapter(handle, CompletionAdapter, async adapter => adapter.releaseCompletionItems(id), undefined);
     }
 
     registerCompletionItemProvider(selector: theia.DocumentSelector, provider: theia.CompletionItemProvider, triggerCharacters: string[],
@@ -247,7 +250,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     // ### Definition provider begin
     $provideDefinition(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | undefined> {
-        return this.withAdapter(handle, DefinitionAdapter, adapter => adapter.provideDefinition(URI.revive(resource), position, token));
+        return this.withAdapter(handle, DefinitionAdapter, adapter => adapter.provideDefinition(URI.revive(resource), position, token), undefined);
     }
 
     registerDefinitionProvider(selector: theia.DocumentSelector, provider: theia.DefinitionProvider, pluginInfo: PluginInfo): theia.Disposable {
@@ -259,7 +262,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     // ### Declaration provider begin
     $provideDeclaration(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | undefined> {
-        return this.withAdapter(handle, DeclarationAdapter, adapter => adapter.provideDeclaration(URI.revive(resource), position, token));
+        return this.withAdapter(handle, DeclarationAdapter, adapter => adapter.provideDeclaration(URI.revive(resource), position, token), undefined);
     }
 
     registerDeclarationProvider(selector: theia.DocumentSelector, provider: theia.DeclarationProvider, pluginInfo: PluginInfo): theia.Disposable {
@@ -273,11 +276,11 @@ export class LanguagesExtImpl implements LanguagesExt {
     $provideSignatureHelp(
         handle: number, resource: UriComponents, position: Position, context: SignatureHelpContext, token: theia.CancellationToken
     ): Promise<SignatureHelp | undefined> {
-        return this.withAdapter(handle, SignatureHelpAdapter, adapter => adapter.provideSignatureHelp(URI.revive(resource), position, token, context));
+        return this.withAdapter(handle, SignatureHelpAdapter, adapter => adapter.provideSignatureHelp(URI.revive(resource), position, token, context), undefined);
     }
 
     $releaseSignatureHelp(handle: number, id: number): void {
-        this.withAdapter(handle, SignatureHelpAdapter, async adapter => adapter.releaseSignatureHelp(id));
+        this.withAdapter(handle, SignatureHelpAdapter, async adapter => adapter.releaseSignatureHelp(id), undefined);
     }
 
     registerSignatureHelpProvider(selector: theia.DocumentSelector, provider: theia.SignatureHelpProvider, metadata: theia.SignatureHelpProviderMetadata,
@@ -300,7 +303,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     // ### Implementation provider begin
     $provideImplementation(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | undefined> {
-        return this.withAdapter(handle, ImplementationAdapter, adapter => adapter.provideImplementation(URI.revive(resource), position, token));
+        return this.withAdapter(handle, ImplementationAdapter, adapter => adapter.provideImplementation(URI.revive(resource), position, token), undefined);
     }
 
     registerImplementationProvider(selector: theia.DocumentSelector, provider: theia.ImplementationProvider, pluginInfo: PluginInfo): theia.Disposable {
@@ -312,7 +315,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     // ### Type Definition provider begin
     $provideTypeDefinition(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Definition | undefined> {
-        return this.withAdapter(handle, TypeDefinitionAdapter, adapter => adapter.provideTypeDefinition(URI.revive(resource), position, token));
+        return this.withAdapter(handle, TypeDefinitionAdapter, adapter => adapter.provideTypeDefinition(URI.revive(resource), position, token), undefined);
     }
 
     registerTypeDefinitionProvider(selector: theia.DocumentSelector, provider: theia.TypeDefinitionProvider, pluginInfo: PluginInfo): theia.Disposable {
@@ -330,7 +333,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     $provideHover(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Hover | undefined> {
-        return this.withAdapter(handle, HoverAdapter, adapter => adapter.provideHover(URI.revive(resource), position, token));
+        return this.withAdapter(handle, HoverAdapter, adapter => adapter.provideHover(URI.revive(resource), position, token), undefined);
     }
     // ### Hover Provider end
 
@@ -342,7 +345,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<DocumentHighlight[] | undefined> {
-        return this.withAdapter(handle, DocumentHighlightAdapter, adapter => adapter.provideDocumentHighlights(URI.revive(resource), position, token));
+        return this.withAdapter(handle, DocumentHighlightAdapter, adapter => adapter.provideDocumentHighlights(URI.revive(resource), position, token), undefined);
     }
     // ### Document Highlight Provider end
 
@@ -354,11 +357,11 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     $provideWorkspaceSymbols(handle: number, query: string, token: theia.CancellationToken): PromiseLike<SymbolInformation[]> {
-        return this.withAdapter(handle, WorkspaceSymbolAdapter, adapter => adapter.provideWorkspaceSymbols(query, token));
+        return this.withAdapter(handle, WorkspaceSymbolAdapter, adapter => adapter.provideWorkspaceSymbols(query, token), []);
     }
 
-    $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: theia.CancellationToken): PromiseLike<SymbolInformation> {
-        return this.withAdapter(handle, WorkspaceSymbolAdapter, adapter => adapter.resolveWorkspaceSymbol(symbol, token));
+    $resolveWorkspaceSymbol(handle: number, symbol: SymbolInformation, token: theia.CancellationToken): PromiseLike<SymbolInformation | undefined> {
+        return this.withAdapter(handle, WorkspaceSymbolAdapter, adapter => adapter.resolveWorkspaceSymbol(symbol, token), undefined);
     }
     // ### WorkspaceSymbol Provider end
 
@@ -371,7 +374,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     $provideDocumentFormattingEdits(handle: number, resource: UriComponents,
         options: FormattingOptions, token: theia.CancellationToken): Promise<TextEdit[] | undefined> {
-        return this.withAdapter(handle, DocumentFormattingAdapter, adapter => adapter.provideDocumentFormattingEdits(URI.revive(resource), options, token));
+        return this.withAdapter(handle, DocumentFormattingAdapter, adapter => adapter.provideDocumentFormattingEdits(URI.revive(resource), options, token), undefined);
     }
     // ### Document Formatting Edit end
 
@@ -385,7 +388,7 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     $provideDocumentRangeFormattingEdits(handle: number, resource: UriComponents, range: Range,
         options: FormattingOptions, token: theia.CancellationToken): Promise<TextEdit[] | undefined> {
-        return this.withAdapter(handle, RangeFormattingAdapter, adapter => adapter.provideDocumentRangeFormattingEdits(URI.revive(resource), range, options, token));
+        return this.withAdapter(handle, RangeFormattingAdapter, adapter => adapter.provideDocumentRangeFormattingEdits(URI.revive(resource), range, options, token), undefined);
     }
     // ### Document Range Formatting Edit end
 
@@ -403,17 +406,17 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     $provideOnTypeFormattingEdits(handle: number, resource: UriComponents, position: Position, ch: string,
         options: FormattingOptions, token: theia.CancellationToken): Promise<TextEdit[] | undefined> {
-        return this.withAdapter(handle, OnTypeFormattingAdapter, adapter => adapter.provideOnTypeFormattingEdits(URI.revive(resource), position, ch, options, token));
+        return this.withAdapter(handle, OnTypeFormattingAdapter, adapter => adapter.provideOnTypeFormattingEdits(URI.revive(resource), position, ch, options, token), undefined);
     }
     // ### On Type Formatting Edit end
 
     // ### Document Link Provider begin
     $provideDocumentLinks(handle: number, resource: UriComponents, token: theia.CancellationToken): Promise<DocumentLink[] | undefined> {
-        return this.withAdapter(handle, LinkProviderAdapter, adapter => adapter.provideLinks(URI.revive(resource), token));
+        return this.withAdapter(handle, LinkProviderAdapter, adapter => adapter.provideLinks(URI.revive(resource), token), undefined);
     }
 
     $resolveDocumentLink(handle: number, link: DocumentLink, token: theia.CancellationToken): Promise<DocumentLink | undefined> {
-        return this.withAdapter(handle, LinkProviderAdapter, adapter => adapter.resolveLink(link, token));
+        return this.withAdapter(handle, LinkProviderAdapter, adapter => adapter.resolveLink(link, token), undefined);
     }
 
     registerLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider, pluginInfo: PluginInfo): theia.Disposable {
@@ -423,7 +426,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     $releaseDocumentLinks(handle: number, ids: number[]): void {
-        this.withAdapter(handle, LinkProviderAdapter, async adapter => adapter.releaseDocumentLinks(ids));
+        this.withAdapter(handle, LinkProviderAdapter, async adapter => adapter.releaseDocumentLinks(ids), undefined);
     }
 
     // ### Document Link Provider end
@@ -452,7 +455,7 @@ export class LanguagesExtImpl implements LanguagesExt {
         context: CodeActionContext,
         token: theia.CancellationToken
     ): Promise<CodeAction[] | undefined> {
-        return this.withAdapter(handle, CodeActionAdapter, adapter => adapter.provideCodeAction(URI.revive(resource), rangeOrSelection, context, token));
+        return this.withAdapter(handle, CodeActionAdapter, adapter => adapter.provideCodeAction(URI.revive(resource), rangeOrSelection, context, token), undefined);
     }
     // ### Code Actions Provider end
 
@@ -472,21 +475,21 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     $provideCodeLenses(handle: number, resource: UriComponents, token: theia.CancellationToken): Promise<CodeLensSymbol[] | undefined> {
-        return this.withAdapter(handle, CodeLensAdapter, adapter => adapter.provideCodeLenses(URI.revive(resource), token));
+        return this.withAdapter(handle, CodeLensAdapter, adapter => adapter.provideCodeLenses(URI.revive(resource), token), undefined);
     }
 
     $resolveCodeLens(handle: number, resource: UriComponents, symbol: CodeLensSymbol, token: theia.CancellationToken): Promise<CodeLensSymbol | undefined> {
-        return this.withAdapter(handle, CodeLensAdapter, adapter => adapter.resolveCodeLens(URI.revive(resource), symbol, token));
+        return this.withAdapter(handle, CodeLensAdapter, adapter => adapter.resolveCodeLens(URI.revive(resource), symbol, token), undefined);
     }
 
     $releaseCodeLenses(handle: number, ids: number[]): void {
-        this.withAdapter(handle, CodeLensAdapter, async adapter => adapter.releaseCodeLenses(ids));
+        this.withAdapter(handle, CodeLensAdapter, async adapter => adapter.releaseCodeLenses(ids), undefined);
     }
     // ### Code Lens Provider end
 
     // ### Code Reference Provider begin
     $provideReferences(handle: number, resource: UriComponents, position: Position, context: ReferenceContext, token: theia.CancellationToken): Promise<Location[] | undefined> {
-        return this.withAdapter(handle, ReferenceAdapter, adapter => adapter.provideReferences(URI.revive(resource), position, context, token));
+        return this.withAdapter(handle, ReferenceAdapter, adapter => adapter.provideReferences(URI.revive(resource), position, context, token), undefined);
     }
 
     registerReferenceProvider(selector: theia.DocumentSelector, provider: theia.ReferenceProvider, pluginInfo: PluginInfo): theia.Disposable {
@@ -504,7 +507,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     $provideDocumentSymbols(handle: number, resource: UriComponents, token: theia.CancellationToken): Promise<DocumentSymbol[] | undefined> {
-        return this.withAdapter(handle, OutlineAdapter, adapter => adapter.provideDocumentSymbols(URI.revive(resource), token));
+        return this.withAdapter(handle, OutlineAdapter, adapter => adapter.provideDocumentSymbols(URI.revive(resource), token), undefined);
     }
     // ### Document Symbol Provider end
 
@@ -516,11 +519,11 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     $provideDocumentColors(handle: number, resource: UriComponents, token: theia.CancellationToken): Promise<RawColorInfo[]> {
-        return this.withAdapter(handle, ColorProviderAdapter, adapter => adapter.provideColors(URI.revive(resource), token));
+        return this.withAdapter(handle, ColorProviderAdapter, adapter => adapter.provideColors(URI.revive(resource), token), []);
     }
 
     $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo, token: theia.CancellationToken): Promise<ColorPresentation[]> {
-        return this.withAdapter(handle, ColorProviderAdapter, adapter => adapter.provideColorPresentations(URI.revive(resource), colorInfo, token));
+        return this.withAdapter(handle, ColorProviderAdapter, adapter => adapter.provideColorPresentations(URI.revive(resource), colorInfo, token), []);
     }
     // ### Color Provider end
 
@@ -537,7 +540,7 @@ export class LanguagesExtImpl implements LanguagesExt {
         context: theia.FoldingContext,
         token: theia.CancellationToken
     ): Promise<FoldingRange[] | undefined> {
-        return this.withAdapter(callId, FoldingProviderAdapter, adapter => adapter.provideFoldingRanges(URI.revive(resource), context, token));
+        return this.withAdapter(callId, FoldingProviderAdapter, adapter => adapter.provideFoldingRanges(URI.revive(resource), context, token), undefined);
     }
     // ### Folding Range Provider end
 
@@ -549,11 +552,11 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string, token: theia.CancellationToken): Promise<WorkspaceEditDto | undefined> {
-        return this.withAdapter(handle, RenameAdapter, adapter => adapter.provideRenameEdits(URI.revive(resource), position, newName, token));
+        return this.withAdapter(handle, RenameAdapter, adapter => adapter.provideRenameEdits(URI.revive(resource), position, newName, token), undefined);
     }
 
     $resolveRenameLocation(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<RenameLocation | undefined> {
-        return this.withAdapter(handle, RenameAdapter, adapter => adapter.resolveRenameLocation(URI.revive(resource), position, token));
+        return this.withAdapter(handle, RenameAdapter, adapter => adapter.resolveRenameLocation(URI.revive(resource), position, token), undefined);
     }
     // ### Rename Provider end
 
@@ -565,11 +568,11 @@ export class LanguagesExtImpl implements LanguagesExt {
     }
 
     $provideRootDefinition(handle: number, resource: UriComponents, location: Position, token: theia.CancellationToken): Promise<CallHierarchyDefinition | undefined> {
-        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideRootDefinition(URI.revive(resource), location, token));
+        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideRootDefinition(URI.revive(resource), location, token), undefined);
     }
 
     $provideCallers(handle: number, definition: CallHierarchyDefinition, token: theia.CancellationToken): Promise<CallHierarchyReference[] | undefined> {
-        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallers(definition, token));
+        return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallers(definition, token), undefined);
     }
     // ### Call Hierarchy Provider end
 }

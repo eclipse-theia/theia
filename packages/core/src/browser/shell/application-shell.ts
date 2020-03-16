@@ -93,6 +93,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         });
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
+        tabBar.disposed.connect(() => renderer.dispose());
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
         return tabBar;
@@ -1325,27 +1326,28 @@ export class ApplicationShell extends Widget {
     }
 
     async closeWidget(id: string, options?: ApplicationShell.CloseOptions): Promise<Widget | undefined> {
+        // TODO handle save for composite widgets, i.e. the preference widget has 2 editors
         const stack = this.toTrackedStack(id);
-        const widget = this.toTrackedStack(id).pop();
-        if (!widget) {
+        const current = stack.pop();
+        if (!current) {
             return undefined;
         }
         let pendingClose;
-        if (SaveableWidget.is(widget)) {
+        if (SaveableWidget.is(current)) {
             let shouldSave;
             if (options && 'save' in options) {
                 shouldSave = () => options.save;
             }
-            pendingClose = widget.closeWithSaving({ shouldSave });
+            pendingClose = current.closeWithSaving({ shouldSave });
         } else {
-            widget.close();
-            pendingClose = waitForClosed(widget);
+            current.close();
+            pendingClose = waitForClosed(current);
         };
         await Promise.all([
             pendingClose,
             this.pendingUpdates
         ]);
-        return stack[0] || widget;
+        return stack[0] || current;
     }
 
     /**

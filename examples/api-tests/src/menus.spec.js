@@ -29,11 +29,10 @@ describe('Menus', function () {
     const { ProblemContribution } = require('@theia/markers/lib/browser/problem/problem-contribution');
     const { SearchInWorkspaceFrontendContribution } = require('@theia/search-in-workspace/lib/browser/search-in-workspace-frontend-contribution');
 
-    /** @type {import('inversify').Container} */
-    const container = window['theia'].container;
+    const container = window.theia.container;
     const shell = container.get(ApplicationShell);
     const menuBarContribution = container.get(BrowserMenuBarContribution);
-    const menuBar = menuBarContribution.menuBar;
+    const menuBar = /** @type {import('@theia/core/lib/browser/menu/browser-menu-plugin').MenuBarWidget} */ (menuBarContribution.menuBar);
 
     for (const contribution of [
         container.get(CallHierarchyContribution),
