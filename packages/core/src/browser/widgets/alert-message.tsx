@@ -29,7 +29,7 @@ const AlertMessageIcon = {
     INFO: 'fa fa-info-circle',
     SUCCESS: 'fa fa-check-circle',
     WARNING: 'fa fa-exclamation-circle',
-    ERROR: 'fa fa-error-icon'
+    ERROR: 'fa fa-times-circle'
 };
 
 export interface AlertMessageProps {

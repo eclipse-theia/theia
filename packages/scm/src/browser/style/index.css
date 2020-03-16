@@ -140,7 +140,9 @@
 
 .theia-scm-validation-message-info {
     background-color: var(--theia-inputValidation-infoBackground) !important;
-    color: var(--theia-inputValidation-warningBackground);
+    color: var(--theia-inputValidation-infoForeground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-infoBorder);
+    border-top: none; /* remove top border since the input declares it already */
 }
 
 .theia-scm-validation-message-success {
@@ -150,13 +152,17 @@
 
 .theia-scm-message-warning,
 .theia-scm-validation-message-warning {
-    background-color: var(--theia-editorWarning-foreground) !important;
-    color: var(--theia-inputValidation-warningBackground);
+    background-color: var(--theia-inputValidation-warningBackground) !important;
+    color: var(--theia-inputValidation-warningForeground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-warningBorder);
+    border-top: none; /* remove top border since the input declares it already */
 }
 
 .theia-scm-validation-message-error {
-    background-color: var(--theia-errorBackground) !important;
-    color: var(--theia-errorForeground);
+    background-color: var(--theia-inputValidation-errorBackground) !important;
+    color: var(--theia-inputValidation-errorForeground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-errorBorder);
+    border-top: none; /* remove top border since the input declares it already */
 }
 
 .no-select {

@@ -23,24 +23,27 @@
 .theia-alert-message-container i {
     padding-right: 3px;
 }
- 
+
 /* information message */
 .theia-info-alert {
     background-color: var(--theia-inputValidation-infoBackground);
-    color: var(--theia-editor-foreground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-infoBorder);
+    color: var(--theia-inputValidation-infoForeground);
     padding: 10px;
 }
 
 /* warning message */
 .theia-warning-alert {
-    background-color: var(--theia-warningBackground);
-    color: var(--theia-warningForeground);
+    background-color: var(--theia-inputValidation-warningBackground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-warningBorder);
+    color: var(--theia-inputValidation-warningForeground);
     padding: 10px;
 }
 
 /* error message */
 .theia-error-alert {
-    background-color: var(--theia-inputValidation-errorBorder);
-    color: var(--theia-editor-foreground);
+    background-color: var(--theia-inputValidation-errorBackground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-errorBorder);
+    color: var(--theia-inputValidation-errorForeground);
     padding: 10px;
 }
