@@ -131,15 +131,13 @@ export class ProblemWidget extends TreeWidget {
                 <div>
                     <i className={severityClass}></i>
                 </div>
-                <div className='owner'>
-                    {'[' + (problemMarker.data.source || problemMarker.owner) + ']'}
-                </div>
                 <div className='message'>{problemMarker.data.message}
-                    {
-                        (problemMarker.data.code) ? <span className='code'>{'[' + problemMarker.data.code + ']'}</span> : ''
-                    }
+                    <span className='owner'>
+                        {(problemMarker.data.source || problemMarker.owner)}
+                        {problemMarker.data.code ? `(${problemMarker.data.code})` : ''}
+                    </span>
                     <span className='position'>
-                        {'(' + (problemMarker.data.range.start.line + 1) + ', ' + (problemMarker.data.range.start.character + 1) + ')'}
+                        {'[' + (problemMarker.data.range.start.line + 1) + ', ' + (problemMarker.data.range.start.character + 1) + ']'}
                     </span>
                 </div>
             </div>;
