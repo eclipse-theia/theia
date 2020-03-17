@@ -1,5 +1,8 @@
 FROM gitpod/workspace-full-vnc:latest
 
+# Docker build does not rebuild an image when a base image is changed, increase this counter to trigger it.
+ENV TRIGGER_REBUILD 1
+
 # Install custom tools, runtime, etc.
 RUN sudo apt-get update \
     # window manager
