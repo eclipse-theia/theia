@@ -356,6 +356,15 @@ export namespace KeyCode {
                     return Key.INTL_BACKSLASH;
                 }
             }
+
+            // https://github.com/eclipse-theia/theia/issues/7315
+            if (code.startsWith('Numpad') && event.key && event.key.length > 1) {
+                const k = Key.getKey(event.key);
+                if (k) {
+                    return k;
+                }
+            }
+
             const key = Key.getKey(code);
             if (key) {
                 return key;
