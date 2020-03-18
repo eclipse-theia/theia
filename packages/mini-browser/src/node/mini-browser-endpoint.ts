@@ -180,9 +180,10 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
             const mimeType = lookup(FileUri.fsPath(stat.uri));
             if (!mimeType) {
                 this.logger.warn(`Cannot handle unexpected resource. URI: ${statWithContent.stat.uri}.`);
-                return response.send();
+                response.contentType('application/octet-stream');
+            } else {
+                response.contentType(mimeType);
             }
-            response.contentType(mimeType);
             return response.send(content);
         };
     }
