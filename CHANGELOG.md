@@ -3,6 +3,7 @@
 ## v0.17.0
 
 - [preferences] add a new preference to silence notifications [#7195](https://github.com/eclipse-theia/theia/pull/7195)
+- [core] fixed keybindings for special Numpad keys in editors [#7315] 
 
 Breaking changes:
 
