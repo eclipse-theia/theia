@@ -22,19 +22,14 @@ const isElectron: () => boolean = require('is-electron');
 class ElectronEnv {
 
     /**
-     * Environment variable that can be accessed on the `process` to check if running in electron or not.
-     */
-    readonly THEIA_ELECTRON_VERSION = 'THEIA_ELECTRON_VERSION';
-
-    /**
      * `true` if running in electron. Otherwise, `false`.
      *
-     * Can be called from both the `main` and the render process. Also works for forked cluster workers.
+     * Can be called from both the `main` and the render process.
      */
     is(): boolean {
         // When forking a new process from the cluster, we can rely neither on `process.versions` nor `process.argv`.
         // Se we look into the `process.env` as well. `is-electron` does not do it for us.
-        return isElectron() || typeof process !== 'undefined' && typeof process.env === 'object' && !!process.env.THEIA_ELECTRON_VERSION;
+        return isElectron();
     }
 
     /**

@@ -132,7 +132,7 @@ process.env.LC_NUMERIC = 'C';
 const uuid = require('uuid');
 const electron = require('electron');
 const { join, resolve } = require('path');
-const { fork } = require('child_process');
+const { spawn } = require('child_process');
 const { app, dialog, shell, BrowserWindow, ipcMain, Menu, globalShortcut } = electron;
 const { ElectronSecurityToken } = require('@theia/core/lib/electron-common/electron-token');
 
@@ -304,7 +304,7 @@ app.on('ready', () => {
         })
     }
 
-    const loadMainWindow = (port) => {
+    const loadMainWindow = port => {
         if (!mainWindow.isDestroyed()) {
             mainWindow.webContents.session.cookies.set({
                 url: \`http://localhost:\${port}/\`,
@@ -325,15 +325,6 @@ app.on('ready', () => {
     // https://github.com/eclipse-theia/theia/issues/3297#issuecomment-439172274
     process.env.THEIA_APP_PROJECT_PATH = resolve(__dirname, '..', '..');
 
-    // Set the electron version for both the dev and the production mode. (https://github.com/eclipse-theia/theia/issues/3254)
-    // Otherwise, the forked backend processes will not know that they're serving the electron frontend.
-    const { versions } = process;
-    // @ts-ignore
-    if (versions && typeof versions.electron !== 'undefined') {
-        // @ts-ignore
-        process.env.THEIA_ELECTRON_VERSION = versions.electron;
-    }
-
     const mainPath = join(__dirname, '..', 'backend', 'main');
     // We need to distinguish between bundled application and development mode when starting the clusters.
     // See: https://github.com/electron/electron/issues/6337#issuecomment-230183287
@@ -346,20 +337,33 @@ app.on('ready', () => {
             app.exit(1);
         });
     } else {
-        const cp = fork(mainPath, [], { env: Object.assign({
+        // In \`electron\`, \`child_process.fork\` will strip the \`process.versions.electron\` property so native module loading can break in a bundled app.
+        // See: https://github.com/electron/electron/issues/6001#issuecomment-225475856
+        // Theia issue: https://github.com/eclipse-theia/theia/issues/7358
+        // Further related \`electron\` issues:
+        //  - https://github.com/electron/electron/issues/8727
+        //  - https://github.com/electron/electron/issues/6656
+        const env = Object.assign({
             [ElectronSecurityToken]: JSON.stringify(electronSecurityToken),
-        }, process.env) });
-        cp.on('message', (address) => {
+        }, process.env);
+        const electronPath = require('electron/index');
+        const cp = spawn(electronPath, [mainPath], { env, stdio: ['inherit', 'inherit', 'inherit', 'ipc'] });
+        cp.on('message', address => {
             loadMainWindow(address.port);
         });
-        cp.on('error', (error) => {
+        cp.on('error', error => {
             console.error(error);
             app.exit(1);
+        });
+        cp.on('close', () => {
+            // User closed the app. Exit the host process.
+            process.exit();
         });
         app.on('quit', () => {
             // If we forked the process for the clusters, we need to manually terminate it.
             // See: https://github.com/eclipse-theia/theia/issues/835
             process.kill(cp.pid);
+            process.exit();
         });
     }
 });
