@@ -207,11 +207,6 @@ export namespace CommonCommands {
         label: 'Auto Save',
     };
 
-    export const QUIT: Command = {
-        id: 'core.quit',
-        label: 'Quit'
-    };
-
     export const ABOUT_COMMAND: Command = {
         id: 'core.about',
         label: 'About'
