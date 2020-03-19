@@ -147,6 +147,8 @@
 
 .theia-vsx-extension-editor .body {
     flex: 1;
+    margin: auto;
+    padding: 0 calc(var(--theia-ui-padding)*3);
 }
 
 .theia-vsx-extension-editor .header .icon-container {
