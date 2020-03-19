@@ -601,9 +601,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             }
         });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_MAXIMIZED, {
-            isEnabled: () => this.shell.canToggleMaximized(),
-            isVisible: () => this.shell.canToggleMaximized(),
-            execute: () => this.shell.toggleMaximized()
+            isEnabled: (event?: Event) => this.canToggleMaximized(event),
+            isVisible: (event?: Event) => this.canToggleMaximized(event),
+            execute: (event?: Event) => this.toggleMaximized(event)
         });
 
         commandRegistry.registerCommand(CommonCommands.SAVE, {
@@ -626,6 +626,19 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
             execute: () => this.selectIconTheme()
         });
+    }
+
+    private canToggleMaximized(event?: Event): boolean {
+        const targetTabBar = this.findTabBar(event);
+        if (targetTabBar) {
+            return this.shell.canToggleMaximized({ targetTabBar });
+        }
+        return false;
+    }
+
+    private toggleMaximized(event?: Event): void {
+        const targetTabBar = this.findTabBar(event)!;
+        this.shell.toggleMaximized({ targetTabBar });
     }
 
     private findTabBar(event?: Event): TabBar<Widget> | undefined {
@@ -653,7 +666,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 tabNode = tabNode.parentElement;
             }
             if (tabNode && tabNode.title) {
-                const title = tabBar.titles.find(t => t.label === tabNode!.title);
+                let title = tabBar.titles.find(t => t.caption === tabNode!.title);
+                if (title) {
+                    return title;
+                }
+                title = tabBar.titles.find(t => t.label === tabNode!.title);
                 if (title) {
                     return title;
                 }

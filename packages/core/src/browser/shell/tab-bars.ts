@@ -413,18 +413,6 @@ export class TabBarRenderer extends TabBar.Renderer {
         if (this.contextMenuRenderer && this.contextMenuPath && event.currentTarget instanceof HTMLElement) {
             event.stopPropagation();
             event.preventDefault();
-
-            if (this.tabBar) {
-                const id = event.currentTarget.id;
-                // eslint-disable-next-line no-null/no-null
-                const title = this.tabBar.titles.find(t => this.createTabId(t) === id) || null;
-                this.tabBar.currentTitle = title;
-                this.tabBar.activate();
-                if (title) {
-                    title.owner.activate();
-                }
-            }
-
             this.contextMenuRenderer.render(this.contextMenuPath, event);
         }
     };

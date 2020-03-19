@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import {
     Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
-    OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode, PreferenceScope
+    OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode, PreferenceScope, TabBar, Title
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX, Command, DisposableCollection, Mutable } from '@theia/core/lib/common';
@@ -177,13 +177,62 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     async initializeLayout(app: FrontendApplication): Promise<void> {
         await this.openView();
     }
+    private findTitle(tabBar: TabBar<Widget> | undefined, event?: Event): Title<Widget> | undefined {
+        if (event && event.target) {
+            let tabNode: HTMLElement | null = event.target as HTMLElement;
+            while (tabNode && !tabNode.classList.contains('p-TabBar-tab')) {
+                tabNode = tabNode.parentElement;
+            }
+            if (tabBar && tabNode && tabNode.title) {
+                let title = tabBar.titles.find(t => t.caption === tabNode!.title);
+                if (title) {
+                    return title;
+                }
+                title = tabBar.titles.find(t => t.label === tabNode!.title);
+                if (title) {
+                    return title;
+                }
+            }
+        }
+        return undefined;
+    }
+    private findTabBar(event?: Event): TabBar<Widget> | undefined {
+        if (event && event.target) {
+            const tabBar = this.shell.findWidgetForElement(event.target as HTMLElement);
+            if (tabBar instanceof TabBar) {
+                return tabBar;
+            }
+        }
+        return this.shell.currentTabBar;
+    }
 
+    private getRequiredWidget(event?: Event): Widget | undefined {
+        let title: Title<Widget> | undefined;
+        if (event && event.target) {
+            const tab = this.findTabBar(event);
+            title = this.findTitle(tab, event);
+        }
+        const widget = title && title.owner;
+        return widget;
+    }
+    private visibilityTest(event?: Event): boolean {
+        let title: Title<Widget> | undefined;
+        if (event && event.target) {
+            const tab = this.findTabBar(event);
+            title = this.findTitle(tab, event);
+        }
+        const widget = title && title.owner;
+        return widget ? Navigatable.is(widget) : Navigatable.is(this.shell.currentWidget);
+    }
     registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, {
-            execute: () => this.openView({ activate: true }).then(() => this.selectWidgetFileNode(this.shell.currentWidget)),
-            isEnabled: () => Navigatable.is(this.shell.currentWidget),
-            isVisible: () => Navigatable.is(this.shell.currentWidget)
+            execute: (event?: Event) => {
+                const widget = this.getRequiredWidget(event);
+                return widget ? this.shell.activateWidget(widget.id) : this.shell.currentWidget && this.shell.activateWidget(this.shell.currentWidget.id);
+            },
+            isEnabled: (event?: Event) => this.visibilityTest(event),
+            isVisible: (event?: Event) => this.visibilityTest(event)
         });
         registry.registerCommand(FileNavigatorCommands.TOGGLE_HIDDEN_FILES, {
             execute: () => {
