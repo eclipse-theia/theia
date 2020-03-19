@@ -18,11 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import {
     Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
-<<<<<<< Updated upstream
-    OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode, PreferenceScope, TabBar, Title
-=======
     OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode, PreferenceScope, Title, TabBar
->>>>>>> Stashed changes
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX, Command, DisposableCollection, Mutable } from '@theia/core/lib/common';
