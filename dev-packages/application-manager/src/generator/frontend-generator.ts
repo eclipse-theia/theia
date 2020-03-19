@@ -326,46 +326,13 @@ app.on('ready', () => {
     process.env.THEIA_APP_PROJECT_PATH = resolve(__dirname, '..', '..');
 
     const mainPath = join(__dirname, '..', 'backend', 'main');
-    // We need to distinguish between bundled application and development mode when starting the clusters.
-    // See: https://github.com/electron/electron/issues/6337#issuecomment-230183287
-    if (devMode) {
-        process.env[ElectronSecurityToken] = JSON.stringify(electronSecurityToken);
-        require(mainPath).then(address => {
-            loadMainWindow(address.port);
-        }).catch((error) => {
-            console.error(error);
-            app.exit(1);
-        });
-    } else {
-        // In \`electron\`, \`child_process.fork\` will strip the \`process.versions.electron\` property so native module loading can break in a bundled app.
-        // See: https://github.com/electron/electron/issues/6001#issuecomment-225475856
-        // Theia issue: https://github.com/eclipse-theia/theia/issues/7358
-        // Further related \`electron\` issues:
-        //  - https://github.com/electron/electron/issues/8727
-        //  - https://github.com/electron/electron/issues/6656
-        const env = Object.assign({
-            [ElectronSecurityToken]: JSON.stringify(electronSecurityToken),
-        }, process.env);
-        const electronPath = require('electron/index');
-        const cp = spawn(electronPath, [mainPath], { env, stdio: ['inherit', 'inherit', 'inherit', 'ipc'] });
-        cp.on('message', address => {
-            loadMainWindow(address.port);
-        });
-        cp.on('error', error => {
-            console.error(error);
-            app.exit(1);
-        });
-        cp.on('close', () => {
-            // User closed the app. Exit the host process.
-            process.exit();
-        });
-        app.on('quit', () => {
-            // If we forked the process for the clusters, we need to manually terminate it.
-            // See: https://github.com/eclipse-theia/theia/issues/835
-            process.kill(cp.pid);
-            process.exit();
-        });
-    }
+    process.env[ElectronSecurityToken] = JSON.stringify(electronSecurityToken);
+    require(mainPath).then(address => {
+        loadMainWindow(address.port);
+    }).catch((error) => {
+        console.error(error);
+        app.exit(1);
+    });
 });
 `;
     }
