@@ -535,6 +535,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: (event?: Event) => {
                 const tabBar = this.findTabBar(event)!;
                 const currentTitle = this.findTitle(tabBar, event);
+
                 const area = this.shell.getAreaFor(tabBar)!;
                 this.shell.closeTabs(area, title => title !== currentTitle);
             }
@@ -542,7 +543,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
             isEnabled: (event?: Event) => {
                 const tabBar = this.findTabBar(event);
-                return tabBar !== undefined && tabBar.currentIndex < tabBar.titles.length - 1;
+                return tabBar !== undefined && tabBar.titles.length > 1;
             },
             isVisible: (event?: Event) => {
                 const area = this.findTabArea(event);
@@ -550,7 +551,13 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             execute: (event?: Event) => {
                 const tabBar = this.findTabBar(event)!;
-                const currentIndex = tabBar.currentIndex;
+                const title = this.findTitle(tabBar, event);
+                let currentIndex: number;
+                if (title) {
+                    currentIndex = tabBar.titles.indexOf(title);
+                } else {
+                    currentIndex = tabBar.currentIndex;
+                }
                 this.shell.closeTabs(tabBar, (_, index) => index > currentIndex);
             }
         });

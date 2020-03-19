@@ -18,7 +18,11 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import {
     Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
+<<<<<<< Updated upstream
     OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode, PreferenceScope, TabBar, Title
+=======
+    OpenerService, FrontendApplicationContribution, FrontendApplication, CompositeTreeNode, PreferenceScope, Title, TabBar
+>>>>>>> Stashed changes
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX, Command, DisposableCollection, Mutable } from '@theia/core/lib/common';
@@ -215,24 +219,22 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         const widget = title && title.owner;
         return widget;
     }
-    private visibilityTest(event?: Event): boolean {
-        let title: Title<Widget> | undefined;
-        if (event && event.target) {
-            const tab = this.findTabBar(event);
-            title = this.findTitle(tab, event);
-        }
-        const widget = title && title.owner;
-        return widget ? Navigatable.is(widget) : Navigatable.is(this.shell.currentWidget);
-    }
+
     registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(FileNavigatorCommands.REVEAL_IN_NAVIGATOR, {
             execute: (event?: Event) => {
                 const widget = this.getRequiredWidget(event);
-                return widget ? this.shell.activateWidget(widget.id) : this.shell.currentWidget && this.shell.activateWidget(this.shell.currentWidget.id);
+                return widget ? this.selectWidgetFileNode(widget) : this.selectWidgetFileNode(this.shell.currentWidget);
             },
-            isEnabled: (event?: Event) => this.visibilityTest(event),
-            isVisible: (event?: Event) => this.visibilityTest(event)
+            isEnabled: (event?: Event) => {
+                const widget = this.getRequiredWidget(event);
+                return widget ? Navigatable.is(widget) : Navigatable.is(this.shell.currentWidget);
+            },
+            isVisible: (event?: Event) => {
+                const widget = this.getRequiredWidget(event);
+                return widget ? Navigatable.is(widget) : Navigatable.is(this.shell.currentWidget);
+            }
         });
         registry.registerCommand(FileNavigatorCommands.TOGGLE_HIDDEN_FILES, {
             execute: () => {
