@@ -21,7 +21,7 @@ import { VSXExtensionsModel } from './vsx-extensions-model';
 @injectable()
 export class VSXExtensionsSourceOptions {
     static INSTALLED = 'installed';
-    static BUITLT_IN = 'builtin';
+    static BUILT_IN = 'builtin';
     static SEARCH_RESULT = 'searchResult';
     readonly id: string;
 }
@@ -47,7 +47,7 @@ export class VSXExtensionsSource extends TreeSource {
             if (!extension) {
                 continue;
             }
-            if (this.options.id === VSXExtensionsSourceOptions.BUITLT_IN) {
+            if (this.options.id === VSXExtensionsSourceOptions.BUILT_IN) {
                 if (extension.builtin) {
                     yield extension;
                 }
