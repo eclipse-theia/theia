@@ -29,7 +29,7 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
     static ID = 'vsx-extensions';
     static INSTALLED_ID = VSXExtensionsWidget.ID + ':' + VSXExtensionsSourceOptions.INSTALLED;
     static SEARCH_RESULT_ID = VSXExtensionsWidget.ID + ':' + VSXExtensionsSourceOptions.SEARCH_RESULT;
-    static BUITLT_IN_ID = VSXExtensionsWidget.ID + ':' + VSXExtensionsSourceOptions.BUITLT_IN;
+    static BUILT_IN_ID = VSXExtensionsWidget.ID + ':' + VSXExtensionsSourceOptions.BUILT_IN;
 
     static createWidget(parent: interfaces.Container, options: VSXExtensionsWidgetOptions): VSXExtensionsWidget {
         const child = SourceTreeWidget.createContainer(parent, {
@@ -68,7 +68,7 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
         if (this.id === VSXExtensionsWidget.INSTALLED_ID) {
             return 'Installed';
         }
-        if (this.id === VSXExtensionsWidget.BUITLT_IN_ID) {
+        if (this.id === VSXExtensionsWidget.BUILT_IN_ID) {
             return 'Built-in';
         }
         return 'Open VSX Registry';
