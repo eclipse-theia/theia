@@ -50,6 +50,18 @@
     color: var(--theia-descriptionForeground);
     align-self: flex-end;
     white-space: nowrap;
+    opacity: 0.7;
+}
+
+.theia-marker-container .markerNode .message .position,
+.theia-marker-container .markerNode .message .owner {
+    opacity: 0.7;
+}
+
+.theia-marker-container .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .markerFileNode .path,
+.theia-marker-container .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .markerNode .message .position,
+.theia-marker-container .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .markerNode .message .owner {
+    color: var(--theia-list-activeSelectionForeground) !important;
 }
 
 .theia-marker-container .error {

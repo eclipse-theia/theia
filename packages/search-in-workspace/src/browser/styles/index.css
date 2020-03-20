@@ -224,6 +224,11 @@
     color: var(--theia-descriptionForeground);
     font-size: var(--theia-ui-font-size0);
     margin-left: 3px;
+    opacity: 0.7;
+}
+
+.t-siw-search-container .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .result .result-head .file-path {
+    color: var(--theia-list-activeSelectionForeground) !important;
 }
 
 .t-siw-search-container .resultLine .match {

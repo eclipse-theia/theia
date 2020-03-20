@@ -54,6 +54,11 @@
 .theia-source-breakpoint .path {
     font-size: var(--theia-ui-font-size0);
     color: var(--theia-descriptionForeground);
+    opacity: 0.7;
+}
+
+.theia-debug-container .theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-source-breakpoint .path {
+    color: var(--theia-list-activeSelectionForeground) !important;
 }
 
 .theia-source-breakpoint .line-info {
