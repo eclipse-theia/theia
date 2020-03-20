@@ -19,7 +19,7 @@ import '../../../src/main/browser/style/index.css';
 
 import { ContainerModule } from 'inversify';
 import {
-    FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution,
+    FrontendApplicationContribution, FrontendApplication, WidgetFactory,
     ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, OpenHandler, LabelProviderContribution
 } from '@theia/core/lib/browser';
 import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider } from '@theia/core/lib/common';
@@ -30,8 +30,6 @@ import { OpenUriCommandHandler } from './commands';
 import { PluginApiFrontendContribution } from './plugin-frontend-contribution';
 import { HostedPluginServer, hostedServicePath, PluginServer, pluginServerJsonRpcPath } from '../../common/plugin-protocol';
 import { ModalNotification } from './dialogs/modal-notification';
-import { PluginWidget } from './plugin-ext-widget';
-import { PluginFrontendViewContribution } from './plugin-frontend-view-contribution';
 import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { TextEditorService } from './text-editor-service';
 import { EditorModelService } from './text-editor-model-service';
@@ -120,14 +118,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         return connection.createProxy<PluginPathsService>(pluginPathsServicePath);
     }).inSingletonScope();
-
-    bindViewContribution(bind, PluginFrontendViewContribution);
-
-    bind(PluginWidget).toSelf();
-    bind(WidgetFactory).toDynamicValue(ctx => ({
-        id: PluginFrontendViewContribution.PLUGINS_WIDGET_FACTORY_ID,
-        createWidget: () => ctx.container.get(PluginWidget)
-    }));
 
     bind(PluginExtDeployCommandService).toSelf().inSingletonScope();
     bind(PluginServer).toDynamicValue(ctx => {
