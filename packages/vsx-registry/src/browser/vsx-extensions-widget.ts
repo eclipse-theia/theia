@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { injectable, interfaces, postConstruct, inject } from 'inversify';
-import { TreeNode, NodeProps } from '@theia/core/lib/browser/tree';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
 
@@ -72,14 +71,6 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
             return 'Built-in';
         }
         return 'Open VSX Registry';
-    }
-
-    protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
-        const style = super.getDefaultNodeStyle(node, props);
-        if (style) {
-            style.paddingLeft = `${this.props.leftPadding}px`;
-        }
-        return style;
     }
 
 }

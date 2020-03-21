@@ -49,6 +49,8 @@
 .theia-vsx-extension {
     display: flex;
     flex-direction: row;
+    line-height: calc(var(--theia-content-line-height)*17/22);
+    align-items: center;
 }
 
 .theia-vsx-extension-icon {
@@ -80,8 +82,8 @@
     white-space: nowrap;
 }
 
-.theia-vsx-extension-content .title .name {
-    font-weight: 700;
+.theia-vsx-extension-content .title .name {
+    font-weight: bold;
 }
 
 .theia-vsx-extension-content .title .version,
