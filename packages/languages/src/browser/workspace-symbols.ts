@@ -125,8 +125,7 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
 
     protected createItem(sym: SymbolInformation, provider: WorkspaceSymbolProvider, token: CancellationToken): QuickOpenItem {
         const uri = new URI(sym.location.uri);
-        const kind = SymbolKind[sym.kind];
-        const icon = (kind) ? SymbolKind[sym.kind].toLowerCase() : 'unknown';
+        const icon = this.toCssClassName(sym.kind) || 'unknown';
         let parent = sym.containerName;
         if (parent) {
             parent += ' - ';
@@ -148,6 +147,14 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
                 this.openURL(uri, sym.location.range.start, sym.location.range.end);
             }
         });
+    }
+
+    protected toCssClassName(symbolKind: SymbolKind, inline?: boolean): string | undefined {
+        const kind = SymbolKind[symbolKind];
+        if (!kind) {
+            return undefined;
+        }
+        return `codicon ${inline ? 'inline' : 'block'} codicon-symbol-${kind.toLowerCase() || 'property'}`;
     }
 
     private openURL(uri: URI, start: Position, end: Position): void {
