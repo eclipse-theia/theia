@@ -30,7 +30,6 @@ import { PreferenceService } from '@theia/core/lib/browser';
 import { TaskNameResolver } from './task-name-resolver';
 import { TaskSourceResolver } from './task-source-resolver';
 import { TaskConfigurationManager } from './task-configuration-manager';
-import { ThemeService } from '@theia/core/lib/browser/theming';
 
 @injectable()
 export class ConfigureTaskAction extends QuickOpenBaseAction {
@@ -39,11 +38,8 @@ export class ConfigureTaskAction extends QuickOpenBaseAction {
     protected readonly taskService: TaskService;
 
     constructor() {
-        super({ id: 'configure:task' });
-
-        this.updateTheme();
-
-        ThemeService.get().onThemeChange(() => this.updateTheme());
+        super({ id: 'configure:task', label: 'Configure Task' });
+        this.updateClass();
     }
 
     async run(item?: QuickOpenItem): Promise<void> {
@@ -52,13 +48,8 @@ export class ConfigureTaskAction extends QuickOpenBaseAction {
         }
     }
 
-    protected updateTheme(): void {
-        const theme = ThemeService.get().getCurrentTheme().id;
-        if (theme === 'dark') {
-            this.class = 'quick-open-task-configure-dark';
-        } else if (theme === 'light') {
-            this.class = 'quick-open-task-configure-bright';
-        }
+    protected updateClass(): void {
+        this.class = 'codicon-gear quick-open-task-configure';
     }
 }
 
