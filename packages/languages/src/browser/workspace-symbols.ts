@@ -34,7 +34,7 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
 
     private command: Command = {
         id: 'languages.workspace.symbol',
-        label: 'Open Workspace Symbol...'
+        label: 'Go to Symbol in Workspace...'
     };
 
     constructor(@inject(Languages) protected languages: Languages,
