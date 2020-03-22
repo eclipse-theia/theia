@@ -16,6 +16,7 @@
 
 import { inject, injectable } from 'inversify';
 import * as cp from 'child_process';
+import * as processTree from 'ps-tree';
 import * as fs from 'fs';
 import * as path from 'path';
 import { FileUri } from '@theia/core/lib/node';
@@ -78,6 +79,15 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
         return this.runWatchScript(pluginRootPath);
     }
 
+    private killProcessTree(parentPid: number): void {
+        processTree(parentPid, (err: Error, childProcesses: Array<processTree.PS>) => {
+            childProcesses.forEach((p: processTree.PS) => {
+                process.kill(parseInt(p.PID));
+            });
+            process.kill(parentPid);
+        });
+    }
+
     stopWatchCompilation(uri: string): Promise<void> {
         const pluginPath = FileUri.fsPath(uri);
 
@@ -86,7 +96,7 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
             throw new Error('Watcher is not running in ' + pluginPath);
         }
 
-        watchProcess.kill();
+        this.killProcessTree(watchProcess.pid);
         return Promise.resolve();
     }
 
