@@ -17,7 +17,6 @@
 import { injectable, inject } from 'inversify';
 import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, MenuPath } from '@theia/core/lib/common';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
-import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
 
@@ -27,44 +26,6 @@ export interface MonacoActionGroup {
 }
 export namespace MonacoMenus {
     export const SELECTION = [...MAIN_MENU_BAR, '3_selection'];
-
-    export const SELECTION_GROUP: MonacoActionGroup = {
-        id: '1_selection_group',
-        actions: [
-            MonacoCommands.SELECTION_SELECT_ALL,
-            MonacoCommands.SELECTION_EXPAND_SELECTION,
-            MonacoCommands.SELECTION_SHRINK_SELECTION
-        ]
-    };
-
-    export const SELECTION_MOVE_GROUP: MonacoActionGroup = {
-        id: '2_copy_move_group',
-        actions: [
-            MonacoCommands.SELECTION_COPY_LINE_UP,
-            MonacoCommands.SELECTION_COPY_LINE_DOWN,
-            MonacoCommands.SELECTION_MOVE_LINE_UP,
-            MonacoCommands.SELECTION_MOVE_LINE_DOWN
-        ]
-    };
-
-    export const SELECTION_CURSOR_GROUP: MonacoActionGroup = {
-        id: '3_cursor_group',
-        actions: [
-            MonacoCommands.SELECTION_ADD_CURSOR_ABOVE,
-            MonacoCommands.SELECTION_ADD_CURSOR_BELOW,
-            MonacoCommands.SELECTION_ADD_CURSOR_TO_LINE_END,
-            MonacoCommands.SELECTION_ADD_NEXT_OCCURRENCE,
-            MonacoCommands.SELECTION_ADD_PREVIOUS_OCCURRENCE,
-            MonacoCommands.SELECTION_SELECT_ALL_OCCURRENCES
-        ]
-    };
-
-    export const SELECTION_GROUPS = [
-        SELECTION_GROUP,
-        SELECTION_MOVE_GROUP,
-        SELECTION_CURSOR_GROUP
-    ];
-
     export const PEEK_CONTEXT_SUBMENU: MenuPath = [...EDITOR_CONTEXT_MENU, 'navigation', 'peek_submenu'];
 }
 
@@ -90,15 +51,17 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         this.registerPeekSubmenu(registry);
 
         registry.registerSubmenu(MonacoMenus.SELECTION, 'Selection');
-        for (const group of MonacoMenus.SELECTION_GROUPS) {
-            group.actions.forEach((action, index) => {
-                const commandId = this.commands.validate(action);
-                if (commandId) {
-                    const path = [...MonacoMenus.SELECTION, group.id];
-                    const order = index.toString();
-                    registry.registerMenuAction(path, { commandId, order });
-                }
-            });
+        for (const item of MenuRegistry.getMenuItems(23)) {
+            if (!monaco.actions.isIMenuItem(item)) {
+                continue;
+            }
+            const commandId = this.commands.validate(item.command.id);
+            if (commandId) {
+                const menuPath = [...MonacoMenus.SELECTION, (item.group || '')];
+                const label = this.removeMnemonic(item.command.title);
+                const order = item.order ? String(item.order) : '';
+                registry.registerMenuAction(menuPath, { commandId, order, label });
+            }
         }
     }
 
@@ -112,5 +75,9 @@ export class MonacoEditorMenuContribution implements MenuContribution {
                 registry.registerMenuAction([...MonacoMenus.PEEK_CONTEXT_SUBMENU, item.group || ''], { commandId, order });
             }
         }
+    }
+
+    protected removeMnemonic(label: string): string {
+        return label.replace(/\(&&\w\)|&&/g, '');
     }
 }

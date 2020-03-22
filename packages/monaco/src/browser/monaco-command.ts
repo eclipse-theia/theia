@@ -44,21 +44,6 @@ export namespace MonacoCommands {
     COMMON_ACTIONS['editor.action.startFindReplaceAction'] = CommonCommands.REPLACE.id;
 
     export const SELECTION_SELECT_ALL = 'editor.action.select.all';
-    export const SELECTION_EXPAND_SELECTION = 'editor.action.smartSelect.grow';
-    export const SELECTION_SHRINK_SELECTION = 'editor.action.smartSelect.shrink';
-
-    export const SELECTION_COPY_LINE_UP = 'editor.action.copyLinesUpAction';
-    export const SELECTION_COPY_LINE_DOWN = 'editor.action.copyLinesDownAction';
-    export const SELECTION_MOVE_LINE_UP = 'editor.action.moveLinesUpAction';
-    export const SELECTION_MOVE_LINE_DOWN = 'editor.action.moveLinesDownAction';
-
-    export const SELECTION_ADD_CURSOR_ABOVE = 'editor.action.insertCursorAbove';
-    export const SELECTION_ADD_CURSOR_BELOW = 'editor.action.insertCursorBelow';
-    export const SELECTION_ADD_CURSOR_TO_LINE_END = 'editor.action.insertCursorAtEndOfEachLineSelected';
-    export const SELECTION_ADD_NEXT_OCCURRENCE = 'editor.action.addSelectionToNextFindMatch';
-    export const SELECTION_ADD_PREVIOUS_OCCURRENCE = 'editor.action.addSelectionToPreviousFindMatch';
-    export const SELECTION_SELECT_ALL_OCCURRENCES = 'editor.action.selectHighlights';
-
     export const GO_TO_DEFINITION = 'editor.action.revealDefinition';
 
     export const ACTIONS = new Map<string, MonacoCommand>();
