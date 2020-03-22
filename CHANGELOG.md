@@ -7,9 +7,11 @@
 
 Breaking changes:
 
-- [scm][git] the History view (GitHistoryWidget) has moved from the git package to a new   package, scm-extra, and
+- [scm][git] the History view (GitHistoryWidget) has moved from the git package to a new package, scm-extra, and
   renamed to ScmHistoryWidget.  GitNavigableListWidget has also moved.
   CSS classes have been moved renamed accordingly.  [6381](https://github.com/eclipse-theia/theia/pull/6381)
+- [task] `TaskRestartRunningQuickOpenItem` class is renamed into `RunningTaskQuickOpenItem`. [7392](https://github.com/eclipse-theia/theia/pull/7392)
+- [task] `TaskAttachQuickOpenItem` class is removed.
 
 ## v0.16.0
 
