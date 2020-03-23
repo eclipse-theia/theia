@@ -27,6 +27,12 @@ export class BackendGenerator extends AbstractGenerator {
     protected compileServer(backendModules: Map<string, string>): string {
         return `// @ts-check
 require('reflect-metadata');
+
+// Patch electron version if missing, see https://github.com/eclipse-theia/theia/pull/7361#pullrequestreview-377065146
+if (typeof process.versions.electron === 'undefined' && typeof process.env.THEIA_ELECTRON_VERSION === 'string') {
+    process.versions.electron = process.env.THEIA_ELECTRON_VERSION;
+}
+
 const path = require('path');
 const express = require('express');
 const { Container } = require('inversify');
