@@ -72,6 +72,10 @@
     width: calc(100% - var(--theia-vsx-extension-icon-size) - var(--theia-ui-padding)*2.5);
 }
 
+.theia-vsx-extension-content.no-extension-icon {
+    width: 100%;
+}
+
 .theia-vsx-extension-content .title {
     display: flex;
     flex-direction: row;

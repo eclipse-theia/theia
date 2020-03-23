@@ -322,18 +322,23 @@ const downloadCompactFormatter = new Intl.NumberFormat(undefined, { notation: 'c
 export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
     render(): React.ReactNode {
         const { iconUrl, publisher, displayName, description, version, downloadCount, averageRating } = this.props.extension;
-        return <div className='theia-vsx-extension'>
-            {iconUrl ?
+        const extensionsContainer = document.getElementById('vsx-extensions-view-container');
+        const minPanelWidthToShowIcon = 300;
+        const showExtensionIcon = extensionsContainer && extensionsContainer.clientWidth > minPanelWidthToShowIcon;
+        return <div className='theia-vsx-extension'>{
+            !!showExtensionIcon ? iconUrl ?
                 <img className='theia-vsx-extension-icon' src={iconUrl} /> :
-                <div className='theia-vsx-extension-icon placeholder' />}
-            <div className='theia-vsx-extension-content'>
+                <div className='theia-vsx-extension-icon placeholder' /> : undefined}
+            <div className={`theia-vsx-extension-content ${!showExtensionIcon ? 'no-extension-icon' : ''}`}>
                 <div className='title'>
                     <div className='noWrapInfo'>
                         <span className='name'>{displayName}</span> <span className='version'>{version}</span>
                     </div>
                     <div className='stat'>
-                        {downloadCount && <span className='download-count'><i className='fa fa-download' />{downloadCompactFormatter.format(downloadCount)}</span>}
-                        {averageRating && <span className='average-rating'><i className='fa fa-star' />{averageRating.toFixed(1)}</span>}
+                        {!!downloadCount && !!showExtensionIcon &&
+                            <span className='download-count'><i className='fa fa-download' />{downloadCompactFormatter.format(downloadCount)}</span>}
+                        {averageRating && !!showExtensionIcon &&
+                            <span className='average-rating'><i className='fa fa-star' />{averageRating.toFixed(1)}</span>}
                     </div>
                 </div>
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
