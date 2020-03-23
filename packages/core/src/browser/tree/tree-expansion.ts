@@ -116,9 +116,9 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
     }
 
     protected async doExpandNode(node: ExpandableTreeNode): Promise<ExpandableTreeNode | undefined> {
-        node.expanded = true;
         const refreshed = await this.tree.refresh(node);
-        if (ExpandableTreeNode.isExpanded(refreshed)) {
+        if (ExpandableTreeNode.is(refreshed)) {
+            refreshed.expanded = true;
             this.fireExpansionChanged(refreshed);
             return refreshed;
         }
