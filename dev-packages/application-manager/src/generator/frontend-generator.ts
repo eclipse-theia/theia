@@ -290,6 +290,8 @@ app.on('ready', () => {
     // Check whether we are in bundled application or development mode.
     // @ts-ignore
     const devMode = process.defaultApp || /node_modules[\/]electron[\/]/.test(process.execPath);
+    // Check if we should run everything as one process.
+    const noBackendFork = process.argv.includes('--no-cluster');
     const mainWindow = createNewWindow();
 
     if (isSingleInstance) {
@@ -331,9 +333,10 @@ app.on('ready', () => {
     process.env.THEIA_ELECTRON_VERSION = process.versions.electron;
 
     const mainPath = join(__dirname, '..', 'backend', 'main');
-    // We need to distinguish between bundled application and development mode when starting the clusters.
-    // See: https://github.com/electron/electron/issues/6337#issuecomment-230183287
-    if (devMode) {
+    // We spawn a separate process for the backend for Express to not run in the Electron main process.
+    // See: https://github.com/eclipse-theia/theia/pull/7361#issuecomment-601272212
+    // But when in debugging we want to run everything in the same process to make things easier.
+    if (noBackendFork) {
         process.env[ElectronSecurityToken] = JSON.stringify(electronSecurityToken);
         require(mainPath).then(address => {
             loadMainWindow(address.port);
