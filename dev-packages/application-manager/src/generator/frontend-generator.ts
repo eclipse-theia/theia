@@ -346,7 +346,10 @@ app.on('ready', () => {
             app.exit(1);
         });
     } else {
-        const cp = fork(mainPath, [], { env: Object.assign({
+        // We want to pass flags passed to the Electron app to the backend process.
+        // Quirk: When developing from sources, we execute Electron as \`electron.exe electron-main.js ...args\`, but when bundled,
+        // the command looks like \`bundled-application.exe ...args\`.
+        const cp = fork(mainPath, process.argv.slice(devMode ? 2 : 1), { env: Object.assign({
             [ElectronSecurityToken]: JSON.stringify(electronSecurityToken),
         }, process.env) });
         cp.on('message', (address) => {
