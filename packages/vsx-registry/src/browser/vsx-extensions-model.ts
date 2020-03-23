@@ -170,7 +170,8 @@ export class VSXExtensionsModel {
                 refreshing.push(this.refresh(id));
             }
             Promise.all(refreshing);
-            this._installed = installed;
+            const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
+            this._installed = new Set(installedSorted.values());
         });
     }
 
@@ -237,6 +238,26 @@ export class VSXExtensionsModel {
         }
         console.error(`[${id}]: failed to refresh, reason:`, error);
         return undefined;
+    }
+
+    /**
+     * Compare two extensions based on their display name, and publisher if applicable.
+     * @param a the first extension id for comparison.
+     * @param b the second extension id for comparison.
+     */
+    protected compareExtensions(a: string, b: string): number {
+        const extensionA = this.getExtension(a);
+        const extensionB = this.getExtension(b);
+        if (!extensionA || !extensionB) {
+            return 0;
+        }
+        if (extensionA.displayName && extensionB.displayName) {
+            return extensionA.displayName.localeCompare(extensionB.displayName);
+        }
+        if (extensionA.publisher && extensionB.publisher) {
+            return extensionA.publisher.localeCompare(extensionB.publisher);
+        }
+        return 0;
     }
 
 }
