@@ -14,12 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { expect } from 'chai';
+import { expect, assert } from 'chai';
 import { MockTreeModel } from './test/mock-tree-model';
 import { TreeModel } from './tree-model';
-import { TreeNode, CompositeTreeNode } from './tree';
+import { TreeNode, CompositeTreeNode, Tree, TreeImpl } from './tree';
 import { ExpandableTreeNode } from './tree-expansion';
 import { createTreeTestContainer } from './test/tree-test-container';
+import { timeout } from '../../common/promise-util';
 
 /* eslint-disable no-unused-expressions */
 describe('TreeExpansionService', () => {
@@ -125,6 +126,41 @@ describe('TreeExpansionService', () => {
                 done();
             });
         });
+    });
+
+    it('node should be refreshed on expansion', async () => {
+        const container = createTreeTestContainer();
+        container.rebind(Tree).to(class extends TreeImpl {
+
+            protected async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+                await timeout(200);
+                return [{
+                    id: 'child',
+                    parent
+                }];
+            }
+
+        });
+        const root: ExpandableTreeNode = {
+            id: 'parent',
+            parent: undefined,
+            children: [],
+            expanded: false
+        };
+
+        const treeModel = container.get<TreeModel>(TreeModel);
+        treeModel.root = root;
+
+        assert.isFalse(root.expanded, 'before');
+        assert.equal(root.children.length, 0, 'before');
+
+        const expanding = treeModel.expandNode(root);
+        assert.isFalse(root.expanded, 'between');
+        assert.equal(root.children.length, 0, 'between');
+
+        await expanding;
+        assert.isTrue(root.expanded, 'after');
+        assert.equal(root.children.length, 1, 'after');
     });
 
     function createTreeModel(): TreeModel {
