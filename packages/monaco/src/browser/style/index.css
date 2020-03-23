@@ -24,6 +24,10 @@
     margin-right: 0px;
 }
 
+.monaco-quick-open-widget .quick-open-tree .quick-open-entry .codicon {
+	vertical-align: sub;
+}
+
 .monaco-quick-open-widget {
     background-color: var(--theia-quickInput-background) !important;
     color: var(--theia-quickInput-foreground) !important;
