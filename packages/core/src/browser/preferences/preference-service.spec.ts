@@ -104,7 +104,7 @@ describe('Preference Service', () => {
                 done();
                 return;
             }
-            done(new Error('onPreferenceChanged() fails to return any preference change infomation'));
+            done(new Error('onPreferenceChanged() fails to return any preference change information'));
             return;
         });
 

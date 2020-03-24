@@ -229,7 +229,7 @@ export class FileTreeWidget extends TreeWidget {
 
     protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
         if (this.hidesExplorerArrows) {
-            // aditional left padding instead of top-level expansion toggle
+            // additional left padding instead of top-level expansion toggle
             return super.getPaddingLeft(node, props) + this.props.leftPadding;
         }
         return super.getPaddingLeft(node, props);

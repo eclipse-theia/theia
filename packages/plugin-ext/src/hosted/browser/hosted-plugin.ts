@@ -248,8 +248,8 @@ export class HostedPluginSupport {
         // process empty plugins as well in order to properly remove stale plugin widgets
         await this.syncPlugins();
 
-        // it has to be resolved before awaiting layout is initilization
-        // otherwise clients can hang forever in the initializatin phase
+        // it has to be resolved before awaiting layout is initialized
+        // otherwise clients can hang forever in the initialization phase
         this.deferredWillStart.resolve();
 
         // make sure that the previous state, including plugin widgets, is restored

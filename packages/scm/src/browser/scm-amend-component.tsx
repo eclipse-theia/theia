@@ -120,8 +120,8 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
         } else if (this.transitionHint === 'none') {
             // If the 'last' commit changes, but we are not expecting an 'amend'
             // or 'unamend' to occur, then we clear out the list of amended commits.
-            // This is because an unexpected change has happened to the repoistory,
-            // perhaps the user commited, merged, or something.  The amended commits
+            // This is because an unexpected change has happened to the repository,
+            // perhaps the user committed, merged, or something.  The amended commits
             // will no longer be valid.
 
             // Note that there may or may not have been a previous lastCommit (if the
@@ -221,7 +221,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
     /**
      * Commits are equal if the ids are equal or if both are undefined.
      * (If a commit is undefined, it represents the initial empty state of a repository,
-     * before the inital commit).
+     * before the initial commit).
      */
     private commitsAreEqual(lastCommit: ScmCommit | undefined, savedLastCommitId: string | undefined): boolean {
         return lastCommit
@@ -520,7 +520,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
                 }
         }
 
-        throw new Error('Invalid value for transtition state: ' + this.state.transition.state);
+        throw new Error('Invalid value for transition state: ' + this.state.transition.state);
     }
 
     protected styleLastCommitMovingUp(transitionState: 'start' | 'transitioning'): React.CSSProperties {

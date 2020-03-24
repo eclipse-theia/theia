@@ -51,7 +51,7 @@ process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
             promise.catch(err => {
                 unhandledPromises.splice(index, 1);
                 if (terminating && (ConnectionClosedError.is(err) || ConnectionClosedError.is(reason))) {
-                    // during termination it is expected that pending rpc requerst are rejected
+                    // during termination it is expected that pending rpc request are rejected
                     return;
                 }
                 console.error(`Promise rejection not handled in one second: ${err} , reason: ${reason}`);

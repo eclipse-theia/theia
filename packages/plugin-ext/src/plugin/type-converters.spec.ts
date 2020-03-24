@@ -101,7 +101,7 @@ describe('Type converters:', () => {
                 assert.deepEqual(result === false, true);
             });
 
-            it('should reject non markdown object if it countains isTrusted field', () => {
+            it('should reject non markdown object if it contains isTrusted field', () => {
                 // given
                 const nonMarkdownObject = { isTrusted: true, field1: 5, field2: 'test' };
 

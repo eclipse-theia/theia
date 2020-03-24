@@ -24,7 +24,7 @@ import { CurrentEditorAccess } from './current-editor-access';
 import { CallHierarchyServiceProvider } from './callhierarchy-service';
 import URI from '@theia/core/lib/common/uri';
 
-export const CALL_HIERARCHY_TOGGLE_COMMAND_ID = 'callhierachy:toggle';
+export const CALL_HIERARCHY_TOGGLE_COMMAND_ID = 'callhierarchy:toggle';
 export const CALL_HIERARCHY_LABEL = 'Call Hierarchy';
 
 export namespace CallHierarchyCommands {

@@ -41,7 +41,7 @@ export class GitRepositoryManager {
     protected async sync(repository: Repository): Promise<void> {
         const reference = await this.getWatcher(repository);
         const watcher = reference.object;
-        // dispose the reference once the next sync cycle is actaully completed
+        // dispose the reference once the next sync cycle is actually completed
         watcher.sync().then(() => reference.dispose());
     }
 

@@ -99,7 +99,7 @@ export class PluginContributionHandler {
     /**
      * Always synchronous in order to simplify handling disconnections.
      * @throws never, loading of each contribution should handle errors
-     * in order to avoid preventing loading of other contibutions or extensions
+     * in order to avoid preventing loading of other contributions or extensions
      */
     handleContributions(clientId: string, plugin: DeployedPlugin): Disposable {
         const contributions = plugin.contributes;

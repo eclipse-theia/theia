@@ -67,7 +67,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
     protected readonly messageService: MessageService;
 
     private pluginState: HostedInstanceState = HostedInstanceState.STOPPED;
-    // used only for displaying Running insted of Watching in status bar if run of watcher fails
+    // used only for displaying Running instead of Watching in status bar if run of watcher fails
     private watcherSuccess: boolean;
     private entry: StatusBarEntry | undefined;
 
@@ -251,7 +251,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
     }
 
     /**
-     * Updaing status bar element when changing connection status.
+     * Updating status bar element when changing connection status.
      */
     private onConnectionStatusChanged(): void {
         if (this.connectionStatusService.currentStatus === ConnectionStatus.OFFLINE) {

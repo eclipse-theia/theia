@@ -38,7 +38,7 @@ export class DebugWatchExpression extends ExpressionItem {
     }
 
     protected setResult(body?: DebugProtocol.EvaluateResponse['body']): void {
-        // overriden to ignore error
+        // overridden to ignore error
         super.setResult(body);
         this.options.onDidChange();
     }

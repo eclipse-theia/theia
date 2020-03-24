@@ -47,14 +47,14 @@ export class WorkspaceVariableContribution implements VariableContribution {
         }
     }
 
-    protected readonly toDiposeOnUpdateCurrentWidget = new DisposableCollection();
+    protected readonly toDisposeOnUpdateCurrentWidget = new DisposableCollection();
     protected setCurrentWidget(currentWidget: NavigatableWidget | undefined): void {
-        this.toDiposeOnUpdateCurrentWidget.dispose();
+        this.toDisposeOnUpdateCurrentWidget.dispose();
         this.currentWidget = currentWidget;
         if (currentWidget) {
             const resetCurrentWidget = () => this.setCurrentWidget(undefined);
             currentWidget.disposed.connect(resetCurrentWidget);
-            this.toDiposeOnUpdateCurrentWidget.push(Disposable.create(() =>
+            this.toDisposeOnUpdateCurrentWidget.push(Disposable.create(() =>
                 currentWidget.disposed.disconnect(resetCurrentWidget)
             ));
         }

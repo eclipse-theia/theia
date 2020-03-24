@@ -139,7 +139,7 @@ export class KeymapsService {
         // TODO use preference values to get proper json settings
         // TODO handle dirty models properly
         // TODO handle race conditions properly
-        // TODO only apply mimimal edits
+        // TODO only apply minimal edits
         await this.resource.saveContents(JSON.stringify(keybindings, undefined, 4));
     }
 
@@ -157,7 +157,7 @@ export class KeymapsService {
         // TODO use preference values to get proper json settings
         // TODO handle dirty models properly
         // TODO handle race conditions properly
-        // TODO only apply mimimal edits
+        // TODO only apply minimal edits
         await this.resource.saveContents(JSON.stringify(filtered, undefined, 4));
     }
 

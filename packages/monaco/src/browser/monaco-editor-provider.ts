@@ -158,7 +158,7 @@ export class MonacoEditorProvider {
 
     /**
      * Suppresses Monaco keydown listener to avoid triggering default Monaco keybindings
-     * if they are overriden by a user. Monaco keybindings should be registered as Theia keybindings
+     * if they are overridden by a user. Monaco keybindings should be registered as Theia keybindings
      * to allow a user to customize them.
      */
     protected suppressMonacoKeybindingListener(editor: MonacoEditor): void {
@@ -359,7 +359,7 @@ export class MonacoEditorProvider {
             referencesController._ignoreModelChangeEvent = true;
             const range = monaco.Range.lift(ref.range).collapseToStart();
 
-            // prerse the model that it does not get disposed if an editor preview replaces an editor
+            // preserve the model that it does not get disposed if an editor preview replaces an editor
             const model = referencesController._model;
             referencesController._model = undefined;
 

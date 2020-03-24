@@ -142,7 +142,7 @@ class PluginLanguageClientContribution extends BaseLanguageClientContribution {
             try {
                 // avoid calling stop if start failed
                 await this._languageClient!.onReady();
-                // remove all listerens
+                // remove all listeners
                 await this._languageClient!.stop();
             } catch {
                 // if start or stop failed make sure the the connection is closed

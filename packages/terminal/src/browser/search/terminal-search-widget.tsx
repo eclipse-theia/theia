@@ -61,7 +61,7 @@ export class TerminalSearchWidget extends ReactWidget {
                     onBlur={this.onSearchInputBlur}
                 />
                 <div title='Match case' tabIndex={0} className='search-elem match-case' onClick={this.handleCaseSensitiveOptionClicked}></div>
-                <div title='Match whole word' tabIndex={0} className='search-elem whole-word' onClick={this.handleWroleWordOptionClicked}></div>
+                <div title='Match whole word' tabIndex={0} className='search-elem whole-word' onClick={this.handleWholeWordOptionClicked}></div>
                 <div title='Use regular expression' tabIndex={0} className='search-elem use-regexp' onClick={this.handleRegexOptionClicked}></div>
             </div>
             <button title='Previous match' className='search-elem arrow-up' onClick={this.handlePreviousButtonClicked}></button>
@@ -91,7 +91,7 @@ export class TerminalSearchWidget extends ReactWidget {
         this.updateSearchInputBox(this.searchOptions.caseSensitive, event.currentTarget);
     };
 
-    private handleWroleWordOptionClicked = (event: React.MouseEvent<HTMLSpanElement>): void => {
+    private handleWholeWordOptionClicked = (event: React.MouseEvent<HTMLSpanElement>): void => {
         this.searchOptions.wholeWord = !this.searchOptions.wholeWord;
         this.updateSearchInputBox(this.searchOptions.wholeWord, event.currentTarget);
     };

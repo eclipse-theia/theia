@@ -511,9 +511,9 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         }
     }
 
-    protected fireLanguageChanged(langaugeId: string): void {
+    protected fireLanguageChanged(languageId: string): void {
         this._languageAutoDetected = false;
-        this.onLanguageChangedEmitter.fire(langaugeId);
+        this.onLanguageChangedEmitter.fire(languageId);
     }
 
     getResourceUri(): URI {

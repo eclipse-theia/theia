@@ -89,14 +89,14 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
             });
         }
         if (endsInWhitespace || lineOffsets.length === 0) {
-            // add remaing snippets when the current prefix ends in whitespace or when no
+            // add remaining snippets when the current prefix ends in whitespace or when no
             // interesting positions have been found
             availableSnippets.forEach(snippet => {
                 suggestions.push(new MonacoSnippetSuggestion(snippet, monaco.Range.fromPositions(position)));
             });
         }
 
-        // dismbiguate suggestions with same labels
+        // disambiguate suggestions with same labels
         suggestions.sort(MonacoSnippetSuggestion.compareByLabel);
         return { suggestions };
     }
@@ -134,7 +134,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
     }
 
     /**
-     * should NOT throw to prevent load erros on suggest
+     * should NOT throw to prevent load errors on suggest
      */
     protected async loadURI(uri: string | URI, options: SnippetLoadOptions, toDispose: DisposableCollection): Promise<void> {
         try {
