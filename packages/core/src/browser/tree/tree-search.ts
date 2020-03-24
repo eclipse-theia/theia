@@ -19,7 +19,7 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { Event, Emitter } from '../../common/event';
 import { Tree, TreeNode } from './tree';
 import { TreeDecoration } from './tree-decorator';
-import { FuzzySearch } from './fuzzy-search';
+import { FuzzySearch } from '../../common/fuzzy-search';
 import { TopDownTreeIterator } from './tree-iterator';
 import { LabelProvider } from '../label-provider';
 

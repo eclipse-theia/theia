@@ -22,7 +22,7 @@ import { TreeSelectionService } from '../tree-selection';
 import { TreeExpansionServiceImpl, TreeExpansionService } from '../tree-expansion';
 import { TreeNavigationService } from '../tree-navigation';
 import { TreeSearch } from '../tree-search';
-import { FuzzySearch } from '../fuzzy-search';
+import { FuzzySearch } from '../../../common/fuzzy-search';
 import { MockLogger } from '../../../common/test/mock-logger';
 import { ILogger, bindContributionProvider } from '../../../common';
 import { LabelProviderContribution, LabelProvider } from '../../label-provider';

@@ -2,8 +2,9 @@
 
 ## v0.17.0
 
+- [core] Deprecated `@theia/core/lib/browser/tree/fuzzy-search`. Use `@theia/core/lib/common/fuzzy-search` instead. [#7414](https://github.com/eclipse-theia/theia/issues/7414)
 - [preferences] add a new preference to silence notifications [#7195](https://github.com/eclipse-theia/theia/pull/7195)
-- [core] fixed keybindings for special Numpad keys in editors [#7315] 
+- [core] fixed keybindings for special Numpad keys in editors [#7315](https://github.com/eclipse-theia/theia/pull/7315)
 
 Breaking changes:
 

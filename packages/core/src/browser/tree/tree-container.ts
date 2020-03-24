@@ -24,7 +24,7 @@ import { TreeExpansionService, TreeExpansionServiceImpl } from './tree-expansion
 import { TreeNavigationService } from './tree-navigation';
 import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator';
 import { TreeSearch } from './tree-search';
-import { FuzzySearch } from './fuzzy-search';
+import { FuzzySearch } from '../../common/fuzzy-search';
 import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { SearchBoxDebounce } from './search-box-debounce';
 
