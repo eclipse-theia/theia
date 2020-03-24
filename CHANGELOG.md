@@ -11,7 +11,8 @@ Breaking changes:
   renamed to ScmHistoryWidget.  GitNavigableListWidget has also moved.
   CSS classes have been moved renamed accordingly.  [6381](https://github.com/eclipse-theia/theia/pull/6381)
 - [task] `TaskRestartRunningQuickOpenItem` class is renamed into `RunningTaskQuickOpenItem`. [7392](https://github.com/eclipse-theia/theia/pull/7392)
-- [task] `TaskAttachQuickOpenItem` class is removed.
+- [task] `TaskAttachQuickOpenItem` class is removed. [7392](https://github.com/eclipse-theia/theia/pull/7392)
+- [task] `TaskService.taskProviderRegistry` is removed. [7418](https://github.com/eclipse-theia/theia/pull/7418)
 
 ## v0.16.0
 

@@ -46,12 +46,13 @@ import {
     TaskServer,
     TaskIdentifier,
     DependsOrder,
-    RevealKind
+    RevealKind,
+    ApplyToKind
 } from '../common';
 import { TaskWatcher } from '../common/task-watcher';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskConfigurationClient, TaskConfigurations } from './task-configurations';
-import { TaskProviderRegistry, TaskResolverRegistry } from './task-contribution';
+import { TaskResolverRegistry } from './task-contribution';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskNameResolver } from './task-name-resolver';
 import { TaskSourceResolver } from './task-source-resolver';
@@ -60,6 +61,7 @@ import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskConfigurationManager } from './task-configuration-manager';
 import { PROBLEMS_WIDGET_ID, ProblemWidget } from '@theia/markers/lib/browser/problem/problem-widget';
 import { TaskNode } from './task-node';
+import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -169,11 +171,9 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
-    /**
-     * @deprecated To be removed in 0.5.0
-     */
-    @inject(TaskProviderRegistry)
-    protected readonly taskProviderRegistry: TaskProviderRegistry;
+
+    @inject(MonacoWorkspace)
+    protected monacoWorkspace: MonacoWorkspace;
 
     @postConstruct()
     protected init(): void {
@@ -236,16 +236,22 @@ export class TaskService implements TaskConfigurationClient {
                             }
                         }
                         const uri = new URI(problem.resource.path).withScheme(problem.resource.scheme);
-                        if (uris.has(uri.toString())) {
-                            const newData = [
-                                ...existingMarkers
-                                    .filter(marker => marker.uri === uri.toString())
-                                    .map(markerData => markerData.data),
-                                problem.marker
-                            ];
-                            this.problemManager.setMarkers(uri, problem.description.owner, newData);
-                        } else {
-                            this.problemManager.setMarkers(uri, problem.description.owner, [problem.marker]);
+                        const document = this.monacoWorkspace.getTextDocument(uri.toString());
+                        if (problem.description.applyTo === ApplyToKind.openDocuments && !!document ||
+                            problem.description.applyTo === ApplyToKind.closedDocuments && !document ||
+                            problem.description.applyTo === ApplyToKind.allDocuments
+                        ) {
+                            if (uris.has(uri.toString())) {
+                                const newData = [
+                                    ...existingMarkers
+                                        .filter(marker => marker.uri === uri.toString())
+                                        .map(markerData => markerData.data),
+                                    problem.marker
+                                ];
+                                this.problemManager.setMarkers(uri, problem.description.owner, newData);
+                            } else {
+                                this.problemManager.setMarkers(uri, problem.description.owner, [problem.marker]);
+                            }
                         }
                     } else { // should have received an event for finding the "background task begins" pattern
                         uris.forEach(uriString => this.problemManager.setMarkers(new URI(uriString), problem.description.owner, []));
