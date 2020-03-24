@@ -45,7 +45,7 @@ import CoreURI from '@theia/core/lib/common/uri';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
-export const VIEW_ITEM_INLINE_MNUE: MenuPath = ['view-item-inline-menu'];
+export const VIEW_ITEM_INLINE_MENU: MenuPath = ['view-item-inline-menu'];
 
 export interface SelectionEventHandler {
     readonly node: SelectableTreeNode;
@@ -295,7 +295,7 @@ export class TreeViewWidget extends TreeWidget {
             return false;
         }
         return this.contextKeys.with({ view: this.id, viewItem: node.contextValue }, () => {
-            const menu = this.menus.getMenu(VIEW_ITEM_INLINE_MNUE);
+            const menu = this.menus.getMenu(VIEW_ITEM_INLINE_MENU);
             const arg = this.toTreeViewSelection(node);
             return <React.Fragment>
                 {menu.children.map((item, index) => item instanceof ActionMenuNode && this.renderInlineCommand(item, index, arg))}

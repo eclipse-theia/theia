@@ -269,7 +269,7 @@ export namespace DebugCommands {
     export const REMOVE_ALL_WATCH_EXPRESSIONS: Command = {
         id: 'debug.watch.removeAllExpressions',
         category: DEBUG_CATEGORY,
-        label: 'Remove All Watch Expresssions'
+        label: 'Remove All Watch Expressions'
     };
 }
 export namespace DebugThreadContextCommands {
@@ -1294,13 +1294,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
     protected updateStatusBar(): void {
-        if (this.debuggingStaturBar === document.body.classList.contains('theia-mod-debugging')) {
+        if (this.debuggingStatusBar === document.body.classList.contains('theia-mod-debugging')) {
             return;
         }
         document.body.classList.toggle('theia-mod-debugging');
     }
 
-    protected get debuggingStaturBar(): boolean {
+    protected get debuggingStatusBar(): boolean {
         if (this.manager.state < DebugState.Running) {
             return false;
         }

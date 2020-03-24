@@ -265,7 +265,7 @@ export interface TerminalServiceMain {
     $hide(id: string): void;
 
     /**
-     * Distroy terminal.
+     * Destroy terminal.
      * @param id - terminal id.
      */
     $dispose(id: string): void;
@@ -1241,7 +1241,7 @@ export interface LanguagesMain {
     $registerWorkspaceSymbolProvider(handle: number, pluginInfo: PluginInfo): void;
     $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerDocumentColorProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
-    $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResoveInitialValues: boolean): void;
+    $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveInitialValues: boolean): void;
     $registerCallHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 

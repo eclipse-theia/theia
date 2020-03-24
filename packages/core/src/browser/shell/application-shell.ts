@@ -1722,7 +1722,7 @@ export namespace ApplicationShell {
          * if optional then a user will be prompted
          * if undefined then close will be canceled
          * if true then will be saved on close
-         * if falase then won't be saved on close
+         * if false then won't be saved on close
          */
         save?: boolean | undefined
     }

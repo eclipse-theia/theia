@@ -90,7 +90,7 @@ export class GitRepositoryTracker {
     }
 
     /**
-     * Returns the last known status of the selected respository, or `undefined` if no repositories are available.
+     * Returns the last known status of the selected repository, or `undefined` if no repositories are available.
      */
     get selectedRepositoryStatus(): WorkingDirectoryStatus | undefined {
         return this.workingDirectoryStatus;

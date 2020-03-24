@@ -106,7 +106,7 @@ export class PreferenceRegistryMainImpl implements PreferenceRegistryMain, Dispo
             case ConfigurationTarget.WorkspaceFolder:
                 return PreferenceScope.Folder;
             default:
-                // PreferenceService knows how to deal with undefiend in VS Code compatible way
+                // PreferenceService knows how to deal with undefined in VS Code compatible way
                 return undefined;
         }
     }

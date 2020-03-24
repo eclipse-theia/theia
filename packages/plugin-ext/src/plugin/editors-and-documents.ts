@@ -110,7 +110,7 @@ export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
 
         if (this.activeEditorId && delta.removedEditors && delta.removedEditors.indexOf(this.activeEditorId) !== -1 && this.editors.size !== 0) {
             // to be compatible with VSCode, when active editor is closed onDidChangeActiveTextEditor
-            // should be trigerred with undefined before next editor, if any, become active.
+            // should be triggered with undefined before next editor, if any, become active.
             this._onDidChangeActiveTextEditors.fire(undefined);
         }
 

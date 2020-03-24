@@ -104,7 +104,7 @@ export class DebugBreakpointWidget implements Disposable {
                     if (this.context === 'condition') {
                         overwriteBefore = position.column - 1;
                     } else {
-                        // Inside the currly brackets, need to count how many useful characters are behind the position so they would all be taken into account
+                        // Inside the curly brackets, need to count how many useful characters are behind the position so they would all be taken into account
                         const value = editor.getModel()!.getValue();
                         while ((position.column - 2 - overwriteBefore >= 0)
                             && value[position.column - 2 - overwriteBefore] !== '{' && value[position.column - 2 - overwriteBefore] !== ' ') {

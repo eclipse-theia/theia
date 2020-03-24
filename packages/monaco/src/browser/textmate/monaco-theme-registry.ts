@@ -48,7 +48,7 @@ export class MonacoThemeRegistry {
     }
 
     setTheme(name: string, data: ThemeMix): void {
-        // monaco auto refrehes a theme with new data
+        // monaco auto refreshes a theme with new data
         monaco.editor.defineTheme(name, data);
     }
 

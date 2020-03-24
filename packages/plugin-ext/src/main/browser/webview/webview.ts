@@ -431,7 +431,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected async loadResource(requestPath: string): Promise<void> {
         const normalizedUri = this.normalizeRequestUri(requestPath);
-        // browser cache does not suppot file scheme, normalize to current endpoint scheme and host
+        // browser cache does not support file scheme, normalize to current endpoint scheme and host
         const cacheUrl = new Endpoint({ path: normalizedUri.path.toString() }).getRestUrl().toString();
 
         try {

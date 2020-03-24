@@ -35,7 +35,7 @@ export class ViewContextKeyService {
      * Viewlet is a tab in the left area in VS Code. Active means visible in this context.
      *
      * In VS Code there can be only one visible viewlet at any time.
-     * It is not true for Theia, since views can be relayouted to different areas.
+     * It is not true for Theia, since views can be layed-out again to different areas.
      * So only last visible view will be an active viewlet.
      */
     get activeViewlet(): ContextKey<string> {
@@ -47,7 +47,7 @@ export class ViewContextKeyService {
      * Panel is a tab in the bottom area in VS Code. Active means visible in this context.
      *
      * In VS Code there can be only one visible panel at any time.
-     * It is not true for Theia, since views can be relayouted to different areas.
+     * It is not true for Theia, since views can be layed-out again to different areas.
      * So only last visible view will be an active panel.
      */
     get activePanel(): ContextKey<string> {

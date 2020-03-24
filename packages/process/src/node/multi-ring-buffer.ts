@@ -20,7 +20,7 @@ import { Disposable } from '@theia/core/lib/common';
 
 /**
  * The MultiRingBuffer is a ring buffer implementation that allows
- * multiple independant readers.
+ * multiple independent readers.
  *
  * These readers are created using the getReader or getStream functions
  * to create a reader that can be read using deq() or one that is a readable stream.

@@ -540,7 +540,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     ): Promise<FoldingRange[] | undefined> {
         return this.withAdapter(callId, FoldingProviderAdapter, adapter => adapter.provideFoldingRanges(URI.revive(resource), context, token));
     }
-    // ### Folging Range Provider end
+    // ### Folding Range Provider end
 
     // ### Rename Provider begin
     registerRenameProvider(selector: theia.DocumentSelector, provider: theia.RenameProvider, pluginInfo: PluginInfo): theia.Disposable {

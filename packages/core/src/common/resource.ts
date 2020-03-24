@@ -47,7 +47,7 @@ export interface Resource extends Disposable {
      */
     readonly version?: ResourceVersion | undefined;
     /**
-     * Reads latest content of this resouce.
+     * Reads latest content of this resource.
      *
      * If a resource supports versioning it updates version to latest.
      *
@@ -66,7 +66,7 @@ export interface Resource extends Disposable {
      */
     saveContents?(content: string, options?: ResourceSaveOptions): Promise<void>;
     /**
-     * Applies incemental content changes to this resource.
+     * Applies incremental content changes to this resource.
      *
      * If a resource supports versioning clients can pass some version
      * to check against it, if it is not provided latest version is used.
@@ -106,7 +106,7 @@ export namespace Resource {
             return true;
         } catch (e) {
             if (!ResourceError.NotFound.is(e) && !ResourceError.OutOfSync.is(e)) {
-                console.error(`Failed to apply incremenal changes to '${resource.uri.toString()}':`, e);
+                console.error(`Failed to apply incremental changes to '${resource.uri.toString()}':`, e);
             }
             return false;
         }

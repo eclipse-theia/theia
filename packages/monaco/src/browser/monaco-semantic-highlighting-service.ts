@@ -49,7 +49,7 @@ export class MonacoSemanticHighlightingService extends SemanticHighlightingServi
     protected readonly toDisposeOnEditorClose = new Map<string, Disposable>();
     protected readonly toDisposeOnUnregister = new Map<string, Disposable>();
 
-    // laguage id -> (scope index -> decoration type)
+    // language id -> (scope index -> decoration type)
     protected readonly decorationTypes = new Map<string, Map<number, DecorationTypeInfo>>();
 
     private lastDecorationTypeId: number = 0;

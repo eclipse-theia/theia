@@ -88,8 +88,8 @@ class FileSystemWatcher implements theia.FileSystemWatcher {
         this.subscriberData = subscriberData;
         subscriberData.event((event: FileSystemEvent) => {
             // Here ignore event flags are not analyzed because all the logic is
-            // moved to server side to avoid unneded data transfer via network.
-            // The flags are present just to be read only accesible for user.
+            // moved to server side to avoid unneeded data transfer via network.
+            // The flags are present just to be read only accessible for user.
             switch (event.type) {
                 case 'updated':
                     this.onDidChangeEmitter.fire(event.uri);

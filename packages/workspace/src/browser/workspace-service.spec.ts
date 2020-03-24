@@ -594,7 +594,7 @@ describe('WorkspaceService', () => {
     });
 
     describe('saved status', () => {
-        it('should be true if there is an opened workspace, and the opened workspace is not a folder, othewise false', () => {
+        it('should be true if there is an opened workspace, and the opened workspace is not a folder, otherwise false', () => {
             const file = <FileStat>{
                 uri: 'file:///home/file',
                 lastModification: 0,

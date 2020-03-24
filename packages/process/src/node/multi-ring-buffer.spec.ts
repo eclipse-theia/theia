@@ -163,7 +163,7 @@ describe('MultiRingBuffer', function (): void {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect enq a string == ring buffer size then one < ring buffer  then one < buffer size and deque ', function (): void {
+    it('expect enq a string == ring buffer size then one < ring buffer  then one < buffer size and dequeue ', function (): void {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffers = ['12345', '123', '678'];
@@ -340,7 +340,7 @@ describe('MultiRingBuffer', function (): void {
         await p;
     });
 
-    it('expect data from stream when data is already enqed', async function (): Promise<void> {
+    it('expect data from stream when data is already ended', async function (): Promise<void> {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffer = 'abc';

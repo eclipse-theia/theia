@@ -51,7 +51,7 @@ export class DecorationsExtImpl implements DecorationsExt {
         });
         const providerMain: DecorationProvider = {
             async provideDecoration(uri: string): Promise<DecorationData | undefined> {
-                const res = await provider.provideDecoration(URI.parse(uri), new CancelationTokenImpl());
+                const res = await provider.provideDecoration(URI.parse(uri), new CancellationTokenImpl());
                 if (res) {
                     let color;
                     if (res.color) {
@@ -85,7 +85,7 @@ export class DecorationsExtImpl implements DecorationsExt {
     }
 }
 
-class CancelationTokenImpl implements theia.CancellationToken {
+class CancellationTokenImpl implements theia.CancellationToken {
     readonly isCancellationRequested: boolean;
     readonly onCancellationRequested: Event<any>;
 }

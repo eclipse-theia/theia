@@ -164,23 +164,23 @@ describe('search-service', function (): void {
             const searchPattern = rootUri.path.dir.base;
             const matches = await service.find(searchPattern, { rootUris: [rootUri.toString()], fuzzyMatch: false, useGitIgnore: true, limit: 200 });
             for (const match of matches) {
-                const relativUri = rootUri.relative(new URI(match));
-                assert.notEqual(relativUri, undefined);
-                const relativMatch = relativUri!.toString();
-                assert.notEqual(relativMatch.indexOf(searchPattern), -1, relativMatch);
+                const relativeUri = rootUri.relative(new URI(match));
+                assert.notEqual(relativeUri, undefined);
+                const relativeMatch = relativeUri!.toString();
+                assert.notEqual(relativeMatch.indexOf(searchPattern), -1, relativeMatch);
             }
         });
 
         it('fuzzy', async () => {
             const matches = await service.find('shell', { rootUris: [rootUri.toString()], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
             for (const match of matches) {
-                const relativUri = rootUri.relative(new URI(match));
-                assert.notEqual(relativUri, undefined);
-                const relativMatch = relativUri!.toString();
+                const relativeUri = rootUri.relative(new URI(match));
+                assert.notEqual(relativeUri, undefined);
+                const relativeMatch = relativeUri!.toString();
                 let position = 0;
                 for (const ch of 'shell') {
-                    position = relativMatch.indexOf(ch, position);
-                    assert.notEqual(position, -1, relativMatch);
+                    position = relativeMatch.indexOf(ch, position);
+                    assert.notEqual(position, -1, relativeMatch);
                 }
             }
         });

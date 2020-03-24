@@ -21,7 +21,7 @@ import { NotificationContentRenderer } from './notification-content-renderer';
 
 describe('notification-content-renderer', () => {
 
-    const contentRnderer = new NotificationContentRenderer();
+    const contentRenderer = new NotificationContentRenderer();
 
     it('should remove new lines', () => {
         expectRenderedContent('foo\nbar', 'foo bar');
@@ -70,6 +70,6 @@ describe('notification-content-renderer', () => {
     });
 
     const expectRenderedContent = (input: string, output: string) =>
-        expect(contentRnderer.renderMessage(input)).to.be.equal(output);
+        expect(contentRenderer.renderMessage(input)).to.be.equal(output);
 
 });

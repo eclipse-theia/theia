@@ -392,7 +392,7 @@ class MessageFactory {
 /**
  * These functions are responsible for correct transferring objects via rpc channel.
  *
- * To reach that some specific kind of objects is converteed to json in some custom way
+ * To reach that some specific kind of objects is converted to json in some custom way
  * and then, after receiving, revived to objects again,
  * so there is feeling that object was transferred via rpc channel.
  *
