@@ -92,11 +92,11 @@
     font-size: 80%;
 }
 
-
 .theia-vsx-extension-content .title .stat .average-rating > i {
     color: #ff8e00;
 }
 
+.theia-vsx-extension-editor .download-count > i,
 .theia-vsx-extension-content .title .stat .average-rating > i,
 .theia-vsx-extension-content .title .stat .download-count > i {
     padding-right: calc(var(--theia-ui-padding)/2);
