@@ -369,7 +369,8 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                             {this.renderNamespaceAccess()}
                             {publisher}
                         </span>
-                        {downloadCount && <span className='fa fa-download download-count' onClick={this.openExtension}>{downloadFormatter.format(downloadCount)}</span>}
+                        {downloadCount && <span className='download-count' onClick={this.openExtension}>
+                            <i className="fa fa-download" />{downloadFormatter.format(downloadCount)}</span>}
                         {averageRating && <span className='average-rating' onClick={this.openAverageRating}>{this.renderStars()}</span>}
                         {repository && <span className='repository' onClick={this.openRepository}>Repository</span>}
                         {license && <span className='license' onClick={this.openLicense}>{license}</span>}
