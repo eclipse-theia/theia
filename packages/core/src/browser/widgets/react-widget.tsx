@@ -16,17 +16,18 @@
 
 import * as ReactDOM from 'react-dom';
 import * as React from 'react';
-import { injectable } from 'inversify';
+import { injectable, unmanaged } from 'inversify';
 import { DisposableCollection, Disposable } from '../../common';
 import { BaseWidget, Message } from './widget';
+import { Widget } from '@phosphor/widgets';
 
 @injectable()
 export abstract class ReactWidget extends BaseWidget {
 
     protected readonly onRender = new DisposableCollection();
 
-    constructor() {
-        super();
+    constructor(@unmanaged() options?: Widget.IOptions) {
+        super(options);
         this.scrollOptions = {
             suppressScrollX: true,
             minScrollbarLength: 35,
