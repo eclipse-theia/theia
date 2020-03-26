@@ -332,8 +332,8 @@ export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
                         <span className='name'>{displayName}</span> <span className='version'>{version}</span>
                     </div>
                     <div className='stat'>
-                        {downloadCount && <span className='download-count'><i className='fa fa-download' />{downloadCompactFormatter.format(downloadCount)}</span>}
-                        {averageRating && <span className='average-rating'><i className='fa fa-star' />{averageRating.toFixed(1)}</span>}
+                        {!!downloadCount && <span className='download-count'><i className='fa fa-download' />{downloadCompactFormatter.format(downloadCount)}</span>}
+                        {!!averageRating && <span className='average-rating'><i className='fa fa-star' />{averageRating.toFixed(1)}</span>}
                     </div>
                 </div>
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
@@ -369,9 +369,9 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                             {this.renderNamespaceAccess()}
                             {publisher}
                         </span>
-                        {downloadCount && <span className='download-count' onClick={this.openExtension}>
+                        {!!downloadCount && <span className='download-count' onClick={this.openExtension}>
                             <i className="fa fa-download" />{downloadFormatter.format(downloadCount)}</span>}
-                        {averageRating && <span className='average-rating' onClick={this.openAverageRating}>{this.renderStars()}</span>}
+                        {averageRating !== undefined && <span className='average-rating' onClick={this.openAverageRating}>{this.renderStars()}</span>}
                         {repository && <span className='repository' onClick={this.openRepository}>Repository</span>}
                         {license && <span className='license' onClick={this.openLicense}>{license}</span>}
                     </div>
@@ -404,10 +404,8 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
     }
 
     protected renderStars(): React.ReactNode {
-        const rating = this.props.extension.averageRating;
-        if (typeof rating !== 'number') {
-            return undefined;
-        }
+        const rating = this.props.extension.averageRating || 0;
+
         const renderStarAt = (position: number) => position <= rating ?
             <i className='fa fa-star' /> :
             position > rating && position - rating < 1 ?
