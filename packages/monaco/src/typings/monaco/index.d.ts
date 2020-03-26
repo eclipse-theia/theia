@@ -364,6 +364,9 @@ declare module monaco.actions {
      */
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/actions/common/actions.ts#L142
     export const MenuRegistry: IMenuRegistry;
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/actions/common/actions.ts#L246
+    export class MenuItemAction { }
 }
 
 declare module monaco.platform {
