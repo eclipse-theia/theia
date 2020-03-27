@@ -83,7 +83,7 @@
     "vscode-builtin-clojure": "http://open-vsx.org/api/vscode/clojure/file/vscode.clojure-1.39.1.vsix",
     "vscode-builtin-coffeescript": "http://open-vsx.org/api/vscode/coffeescript/file/vscode.coffeescript-1.39.1.vsix",
     "vscode-builtin-configuration-editing": "http://open-vsx.org/api/vscode/configuration-editing/file/vscode.configuration-editing-1.39.1.vsix",
-    "vscode-builtin-cpp": "http://open-vsx.org/api/vscode/cpp/file/vscode.cpp-1.39.1.vsix",
+    "vscode-builtin-cpp": "http://open-vsx.org/api/vscode/cpp/1.39.1/file/vscode.cpp-1.39.1.vsix",
     "vscode-builtin-csharp": "http://open-vsx.org/api/vscode/csharp/file/vscode.csharp-1.39.1.vsix",
     "vscode-builtin-css": "http://open-vsx.org/api/vscode/css/file/vscode.css-1.39.1.vsix",
     "vscode-builtin-debug-auto-launch": "http://open-vsx.org/api/vscode/debug-auto-launch/file/vscode.debug-auto-launch-1.39.1.vsix",
@@ -110,8 +110,8 @@
     "vscode-builtin-markdown-language-features": "http://open-vsx.org/api/vscode/markdown-language-features/file/vscode.markdown-language-features-1.39.1.vsix",
     "vscode-builtin-merge-conflict": "https://open-vsx.org/api/vscode/merge-conflict/file/vscode.merge-conflict-1.39.1.vsix",
     "vscode-builtin-npm": "http://open-vsx.org/api/vscode/npm/file/vscode.npm-1.39.1.vsix",
-    "vscode-builtin-node-debug": "https://github.com/theia-ide/vscode-node-debug/releases/download/v1.35.3/node-debug-1.35.3.vsix",
-    "vscode-builtin-node-debug2": "https://github.com/theia-ide/vscode-node-debug2/releases/download/v1.33.0/node-debug2-1.33.0.vsix",
+    "vscode-builtin-node-debug": "https://open-vsx.org/api/ms-vscode/node-debug/file/ms-vscode.node-debug-1.44.2.vsix",
+    "vscode-builtin-node-debug2": "https://open-vsx.org/api/ms-vscode/node-debug2/file/ms-vscode.node-debug2-1.33.0.vsix",
     "vscode-builtin-objective-c": "http://open-vsx.org/api/vscode/objective-c/file/vscode.objective-c-1.39.1.vsix",
     "vscode-builtin-perl": "http://open-vsx.org/api/vscode/perl/file/vscode.perl-1.39.1.vsix",
     "vscode-builtin-powershell": "http://open-vsx.org/api/vscode/powershell/file/vscode.powershell-1.39.1.vsix",
@@ -143,6 +143,6 @@
     "vscode-builtin-yaml": "http://open-vsx.org/api/vscode/yaml/file/vscode.yaml-1.39.1.vsix",
     "vscode-editorconfig": "https://open-vsx.org/api/EditorConfig/EditorConfig/file/EditorConfig.EditorConfig-0.14.4.vsix",
     "vscode-eslint": "https://open-vsx.org/api/dbaeumer/vscode-eslint/file/dbaeumer.vscode-eslint-2.1.1.vsix",
-    "vscode-references-view": "https://github.com/theia-ide/vscode-references-view/releases/download/v0.0.47/references-view-0.0.47.vsix"
+    "vscode-references-view": "https://open-vsx.org/api/ms-vscode/references-view/file/ms-vscode.references-view-0.0.47.vsix"
   }
 }
