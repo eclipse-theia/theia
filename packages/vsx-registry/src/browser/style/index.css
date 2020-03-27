@@ -234,14 +234,15 @@
     display: flex;
     align-items: center;
     cursor: pointer;
-    padding-right: var(--theia-ui-padding);
     line-height: var(--theia-content-line-height);
     height: var(--theia-content-line-height);
 }
 
 .theia-vsx-extension-editor .header .details .subtitle > span:not(:first-child):not(:empty) {
     border-left: 1px solid hsla(0,0%,50%,.7);
-    padding-left: var(--theia-ui-padding);
+    padding-left: calc(var(--theia-ui-padding)*2);
+    margin-left: calc(var(--theia-ui-padding)*2);
+    font-weight: 500;
 }
 
 .theia-vsx-extension-editor .header .details .subtitle .publisher {
