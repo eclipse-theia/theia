@@ -403,17 +403,30 @@ export class WorkspaceCommandContribution implements CommandContribution {
         };
     }
 
+    /**
+     * Removes the list of folders from the workspace upon confirmation from the user.
+     * @param uris the list of folder uris to remove.
+     */
     protected async removeFolderFromWorkspace(uris: URI[]): Promise<void> {
-        const roots = new Set(this.workspaceService.tryGetRoots().map(r => r.uri));
-        const toRemove = uris.filter(u => roots.has(u.toString()));
+        const roots = new Set(this.workspaceService.tryGetRoots().map(root => root.uri));
+        const toRemove = uris.filter(uri => roots.has(uri.toString()));
         if (toRemove.length > 0) {
             const messageContainer = document.createElement('div');
-            messageContainer.textContent = 'Remove the following folders from workspace? (note: nothing will be erased from disk)';
-            const list = document.createElement('ul');
-            list.style.listStyleType = 'none';
-            toRemove.forEach(u => {
-                const listItem = document.createElement('li');
-                listItem.textContent = u.displayName;
+            messageContainer.textContent = `Are you sure you want to remove the following folder${toRemove.length > 1 ? 's' : ''} from the workspace?`;
+            messageContainer.title = 'Note: Nothing will be erased from disk';
+            const list = document.createElement('div');
+            list.classList.add('theia-dialog-node');
+            toRemove.forEach(uri => {
+                const listItem = document.createElement('div');
+                listItem.classList.add('theia-dialog-node-content');
+                const folderIcon = document.createElement('span');
+                folderIcon.classList.add('codicon', 'codicon-root-folder', 'theia-dialog-icon');
+                listItem.appendChild(folderIcon);
+                listItem.title = this.labelProvider.getLongName(uri);
+                const listContent = document.createElement('span');
+                listContent.classList.add('theia-dialog-node-segment');
+                listContent.appendChild(document.createTextNode(uri.displayName));
+                listItem.appendChild(listContent);
                 list.appendChild(listItem);
             });
             messageContainer.appendChild(list);

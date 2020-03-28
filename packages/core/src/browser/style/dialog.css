@@ -105,3 +105,25 @@
     font-size: var(--theia-ui-font-size1);
     display: block;
 }
+
+.theia-dialog-node {
+    line-height: var(--theia-content-line-height);
+    margin-top: calc(var(--theia-ui-padding)*1.5);
+    margin-left: calc(var(--theia-ui-padding)*2.5);
+}
+
+.theia-dialog-node-content {
+    display: flex;
+    align-items: center;
+    margin-right: calc(var(--theia-ui-padding)*1.5);}
+
+.theia-dialog-node-segment {
+    flex-grow: 0;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.theia-dialog-icon {
+    align-content: center;
+    margin-right: calc(var(--theia-ui-padding)*1.5);
+}
