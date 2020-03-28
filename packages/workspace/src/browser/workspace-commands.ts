@@ -208,7 +208,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent, true)
-                    }, this.labelProvider);
+                    }, this.labelProvider, this.workspaceService);
 
                     dialog.open().then(name => {
                         if (name) {
@@ -231,7 +231,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         parentUri: parentUri,
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent, true)
-                    }, this.labelProvider);
+                    }, this.labelProvider, this.workspaceService);
                     dialog.open().then(name => {
                         if (name) {
                             this.fileSystem.createFolder(parentUri.resolve(name).toString());

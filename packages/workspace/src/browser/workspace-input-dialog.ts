@@ -17,6 +17,7 @@
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { SingleTextInputDialog, SingleTextInputDialogProps, LabelProvider } from '@theia/core/lib/browser';
+import { WorkspaceService } from './workspace-service';
 
 @injectable()
 export class WorkspaceInputDialogProps extends SingleTextInputDialogProps {
@@ -32,8 +33,10 @@ export class WorkspaceInputDialog extends SingleTextInputDialog {
     constructor(
         @inject(WorkspaceInputDialogProps) protected readonly props: WorkspaceInputDialogProps,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
+        @inject(WorkspaceService) protected readonly workspaceService?: WorkspaceService
     ) {
         super(props);
+        this.appendRootName();
         this.appendParentPath();
     }
 
@@ -51,7 +54,37 @@ export class WorkspaceInputDialog extends SingleTextInputDialog {
         icon.style.marginRight = '0.5em';
         element.appendChild(icon);
         element.appendChild(document.createTextNode(label));
+        element.style.marginBottom = '1.0em';
         // Add the path and icon div before the `inputField`.
         this.contentNode.insertBefore(element, this.inputField);
+    }
+
+    /**
+     * Append the human-readable root `path` to the dialog when in a multi-root workspace.
+     * When two roots have the same name, displays full path of the root, else displays the root-name.
+     */
+    protected appendRootName(): void {
+        if (this.workspaceService && this.workspaceService.isMultiRootWorkspaceOpened) {
+            const roots = this.workspaceService.tryGetRoots();
+            const rootUri = this.workspaceService.getWorkspaceRootUri(this.props.parentUri);
+            if (rootUri) {
+                const rootsWithSameName = roots.some(singleRoot => {
+                    const singleRootUri = new URI(singleRoot.uri);
+                    return this.labelProvider.getName(rootUri) === this.labelProvider.getName(singleRootUri) && singleRootUri !== rootUri;
+                });
+                // Displays the root name if its unique, else displays the root path
+                const label = rootsWithSameName ? this.labelProvider.getLongName(rootUri) : this.labelProvider.getName(rootUri);
+                const element = document.createElement('div');
+                const icon = document.createElement('i');
+                // Creates the Root icon (circle)
+                icon.classList.add('fa', 'fa-circle-o');
+                icon.style.marginRight = '1.0em';
+                element.appendChild(icon);
+                element.appendChild(document.createTextNode(label));
+                element.style.marginBottom = '0.5em';
+                // Place the path and icon div before the `inputField`
+                this.contentNode.insertBefore(element, this.inputField);
+            }
+        }
     }
 }
