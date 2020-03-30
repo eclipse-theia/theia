@@ -19,7 +19,7 @@ import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer } from '../common';
+import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer, TaskOutputPresentation } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
@@ -83,7 +83,8 @@ export class TaskTerminalWidgetManager {
             // find the terminal where the task ran, and mark it as "idle"
             for (const terminal of this.getTaskTerminalWidgets()) {
                 if (terminal.taskId === finishedTaskId) {
-                    this.notifyTaskFinished(terminal);
+                    const showReuseMessage = !!event.config && TaskOutputPresentation.shouldShowReuseMessage(event.config);
+                    this.notifyTaskFinished(terminal, showReuseMessage);
                     break;
                 }
             }
@@ -103,11 +104,11 @@ export class TaskTerminalWidgetManager {
                         terminal.taskConfig = taskConfig;
                         terminal.busy = true;
                     } else {
-                        this.notifyTaskFinished(terminal);
+                        this.notifyTaskFinished(terminal, true);
                     }
                 });
                 const didConnectFailureListener = terminal.onDidOpenFailure(async () => {
-                    this.notifyTaskFinished(terminal);
+                    this.notifyTaskFinished(terminal, true);
                 });
                 terminal.onDidDispose(() => {
                     didConnectListener.dispose();
@@ -127,8 +128,13 @@ export class TaskTerminalWidgetManager {
         if (isNew) {
             this.shell.addWidget(widget, { area: options.widgetOptions ? options.widgetOptions.area : 'bottom' });
             widget.resetTerminal();
-        } else if (options.title) {
-            widget.setTitle(options.title);
+        } else {
+            if (options.title) {
+                widget.setTitle(options.title);
+            }
+            if (options.taskConfig && TaskOutputPresentation.shouldClearTerminalBeforeRun(options.taskConfig)) {
+                widget.clearOutput();
+            }
         }
         this.terminalService.open(widget, options);
 
@@ -178,9 +184,11 @@ export class TaskTerminalWidgetManager {
         return this.terminalService.all.filter(TaskTerminalWidget.is);
     }
 
-    private notifyTaskFinished(terminal: TaskTerminalWidget): void {
+    private notifyTaskFinished(terminal: TaskTerminalWidget, showReuseMessage: boolean): void {
         terminal.busy = false;
         terminal.scrollToBottom();
-        terminal.writeLine('\x1b[1m\n\rTerminal will be reused by tasks. \x1b[0m\n');
+        if (showReuseMessage) {
+            terminal.writeLine('\x1b[1m\n\rTerminal will be reused by tasks. \x1b[0m\n');
+        }
     }
 }

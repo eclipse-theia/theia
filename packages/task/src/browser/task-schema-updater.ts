@@ -540,7 +540,9 @@ const presentation: IJSONSchema = {
     default: {
         reveal: 'always',
         focus: false,
-        panel: 'shared'
+        panel: 'shared',
+        showReuseMessage: true,
+        clear: false
     },
     description: 'Configures the panel that is used to present the task\'s output and reads its input.',
     additionalProperties: true,
@@ -572,6 +574,16 @@ const presentation: IJSONSchema = {
             ],
             default: 'shared',
             description: 'Controls if the panel is shared between tasks, dedicated to this task or a new one is created on every run.'
+        },
+        showReuseMessage: {
+            type: 'boolean',
+            default: true,
+            description: 'Controls whether to show the "Terminal will be reused by tasks" message.'
+        },
+        clear: {
+            type: 'boolean',
+            default: false,
+            description: 'Controls whether the terminal is cleared before this task is run.'
         }
     }
 };
