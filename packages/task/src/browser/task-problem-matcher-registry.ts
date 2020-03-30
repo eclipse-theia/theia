@@ -112,7 +112,22 @@ export class ProblemMatcherRegistry {
      * @return the problem matcher
      */
     async getProblemMatcherFromContribution(matcher: ProblemMatcherContribution): Promise<ProblemMatcher> {
-        const { fileLocation, filePrefix } = this.getFileLocationKindAndPrefix(matcher);
+        let baseMatcher: NamedProblemMatcher | undefined;
+        if (matcher.base) {
+            baseMatcher = this.get(matcher.base);
+        }
+
+        let fileLocation: FileLocationKind | undefined;
+        let filePrefix: string | undefined;
+        if (matcher.fileLocation === undefined) {
+            fileLocation = baseMatcher ? baseMatcher.fileLocation : FileLocationKind.Relative;
+            filePrefix = baseMatcher ? baseMatcher.filePrefix : '${workspaceFolder}';
+        } else {
+            const locationAndPrefix = this.getFileLocationKindAndPrefix(matcher);
+            fileLocation = locationAndPrefix.fileLocation;
+            filePrefix = locationAndPrefix.filePrefix;
+        }
+
         const patterns: ProblemPattern[] = [];
         if (matcher.pattern) {
             if (typeof matcher.pattern === 'string') {
@@ -128,19 +143,42 @@ export class ProblemMatcherRegistry {
             } else {
                 patterns.push(ProblemPattern.fromProblemPatternContribution(matcher.pattern));
             }
+        } else if (baseMatcher) {
+            patterns.push(...baseMatcher.pattern);
+        }
+
+        let deprecated: boolean | undefined = matcher.deprecated;
+        if (deprecated === undefined && baseMatcher) {
+            deprecated = baseMatcher.deprecated;
+        }
+
+        let applyTo: ApplyToKind | undefined;
+        if (matcher.applyTo === undefined) {
+            applyTo = baseMatcher ? baseMatcher.applyTo : ApplyToKind.allDocuments;
+        } else {
+            applyTo = ApplyToKind.fromString(matcher.applyTo) || ApplyToKind.allDocuments;
+        }
+
+        let severity: Severity = Severity.fromValue(matcher.severity);
+        if (matcher.severity === undefined && baseMatcher && baseMatcher.severity !== undefined) {
+            severity = baseMatcher.severity;
+        }
+        let watching: WatchingMatcher | undefined = WatchingMatcher.fromWatchingMatcherContribution(matcher.background || matcher.watching);
+        if (watching === undefined && baseMatcher) {
+            watching = baseMatcher.watching;
         }
         const problemMatcher = {
-            name: matcher.name,
-            label: matcher.label,
-            deprecated: matcher.deprecated,
-            owner: matcher.owner,
-            source: matcher.source,
-            applyTo: ApplyToKind.fromString(matcher.applyTo) || ApplyToKind.allDocuments,
+            name: matcher.name || (baseMatcher ? baseMatcher.name : undefined),
+            label: matcher.label || (baseMatcher ? baseMatcher.label : undefined),
+            deprecated,
+            owner: matcher.owner || (baseMatcher ? baseMatcher.owner : ''),
+            source: matcher.source || (baseMatcher ? baseMatcher.source : undefined),
+            applyTo,
             fileLocation,
             filePrefix,
             pattern: patterns,
-            severity: Severity.fromValue(matcher.severity),
-            watching: WatchingMatcher.fromWatchingMatcherContribution(matcher.background || matcher.watching)
+            severity,
+            watching
         };
         return problemMatcher;
     }

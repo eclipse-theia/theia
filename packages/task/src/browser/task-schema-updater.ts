@@ -413,6 +413,7 @@ const problemMatcherObject: IJSONSchema = {
     properties: {
         base: {
             type: 'string',
+            enum: problemMatcherNames,
             description: 'The name of a base problem matcher to use.'
         },
         owner: {
