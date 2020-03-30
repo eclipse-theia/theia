@@ -257,6 +257,10 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         return this.all.find(terminal => terminal.id === id);
     }
 
+    getByTerminalId(terminalId: number): TerminalWidget | undefined {
+        return this.all.find(terminal => terminal.terminalId === terminalId);
+    }
+
     getDefaultShell(): Promise<string> {
         return this.shellTerminalServer.getDefaultShell();
     }
