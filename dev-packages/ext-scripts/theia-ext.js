@@ -25,7 +25,7 @@ const extScriptsPck = require(path.resolve(__dirname, 'package.json'));
  * Lookup the requested ext:script to run, returns the full command line to execute.
  */
 function getExtScript() {
-    // process.argv are always like [0:node, 1:script, 2:...args]
+    // process.argv is always like [0:node, 1:script, 2:...args]
     const args = process.argv.slice(2);
     if (!args[0]) {
         throw new Error('Please specify the script that runs with theiaext command.');
