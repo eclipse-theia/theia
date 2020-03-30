@@ -26,7 +26,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalWidgetFactoryOptions, TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { inject, injectable, named, postConstruct } from 'inversify';
@@ -228,7 +228,7 @@ export class TaskService implements TaskConfigurationClient {
                         if (isTaskActiveAndOutputSilent && problem.marker.severity === DiagnosticSeverity.Error) {
                             const terminalId = matchedRunningTaskInfo!.terminalId;
                             if (terminalId) {
-                                const terminal = this.terminalService.getById(this.getTerminalWidgetId(terminalId));
+                                const terminal = this.terminalService.getByTerminalId(terminalId);
                                 if (terminal) {
                                     const focus = !!matchedRunningTaskInfo!.config.presentation!.focus;
                                     if (focus) { // assign focus to the terminal if presentation.focus is true
@@ -304,7 +304,7 @@ export class TaskService implements TaskConfigurationClient {
                 } else {
                     const eventTaskConfig = event.config;
                     if (eventTaskConfig && eventTaskConfig.presentation && eventTaskConfig.presentation.reveal === RevealKind.Silent && event.terminalId) {
-                        const terminal = this.terminalService.getById(this.getTerminalWidgetId(event.terminalId));
+                        const terminal = this.terminalService.getByTerminalId(event.terminalId);
                         const focus = !!eventTaskConfig.presentation.focus;
                         if (terminal) {
                             if (focus) { // assign focus to the terminal if presentation.focus is true
@@ -700,7 +700,7 @@ export class TaskService implements TaskConfigurationClient {
             const taskName = this.taskNameResolver.resolve(task);
             const terminalId = matchedRunningTaskInfo.terminalId;
             if (terminalId) {
-                const terminal = this.terminalService.getById(this.getTerminalWidgetId(terminalId));
+                const terminal = this.terminalService.getByTerminalId(terminalId);
                 if (terminal && task.presentation) {
                     if (task.presentation.focus) { // assign focus to the terminal if presentation.focus is true
                         this.terminalService.open(terminal, { mode: 'activate' });
@@ -979,17 +979,24 @@ export class TaskService implements TaskConfigurationClient {
         terminal.sendText(selectedText);
     }
 
-    async attach(processId: number, taskId: number): Promise<void> {
+    async attach(terminalId: number, taskId: number): Promise<void> {
         // Get the list of all available running tasks.
         const runningTasks: TaskInfo[] = await this.getRunningTasks();
         // Get the corresponding task information based on task id if available.
         const taskInfo: TaskInfo | undefined = runningTasks.find((t: TaskInfo) => t.taskId === taskId);
         let widgetOpenMode: WidgetOpenMode = 'open';
-        if (taskInfo && taskInfo.config.presentation && taskInfo.config.presentation.reveal === RevealKind.Always) {
-            if (taskInfo.config.presentation.focus) { // assign focus to the terminal if presentation.focus is true
-                widgetOpenMode = 'activate';
-            } else { // show the terminal but not assign focus
-                widgetOpenMode = 'reveal';
+        if (taskInfo) {
+            const terminalWidget = this.terminalService.getByTerminalId(terminalId);
+            if (terminalWidget) {
+                this.messageService.error('Task is already running in terminal');
+                return this.terminalService.open(terminalWidget, { mode: 'activate' });
+            }
+            if (taskInfo.config.presentation && taskInfo.config.presentation.reveal === RevealKind.Always) {
+                if (taskInfo.config.presentation.focus) { // assign focus to the terminal if presentation.focus is true
+                    widgetOpenMode = 'activate';
+                } else { // show the terminal but not assign focus
+                    widgetOpenMode = 'reveal';
+                }
             }
         }
 
@@ -998,7 +1005,7 @@ export class TaskService implements TaskConfigurationClient {
             <TaskTerminalWidgetOpenerOptions>{
                 created: new Date().toString(),
                 taskId,
-                id: this.getTerminalWidgetId(processId),
+                id: this.getTerminalWidgetId(terminalId),
                 title: taskInfo
                     ? `Task: ${taskInfo.config.label}`
                     : `Task: #${taskId}`,
@@ -1008,11 +1015,14 @@ export class TaskService implements TaskConfigurationClient {
                 taskConfig: taskInfo ? taskInfo.config : undefined
             }
         );
-        widget.start(processId);
+        widget.start(terminalId);
     }
 
-    private getTerminalWidgetId(terminalId: number): string {
-        return `${TERMINAL_WIDGET_FACTORY_ID}-${terminalId}`;
+    protected getTerminalWidgetId(terminalId: number): string | undefined {
+        const terminalWidget = this.terminalService.getByTerminalId(terminalId);
+        if (terminalWidget) {
+            return terminalWidget.id;
+        }
     }
 
     async configure(task: TaskConfiguration): Promise<void> {
