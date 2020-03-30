@@ -754,7 +754,7 @@ export class TaskService implements TaskConfigurationClient {
         const resolvedTask = await this.getResolvedTask(task);
         if (resolvedTask) {
             // remove problem markers from the same source before running the task
-            await this.removeProblemMarks(option);
+            await this.removeProblemMarkers(option);
             return this.runResolvedTask(resolvedTask, option);
         }
     }
@@ -869,7 +869,7 @@ export class TaskService implements TaskConfigurationClient {
         return customizationObject;
     }
 
-    private async removeProblemMarks(option?: RunTaskOption): Promise<void> {
+    private async removeProblemMarkers(option?: RunTaskOption): Promise<void> {
         if (option && option.customization) {
             const matchersFromOption = option.customization.problemMatcher || [];
             for (const matcher of matchersFromOption) {
