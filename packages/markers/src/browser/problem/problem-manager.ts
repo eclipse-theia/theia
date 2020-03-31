@@ -18,6 +18,7 @@ import { injectable } from 'inversify';
 import { MarkerManager } from '../marker-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { Diagnostic } from 'vscode-languageserver-types';
+import URI from '@theia/core/lib/common/uri';
 
 export interface ProblemStat {
     errors: number;
@@ -32,11 +33,18 @@ export class ProblemManager extends MarkerManager<Diagnostic> {
         return PROBLEM_KIND;
     }
 
-    getProblemStat(): ProblemStat {
+    /**
+     * Get the problem stat (number of `errors`, `warnings`, and `infos`).
+     * - If `uri` is provided, determine the total count for this resource.
+     * @param uri the marker URI for search purposes.
+     *
+     * @returns the `ProblemStat`.
+     */
+    getProblemStat(uri?: URI): ProblemStat {
         let errors = 0;
         let warnings = 0;
         let infos = 0;
-        for (const marker of this.findMarkers()) {
+        for (const marker of this.findMarkers({ uri })) {
             if (marker.data.severity === 1) {
                 errors++;
             } else if (marker.data.severity === 2) {

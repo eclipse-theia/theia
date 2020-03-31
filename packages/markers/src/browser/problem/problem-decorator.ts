@@ -127,10 +127,14 @@ export class ProblemDecorator implements TreeDecorator {
     }
 
     protected toDecorator(marker: Marker<Diagnostic>): TreeDecoration.Data {
+        // Determine if the given marker is for a resource of a container.
+        const isResource = Array.from(this.problemManager.getUris()).some(m => m === marker.uri);
         const position = TreeDecoration.IconOverlayPosition.BOTTOM_RIGHT;
         const icon = this.getOverlayIcon(marker);
         const color = this.getOverlayIconColor(marker);
         const priority = this.getPriority(marker);
+        // Determine the number of stats for marker (for display purposes we only care about errors and warnings).
+        const problemStat = this.problemManager.getProblemStat(new URI(marker.uri));
         return {
             priority,
             fontData: {
@@ -145,6 +149,17 @@ export class ProblemDecorator implements TreeDecorator {
                     color: 'transparent'
                 }
             },
+            tailDecorations: [
+                {
+                    data: isResource && (problemStat.errors + problemStat.warnings > 0)
+                        ? (problemStat.errors + problemStat.warnings).toString()
+                        : '',
+                    iconClass: isResource
+                        ? []
+                        : ['theia-marker-container-decoration', 'fa', 'fa-circle'],
+                    color,
+                }
+            ]
         };
     }
 

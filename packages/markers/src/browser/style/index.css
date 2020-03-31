@@ -102,3 +102,7 @@
     width: 15px;
     height: 15px;
 }
+
+.theia-marker-container-decoration {
+    font-size: calc(var(--theia-ui-font-size0) * 0.7) !important;
+}
