@@ -75,7 +75,8 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/markers/common/markerService',
                 'vs/platform/contextkey/common/contextkey',
                 'vs/platform/contextkey/browser/contextKeyService',
-                'vs/base/common/errors'
+                'vs/base/common/errors',
+                'vs/platform/instantiation/common/instantiation'
             ], (css: any, html: any, commands: any, actions: any,
                 keybindingsRegistry: any, keybindingResolver: any, resolvedKeybinding: any, keybindingLabels: any,
                 keyCodes: any, mime: any, editorExtensions: any, simpleServices: any,
@@ -86,7 +87,8 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 codeEditorService: any, codeEditorServiceImpl: any,
                 markerService: any,
                 contextKey: any, contextKeyService: any,
-                error: any) => {
+                error: any,
+                instantiation: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
                     global.monaco.actions = actions;
@@ -106,6 +108,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                     global.monaco.contextKeyService = contextKeyService;
                     global.monaco.mime = mime;
                     global.monaco.error = error;
+                    global.monaco.instantiation = instantiation;
                     resolve();
                 });
         });

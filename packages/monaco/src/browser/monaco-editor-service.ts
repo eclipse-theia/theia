@@ -56,6 +56,13 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
         return editor && editor.getControl();
     }
 
+    /**
+     * Returns `true` if there is a code editor with focus. The cursor blinks in the editor.
+     */
+    hasFocusedCodeEditor(): boolean {
+        return !!this.getFocusedCodeEditor();
+    }
+
     async openCodeEditor(input: IResourceInput, source?: ICodeEditor, sideBySide?: boolean): Promise<CommonCodeEditor | undefined> {
         const uri = new URI(input.resource.toString());
         const openerOptions = this.createEditorOpenerOptions(input, source, sideBySide);

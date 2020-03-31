@@ -30,11 +30,11 @@ import {
     InMemoryResources,
     messageServicePath
 } from '../common';
-import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
+import { KeybindingRegistry, KeybindingContext, KeybindingContribution, NativeTextInputFocusContext } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HttpOpenHandler } from './http-open-handler';
-import { CommonFrontendContribution } from './common-frontend-contribution';
+import { CommonFrontendContribution, UndoHandler, RedoHandler, SelectAllHandler } from './common-frontend-contribution';
 import {
     QuickOpenService, QuickCommandService, QuickCommandFrontendContribution, QuickOpenContribution,
     QuickOpenHandlerRegistry, CommandQuickOpenContribution, HelpQuickOpenHandler,
@@ -318,4 +318,11 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     });
 
     bind(ContextMenuContext).toSelf().inSingletonScope();
+
+    bind(UndoHandler).toSelf().inSingletonScope();
+    bind(RedoHandler).toSelf().inSingletonScope();
+    bind(SelectAllHandler).toSelf().inSingletonScope();
+    bind(NativeTextInputFocusContext).toSelf().inSingletonScope();
+    bind(KeybindingContext).toService(NativeTextInputFocusContext);
+
 });
