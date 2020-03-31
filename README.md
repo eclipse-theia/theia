@@ -7,7 +7,7 @@
 
 <div id="badges" align="center">
 
-  [![Gitpod - Code Now](https://img.shields.io/badge/Gitpod-code%20now-blue.svg?longCache=true)](https://gitpod.io#https://github.com/eclipse-theia/theia)
+  [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/eclipse-theia/theia) 
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/help%20wanted)
   [![Spectrum](https://img.shields.io/badge/Chat-on%20Spectrum-blue.svg)](https://spectrum.chat/theia)
   [![Build Status](https://travis-ci.com/eclipse-theia/theia.svg?branch=master)](https://travis-ci.com/eclipse-theia/theia)
@@ -16,6 +16,8 @@
   [![Open bugs](https://img.shields.io/badge/Open-bugs-red.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/bug)
 
   Eclipse Theia is an extensible platform to develop full-fledged multi-language Cloud & Desktop IDE-like products with state-of-the-art web  technologies.
+
+  **Theia 1.0 has been released. Read the [announcement](https://dev.to/svenefftinge/theia-1-0-finally-a-good-browser-ide-3ok0).**
 
 </div>
 
@@ -31,7 +33,6 @@
 - [**Contributing**](#contributing)
 - [**Feedback**](#feedback)
 - [**Documentation**](#documentation)
-- [**Roadmap**](#roadmap)
 - [**License**](#license)
 - [**Trademark**](#trademark)
 
@@ -40,11 +41,10 @@
 [Visit the Theia website](http://www.theia-ide.org) for more [documentation](http://www.theia-ide.org/doc).
 
 ## Scope
-- Establish a platform to build IDE-like products
-- Provide the end-user with a full-fledged multi-language IDE  (not just a smart editor)
-- Support equally the paradigm of Cloud IDE and Desktop IDE
-- Provide support for multiple languages via the language and debug server protocols
-- Provide modern GUI with javascript UI libraries
+- Support building browser-based and desktop IDEs
+- Provide a highly flexible architecture for adopters
+- Support VS Code Extension protocol
+- Develop under vendor-neutral open-source governance
 
 ## Getting Started
 Here you can find guides and examples for common scenarios:
@@ -84,32 +84,6 @@ Read below how to engage with Theia community:
   - [API Integration Testing](doc/api-testing.md)
   - [Coding Guidelines](https://github.com/eclipse-theia/theia/wiki/Coding-Guidelines)
   - [Code Organization](https://github.com/eclipse-theia/theia/wiki/Code-Organization)
-
-## Roadmap
-
- - __Debugging__
-
-   A visual debugger leveraging the Debug Server Protocol defined by the VS Code team.
-
- - __Plug-in System__
-
-   A plug-in system supporting VS Code extensions.
-
- - __Workbench Improvements__
-
-   Theia's workbench shell will be improved, such that the user can drag and drop widgets from the side bar to the main area and vice-versa.
-
- - __Test Adapter Support__
-
-   Integration with testing frameworks, based on a Test Adapter Protocol.
-
- - __Robustness and Improved UX__
-
-   We will further work on simplifying Theia and its UI / UX, improve the performance and keep working on bug reports that are rolling in.
-
- - __More__
-
-   Any contributors might want to work on additional things. At least this happened in 2017 and is likely to increase with a growing community. :)
 
 ## License
 
