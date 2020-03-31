@@ -14,8 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { EditorWidget } from '@theia/editor/lib/browser/editor-widget';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { NativeTextInputFocusContext } from '@theia/core/lib/browser/keybinding';
 import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
 import { MonacoEditor } from './monaco-editor';
 
@@ -38,6 +40,26 @@ export class MonacoStrictEditorTextFocusContext extends StrictEditorTextFocusCon
             return editor.isFocused({ strict: true });
         }
         return super.canHandle(widget);
+    }
+
+}
+
+/**
+ * The Monaco editor itself is a `textArea` so we have to restrict the default native text input focus context.
+ * It is enabled if the focus is on an `input` or `textArea` and not contained in a Monaco editor.
+ *
+ * Notes: if we do not customize the default behavior we would get two matching bindings for the `Undo`, for instance:
+ * `core.undo` with `nativeTextInputFocus` context, and `undo` from monaco with `textInputFocus && !editorReadonly` when.
+ * Both are valid and enabled but `KeybindingRegistry#run` picks the first matching, which is the `core.undo`. It's incorrect.
+ */
+@injectable()
+export class MonacoNativeTextInputFocusContext extends NativeTextInputFocusContext {
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    isEnabled(): boolean {
+        return super.isEnabled() && !this.contextKeyService.match('editorFocus');
     }
 
 }

@@ -16,7 +16,6 @@
 
 import { injectable, inject } from 'inversify';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
-import { EditorKeybindingContexts } from '@theia/editor/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { environment } from '@theia/core';
@@ -36,7 +35,9 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             const item = defaultKeybindings[i];
             const command = this.commands.validate(item.command);
             if (command) {
-                const when = item.when && item.when.serialize();
+                // Some commands, such as `actions.find` and `actions.findWithSelection` does not have a `when` constraint from Monaco.
+                // Let's constrict them to either editor or native text focus.
+                const when = item.when && item.when.serialize() || 'textInputFocus';
                 let keybinding;
                 if (item.command === MonacoCommands.GO_TO_DEFINITION && !environment.electron.is()) {
                     keybinding = 'ctrlcmd+f11';
@@ -45,16 +46,6 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                 }
                 registry.registerKeybinding({ command, keybinding, when });
             }
-        }
-
-        // `Select All` is not an editor action just like everything else.
-        const selectAllCommand = this.commands.validate(MonacoCommands.SELECTION_SELECT_ALL);
-        if (selectAllCommand) {
-            registry.registerKeybinding({
-                command: selectAllCommand,
-                keybinding: 'ctrlcmd+a',
-                context: EditorKeybindingContexts.editorTextFocus
-            });
         }
     }
 }

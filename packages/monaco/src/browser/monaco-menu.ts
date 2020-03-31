@@ -16,9 +16,11 @@
 
 import { injectable, inject } from 'inversify';
 import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, MenuPath } from '@theia/core/lib/common';
+import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
+import { MonacoCommands } from './monaco-command';
 
 export interface MonacoActionGroup {
     id: string;
@@ -62,6 +64,20 @@ export class MonacoEditorMenuContribution implements MenuContribution {
                 const order = item.order ? String(item.order) : '';
                 registry.registerMenuAction(menuPath, { commandId, order, label });
             }
+        }
+
+        // Register `Find` and `Replace` to the `Edit` menu.
+        if (this.commands.validate(MonacoCommands.FIND)) {
+            registry.registerMenuAction(CommonMenus.EDIT_FIND, {
+                commandId: MonacoCommands.FIND,
+                order: '0'
+            });
+        }
+        if (this.commands.validate(MonacoCommands.REPLACE)) {
+            registry.registerMenuAction(CommonMenus.EDIT_FIND, {
+                commandId: MonacoCommands.REPLACE,
+                order: '1'
+            });
         }
     }
 

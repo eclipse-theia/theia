@@ -18,9 +18,26 @@
 /// <reference types='@theia/monaco-editor-core/monaco'/>
 
 declare module monaco.instantiation {
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/instantiation/common/instantiation.ts#L86
     export interface IInstantiationService {
         invokeFunction: (fn: any, ...args: any) => any
     }
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/instantiation/common/instantiation.ts#L63
+    export interface ServicesAccessor {
+        get<T>(id: ServiceIdentifier<T>): T;
+    }
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/instantiation/common/instantiation.ts#L123
+    export interface ServiceIdentifier<T> {
+        (...args: any[]): void;
+        type: T;
+    }
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/instantiation/common/instantiation.ts#L140
+    export function createDecorator<T>(serviceId: string): ServiceIdentifier<T>
+
 }
 
 declare module monaco.editor {
@@ -332,6 +349,7 @@ declare module monaco.commands {
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/commands/common/commands.ts#L55
     export const CommandsRegistry: {
         getCommands(): Map<string, { id: string, handler: (...args: any) => any }>;
+        getCommand(id: string): { id: string, handler: (accessor: monaco.instantiation.ServicesAccessor, ...args: any[]) => any } | undefined;
     };
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/commands/common/commands.ts#L16
@@ -570,6 +588,10 @@ declare module monaco.services {
         registerDecorationType: monaco.editor.ICodeEditorService['registerDecorationType'];
         removeDecorationType: monaco.editor.ICodeEditorService['removeDecorationType'];
         resolveDecorationOptions: monaco.editor.ICodeEditorService['resolveDecorationOptions'];
+        /**
+         * Returns the current focused code editor (if the focus is in the editor or in an editor widget) or null.
+         */
+        getFocusedCodeEditor(): ICodeEditor | null;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/standalone/browser/simpleServices.ts#L245
@@ -1009,6 +1031,7 @@ declare module monaco.quickOpen {
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/parts/quickopen/browser/quickOpenModel.ts#L489
     export class QuickOpenModel implements IModel<QuickOpenEntry>, IDataSource<QuickOpenEntry>, IFilter<QuickOpenEntry>, IRunner<QuickOpenEntry>,
         IAccessiblityProvider<QuickOpenEntry> {
+
         constructor(entries?: QuickOpenEntry[], actionProvider?: IActionProvider);
         addEntries(entries: QuickOpenEntry[]): void;
         entries: QuickOpenEntry[];
@@ -1054,16 +1077,23 @@ declare module monaco.filters {
 
 declare module monaco.editorExtensions {
 
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/browser/editorExtensions.ts#L141
+    export interface EditorCommand {
+        runCommand(accessor: monaco.instantiation.ServicesAccessor, args: any): void | Promise<void>
+    }
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/browser/editorExtensions.ts#L205
-    export interface EditorAction {
+    export interface EditorAction extends EditorCommand {
         id: string;
         label: string;
         alias: string;
+        runEditorCommand(accessor: monaco.instantiation.ServicesAccessor, editor: monaco.editor.ICodeEditor, args: any): void | Promise<void>
     }
 
     export module EditorExtensionsRegistry {
         // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/browser/editorExtensions.ts#L341
         export function getEditorActions(): EditorAction[];
+        export function getEditorCommand(commandId: string): EditorCommand;
     }
 }
 declare module monaco.modes {

@@ -194,13 +194,16 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: () => commands.executeCommand('editor.action.gotoLine')
         });
         commands.registerCommand({ id: 'actions.find' }, {
-            execute: () => commands.executeCommand(CommonCommands.FIND.id)
+            execute: () => commands.executeCommand('actions.find')
         });
         commands.registerCommand({ id: 'undo' }, {
-            execute: () => commands.executeCommand(CommonCommands.UNDO.id)
+            execute: () => commands.executeCommand('undo')
+        });
+        commands.registerCommand({ id: 'redo' }, {
+            execute: () => commands.executeCommand('redo')
         });
         commands.registerCommand({ id: 'editor.action.startFindReplaceAction' }, {
-            execute: () => commands.executeCommand(CommonCommands.REPLACE.id)
+            execute: () => commands.executeCommand('editor.action.startFindReplaceAction')
         });
         commands.registerCommand({ id: 'workbench.action.quickOpen' }, {
             execute: () => this.quickOpen.open('')

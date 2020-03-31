@@ -18,38 +18,41 @@ import { injectable, inject } from 'inversify';
 import { ProtocolToMonacoConverter } from 'monaco-languageclient/lib';
 import { Position, Location } from '@theia/languages/lib/browser';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core';
-import { CommonCommands } from '@theia/core/lib/browser';
+import { NativeTextInputFocusContext } from '@theia/core/lib/browser/keybinding';
 import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
 import { QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
-import { EditorCommands } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
-import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
+import { MonacoEditorCommandHandler, MonacoCommandRegistry } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
-import { MonacoCommandService } from './monaco-command-service';
+import { MonacoEditorService } from './monaco-editor-service';
+import { CommandHandler } from '@theia/core/src/common/command';
+import { EditorCommands } from '@theia/editor/lib/browser/editor-command';
+import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
 
 // vs code doesn't use iconClass anymore, but icon instead, so some adaptation is required to reuse it on theia side
 export type MonacoIcon = { dark?: monaco.Uri; light?: monaco.Uri } | monaco.theme.ThemeIcon;
-export type MonacoCommand = Command & { icon?: MonacoIcon, delegate?: string };
+export type MonacoCommand = Command & { icon?: MonacoIcon };
 export namespace MonacoCommands {
 
     export const UNDO = 'undo';
     export const REDO = 'redo';
-    export const COMMON_KEYBOARD_ACTIONS = new Set([UNDO, REDO]);
-    export const COMMON_ACTIONS: {
-        [action: string]: string
-    } = {};
-    COMMON_ACTIONS[UNDO] = CommonCommands.UNDO.id;
-    COMMON_ACTIONS[REDO] = CommonCommands.REDO.id;
-    COMMON_ACTIONS['actions.find'] = CommonCommands.FIND.id;
-    COMMON_ACTIONS['editor.action.startFindReplaceAction'] = CommonCommands.REPLACE.id;
-
-    export const SELECTION_SELECT_ALL = 'editor.action.select.all';
+    export const FIND = 'actions.find';
+    export const REPLACE = 'editor.action.startFindReplaceAction';
     export const GO_TO_DEFINITION = 'editor.action.revealDefinition';
 
+    /**
+     * These commands have to be remapped, as `@theia/core` provides the core functionality and the menu registration.
+     * Without this remapping, we would end up either
+     *  - with zero `Undo`/`Redo` menu items, if cursor in editor, or
+     *  - duplicate ones, as both are registered and valid.
+     */
+    export const REMAPPED_COMMANDS = new Map<string, string>([
+        [UNDO, CommonCommands.UNDO.id],
+        [REDO, CommonCommands.REDO.id]
+    ]);
+
     export const ACTIONS = new Map<string, MonacoCommand>();
-    ACTIONS.set(SELECTION_SELECT_ALL, { id: SELECTION_SELECT_ALL, label: 'Select All', delegate: 'editor.action.selectAll' });
     export const EXCLUDE_ACTIONS = new Set([
-        ...Object.keys(COMMON_ACTIONS),
         'editor.action.quickCommand',
         'editor.action.clipboardCutAction',
         'editor.action.clipboardCopyAction',
@@ -57,16 +60,15 @@ export namespace MonacoCommands {
     ]);
     const icons = new Map<string, MonacoIcon>();
     for (const menuItem of MenuRegistry.getMenuItems(7)) {
-
         const commandItem = menuItem.command;
         if (commandItem && commandItem.icon) {
             icons.set(commandItem.id, commandItem.icon);
         }
     }
-    for (const command of monaco.editorExtensions.EditorExtensionsRegistry.getEditorActions()) {
-        const id = command.id;
+    for (const action of monaco.editorExtensions.EditorExtensionsRegistry.getEditorActions()) {
+        const id = action.id;
         if (!EXCLUDE_ACTIONS.has(id)) {
-            const label = command.label;
+            const label = action.label;
             const icon = icons.get(id);
             ACTIONS.set(id, { id, label, icon });
         }
@@ -74,7 +76,7 @@ export namespace MonacoCommands {
     for (const keybinding of monaco.keybindings.KeybindingsRegistry.getDefaultKeybindings()) {
         const id = keybinding.command;
         if (!ACTIONS.has(id) && !EXCLUDE_ACTIONS.has(id)) {
-            ACTIONS.set(id, { id, delegate: id });
+            ACTIONS.set(id, { id });
         }
     }
 }
@@ -94,13 +96,32 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
 
+    @inject(MonacoEditorService)
+    protected readonly editorService: MonacoEditorService;
+
+    @inject(NativeTextInputFocusContext)
+    protected readonly nativeTextInputFocusContext: NativeTextInputFocusContext;
+
+    private readonly serviceAccessor: monaco.instantiation.ServicesAccessor = {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        get: <T>(id: monaco.instantiation.ServiceIdentifier<T>) => {
+            if (id !== monaco.services.ICodeEditorService) {
+                throw new Error(`Unhandled service identified: ${id.type}.`);
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return this.editorService as any as T;
+        }
+    };
+
     registerCommands(): void {
-        this.registerCommonCommandHandlers();
-        this.registerEditorCommandHandlers();
-        this.registerMonacoActionCommands();
+        this.registerCustomCommandHandlers();
+        this.registerBuiltinMonacoEditorCommands();
         this.registerInternalLanguageServiceCommands();
     }
 
+    /**
+     * Registers internal monaco commands for language services.
+     */
     protected registerInternalLanguageServiceCommands(): void {
         const instantiationService = monaco.services.StaticServices.instantiationService.get();
         const monacoCommands = monaco.commands.CommandsRegistry.getCommands();
@@ -122,22 +143,66 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         }
     }
 
-    protected registerCommonCommandHandlers(): void {
-        // eslint-disable-next-line guard-for-in
-        for (const action in MonacoCommands.COMMON_ACTIONS) {
-            const command = MonacoCommands.COMMON_ACTIONS[action];
-            const handler = this.newCommonActionHandler(action);
-            this.monacoCommandRegistry.registerHandler(command, handler);
+    /**
+     * Registers all available, built-in `EditorCommand` and `EditorAction` instances from monaco into the Theia command registry.
+     * For instance, `editor.action.revealDefinition` which is `Go to Definition` on the UI.
+     * Also makes sure to remap commands, such as the monaco-specific `undo` to the `core.undo`.
+     */
+    protected registerBuiltinMonacoEditorCommands(): void {
+        for (const action of MonacoCommands.ACTIONS.values()) {
+            const handler = this.newEditorCommandHandler(action.id);
+            this.commandRegistry.registerCommand(action, handler);
+            const existingCommandId = MonacoCommands.REMAPPED_COMMANDS.get(action.id);
+            if (existingCommandId && handler) {
+                this.commandRegistry.registerHandler(existingCommandId, handler);
+            }
         }
     }
-    protected newCommonActionHandler(action: string): MonacoEditorCommandHandler {
-        return this.isCommonKeyboardAction(action) ? this.newKeyboardHandler(action) : this.newActionHandler(action);
-    }
-    protected isCommonKeyboardAction(action: string): boolean {
-        return MonacoCommands.COMMON_KEYBOARD_ACTIONS.has(action);
+
+    protected newEditorCommandHandler(id: string): CommandHandler | undefined {
+        // First, try to get the editor scoped command.
+        const editorCommand = monaco.editorExtensions.EditorExtensionsRegistry.getEditorCommand(id);
+        if (editorCommand) {
+            return {
+                execute: (...args) => editorCommand.runCommand(this.serviceAccessor, args),
+                isEnabled: () => !!this.editorService.getActiveCodeEditor() || this.editorService.hasFocusedCodeEditor()
+            };
+        }
+
+        // Try to get the core command that does not require a focused or active editor. Such as: `Undo`, `Redo`, and `Select All`.
+        const command = monaco.commands.CommandsRegistry.getCommand(id);
+        if (command) {
+            return {
+                execute: (...args) => command.handler(this.serviceAccessor, args),
+                isEnabled: () => {
+                    if (!!this.editorService.getActiveCodeEditor() || this.editorService.hasFocusedCodeEditor()) {
+                        return true;
+                    }
+                    // This is a hack for `EditorOrNativeTextInputCommand`. The target can be an `input` or `textArea`.
+                    // This part is executed, when editor is open, but thew focus is in an `input` outside of the editor and you trigger the command from the menu.
+                    return this.nativeTextInputFocusContext.isEnabled()
+                        && this.isContextKeyExprAware(command)
+                        && command.when.keys().indexOf('textInputFocus') !== -1;
+                }
+            };
+        }
+        console.error(`Could not find monaco command with ID: '${id}'. Skipping the handler registration.`);
+        return undefined;
     }
 
-    protected registerEditorCommandHandlers(): void {
+    private isContextKeyExprAware(command: object & { when?: object }): command is object & { when: monaco.contextkey.ContextKeyExpr } {
+        if (command.when) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const when = command.when as any;
+            return 'keys' in when && typeof when.keys === 'function' && 'serialize' in when && typeof when.serialize === 'function';
+        }
+        return false;
+    }
+
+    /**
+     * Additional, custom commands and handlers for setting the EOL or the indentation in the editor, for instance.
+     */
+    protected registerCustomCommandHandlers(): void {
         this.monacoCommandRegistry.registerHandler(EditorCommands.SHOW_REFERENCES.id, this.newShowReferenceHandler());
         this.monacoCommandRegistry.registerHandler(EditorCommands.CONFIG_INDENTATION.id, this.newConfigIndentationHandler());
         this.monacoCommandRegistry.registerHandler(EditorCommands.CONFIG_EOL.id, this.newConfigEolHandler());
@@ -186,7 +251,6 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             execute: editor => this.configureEol(editor)
         };
     }
-
     protected configureEol(editor: MonacoEditor): void {
         const options = ['LF', 'CRLF'].map(lineEnding =>
             new QuickOpenItem({
@@ -205,7 +269,6 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             fuzzyMatchLabel: true
         });
     }
-
     protected setEol(editor: MonacoEditor, lineEnding: string): void {
         const model = editor.document && editor.document.textEditorModel;
         if (model) {
@@ -253,44 +316,6 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                 }
             });
         }
-    }
-
-    protected registerMonacoActionCommands(): void {
-        for (const action of MonacoCommands.ACTIONS.values()) {
-            const handler = this.newMonacoActionHandler(action);
-            this.monacoCommandRegistry.registerCommand(action, handler);
-        }
-    }
-    protected newMonacoActionHandler(action: MonacoCommand): MonacoEditorCommandHandler {
-        const delegate = action.delegate;
-        return delegate ? this.newDelegateHandler(delegate) : this.newActionHandler(action.id);
-    }
-
-    protected newKeyboardHandler(action: string): MonacoEditorCommandHandler {
-        return {
-            execute: (editor, ...args) => {
-                const modelData = editor.getControl()._modelData;
-                if (modelData) {
-                    modelData.cursor.trigger('keyboard', action, args);
-                }
-            }
-        };
-    }
-    protected newCommandHandler(action: string): MonacoEditorCommandHandler {
-        return {
-            execute: (editor, ...args) => editor.commandService.executeCommand(action, ...args)
-        };
-    }
-    protected newActionHandler(action: string): MonacoEditorCommandHandler {
-        return {
-            execute: editor => editor.runAction(action),
-            isEnabled: editor => editor.isActionSupported(action)
-        };
-    }
-    protected newDelegateHandler(action: string): MonacoEditorCommandHandler {
-        return {
-            execute: (editor, ...args) => (editor.commandService as MonacoCommandService).executeMonacoCommand(action, ...args)
-        };
     }
 
 }

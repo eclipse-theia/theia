@@ -17,12 +17,12 @@
 /* eslint-disable max-len, @typescript-eslint/indent */
 
 import debounce = require('lodash.debounce');
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct, unmanaged } from 'inversify';
 import { TabBar, Widget, Title } from '@phosphor/widgets';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
-import { KeybindingContribution, KeybindingRegistry } from './keybinding';
+import { KeybindingContribution, KeybindingRegistry, NativeTextInputFocusContext } from './keybinding';
 import { FrontendApplicationContribution } from './frontend-application';
-import { CommandContribution, CommandRegistry, Command } from '../common/command';
+import { CommandContribution, CommandRegistry, Command, CommandHandler } from '../common/command';
 import { UriAwareCommandHandler } from '../common/uri-command-handler';
 import { SelectionService } from '../common/selection-service';
 import { MessageService } from '../common/message-service';
@@ -109,14 +109,9 @@ export namespace CommonCommands {
         id: 'core.redo',
         label: 'Redo'
     };
-
-    export const FIND: Command = {
-        id: 'core.find',
-        label: 'Find'
-    };
-    export const REPLACE: Command = {
-        id: 'core.replace',
-        label: 'Replace'
+    export const SELECT_ALL: Command = {
+        id: 'core.selectAll',
+        label: 'Select All'
     };
 
     export const NEXT_TAB: Command = {
@@ -240,6 +235,25 @@ export const supportPaste = browser.isNative || (!browser.isChrome && document.q
 
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
 
+@injectable() export abstract class DomCommandHandler implements CommandHandler {
+    constructor(@unmanaged() protected domCommand: string) { }
+    execute(): void { document.execCommand(this.domCommand); }
+}
+@injectable() export abstract class NativeTextInputCommandHandler extends DomCommandHandler {
+    @inject(NativeTextInputFocusContext) protected readonly delegate: NativeTextInputFocusContext;
+    isEnabled(): boolean { return this.delegate.isEnabled(); }
+    isVisible(): boolean { return this.isEnabled(); }
+}
+@injectable() export class UndoHandler extends NativeTextInputCommandHandler {
+    constructor() { super('undo'); }
+}
+@injectable() export class RedoHandler extends NativeTextInputCommandHandler {
+    constructor() { super('redo'); }
+}
+@injectable() export class SelectAllHandler extends NativeTextInputCommandHandler {
+    constructor() { super('selectAll'); }
+}
+
 @injectable()
 export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
 
@@ -283,6 +297,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(UndoHandler)
+    protected readonly undoHandler: CommandHandler;
+
+    @inject(RedoHandler)
+    protected readonly redoHandler: CommandHandler;
+
+    @inject(SelectAllHandler)
+    protected readonly selectAllHandler: CommandHandler;
 
     @postConstruct()
     protected init(): void {
@@ -389,15 +412,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             order: '1'
         });
 
-        registry.registerMenuAction(CommonMenus.EDIT_FIND, {
-            commandId: CommonCommands.FIND.id,
-            order: '0'
-        });
-        registry.registerMenuAction(CommonMenus.EDIT_FIND, {
-            commandId: CommonCommands.REPLACE.id,
-            order: '1'
-        });
-
         registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
             commandId: CommonCommands.CUT.id,
             order: '0'
@@ -500,11 +514,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             }
         });
 
-        commandRegistry.registerCommand(CommonCommands.UNDO);
-        commandRegistry.registerCommand(CommonCommands.REDO);
-
-        commandRegistry.registerCommand(CommonCommands.FIND);
-        commandRegistry.registerCommand(CommonCommands.REPLACE);
+        commandRegistry.registerCommand(CommonCommands.UNDO, this.undoHandler);
+        commandRegistry.registerCommand(CommonCommands.REDO, this.redoHandler);
+        commandRegistry.registerCommand(CommonCommands.SELECT_ALL, this.selectAllHandler);
 
         commandRegistry.registerCommand(CommonCommands.NEXT_TAB, {
             isEnabled: () => this.shell.currentTabBar !== undefined,
@@ -577,7 +589,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             isEnabled: () => {
                 const currentWidget = this.shell.getCurrentWidget('main');
                 return currentWidget !== undefined &&
-                       this.shell.mainAreaTabBars.some(tb => tb.titles.some(title => title.owner !== currentWidget && title.closable));
+                    this.shell.mainAreaTabBars.some(tb => tb.titles.some(title => title.owner !== currentWidget && title.closable));
             },
             execute: () => {
                 const currentWidget = this.shell.getCurrentWidget('main');
@@ -699,19 +711,18 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // Edition
             {
                 command: CommonCommands.UNDO.id,
-                keybinding: 'ctrlcmd+z'
+                keybinding: 'ctrlcmd+z',
+                context: NativeTextInputFocusContext.ID
             },
             {
                 command: CommonCommands.REDO.id,
-                keybinding: 'ctrlcmd+shift+z'
+                keybinding: 'ctrlcmd+shift+z',
+                context: NativeTextInputFocusContext.ID
             },
             {
-                command: CommonCommands.FIND.id,
-                keybinding: 'ctrlcmd+f'
-            },
-            {
-                command: CommonCommands.REPLACE.id,
-                keybinding: 'ctrlcmd+alt+f'
+                command: CommonCommands.SELECT_ALL.id,
+                keybinding: 'ctrlcmd+a',
+                context: NativeTextInputFocusContext.ID
             },
             // Tabs
             {

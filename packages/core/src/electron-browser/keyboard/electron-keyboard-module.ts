@@ -18,6 +18,8 @@ import { ContainerModule } from 'inversify';
 import { KeyboardLayoutProvider, keyboardPath, KeyboardLayoutChangeNotifier } from '../../common/keyboard/keyboard-layout-provider';
 import { WebSocketConnectionProvider } from '../../browser/messaging/ws-connection-provider';
 import { ElectronKeyboardLayoutChangeNotifier } from './electron-keyboard-layout-change-notifier';
+import { UndoHandler, RedoHandler, SelectAllHandler } from '../../browser/common-frontend-contribution';
+import { ElectronUndoHandler, ElectronRedoHandler, ElectronSelectAllHandler } from './electron-common-commands';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(KeyboardLayoutProvider).toDynamicValue(ctx =>
@@ -25,4 +27,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     ).inSingletonScope();
     bind(ElectronKeyboardLayoutChangeNotifier).toSelf().inSingletonScope();
     bind(KeyboardLayoutChangeNotifier).toService(ElectronKeyboardLayoutChangeNotifier);
+    rebind(UndoHandler).to(ElectronUndoHandler).inSingletonScope();
+    rebind(RedoHandler).to(ElectronRedoHandler).inSingletonScope();
+    rebind(SelectAllHandler).to(ElectronSelectAllHandler).inSingletonScope();
 });
