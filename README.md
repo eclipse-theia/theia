@@ -1,4 +1,5 @@
 <br/>
+
 <div id="theia-logo" align="center">
     <br />
     <img src="https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia-logo.svg?sanitize=true" alt="Theia Logo" width="300"/>
@@ -7,7 +8,7 @@
 
 <div id="badges" align="center">
 
-  [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/eclipse-theia/theia) 
+  [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/eclipse-theia/theia)
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/help%20wanted)
   [![Spectrum](https://img.shields.io/badge/Chat-on%20Spectrum-blue.svg)](https://spectrum.chat/theia)
   [![Build Status](https://travis-ci.com/eclipse-theia/theia.svg?branch=master)](https://travis-ci.com/eclipse-theia/theia)
