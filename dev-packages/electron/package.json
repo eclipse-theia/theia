@@ -27,7 +27,7 @@
     "native-keymap": "^1.2.5",
     "node-gyp": "^3.6.0",
     "unzipper": "^0.9.11",
-    "yargs": "^11.1.0"
+    "yargs": "^15.3.1"
   },
   "scripts": {
     "postinstall": "node scripts/post-install.js",
