@@ -66,9 +66,7 @@ export class ScmService {
         }
         this.toDisposeOnSelected.dispose();
         this._selectedRepository = repository;
-        this.updateContextKeys();
         if (this._selectedRepository) {
-            this.toDisposeOnSelected.push(this._selectedRepository.onDidChange(() => this.updateContextKeys()));
             if (this._selectedRepository.provider.onDidChangeStatusBarCommands) {
                 this.toDisposeOnSelected.push(this._selectedRepository.provider.onDidChangeStatusBarCommands(() => this.fireDidChangeStatusBarCommands()));
             }
@@ -105,16 +103,6 @@ export class ScmService {
             this.selectedRepository = repository;
         }
         return repository;
-    }
-
-    protected updateContextKeys(): void {
-        if (this._selectedRepository) {
-            this.contextKeys.scmProvider.set(this._selectedRepository.provider.id);
-            this.contextKeys.scmResourceGroup.set(this._selectedRepository.selectedResource && this._selectedRepository.selectedResource.group.id);
-        } else {
-            this.contextKeys.scmProvider.reset();
-            this.contextKeys.scmResourceGroup.reset();
-        }
     }
 
 }

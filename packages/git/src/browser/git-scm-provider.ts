@@ -255,14 +255,21 @@ export class GitScmProvider implements ScmProvider {
             this.gitErrorHandler.handleError(error);
         }
     }
-    async stage(uri: string): Promise<void> {
+    async stage(uriArg: string | string[]): Promise<void> {
         try {
             const { repository, unstagedChanges, mergeChanges } = this;
-            const hasUnstagedChanges = unstagedChanges.some(change => change.uri === uri) || mergeChanges.some(change => change.uri === uri);
-            if (hasUnstagedChanges) {
+            const uris = Array.isArray(uriArg) ? uriArg : [ uriArg ];
+            const unstagedUris = uris
+                .filter(uri => {
+                    const resourceUri = new URI(uri);
+                    return unstagedChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)))
+                        || mergeChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)));
+                }
+            );
+            if (unstagedUris.length !== 0) {
                 // TODO resolve deletion conflicts
                 // TODO confirm staging of a unresolved file
-                await this.git.add(repository, uri);
+                await this.git.add(repository, uris);
             }
         } catch (error) {
             this.gitErrorHandler.handleError(error);
@@ -278,11 +285,18 @@ export class GitScmProvider implements ScmProvider {
             this.gitErrorHandler.handleError(error);
         }
     }
-    async unstage(uri: string): Promise<void> {
+    async unstage(uriArg: string | string[]): Promise<void> {
         try {
             const { repository, stagedChanges } = this;
-            if (stagedChanges.some(change => change.uri === uri)) {
-                await this.git.unstage(repository, uri);
+            const uris = Array.isArray(uriArg) ? uriArg : [ uriArg ];
+            const stagedUris = uris
+                .filter(uri => {
+                    const resourceUri = new URI(uri);
+                    return stagedChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)));
+                }
+            );
+            if (stagedUris.length !== 0) {
+                await this.git.unstage(repository, uris);
             }
         } catch (error) {
             this.gitErrorHandler.handleError(error);
@@ -303,31 +317,66 @@ export class GitScmProvider implements ScmProvider {
             }
         }
     }
-    async discard(uri: string): Promise<void> {
+    async discard(uriArg: string | string[]): Promise<void> {
         const { repository } = this;
+        const uris = Array.isArray(uriArg) ? uriArg : [ uriArg ];
+
         const status = this.getStatus();
-        if (!(status && status.changes.some(change => change.uri === uri))) {
+        if (!status) {
             return;
         }
-        // Allow deletion, only iff the same file is not yet in the Git index.
-        if (await this.git.lsFiles(repository, uri, { errorUnmatch: true })) {
-            if (await this.confirm(uri)) {
-                try {
-                    await this.git.unstage(repository, uri, { treeish: 'HEAD', reset: 'working-tree' });
-                } catch (error) {
-                    this.gitErrorHandler.handleError(error);
-                }
+
+        const pairs = await Promise.all(
+            uris
+                .filter(uri => {
+                    const uriAsUri = new URI(uri);
+                    return status.changes.some(change => uriAsUri.isEqualOrParent(new URI(change.uri)));
+                })
+                .map(uri => {
+                    const includeIndexFlag = async () => {
+                        // Allow deletion, only iff the same file is not yet in the Git index.
+                        const isInIndex = await this.git.lsFiles(repository, uri, { errorUnmatch: true });
+                        return { uri, isInIndex };
+                    };
+                    return includeIndexFlag();
+                })
+        );
+
+        const urisInIndex = pairs.filter(pair => pair.isInIndex).map(pair => pair.uri);
+        if (urisInIndex.length !== 0) {
+            if (!await this.confirm(urisInIndex)) {
+                return;
             }
-        } else {
-            await this.commands.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(uri));
         }
+
+        await Promise.all(
+            pairs.map(pair => {
+                const discardSingle = async () => {
+                if (pair.isInIndex) {
+                    try {
+                        await this.git.unstage(repository, pair.uri, { treeish: 'HEAD', reset: 'working-tree' });
+                    } catch (error) {
+                        this.gitErrorHandler.handleError(error);
+                    }
+                } else {
+                    await this.commands.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(pair.uri));
+                }
+                };
+                return discardSingle();
+            })
+        );
     }
 
-    protected confirm(path: string): Promise<boolean | undefined> {
-        const uri = new URI(path);
+    protected confirm(paths: string[]): Promise<boolean | undefined> {
+        let fileText: string;
+        if (paths.length <= 3) {
+            fileText = paths.map(path => new URI(path).displayName).join(', ');
+        } else {
+            fileText = `${paths.length} files`;
+        }
         return new ConfirmDialog({
             title: 'Discard changes',
-            msg: `Do you really want to discard changes in ${uri.displayName}?`
+            msg: `Do you really want to discard changes in ${fileText}?`
         }).open();
     }
 

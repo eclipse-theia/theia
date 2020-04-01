@@ -17,15 +17,21 @@
 import '../../src/browser/style/index.css';
 import '../../src/browser/style/diff.css';
 
-import { ContainerModule } from 'inversify';
+import { interfaces, ContainerModule, Container } from 'inversify';
 import {
     bindViewContribution, FrontendApplicationContribution,
     WidgetFactory, ViewContainer,
-    WidgetManager, ApplicationShellLayoutMigration
+    WidgetManager, ApplicationShellLayoutMigration,
+    createTreeContainer, TreeWidget, TreeModel, TreeModelImpl, TreeProps
 } from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID, SCM_VIEW_CONTAINER_TITLE_OPTIONS } from './scm-contribution';
 import { ScmWidget } from './scm-widget';
+import { ScmTreeWidget } from './scm-tree-widget';
+import { ScmCommitWidget } from './scm-commit-widget';
+import { ScmAmendWidget } from './scm-amend-widget';
+import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
+import { ScmTreeModel, ScmTreeModelProps } from './scm-tree-model';
 import { ScmQuickOpenService } from './scm-quick-open-service';
 import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser';
@@ -34,7 +40,10 @@ import { ScmDecorationsService } from './decorations/scm-decorations-service';
 import { ScmAvatarService } from './scm-avatar-service';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { ScmLayoutVersion3Migration } from './scm-layout-migrations';
+import { ScmTreeLabelProvider } from './scm-tree-label-provider';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
+import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 
 export default new ContainerModule(bind => {
     bind(ScmContextKeyService).toSelf().inSingletonScope();
@@ -45,6 +54,34 @@ export default new ContainerModule(bind => {
         id: SCM_WIDGET_FACTORY_ID,
         createWidget: () => container.get(ScmWidget)
     })).inSingletonScope();
+
+    bind(ScmCommitWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: ScmCommitWidget.ID,
+        createWidget: () => container.get(ScmCommitWidget)
+    })).inSingletonScope();
+
+    bind(ScmTreeWidget).toDynamicValue(ctx => {
+        const child = createFileChangeTreeContainer(ctx.container);
+        return child.get(ScmTreeWidget);
+    });
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: ScmTreeWidget.ID,
+        createWidget: () => container.get(ScmTreeWidget)
+    })).inSingletonScope();
+
+    bind(ScmAmendWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: ScmAmendWidget.ID,
+        createWidget: () => container.get(ScmAmendWidget)
+    })).inSingletonScope();
+
+    bind(ScmNoRepositoryWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: ScmNoRepositoryWidget.ID,
+        createWidget: () => container.get(ScmNoRepositoryWidget)
+    })).inSingletonScope();
+
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: SCM_VIEW_CONTAINER_ID,
         createWidget: async () => {
@@ -66,6 +103,7 @@ export default new ContainerModule(bind => {
     bind(ScmQuickOpenService).toSelf().inSingletonScope();
     bindViewContribution(bind, ScmContribution);
     bind(FrontendApplicationContribution).toService(ScmContribution);
+    bind(TabBarToolbarContribution).toService(ScmContribution);
     bind(ColorContribution).toService(ScmContribution);
 
     bind(NavigatorTreeDecorator).to(ScmNavigatorDecorator).inSingletonScope();
@@ -74,4 +112,29 @@ export default new ContainerModule(bind => {
     bind(ScmAvatarService).toSelf().inSingletonScope();
 
     bindDirtyDiff(bind);
+
+    bind(ScmTreeLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(ScmTreeLabelProvider);
 });
+
+export function createFileChangeTreeContainer(parent: interfaces.Container): Container {
+    const child = createTreeContainer(parent);
+
+    child.unbind(TreeWidget);
+    child.bind(ScmTreeWidget).toSelf();
+
+    child.unbind(TreeModelImpl);
+    child.bind(ScmTreeModel).toSelf();
+    child.rebind(TreeModel).toService(ScmTreeModel);
+
+    child.rebind(TreeProps).toConstantValue({
+        leftPadding: 8,
+        expansionTogglePadding: 22,
+        virtualized: true,
+        search: true,
+    });
+    child.bind(ScmTreeModelProps).toConstantValue({
+        defaultExpansion: 'expanded',
+    });
+    return child;
+}

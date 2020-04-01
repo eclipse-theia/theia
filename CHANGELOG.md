@@ -1,5 +1,11 @@
 # Change Log
 
+## v1.2.0
+
+Breaking changes:
+
+- [scm] support file tree mode in Source Control view.  Classes that extend ScmWidget will likely require changes [#7505](https://github.com/eclipse-theia/theia/pull/7505)
+
 ## v1.1.0
 
 - [application-manager] added meta tag to enable fullscreen on iOS devices [#7663](https://github.com/eclipse-theia/theia/pull/7663)
