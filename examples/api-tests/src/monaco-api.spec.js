@@ -66,8 +66,7 @@ describe('Monaco API', async function () {
             }, {
                 label: 'Ctrl+Shift+Alt+K',
                 ariaLabel: 'Ctrl+Shift+Alt+K',
-                // eslint-disable-next-line no-null/no-null
-                electronAccelerator: null,
+                electronAccelerator: 'Ctrl+Shift+Alt+K',
                 userSettingsLabel: 'ctrl+shift+alt+K',
                 WYSIWYG: true,
                 chord: false,
