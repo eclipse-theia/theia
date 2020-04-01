@@ -31,6 +31,7 @@ import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stac
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
+import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { PluginScmProvider, PluginScmResourceGroup, PluginScmResource } from '../scm-main';
@@ -131,13 +132,19 @@ export class MenusContributionPointHandler {
             } else if (location === 'scm/resourceGroup/context') {
                 for (const menu of allMenus[location]) {
                     const inline = menu.group && /^inline/.test(menu.group) || false;
-                    const menuPath = inline ? ScmWidget.RESOURCE_GROUP_INLINE_MENU : ScmWidget.RESOURCE_GROUP_CONTEXT_MENU;
+                    const menuPath = inline ? ScmTreeWidget.RESOURCE_GROUP_INLINE_MENU : ScmTreeWidget.RESOURCE_GROUP_CONTEXT_MENU;
+                    toDispose.push(this.registerScmMenuAction(menuPath, menu));
+                }
+            } else if (location === 'scm/resourceFolder/context') {
+                for (const menu of allMenus[location]) {
+                    const inline = menu.group && /^inline/.test(menu.group) || false;
+                    const menuPath = inline ? ScmTreeWidget.RESOURCE_FOLDER_INLINE_MENU : ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU;
                     toDispose.push(this.registerScmMenuAction(menuPath, menu));
                 }
             } else if (location === 'scm/resourceState/context') {
                 for (const menu of allMenus[location]) {
                     const inline = menu.group && /^inline/.test(menu.group) || false;
-                    const menuPath = inline ? ScmWidget.RESOURCE_INLINE_MENU : ScmWidget.RESOURCE_CONTEXT_MENU;
+                    const menuPath = inline ? ScmTreeWidget.RESOURCE_INLINE_MENU : ScmTreeWidget.RESOURCE_CONTEXT_MENU;
                     toDispose.push(this.registerScmMenuAction(menuPath, menu));
                 }
             } else if (location === 'debug/callstack/context') {

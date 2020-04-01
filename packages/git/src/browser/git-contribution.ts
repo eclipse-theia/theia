@@ -27,6 +27,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitErrorHandler } from '../browser/git-error-handler';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
+import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { ScmResource, ScmCommand } from '@theia/scm/lib/browser/scm-provider';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { GitPreferences } from './git-preferences';
@@ -225,8 +226,8 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         });
 
         const registerResourceAction = (group: string, action: MenuAction) => {
-            menus.registerMenuAction(ScmWidget.RESOURCE_INLINE_MENU, action);
-            menus.registerMenuAction([...ScmWidget.RESOURCE_CONTEXT_MENU, group], action);
+            menus.registerMenuAction(ScmTreeWidget.RESOURCE_INLINE_MENU, action);
+            menus.registerMenuAction([...ScmTreeWidget.RESOURCE_CONTEXT_MENU, group], action);
         };
 
         registerResourceAction('navigation', {
@@ -264,9 +265,37 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             when: 'scmProvider == git && scmResourceGroup == merge'
         });
 
+        const registerResourceFolderAction = (group: string, action: MenuAction) => {
+            menus.registerMenuAction(ScmTreeWidget.RESOURCE_FOLDER_INLINE_MENU, action);
+            menus.registerMenuAction([...ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU, group], action);
+        };
+
+        registerResourceFolderAction('1_modification', {
+            commandId: GIT_COMMANDS.DISCARD.id,
+            when: 'scmProvider == git && scmResourceGroup == workingTree'
+        });
+        registerResourceFolderAction('1_modification', {
+            commandId: GIT_COMMANDS.STAGE.id,
+            when: 'scmProvider == git && scmResourceGroup == workingTree'
+        });
+
+        registerResourceFolderAction('1_modification', {
+            commandId: GIT_COMMANDS.UNSTAGE.id,
+            when: 'scmProvider == git && scmResourceGroup == index'
+        });
+
+        registerResourceFolderAction('1_modification', {
+            commandId: GIT_COMMANDS.DISCARD.id,
+            when: 'scmProvider == git && scmResourceGroup == merge'
+        });
+        registerResourceFolderAction('1_modification', {
+            commandId: GIT_COMMANDS.STAGE.id,
+            when: 'scmProvider == git && scmResourceGroup == merge'
+        });
+
         const registerResourceGroupAction = (group: string, action: MenuAction) => {
-            menus.registerMenuAction(ScmWidget.RESOURCE_GROUP_INLINE_MENU, action);
-            menus.registerMenuAction([...ScmWidget.RESOURCE_GROUP_CONTEXT_MENU, group], action);
+            menus.registerMenuAction(ScmTreeWidget.RESOURCE_GROUP_INLINE_MENU, action);
+            menus.registerMenuAction([...ScmTreeWidget.RESOURCE_GROUP_CONTEXT_MENU, group], action);
         };
 
         registerResourceGroupAction('1_modification', {
@@ -382,26 +411,35 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.UNSTAGE, {
-            execute: (arg: string | ScmResource) => {
-                const uri = typeof arg === 'string' ? arg : arg.sourceUri.toString();
+            execute: (arg: string |  ScmResource[] | ScmResource) => {
+                const uris =
+                    typeof arg === 'string' ? [ arg ] :
+                    Array.isArray(arg) ? arg.map(r => r.sourceUri.toString()) :
+                    [ arg.sourceUri.toString() ];
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && this.withProgress(() => provider.unstage(uri));
+                return provider && this.withProgress(() => provider.unstage(uris));
             },
             isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
         registry.registerCommand(GIT_COMMANDS.STAGE, {
-            execute: (arg: string | ScmResource) => {
-                const uri = typeof arg === 'string' ? arg : arg.sourceUri.toString();
+            execute: (arg: string | ScmResource[] | ScmResource) => {
+                const uris =
+                    typeof arg === 'string' ? [ arg ] :
+                    Array.isArray(arg) ? arg.map(r => r.sourceUri.toString()) :
+                    [ arg.sourceUri.toString() ];
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && this.withProgress(() => provider.stage(uri));
+                return provider && this.withProgress(() => provider.stage(uris));
             },
             isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
         registry.registerCommand(GIT_COMMANDS.DISCARD, {
-            execute: (arg: string | ScmResource) => {
-                const uri = typeof arg === 'string' ? arg : arg.sourceUri.toString();
+            execute: (arg: string | ScmResource[] | ScmResource) => {
+                const uris =
+                    typeof arg === 'string' ? [ arg ] :
+                    Array.isArray(arg) ? arg.map(r => r.sourceUri.toString()) :
+                    [ arg.sourceUri.toString() ];
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && this.withProgress(() => provider.discard(uri));
+                return provider && this.withProgress(() => provider.discard(uris));
             },
             isEnabled: () => !!this.repositoryProvider.selectedScmProvider
         });
@@ -409,7 +447,8 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             execute: (arg: string | ScmResource) => {
                 const uri = typeof arg === 'string' ? new URI(arg) : arg.sourceUri;
                 this.editorManager.open(uri, { mode: 'reveal' });
-            }
+            },
+            isVisible: (arg: string | ScmResource, isFolder: boolean) => !isFolder
         });
         registry.registerCommand(GIT_COMMANDS.STASH, {
             execute: () => this.quickOpenService.stash(),

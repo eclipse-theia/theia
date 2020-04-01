@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { inject, injectable, postConstruct } from 'inversify';
+import { Emitter } from '@theia/core/lib/common/event';
+import { find } from '@phosphor/algorithm';
 import {
     AbstractViewContribution,
     FrontendApplicationContribution, LabelProvider,
@@ -22,9 +24,10 @@ import {
     StatusBarAlignment,
     StatusBarEntry,
     KeybindingRegistry,
-    ViewContainerTitleOptions
-} from '@theia/core/lib/browser';
-import { CommandRegistry, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
+    ViewContainerTitleOptions,
+    ViewContainer} from '@theia/core/lib/browser';
+import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { ScmService } from './scm-service';
 import { ScmWidget } from '../browser/scm-widget';
@@ -51,6 +54,18 @@ export namespace SCM_COMMANDS {
     export const ACCEPT_INPUT = {
         id: 'scm.acceptInput'
     };
+    export const TREE_VIEW_MODE = {
+        id: 'scm.viewmode.tree',
+        tooltip: 'Toggle to Tree View',
+        iconClass: 'codicon codicon-list-tree',
+        label: 'Toggle to Tree View',
+    };
+    export const FLAT_VIEW_MODE = {
+        id: 'scm.viewmode.flat',
+        tooltip: 'Toggle to Flat View',
+        iconClass: 'codicon codicon-list-flat',
+        label: 'Toggle to Flat View',
+    };
 }
 
 export namespace ScmColors {
@@ -60,7 +75,7 @@ export namespace ScmColors {
 }
 
 @injectable()
-export class ScmContribution extends AbstractViewContribution<ScmWidget> implements FrontendApplicationContribution, ColorContribution {
+export class ScmContribution extends AbstractViewContribution<ScmWidget> implements FrontendApplicationContribution, TabBarToolbarContribution, ColorContribution {
 
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(ScmService) protected readonly scmService: ScmService;
@@ -68,6 +83,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
     @inject(ScmQuickOpenService) protected readonly scmQuickOpenService: ScmQuickOpenService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(CommandService) protected readonly commands: CommandService;
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
     @inject(ContextKeyService) protected readonly contextKeys: ContextKeyService;
 
     protected scmFocus: ContextKey<boolean>;
@@ -121,6 +137,49 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             execute: () => this.acceptInput(),
             isEnabled: () => !!this.scmFocus.get() && !!this.acceptInputCommand()
         });
+    }
+
+    registerToolbarItems(registry: TabBarToolbarRegistry): void {
+        const viewModeEmitter = new Emitter<void>();
+        /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+        const extractScmWidget = (widget: any) => {
+            if (widget instanceof ViewContainer) {
+                const layout = widget.containerLayout;
+                const scmWidgetPart = find(layout.iter(), part => part.wrapped instanceof ScmWidget);
+                if (scmWidgetPart && scmWidgetPart.wrapped instanceof ScmWidget) {
+                    return scmWidgetPart.wrapped;
+                }
+            }
+        };
+        const registerToggleViewItem = (command: Command, mode: 'tree' | 'flat') => {
+            const id = command.id;
+            const item: TabBarToolbarItem = {
+                id,
+                command: id,
+                tooltip: command.label,
+                onDidChange: viewModeEmitter.event
+            };
+            this.commandRegistry.registerCommand({ id, iconClass: command && command.iconClass }, {
+                execute: widget => {
+                    const scmWidget = extractScmWidget(widget);
+                    if (scmWidget) {
+                        scmWidget.viewMode = mode;
+                        viewModeEmitter.fire();
+                    }
+                },
+                isVisible: widget => {
+                    const scmWidget = extractScmWidget(widget);
+                    if (scmWidget) {
+                        return !!this.scmService.selectedRepository
+                            && scmWidget.viewMode !== mode;
+                    }
+                    return false;
+                },
+            });
+            registry.registerItem(item);
+        };
+        registerToggleViewItem(SCM_COMMANDS.TREE_VIEW_MODE, 'tree');
+        registerToggleViewItem(SCM_COMMANDS.FLAT_VIEW_MODE, 'flat');
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {

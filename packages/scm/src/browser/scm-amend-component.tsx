@@ -25,7 +25,6 @@ import { ScmRepository } from './scm-repository';
 import { ScmAmendSupport, ScmCommit } from './scm-provider';
 
 export interface ScmAmendComponentProps {
-    id: string,
     style: React.CSSProperties | undefined,
     repository: ScmRepository,
     scmAmendSupport: ScmAmendSupport,
@@ -288,7 +287,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
             };
 
         return (
-            <div className={ScmAmendComponent.Styles.COMMIT_CONTAINER + ' no-select'} style={style} id={this.props.id}>
+            <div className={ScmAmendComponent.Styles.COMMIT_CONTAINER + ' no-select'} style={style}>
                 {
                     this.state.amendingCommits.length > 0 || (this.state.lastCommit && this.state.transition.state !== 'none' && this.state.transition.direction === 'down')
                         ? this.renderAmendingCommits()
@@ -297,7 +296,7 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
                 {
                     this.state.lastCommit ?
                         <div>
-                            <div id='lastCommit' className='changesContainer'>
+                            <div id='lastCommit' className='theia-scm-amend'>
                                 <div className='theia-header scm-theia-header'>
                                     HEAD Commit
                                 </div>

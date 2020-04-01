@@ -35,6 +35,7 @@ export interface ScmProvider extends Disposable {
     readonly amendSupport?: ScmAmendSupport;
 }
 
+export const ScmResourceGroup = Symbol('ScmResourceGroup');
 export interface ScmResourceGroup extends Disposable {
     readonly id: string;
     readonly label: string;
