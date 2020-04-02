@@ -62,7 +62,7 @@ import { TaskConfigurationManager } from './task-configuration-manager';
 import { PROBLEMS_WIDGET_ID, ProblemWidget } from '@theia/markers/lib/browser/problem/problem-widget';
 import { TaskNode } from './task-node';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import { TaskTerminalWidgetManager, TaskTerminalWidgetOpenerOptions } from './task-terminal-widget-manager';
+import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -1001,20 +1001,19 @@ export class TaskService implements TaskConfigurationClient {
         }
 
         // Create / find a terminal widget to display an execution output of a task that was launched as a command inside a shell.
-        const widget = await this.taskTerminalWidgetManager.open(
-            <TaskTerminalWidgetOpenerOptions>{
-                created: new Date().toString(),
-                taskId,
-                id: this.getTerminalWidgetId(terminalId),
-                title: taskInfo
-                    ? `Task: ${taskInfo.config.label}`
-                    : `Task: #${taskId}`,
-                destroyTermOnClose: true,
-                widgetOptions: { area: 'bottom' },
-                mode: widgetOpenMode,
-                taskConfig: taskInfo ? taskInfo.config : undefined
-            }
-        );
+        const widget = await this.taskTerminalWidgetManager.open({
+            created: new Date().toString(),
+            id: this.getTerminalWidgetId(terminalId),
+            title: taskInfo
+                ? `Task: ${taskInfo.config.label}`
+                : `Task: #${taskId}`,
+            destroyTermOnClose: true
+        }, {
+            taskId,
+            widgetOptions: { area: 'bottom' },
+            mode: widgetOpenMode,
+            taskConfig: taskInfo ? taskInfo.config : undefined
+        });
         widget.start(terminalId);
     }
 
