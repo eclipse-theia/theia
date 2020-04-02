@@ -439,8 +439,8 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         });
         registry.registerCommand(GIT_COMMANDS.INIT_REPOSITORY, {
             execute: () => this.quickOpenService.initRepository(),
-            isEnabled: widget => (!widget || widget instanceof ScmWidget) && !this.repositoryProvider.selectedRepository,
-            isVisible: widget => (!widget || widget instanceof ScmWidget) && !this.repositoryProvider.selectedRepository
+            isEnabled: widget => this.workspaceService.opened && (!widget || widget instanceof ScmWidget) && !this.repositoryProvider.selectedRepository,
+            isVisible: widget => this.workspaceService.opened && (!widget || widget instanceof ScmWidget) && !this.repositoryProvider.selectedRepository
         });
     }
     async amend(): Promise<void> {
