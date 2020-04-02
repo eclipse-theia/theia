@@ -271,6 +271,8 @@
 		 * @param {KeyboardEvent} e
 		 */
         const handleInnerKeydown = (e) => {
+            preventDefaultBrowserHotkeys(e);
+
             host.postMessage('did-keydown', {
                 key: e.key,
                 keyCode: e.keyCode,
@@ -282,6 +284,15 @@
                 repeat: e.repeat
             });
         };
+
+        function preventDefaultBrowserHotkeys(e) {
+            var isOSX = navigator.platform.toUpperCase().indexOf('MAC')>=0;
+
+            // F1 or CtrlCmd+P
+            if (e.keyCode === 112 || (((e.ctrlKey && !isOSX) || (e.metaKey && isOSX)) && e.keyCode === 80)) {
+                e.preventDefault();
+            }
+        }
 
         let isHandlingScroll = false;
         const handleInnerScroll = (event) => {
