@@ -1,4 +1,7 @@
 <!--Copyright (c) Microsoft Corporation. All rights reserved.-->
-<!--Copyright (C) 2018 TypeFox and others.-->
+<!--Copyright (C) 2020 TypeFox and others.-->
 <!--Licensed under the MIT License. See License.txt in the project root for license information.-->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.icon-canvas-transparent,.icon-vs-out{fill:#f6f6f6;}.icon-canvas-transparent{opacity:0;}.cls-1{fill:#9cce9c;}.icon-vs-red{fill:#e51400;}</style></defs><title>stackframe-and-breakpoint</title><g id="canvas"><path class="icon-canvas-transparent" d="M16,0V16H0V0Z"/></g><g id="outline" style="display: none;"><path class="icon-vs-out" d="M13.829,8,9.454,13H4V3H9.454Z"/></g><g id="iconBg"><path class="cls-1" d="M12.5,8,9,12H5V4H9Z"/><path class="icon-vs-red" d="M10.5,8A2.5,2.5,0,1,1,8,5.5,2.5,2.5,0,0,1,10.5,8Z"/></g></svg>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M10.0001 8C10.0001 8.39556 9.88278 8.78219 9.66301 9.11108C9.44325 9.43998 9.13088 9.6964 8.76543 9.84778C8.39998 9.99915 7.99788 10.0387 7.60991 9.96155C7.22195 9.88438 6.86557 9.69389 6.58587 9.41418C6.30616 9.13448 6.11567 8.7781 6.0385 8.39014C5.96133 8.00217 6.0009 7.60007 6.15227 7.23462C6.30365 6.86917 6.56007 6.5568 6.88897 6.33704C7.21786 6.11727 7.60449 6 8.00005 6C8.53048 6 9.03916 6.21074 9.41423 6.58582C9.78931 6.96089 10.0001 7.46957 10.0001 8Z" fill="#E51400"/>
+<path d="M14.5001 7.15002L10.2401 2.41003L9.31012 2H4.25006L3.00006 3.25V12.73L4.25006 13.98H9.31012L10.2401 13.5601L14.5001 8.81995V7.15002ZM9.31012 12.73H4.25006V3.25H9.31012L13.57 7.97998L9.31012 12.73Z" fill="#FFCC00"/>
+</svg>

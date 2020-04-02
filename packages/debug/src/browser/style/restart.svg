@@ -1,4 +1,6 @@
 <!--Copyright (c) Microsoft Corporation. All rights reserved.-->
-<!--Copyright (C) 2018 TypeFox and others.-->
+<!--Copyright (C) 2020 TypeFox and others.-->
 <!--Licensed under the MIT License. See License.txt in the project root for license information.-->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><style>.st0{fill:#f6f6f6;fill-opacity:0}.st1{display:none}.st2{display:inline;fill:#f6f6f6}.st3{fill:#388a34}</style><title>restart</title><path class="st0" d="M16 0v16H0V0h16z" id="canvas"/><g id="outline" class="st1" style="display: none;"><path class="st2" d="M8.5 1C6.9 1 5.3 1.5 4 2.5V1H0v8h3.1L1 9.6l.3 1c1.1 4 5.3 6.3 9.3 5.2s6.3-5.3 5.2-9.3C14.8 3.2 11.9 1 8.5 1zm0 11c-1.6 0-2.9-1-3.4-2.5L5 9h3V5h.5C10.4 5 12 6.6 12 8.5S10.4 12 8.5 12z"/></g><path class="st3" d="M15 8c0 3.6-2.9 6.5-6.5 6.5-2.9 0-5.5-1.9-6.3-4.7l1.9-.5c.7 2.4 3.2 3.8 5.6 3.1 2.4-.7 3.8-3.2 3.1-5.6S9.7 3 7.3 3.7c-1 .3-1.9.9-2.5 1.8H7v2H1v-6h2v3.1c1.9-3 5.9-4 8.9-2.1C13.8 3.7 15 5.7 15 8z" id="iconBg"/></svg>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M12.75 8C12.75 10.4853 10.7353 12.5 8.24999 12.5C6.41795 12.5 4.84162 11.4052 4.13953 9.83416L2.74882 10.399C3.67446 12.5186 5.78923 14 8.24999 14C11.5637 14 14.25 11.3137 14.25 8C14.25 4.68629 11.5637 2 8.24999 2C6.3169 2 4.59732 2.91418 3.5 4.3338V2.5H2V6.5L2.75 7.25H6.25V5.75H4.35201C5.13008 4.40495 6.58436 3.5 8.24999 3.5C10.7353 3.5 12.75 5.51472 12.75 8Z" fill="#89D185"/>
+</svg>

@@ -1,4 +1,6 @@
 <!--Copyright (c) Microsoft Corporation. All rights reserved.-->
-<!--Copyright (C) 2018 TypeFox and others.-->
+<!--Copyright (C) 2020 TypeFox and others.-->
 <!--Licensed under the MIT License. See License.txt in the project root for license information.-->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.icon-canvas-transparent,.icon-vs-out{fill:#f6f6f6;}.icon-canvas-transparent{opacity:0;}.icon-vs-bg{fill:#424242;}.icon-vs-action-blue{fill:#00539c;}</style></defs><title>step-over</title><g id="canvas"><path class="icon-canvas-transparent" d="M16,0V16H0V0Z"/></g><g id="outline" style="display: none;"><path class="icon-vs-out" d="M11,13a3,3,0,1,1-3-3A3,3,0,0,1,11,13ZM12,1V2.527A7.466,7.466,0,0,0,.028,7.923L0,8.293V9H3.945l.1-.888A3.475,3.475,0,0,1,8,5.036V9h8V1Z"/></g><g id="iconBg"><path class="icon-vs-bg" d="M10,13a2,2,0,1,1-2-2A2,2,0,0,1,10,13Z"/></g><g id="colorAction"><path class="icon-vs-action-blue" d="M15,2V8H9V6h2.237A4.481,4.481,0,0,0,3.051,8H1.025A6.482,6.482,0,0,1,13,5.069V2Z"/></g></svg>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M14.25 5.75001V1.75001H12.75V4.29161C11.605 2.93304 9.83899 2.08335 7.90914 2.08335C4.73316 2.08335 1.98941 4.39037 1.75072 7.48076L1.72992 7.75001H3.231L3.25287 7.5241C3.46541 5.32933 5.45509 3.58335 7.90914 3.58335C9.6452 3.58335 11.1528 4.45926 11.9587 5.75001H9.12986V7.25001H13.292L14.2535 6.27494V5.75001H14.25ZM7.99997 14C9.10454 14 9.99997 13.1046 9.99997 12C9.99997 10.8954 9.10454 10 7.99997 10C6.8954 10 5.99997 10.8954 5.99997 12C5.99997 13.1046 6.8954 14 7.99997 14Z" fill="#007ACC"/>
+</svg>

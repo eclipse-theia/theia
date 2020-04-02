@@ -1,4 +1,6 @@
 <!--Copyright (c) Microsoft Corporation. All rights reserved.-->
-<!--Copyright (C) 2019 TypeFox and others.-->
+<!--Copyright (C) 2020 TypeFox and others.-->
 <!--Licensed under the MIT License. See License.txt in the project root for license information.-->
-<svg fill="#F6F6F6" height="28" viewBox="0 0 28 28" width="28" xmlns="http://www.w3.org/2000/svg"><path d="m14.965 7h-8.91642s-2.04858.078-2.04858 2v15s0 2 2.04858 2l11.26722-.004c2.0486.004 2.0486-1.996 2.0486-1.996v-11.491zm-1.7464 2v5h4.0972v10h-11.26722v-15zm5.6428-6h-8.6993s-2.06493.016-2.0803 2h8.2097v.454l4.0265 4.546h1.095v12c2.0485 0 2.0485-1.995 2.0485-1.995v-11.357z" fill="#F6F6F6"/></svg>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M17.5 0H8.5L7 1.5V6H2.5L1 7.5V22.5699L2.5 24H14.5699L16 22.5699V18H20.7L22 16.5699V4.5L17.5 0ZM17.5 2.12L19.88 4.5H17.5V2.12ZM14.5 22.5H2.5V7.5H7V16.5699L8.5 18H14.5V22.5ZM20.5 16.5H8.5V1.5H16V6H20.5V16.5Z" fill="#C5C5C5"/>
+</svg>

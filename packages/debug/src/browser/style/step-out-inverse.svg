@@ -1,4 +1,6 @@
 <!--Copyright (c) Microsoft Corporation. All rights reserved.-->
-<!--Copyright (C) 2018 TypeFox and others.-->
+<!--Copyright (C) 2020 TypeFox and others.-->
 <!--Licensed under the MIT License. See License.txt in the project root for license information.-->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.icon-canvas-transparent,.icon-vs-out{fill:#252526;}.icon-canvas-transparent{opacity:0;}.icon-vs-bg{fill:#c5c5c5;}.icon-vs-action-blue{fill:#75beff;}</style></defs><title>step-out</title><g id="canvas"><path class="icon-canvas-transparent" d="M16,16H0V0H16Z"/></g><g id="outline" style="display: none;"><path class="icon-vs-out" d="M10,10.78a3,3,0,1,1-4,0V6.225l-.97.97L2.556,4.72,7.275,0H8.725l4.72,4.72L10.97,7.194,10,6.225Z"/></g><g id="iconBg"><path class="icon-vs-bg" d="M8,11a2,2,0,1,1-2,2A2,2,0,0,1,8,11Z"/></g><g id="colorAction"><path class="icon-vs-action-blue" d="M3.97,4.72,8,.689l4.03,4.03L10.97,5.78,9,3.811V10H7V3.811L5.03,5.78Z"/></g></svg>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M8.00001 1H7.45801L3.55301 4.905L4.61401 5.965L7.25101 3.355V9.532H8.00001H8.74901V3.355L11.386 5.965L12.447 4.905L8.54201 1H8.00001ZM9.95601 13.013C9.95601 14.1176 9.06058 15.013 7.95601 15.013C6.85144 15.013 5.95601 14.1176 5.95601 13.013C5.95601 11.9084 6.85144 11.013 7.95601 11.013C9.06058 11.013 9.95601 11.9084 9.95601 13.013Z" fill="#75BEFF" />
+</svg>

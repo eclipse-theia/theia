@@ -1,4 +1,6 @@
 <!--Copyright (c) Microsoft Corporation. All rights reserved.-->
-<!--Copyright (C) 2018 TypeFox and others.-->
+<!--Copyright (C) 2020 TypeFox and others.-->
 <!--Licensed under the MIT License. See License.txt in the project root for license information.-->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><defs><style>.icon-canvas-transparent,.icon-vs-out{fill:#f6f6f6;}.icon-canvas-transparent{opacity:0;}.cls-1{fill:#9cce9c;}</style></defs><title>stackframe-arrow</title><g id="canvas"><path class="icon-canvas-transparent" d="M16,0V16H0V0Z"/></g><g id="outline" style="display: none;"><path class="icon-vs-out" d="M13.829,8,9.454,13H4V3H9.454Z"/></g><g id="iconBg"><path class="cls-1" d="M12.5,8,9,12H5V4H9Z"/></g></svg>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M14.5 7.15002L10.24 2.41003L9.31006 2H4.25L3 3.25V12.73L4.25 13.98H9.31006L10.24 13.5601L14.5 8.81995V7.15002ZM9.31006 12.73H4.25V3.25H9.31006L13.5699 7.97998L9.31006 12.73Z" fill="#FFCC00"/>
+</svg>
