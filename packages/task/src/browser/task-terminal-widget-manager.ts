@@ -36,7 +36,7 @@ export namespace TaskTerminalWidget {
     }
 }
 
-export interface TaskTerminalWidgetOpenerOptions extends WidgetOpenerOptions, TerminalWidgetFactoryOptions {
+export interface TaskTerminalWidgetOpenerOptions extends WidgetOpenerOptions {
     taskId: number;
     taskConfig?: TaskConfiguration;
 }
@@ -118,45 +118,47 @@ export class TaskTerminalWidgetManager {
         });
     }
 
-    async open(options: TaskTerminalWidgetOpenerOptions): Promise<TerminalWidget> {
-        const dedicated = TaskTerminalWidgetOpenerOptions.isDedicatedTerminal(options);
-        if (dedicated && !options.taskConfig) {
+    async open(factoryOptions: TerminalWidgetFactoryOptions, openerOptions: TaskTerminalWidgetOpenerOptions): Promise<TerminalWidget> {
+        const dedicated = TaskTerminalWidgetOpenerOptions.isDedicatedTerminal(openerOptions);
+        if (dedicated && !openerOptions.taskConfig) {
             throw new Error('"taskConfig" must be included as part of the "option" if "isDedicated" is true');
         }
 
-        const { isNew, widget } = await this.getWidgetToRunTask(options);
+        const { isNew, widget } = await this.getWidgetToRunTask(factoryOptions, openerOptions);
         if (isNew) {
-            this.shell.addWidget(widget, { area: options.widgetOptions ? options.widgetOptions.area : 'bottom' });
+            this.shell.addWidget(widget, { area: openerOptions.widgetOptions ? openerOptions.widgetOptions.area : 'bottom' });
             widget.resetTerminal();
         } else {
-            if (options.title) {
-                widget.setTitle(options.title);
+            if (factoryOptions.title) {
+                widget.setTitle(factoryOptions.title);
             }
-            if (options.taskConfig && TaskOutputPresentation.shouldClearTerminalBeforeRun(options.taskConfig)) {
+            if (openerOptions.taskConfig && TaskOutputPresentation.shouldClearTerminalBeforeRun(openerOptions.taskConfig)) {
                 widget.clearOutput();
             }
         }
-        this.terminalService.open(widget, options);
+        this.terminalService.open(widget, openerOptions);
 
         return widget;
     }
 
-    protected async getWidgetToRunTask(options: TaskTerminalWidgetOpenerOptions): Promise<{ isNew: boolean, widget: TerminalWidget }> {
+    protected async getWidgetToRunTask(
+        factoryOptions: TerminalWidgetFactoryOptions, openerOptions: TaskTerminalWidgetOpenerOptions
+    ): Promise<{ isNew: boolean, widget: TerminalWidget }> {
         let reusableTerminalWidget: TerminalWidget | undefined;
-        if (TaskTerminalWidgetOpenerOptions.isDedicatedTerminal(options)) {
+        if (TaskTerminalWidgetOpenerOptions.isDedicatedTerminal(openerOptions)) {
             for (const widget of this.getTaskTerminalWidgets()) {
                 // to run a task whose `taskPresentation === 'dedicated'`, the terminal to be reused must be
                 // 1) dedicated, 2) idle, 3) the one that ran the same task
                 if (widget.dedicated &&
                     !widget.busy &&
-                    widget.taskConfig && options.taskConfig &&
-                    this.taskDefinitionRegistry.compareTasks(options.taskConfig, widget.taskConfig)) {
+                    widget.taskConfig && openerOptions.taskConfig &&
+                    this.taskDefinitionRegistry.compareTasks(openerOptions.taskConfig, widget.taskConfig)) {
 
                     reusableTerminalWidget = widget;
                     break;
                 }
             }
-        } else if (TaskTerminalWidgetOpenerOptions.isSharedTerminal(options)) {
+        } else if (TaskTerminalWidgetOpenerOptions.isSharedTerminal(openerOptions)) {
             const availableWidgets: TerminalWidget[] = [];
             for (const widget of this.getTaskTerminalWidgets()) {
                 // to run a task whose `taskPresentation === 'shared'`, the terminal to be used must be
@@ -174,7 +176,7 @@ export class TaskTerminalWidgetManager {
 
         // we are unable to find a terminal widget to run the task, or `taskPresentation === 'new'`
         if (!reusableTerminalWidget) {
-            const widget = await this.terminalService.newTerminal({ ...options, kind: 'task' });
+            const widget = await this.terminalService.newTerminal({ ...factoryOptions, kind: 'task' });
             return { isNew: true, widget };
         }
         return { isNew: false, widget: reusableTerminalWidget };
