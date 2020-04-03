@@ -106,3 +106,8 @@
 .modal-Notification .buttons > button:hover {
     background-color: var(--theia-button-hoverBackground);
 }
+
+.modal-Notification pre {
+    font-family: var(--theia-ui-font-family);
+    font-size: var(--theia-ui-font-size1);
+}

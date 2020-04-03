@@ -31,14 +31,14 @@ export class MessageRegistryExt {
         optionsOrFirstItem?: MessageOptions | string | MessageItem,
         ...rest: (string | MessageItem)[]): Promise<string | MessageItem | undefined> {
         const options: MainMessageOptions = {};
-        const actions: string[] = [];
+        const actions: MessageItem[] = [];
         const items: (string | MessageItem)[] = [];
         const pushItem = (item: string | MessageItem) => {
             items.push(item);
             if (typeof item === 'string') {
-                actions.push(item);
+                actions.push({ title: item });
             } else {
-                actions.push(item.title);
+                actions.push({ title: item.title, isCloseAffordance: item.isCloseAffordance });
                 if (item.isCloseAffordance) {
                     options.onCloseActionHandle = actions.length - 1;
                 }

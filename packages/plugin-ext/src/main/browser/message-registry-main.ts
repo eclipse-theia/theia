@@ -16,7 +16,7 @@
 
 import { interfaces } from 'inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { MessageRegistryMain, MainMessageType, MainMessageOptions } from '../../common/plugin-api-rpc';
+import { MessageRegistryMain, MainMessageType, MainMessageOptions, MainMessageItem } from '../../common/plugin-api-rpc';
 import { ModalNotification, MessageType } from './dialogs/modal-notification';
 
 export class MessageRegistryMainImpl implements MessageRegistryMain {
@@ -26,13 +26,15 @@ export class MessageRegistryMainImpl implements MessageRegistryMain {
         this.messageService = container.get(MessageService);
     }
 
-    async $showMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: string[]): Promise<number | undefined> {
+    async $showMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: MainMessageItem[]): Promise<number | undefined> {
         const action = await this.doShowMessage(type, message, options, actions);
-        const handle = action ? actions.indexOf(action) : undefined;
+        const handle = action
+            ? actions.map(a => a.title).indexOf(action)
+            : undefined;
         return handle === undefined && options.modal ? options.onCloseActionHandle : handle;
     }
 
-    protected async doShowMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: string[]): Promise<string | undefined> {
+    protected async doShowMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: MainMessageItem[]): Promise<string | undefined> {
         if (options.modal) {
             const messageType = type === MainMessageType.Error ? MessageType.Error :
                 type === MainMessageType.Warning ? MessageType.Warning :
@@ -42,11 +44,11 @@ export class MessageRegistryMainImpl implements MessageRegistryMain {
         }
         switch (type) {
             case MainMessageType.Info:
-                return this.messageService.info(message, ...actions);
+                return this.messageService.info(message, ...actions.map(a => a.title));
             case MainMessageType.Warning:
-                return this.messageService.warn(message, ...actions);
+                return this.messageService.warn(message, ...actions.map(a => a.title));
             case MainMessageType.Error:
-                return this.messageService.error(message, ...actions);
+                return this.messageService.error(message, ...actions.map(a => a.title));
         }
         throw new Error(`Message type '${type}' is not supported yet!`);
     }
