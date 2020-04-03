@@ -13,11 +13,12 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import {injectable} from 'inversify';
-import {Message} from '@phosphor/messaging';
-import {Key} from '@theia/core/lib/browser';
-import {AbstractDialog} from '@theia/core/lib/browser/dialogs';
+import { injectable } from 'inversify';
+import { Message } from '@phosphor/messaging';
+import { Key } from '@theia/core/lib/browser';
+import { AbstractDialog } from '@theia/core/lib/browser/dialogs';
 import '../../../../src/main/browser/dialogs/style/modal-notification.css';
+import { MainMessageItem } from '../../../common/plugin-api-rpc';
 
 export enum MessageType {
     Error = 'error',
@@ -35,7 +36,7 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
     protected actionTitle: string | undefined;
 
     constructor() {
-        super({title: 'Theia'});
+        super({ title: 'Theia' });
     }
 
     protected onCloseRequest(msg: Message): void {
@@ -47,12 +48,12 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
         return this.actionTitle;
     }
 
-    showDialog(messageType: MessageType, text: string, actions: string[]): Promise<string | undefined> {
+    showDialog(messageType: MessageType, text: string, actions: MainMessageItem[]): Promise<string | undefined> {
         this.contentNode.appendChild(this.createMessageNode(messageType, text, actions));
         return this.open();
     }
 
-    protected createMessageNode(messageType: MessageType, text: string, actions: string[]): HTMLElement {
+    protected createMessageNode(messageType: MessageType, text: string, actions: MainMessageItem[]): HTMLElement {
         const messageNode = document.createElement('div');
         messageNode.classList.add(NOTIFICATION);
 
@@ -63,22 +64,24 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
 
         const textContainer = messageNode.appendChild(document.createElement('div'));
         textContainer.classList.add(TEXT);
-        const textElement = textContainer.appendChild(document.createElement('span'));
+        const textElement = textContainer.appendChild(document.createElement('pre'));
         textElement.textContent = text;
 
-        actions.forEach((action: string) => {
-            const button = this.createButton(action);
+        actions.forEach((action: MainMessageItem) => {
+            const button = this.createButton(action.title);
             button.classList.add('main');
             this.controlPanel.appendChild(button);
             this.addKeyListener(button,
                 Key.ENTER,
                 () => {
-                    this.actionTitle = action;
+                    this.actionTitle = action.title;
                     this.accept();
                 },
                 'click');
         });
-        this.appendCloseButton('close');
+        if (!actions.some(action => action.isCloseAffordance === true)) {
+            this.appendCloseButton('close');
+        }
 
         return messageNode;
     }

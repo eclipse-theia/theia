@@ -313,8 +313,14 @@ export interface MainMessageOptions {
     onCloseActionHandle?: number
 }
 
+export interface MainMessageItem {
+    title: string,
+    isCloseAffordance?: boolean;
+    handle?: number
+}
+
 export interface MessageRegistryMain {
-    $showMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: string[]): PromiseLike<number | undefined>;
+    $showMessage(type: MainMessageType, message: string, options: MainMessageOptions, actions: MainMessageItem[]): PromiseLike<number | undefined>;
 }
 
 export interface StatusBarMessageRegistryMain {
