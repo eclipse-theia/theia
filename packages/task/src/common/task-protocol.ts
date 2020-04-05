@@ -40,6 +40,7 @@ export enum PanelKind {
 }
 
 export interface TaskOutputPresentation {
+    echo?: boolean;
     focus?: boolean;
     reveal?: RevealKind;
     panel?: PanelKind;
@@ -51,6 +52,7 @@ export interface TaskOutputPresentation {
 export namespace TaskOutputPresentation {
     export function getDefault(): TaskOutputPresentation {
         return {
+            echo: true,
             reveal: RevealKind.Always,
             focus: false,
             panel: PanelKind.Shared,
@@ -83,6 +85,7 @@ export namespace TaskOutputPresentation {
             }
             outputPresentation = {
                 ...outputPresentation,
+                echo: task.presentation.echo === undefined || task.presentation.echo,
                 focus: shouldSetFocusToTerminal(task),
                 showReuseMessage: shouldShowReuseMessage(task),
                 clear: shouldClearTerminalBeforeRun(task)

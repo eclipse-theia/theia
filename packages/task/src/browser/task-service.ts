@@ -1004,7 +1004,6 @@ export class TaskService implements TaskConfigurationClient {
                 }
             }
         }
-
         // Create / find a terminal widget to display an execution output of a task that was launched as a command inside a shell.
         const widget = await this.taskTerminalWidgetManager.open({
             created: new Date().toString(),
@@ -1017,7 +1016,7 @@ export class TaskService implements TaskConfigurationClient {
             taskId,
             widgetOptions: { area: 'bottom' },
             mode: widgetOpenMode,
-            taskConfig: taskInfo ? taskInfo.config : undefined
+            taskInfo
         });
         widget.start(terminalId);
     }

@@ -48,6 +48,7 @@ export const TaskProcessOptions = Symbol('TaskProcessOptions');
 export interface TaskProcessOptions extends TaskOptions {
     process: Process;
     processType: ProcessType;
+    command?: string;
 }
 
 export const TaskFactory = Symbol('TaskFactory');
@@ -56,6 +57,8 @@ export type TaskFactory = (options: TaskProcessOptions) => ProcessTask;
 /** Represents a Task launched as a process by `ProcessTaskRunner`. */
 @injectable()
 export class ProcessTask extends Task {
+
+    protected command: string | undefined;
 
     constructor(
         @inject(TaskManager) protected readonly taskManager: TaskManager,
@@ -92,6 +95,8 @@ export class ProcessTask extends Task {
                 });
             }
         });
+
+        this.command = this.options.command;
         this.logger.info(`Created new task, id: ${this.id}, process id: ${this.options.process.id}, OS PID: ${this.process.pid}, context: ${this.context}`);
     }
 
@@ -128,6 +133,7 @@ export class ProcessTask extends Task {
             config: this.options.config,
             terminalId: this.process.id,
             processId: this.process.id,
+            command: this.command
         };
     }
 

@@ -78,14 +78,14 @@ export interface ProcessTaskConfiguration extends TaskConfiguration, CommandProp
 }
 
 export interface ProcessTaskInfo extends TaskInfo {
-    /** terminal id. Defined if task is run as a terminal process */
-    readonly terminalId?: number;
     /** process id. Defined if task is run as a process */
     readonly processId?: number;
+    /** process task command */
+    readonly command?: string;
 }
 export namespace ProcessTaskInfo {
     export function is(info: TaskInfo): info is ProcessTaskInfo {
-        return info['terminalId'] !== undefined || info['processId'] !== undefined;
+        return info['processId'] !== undefined;
     }
 }
 

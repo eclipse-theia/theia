@@ -19,7 +19,8 @@ import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer, TaskOutputPresentation } from '../common';
+import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer, TaskOutputPresentation, TaskInfo } from '../common';
+import { ProcessTaskInfo } from '../common/process/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
@@ -38,20 +39,27 @@ export namespace TaskTerminalWidget {
 
 export interface TaskTerminalWidgetOpenerOptions extends WidgetOpenerOptions {
     taskId: number;
-    taskConfig?: TaskConfiguration;
+    taskInfo?: TaskInfo;
 }
 export namespace TaskTerminalWidgetOpenerOptions {
     export function isDedicatedTerminal(options: TaskTerminalWidgetOpenerOptions): boolean {
-        return !!options.taskConfig && !!options.taskConfig.presentation && options.taskConfig.presentation.panel === PanelKind.Dedicated;
+        const taskConfig = options.taskInfo ? options.taskInfo.config : undefined;
+        return !!taskConfig && !!taskConfig.presentation && taskConfig.presentation.panel === PanelKind.Dedicated;
     }
 
     export function isNewTerminal(options: TaskTerminalWidgetOpenerOptions): boolean {
-        return !!options.taskConfig && !!options.taskConfig.presentation && options.taskConfig.presentation.panel === PanelKind.New;
+        const taskConfig = options.taskInfo ? options.taskInfo.config : undefined;
+        return !!taskConfig && !!taskConfig.presentation && taskConfig.presentation.panel === PanelKind.New;
     }
 
     export function isSharedTerminal(options: TaskTerminalWidgetOpenerOptions): boolean {
-        return !!options.taskConfig &&
-            (options.taskConfig.presentation === undefined || options.taskConfig.presentation.panel === undefined || options.taskConfig.presentation.panel === PanelKind.Shared);
+        const taskConfig = options.taskInfo ? options.taskInfo.config : undefined;
+        return !!taskConfig && (taskConfig.presentation === undefined || taskConfig.presentation.panel === undefined || taskConfig.presentation.panel === PanelKind.Shared);
+    }
+
+    export function echoExecutedCommand(options: TaskTerminalWidgetOpenerOptions): boolean {
+        const taskConfig = options.taskInfo ? options.taskInfo.config : undefined;
+        return !!taskConfig && (taskConfig.presentation === undefined || taskConfig.presentation.echo === undefined || taskConfig.presentation.echo);
     }
 }
 
@@ -120,8 +128,8 @@ export class TaskTerminalWidgetManager {
 
     async open(factoryOptions: TerminalWidgetFactoryOptions, openerOptions: TaskTerminalWidgetOpenerOptions): Promise<TerminalWidget> {
         const dedicated = TaskTerminalWidgetOpenerOptions.isDedicatedTerminal(openerOptions);
-        if (dedicated && !openerOptions.taskConfig) {
-            throw new Error('"taskConfig" must be included as part of the "option" if "isDedicated" is true');
+        if (dedicated && (!openerOptions.taskInfo || !openerOptions.taskInfo.config)) {
+            throw new Error('"taskConfig" must be included as part of the "option.taskInfo" if "isDedicated" is true');
         }
 
         const { isNew, widget } = await this.getWidgetToRunTask(factoryOptions, openerOptions);
@@ -132,12 +140,18 @@ export class TaskTerminalWidgetManager {
             if (factoryOptions.title) {
                 widget.setTitle(factoryOptions.title);
             }
-            if (openerOptions.taskConfig && TaskOutputPresentation.shouldClearTerminalBeforeRun(openerOptions.taskConfig)) {
+            const taskConfig = openerOptions.taskInfo ? openerOptions.taskInfo.config : undefined;
+            if (taskConfig && TaskOutputPresentation.shouldClearTerminalBeforeRun(taskConfig)) {
                 widget.clearOutput();
             }
         }
         this.terminalService.open(widget, openerOptions);
-
+        const taskInfo = openerOptions.taskInfo;
+        if (TaskTerminalWidgetOpenerOptions.echoExecutedCommand(openerOptions) &&
+            taskInfo && ProcessTaskInfo.is(taskInfo) && taskInfo.command && taskInfo.command.length > 0
+        ) {
+            widget.writeLine(`\x1b[1m> Executing task: ${taskInfo.command} <\x1b[0m\n`);
+        }
         return widget;
     }
 
@@ -151,8 +165,8 @@ export class TaskTerminalWidgetManager {
                 // 1) dedicated, 2) idle, 3) the one that ran the same task
                 if (widget.dedicated &&
                     !widget.busy &&
-                    widget.taskConfig && openerOptions.taskConfig &&
-                    this.taskDefinitionRegistry.compareTasks(openerOptions.taskConfig, widget.taskConfig)) {
+                    widget.taskConfig && openerOptions.taskInfo &&
+                    this.taskDefinitionRegistry.compareTasks(openerOptions.taskInfo.taskConfig, widget.taskConfig)) {
 
                     reusableTerminalWidget = widget;
                     break;
