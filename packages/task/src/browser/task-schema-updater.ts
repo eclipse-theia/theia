@@ -539,6 +539,7 @@ const problemMatcher = {
 const presentation: IJSONSchema = {
     type: 'object',
     default: {
+        echo: true,
         reveal: 'always',
         focus: false,
         panel: 'shared',
@@ -548,6 +549,11 @@ const presentation: IJSONSchema = {
     description: 'Configures the panel that is used to present the task\'s output and reads its input.',
     additionalProperties: true,
     properties: {
+        echo: {
+            type: 'boolean',
+            default: true,
+            description: 'Controls whether the executed command is echoed to the panel. Default is true.'
+        },
         focus: {
             type: 'boolean',
             default: false,

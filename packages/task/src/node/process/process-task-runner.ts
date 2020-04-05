@@ -72,7 +72,8 @@ export class ProcessTaskRunner implements TaskRunner {
             // way the command is passed:
             // - process: directly look for an executable and pass a specific set of arguments/options.
             // - shell: defer the spawning to a shell that will evaluate a command line with our executable.
-            const terminal: Process = this.terminalProcessFactory(this.getResolvedCommand(taskConfig));
+            const terminalProcessOptions = this.getResolvedCommand(taskConfig);
+            const terminal: Process = this.terminalProcessFactory(terminalProcessOptions);
 
             // Wait for the confirmation that the process is successfully started, or has failed to start.
             await new Promise((resolve, reject) => {
@@ -82,12 +83,14 @@ export class ProcessTaskRunner implements TaskRunner {
                 });
             });
 
+            const processType = taskConfig.type as 'process' | 'shell';
             return this.taskFactory({
                 label: taskConfig.label,
                 process: terminal,
-                processType: taskConfig.type as 'process' | 'shell',
+                processType,
                 context: ctx,
-                config: taskConfig
+                config: taskConfig,
+                command: this.getCommand(processType, terminalProcessOptions)
             });
         } catch (error) {
             this.logger.error(`Error occurred while creating task: ${error}`);
@@ -247,6 +250,16 @@ export class ProcessTaskRunner implements TaskRunner {
             }
         }
         return { command, args, commandLine, options };
+    }
+
+    private getCommand(processType: 'process' | 'shell', terminalProcessOptions: TerminalProcessOptions): string | undefined {
+        if (terminalProcessOptions.args) {
+            if (processType === 'shell') {
+                return terminalProcessOptions.args[terminalProcessOptions.args.length - 1];
+            } else if (processType === 'process') {
+                return `${terminalProcessOptions.command} ${terminalProcessOptions.args.join(' ')}`;
+            }
+        }
     }
 
     /**
