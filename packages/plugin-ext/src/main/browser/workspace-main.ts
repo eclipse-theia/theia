@@ -18,7 +18,7 @@ import * as theia from '@theia/plugin';
 import { interfaces, injectable } from 'inversify';
 import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import Uri from 'vscode-uri';
+import { URI as Uri } from 'vscode-uri';
 import { UriComponents } from '../../common/uri-components';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';

@@ -23,7 +23,8 @@
 
 import { Severity } from '@theia/core/lib/common/severity';
 import { Diagnostic } from 'vscode-languageserver-types';
-import vscodeURI from 'vscode-uri/lib/umd';
+// TODO use URI from `@theia/core` instead
+import { URI } from 'vscode-uri';
 import { ProblemPatternContribution, WatchingMatcherContribution } from './task-protocol';
 
 export enum ApplyToKind {
@@ -121,7 +122,7 @@ export interface ProblemMatcher {
     pattern: ProblemPattern | ProblemPattern[];
     severity?: Severity;
     watching?: WatchingMatcher;
-    uriProvider?: (path: string) => vscodeURI;
+    uriProvider?: (path: string) => URI;
 }
 
 export interface NamedProblemMatcher extends ProblemMatcher {
@@ -178,7 +179,7 @@ export namespace ProblemPattern {
 }
 
 export interface ProblemMatch {
-    resource?: vscodeURI;
+    resource?: URI;
     description: ProblemMatcher;
 }
 

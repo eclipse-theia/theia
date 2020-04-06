@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import URI from 'vscode-uri/lib/umd';
+import { URI } from 'vscode-uri';
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import { RawColorInfo } from '../../common/plugin-api-rpc';

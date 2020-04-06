@@ -8735,15 +8735,15 @@ monaco-html@^2.5.2:
   resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-2.6.0.tgz#42d4441b9ba3e023d8895e5a1569d1df623c1691"
   integrity sha512-UVvgqFFuzCjwsfINKmc2nm4qvQhBsu1luw4lUz+YF3CxAcVQBmscWiz5fb6/MFRG77K0h+7uADseNmc9APzEgA==
 
-monaco-languageclient@^0.12.0:
-  version "0.12.0"
-  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.12.0.tgz#80027aafc3ee39c3a481b4017ae24e443ebb5157"
-  integrity sha512-31ujegLEe+veCVodbPtWMvBLyaNXxnWLWL6jn/80INx0+eBS3TTs4y5wx8uLWx9lTs9sF6YVwH/b3wbmf3h/mw==
+monaco-languageclient@^0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.13.0.tgz#59b68b42fb7633171502d6557f597c2752f6c266"
+  integrity sha512-aCwd33dTitwV5QwY56rpYHwzEGXei8TZ+yvZcvP3gEMd6Mizr8m3pOuoknDi2SUfLuNAHS6+ulvLgZlNQB5awg==
   dependencies:
     glob-to-regexp "^0.3.0"
     vscode-jsonrpc "^5.0.0"
     vscode-languageclient "^6.0.0"
-    vscode-uri "^1.0.8"
+    vscode-uri "^2.1.1"
 
 moo-server@*, moo-server@1.3.x:
   version "1.3.0"
@@ -12959,11 +12959,6 @@ vscode-textmate@^4.0.1:
   integrity sha512-dFpm2eK0HwEjeFSD1DDh3j0q47bDSVuZt20RiJWxGqjtm73Wu2jip3C2KaZI3dQx/fSeeXCr/uEN4LNaNj7Ytw==
   dependencies:
     oniguruma "^7.2.0"
-
-vscode-uri@^1.0.8:
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/vscode-uri/-/vscode-uri-1.0.8.tgz#9769aaececae4026fb6e22359cb38946580ded59"
-  integrity sha512-obtSWTlbJ+a+TFRYGaUumtVwb+InIUVI0Lu0VBUAPmj2cU5JutEXg3xUE0c2J5Tcy7h2DEKVJBFi+Y9ZSFzzPQ==
 
 vscode-uri@^2.0.3, vscode-uri@^2.1.1:
   version "2.1.1"

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Range as R, Position as P, Location as L } from 'vscode-languageserver-types';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import * as theia from '@theia/plugin';
 import { cloneAndChange } from '../common/objects';
 import { Position, Range, Location, CallHierarchyItem } from './types-impl';

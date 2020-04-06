@@ -25,7 +25,7 @@
 import { Event } from '@theia/core/lib/common/event';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import VSCodeURI from 'vscode-uri';
+import { URI as VSCodeURI } from 'vscode-uri';
 import URI from '@theia/core/lib/common/uri';
 import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver-protocol';
 import { Range, Position } from '../plugin/types-impl';

@@ -18,7 +18,7 @@ import * as theia from '@theia/plugin';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { WorkspaceMain } from '../common/plugin-api-rpc';
 import { FileWatcherSubscriberOptions, FileChangeEventType } from '../common/plugin-api-rpc-model';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 
 /**
  * This class is responsible for file watchers subscription registering and file system events proxying.

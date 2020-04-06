@@ -18,7 +18,7 @@ import { Definition as CallHierarchyDefinition, Caller as CallHierarchyCaller } 
 import * as model from '../../../common/plugin-api-rpc-model';
 import * as rpc from '../../../common/plugin-api-rpc';
 import * as callhierarchy from 'vscode-languageserver-types';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { UriComponents } from '../../../common/uri-components';
 import { Location } from 'vscode-languageserver-types';
 
