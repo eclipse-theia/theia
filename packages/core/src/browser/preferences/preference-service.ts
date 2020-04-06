@@ -138,8 +138,6 @@ export class PreferenceServiceImpl implements PreferenceService {
     @postConstruct()
     protected init(): void {
         this.toDispose.push(Disposable.create(() => this._ready.reject(new Error('preference service is disposed'))));
-        this.onPreferenceChanged.maxListeners = 64;
-        this.onPreferencesChanged.maxListeners = 64;
         this.initializeProviders();
     }
 
