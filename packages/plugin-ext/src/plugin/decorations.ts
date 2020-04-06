@@ -24,7 +24,7 @@ import {
 } from '../common/plugin-api-rpc';
 import { Event } from '@theia/core/lib/common/event';
 import { RPCProtocol } from '../common/rpc-protocol';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import { Disposable } from './types-impl';
 
 export class DecorationsExtImpl implements DecorationsExt {

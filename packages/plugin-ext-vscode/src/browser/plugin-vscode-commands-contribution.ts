@@ -47,7 +47,7 @@ import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { inject, injectable } from 'inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {

@@ -16,7 +16,7 @@
 
 import * as theia from '@theia/plugin';
 import { Position as P, Range as R, SymbolInformation, SymbolKind as S } from 'vscode-languageserver-types';
-import URI from 'vscode-uri';
+import { URI } from 'vscode-uri';
 import * as rpc from '../common/plugin-api-rpc';
 import {
     DecorationOptions, EditorPosition, PickOpenItem, Plugin, Position, ResourceFileEditDto,

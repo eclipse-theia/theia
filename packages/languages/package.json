@@ -10,7 +10,7 @@
     "@theia/workspace": "^1.0.0",
     "@theia/monaco-editor-core": "^0.19.3",
     "@types/uuid": "^3.4.3",
-    "monaco-languageclient": "^0.12.0",
+    "monaco-languageclient": "^0.13.0",
     "uuid": "^3.2.1"
   },
   "publishConfig": {
