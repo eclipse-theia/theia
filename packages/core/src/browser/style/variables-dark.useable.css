@@ -33,10 +33,12 @@ is not optimized for dense, information rich UIs.
 
   --theia-ui-font-scale-factor: 1.2;
   --theia-ui-font-size0: calc(var(--theia-ui-font-size1) / var(--theia-ui-font-scale-factor));
-  --theia-ui-font-size1: 13px; /* Base font size */
+  --theia-ui-font-size1: 13px;
+  /* Base font size */
   --theia-ui-font-size2: calc(var(--theia-ui-font-size1) * var(--theia-ui-font-scale-factor));
   --theia-ui-font-size3: calc(var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor));
-  --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
+  --theia-ui-icon-font-size: 14px;
+  /* Ensures px perfect FontAwesome icons */
   --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
   /* Content fonts: Family, size and color (bright to dark)
@@ -61,7 +63,7 @@ is not optimized for dense, information rich UIs.
   --theia-icon-arrow-down: url(../icons/arrow-down-dark.svg);
   --theia-sprite-y-offset: -20px;
   --theia-icon-circle: url(../icons/circle-dark.svg);
-  --theia-preloader: url(../icons/spinner.gif);
+  --theia-preloader: url(../icons/spinner.svg);
   --theia-icon-case-sensitive: url(../icons/case-sensitive-dark.svg);
   --theia-icon-regex: url(../icons/regex-dark.svg);
   --theia-icon-whole-word: url(../icons/whole-word-dark.svg);
