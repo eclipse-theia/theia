@@ -4527,6 +4527,14 @@ declare module '@theia/plugin' {
      */
     export interface FileSystem {
 
+		/**
+		 * Retrieve metadata about a file.
+		 *
+		 * @param uri The uri of the file to retrieve metadata about.
+		 * @return The file metadata about the file.
+		 */
+        stat(uri: Uri): Thenable<FileStat>;
+
         /**
          * Read the entire contents of a file.
          *

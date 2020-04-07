@@ -22,6 +22,10 @@ import URI from '@theia/core/lib/common/uri';
 import { MAIN_RPC_CONTEXT, FileSystemMain, FileSystemExt } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
+import { FileSystem, FileStat, FileSystemError } from '@theia/filesystem/lib/common/filesystem';
+
+type TheiaFileStat = import('@theia/plugin').FileStat;
+type TheiaFileType = import('@theia/plugin').FileType;
 
 export class FileSystemMainImpl implements FileSystemMain, Disposable {
 
@@ -30,11 +34,13 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
     private readonly resourceProvider: ResourceProvider;
     private readonly providers = new Map<number, Disposable>();
     private readonly toDispose = new DisposableCollection();
+    private readonly filesystem: FileSystem;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT);
         this.resourceResolver = container.get(FSResourceResolver);
         this.resourceProvider = container.get(ResourceProvider);
+        this.filesystem = container.get(FileSystem);
     }
 
     dispose(): void {
@@ -57,6 +63,44 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
         }
     }
 
+    async $stat(components: UriComponents): Promise<TheiaFileStat> {
+        const resource = Uri.from(components);
+        // TODO support other providers
+        // TODO activate providers by scheme on lookup
+        if (resource.scheme !== 'file') {
+            const error = new Error();
+            error.name = 'ENOPRO';
+            error.message = `No file system provider found for resource ${resource.toString()}`;
+            throw error;
+        }
+        try {
+            // todo we need new stat which throws all errors
+            const stat = await this.filesystem.getFileStat(resource.toString());
+            if (!stat) {
+                const error = new Error();
+                error.name = 'EntryNotFound';
+                throw error;
+            }
+            return {
+                type: this.toType(stat),
+                ctime: stat.creationTime,
+                mtime: stat.lastModification,
+                size: stat.size || 0
+            };
+        } catch (e) {
+            if (FileSystemError.FileNotFound.is(e)) {
+                e.name = 'EntryNotFound';
+                throw e;
+            }
+            if (FileSystemError.FileExists.is(e)) {
+                // TODO
+                throw e;
+            }
+            // TODO handle all VS Code errors
+            throw e;
+        }
+    }
+
     async $readFile(uriComponents: UriComponents): Promise<string> {
         const uri = Uri.revive(uriComponents);
         const resource = await this.resourceProvider(new URI(uri));
@@ -70,6 +114,21 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
             throw new Error(`'No write operation available on the resource for URI ${uriComponents}`);
         }
         return resource.saveContents(content);
+    }
+
+    private toType(stat: FileStat): TheiaFileType {
+        let type: TheiaFileType;
+        if (stat.symbolicLink && stat.symbolicLink.dangling) {
+            type = 0; // theia.FileType.Unknown
+        } else if (stat.isDirectory) {
+            type = 2; // theia.FileType.Directory
+        } else {
+            type = 1; // theia.FileType.File
+        }
+        if (stat.symbolicLink) {
+            type |= 64; // theia.FileType.SymbolicLink
+        }
+        return type;
     }
 
 }

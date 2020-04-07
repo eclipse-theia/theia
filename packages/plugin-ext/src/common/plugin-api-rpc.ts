@@ -1327,6 +1327,7 @@ export interface FileSystemExt {
 }
 
 export interface FileSystemMain {
+    $stat(uri: UriComponents): Promise<theia.FileStat>;
     $readFile(uri: UriComponents): Promise<string>;
     $writeFile(uri: UriComponents, content: string): Promise<void>;
     $registerFileSystemProvider(handle: number, scheme: string): void;

@@ -250,6 +250,13 @@ export class DispatchingFileSystemClient implements FileSystemClient {
 
 }
 
+export interface SymbolicLink {
+    /**
+     * Whether it points to a resource that does not exist on disk.
+     */
+    dangling?: boolean
+}
+
 /**
  * A file resource with meta information.
  */
@@ -261,7 +268,12 @@ export interface FileStat {
     uri: string;
 
     /**
-     * The last modification of this file.
+     * The creation timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
+     */
+    creationTime: number;
+
+    /**
+     * The modification timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
      */
     lastModification: number;
 
@@ -269,6 +281,11 @@ export interface FileStat {
      * `true` if the resource is a directory. Otherwise, `false`.
      */
     isDirectory: boolean;
+
+    /**
+     * Provided if the resource is a symbolic link on disk.
+     */
+    symbolicLink?: SymbolicLink;
 
     /**
      * The children of the file stat.

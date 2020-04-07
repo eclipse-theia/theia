@@ -21,7 +21,7 @@ import * as fs from 'fs-extra';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
 import { isWindows } from '@theia/core/lib/common/os';
-import { FileSystem } from '../common/filesystem';
+import { FileSystem, FileStat } from '../common/filesystem';
 import { FileSystemNode } from './node-filesystem';
 import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
 
@@ -159,8 +159,9 @@ describe('NodeFileSystem', function (): void {
             const uri = root.resolve('foo.txt');
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            const stat = {
+            const stat: FileStat = {
                 uri: uri.toString(),
+                creationTime: new Date().getTime(),
                 lastModification: new Date().getTime(),
                 isDirectory: false
             };

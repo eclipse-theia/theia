@@ -24,11 +24,18 @@ import { FileSystemError } from './types-impl';
  * This class is managing FileSystem proxy
  */
 export class InPluginFileSystemProxy implements theia.FileSystem {
-
     private proxy: FileSystemMain;
 
     constructor(proxy: FileSystemMain) {
         this.proxy = proxy;
+    }
+
+    async stat(uri: UriComponents): Promise<theia.FileStat> {
+        try {
+            return await this.proxy.$stat(uri);
+        } catch (error) {
+            throw this.handleError(error);
+        }
     }
 
     async readFile(uri: UriComponents): Promise<Uint8Array> {
@@ -50,7 +57,7 @@ export class InPluginFileSystemProxy implements theia.FileSystem {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    handleError(error: any): Error {
+    protected handleError(error: any): Error {
         if (!(error instanceof Error)) {
             return new FileSystemError(String(error));
         }

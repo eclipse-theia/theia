@@ -28,7 +28,7 @@ import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { TextDocumentContentChangeDelta } from '@theia/core/lib/common/lsp-types';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { FileStat, FileSystem, FileSystemClient, FileSystemError, FileMoveOptions, FileDeleteOptions, FileAccess } from '../common/filesystem';
+import { FileStat, FileSystem, FileSystemClient, FileSystemError, FileMoveOptions, FileDeleteOptions, FileAccess, SymbolicLink } from '../common/filesystem';
 import * as iconv from 'iconv-lite';
 import { EncodingUtil } from './encoding-util';
 
@@ -466,11 +466,13 @@ export class FileSystemNode implements FileSystem {
 
     protected async doGetStat(uri: URI, depth: number): Promise<FileStat | undefined> {
         try {
-            const stats = await fs.stat(FileUri.fsPath(uri));
-            if (stats.isDirectory()) {
-                return this.doCreateDirectoryStat(uri, stats, depth);
+            const fsPath = FileUri.fsPath(uri);
+            const { stat, symbolicLink } = await this.statLink(fsPath);
+            const result = stat.isDirectory() ? this.doCreateDirectoryStat(uri, stat, depth) : this.doCreateFileStat(uri, stat);
+            if (symbolicLink) {
+                return Object.assign(result, { symbolicLink });
             }
-            return this.doCreateFileStat(uri, stats);
+            return result;
         } catch (error) {
             if (isErrnoException(error)) {
                 if (error.code === 'ENOENT' || error.code === 'EACCES' || error.code === 'EBUSY' || error.code === 'EPERM') {
@@ -481,9 +483,42 @@ export class FileSystemNode implements FileSystem {
         }
     }
 
+    private async statLink(fsPath: string): Promise<{ stat: fs.Stats, symbolicLink?: SymbolicLink }> {
+        // First stat the link
+        let lstats: fs.Stats | undefined;
+        try {
+            lstats = await fs.lstat(fsPath);
+
+            // Return early if the stat is not a symbolic link at all
+            if (!lstats.isSymbolicLink()) {
+                return { stat: lstats };
+            }
+        } catch (error) {
+            /* ignore - use stat() instead */
+        }
+
+        // If the stat is a symbolic link or failed to stat, use fs.stat()
+        // which for symbolic links will stat the target they point to
+        try {
+            const stats = await fs.stat(fsPath);
+
+            return { stat: stats, symbolicLink: lstats && lstats.isSymbolicLink() ? { dangling: false } : undefined };
+        } catch (error) {
+
+            // If the link points to a non-existing file we still want
+            // to return it as result while setting dangling: true flag
+            if (error.code === 'ENOENT' && lstats) {
+                return { stat: lstats, symbolicLink: { dangling: true } };
+            }
+
+            throw error;
+        }
+    }
+
     protected async doCreateFileStat(uri: URI, stat: fs.Stats): Promise<FileStat> {
         return {
             uri: uri.toString(),
+            creationTime: stat.birthtime.getTime(),
             lastModification: stat.mtime.getTime(),
             isDirectory: false,
             size: stat.size
@@ -494,6 +529,7 @@ export class FileSystemNode implements FileSystem {
         const children = depth > 0 ? await this.doGetChildren(uri, depth) : [];
         return {
             uri: uri.toString(),
+            creationTime: stat.birthtime.getTime(),
             lastModification: stat.mtime.getTime(),
             isDirectory: true,
             children
