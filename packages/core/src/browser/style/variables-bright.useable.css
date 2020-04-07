@@ -33,12 +33,10 @@ is not optimized for dense, information rich UIs.
 
   --theia-ui-font-scale-factor: 1.2;
   --theia-ui-font-size0: calc(var(--theia-ui-font-size1) / var(--theia-ui-font-scale-factor));
-  --theia-ui-font-size1: 13px;
-  /* Base font size */
+  --theia-ui-font-size1: 13px; /* Base font size */
   --theia-ui-font-size2: calc(var(--theia-ui-font-size1) * var(--theia-ui-font-scale-factor));
   --theia-ui-font-size3: calc(var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor));
-  --theia-ui-icon-font-size: 14px;
-  /* Ensures px perfect FontAwesome icons */
+  --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
   --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 
   /* Content fonts
