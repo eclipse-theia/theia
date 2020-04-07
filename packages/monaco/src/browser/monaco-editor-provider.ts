@@ -139,8 +139,8 @@ export class MonacoEditorProvider {
 
         const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
         commandService.setDelegate(standaloneCommandService);
-        this.installQuickOpenService(editor);
-        this.installReferencesController(editor);
+        toDispose.push(this.installQuickOpenService(editor));
+        toDispose.push(this.installReferencesController(editor));
 
         toDispose.push(editor.onFocusChanged(focused => {
             if (focused) {
@@ -331,9 +331,10 @@ export class MonacoEditorProvider {
         }
     }
 
-    protected installQuickOpenService(editor: MonacoEditor): void {
+    protected installQuickOpenService(editor: MonacoEditor): Disposable {
         const control = editor.getControl();
         const quickOpenController = control._contributions['editor.controller.quickOpenController'];
+        const originalRun = quickOpenController.run;
         quickOpenController.run = options => {
             const selection = control.getSelection();
             this.quickOpenService.internalOpen({
@@ -349,11 +350,13 @@ export class MonacoEditorProvider {
                 }
             });
         };
+        return Disposable.create(() => quickOpenController.run = originalRun);
     }
 
-    protected installReferencesController(editor: MonacoEditor): void {
+    protected installReferencesController(editor: MonacoEditor): Disposable {
         const control = editor.getControl();
         const referencesController = control._contributions['editor.contrib.referencesController'];
+        const originalGotoReference = referencesController._gotoReference;
         referencesController._gotoReference = async ref => {
             if (referencesController._widget) {
                 referencesController._widget.hide();
@@ -402,6 +405,7 @@ export class MonacoEditorProvider {
                 monaco.error.onUnexpectedError(e);
             });
         };
+        return Disposable.create(() => referencesController._gotoReference = originalGotoReference);
     }
 
     getDiffNavigator(editor: TextEditor): DiffNavigator {
