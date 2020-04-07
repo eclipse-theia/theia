@@ -71,14 +71,14 @@ export class PluginDebugAdapterSession extends DebugAdapterSessionImpl implement
             super.send(message);
         } finally {
             if (this.tracker.onDidSendMessage) {
-                this.tracker.onDidSendMessage(message);
+                this.tracker.onDidSendMessage(JSON.parse(message));
             }
         }
     }
 
     protected write(message: string): void {
         if (this.tracker.onWillReceiveMessage) {
-            this.tracker.onWillReceiveMessage(message);
+            this.tracker.onWillReceiveMessage(JSON.parse(message));
         }
         super.write(message);
     }
