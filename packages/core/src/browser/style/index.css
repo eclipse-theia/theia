@@ -104,7 +104,7 @@ blockquote {
 .theia-loader {
   font-size: 72px !important; /* Override default codicon size */
   animation: 1s theia-loader-rotate infinite;
-  color: var(--theia-foreground, #949494)
+  color: var(--theia-foreground, #949494);
 }
 
 @keyframes theia-loader-rotate {
