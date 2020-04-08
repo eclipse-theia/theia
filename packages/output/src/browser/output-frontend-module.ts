@@ -14,16 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, interfaces } from 'inversify';
+import { ContainerModule } from 'inversify';
 import { OutputWidget, OUTPUT_WIDGET_KIND } from './output-widget';
-import { WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
-import { OutputContribution } from './output-contribution';
+import { WidgetFactory, bindViewContribution, KeybindingContext } from '@theia/core/lib/browser';
+import { OutputContribution, OutputWidgetIsActiveContext } from './output-contribution';
 import { OutputToolbarContribution } from './output-toolbar-contribution';
 import { OutputChannelManager } from '../common/output-channel';
 import { bindOutputPreferences } from '../common/output-preferences';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
-export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindOutputPreferences(bind);
     bind(OutputWidget).toSelf();
     bind(OutputChannelManager).toSelf().inSingletonScope();
@@ -34,6 +34,8 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     }));
 
     bindViewContribution(bind, OutputContribution);
+    bind(OutputWidgetIsActiveContext).toSelf().inSingletonScope();
+    bind(KeybindingContext).toService(OutputWidgetIsActiveContext);
     bind(OutputToolbarContribution).toSelf().inSingletonScope();
     bind(TabBarToolbarContribution).toService(OutputToolbarContribution);
 });
