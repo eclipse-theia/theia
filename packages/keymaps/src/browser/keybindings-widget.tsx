@@ -468,7 +468,7 @@ export class KeybindingWidget extends ReactWidget {
             });
         }
         // Sort the keybinding item by label.
-        const sorted: KeybindingItem[] = items.sort((a, b) => this.compareItem(a.labels.id, b.labels.id));
+        const sorted: KeybindingItem[] = items.sort((a, b) => this.compareItem(a.command, b.command));
         // Get the list of keybinding item with keybindings (visually put them at the top of the table).
         const keyItems: KeybindingItem[] = sorted.filter(a => !!a.labels.keybinding);
         // Get the remaining keybinding items (without keybindings).
@@ -478,8 +478,18 @@ export class KeybindingWidget extends ReactWidget {
         return [...keyItems, ...otherItems];
     }
 
+    /**
+     * Get the human-readable label for a given command.
+     * @param command the command.
+     *
+     * @returns a human-readable label for the given command.
+     */
     protected getCommandLabel(command: Command): string {
-        return command.label || command.id;
+        if (command.label) {
+            // Prefix the command label with the category if it exists, else return the simple label.
+            return command.category ? `${command.category}: ${command.label}` : command.label;
+        }
+        return command.id;
     }
 
     protected getKeybindingLabel(keybinding: ScopedKeybinding | undefined): string | undefined {
@@ -502,21 +512,30 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     /**
-     * Compare two strings.
-     * - Strings are first normalized before comparison (`toLowerCase`).
-     * @param a the optional first string.
-     * @param b the optional second string.
+     * Compare two commands.
+     * - Commands with a label should be prioritized and alphabetically sorted.
+     * - Commands without a label (id) should be placed at the bottom.
+     * @param a the first command.
+     * @param b the second command.
      *
      * @returns an integer indicating whether `a` comes before, after or is equivalent to `b`.
      * - returns `-1` if `a` occurs before `b`.
      * - returns `1` if `a` occurs after `b`.
      * - returns `0` if they are equivalent.
      */
-    protected compareItem(a: string | undefined, b: string | undefined): number {
-        if (a && b) {
-            return (a.toLowerCase()).localeCompare(b.toLowerCase());
+    protected compareItem(a: Command, b: Command): number {
+        const labelA = this.getCommandLabel(a);
+        const labelB = this.getCommandLabel(b);
+        if (labelA === a.id && labelB === b.id) {
+            return labelA.toLowerCase().localeCompare(labelB.toLowerCase());
         }
-        return 0;
+        if (labelA === a.id) {
+            return 1;
+        }
+        if (labelB === b.id) {
+            return -1;
+        }
+        return labelA.toLowerCase().localeCompare(labelB.toLowerCase());
     }
 
     /**
