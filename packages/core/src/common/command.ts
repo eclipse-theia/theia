@@ -306,13 +306,16 @@ export class CommandRegistry implements CommandService {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getVisibleHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
-        for (const handler of this.getAllHandlers(commandId)) {
-            try {
-                if (!handler.isVisible || handler.isVisible(...args)) {
-                    return handler;
+        const handlers = this._handlers[commandId];
+        if (handlers) {
+            for (const handler of handlers) {
+                try {
+                    if (!handler.isVisible || handler.isVisible(...args)) {
+                        return handler;
+                    }
+                } catch (error) {
+                    console.error(error);
                 }
-            } catch (error) {
-                console.error(error);
             }
         }
         return undefined;
@@ -323,13 +326,16 @@ export class CommandRegistry implements CommandService {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
-        for (const handler of this.getAllHandlers(commandId)) {
-            try {
-                if (!handler.isEnabled || handler.isEnabled(...args)) {
-                    return handler;
+        const handlers = this._handlers[commandId];
+        if (handlers) {
+            for (const handler of handlers) {
+                try {
+                    if (!handler.isEnabled || handler.isEnabled(...args)) {
+                        return handler;
+                    }
+                } catch (error) {
+                    console.error(error);
                 }
-            } catch (error) {
-                console.error(error);
             }
         }
         return undefined;
@@ -340,13 +346,16 @@ export class CommandRegistry implements CommandService {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getToggledHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
-        for (const handler of this.getAllHandlers(commandId)) {
-            try {
-                if (handler.isToggled && handler.isToggled(...args)) {
-                    return handler;
+        const handlers = this._handlers[commandId];
+        if (handlers) {
+            for (const handler of handlers) {
+                try {
+                    if (handler.isToggled && handler.isToggled(...args)) {
+                        return handler;
+                    }
+                } catch (error) {
+                    console.error(error);
                 }
-            } catch (error) {
-                console.error(error);
             }
         }
         return undefined;
@@ -358,8 +367,7 @@ export class CommandRegistry implements CommandService {
      */
     getAllHandlers(commandId: string): CommandHandler[] {
         const handlers = this._handlers[commandId];
-        // We intentionally reverse the array of handlers, so if there are multiple handlers for a command, you can find the more specific, enabled one.
-        return handlers ? handlers.slice().reverse() : [];
+        return handlers ? handlers.slice() : [];
     }
 
     /**

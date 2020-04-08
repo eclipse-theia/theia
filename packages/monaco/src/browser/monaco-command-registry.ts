@@ -63,6 +63,7 @@ export class MonacoCommandRegistry {
     protected execute(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): any {
         const editor = this.monacoEditors.current;
         if (editor) {
+            editor.focus();
             return Promise.resolve(monacoHandler.execute(editor, ...args));
         }
         return Promise.resolve();
