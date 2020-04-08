@@ -54,7 +54,14 @@ export class FrontendGenerator extends AbstractGenerator {
 </head>
 
 <body>
-  <div class="theia-preload">${this.compileIndexPreload(frontendModules)}</div>
+  <div class="theia-preload">
+    ${this.compileIndexPreload(frontendModules)}
+    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100px" height="100px" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" fill="none" stroke="var(--theia-foreground, #949494)" stroke-width="10" r="35" stroke-dasharray="160 59.91">
+        <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="1s" values="0 50 50;360 50 50" keyTimes="0;1"></animateTransform>
+      </circle>
+    </svg>
+  </div>
 </body>
 
 </html>`;
