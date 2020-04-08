@@ -367,7 +367,6 @@ class MenuCommandRegistry extends PhosphorCommandRegistry {
         const { commandRegistry } = this.services;
         const command = commandRegistry.getCommand(commandId);
         if (!command) {
-            console.warn(`Could not find command '${commandId}'. Skipping node registration: ${JSON.stringify(menu)}.`);
             return;
         }
         const { id } = command;
