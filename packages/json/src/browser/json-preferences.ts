@@ -21,7 +21,8 @@ import {
     PreferenceService,
     PreferenceContribution,
     PreferenceSchema,
-    PreferenceChangeEvent
+    PreferenceChangeEvent,
+    PreferenceScope
 } from '@theia/core/lib/browser/preferences';
 import { JsonSchemaConfiguration } from '@theia/core/lib/browser/json-schema-store';
 
@@ -63,7 +64,8 @@ export const jsonPreferenceSchema: PreferenceSchema = {
             'default': true,
             'description': 'Enable/disable default JSON formatter'
         },
-    }
+    },
+    scope: PreferenceScope.Folder
 };
 
 export interface JsonConfiguration {

@@ -27,11 +27,11 @@ import { JSON_LANGUAGE_ID, JSON_LANGUAGE_NAME, JSONC_LANGUAGE_ID } from '../comm
 import { ResourceProvider } from '@theia/core';
 import { DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import * as path from 'path';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { Path } from '@theia/core/lib/common/path';
 import { JsonPreferences } from './json-preferences';
-import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
-import { Endpoint } from '@theia/core/lib/browser';
+import { JsonSchemaStore, JsonSchemaConfiguration } from '@theia/core/lib/browser/json-schema-store';
+import { Endpoint, PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
+import { FileSystem } from '@theia/filesystem/lib/common';
 
 @injectable()
 export class JsonClientContribution extends BaseLanguageClientContribution {
@@ -39,21 +39,29 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
     readonly id = JSON_LANGUAGE_ID;
     readonly name = JSON_LANGUAGE_NAME;
 
+    protected schemaRegistry: { [pattern: string]: string[] };
+
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(Languages) protected readonly languages: Languages,
         @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
         @inject(JsonPreferences) protected readonly preferences: JsonPreferences,
-        @inject(JsonSchemaStore) protected readonly jsonSchemaStore: JsonSchemaStore
+        @inject(PreferenceService) protected readonly preferenceService: PreferenceService,
+        @inject(JsonSchemaStore) protected readonly jsonSchemaStore: JsonSchemaStore,
+        @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
         super(workspace, languages, languageClientFactory);
-        this.initializeJsonSchemaAssociations();
+        this.initializeJsonSchemaStoreAssociations();
     }
 
-    protected updateSchemas(client: ILanguageClient): void {
-        const registry: { [pattern: string]: string[] } = {};
+    protected async updateSchemas(client: ILanguageClient): Promise<void> {
+        this.schemaRegistry = {};
+        this.updateJsonSchemaStoreSchemas();
+        this.initializeJsonPreferencesAssociations().then(() => client.sendNotification('json/schemaAssociations', this.schemaRegistry));
+    }
 
+    protected updateJsonSchemaStoreSchemas(client?: ILanguageClient): void {
         const schemaStoreConfigs = [...this.jsonSchemaStore.getJsonSchemaConfigurations()];
         for (const schemaConfig of schemaStoreConfigs) {
             if (schemaConfig.fileMatch) {
@@ -61,35 +69,55 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
                     if (!fileMatch.startsWith('/') && !fileMatch.match(/\w+:/)) {
                         fileMatch = '/' + fileMatch;
                     }
-                    registry[fileMatch] = [schemaConfig.url];
+                    this.schemaRegistry[fileMatch] = [schemaConfig.url];
                 }
             }
         }
+        if (client) {
+            client.sendNotification('json/schemaAssociations', this.schemaRegistry);
+        }
+    }
 
-        const preferenceConfigs = this.preferences['json.schemas'];
-        for (const schemaConfig of preferenceConfigs) {
-            if (schemaConfig.fileMatch) {
-                for (let fileMatch of schemaConfig.fileMatch) {
-                    if (!fileMatch.startsWith('/') && !fileMatch.match(/\w+:/)) {
-                        fileMatch = '/' + fileMatch;
+    protected async setJsonPreferencesSchemas(schemaConfigs: JsonSchemaConfiguration[], scope: PreferenceScope, workspaceRoot?: string): Promise<void> {
+        await this.asyncForEach(schemaConfigs, async (schemaConfig: JsonSchemaConfiguration) => {
+            await this.asyncForEach(schemaConfig.fileMatch, async (fileMatch: string) => {
+                if (!fileMatch.startsWith('/') && !fileMatch.match(/\w+:/)) {
+                    fileMatch = '/' + fileMatch;
+                }
+
+                if (workspaceRoot) {
+                    workspaceRoot = new URI(workspaceRoot).path.toString();
+                    if (scope !== PreferenceScope.User) {
+                        fileMatch = new Path(workspaceRoot).join(fileMatch).normalize().toString();
                     }
+                }
 
-                    const fileUri = new URI(schemaConfig.url);
-                    if (fileUri.scheme === 'file') {
+                const fileUri = new URI(schemaConfig.url);
+                if (fileUri.scheme === 'file') {
+                    await this.fileSystem.exists(fileUri.toString()).then(async fileExists => {
                         const filePath = fileUri.path.toString();
-                        const workspaceRootPath = this.workspace.rootPath;
-                        if (workspaceRootPath && !filePath.startsWith(workspaceRootPath)) {
-                            registry[fileMatch] = [FileUri.create(path.join(workspaceRootPath, filePath)).toString()];
+                        if (fileExists) {
+                            this.schemaRegistry[fileMatch] = [filePath];
                         } else {
-                            registry[fileMatch] = [FileUri.create(filePath).toString()];
+                            if (workspaceRoot && !filePath.startsWith(workspaceRoot)) {
+                                const absolutePath = new Path(workspaceRoot).join(filePath).normalize().toString();
+                                await this.fileSystem.exists(absolutePath).then(exists => {
+                                    if (exists) {
+                                        this.schemaRegistry[fileMatch] = [absolutePath];
+                                    } else {
+                                        console.error('JSON schema configuration for fileMatch: \'' + fileMatch + '\' and url: \'' + absolutePath + '\' could not be registered.');
+                                    }
+                                });
+                            } else {
+                                console.error('JSON schema configuration for fileMatch: \'' + fileMatch + '\' and url: \'' + filePath + '\' could not be registered.');
+                            }
                         }
-                    } else {
-                        registry[fileMatch] = [schemaConfig.url];
-                    }
+                    });
+                } else {
+                    this.schemaRegistry[fileMatch] = [schemaConfig.url];
                 }
-            }
-        }
-        client.sendNotification('json/schemaAssociations', registry);
+            });
+        });
     }
 
     protected get globPatterns(): string[] {
@@ -129,7 +157,7 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         this.updateSchemas(languageClient);
     }
 
-    protected async initializeJsonSchemaAssociations(): Promise<void> {
+    protected async initializeJsonSchemaStoreAssociations(): Promise<void> {
         const url = `${new Endpoint().httpScheme}//schemastore.azurewebsites.net/api/json/catalog.json`;
         const response = await fetch(url);
         const schemas: SchemaData[] = (await response.json()).schemas!;
@@ -143,6 +171,44 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         }
     }
 
+    protected async initializeJsonPreferencesAssociations(): Promise<void> {
+        const userPreferenceValues = this.preferenceService.inspect<JsonSchemaConfiguration[]>('json.schemas');
+        if (userPreferenceValues) {
+            if (userPreferenceValues.globalValue) {
+                await this.setJsonPreferencesSchemas(userPreferenceValues.globalValue, PreferenceScope.User);
+            }
+        }
+
+        if (this.workspaceService.isMultiRootWorkspaceOpened) {
+            await this.asyncForEach(this.workspace.workspaceFolders, async (workspaceFolder: { name: string; uri: { path: string; }; }) => {
+                const workspaceFolderPath = workspaceFolder.uri.path;
+                const multiRootInspectValue = this.preferenceService.inspect<JsonSchemaConfiguration[]>('json.schemas', workspaceFolderPath);
+                if (multiRootInspectValue) {
+                    if (multiRootInspectValue.workspaceValue) {
+                        await this.setJsonPreferencesSchemas(multiRootInspectValue.workspaceValue, PreferenceScope.Workspace, workspaceFolderPath);
+                    }
+                    if (multiRootInspectValue.workspaceFolderValue) {
+                        await this.setJsonPreferencesSchemas(multiRootInspectValue.workspaceFolderValue, PreferenceScope.Folder, workspaceFolderPath);
+                    }
+                }
+            });
+        } else {
+            const workspaceRootPath = this.workspace.rootPath || undefined;
+            const singleRootInspectValue = this.preferenceService.inspect<JsonSchemaConfiguration[]>('json.schemas', workspaceRootPath);
+            if (singleRootInspectValue) {
+                if (singleRootInspectValue.workspaceValue) {
+                    await this.setJsonPreferencesSchemas(singleRootInspectValue.workspaceValue, PreferenceScope.Workspace, workspaceRootPath);
+                }
+            }
+        }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private async asyncForEach(array: any[], callback: any): Promise<void> {
+        for (const element of array) {
+            await callback(element);
+        }
+    }
 }
 
 interface SchemaData {
