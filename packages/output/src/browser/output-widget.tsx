@@ -78,9 +78,28 @@ export class OutputWidget extends ReactWidget {
         </React.Fragment>;
     }
 
-    public clear(): void {
+    clear(): void {
         if (this.outputChannelManager.selectedChannel) {
             this.outputChannelManager.selectedChannel.clear();
+        }
+    }
+
+    selectAll(): void {
+        if (this.outputChannelManager.selectedChannel) {
+            const element = document.getElementById(OutputWidget.IDs.CONTENTS);
+            if (element) {
+                const selectElementContent = (htmlElement: HTMLElement) => {
+                    const selection = window.getSelection();
+                    const range = document.createRange();
+                    if (selection && range) {
+                        range.selectNodeContents(htmlElement);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                };
+                element.focus();
+                selectElementContent(element);
+            }
         }
     }
 
