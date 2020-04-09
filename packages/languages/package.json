@@ -6,7 +6,6 @@
     "@theia/application-package": "^1.2.0",
     "@theia/core": "^1.2.0",
     "@theia/monaco-editor-core": "^0.19.3",
-    "@theia/output": "^1.2.0",
     "@theia/process": "^1.2.0",
     "@theia/workspace": "^1.2.0",
     "@types/uuid": "^7.0.3",

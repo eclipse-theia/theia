@@ -28,6 +28,10 @@ export class SampleOutputChannelWithSeverity
         channel.appendLine('hello info2', OutputChannelSeverity.Info);
         channel.appendLine('hello error', OutputChannelSeverity.Error);
         channel.appendLine('hello warning', OutputChannelSeverity.Warning);
+        channel.append('inlineInfo1 ');
+        channel.append('inlineWarning ', OutputChannelSeverity.Warning);
+        channel.append('inlineError ', OutputChannelSeverity.Error);
+        channel.append('inlineInfo2', OutputChannelSeverity.Info);
     }
 }
 export const bindSampleOutputChannelWithSeverity = (bind: interfaces.Bind) => {

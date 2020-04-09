@@ -14,12 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
-import { OutputWidget } from './output-widget';
-import { OutputChannelManager } from '../common/output-channel';
-import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { OutputCommands } from './output-contribution';
 import * as React from 'react';
+import { inject, injectable, postConstruct } from 'inversify';
+import { Emitter } from '@theia/core/lib/common/event';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { OutputWidget } from './output-widget';
+import { OutputCommands, OutputContribution } from './output-contribution';
+import { OutputChannelManager } from '../common/output-channel';
 
 @injectable()
 export class OutputToolbarContribution implements TabBarToolbarContribution {
@@ -27,19 +28,54 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
 
+    @inject(OutputContribution)
+    protected readonly outputContribution: OutputContribution;
+
+    protected readonly onOutputWidgetStateChangedEmitter = new Emitter<void>();
+    protected readonly onOutputWidgetStateChanged = this.onOutputWidgetStateChangedEmitter.event;
+
+    protected readonly onChannelsChangedEmitter = new Emitter<void>();
+    protected readonly onChannelsChanged = this.onChannelsChangedEmitter.event;
+
+    @postConstruct()
+    protected init(): void {
+        this.outputContribution.widget.then(widget => {
+            widget.onStateChanged(() => this.onOutputWidgetStateChangedEmitter.fire());
+        });
+        const fireChannelsChanged = () => this.onChannelsChangedEmitter.fire();
+        this.outputChannelManager.onSelectedChannelChanged(fireChannelsChanged);
+        this.outputChannelManager.onChannelAdded(fireChannelsChanged);
+        this.outputChannelManager.onChannelDeleted(fireChannelsChanged);
+        this.outputChannelManager.onChannelWasShown(fireChannelsChanged);
+        this.outputChannelManager.onChannelWasHidden(fireChannelsChanged);
+    }
+
     async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
         toolbarRegistry.registerItem({
             id: 'channels',
             render: () => this.renderChannelSelector(),
-            isVisible: widget => (widget instanceof OutputWidget),
-            onDidChange: this.outputChannelManager.onListOrSelectionChange
+            isVisible: widget => widget instanceof OutputWidget,
+            onDidChange: this.onChannelsChanged
         });
-
         toolbarRegistry.registerItem({
-            id: OutputCommands.CLEAR_OUTPUT_TOOLBAR.id,
-            command: OutputCommands.CLEAR_OUTPUT_TOOLBAR.id,
-            tooltip: 'Clear Output',
+            id: OutputCommands.CLEAR__WIDGET.id,
+            command: OutputCommands.CLEAR__WIDGET.id,
+            tooltip: OutputCommands.CLEAR__WIDGET.label,
             priority: 1,
+        });
+        toolbarRegistry.registerItem({
+            id: OutputCommands.LOCK__WIDGET.id,
+            command: OutputCommands.LOCK__WIDGET.id,
+            tooltip: 'Turn Auto Scrolling Off',
+            onDidChange: this.onOutputWidgetStateChanged,
+            priority: 2
+        });
+        toolbarRegistry.registerItem({
+            id: OutputCommands.UNLOCK__WIDGET.id,
+            command: OutputCommands.UNLOCK__WIDGET.id,
+            tooltip: 'Turn Auto Scrolling On',
+            onDidChange: this.onOutputWidgetStateChanged,
+            priority: 2
         });
     }
 
@@ -55,8 +91,8 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
         }
         return <select
             className='theia-select'
-            id={OutputWidget.IDs.CHANNEL_LIST}
-            key={OutputWidget.IDs.CHANNEL_LIST}
+            id='outputChannelList'
+            key='outputChannelList'
             value={this.outputChannelManager.selectedChannel ? this.outputChannelManager.selectedChannel.name : this.NONE}
             onChange={this.changeChannel}
         >
