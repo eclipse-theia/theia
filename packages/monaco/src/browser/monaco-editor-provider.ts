@@ -105,6 +105,10 @@ export class MonacoEditorProvider {
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
         const reference = await this.textModelService.createModelReference(uri);
+        // if document is invalid makes sure that all events from underlying resource are processed before throwing invalid model
+        if (!reference.object.valid) {
+            await reference.object.sync();
+        }
         if (!reference.object.valid) {
             reference.dispose();
             throw Object.assign(new Error(`'${uri.toString()}' is invalid`), { code: 'MODEL_IS_INVALID' });

@@ -18,12 +18,17 @@
 /// <reference types='@theia/monaco-editor-core/monaco'/>
 
 declare module monaco.instantiation {
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/instantiation/common/instantiation.ts#L86
     export interface IInstantiationService {
         invokeFunction: (fn: any, ...args: any) => any
     }
 }
 
 declare module monaco.editor {
+
+    export interface ICodeEditor {
+        protected readonly _instantiationService: monaco.instantiation.IInstantiationService;
+    }
 
     export interface IBulkEditResult {
         ariaSummary: string;
@@ -532,6 +537,9 @@ declare module monaco.services {
         tokenize(line: string, state: monaco.languages.IState, offsetDelta: number): any;
     }
 
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/services/resolverService.ts#L12
+    export const ITextModelService: any;
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/browser/services/codeEditorService.ts#L13
     export const ICodeEditorService: any;
 
@@ -570,6 +578,11 @@ declare module monaco.services {
         registerDecorationType: monaco.editor.ICodeEditorService['registerDecorationType'];
         removeDecorationType: monaco.editor.ICodeEditorService['removeDecorationType'];
         resolveDecorationOptions: monaco.editor.ICodeEditorService['resolveDecorationOptions'];
+        /**
+         * It respects inline and emebedded editors in comparison to `getActiveCodeEditor`
+         * which only respect standalone and diff modified editors.
+         */
+        getFocusedCodeEditor(): monaco.editor.ICodeEditor | undefined;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/standalone/browser/simpleServices.ts#L245
@@ -1054,16 +1067,20 @@ declare module monaco.filters {
 
 declare module monaco.editorExtensions {
 
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/browser/editorExtensions.ts#L141
+    export abstract class EditorCommand {
+    }
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/browser/editorExtensions.ts#L205
-    export interface EditorAction {
+    export abstract class EditorAction extends EditorCommand {
         id: string;
         label: string;
-        alias: string;
     }
 
     export module EditorExtensionsRegistry {
         // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/browser/editorExtensions.ts#L341
         export function getEditorActions(): EditorAction[];
+        export function getEditorCommand(commandId: string): EditorCommand | undefined;
     }
 }
 declare module monaco.modes {
@@ -1224,6 +1241,10 @@ declare module monaco.contextKeyService {
 }
 
 declare module monaco.contextkey {
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/contextkey/common/contextkey.ts#L819
+    export const IContextKeyService: any;
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/platform/contextkey/common/contextkey.ts#L29
     export class ContextKeyExpr {
         keys(): string[];

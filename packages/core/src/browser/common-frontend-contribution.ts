@@ -109,6 +109,10 @@ export namespace CommonCommands {
         id: 'core.redo',
         label: 'Redo'
     };
+    export const SELECT_ALL: Command = {
+        id: 'core.selectAll',
+        label: 'Select All'
+    };
 
     export const FIND: Command = {
         id: 'core.find',
@@ -500,11 +504,22 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             }
         });
 
-        commandRegistry.registerCommand(CommonCommands.UNDO);
-        commandRegistry.registerCommand(CommonCommands.REDO);
+        commandRegistry.registerCommand(CommonCommands.UNDO, {
+            execute: () => document.execCommand('undo')
+        });
+        commandRegistry.registerCommand(CommonCommands.REDO, {
+            execute: () => document.execCommand('redo')
+        });
+        commandRegistry.registerCommand(CommonCommands.SELECT_ALL, {
+            execute: () => document.execCommand('selectAll')
+        });
 
-        commandRegistry.registerCommand(CommonCommands.FIND);
-        commandRegistry.registerCommand(CommonCommands.REPLACE);
+        commandRegistry.registerCommand(CommonCommands.FIND, {
+            execute: () => { /* no-op */ }
+        });
+        commandRegistry.registerCommand(CommonCommands.REPLACE, {
+            execute: () => { /* no-op */ }
+        });
 
         commandRegistry.registerCommand(CommonCommands.NEXT_TAB, {
             isEnabled: () => this.shell.currentTabBar !== undefined,
@@ -577,7 +592,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             isEnabled: () => {
                 const currentWidget = this.shell.getCurrentWidget('main');
                 return currentWidget !== undefined &&
-                       this.shell.mainAreaTabBars.some(tb => tb.titles.some(title => title.owner !== currentWidget && title.closable));
+                    this.shell.mainAreaTabBars.some(tb => tb.titles.some(title => title.owner !== currentWidget && title.closable));
             },
             execute: () => {
                 const currentWidget = this.shell.getCurrentWidget('main');
@@ -704,6 +719,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 command: CommonCommands.REDO.id,
                 keybinding: 'ctrlcmd+shift+z'
+            },
+            {
+                command: CommonCommands.SELECT_ALL.id,
+                keybinding: 'ctrlcmd+a'
             },
             {
                 command: CommonCommands.FIND.id,
@@ -841,16 +860,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-            placeholder: 'Select File Icon Theme',
-            fuzzyMatchLabel: true,
-            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-            onClose: () => {
-                if (resetTo) {
-                    previewTheme.cancel();
-                    this.iconThemes.current = resetTo;
+                placeholder: 'Select File Icon Theme',
+                fuzzyMatchLabel: true,
+                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+                onClose: () => {
+                    if (resetTo) {
+                        previewTheme.cancel();
+                        this.iconThemes.current = resetTo;
+                    }
                 }
-            }
-        });
+            });
     }
 
     protected selectColorTheme(): void {
@@ -880,19 +899,19 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-            placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
-            fuzzyMatchLabel: true,
-            selectIndex: () => {
-                const current = this.themeService.getCurrentTheme().id;
-                return items.findIndex(item => item.id === current);
-            },
-            onClose: () => {
-                if (resetTo) {
-                    previewTheme.cancel();
-                    this.themeService.setCurrentTheme(resetTo);
+                placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
+                fuzzyMatchLabel: true,
+                selectIndex: () => {
+                    const current = this.themeService.getCurrentTheme().id;
+                    return items.findIndex(item => item.id === current);
+                },
+                onClose: () => {
+                    if (resetTo) {
+                        previewTheme.cancel();
+                        this.themeService.setCurrentTheme(resetTo);
+                    }
                 }
-            }
-        });
+            });
     }
 
     registerColors(colors: ColorRegistry): void {

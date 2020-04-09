@@ -70,6 +70,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/contrib/snippet/snippetParser',
                 'vs/platform/configuration/common/configuration',
                 'vs/platform/configuration/common/configurationModels',
+                'vs/editor/common/services/resolverService',
                 'vs/editor/browser/services/codeEditorService',
                 'vs/editor/browser/services/codeEditorServiceImpl',
                 'vs/platform/markers/common/markerService',
@@ -83,6 +84,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 filters: any, styler: any, colorRegistry: any, color: any,
                 platform: any, modes: any, suggest: any, snippetParser: any,
                 configuration: any, configurationModels: any,
+                resolverService: any,
                 codeEditorService: any, codeEditorServiceImpl: any,
                 markerService: any,
                 contextKey: any, contextKeyService: any,
@@ -92,7 +94,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                     global.monaco.actions = actions;
                     global.monaco.keybindings = Object.assign({}, keybindingsRegistry, keybindingResolver, resolvedKeybinding, keybindingLabels, keyCodes);
                     global.monaco.services = Object.assign({}, simpleServices, standaloneServices, standaloneLanguages, configuration, configurationModels,
-                        codeEditorService, codeEditorServiceImpl, markerService);
+                        resolverService, codeEditorService, codeEditorServiceImpl, markerService);
                     global.monaco.quickOpen = Object.assign({}, quickOpenWidget, quickOpenModel);
                     global.monaco.filters = filters;
                     global.monaco.theme = styler;

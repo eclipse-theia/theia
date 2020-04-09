@@ -16,7 +16,6 @@
 
 import { injectable, inject } from 'inversify';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
-import { EditorKeybindingContexts } from '@theia/editor/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { environment } from '@theia/core';
@@ -45,16 +44,6 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                 }
                 registry.registerKeybinding({ command, keybinding, when });
             }
-        }
-
-        // `Select All` is not an editor action just like everything else.
-        const selectAllCommand = this.commands.validate(MonacoCommands.SELECTION_SELECT_ALL);
-        if (selectAllCommand) {
-            registry.registerKeybinding({
-                command: selectAllCommand,
-                keybinding: 'ctrlcmd+a',
-                context: EditorKeybindingContexts.editorTextFocus
-            });
         }
     }
 }

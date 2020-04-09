@@ -17,66 +17,34 @@
 import { injectable, inject } from 'inversify';
 import { ProtocolToMonacoConverter } from 'monaco-languageclient/lib';
 import { Position, Location } from '@theia/languages/lib/browser';
-import { Command, CommandContribution, CommandRegistry } from '@theia/core';
+import { CommandContribution, CommandRegistry, CommandHandler } from '@theia/core/lib/common/command';
 import { CommonCommands } from '@theia/core/lib/browser';
 import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
 import { QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { EditorCommands } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
-import MenuRegistry = monaco.actions.MenuRegistry;
-import { MonacoCommandService } from './monaco-command-service';
+import { MonacoEditorService } from './monaco-editor-service';
+import { MonacoTextModelService } from './monaco-text-model-service';
 
-// vs code doesn't use iconClass anymore, but icon instead, so some adaptation is required to reuse it on theia side
-export type MonacoIcon = { dark?: monaco.Uri; light?: monaco.Uri } | monaco.theme.ThemeIcon;
-export type MonacoCommand = Command & { icon?: MonacoIcon, delegate?: string };
 export namespace MonacoCommands {
 
-    export const UNDO = 'undo';
-    export const REDO = 'redo';
-    export const COMMON_KEYBOARD_ACTIONS = new Set([UNDO, REDO]);
-    export const COMMON_ACTIONS: {
-        [action: string]: string
-    } = {};
-    COMMON_ACTIONS[UNDO] = CommonCommands.UNDO.id;
-    COMMON_ACTIONS[REDO] = CommonCommands.REDO.id;
-    COMMON_ACTIONS['actions.find'] = CommonCommands.FIND.id;
-    COMMON_ACTIONS['editor.action.startFindReplaceAction'] = CommonCommands.REPLACE.id;
+    export const COMMON_ACTIONS = new Map<string, string>([
+        ['undo', CommonCommands.UNDO.id],
+        ['redo', CommonCommands.REDO.id],
+        ['editor.action.selectAll', CommonCommands.SELECT_ALL.id],
+        ['actions.find', CommonCommands.FIND.id],
+        ['editor.action.startFindReplaceAction', CommonCommands.REPLACE.id]
+    ]);
 
-    export const SELECTION_SELECT_ALL = 'editor.action.select.all';
     export const GO_TO_DEFINITION = 'editor.action.revealDefinition';
 
-    export const ACTIONS = new Map<string, MonacoCommand>();
-    ACTIONS.set(SELECTION_SELECT_ALL, { id: SELECTION_SELECT_ALL, label: 'Select All', delegate: 'editor.action.selectAll' });
     export const EXCLUDE_ACTIONS = new Set([
-        ...Object.keys(COMMON_ACTIONS),
         'editor.action.quickCommand',
         'editor.action.clipboardCutAction',
         'editor.action.clipboardCopyAction',
         'editor.action.clipboardPasteAction'
     ]);
-    const icons = new Map<string, MonacoIcon>();
-    for (const menuItem of MenuRegistry.getMenuItems(7)) {
-
-        const commandItem = menuItem.command;
-        if (commandItem && commandItem.icon) {
-            icons.set(commandItem.id, commandItem.icon);
-        }
-    }
-    for (const command of monaco.editorExtensions.EditorExtensionsRegistry.getEditorActions()) {
-        const id = command.id;
-        if (!EXCLUDE_ACTIONS.has(id)) {
-            const label = command.label;
-            const icon = icons.get(id);
-            ACTIONS.set(id, { id, label, icon });
-        }
-    }
-    for (const keybinding of monaco.keybindings.KeybindingsRegistry.getDefaultKeybindings()) {
-        const id = keybinding.command;
-        if (!ACTIONS.has(id) && !EXCLUDE_ACTIONS.has(id)) {
-            ACTIONS.set(id, { id, delegate: id });
-        }
-    }
 }
 
 @injectable()
@@ -94,47 +62,118 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
 
+    @inject(MonacoEditorService)
+    protected readonly codeEditorService: MonacoEditorService;
+
+    @inject(MonacoTextModelService)
+    protected readonly textModelService: MonacoTextModelService;
+
+    @inject(monaco.contextKeyService.ContextKeyService)
+    protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService;
+
     registerCommands(): void {
-        this.registerCommonCommandHandlers();
+        this.registerMonacoCommands();
         this.registerEditorCommandHandlers();
-        this.registerMonacoActionCommands();
-        this.registerInternalLanguageServiceCommands();
     }
 
-    protected registerInternalLanguageServiceCommands(): void {
-        const instantiationService = monaco.services.StaticServices.instantiationService.get();
+    /**
+     * Register commands from Monaco to Theia registry.
+     *
+     * Monaco has different kind of commands which should be handled differently by Theia.
+     *
+     * ### Editor Actions
+     *
+     * They should be registered with a label to be visible in the quick command palette.
+     *
+     * Such actions should be enabled only if the current editor is available and
+     * it supports such action in the current context.
+     *
+     * ### Editor Commands
+     *
+     * Such actions should be enabled only if the current editor is available.
+     *
+     * `actions.find` and `editor.action.startFindReplaceAction` are registed as handlers for `find` and `replace`.
+     * If handlers are not enabled then the core should prevent the default browser behaviour.
+     * Other Theia extensions can register alternative implementations using custom enablement.
+     *
+     * ### Global Commands
+     *
+     * These commands are not necessary dependend on the current editor and enabled always.
+     * But they depend on services which are global in VS Code, but bound to the editor in Monaco,
+     * i.e. `ICodeEditorService` or `IContextKeyService`. We should take care of providing Theia implementations for such services.
+     *
+     * #### Global Native or Editor Commands
+     *
+     * Namely: `undo`, `redo` and `editor.action.selectAll`. They depend on `ICodeEditorService`.
+     * They will try to delegate to the current editor and if it is not available delegate to the browser.
+     * They are registered as handlers for corresponding core commands always.
+     * Other Theia extensions can provide alternative implementations by introducing a dependency to `@theia/monaco` extension.
+     *
+     * #### Global Language Commands
+     *
+     * Like `_executeCodeActionProvider`, they depend on `ICodeEditorService` and `ITextModelService`.
+     *
+     * #### Global Context Commands
+     *
+     * It is `setContext`. It depends on `IContextKeyService`.
+     *
+     * #### Global Editor Commands
+     *
+     * Like `openReferenceToSide` and `openReference`, they depend on `IListService`.
+     * We treat all commands which don't match any other category of global commands as global editor commands
+     * and execute them using the instantiation service of the current editor.
+     */
+    protected registerMonacoCommands(): void {
+        const editorRegistry = monaco.editorExtensions.EditorExtensionsRegistry;
+        const editorActions = new Map(editorRegistry.getEditorActions().map(({ id, label }) => [id, label]));
+
+        const { codeEditorService, textModelService, contextKeyService } = this;
+        const [, globalInstantiationService] = monaco.services.StaticServices.init({ codeEditorService, textModelService, contextKeyService });
         const monacoCommands = monaco.commands.CommandsRegistry.getCommands();
-        for (const command of monacoCommands.keys()) {
-            if (command.startsWith('_execute')) {
-                this.commandRegistry.registerCommand(
-                    {
-                        id: command
-                    },
-                    {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        execute: (...args: any) => instantiationService.invokeFunction(
-                            monacoCommands.get(command)!.handler,
-                            ...args
-                        )
+        for (const id of monacoCommands.keys()) {
+            if (MonacoCommands.EXCLUDE_ACTIONS.has(id)) {
+                continue;
+            }
+            const handler: CommandHandler = {
+                execute: (...args) => {
+                    const editor = codeEditorService.getFocusedCodeEditor() || codeEditorService.getActiveCodeEditor();
+                    if (editorActions.has(id)) {
+                        const action = editor && editor.getAction(id);
+                        if (!action) {
+                            return;
+                        }
+                        return action.run();
                     }
-                );
+                    const editorCommand = !!editorRegistry.getEditorCommand(id) ||
+                        !(id.startsWith('_execute') || id === 'setContext' || MonacoCommands.COMMON_ACTIONS.has(id));
+                    const instantiationService = editorCommand ? editor && editor['_instantiationService'] : globalInstantiationService;
+                    if (!instantiationService) {
+                        return;
+                    }
+                    return instantiationService.invokeFunction(
+                        monacoCommands.get(id)!.handler,
+                        ...args
+                    );
+                },
+                isEnabled: () => {
+                    const editor = codeEditorService.getFocusedCodeEditor() || codeEditorService.getActiveCodeEditor();
+                    if (editorActions.has(id)) {
+                        const action = editor && editor.getAction(id);
+                        return !!action && action.isSupported();
+                    }
+                    if (!!editorRegistry.getEditorCommand(id)) {
+                        return !!editor;
+                    }
+                    return true;
+                }
+            };
+            const label = editorActions.get(id);
+            this.commandRegistry.registerCommand({ id, label }, handler);
+            const coreCommand = MonacoCommands.COMMON_ACTIONS.get(id);
+            if (coreCommand) {
+                this.commandRegistry.registerHandler(coreCommand, handler);
             }
         }
-    }
-
-    protected registerCommonCommandHandlers(): void {
-        // eslint-disable-next-line guard-for-in
-        for (const action in MonacoCommands.COMMON_ACTIONS) {
-            const command = MonacoCommands.COMMON_ACTIONS[action];
-            const handler = this.newCommonActionHandler(action);
-            this.monacoCommandRegistry.registerHandler(command, handler);
-        }
-    }
-    protected newCommonActionHandler(action: string): MonacoEditorCommandHandler {
-        return this.isCommonKeyboardAction(action) ? this.newKeyboardHandler(action) : this.newActionHandler(action);
-    }
-    protected isCommonKeyboardAction(action: string): boolean {
-        return MonacoCommands.COMMON_KEYBOARD_ACTIONS.has(action);
     }
 
     protected registerEditorCommandHandlers(): void {
@@ -253,44 +292,6 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                 }
             });
         }
-    }
-
-    protected registerMonacoActionCommands(): void {
-        for (const action of MonacoCommands.ACTIONS.values()) {
-            const handler = this.newMonacoActionHandler(action);
-            this.monacoCommandRegistry.registerCommand(action, handler);
-        }
-    }
-    protected newMonacoActionHandler(action: MonacoCommand): MonacoEditorCommandHandler {
-        const delegate = action.delegate;
-        return delegate ? this.newDelegateHandler(delegate) : this.newActionHandler(action.id);
-    }
-
-    protected newKeyboardHandler(action: string): MonacoEditorCommandHandler {
-        return {
-            execute: (editor, ...args) => {
-                const modelData = editor.getControl()._modelData;
-                if (modelData) {
-                    modelData.cursor.trigger('keyboard', action, args);
-                }
-            }
-        };
-    }
-    protected newCommandHandler(action: string): MonacoEditorCommandHandler {
-        return {
-            execute: (editor, ...args) => editor.commandService.executeCommand(action, ...args)
-        };
-    }
-    protected newActionHandler(action: string): MonacoEditorCommandHandler {
-        return {
-            execute: editor => editor.runAction(action),
-            isEnabled: editor => editor.isActionSupported(action)
-        };
-    }
-    protected newDelegateHandler(action: string): MonacoEditorCommandHandler {
-        return {
-            execute: (editor, ...args) => (editor.commandService as MonacoCommandService).executeMonacoCommand(action, ...args)
-        };
     }
 
 }
