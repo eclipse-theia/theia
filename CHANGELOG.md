@@ -6,6 +6,7 @@
 
 Breaking changes:
 
+- [core] `CommandRegistry.registerHandler` registers a new handler with a higher priority than previous [#7539](https://github.com/eclipse-theia/theia/pull/7539)
 - [plugin] removed `configStorage` argument from `PluginManager.registerPlugin`.
 Use `PluginManager.configStorage` property instead. [#7265](https://github.com/eclipse-theia/theia/pull/7265#discussion_r399956070)
 - [process] `TerminalProcess` doesn't handle shell quoting, the shell process arguments must be prepared from the caller. Removed all methods related to shell escaping inside this class. You should use functions located in `@theia/process/lib/common/shell-quoting.ts` in order to process arguments for shells.

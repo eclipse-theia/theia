@@ -236,13 +236,17 @@ export class CommandRegistry implements CommandService {
 
     /**
      * Register the given handler for the given command identifier.
+     *
+     * If there is already a handler for the given command
+     * then the given handler is registered as more specific, and
+     * has higher priority during enablement, visibility and toggle state evaluations.
      */
     registerHandler(commandId: string, handler: CommandHandler): Disposable {
         let handlers = this._handlers[commandId];
         if (!handlers) {
             this._handlers[commandId] = handlers = [];
         }
-        handlers.push(handler);
+        handlers.unshift(handler);
         return {
             dispose: () => {
                 const idx = handlers.indexOf(handler);

@@ -571,6 +571,15 @@ export class KeybindingRegistry {
         return true;
     }
 
+    dispatchCommand(id: string, target?: EventTarget): void {
+        const keybindings = this.getKeybindingsForCommand(id);
+        if (keybindings.length) {
+            for (const keyCode of this.resolveKeybinding(keybindings[0])) {
+                this.dispatchKeyDown(keyCode, target);
+            }
+        }
+    }
+
     dispatchKeyDown(input: KeyboardEventInit | KeyCode | string, target: EventTarget = document.activeElement || window): void {
         const eventInit = this.asKeyboardEventInit(input);
         const emulatedKeyboardEvent = new KeyboardEvent('keydown', eventInit);

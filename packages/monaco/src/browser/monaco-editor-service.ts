@@ -51,8 +51,11 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
         super(monaco.services.StaticServices.standaloneThemeService.get());
     }
 
-    getActiveCodeEditor(): ICodeEditor | undefined {
-        const editor = MonacoEditor.getActive(this.editors);
+    /**
+     * Monaco active editor is either focused or last focused editor.
+     */
+    getActiveCodeEditor(): monaco.editor.IStandaloneCodeEditor | undefined {
+        const editor = MonacoEditor.getCurrent(this.editors);
         return editor && editor.getControl();
     }
 
