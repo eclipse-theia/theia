@@ -292,9 +292,7 @@ export class MiniBrowserContent extends BaseWidget {
 
         const loadIndicator = document.createElement('div');
         loadIndicator.classList.add(MiniBrowserContentStyle.PRE_LOAD);
-        const loader = document.createElement('i');
-        loader.className = 'codicon codicon-sync theia-loader';
-        loadIndicator.appendChild(loader);
+        loadIndicator.classList.add(MiniBrowserContentStyle.THEIA_LOADER);
         loadIndicator.style.display = 'none';
 
         const errorBar = this.createErrorBar();

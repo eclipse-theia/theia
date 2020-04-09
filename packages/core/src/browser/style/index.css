@@ -101,10 +101,23 @@ blockquote {
   align-items: center;
 }
 
-.theia-loader {
-  font-size: 72px !important; /* Override default codicon size */
+.theia-loader::after {
+  content: "\ea77"; /* codicon-sync */
+
   animation: 1s theia-loader-rotate infinite;
   color: var(--theia-foreground, #949494);
+
+  /* styles from codicon */
+	font: normal normal normal 72px/1 codicon;
+	display: inline-block;
+	text-decoration: none;
+	text-rendering: auto;
+	text-align: center;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
 }
 
 @keyframes theia-loader-rotate {

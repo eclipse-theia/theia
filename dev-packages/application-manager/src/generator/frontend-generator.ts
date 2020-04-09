@@ -54,10 +54,7 @@ export class FrontendGenerator extends AbstractGenerator {
 </head>
 
 <body>
-  <div class="theia-preload">
-    ${this.compileIndexPreload(frontendModules)}
-    <i class="codicon codicon-sync theia-loader"></i>
-  </div>
+  <div class="theia-preload theia-loader">${this.compileIndexPreload(frontendModules)}</div>
 </body>
 
 </html>`;
