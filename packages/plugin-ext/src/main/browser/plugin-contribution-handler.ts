@@ -19,7 +19,7 @@ import { ITokenTypeMap, IEmbeddedLanguagesMap, StandardTokenType } from 'vscode-
 import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginViewRegistry } from './view/plugin-view-registry';
-import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin } from '../../common';
+import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin, GrammarsContribution } from '../../common';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser/preferences';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
@@ -162,6 +162,7 @@ export class PluginContributionHandler {
 
         const grammars = contributions.grammars;
         if (grammars && grammars.length) {
+            const grammarsWithLanguage: GrammarsContribution[] = [];
             for (const grammar of grammars) {
                 if (grammar.injectTo) {
                     for (const injectScope of grammar.injectTo) {
@@ -178,6 +179,10 @@ export class PluginContributionHandler {
                         });
                     }
                 }
+                if (grammar.language) {
+                    // processing is deferred.
+                    grammarsWithLanguage.push(grammar);
+                }
                 pushContribution(`grammar.textmate.scope.${grammar.scope}`, () => this.grammarsRegistry.registerTextmateGrammarScope(grammar.scope, {
                     async getGrammarDefinition(): Promise<GrammarDefinition> {
                         return {
@@ -189,23 +194,29 @@ export class PluginContributionHandler {
                     getInjections: (scopeName: string) =>
                         this.injections.get(scopeName)!
                 }));
-
-                // load grammars on next tick to await registration of languages from all plugins in current tick
-                // see https://github.com/eclipse-theia/theia/issues/6907#issuecomment-578600243
+            }
+            // load grammars on next tick to await registration of languages from all plugins in current tick
+            // see https://github.com/eclipse-theia/theia/issues/6907#issuecomment-578600243
+            setTimeout(() => {
+                for (const grammar of grammarsWithLanguage) {
+                    const language = grammar.language!;
+                    pushContribution(`grammar.language.${language}.scope`, () => this.grammarsRegistry.mapLanguageIdToTextmateGrammar(language, grammar.scope));
+                    pushContribution(`grammar.language.${language}.configuration`, () => this.grammarsRegistry.registerGrammarConfiguration(language, {
+                        embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages, logError),
+                        tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
+                    }));
+                }
+                // activate grammars only once everything else is loaded.
+                // see https://github.com/eclipse-theia/theia-cpp-extensions/issues/100#issuecomment-610643866
                 setTimeout(() => {
-                    const language = grammar.language;
-                    if (language) {
-                        pushContribution(`grammar.language.${language}.scope`, () => this.grammarsRegistry.mapLanguageIdToTextmateGrammar(language, grammar.scope));
-                        pushContribution(`grammar.language.${language}.configuration`, () => this.grammarsRegistry.registerGrammarConfiguration(language, {
-                            embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages, logError),
-                            tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
-                        }));
+                    for (const grammar of grammarsWithLanguage) {
+                        const language = grammar.language!;
                         pushContribution(`grammar.language.${language}.activation`,
                             () => this.monacoTextmateService.activateLanguage(language)
                         );
                     }
                 });
-            }
+            });
         }
 
         pushContribution('commands', () => this.registerCommands(contributions));
