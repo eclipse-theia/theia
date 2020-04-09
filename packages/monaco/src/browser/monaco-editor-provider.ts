@@ -18,7 +18,7 @@
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { DisposableCollection, deepClone, Disposable, } from '@theia/core/lib/common';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter, TextDocumentSaveReason } from 'monaco-languageclient';
 import { MonacoCommandServiceFactory } from './monaco-command-service';
@@ -35,13 +35,23 @@ import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
-import { OS } from '@theia/core';
+import { OS, ContributionProvider } from '@theia/core';
 import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 
+export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
+export interface MonacoEditorFactory {
+    readonly scheme: string;
+    create(model: MonacoEditorModel, defaultOptions: MonacoEditor.IOptions, defaultOverrides: IEditorOverrideServices): MonacoEditor;
+}
+
 @injectable()
 export class MonacoEditorProvider {
+
+    @inject(ContributionProvider)
+    @named(MonacoEditorFactory)
+    protected readonly factories: ContributionProvider<MonacoEditorFactory>;
 
     @inject(MonacoBulkEditService)
     protected readonly bulkEditService: MonacoBulkEditService;
@@ -123,10 +133,10 @@ export class MonacoEditorProvider {
 
     async get(uri: URI): Promise<MonacoEditor> {
         await this.editorPreferences.ready;
-        return this.doCreateEditor((override, toDispose) => this.createEditor(uri, override, toDispose));
+        return this.doCreateEditor(uri, (override, toDispose) => this.createEditor(uri, override, toDispose));
     }
 
-    protected async doCreateEditor(factory: (override: IEditorOverrideServices, toDispose: DisposableCollection) => Promise<MonacoEditor>): Promise<MonacoEditor> {
+    protected async doCreateEditor(uri: URI, factory: (override: IEditorOverrideServices, toDispose: DisposableCollection) => Promise<MonacoEditor>): Promise<MonacoEditor> {
         const commandService = this.commandServiceFactory();
         const contextKeyService = this.contextKeyService.createScoped();
         const { codeEditorService, textModelService, contextMenuService } = this;
@@ -134,7 +144,7 @@ export class MonacoEditorProvider {
         const toDispose = new DisposableCollection(commandService);
         const openerService = new monaco.services.OpenerService(codeEditorService, commandService);
         openerService.registerOpener({
-            open: (uri, options) => this.interceptOpen(uri, options)
+            open: (u, options) => this.interceptOpen(u, options)
         });
         const editor = await factory({
             codeEditorService,
@@ -245,7 +255,10 @@ export class MonacoEditorProvider {
     protected async createMonacoEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {
         const model = await this.getModel(uri, toDispose);
         const options = this.createMonacoEditorOptions(model);
-        const editor = new MonacoEditor(uri, model, document.createElement('div'), this.services, options, override);
+        const factory = this.factories.getContributions().find(({ scheme }) => uri.scheme === scheme);
+        const editor = factory
+            ? factory.create(model, options, override)
+            : new MonacoEditor(uri, model, document.createElement('div'), this.services, options, override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => {
             if (event.affects(uri.toString(), model.languageId)) {
                 this.updateMonacoEditorOptions(editor, event);
@@ -471,7 +484,7 @@ export class MonacoEditorProvider {
     }
 
     async createInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions): Promise<MonacoEditor> {
-        return this.doCreateEditor(async (override, toDispose) => {
+        return this.doCreateEditor(uri, async (override, toDispose) => {
             override.contextMenuService = {
                 showContextMenu: () => {/* no-op*/ }
             };

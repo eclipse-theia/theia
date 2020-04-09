@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2020 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,14 +14,28 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-.theia-output .editor-container {
-    height: 100%;
-}
+import URI from '@theia/core/lib/common/uri';
 
-.theia-output-error {
-    color: var(--theia-errorForeground);
-}
+export namespace OutputUri {
 
-.theia-output-warning {
-    color: var(--theia-editorWarning-foreground);
+    export const SCHEME = 'output';
+
+    export function is(uri: string | URI): boolean {
+        if (uri instanceof URI) {
+            return uri.scheme === SCHEME;
+        }
+        return is(new URI(uri));
+    }
+
+    export function create(name: string): URI {
+        return new URI(name).withScheme(SCHEME);
+    }
+
+    export function channelName(uri: string | URI): string {
+        if (!is(uri)) {
+            throw new Error(`Expected '${OutputUri.SCHEME}' URI scheme. Got: ${uri} instead.`);
+        }
+        return (uri instanceof URI ? uri : new URI(uri)).toString(true).slice(`${OutputUri.SCHEME}:/`.length);
+    }
+
 }

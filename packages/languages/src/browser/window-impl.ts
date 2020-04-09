@@ -15,17 +15,22 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { MessageService } from '@theia/core/lib/common';
+import { MessageService, CommandRegistry } from '@theia/core/lib/common';
 import { Window, OutputChannel, MessageActionItem, MessageType } from 'monaco-languageclient/lib/services';
-import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
-import { OutputContribution } from '@theia/output/lib/browser/output-contribution';
 
 @injectable()
 export class WindowImpl implements Window {
 
+    private canAccessOutput: boolean | undefined;
+    protected static readonly NOOP_CHANNEL: OutputChannel = {
+        append: () => { },
+        appendLine: () => { },
+        dispose: () => { },
+        show: () => { }
+    };
+
     @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(OutputChannelManager) protected readonly outputChannelManager: OutputChannelManager;
-    @inject(OutputContribution) protected readonly outputContribution: OutputContribution;
+    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
 
     showMessage<T extends MessageActionItem>(type: MessageType, message: string, ...actions: T[]): Thenable<T | undefined> {
         const originalActions = new Map((actions || []).map(action => [action.title, action] as [string, T]));
@@ -52,22 +57,20 @@ export class WindowImpl implements Window {
     }
 
     createOutputChannel(name: string): OutputChannel {
-        const outputChannel = this.outputChannelManager.getChannel(name);
+        // Note: alternatively, we could add `@theia/output` as a `devDependency` and check, for instance,
+        // the manager for the output channels can be injected or not with `@optional()` but this approach has the same effect.
+        // The `@theia/languages` extension will be removed anyway: https://github.com/eclipse-theia/theia/issues/7100
+        if (this.canAccessOutput === undefined) {
+            this.canAccessOutput = !!this.commandRegistry.getCommand('output:append');
+        }
+        if (!this.canAccessOutput) {
+            return WindowImpl.NOOP_CHANNEL;
+        }
         return {
-            append: outputChannel.append.bind(outputChannel),
-            appendLine: outputChannel.appendLine.bind(outputChannel),
-            show: async (preserveFocus?: boolean) => {
-                const options = Object.assign({
-                    preserveFocus: false,
-                }, { preserveFocus });
-                const activate = !options.preserveFocus;
-                const reveal = options.preserveFocus;
-                await this.outputContribution.openView({ activate, reveal });
-                outputChannel.setVisibility(true);
-            },
-            dispose: () => {
-                this.outputChannelManager.deleteChannel(outputChannel.name);
-            }
+            append: text => this.commandRegistry.executeCommand('output:append', { name, text }),
+            appendLine: text => this.commandRegistry.executeCommand('output:appendLine', { name, text }),
+            dispose: () => this.commandRegistry.executeCommand('output:dispose', { name }),
+            show: (preserveFocus: boolean = false) => this.commandRegistry.executeCommand('output:show', { name, options: { preserveFocus } })
         };
     }
 }

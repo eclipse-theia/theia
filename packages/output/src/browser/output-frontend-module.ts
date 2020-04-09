@@ -16,26 +16,38 @@
 
 import { ContainerModule } from 'inversify';
 import { OutputWidget, OUTPUT_WIDGET_KIND } from './output-widget';
-import { WidgetFactory, bindViewContribution, KeybindingContext } from '@theia/core/lib/browser';
-import { OutputContribution, OutputWidgetIsActiveContext } from './output-contribution';
-import { OutputToolbarContribution } from './output-toolbar-contribution';
+import { CommandContribution } from '@theia/core/lib/common/command';
+import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { ResourceResolver } from '@theia/core/lib/common';
+import { WidgetFactory, bindViewContribution, OpenHandler } from '@theia/core/lib/browser';
 import { OutputChannelManager } from '../common/output-channel';
 import { bindOutputPreferences } from '../common/output-preferences';
-import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { OutputToolbarContribution } from './output-toolbar-contribution';
+import { OutputContribution } from './output-contribution';
+import { MonacoEditorFactory } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { OutputContextMenuService } from './output-context-menu';
+import { OutputEditorFactory } from './output-editor-factory';
+import { MonacoEditorModelFactory } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { OutputEditorModelFactory } from './output-editor-model-factory';
 
-export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bindOutputPreferences(bind);
-    bind(OutputWidget).toSelf();
+export default new ContainerModule(bind => {
     bind(OutputChannelManager).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(OutputChannelManager);
+    bind(ResourceResolver).toService(OutputChannelManager);
+    bind(MonacoEditorFactory).to(OutputEditorFactory).inSingletonScope();
+    bind(MonacoEditorModelFactory).to(OutputEditorModelFactory).inSingletonScope();
+    bind(OutputContextMenuService).toSelf().inSingletonScope();
 
+    bindOutputPreferences(bind);
+
+    bind(OutputWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: OUTPUT_WIDGET_KIND,
         createWidget: () => context.container.get<OutputWidget>(OutputWidget)
     }));
-
     bindViewContribution(bind, OutputContribution);
-    bind(OutputWidgetIsActiveContext).toSelf().inSingletonScope();
-    bind(KeybindingContext).toService(OutputWidgetIsActiveContext);
+    bind(OpenHandler).to(OutputContribution).inSingletonScope();
+
     bind(OutputToolbarContribution).toSelf().inSingletonScope();
     bind(TabBarToolbarContribution).toService(OutputToolbarContribution);
 });

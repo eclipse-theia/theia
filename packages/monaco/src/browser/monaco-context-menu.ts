@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import { MenuPath } from '@theia/core/lib/common/menu';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { ContextMenuRenderer, toAnchor } from '@theia/core/lib/browser';
 import IContextMenuService = monaco.editor.IContextMenuService;
@@ -35,7 +36,11 @@ export class MonacoContextMenuService implements IContextMenuService {
         // Actions for editor context menu come as 'MenuItemAction' items
         // In case of 'Quick Fix' actions come as 'CodeActionAction' items
         if (actions.length > 0 && actions[0] instanceof monaco.actions.MenuItemAction) {
-            this.contextMenuRenderer.render(EDITOR_CONTEXT_MENU, anchor, () => delegate.onHide(false));
+            this.contextMenuRenderer.render({
+                menuPath: this.menuPath(),
+                anchor,
+                onHide: () => delegate.onHide(false)
+            });
         } else {
             const commands = new CommandRegistry();
             const menu = new Menu({
@@ -59,6 +64,10 @@ export class MonacoContextMenuService implements IContextMenuService {
             menu.aboutToClose.connect(() => delegate.onHide(false));
             menu.open(anchor.x, anchor.y);
         }
+    }
+
+    protected menuPath(): MenuPath {
+        return EDITOR_CONTEXT_MENU;
     }
 
 }

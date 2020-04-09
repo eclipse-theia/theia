@@ -14,12 +14,26 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';
-import { ResourceProvider, ReferenceCollection, Event } from '@theia/core';
+import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider } from '@theia/core';
 import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
+import IReference = monaco.editor.IReference;
+export { IReference };
+
+export const MonacoEditorModelFactory = Symbol('MonacoEditorModelFactory');
+export interface MonacoEditorModelFactory {
+
+    readonly scheme: string;
+
+    createModel(
+        resource: Resource,
+        options?: { encoding?: string | undefined }
+    ): MaybePromise<MonacoEditorModel>;
+
+}
 
 @injectable()
 export class MonacoTextModelService implements monaco.editor.ITextModelService {
@@ -40,6 +54,10 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     @inject(ProtocolToMonacoConverter)
     protected readonly p2m: ProtocolToMonacoConverter;
 
+    @inject(ContributionProvider)
+    @named(MonacoEditorModelFactory)
+    protected readonly factories: ContributionProvider<MonacoEditorModelFactory>;
+
     get models(): MonacoEditorModel[] {
         return this._models.values();
     }
@@ -52,19 +70,25 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         return this._models.onDidCreate;
     }
 
-    createModelReference(raw: monaco.Uri | URI): Promise<monaco.editor.IReference<MonacoEditorModel>> {
+    createModelReference(raw: monaco.Uri | URI): Promise<IReference<MonacoEditorModel>> {
         return this._models.acquire(raw.toString());
     }
 
     protected async loadModel(uri: URI): Promise<MonacoEditorModel> {
         await this.editorPreferences.ready;
         const resource = await this.resourceProvider(uri);
-        const model = await (new MonacoEditorModel(resource, this.m2p, this.p2m, { encoding: this.editorPreferences.get('files.encoding') }).load());
+        const model = await (await this.createModel(resource)).load();
         this.updateModel(model);
         model.textEditorModel.onDidChangeLanguage(() => this.updateModel(model));
         const disposable = this.editorPreferences.onPreferenceChanged(change => this.updateModel(model, change));
         model.onDispose(() => disposable.dispose());
         return model;
+    }
+
+    protected createModel(resource: Resource): MaybePromise<MonacoEditorModel> {
+        const options = { encoding: this.editorPreferences.get('files.encoding') };
+        const factory = this.factories.getContributions().find(({ scheme }) => resource.uri.scheme === scheme);
+        return factory ? factory.createModel(resource, options) : new MonacoEditorModel(resource, this.m2p, this.p2m, options);
     }
 
     protected readonly modelOptions: { [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined) } = {

@@ -11,6 +11,12 @@
   "references": [
     {
       "path": "../core/compile.tsconfig.json"
+    },
+    {
+      "path": "../monaco/compile.tsconfig.json"
+    },
+    {
+      "path": "../editor/compile.tsconfig.json"
     }
   ]
 }

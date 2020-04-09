@@ -14,100 +14,164 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
+import { Widget } from '@theia/core/lib/browser/widgets/widget';
+import { MaybePromise } from '@theia/core/lib/common/types';
+import { CommonCommands, quickCommand, OpenHandler, OpenerOptions } from '@theia/core/lib/browser';
+import { Command, CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { Widget, KeybindingRegistry, KeybindingContext, ApplicationShell } from '@theia/core/lib/browser';
-import { OUTPUT_WIDGET_KIND, OutputWidget } from './output-widget';
-import { Command, CommandRegistry } from '@theia/core/lib/common';
+import { OutputWidget } from './output-widget';
+import { OutputContextMenu } from './output-context-menu';
+import { OutputUri } from '../common/output-uri';
 
 export namespace OutputCommands {
 
     const OUTPUT_CATEGORY = 'Output';
 
-    export const CLEAR_OUTPUT_TOOLBAR: Command = {
-        id: 'output:clear',
+    /* #region VS Code `OutputChannel` API */
+    // Based on: https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/vscode.d.ts#L4692-L4745
+
+    export const APPEND: Command = {
+        id: 'output:append'
+    };
+
+    export const APPEND_LINE: Command = {
+        id: 'output:appendLine'
+    };
+
+    export const CLEAR: Command = {
+        id: 'output:clear'
+    };
+
+    export const SHOW: Command = {
+        id: 'output:show'
+    };
+
+    export const HIDE: Command = {
+        id: 'output:hide'
+    };
+
+    export const DISPOSE: Command = {
+        id: 'output:dispose'
+    };
+
+    /* #endregion VS Code `OutputChannel` API */
+
+    export const CLEAR__WIDGET: Command = {
+        id: 'output:widget:clear',
         category: OUTPUT_CATEGORY,
-        label: 'Clear Output',
         iconClass: 'clear-all'
     };
 
-    export const SELECT_ALL: Command = {
-        id: 'output:selectAll',
+    export const LOCK__WIDGET: Command = {
+        id: 'output:widget:lock',
         category: OUTPUT_CATEGORY,
-        label: 'Select All'
+        iconClass: 'fa fa-unlock'
+    };
+
+    export const UNLOCK__WIDGET: Command = {
+        id: 'output:widget:unlock',
+        category: OUTPUT_CATEGORY,
+        iconClass: 'fa fa-lock'
+    };
+
+    export const CLEAR__QUICK_PICK: Command = {
+        id: 'output:pick-clear',
+        label: 'Clear Output Channel...',
+        category: OUTPUT_CATEGORY
+    };
+
+    export const SHOW__QUICK_PICK: Command = {
+        id: 'output:pick-show',
+        label: 'Show Output Channel...',
+        category: OUTPUT_CATEGORY
+    };
+
+    export const HIDE__QUICK_PICK: Command = {
+        id: 'output:pick-hide',
+        label: 'Hide Output Channel...',
+        category: OUTPUT_CATEGORY
+    };
+
+    export const DISPOSE__QUICK_PICK: Command = {
+        id: 'output:pick-dispose',
+        label: 'Close Output Channel...',
+        category: OUTPUT_CATEGORY
     };
 
 }
 
-/**
- * Enabled when the `Output` widget is the `activeWidget` in the shell.
- */
 @injectable()
-export class OutputWidgetIsActiveContext implements KeybindingContext {
+export class OutputContribution extends AbstractViewContribution<OutputWidget> implements OpenHandler {
 
-    static readonly ID = 'output:isActive';
-
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
-
-    readonly id = OutputWidgetIsActiveContext.ID;
-
-    isEnabled(): boolean {
-        return this.shell.activeWidget instanceof OutputWidget;
-    }
-
-}
-
-@injectable()
-export class OutputContribution extends AbstractViewContribution<OutputWidget> {
-
-    @inject(OutputWidgetIsActiveContext)
-    protected readonly outputIsActiveContext: OutputWidgetIsActiveContext;
+    readonly id: string = `${OutputWidget.ID}-opener`;
 
     constructor() {
         super({
-            widgetId: OUTPUT_WIDGET_KIND,
+            widgetId: OutputWidget.ID,
             widgetName: 'Output',
             defaultWidgetOptions: {
                 area: 'bottom'
             },
             toggleCommandId: 'output:toggle',
-            toggleKeybinding: 'ctrlcmd+shift+u'
+            toggleKeybinding: 'CtrlCmd+Shift+U'
         });
     }
 
-    registerCommands(commands: CommandRegistry): void {
-        super.registerCommands(commands);
-        commands.registerCommand(OutputCommands.CLEAR_OUTPUT_TOOLBAR, {
-            isEnabled: widget => this.withWidget(widget, () => true),
-            isVisible: widget => this.withWidget(widget, () => true),
-            execute: widget => this.withWidget(widget, outputWidget => this.clear(outputWidget))
+    registerCommands(registry: CommandRegistry): void {
+        super.registerCommands(registry);
+        registry.registerCommand(OutputCommands.CLEAR__WIDGET, {
+            isEnabled: () => this.withWidget(),
+            isVisible: () => this.withWidget(),
+            execute: () => this.widget.then(widget => widget.clear())
         });
-        commands.registerCommand(OutputCommands.SELECT_ALL, {
-            isEnabled: () => this.outputIsActiveContext.isEnabled(),
-            isVisible: () => this.outputIsActiveContext.isEnabled(),
-            execute: widget => this.withWidget(widget, outputWidget => outputWidget.selectAll())
+        registry.registerCommand(OutputCommands.LOCK__WIDGET, {
+            isEnabled: widget => this.withWidget(widget, output => !output.isLocked),
+            isVisible: widget => this.withWidget(widget, output => !output.isLocked),
+            execute: () => this.widget.then(widget => widget.lock())
         });
-    }
-
-    registerKeybindings(registry: KeybindingRegistry): void {
-        super.registerKeybindings(registry);
-        registry.registerKeybindings({
-            command: OutputCommands.SELECT_ALL.id,
-            keybinding: 'CtrlCmd+A',
-            context: OutputWidgetIsActiveContext.ID
+        registry.registerCommand(OutputCommands.UNLOCK__WIDGET, {
+            isEnabled: widget => this.withWidget(widget, output => output.isLocked),
+            isVisible: widget => this.withWidget(widget, output => output.isLocked),
+            execute: () => this.widget.then(widget => widget.unlock())
         });
     }
 
-    protected async clear(widget: OutputWidget): Promise<void> {
-        widget.clear();
+    registerMenus(registry: MenuModelRegistry): void {
+        super.registerMenus(registry);
+        registry.registerMenuAction(OutputContextMenu.TEXT_EDIT_GROUP, {
+            commandId: CommonCommands.COPY.id
+        });
+        registry.registerMenuAction(OutputContextMenu.COMMAND_GROUP, {
+            commandId: quickCommand.id,
+            label: 'Find Command...'
+        });
+        registry.registerMenuAction(OutputContextMenu.WIDGET_GROUP, {
+            commandId: OutputCommands.CLEAR__WIDGET.id,
+            label: 'Clear Output'
+        });
     }
 
-    protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), cb: (problems: OutputWidget) => T): T | false {
-        if (widget instanceof OutputWidget && widget.id === OUTPUT_WIDGET_KIND) {
-            return cb(widget);
+    canHandle(uri: URI): MaybePromise<number> {
+        return OutputUri.is(uri) ? 200 : 0;
+    }
+
+    async open(uri: URI, options?: OpenerOptions): Promise<OutputWidget> {
+        if (!OutputUri.is(uri)) {
+            throw new Error(`Expected '${OutputUri.SCHEME}' URI scheme. Got: ${uri} instead.`);
         }
-        return false;
+        const widget = await this.openView(options);
+        widget.setInput(OutputUri.channelName(uri));
+        return widget;
+    }
+
+    protected withWidget(
+        widget: Widget | undefined = this.tryGetWidget(),
+        predicate: (output: OutputWidget) => boolean = () => true
+    ): boolean | false {
+
+        return widget instanceof OutputWidget ? predicate(widget) : false;
     }
 
 }
