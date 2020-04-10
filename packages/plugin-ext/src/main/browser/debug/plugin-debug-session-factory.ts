@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { DefaultDebugSessionFactory, } from '@theia/debug/lib/browser/debug-session-contribution';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoint-manager';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
@@ -27,7 +27,7 @@ import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
 import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 import { FileSystem } from '@theia/filesystem/lib/common';
-import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 
 export class PluginDebugSession extends DebugSession {
@@ -35,7 +35,7 @@ export class PluginDebugSession extends DebugSession {
         readonly id: string,
         readonly options: DebugSessionOptions,
         protected readonly connection: DebugSessionConnection,
-        protected readonly terminalServer: TerminalService,
+        protected readonly terminalServer: TerminalFrontendContribution,
         protected readonly editorManager: EditorManager,
         protected readonly breakpoints: BreakpointManager,
         protected readonly labelProvider: LabelProvider,
@@ -57,7 +57,7 @@ export class PluginDebugSession extends DebugSession {
  */
 export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
     constructor(
-        protected readonly terminalService: TerminalService,
+        protected readonly terminalService: TerminalFrontendContribution,
         protected readonly editorManager: EditorManager,
         protected readonly breakpoints: BreakpointManager,
         protected readonly labelProvider: LabelProvider,

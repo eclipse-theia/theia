@@ -56,7 +56,7 @@ import { TaskProviderRegistry, TaskResolverRegistry } from '@theia/task/lib/brow
 import { WebviewEnvironment } from '../../main/browser/webview/webview-environment';
 import { WebviewWidget } from '../../main/browser/webview/webview';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 
@@ -139,8 +139,8 @@ export class HostedPluginSupport {
     @inject(WidgetManager)
     protected readonly widgets: WidgetManager;
 
-    @inject(TerminalService)
-    protected readonly terminalService: TerminalService;
+    @inject(TerminalFrontendContribution)
+    protected readonly terminalService: TerminalFrontendContribution;
 
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;

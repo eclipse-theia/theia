@@ -18,7 +18,7 @@ import { interfaces } from 'inversify';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalOptions } from '@theia/plugin';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -28,14 +28,14 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
  */
 export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable {
 
-    private readonly terminals: TerminalService;
+    private readonly terminals: TerminalFrontendContribution;
     private readonly shell: ApplicationShell;
     private readonly extProxy: TerminalServiceExt;
 
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
-        this.terminals = container.get(TerminalService);
+        this.terminals = container.get(TerminalFrontendContribution);
         this.shell = container.get(ApplicationShell);
         this.extProxy = rpc.getProxy(MAIN_RPC_CONTEXT.TERMINAL_EXT);
         this.toDispose.push(this.terminals.onDidCreateTerminal(terminal => this.trackTerminal(terminal)));

@@ -23,8 +23,7 @@ import {
 } from '@theia/core/lib/browser';
 import { CommandContribution, CommandRegistry, CommandService } from '@theia/core/lib/common';
 import { TerminalWidget } from './base/terminal-widget';
-import { TerminalService } from './base/terminal-service';
-import { TerminalCommands } from './terminal-frontend-contribution';
+import { TerminalCommands, TerminalFrontendContribution } from './terminal-frontend-contribution';
 
 @injectable()
 export class TerminalQuickOpenService implements QuickOpenModel, QuickOpenHandler {
@@ -35,8 +34,8 @@ export class TerminalQuickOpenService implements QuickOpenModel, QuickOpenHandle
     @inject(CommandService)
     protected readonly commandService: CommandService;
 
-    @inject(TerminalService)
-    protected readonly terminalService: TerminalService;
+    @inject(TerminalFrontendContribution)
+    protected readonly terminalService: TerminalFrontendContribution;
 
     readonly prefix: string = 'term ';
 

@@ -37,7 +37,7 @@ import { ConnectionMainImpl } from '../connection-main';
 import { DebuggerDescription } from '@theia/debug/lib/common/debug-service';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
 import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
 import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';
@@ -60,7 +60,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly breakpointsManager: BreakpointManager;
     private readonly debugConsoleSession: DebugConsoleSession;
     private readonly configurationManager: DebugConfigurationManager;
-    private readonly terminalService: TerminalService;
+    private readonly terminalService: TerminalFrontendContribution;
     private readonly messages: MessageClient;
     private readonly outputChannelManager: OutputChannelManager;
     private readonly debugPreferences: DebugPreferences;
@@ -80,7 +80,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.breakpointsManager = container.get(BreakpointManager);
         this.debugConsoleSession = container.get(DebugConsoleSession);
         this.configurationManager = container.get(DebugConfigurationManager);
-        this.terminalService = container.get(TerminalService);
+        this.terminalService = container.get(TerminalFrontendContribution);
         this.messages = container.get(MessageClient);
         this.outputChannelManager = container.get(OutputChannelManager);
         this.debugPreferences = container.get(DebugPreferences);

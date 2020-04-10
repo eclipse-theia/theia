@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { ApplicationShell, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { PanelKind, TaskConfiguration, TaskWatcher, TaskExitedEvent, TaskServer, TaskOutputPresentation } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -64,8 +64,8 @@ export class TaskTerminalWidgetManager {
     @inject(TaskDefinitionRegistry)
     protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
-    @inject(TerminalService)
-    protected readonly terminalService: TerminalService;
+    @inject(TerminalFrontendContribution)
+    protected readonly terminalService: TerminalFrontendContribution;
 
     @inject(TaskWatcher)
     protected readonly taskWatcher: TaskWatcher;

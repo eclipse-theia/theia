@@ -24,7 +24,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
-import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
@@ -134,8 +134,8 @@ export class TaskService implements TaskConfigurationClient {
     @inject(TaskResolverRegistry)
     protected readonly taskResolverRegistry: TaskResolverRegistry;
 
-    @inject(TerminalService)
-    protected readonly terminalService: TerminalService;
+    @inject(TerminalFrontendContribution)
+    protected readonly terminalService: TerminalFrontendContribution;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
