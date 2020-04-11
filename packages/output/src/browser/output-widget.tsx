@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { Message } from '@theia/core/lib/browser';
-import { OutputChannelManager, OutputChannel } from '../common/output-channel';
+import { OutputChannel, OutputChannelManager, OutputChannelSeverity } from '../common/output-channel';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from 'react';
 
@@ -117,10 +117,16 @@ export class OutputWidget extends ReactWidget {
         };
 
         if (this.outputChannelManager.selectedChannel) {
-            for (const text of this.outputChannelManager.selectedChannel.getLines()) {
-                const lines = text.split(/[\n\r]+/);
+            for (const outputChannelLine of this.outputChannelManager.selectedChannel.getLines()) {
+                const lines = outputChannelLine.text.split(/[\n\r]+/);
+                let className;
+                if (outputChannelLine.severity === OutputChannelSeverity.Error) {
+                    className = 'theia-output-error';
+                } else if (outputChannelLine.severity === OutputChannelSeverity.Warning) {
+                    className = 'theia-output-warning';
+                }
                 for (const line of lines) {
-                    result.push(<div style={style} key={id++}>{line}</div>);
+                    result.push(<div style={style} className={className} key={id++}>{line}</div>);
                 }
             }
         }

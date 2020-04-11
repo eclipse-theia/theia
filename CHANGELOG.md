@@ -3,6 +3,7 @@
 ## v1.1.0
 
 - [task] fixed presentation.reveal & focus for detected tasks [#7548](https://github.com/eclipse-theia/theia/pull/7548)
+- [output] added optional argument `severity` to `OutputChannel.appendLine` method for coloring.
 
 Breaking changes:
 
