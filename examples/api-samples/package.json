@@ -4,7 +4,8 @@
   "version": "1.0.0",
   "description": "Theia - Example code to demonstrate Theia API",
   "dependencies": {
-    "@theia/core": "^1.0.0"
+    "@theia/core": "^1.0.0",
+    "@theia/output": "^1.0.0"
   },
   "theiaExtensions": [
     {

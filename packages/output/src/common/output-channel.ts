@@ -105,12 +105,22 @@ export class OutputChannelManager implements Disposable {
     }
 }
 
+export enum OutputChannelSeverity {
+    Error = 1,
+    Warning = 2,
+    Info = 3
+}
+export interface OutputChannelLine {
+    text: string;
+    severity?: OutputChannelSeverity;
+}
+
 export class OutputChannel {
 
     private readonly visibilityChangeEmitter = new Emitter<{ visible: boolean }>();
     private readonly contentChangeEmitter = new Emitter<OutputChannel>();
-    private lines: string[] = [];
-    private currentLine: string | undefined;
+    private lines: OutputChannelLine[] = [];
+    private currentLine: OutputChannelLine | undefined;
     private visible: boolean = true;
 
     readonly onVisibilityChange: Event<{ visible: boolean }> = this.visibilityChangeEmitter.event;
@@ -120,19 +130,20 @@ export class OutputChannel {
 
     append(value: string): void {
         if (this.currentLine === undefined) {
-            this.currentLine = value;
+            this.currentLine = { text: value, severity: OutputChannelSeverity.Info };
         } else {
-            this.currentLine += value;
+            this.currentLine.text += value;
         }
         this.contentChangeEmitter.fire(this);
     }
 
-    appendLine(line: string): void {
+    appendLine(line: string, severity = OutputChannelSeverity.Info): void {
         if (this.currentLine !== undefined) {
-            this.lines.push(this.currentLine + line);
+            this.currentLine.text = this.currentLine.text + line;
+            this.lines.push(this.currentLine);
             this.currentLine = undefined;
         } else {
-            this.lines.push(line);
+            this.lines.push({ text: line, severity });
         }
         const maxChannelHistory = this.preferences['output.maxChannelHistory'];
         if (this.lines.length > maxChannelHistory) {
@@ -152,7 +163,7 @@ export class OutputChannel {
         this.visibilityChangeEmitter.fire({ visible });
     }
 
-    getLines(): string[] {
+    getLines(): OutputChannelLine[] {
         if (this.currentLine !== undefined) {
             return [...this.lines, this.currentLine];
         } else {
