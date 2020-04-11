@@ -63,3 +63,11 @@
 .output-tab-icon::before {
     content: "\f024"
 }
+
+.theia-output-error {
+    color: var(--theia-errorForeground);
+}
+
+.theia-output-warning {
+    color: var(--theia-editorWarning-foreground);
+}

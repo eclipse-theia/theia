@@ -17,8 +17,10 @@
 import { ContainerModule } from 'inversify';
 import { bindDynamicLabelProvider } from './label/sample-dynamic-label-provider-command-contribution';
 import { bindSampleUnclosableView } from './view/sample-unclosable-view-contribution';
+import { bindSampleOutputChannelWithSeverity } from './output/sample-output-channel-with-severity';
 
 export default new ContainerModule(bind => {
     bindDynamicLabelProvider(bind);
     bindSampleUnclosableView(bind);
+    bindSampleOutputChannelWithSeverity(bind);
 });
