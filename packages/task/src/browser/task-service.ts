@@ -90,7 +90,7 @@ export class TaskService implements TaskConfigurationClient {
     /**
      * The last executed task.
      */
-    protected lastTask: { source: string, taskLabel: string } | undefined = undefined;
+    protected lastTask: { source: string, taskLabel: string, scope?: string } | undefined = undefined;
     protected cachedRecentTasks: TaskConfiguration[] = [];
     protected runningTasks = new Map<number, {
         exitCode: Deferred<number | undefined>,
@@ -430,7 +430,7 @@ export class TaskService implements TaskConfigurationClient {
      *
      * @returns the last executed task or `undefined`.
      */
-    getLastTask(): { source: string, taskLabel: string } | undefined {
+    getLastTask(): { source: string, taskLabel: string, scope?: string } | undefined {
         return this.lastTask;
     }
 
@@ -455,8 +455,8 @@ export class TaskService implements TaskConfigurationClient {
         if (!this.lastTask) {
             return;
         }
-        const { source, taskLabel } = this.lastTask;
-        return this.run(source, taskLabel);
+        const { source, taskLabel, scope } = this.lastTask;
+        return this.run(source, taskLabel, scope);
     }
 
     /**
@@ -908,7 +908,7 @@ export class TaskService implements TaskConfigurationClient {
         const taskLabel = resolvedTask.label;
         try {
             const taskInfo = await this.taskServer.run(resolvedTask, this.getContext(), option);
-            this.lastTask = { source, taskLabel };
+            this.lastTask = { source, taskLabel, scope: resolvedTask._scope };
             this.logger.debug(`Task created. Task id: ${taskInfo.taskId}`);
 
             /**
