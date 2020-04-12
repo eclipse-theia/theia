@@ -289,10 +289,6 @@ export class CommandRegistry implements CommandService {
             await this.fireWillExecuteCommand(commandId, args);
             const result = await handler.execute(...args);
             this.onDidExecuteCommandEmitter.fire({ commandId, args });
-            const command = this.getCommand(commandId);
-            if (command) {
-                this.addRecentCommand(command);
-            }
             return result;
         }
         const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';

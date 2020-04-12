@@ -248,6 +248,8 @@ export class CommandQuickOpenItem extends QuickOpenGroupItem {
             // reset focus on the previously active element.
             this.activeElement.focus({ preventScroll: true });
             this.commands.executeCommand(this.command.id);
+
+            this.commands.addRecentCommand(this.command);
         }, 50);
         return true;
     }
