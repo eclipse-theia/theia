@@ -106,7 +106,10 @@ export class ProvidedTaskConfigurations {
         if (labelConfigMap) {
             const scopeConfigMap = labelConfigMap.get(taskLabel);
             if (scopeConfigMap) {
-                return scopeConfigMap.get(scope);
+                if (scope) {
+                    return scopeConfigMap.get(scope);
+                }
+                return Array.from(scopeConfigMap.values())[0];
             }
         }
     }
