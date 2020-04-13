@@ -53,8 +53,8 @@ export namespace Command {
     /** Comparator function for when sorting commands */
     export function compareCommands(a: Command, b: Command): number {
         if (a.label && b.label) {
-            const aCommand = (a.category) ? a.category + a.label : a.label;
-            const bCommand = (b.category) ? b.category + b.label : b.label;
+            const aCommand = (a.category ? `${a.category}: ${a.label}` : a.label).toLowerCase();
+            const bCommand = (b.category ? `${b.category}: ${b.label}` : b.label).toLowerCase();
             return (aCommand).localeCompare(bCommand);
         } else {
             return 0;

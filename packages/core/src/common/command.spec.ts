@@ -141,6 +141,48 @@ describe('Commands', () => {
         expect(commandRegistry.getAllHandlers('id').length).to.be.equal(2);
     });
 
+    describe('compareCommands', () => {
+
+        it('should sort command \'a\' before command \'b\' with categories', () => {
+            const a: Command = { id: 'a', category: 'a', label: 'a' };
+            const b: Command = { id: 'b', category: 'b', label: 'b' };
+            expect(Command.compareCommands(a, b)).to.equal(-1);
+            expect(Command.compareCommands(b, a)).to.equal(1);
+        });
+
+        it('should sort command \'a\' before command \'b\' without categories', () => {
+            const a: Command = { id: 'a', label: 'a' };
+            const b: Command = { id: 'b', label: 'b' };
+            expect(Command.compareCommands(a, b)).to.equal(-1);
+            expect(Command.compareCommands(b, a)).to.equal(1);
+        });
+
+        it('should sort command \'a\' before command \'b\' with mix-match categories', () => {
+            const a: Command = { id: 'a', category: 'a', label: 'a' };
+            const b: Command = { id: 'b', label: 'a' };
+            expect(Command.compareCommands(a, b)).to.equal(1);
+            expect(Command.compareCommands(b, a)).to.equal(-1);
+        });
+
+        it('should sort irregardless of casing', () => {
+            const lowercase: Command = { id: 'a', label: 'a' };
+            const uppercase: Command = { id: 'a', label: 'A' };
+            expect(Command.compareCommands(lowercase, uppercase)).to.equal(0);
+        });
+
+        it('should not sort if commands are equal', () => {
+            const a: Command = { id: 'a', label: 'a' };
+            expect(Command.compareCommands(a, a)).to.equal(0);
+        });
+
+        it('should not sort commands without labels', () => {
+            const a: Command = { id: 'a' };
+            const b: Command = { id: 'b' };
+            expect(Command.compareCommands(a, b)).to.equal(0);
+        });
+
+    });
+
 });
 
 class EmptyContributionProvider implements ContributionProvider<CommandContribution> {

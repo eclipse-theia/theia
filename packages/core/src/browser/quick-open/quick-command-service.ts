@@ -86,8 +86,8 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
                     this.commands,
                     this.keybindings,
                     {
-                        groupLabel: recent.length <= 0 ? '' : index === 0 ? 'other commands' : '',
-                        showBorder: recent.length <= 0 ? false : index === 0 ? true : false,
+                        groupLabel: recent.length > 0 && index === 0 ? 'other commands' : '',
+                        showBorder: recent.length > 0 && index === 0 ? true : false,
                     }
                 )
             ),
@@ -160,13 +160,13 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
 
     /**
      * Normalizes a list of commands.
-     * Normalization includes obtaining commands that have labels and are visible.
+     * Normalization includes obtaining commands that have labels, are visible, and are enabled.
      *
      * @param commands the list of commands.
      * @returns the list of normalized commands.
      */
     private normalize(commands: Command[]): Command[] {
-        return commands.filter((a: Command) => a.label && this.commands.isVisible(a.id));
+        return commands.filter((a: Command) => a.label && (this.commands.isVisible(a.id) && this.commands.isEnabled(a.id)));
     }
 
     /**
