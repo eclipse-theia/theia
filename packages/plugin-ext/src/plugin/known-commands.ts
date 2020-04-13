@@ -282,8 +282,14 @@ export namespace KnownCommands {
     };
 
     // vscode-'executeXXX'-like commands
-    mappings['vscode.executeReferenceProvider'] = ['vscode.executeReferenceProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
-    mappings['vscode.executeImplementationProvider'] = ['vscode.executeImplementationProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.executeDefinitionProvider'] = ['vscode.executeDefinitionProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.executeDeclarationProvider'] = ['vscode.executeDeclarationProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.executeTypeDefinitionProvider'] = ['vscode.executeTypeDefinitionProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.executeHoverProvider'] = ['vscode.executeHoverProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.executeDocumentHighlights'] = ['vscode.executeDocumentHighlights', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.executeFormatDocumentProvider'] = ['vscode.executeFormatDocumentProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.executeFormatRangeProvider'] = ['vscode.executeFormatRangeProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.executeFormatOnTypeProvider'] = ['vscode.executeFormatOnTypeProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.prepareCallHierarchy'] = ['vscode.prepareCallHierarchy', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.provideIncomingCalls'] = ['vscode.provideIncomingCalls', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.provideOutgoingCalls'] = ['vscode.provideOutgoingCalls', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
