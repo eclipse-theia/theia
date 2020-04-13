@@ -45,7 +45,8 @@ import {
     PluginCommand,
     IconUrl,
     ThemeContribution,
-    IconThemeContribution
+    IconThemeContribution,
+    JsonValidationContribution
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -278,6 +279,12 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         try {
+            contributions.jsonValidations = this.readJsonValidations(rawPlugin);
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'jsonValidation'.`, rawPlugin.contributes!.jsonValidation, err);
+        }
+
+        try {
             contributions.themes = this.readThemes(rawPlugin);
         } catch (err) {
             console.error(`Could not read '${rawPlugin.name}' contribution 'themes'.`, rawPlugin.contributes.themes, err);
@@ -408,6 +415,33 @@ export class TheiaPluginScanner implements PluginScanner {
                     source: pck.displayName || pck.name,
                     uri: FileUri.create(path.join(pck.packagePath, contribution.path)).toString()
                 });
+            }
+        }
+        return result;
+    }
+
+    protected readJsonValidations(pck: PluginPackage): JsonValidationContribution[] | undefined {
+        if (!pck.contributes || !pck.contributes.jsonValidation) {
+            return undefined;
+        }
+        const result: JsonValidationContribution[] = [];
+        const addSingleValidation = (fileMatch: string, url: string) => {
+            if (typeof fileMatch === 'string') {
+                result.push({
+                    fileMatch: fileMatch,
+                    url: url
+                });
+            }
+        };
+        for (const contribution of pck.contributes.jsonValidation) {
+            if (typeof contribution.url === 'string') {
+                if (typeof contribution.fileMatch === 'string') {
+                 addSingleValidation(contribution.fileMatch, contribution.url);
+                } else if (Array.isArray(contribution.fileMatch)) {
+                    contribution.fileMatch.forEach(fileMatchItem => {
+                        addSingleValidation(fileMatchItem, contribution.url);
+                    });
+                }
             }
         }
         return result;

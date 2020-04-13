@@ -29,6 +29,7 @@ import URI from '@theia/core/lib/common/uri';
 import { JsonPreferences } from './json-preferences';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { Endpoint } from '@theia/core/lib/browser';
+import { JsonValidationContributionsRegistry } from './json-validation-registry';
 
 @injectable()
 export class JsonClientContribution extends BaseLanguageClientContribution {
@@ -42,18 +43,22 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         @inject(Languages) protected readonly languages: Languages,
         @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
         @inject(JsonPreferences) protected readonly preferences: JsonPreferences,
-        @inject(JsonSchemaStore) protected readonly jsonSchemaStore: JsonSchemaStore
-    ) {
+        @inject(JsonSchemaStore) protected readonly jsonSchemaStore: JsonSchemaStore,
+        @inject(JsonValidationContributionsRegistry) protected readonly jsonValidationContributionsRegistry: JsonValidationContributionsRegistry
+) {
         super(workspace, languages, languageClientFactory);
         this.initializeJsonSchemaAssociations();
     }
 
     protected updateSchemas(client: ILanguageClient): void {
-        const allConfigs = [...this.jsonSchemaStore.getJsonSchemaConfigurations()];
-        const config = this.preferences['json.schemas'];
-        if (config instanceof Array) {
-            allConfigs.push(...config);
-        }
+        const schemaStoreConfigs = this.jsonSchemaStore.getJsonSchemaConfigurations();
+        const pluginContributionConfigs = this.jsonValidationContributionsRegistry.getJsonValidations();
+        const preferencesConfigs = this.preferences['json.schemas'] instanceof Array ? this.preferences['json.schemas'] : [];
+
+        // The order of combining the schema configs is very important as it implies a precedence.
+        // Given multiple *identical** fileMatch properties, The **last** schema will take precedence.
+        // This means: schemaStore < pluginContribution < preferences
+        const allConfigs = [...schemaStoreConfigs, ...pluginContributionConfigs, ...preferencesConfigs];
         const registry: { [pattern: string]: string[] } = {};
         for (const s of allConfigs) {
             if (s.fileMatch) {

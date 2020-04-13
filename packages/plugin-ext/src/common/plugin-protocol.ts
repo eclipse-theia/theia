@@ -78,6 +78,7 @@ export interface PluginPackageContribution {
     keybindings?: PluginPackageKeybinding | PluginPackageKeybinding[];
     debuggers?: PluginPackageDebuggersContribution[];
     snippets: PluginPackageSnippetsContribution[];
+    jsonValidation?: PluginJsonValidationContribution[];
     themes?: PluginThemeContribution[];
     iconThemes?: PluginIconThemeContribution[];
     colors?: PluginColorContribution[];
@@ -137,6 +138,11 @@ export interface ScopeMap {
 export interface PluginPackageSnippetsContribution {
     language?: string;
     path?: string;
+}
+
+export interface PluginJsonValidationContribution {
+    fileMatch: string | string[],
+    url: string
 }
 
 export interface PluginColorContribution {
@@ -469,6 +475,7 @@ export interface PluginContribution {
     keybindings?: Keybinding[];
     debuggers?: DebuggerContribution[];
     snippets?: SnippetContribution[];
+    jsonValidations?: JsonValidationContribution[];
     themes?: ThemeContribution[];
     iconThemes?: IconThemeContribution[];
     colors?: ColorDefinition[];
@@ -481,6 +488,11 @@ export interface SnippetContribution {
     uri: string
     source: string
     language?: string
+}
+
+export interface JsonValidationContribution {
+    fileMatch: string,
+    url: string
 }
 
 export type UiTheme = 'vs' | 'vs-dark' | 'hc-black';

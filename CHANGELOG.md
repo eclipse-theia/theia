@@ -4,6 +4,8 @@
 
 - [task] fixed presentation.reveal & focus for detected tasks [#7548](https://github.com/eclipse-theia/theia/pull/7548)
 
+- [json] support `contributes.jsonValidation` VSCode API. [#7545](https://github.com/eclipse-theia/theia/pull/7560)
+
 Breaking changes:
 
 - [core] `CommandRegistry.registerHandler` registers a new handler with a higher priority than previous [#7539](https://github.com/eclipse-theia/theia/pull/7539)
@@ -14,6 +16,7 @@ Use `PluginManager.configStorage` property instead. [#7265](https://github.com/e
 
 ## v1.0.0
 
+- [core] `CommandRegistry#getAllHandlers` returns with the reversed order of handlers, so if a command has multiple handlers, any handler is considered to be more specific than the other subsequent handlers in the array. In other words, if `@theia/core` contributes a handler for a particular command and your extension also contributes a handler for the same command, the handler from your extension will have `0` index, and the handler from `@theia/core` will have `1` index when calling `getAllHandlers`.
 - [core] added functionality to ensure that nodes are refreshed properly on tree expansion [#7400](https://github.com/eclipse-theia/theia/pull/7400)
 - [core] added loading state for trees [#7249](https://github.com/eclipse-theia/theia/pull/7249)
 - [core] added the ability to customize the layout of view-containers [#6655](https://github.com/eclipse-theia/theia/pull/6655)

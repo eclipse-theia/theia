@@ -18,9 +18,11 @@ import { ContainerModule } from 'inversify';
 import { LanguageClientContribution } from '@theia/languages/lib/browser';
 import { JsonClientContribution } from './json-client-contribution';
 import { bindJsonPreferences } from './json-preferences';
+import { JsonValidationContributionsRegistry } from './json-validation-registry';
 
 export default new ContainerModule(bind => {
     bindJsonPreferences(bind);
 
     bind(LanguageClientContribution).to(JsonClientContribution).inSingletonScope();
+    bind(JsonValidationContributionsRegistry).toSelf().inSingletonScope();
 });

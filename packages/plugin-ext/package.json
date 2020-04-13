@@ -11,6 +11,7 @@
     "@theia/editor": "^1.0.0",
     "@theia/file-search": "^1.0.0",
     "@theia/filesystem": "^1.0.0",
+    "@theia/json": "^1.0.0",
     "@theia/languages": "^1.0.0",
     "@theia/markers": "^1.0.0",
     "@theia/messages": "^1.0.0",

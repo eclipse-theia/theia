@@ -34,6 +34,7 @@ import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-update
 import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-service';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { PluginIconThemeService } from './plugin-icon-theme-service';
+import { JsonValidationContributionsRegistry } from '@theia/json/lib/browser/json-validation-registry';
 
 @injectable()
 export class PluginContributionHandler {
@@ -60,6 +61,9 @@ export class PluginContributionHandler {
 
     @inject(MonacoSnippetSuggestProvider)
     protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
+
+    @inject(JsonValidationContributionsRegistry)
+    protected readonly jsonValidationContributionsRegistry: JsonValidationContributionsRegistry;
 
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
@@ -250,6 +254,17 @@ export class PluginContributionHandler {
                 pushContribution(`snippets.${snippet.uri}`, () => this.snippetSuggestProvider.fromURI(snippet.uri, {
                     language: snippet.language,
                     source: snippet.source
+                }));
+            }
+        }
+
+        if (contributions.jsonValidations) {
+            for (const jsonValidation of contributions.jsonValidations) {
+                pushContribution(
+                    `jsonValidation.${jsonValidation.url}`,
+                    () => this.jsonValidationContributionsRegistry.registerJsonValidation( {
+                    url: jsonValidation.url,
+                    fileMatch: [jsonValidation.fileMatch]
                 }));
             }
         }
