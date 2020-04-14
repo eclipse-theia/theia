@@ -12,7 +12,7 @@ RUN sudo apt-get update \
     # native-keymap
     && sudo apt-get install -y libx11-dev libxkbfile-dev \
     # keytar
-    && sudo apt-get install libsecret-1-dev \
+    && sudo apt-get install -y libsecret-1-dev \
     && sudo rm -rf /var/lib/apt/lists/*
 
 # Pin Node.js to v10.
