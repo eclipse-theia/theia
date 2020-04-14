@@ -49,15 +49,19 @@ export interface TaskOutputPresentation {
     [name: string]: any;
 }
 export namespace TaskOutputPresentation {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function fromJson(task: any): TaskOutputPresentation {
-        let outputPresentation = {
+    export function getDefault(): TaskOutputPresentation {
+        return {
             reveal: RevealKind.Always,
             focus: false,
             panel: PanelKind.Shared,
             showReuseMessage: true,
             clear: false
         };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function fromJson(task: any): TaskOutputPresentation {
+        let outputPresentation = getDefault();
         if (task && task.presentation) {
             if (task.presentation.reveal) {
                 let reveal = RevealKind.Always;
@@ -85,6 +89,10 @@ export namespace TaskOutputPresentation {
             };
         }
         return outputPresentation;
+    }
+
+    export function shouldAlwaysRevealTerminal(task: TaskCustomization): boolean {
+        return !task.presentation || task.presentation.reveal === undefined || task.presentation.reveal === RevealKind.Always;
     }
 
     export function shouldSetFocusToTerminal(task: TaskCustomization): boolean {

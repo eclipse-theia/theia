@@ -2,6 +2,8 @@
 
 ## v1.1.0
 
+- [task] fixed presentation.reveal & focus for detected tasks [#7548](https://github.com/eclipse-theia/theia/pull/7548)
+
 Breaking changes:
 
 - [core] Removed the `core.find` and `core.replace` commands as they did not work without the `@theia/monaco` extension, or an opened Monaco editor. Use the Monaco-specific `actions.find` and `editor.action.startFindReplaceAction` commands instead. [#7474](https://github.com/eclipse-theia/theia/issues/7474)
