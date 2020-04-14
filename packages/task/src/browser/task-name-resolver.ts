@@ -17,11 +17,15 @@
 import { inject, injectable } from 'inversify';
 import { TaskConfiguration, ContributedTaskConfiguration } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
+import { TaskConfigurations } from './task-configurations';
 
 @injectable()
 export class TaskNameResolver {
     @inject(TaskDefinitionRegistry)
     protected taskDefinitionRegistry: TaskDefinitionRegistry;
+
+    @inject(TaskConfigurations)
+    protected readonly taskConfigurations: TaskConfigurations;
 
     /**
      * Returns task name to display.
@@ -29,6 +33,15 @@ export class TaskNameResolver {
      */
     resolve(task: TaskConfiguration): string {
         if (this.isDetectedTask(task)) {
+            const scope = task._scope;
+            const rawConfigs = this.taskConfigurations.getRawTaskConfigurations(scope);
+            const jsonConfig = rawConfigs.find(rawConfig => this.taskDefinitionRegistry.compareTasks({
+                ...rawConfig, _scope: scope
+            }, task));
+            // detected task that has a `label` defined in `tasks.json`
+            if (jsonConfig && jsonConfig.label) {
+                return jsonConfig.label;
+            }
             return `${task.source || task._source}: ${task.label}`;
         }
 

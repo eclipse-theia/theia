@@ -161,6 +161,7 @@ export class TaskSchemaUpdater {
                 }
                 customizedDetectedTask.properties![taskProp] = { ...def.properties.schema.properties![taskProp] };
             });
+            customizedDetectedTask.properties!.label = taskLabel;
             customizedDetectedTask.properties!.problemMatcher = problemMatcher;
             customizedDetectedTask.properties!.presentation = presentation;
             customizedDetectedTask.properties!.options = commandOptionsSchema;

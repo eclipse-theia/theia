@@ -107,7 +107,7 @@ export class TaskDefinitionRegistry {
         });
     }
 
-    compareTasks(one: TaskConfiguration, other: TaskConfiguration): boolean {
+    compareTasks(one: TaskConfiguration | TaskCustomization, other: TaskConfiguration | TaskCustomization): boolean {
         const oneType = one.taskType || one.type;
         const otherType = other.taskType || other.type;
         if (oneType !== otherType) {
