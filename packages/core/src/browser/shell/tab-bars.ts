@@ -142,7 +142,11 @@ export class TabBarRenderer extends TabBar.Renderer {
             {
                 key, className, id, title: title.caption, style, dataset,
                 oncontextmenu: this.handleContextMenuEvent,
-                ondblclick: this.handleDblClickEvent
+                ondblclick: this.handleDblClickEvent,
+                onauxclick: (e: MouseEvent) => {
+                    // If user closes the tab using mouse wheel, nothing should be pasted to an active editor
+                    e.preventDefault();
+                }
             },
             h.div(
                 { className: 'theia-tab-icon-label' },
