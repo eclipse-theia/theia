@@ -465,9 +465,13 @@ export class TaskService implements TaskConfigurationClient {
      * It looks for configured and detected tasks.
      */
     async run(source: string, taskLabel: string, scope?: string): Promise<TaskInfo | undefined> {
-        let task = await this.getProvidedTask(source, taskLabel, scope);
+        let task: TaskConfiguration | undefined;
+        task = await this.getProvidedTask(source, taskLabel, scope);
         if (!task) { // if a detected task cannot be found, search from tasks.json
             task = this.taskConfigurations.getTask(source, taskLabel);
+            if (!task && scope) { // find from the customized detected tasks
+                task = await this.taskConfigurations.getCustomizedTask(scope, taskLabel);
+            }
             if (!task) {
                 this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
                 return;

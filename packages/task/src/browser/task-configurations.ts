@@ -152,6 +152,20 @@ export class TaskConfigurations implements Disposable {
         return [...configuredTasks, ...detectedTasksAsConfigured];
     }
 
+    getRawTaskConfigurations(rootFolder?: string): (TaskCustomization | TaskConfiguration)[] {
+        if (!rootFolder) {
+            const tasks: (TaskCustomization | TaskConfiguration)[] = [];
+            for (const configs of this.rawTaskConfigurations.values()) {
+                tasks.push(...configs);
+            }
+            return tasks;
+        }
+        if (this.rawTaskConfigurations.has(rootFolder)) {
+            return Array.from(this.rawTaskConfigurations.get(rootFolder)!.values());
+        }
+        return [];
+    }
+
     /**
      * returns a collection of invalid task configs as per the task schema defined in Theia.
      */
@@ -173,6 +187,24 @@ export class TaskConfigurations implements Disposable {
         const labelConfigMap = this.tasksMap.get(rootFolderPath);
         if (labelConfigMap) {
             return labelConfigMap.get(taskLabel);
+        }
+    }
+
+    /** returns the customized task for a given label or undefined if none */
+    async getCustomizedTask(rootFolderPath: string, taskLabel: string): Promise<TaskConfiguration | undefined> {
+        const customizations = this.taskCustomizationMap.get(rootFolderPath);
+        if (customizations) {
+            const customization = customizations.find(cus => cus.label === taskLabel);
+            if (customization) {
+                const detected = await this.providedTaskConfigurations.getTaskToCustomize(customization, rootFolderPath);
+                if (detected) {
+                    return {
+                        ...detected,
+                        ...customization,
+                        type: detected.type
+                    };
+                }
+            }
         }
     }
 
