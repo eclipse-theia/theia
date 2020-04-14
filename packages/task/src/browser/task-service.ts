@@ -47,7 +47,8 @@ import {
     TaskIdentifier,
     DependsOrder,
     RevealKind,
-    ApplyToKind
+    ApplyToKind,
+    TaskOutputPresentation
 } from '../common';
 import { TaskWatcher } from '../common/task-watcher';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -701,10 +702,10 @@ export class TaskService implements TaskConfigurationClient {
             const terminalId = matchedRunningTaskInfo.terminalId;
             if (terminalId) {
                 const terminal = this.terminalService.getByTerminalId(terminalId);
-                if (terminal && task.presentation) {
-                    if (task.presentation.focus) { // assign focus to the terminal if presentation.focus is true
+                if (terminal) {
+                    if (TaskOutputPresentation.shouldSetFocusToTerminal(task)) { // assign focus to the terminal if presentation.focus is true
                         this.terminalService.open(terminal, { mode: 'activate' });
-                    } else if (task.presentation.reveal === RevealKind.Always) { // show the terminal but not assign focus
+                    } else if (TaskOutputPresentation.shouldAlwaysRevealTerminal(task)) { // show the terminal but not assign focus
                         this.terminalService.open(terminal, { mode: 'reveal' });
                     }
                 }
@@ -991,8 +992,8 @@ export class TaskService implements TaskConfigurationClient {
                 this.messageService.error('Task is already running in terminal');
                 return this.terminalService.open(terminalWidget, { mode: 'activate' });
             }
-            if (taskInfo.config.presentation && taskInfo.config.presentation.reveal === RevealKind.Always) {
-                if (taskInfo.config.presentation.focus) { // assign focus to the terminal if presentation.focus is true
+            if (TaskOutputPresentation.shouldAlwaysRevealTerminal(taskInfo.config)) {
+                if (TaskOutputPresentation.shouldSetFocusToTerminal(taskInfo.config)) { // assign focus to the terminal if presentation.focus is true
                     widgetOpenMode = 'activate';
                 } else { // show the terminal but not assign focus
                     widgetOpenMode = 'reveal';

@@ -17,7 +17,7 @@
 import { inject, injectable } from 'inversify';
 import { TaskProviderRegistry } from './task-contribution';
 import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskConfiguration, TaskCustomization } from '../common';
+import { TaskConfiguration, TaskCustomization, TaskOutputPresentation } from '../common';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
@@ -40,7 +40,17 @@ export class ProvidedTaskConfigurations {
     async getTasks(): Promise<TaskConfiguration[]> {
         const providers = await this.taskProviderRegistry.getProviders();
         const providedTasks: TaskConfiguration[] = (await Promise.all(providers.map(p => p.provideTasks())))
-            .reduce((acc, taskArray) => acc.concat(taskArray), []);
+            .reduce((acc, taskArray) => acc.concat(taskArray), [])
+            .map(providedTask => {
+                const originalPresentation = providedTask.presentation || {};
+                return {
+                    ...providedTask,
+                    presentation: {
+                        ...TaskOutputPresentation.getDefault(),
+                        ...originalPresentation
+                    }
+                };
+            });
         this.cacheTasks(providedTasks);
         return providedTasks;
     }
