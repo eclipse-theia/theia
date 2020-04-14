@@ -43,8 +43,11 @@ export default new ContainerModule(bind => {
     bind(EditorManager).toSelf().inSingletonScope();
     bind(OpenHandler).toService(EditorManager);
 
-    bind(CommandContribution).to(EditorCommandContribution).inSingletonScope();
-    bind(MenuContribution).to(EditorMenuContribution).inSingletonScope();
+    bind(EditorCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(EditorCommandContribution);
+
+    bind(EditorMenuContribution).toSelf().inSingletonScope();
+    bind(MenuContribution).toService(EditorMenuContribution);
 
     bind(StrictEditorTextFocusContext).toSelf().inSingletonScope();
     bind(KeybindingContext).toService(StrictEditorTextFocusContext);
