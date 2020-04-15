@@ -81,6 +81,12 @@ export class ApplicationPackage {
             theia.target = this.options.appTarget;
         }
 
+        if (theia.target && !(theia.target in ApplicationProps.ApplicationTarget)) {
+            const defaultTarget = ApplicationProps.ApplicationTarget.browser;
+            console.warn(`Unknown application target '${theia.target}', '${defaultTarget}' to be used instead`);
+            theia.target = defaultTarget;
+        }
+
         return this._props = { ...ApplicationProps.DEFAULT, ...theia };
     }
 
@@ -205,11 +211,11 @@ export class ApplicationPackage {
     }
 
     isBrowser(): boolean {
-        return this.target === 'browser';
+        return this.target === ApplicationProps.ApplicationTarget.browser;
     }
 
     isElectron(): boolean {
-        return this.target === 'electron';
+        return this.target === ApplicationProps.ApplicationTarget.electron;
     }
 
     ifBrowser<T>(value: T): T | undefined;
