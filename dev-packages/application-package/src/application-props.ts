@@ -63,8 +63,12 @@ export interface ApplicationProps extends NpmRegistryProps {
     readonly generator: Readonly<{ config: GeneratorConfig }>;
 }
 export namespace ApplicationProps {
+    export enum ApplicationTarget {
+        browser = 'browser',
+        electron = 'electron'
+    };
 
-    export type Target = 'browser' | 'electron';
+    export type Target = keyof typeof ApplicationTarget;
 
     export const DEFAULT: ApplicationProps = {
         ...NpmRegistryProps.DEFAULT,
