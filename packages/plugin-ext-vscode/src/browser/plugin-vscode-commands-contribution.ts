@@ -48,7 +48,6 @@ import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/workspace-service';
 import { DiffService } from '@theia/workspace/lib/browser/diff-service';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { inject, injectable } from 'inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from 'vscode-uri';
@@ -64,10 +63,6 @@ export namespace VscodeCommands {
 
     export const DIFF: Command = {
         id: 'vscode.diff'
-    };
-
-    export const SET_CONTEXT: Command = {
-        id: 'setContext'
     };
 }
 
@@ -165,14 +160,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             }
         });
 
-        commands.registerCommand(VscodeCommands.SET_CONTEXT, {
-            isVisible: () => false,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            execute: (contextKey: any, contextValue: any) => {
-                this.contextKeyService.createKey(String(contextKey), contextValue);
-            }
-        });
-
         // https://code.visualstudio.com/docs/getstarted/keybindings#_navigation
         /*
          * internally, in VS Code, any widget opened in the main area is represented as an editor
@@ -202,14 +189,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
             execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)
-        });
-        commands.registerCommand({ id: 'default:type' }, {
-            execute: args => {
-                const editor = MonacoEditor.getCurrent(this.editorManager);
-                if (editor) {
-                    editor.trigger('keyboard', 'type', args);
-                }
-            }
         });
         commands.registerCommand({ id: 'workbench.action.files.save', }, {
             execute: (uri?: monaco.Uri) => {
