@@ -141,9 +141,13 @@ export class TaskConfigurations implements Disposable {
     async getTasks(): Promise<TaskConfiguration[]> {
         const configuredTasks = Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as TaskConfiguration[]);
         const detectedTasksAsConfigured: TaskConfiguration[] = [];
+        let fetchTasksFromProviders = true;
         for (const [rootFolder, customizations] of Array.from(this.taskCustomizationMap.entries())) {
             for (const cus of customizations) {
-                const detected = await this.providedTaskConfigurations.getTaskToCustomize(cus, rootFolder);
+                const detected = fetchTasksFromProviders
+                    ? await this.providedTaskConfigurations.getTaskToCustomize(cus, rootFolder)
+                    : this.providedTaskConfigurations.getCachedTaskToCustomize(cus, rootFolder);
+                fetchTasksFromProviders = false;
                 if (detected) {
                     detectedTasksAsConfigured.push({ ...detected, ...cus });
                 }

@@ -72,43 +72,26 @@ export class ProvidedTaskConfigurations {
      * In case that more than one customization is found, return the one that has the biggest number of matched properties.
      *
      * @param customization the task customization
+     * @param rootFolderPath the root folder that the detected task comes from
      * @return the detected task for the given task customization. If the task customization is not found, `undefined` is returned.
      */
     async getTaskToCustomize(customization: TaskCustomization, rootFolderPath: string): Promise<TaskConfiguration | undefined> {
-        const definition = this.taskDefinitionRegistry.getDefinition(customization);
-        if (!definition) {
-            return undefined;
-        }
-
-        const matchedTasks: TaskConfiguration[] = [];
-        let highest = -1;
         const tasks = await this.getTasks();
-        for (const task of tasks) { // find detected tasks that match the `definition`
-            let score = 0;
-            if (!definition.properties.required.every(requiredProp => customization[requiredProp] !== undefined)) {
-                continue;
-            }
-            score += definition.properties.required.length; // number of required properties
-            const requiredProps = new Set(definition.properties.required);
-            // number of optional properties
-            score += definition.properties.all.filter(p => !requiredProps.has(p) && customization[p] !== undefined).length;
-            if (score >= highest) {
-                if (score > highest) {
-                    highest = score;
-                    matchedTasks.length = 0;
-                }
-                matchedTasks.push(task);
-            }
-        }
+        return this.findMatchedTask(tasks, customization, rootFolderPath);
+    }
 
-        // find the task that matches the `customization`.
-        // The scenario where more than one match is found should not happen unless users manually enter multiple customizations for one type of task
-        // If this does happen, return the first match
-        const rootFolderUri = new URI(rootFolderPath).toString();
-        const matchedTask = matchedTasks.filter(t =>
-            rootFolderUri === t._scope && definition.properties.all.every(p => t[p] === customization[p])
-        )[0];
-        return matchedTask;
+    /**
+     * Finds the detected task from the cache for the given task customization.
+     * The detected task is considered as a "match" to the task customization if it has all the `required` properties.
+     * In case that more than one customization is found, return the one that has the biggest number of matched properties.
+     *
+     * @param customization the task customization
+     * @param rootFolderPath the root folder that the detected task comes from
+     * @return the detected task for the given task customization. If the task customization is not found, `undefined` is returned.
+     */
+    getCachedTaskToCustomize(customization: TaskCustomization, rootFolderPath: string): TaskConfiguration | undefined {
+        const tasks = this.getCachedTasks();
+        return this.findMatchedTask(tasks, customization, rootFolderPath);
     }
 
     protected getCachedTask(source: string, taskLabel: string, scope?: string): TaskConfiguration | undefined {
@@ -122,6 +105,18 @@ export class ProvidedTaskConfigurations {
                 return Array.from(scopeConfigMap.values())[0];
             }
         }
+    }
+
+    protected getCachedTasks(): TaskConfiguration[] {
+        const tasks: TaskConfiguration[] = [];
+        for (const taskLabelMap of this.tasksMap.values()) {
+            for (const taskScopeMap of taskLabelMap.values()) {
+                for (const task of taskScopeMap.values()) {
+                    tasks.push(task);
+                }
+            }
+        }
+        return tasks;
     }
 
     protected cacheTasks(tasks: TaskConfiguration[]): void {
@@ -144,6 +139,43 @@ export class ProvidedTaskConfigurations {
                 newScopeConfigMap.set(scope, task);
                 newLabelConfigMap.set(label, newScopeConfigMap);
                 this.tasksMap.set(source, newLabelConfigMap);
+            }
+        }
+    }
+
+    // find tasks that matches the `customization` from `tasks`.
+    private findMatchedTask(tasks: TaskConfiguration[], customization: TaskCustomization, rootFolderPath: string): TaskConfiguration | undefined {
+        const definition = this.taskDefinitionRegistry.getDefinition(customization);
+        if (definition) {
+            const matchedTasks: TaskConfiguration[] = [];
+            let highest = -1;
+            for (const task of tasks) { // find detected tasks that match the `definition`
+                let score = 0;
+                if (!definition.properties.required.every(requiredProp => customization[requiredProp] !== undefined)) {
+                    continue;
+                }
+                score += definition.properties.required.length; // number of required properties
+                const requiredProps = new Set(definition.properties.required);
+                // number of optional properties
+                score += definition.properties.all.filter(p => !requiredProps.has(p) && customization[p] !== undefined).length;
+                if (score >= highest) {
+                    if (score > highest) {
+                        highest = score;
+                        matchedTasks.length = 0;
+                    }
+                    matchedTasks.push(task);
+                }
+            }
+
+            if (matchedTasks.length > 0) {
+                // find the task that matches the `customization`.
+                // The scenario where more than one match is found should not happen unless users manually enter multiple customizations for one type of task
+                // If this does happen, return the first match
+                const rootFolderUri = new URI(rootFolderPath).toString();
+                const matchedTask = matchedTasks.filter(t =>
+                    rootFolderUri === t._scope && definition.properties.all.every(p => t[p] === customization[p])
+                )[0];
+                return matchedTask;
             }
         }
     }
