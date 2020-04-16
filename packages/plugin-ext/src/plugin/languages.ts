@@ -58,6 +58,7 @@ import {
     CodeActionContext,
     CodeAction,
     FoldingRange,
+    SelectionRange,
     CallHierarchyDefinition,
     CallHierarchyReference
 } from '../common/plugin-api-rpc-model';
@@ -80,6 +81,7 @@ import { ReferenceAdapter } from './languages/reference';
 import { WorkspaceSymbolAdapter } from './languages/workspace-symbol';
 import { SymbolInformation } from 'vscode-languageserver-types';
 import { FoldingProviderAdapter } from './languages/folding';
+import { SelectionRangeProviderAdapter } from './languages/selection-range';
 import { ColorProviderAdapter } from './languages/color';
 import { RenameAdapter } from './languages/rename';
 import { Event } from '@theia/core/lib/common/event';
@@ -106,6 +108,7 @@ type Adapter = CompletionAdapter |
     ReferenceAdapter |
     WorkspaceSymbolAdapter |
     FoldingProviderAdapter |
+    SelectionRangeProviderAdapter |
     ColorProviderAdapter |
     RenameAdapter |
     CallHierarchyAdapter;
@@ -543,6 +546,16 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(callId, FoldingProviderAdapter, adapter => adapter.provideFoldingRanges(URI.revive(resource), context, token), undefined);
     }
     // ### Folding Range Provider end
+
+    registerSelectionRangeProvider(selector: theia.DocumentSelector, provider: theia.SelectionRangeProvider, pluginInfo: PluginInfo): theia.Disposable {
+        const callId = this.addNewAdapter(new SelectionRangeProviderAdapter(provider, this.documents));
+        this.proxy.$registerSelectionRangeProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
+        return this.createDisposable(callId);
+    }
+
+    $provideSelectionRanges(handle: number, resource: UriComponents, positions: Position[], token: theia.CancellationToken): Promise<SelectionRange[][]> {
+        return this.withAdapter(handle, SelectionRangeProviderAdapter, adapter => adapter.provideSelectionRanges(URI.revive(resource), positions, token), []);
+    }
 
     // ### Rename Provider begin
     registerRenameProvider(selector: theia.DocumentSelector, provider: theia.RenameProvider, pluginInfo: PluginInfo): theia.Disposable {

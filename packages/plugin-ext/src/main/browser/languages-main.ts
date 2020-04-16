@@ -625,6 +625,23 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return this.proxy.$provideFoldingRange(handle, model.uri, context, token);
     }
 
+    $registerSelectionRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+        const languageSelector = fromLanguageSelector(selector);
+        const provider = this.createSelectionRangeProvider(handle);
+        this.register(handle, monaco.languages.registerSelectionRangeProvider(languageSelector, provider));
+    }
+
+    protected createSelectionRangeProvider(handle: number): monaco.languages.SelectionRangeProvider {
+        return {
+            provideSelectionRanges: (model, positions, token) => this.provideSelectionRanges(handle, model, positions, token)
+        };
+    }
+
+    protected provideSelectionRanges(handle: number, model: monaco.editor.ITextModel,
+        positions: monaco.Position[], token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.SelectionRange[][]> {
+        return this.proxy.$provideSelectionRanges(handle, model.uri, positions, token);
+    }
+
     $registerDocumentColorProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         const languageSelector = fromLanguageSelector(selector);
         const colorProvider = this.createColorProvider(handle);

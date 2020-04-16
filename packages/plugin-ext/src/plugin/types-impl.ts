@@ -2001,6 +2001,21 @@ export enum FoldingRangeKind {
     Region = 3
 }
 
+export class SelectionRange {
+
+	range: Range;
+	parent?: SelectionRange;
+
+	constructor(range: Range, parent?: SelectionRange) {
+		this.range = range;
+		this.parent = parent;
+
+		if (parent && !parent.range.contains(this.range)) {
+			throw new Error('Invalid argument: parent must contain this range');
+		}
+	}
+}
+
 /**
  * Enumeration of the supported operating systems.
  */

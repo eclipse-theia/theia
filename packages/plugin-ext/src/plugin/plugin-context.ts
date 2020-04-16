@@ -104,6 +104,7 @@ import {
     FunctionBreakpoint,
     FoldingRange,
     FoldingRangeKind,
+    SelectionRange,
     Color,
     ColorInformation,
     ColorPresentation,
@@ -626,6 +627,9 @@ export function createAPIFactory(
             registerFoldingRangeProvider(selector: theia.DocumentSelector, provider: theia.FoldingRangeProvider): theia.Disposable {
                 return languagesExt.registerFoldingRangeProvider(selector, provider, pluginToPluginInfo(plugin));
             },
+            registerSelectionRangeProvider(selector: theia.DocumentSelector, provider: theia.SelectionRangeProvider): theia.Disposable {
+                return languagesExt.registerSelectionRangeProvider(selector, provider, pluginToPluginInfo(plugin));
+            },
             registerRenameProvider(selector: theia.DocumentSelector, provider: theia.RenameProvider): theia.Disposable {
                 return languagesExt.registerRenameProvider(selector, provider, pluginToPluginInfo(plugin));
             },
@@ -855,6 +859,7 @@ export function createAPIFactory(
             ColorInformation,
             ColorPresentation,
             FoldingRange,
+            SelectionRange,
             FoldingRangeKind,
             OperatingSystem,
             WebviewPanelTargetArea,
