@@ -65,6 +65,7 @@ import {
     CodeActionContext,
     FoldingContext,
     FoldingRange,
+    SelectionRange,
     CallHierarchyDefinition,
     CallHierarchyReference
 } from './plugin-api-rpc-model';
@@ -1196,6 +1197,7 @@ export interface LanguagesExt {
         context: FoldingContext,
         token: CancellationToken
     ): PromiseLike<FoldingRange[] | undefined>;
+    $provideSelectionRanges(handle: number, resource: UriComponents, positions: Position[], token: CancellationToken): PromiseLike<SelectionRange[][]>;
     $provideDocumentColors(handle: number, resource: UriComponents, token: CancellationToken): PromiseLike<RawColorInfo[]>;
     $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo, token: CancellationToken): PromiseLike<ColorPresentation[]>;
     $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string, token: CancellationToken): PromiseLike<WorkspaceEditDto | undefined>;
@@ -1241,6 +1243,7 @@ export interface LanguagesMain {
     $registerOutlineSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerWorkspaceSymbolProvider(handle: number, pluginInfo: PluginInfo): void;
     $registerFoldingRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerSelectionRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerDocumentColorProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveInitialValues: boolean): void;
     $registerCallHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;

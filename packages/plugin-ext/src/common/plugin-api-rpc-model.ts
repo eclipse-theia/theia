@@ -471,6 +471,10 @@ export class FoldingRangeKind {
     public constructor(public value: string) { }
 }
 
+export interface SelectionRange {
+    range: Range;
+}
+
 export interface Color {
     readonly red: number;
     readonly green: number;

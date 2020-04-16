@@ -929,6 +929,10 @@ export function toSymbolInformation(symbolInformation: SymbolInformation): theia
     };
 }
 
+export function fromSelectionRange(selectionRange: theia.SelectionRange): model.SelectionRange {
+    return { range: fromRange(selectionRange.range) };
+}
+
 export function fromFoldingRange(foldingRange: theia.FoldingRange): model.FoldingRange {
     const range: model.FoldingRange = {
         start: foldingRange.start + 1,
