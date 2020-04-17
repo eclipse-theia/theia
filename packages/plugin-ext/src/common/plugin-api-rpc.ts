@@ -139,6 +139,7 @@ export const emptyPlugin: Plugin = {
             version: 'empty'
         },
         packagePath: 'empty',
+        packageUri: 'empty',
         entryPoint: {
 
         }

@@ -2,11 +2,13 @@
 
 ## v1.1.0
 
+- [plugin-ext] fixed custom Icon Themes & plugin Icons [#7583](https://github.com/eclipse-theia/theia/pull/7583)
 - [task] fixed presentation.reveal & focus for detected tasks [#7548](https://github.com/eclipse-theia/theia/pull/7548)
 - [output] added optional argument `severity` to `OutputChannel.appendLine` method for coloring.
 
 Breaking changes:
 
+- [plugin-ext] `PluginModel.packagePath` deprecated. `PluginModel.packageUri` should be used instead.
 - [core] `CommandRegistry.registerHandler` registers a new handler with a higher priority than previous [#7539](https://github.com/eclipse-theia/theia/pull/7539)
 - [plugin] removed `configStorage` argument from `PluginManager.registerPlugin`.
 Use `PluginManager.configStorage` property instead. [#7265](https://github.com/eclipse-theia/theia/pull/7265#discussion_r399956070)

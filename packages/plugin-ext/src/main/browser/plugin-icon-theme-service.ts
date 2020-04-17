@@ -34,6 +34,7 @@ import { LabelProviderContribution, DidChangeLabelEvent, LabelProvider, URIIconR
 import { ThemeType } from '@theia/core/lib/browser/theming';
 import { FileStatNode, DirNode, FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser';
 import { WorkspaceRootNode } from '@theia/navigator/lib/browser/navigator-tree';
+import { Endpoint } from '@theia/core/lib/browser/endpoint';
 
 export interface PluginIconDefinition {
     iconPath: string;
@@ -87,7 +88,7 @@ export class PluginIconThemeDefinition implements IconThemeDefinition, IconTheme
     uri: string;
     uiTheme?: UiTheme;
     pluginId: string;
-    packagePath: string;
+    packageUri: string;
     hasFileIcons?: boolean;
     hasFolderIcons?: boolean;
     hidesExplorerArrows?: boolean;
@@ -118,7 +119,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         this.toDeactivate, this.toDisposeStyleElement, this.toUnload, this.onDidChangeEmitter
     );
 
-    protected packageUri: URI;
+    protected packageRootUri: URI;
     protected locationUri: URI;
 
     protected styleSheetContent: string | undefined;
@@ -127,7 +128,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     @postConstruct()
     protected init(): void {
         Object.assign(this, this.definition);
-        this.packageUri = new URI(this.packagePath);
+        this.packageRootUri = new URI(this.packageUri);
         this.locationUri = new URI(this.uri).parent;
     }
 
@@ -329,8 +330,10 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             return undefined;
         }
         const iconUri = this.locationUri.resolve(iconPath);
-        const relativePath = this.packageUri.path.relative(iconUri.path.normalize());
-        return relativePath && `url('hostedPlugin/${this.pluginId}/${encodeURIComponent(relativePath.normalize().toString())}')`;
+        const relativePath = this.packageRootUri.path.relative(iconUri.path.normalize());
+        return relativePath && `url('${new Endpoint({
+            path: `hostedPlugin/${this.pluginId}/${encodeURIComponent(relativePath.normalize().toString())}`
+        }).getRestUrl().toString()}')`;
     }
 
     protected escapeCSS(value: string): string {
@@ -539,7 +542,7 @@ export class PluginIconThemeService implements LabelProviderContribution {
 
     register(contribution: IconThemeContribution, plugin: DeployedPlugin): Disposable {
         const pluginId = getPluginId(plugin.metadata.model);
-        const packagePath = plugin.metadata.model.packagePath;
+        const packageUri = plugin.metadata.model.packageUri;
         const iconTheme = this.iconThemeFactory({
             id: contribution.id,
             label: contribution.label || new URI(contribution.uri).path.base,
@@ -547,7 +550,7 @@ export class PluginIconThemeService implements LabelProviderContribution {
             uri: contribution.uri,
             uiTheme: contribution.uiTheme,
             pluginId,
-            packagePath
+            packageUri
         });
         return new DisposableCollection(
             iconTheme,
