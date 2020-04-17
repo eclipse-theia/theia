@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, CommandContribution, CommandRegistry, ResourceProvider } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -76,8 +76,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly editorManager: EditorManager;
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
-    @inject(ResourceProvider)
-    protected readonly resources: ResourceProvider;
     @inject(DiffService)
     protected readonly diffService: DiffService;
     @inject(OpenerService)
