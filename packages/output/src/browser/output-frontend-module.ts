@@ -16,12 +16,18 @@
 
 import { ContainerModule } from 'inversify';
 import { OutputWidget, OUTPUT_WIDGET_KIND } from './output-widget';
-import { WidgetFactory, bindViewContribution, KeybindingContext } from '@theia/core/lib/browser';
+import {
+    WidgetFactory,
+    bindViewContribution,
+    KeybindingContext,
+    FrontendApplicationContribution
+} from '@theia/core/lib/browser';
 import { OutputContribution, OutputWidgetIsActiveContext } from './output-contribution';
 import { OutputToolbarContribution } from './output-toolbar-contribution';
 import { OutputChannelManager } from '../common/output-channel';
 import { bindOutputPreferences } from '../common/output-preferences';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TestApp } from './test-app';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindOutputPreferences(bind);
@@ -38,4 +44,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(KeybindingContext).toService(OutputWidgetIsActiveContext);
     bind(OutputToolbarContribution).toSelf().inSingletonScope();
     bind(TabBarToolbarContribution).toService(OutputToolbarContribution);
+
+    bind(FrontendApplicationContribution)
+        .to(TestApp)
+        .inSingletonScope();
 });
