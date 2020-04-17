@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { TaskConfiguration, ContributedTaskConfiguration } from '../common';
+import { TaskConfiguration } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskConfigurations } from './task-configurations';
 
@@ -49,7 +49,7 @@ export class TaskNameResolver {
         return task.label || `${task.type}: ${task.task}`;
     }
 
-    private isDetectedTask(task: TaskConfiguration): task is ContributedTaskConfiguration {
+    private isDetectedTask(task: TaskConfiguration): boolean {
         return !!this.taskDefinitionRegistry.getDefinition(task);
     }
 }

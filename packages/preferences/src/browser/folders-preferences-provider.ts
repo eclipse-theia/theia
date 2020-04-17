@@ -21,7 +21,8 @@ import URI from '@theia/core/lib/common/uri';
 import { PreferenceProvider, PreferenceResolveResult } from '@theia/core/lib/browser/preferences/preference-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
-import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderOptions } from './folder-preference-provider';
+import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider';
+import { FileStat } from '@theia/filesystem/lib/common';
 
 @injectable()
 export class FoldersPreferencesProvider extends PreferenceProvider {
@@ -57,12 +58,12 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         for (const folder of roots) {
             for (const configPath of this.configurations.getPaths()) {
                 for (const configName of [...this.configurations.getSectionNames(), this.configurations.getConfigName()]) {
-                    const configUri = this.configurations.createUri(new URI(folder.uri), configPath, configName);
-                    const key = configUri.toString();
-                    toDelete.delete(key);
-                    if (!this.providers.has(key)) {
-                        const provider = this.createProvider({ folder, configUri });
-                        this.providers.set(key, provider);
+                    const sectionUri = this.configurations.createUri(new URI(folder.uri), configPath, configName);
+                    const sectionKey = sectionUri.toString();
+                    toDelete.delete(sectionKey);
+                    if (!this.providers.has(sectionKey)) {
+                        const provider = this.createProvider(sectionUri, configName, folder);
+                        this.providers.set(sectionKey, provider);
                     }
                 }
             }
@@ -202,6 +203,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
             folderProviders.push(provider);
             providers.set(uri, folderProviders);
 
+            // in case we have nested folders mounted as workspace roots, select the innermost enclosing folder
             const relativity = provider.folderUri.path.relativity(resourcePath);
             if (relativity >= 0 && folder.relativity > relativity) {
                 folder = { relativity, uri };
@@ -210,10 +212,13 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         return folder.uri && providers.get(folder.uri) || [];
     }
 
-    protected createProvider(options: FolderPreferenceProviderOptions): FolderPreferenceProvider {
-        const provider = this.folderPreferenceProviderFactory(options);
+    protected createProvider(uri: URI, section: string, folder: FileStat): FolderPreferenceProvider {
+        const provider = this.folderPreferenceProviderFactory(uri, section, folder);
         this.toDispose.push(provider);
-        this.toDispose.push(provider.onDidPreferencesChanged(change => this.onDidPreferencesChangedEmitter.fire(change)));
+        this.toDispose.push(provider.onDidPreferencesChanged(change => {
+            this.onDidPreferencesChangedEmitter.fire(change);
+        }
+        ));
         return provider;
     }
 

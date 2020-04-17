@@ -16,12 +16,13 @@
 
 import { Container, interfaces } from 'inversify';
 import { PreferenceProvider, PreferenceScope } from '@theia/core/lib/browser/preferences';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
-import { UserPreferenceProvider } from './user-preference-provider';
+import { UserPreferenceProvider, UserPreferenceProviderFactory } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { WorkspaceFilePreferenceProvider, WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProviderOptions } from './workspace-file-preference-provider';
 import { FoldersPreferencesProvider } from './folders-preferences-provider';
-import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderOptions } from './folder-preference-provider';
+import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderFolder } from './folder-preference-provider';
+import { UserConfigsPreferenceProvider } from './user-configs-preference-provider';
+import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from './section-preference-provider';
 
 export function bindWorkspaceFilePreferenceProvider(bind: interfaces.Bind): void {
     bind(WorkspaceFilePreferenceProviderFactory).toFactory(ctx => (options: WorkspaceFilePreferenceProviderOptions) => {
@@ -33,30 +34,32 @@ export function bindWorkspaceFilePreferenceProvider(bind: interfaces.Bind): void
     });
 }
 
-export function bindFolderPreferenceProvider(bind: interfaces.Bind): void {
-    bind(FolderPreferenceProviderFactory).toFactory(ctx =>
-        (options: FolderPreferenceProviderOptions) => {
+export function bindFactory<F, C>(bind: interfaces.Bind,
+    factoryId: interfaces.ServiceIdentifier<F>,
+    constructor: interfaces.Newable<C>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...parameterBindings: interfaces.ServiceIdentifier<any>[]): void {
+    bind(factoryId).toFactory(ctx =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (...args: any[]) => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
-            child.bind(FolderPreferenceProviderOptions).toConstantValue(options);
-            const configurations = ctx.container.get(PreferenceConfigurations);
-            if (configurations.isConfigUri(options.configUri)) {
-                child.bind(FolderPreferenceProvider).toSelf();
-                return child.get(FolderPreferenceProvider);
+            for (let i = 0; i < parameterBindings.length; i++) {
+                child.bind(parameterBindings[i]).toConstantValue(args[i]);
             }
-            const sectionName = configurations.getName(options.configUri);
-            return child.getNamed(FolderPreferenceProvider, sectionName);
+            child.bind(constructor).to(constructor);
+            return child.get(constructor);
         }
     );
-
 }
 
 export function bindPreferenceProviders(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
     unbind(PreferenceProvider);
 
-    bind(PreferenceProvider).to(UserPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.User);
+    bind(PreferenceProvider).to(UserConfigsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bind(PreferenceProvider).to(WorkspacePreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
     bind(PreferenceProvider).to(FoldersPreferencesProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
-    bindFolderPreferenceProvider(bind);
     bindWorkspaceFilePreferenceProvider(bind);
+    bindFactory(bind, UserPreferenceProviderFactory, UserPreferenceProvider, SectionPreferenceProviderUri, SectionPreferenceProviderSection);
+    bindFactory(bind, FolderPreferenceProviderFactory, FolderPreferenceProvider, SectionPreferenceProviderUri, SectionPreferenceProviderSection, FolderPreferenceProviderFolder);
 }

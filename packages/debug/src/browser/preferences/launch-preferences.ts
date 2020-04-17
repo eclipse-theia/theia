@@ -17,8 +17,6 @@
 import { interfaces } from 'inversify';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { launchSchemaId } from '../debug-schema-updater';
-import { LaunchFolderPreferenceProvider } from './launch-folder-preference-provider';
-import { FolderPreferenceProvider } from '@theia/preferences/lib/browser';
 import { PreferenceConfiguration } from '@theia/core/lib/browser/preferences/preference-configurations';
 
 export const launchPreferencesSchema: PreferenceSchema = {
@@ -35,6 +33,5 @@ export const launchPreferencesSchema: PreferenceSchema = {
 
 export function bindLaunchPreferences(bind: interfaces.Bind): void {
     bind(PreferenceContribution).toConstantValue({ schema: launchPreferencesSchema });
-    bind(FolderPreferenceProvider).to(LaunchFolderPreferenceProvider).inTransientScope().whenTargetNamed('launch');
     bind(PreferenceConfiguration).toConstantValue({ name: 'launch' });
 }

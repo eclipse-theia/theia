@@ -20,3 +20,4 @@ export * from './user-preference-provider';
 export * from './workspace-preference-provider';
 export * from './folders-preferences-provider';
 export * from './folder-preference-provider';
+export * from './user-configs-preference-provider';
