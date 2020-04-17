@@ -877,7 +877,14 @@ export class DugiteGit implements Git {
     }
 
     private async mapFileChanges(toMap: DugiteStatus, repositoryPath: string): Promise<GitFileChange[]> {
-        return Promise.all(toMap.files.map(file => this.mapFileChange(file, repositoryPath)));
+        return Promise.all(toMap.files
+            .filter(file => !this.isNestedGitRepository(file))
+            .map(file => this.mapFileChange(file, repositoryPath))
+        );
+    }
+
+    private isNestedGitRepository(fileChange: DugiteFileChange): boolean {
+        return fileChange.path.endsWith('/');
     }
 
     private async mapFileChange(toMap: DugiteFileChange, repositoryPath: string): Promise<GitFileChange> {
