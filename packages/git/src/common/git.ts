@@ -435,13 +435,13 @@ export namespace Git {
              * The exit codes which indicate success to the caller. Unexpected exit codes will be logged and an
              * error thrown. Defaults to `0` if `undefined`.
              */
-            readonly successExitCodes?: ReadonlySet<number>;
+            readonly successExitCodes?: ReadonlyArray<number>;
 
             /**
              * The Git errors which are expected by the caller. Unexpected errors will
              * be logged and an error thrown.
              */
-            readonly expectedErrors?: ReadonlySet<GitError>;
+            readonly expectedErrors?: ReadonlyArray<GitError>;
 
             /**
              * An optional collection of key-value pairs which will be
