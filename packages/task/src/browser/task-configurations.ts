@@ -28,7 +28,7 @@ import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskConfigurationManager } from './task-configuration-manager';
 import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskSourceResolver } from './task-source-resolver';
-import { Disposable, DisposableCollection, ResourceProvider } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -69,9 +69,6 @@ export class TaskConfigurations implements Disposable {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
-
-    @inject(ResourceProvider)
-    protected readonly resourceProvider: ResourceProvider;
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
