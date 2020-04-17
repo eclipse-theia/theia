@@ -615,6 +615,12 @@ export class DugiteGit implements Git {
                 opts = {
                     ...options
                 };
+                if (options.successExitCodes) {
+                    opts = { ...opts, successExitCodes: new Set(options.successExitCodes) };
+                }
+                if (options.expectedErrors) {
+                    opts = { ...opts, expectedErrors: new Set(options.expectedErrors) };
+                }
             }
             opts = {
                 ...opts,
@@ -660,7 +666,7 @@ export class DugiteGit implements Git {
             args.push(...[file]);
         }
 
-        const successExitCodes = new Set([0, 128]);
+        const successExitCodes = [0, 128];
         let result = await this.exec(repository, args, { successExitCodes });
         if (result.exitCode !== 0) {
             // Note that if no range specified then the 'to revision' defaults to HEAD
@@ -685,7 +691,7 @@ export class DugiteGit implements Git {
 
     async revParse(repository: Repository, options: Git.Options.RevParse): Promise<string | undefined> {
         const ref = options.ref;
-        const successExitCodes = new Set([0, 128]);
+        const successExitCodes = [0, 128];
         const result = await this.exec(repository, ['rev-parse', ref], { successExitCodes });
         if (result.exitCode === 0) {
             return result.stdout; // sha
@@ -734,8 +740,8 @@ export class DugiteGit implements Git {
         const file = (relativePath === '') ? '.' : relativePath;
         if (options && options.errorUnmatch) {
             args.push('--error-unmatch', file);
-            const successExitCodes = new Set([0, 1]);
-            const expectedErrors = new Set([GitError.OutsideRepository]);
+            const successExitCodes = [0, 1];
+            const expectedErrors = [GitError.OutsideRepository];
             const result = await this.exec(repository, args, { successExitCodes, expectedErrors });
             const { exitCode } = result;
             return exitCode === 0;
