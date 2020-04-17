@@ -17,8 +17,7 @@
 import { inject, injectable } from 'inversify';
 import { TaskProviderRegistry } from './task-contribution';
 import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskConfiguration, TaskCustomization, TaskOutputPresentation } from '../common';
-import URI from '@theia/core/lib/common/uri';
+import { TaskConfiguration, TaskCustomization, TaskOutputPresentation, TaskConfigurationScope } from '../common';
 
 @injectable()
 export class ProvidedTaskConfigurations {
@@ -56,7 +55,7 @@ export class ProvidedTaskConfigurations {
     }
 
     /** returns the task configuration for a given source and label or undefined if none */
-    async getTask(source: string, taskLabel: string, scope?: string): Promise<TaskConfiguration | undefined> {
+    async getTask(source: string, taskLabel: string, scope: TaskConfigurationScope): Promise<TaskConfiguration | undefined> {
         const task = this.getCachedTask(source, taskLabel, scope);
         if (task) {
             return task;
@@ -74,7 +73,7 @@ export class ProvidedTaskConfigurations {
      * @param customization the task customization
      * @return the detected task for the given task customization. If the task customization is not found, `undefined` is returned.
      */
-    async getTaskToCustomize(customization: TaskCustomization, rootFolderPath: string): Promise<TaskConfiguration | undefined> {
+    async getTaskToCustomize(customization: TaskCustomization, scope: TaskConfigurationScope): Promise<TaskConfiguration | undefined> {
         const definition = this.taskDefinitionRegistry.getDefinition(customization);
         if (!definition) {
             return undefined;
@@ -104,20 +103,19 @@ export class ProvidedTaskConfigurations {
         // find the task that matches the `customization`.
         // The scenario where more than one match is found should not happen unless users manually enter multiple customizations for one type of task
         // If this does happen, return the first match
-        const rootFolderUri = new URI(rootFolderPath).toString();
         const matchedTask = matchedTasks.filter(t =>
-            rootFolderUri === t._scope && definition.properties.all.every(p => t[p] === customization[p])
+            scope === t._scope && definition.properties.all.every(p => t[p] === customization[p])
         )[0];
         return matchedTask;
     }
 
-    protected getCachedTask(source: string, taskLabel: string, scope?: string): TaskConfiguration | undefined {
+    protected getCachedTask(source: string, taskLabel: string, scope?: TaskConfigurationScope): TaskConfiguration | undefined {
         const labelConfigMap = this.tasksMap.get(source);
         if (labelConfigMap) {
             const scopeConfigMap = labelConfigMap.get(taskLabel);
             if (scopeConfigMap) {
                 if (scope) {
-                    return scopeConfigMap.get(scope);
+                    return scopeConfigMap.get(scope.toString());
                 }
                 return Array.from(scopeConfigMap.values())[0];
             }
@@ -132,16 +130,16 @@ export class ProvidedTaskConfigurations {
             if (this.tasksMap.has(source)) {
                 const labelConfigMap = this.tasksMap.get(source)!;
                 if (labelConfigMap.has(label)) {
-                    labelConfigMap.get(label)!.set(scope, task);
+                    labelConfigMap.get(label)!.set(scope.toString(), task);
                 } else {
                     const newScopeConfigMap = new Map<undefined | string, TaskConfiguration>();
-                    newScopeConfigMap.set(scope, task);
+                    newScopeConfigMap.set(scope.toString(), task);
                     labelConfigMap.set(label, newScopeConfigMap);
                 }
             } else {
                 const newLabelConfigMap = new Map<string, Map<undefined | string, TaskConfiguration>>();
                 const newScopeConfigMap = new Map<undefined | string, TaskConfiguration>();
-                newScopeConfigMap.set(scope, task);
+                newScopeConfigMap.set(scope.toString(), task);
                 newLabelConfigMap.set(label, newScopeConfigMap);
                 this.tasksMap.set(source, newLabelConfigMap);
             }

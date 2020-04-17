@@ -16,8 +16,7 @@
 
 import { injectable } from 'inversify';
 import { Event, Emitter } from '@theia/core/lib/common';
-import { TaskConfiguration, TaskCustomization, TaskDefinition } from '../common';
-import URI from '@theia/core/lib/common/uri';
+import { TaskConfiguration, TaskDefinition, TaskCustomization } from '../common';
 import { Disposable } from '@theia/core/lib/common/disposable';
 
 @injectable()
@@ -115,9 +114,8 @@ export class TaskDefinitionRegistry {
         }
         const def = this.getDefinition(one);
         if (def) {
-            const oneScope = new URI(one._scope).path.toString();
-            const otherScope = new URI(other._scope).path.toString();
-            return def.properties.all.every(p => p === 'type' || one[p] === other[p]) && oneScope === otherScope;
+            // scope is either a string or an enum value. Anyway...the must exactly match
+            return def.properties.all.every(p => p === 'type' || one[p] === other[p]) && one._scope === other._scope;
         }
         return one.label === other.label && one._source === other._source;
     }

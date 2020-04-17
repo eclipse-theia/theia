@@ -16,18 +16,22 @@
 
 import { injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { PreferenceScope } from '@theia/core/lib/browser';
+import { SectionPreferenceProvider } from './section-preference-provider';
 
 export const USER_PREFERENCE_URI = new URI().withScheme(UserStorageUri.SCHEME).withPath('settings.json');
+
+export const UserPreferenceProviderFactory = Symbol('UserPreferenceProviderFactory');
+export interface UserPreferenceProviderFactory {
+    (uri: URI, section: string): UserPreferenceProvider;
+};
+
+/**
+ * A @SectionPreferenceProvider that targets the user-level settings
+ */
 @injectable()
-export class UserPreferenceProvider extends AbstractResourcePreferenceProvider {
-
-    protected getUri(): URI {
-        return USER_PREFERENCE_URI;
-    }
-
+export class UserPreferenceProvider extends SectionPreferenceProvider {
     protected getScope(): PreferenceScope {
         return PreferenceScope.User;
     }

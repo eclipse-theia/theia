@@ -80,6 +80,12 @@ export namespace TaskCommands {
         label: 'Configure Tasks...'
     };
 
+    export const TASK_OPEN_USER: Command = {
+        id: 'task:open_user',
+        category: TASK_CATEGORY,
+        label: 'Open User Tasks'
+    };
+
     export const TASK_CLEAR_HISTORY: Command = {
         id: 'task:clear-history',
         category: TASK_CATEGORY,
@@ -279,6 +285,15 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_CONFIGURE,
             {
                 execute: () => this.quickOpenTask.configure()
+            }
+        );
+
+        registry.registerCommand(
+            TaskCommands.TASK_OPEN_USER,
+            {
+                execute: () => {
+                    this.taskService.openUserTasks();
+                }
             }
         );
 

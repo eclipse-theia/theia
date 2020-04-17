@@ -708,7 +708,11 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     const taskDto = {} as TaskDto;
     taskDto.label = task.name;
     taskDto.source = task.source;
-    taskDto.scope = typeof task.scope === 'object' ? task.scope.uri.toString() : undefined;
+    if (typeof task.scope === 'object') {
+        taskDto.scope = task.scope.uri.toString();
+    } else if (typeof task.scope === 'number') {
+        taskDto.scope = task.scope;
+    }
 
     const taskDefinition = task.definition;
     if (!taskDefinition) {
@@ -748,13 +752,15 @@ export function toTask(taskDto: TaskDto): theia.Task {
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
-    if (scope) {
+    if (typeof scope === 'string') {
         const uri = URI.parse(scope);
         result.scope = {
             uri,
             name: uri.toString(),
             index: 0
         };
+    } else {
+        result.scope = scope;
     }
 
     const taskType = type;

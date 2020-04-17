@@ -48,7 +48,8 @@ import {
     DependsOrder,
     RevealKind,
     ApplyToKind,
-    TaskOutputPresentation
+    TaskOutputPresentation,
+    TaskConfigurationScope
 } from '../common';
 import { TaskWatcher } from '../common/task-watcher';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -91,7 +92,7 @@ export class TaskService implements TaskConfigurationClient {
     /**
      * The last executed task.
      */
-    protected lastTask: { source: string, taskLabel: string, scope?: string } | undefined = undefined;
+    protected lastTask: { source: string, taskLabel: string, scope: TaskConfigurationScope } | undefined = undefined;
     protected cachedRecentTasks: TaskConfiguration[] = [];
     protected runningTasks = new Map<number, {
         exitCode: Deferred<number | undefined>,
@@ -409,10 +410,17 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
+     * Open user ser
+     */
+    openUserTasks(): Promise<void> {
+        return this.taskConfigurations.openUserTasks();
+    }
+
+    /**
      * Returns a task configuration provided by an extension by task source and label.
      * If there are no task configuration, returns undefined.
      */
-    async getProvidedTask(source: string, label: string, scope?: string): Promise<TaskConfiguration | undefined> {
+    async getProvidedTask(source: string, label: string, scope: TaskConfigurationScope): Promise<TaskConfiguration | undefined> {
         return this.providedTaskConfigurations.getTask(source, label, scope);
     }
 
@@ -431,7 +439,7 @@ export class TaskService implements TaskConfigurationClient {
      *
      * @returns the last executed task or `undefined`.
      */
-    getLastTask(): { source: string, taskLabel: string, scope?: string } | undefined {
+    getLastTask(): { source: string, taskLabel: string, scope: TaskConfigurationScope } | undefined {
         return this.lastTask;
     }
 
@@ -439,14 +447,14 @@ export class TaskService implements TaskConfigurationClient {
      * Runs a task, by task configuration label.
      * Note, it looks for a task configured in tasks.json only.
      */
-    async runConfiguredTask(source: string, taskLabel: string): Promise<void> {
-        const task = this.taskConfigurations.getTask(source, taskLabel);
+    async runConfiguredTask(scope: TaskConfigurationScope, taskLabel: string): Promise<void> {
+        const task = this.taskConfigurations.getTask(scope, taskLabel);
         if (!task) {
             this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
             return;
         }
 
-        this.run(source, taskLabel);
+        this.run(task._source, taskLabel, scope);
     }
 
     /**
@@ -464,12 +472,12 @@ export class TaskService implements TaskConfigurationClient {
      * Runs a task, by the source and label of the task configuration.
      * It looks for configured and detected tasks.
      */
-    async run(source: string, taskLabel: string, scope?: string): Promise<TaskInfo | undefined> {
+    async run(source: string, taskLabel: string, scope: TaskConfigurationScope): Promise<TaskInfo | undefined> {
         let task: TaskConfiguration | undefined;
-        task = this.taskConfigurations.getTask(source, taskLabel);
+        task = this.taskConfigurations.getTask(scope, taskLabel);
         if (!task) { // if a configured task cannot be found, search from detected tasks
             task = await this.getProvidedTask(source, taskLabel, scope);
-            if (!task && scope) { // find from the customized detected tasks
+            if (!task) { // find from the customized detected tasks
                 task = await this.taskConfigurations.getCustomizedTask(scope, taskLabel);
             }
             if (!task) {
@@ -835,9 +843,10 @@ export class TaskService implements TaskConfigurationClient {
         this.taskConfigurations.updateTaskConfig(task, update);
     }
 
-    protected async getWorkspaceTasks(workspaceFolderUri: string | undefined): Promise<TaskConfiguration[]> {
+    protected async getWorkspaceTasks(restrictToFolder: TaskConfigurationScope | undefined): Promise<TaskConfiguration[]> {
         const tasks = await this.getTasks();
-        return tasks.filter(t => t._scope === workspaceFolderUri || t._scope === undefined);
+        // if we pass undefined, return everything, otherwise only tasks with the same uri or workspace/global scope tasks
+        return tasks.filter(t => typeof t._scope !== 'string' || t._scope === restrictToFolder);
     }
 
     protected async resolveProblemMatchers(task: TaskConfiguration, customizationObject: TaskCustomization): Promise<ProblemMatcher[] | undefined> {
@@ -874,7 +883,7 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     protected async getTaskCustomization(task: TaskConfiguration): Promise<TaskCustomization> {
-        const customizationObject: TaskCustomization = { type: '' };
+        const customizationObject: TaskCustomization = { type: '', _scope: task._scope };
         const customizationFound = this.taskConfigurations.getCustomizationForTask(task);
         if (customizationFound) {
             Object.assign(customizationObject, customizationFound);

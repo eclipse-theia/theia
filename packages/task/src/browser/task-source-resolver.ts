@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { TaskConfiguration, ContributedTaskConfiguration } from '../common';
+import { TaskConfiguration, TaskScope } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 
 @injectable()
@@ -26,18 +26,11 @@ export class TaskSourceResolver {
     /**
      * Returns task source to display.
      */
-    resolve(task: TaskConfiguration): string | undefined {
-        const isDetectedTask = this.isDetectedTask(task);
-        let sourceFolderUri: string | undefined;
-        if (isDetectedTask) {
-            sourceFolderUri = task._scope;
+    resolve(task: TaskConfiguration): string {
+        if (typeof task._scope === 'string') {
+            return task._scope;
         } else {
-            sourceFolderUri = task._source;
+            return TaskScope[task._scope];
         }
-        return sourceFolderUri;
-    }
-
-    private isDetectedTask(task: TaskConfiguration): task is ContributedTaskConfiguration {
-        return !!this.taskDefinitionRegistry.getDefinition(task);
     }
 }

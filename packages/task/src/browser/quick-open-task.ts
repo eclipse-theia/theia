@@ -16,7 +16,7 @@
 
 import { inject, injectable } from 'inversify';
 import { TaskService } from './task-service';
-import { TaskInfo, TaskConfiguration, TaskCustomization } from '../common/task-protocol';
+import { TaskInfo, TaskConfiguration, TaskCustomization, TaskScope, TaskConfigurationScope } from '../common/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import URI from '@theia/core/lib/common/uri';
 import { QuickOpenHandler, QuickOpenService, QuickOpenOptions, QuickOpenBaseAction, LabelProvider } from '@theia/core/lib/browser';
@@ -335,7 +335,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                 if (defaultBuildOrTestTasks.length === 1) { // run the default build / test task
                     const defaultBuildOrTestTask = defaultBuildOrTestTasks[0];
                     const taskToRun = (defaultBuildOrTestTask as TaskRunQuickOpenItem).getTask();
-                    const scope = this.taskSourceResolver.resolve(taskToRun);
+                    const scope = taskToRun._scope;
 
                     if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(taskToRun)) {
                         this.taskService.run(taskToRun.source, taskToRun.label, scope);
@@ -451,10 +451,10 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         const grouped = new Map<string | undefined, TaskConfiguration[]>();
         for (const task of tasks) {
             const folder = task._scope;
-            if (grouped.has(folder)) {
-                grouped.get(folder)!.push(task);
+            if (grouped.has(folder.toString())) {
+                grouped.get(folder.toString())!.push(task);
             } else {
-                grouped.set(folder, [task]);
+                grouped.set(folder.toString(), [task]);
             }
         }
         for (const taskConfigs of grouped.values()) {
@@ -491,18 +491,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getDescription(): string {
-        if (!this.isMulti) {
-            return '';
-        }
-        if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
-            if (this.task._scope) {
-                return new URI(this.task._scope).displayName;
-            }
-            return this.task._source;
-        } else {
-            return new URI(this.task._source).displayName;
-        }
-
+        return renderScope(this.task._scope, this.isMulti);
     }
 
     run(mode: QuickOpenMode): boolean {
@@ -510,7 +499,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
             return false;
         }
 
-        const scope = this.taskSourceResolver.resolve(this.task);
+        const scope = this.task._scope;
         if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
             this.taskService.run(this.task.source || this.task._source, this.task.label, scope);
         } else {
@@ -549,6 +538,19 @@ export class ConfigureBuildOrTestTaskQuickOpenItem extends TaskRunQuickOpenItem 
     }
 }
 
+function renderScope(scope: TaskConfigurationScope, isMulti: boolean): string {
+    if (typeof scope === 'string') {
+        if (isMulti) {
+            return new URI(scope).displayName;
+        } else {
+            return '';
+        }
+    } else {
+        return TaskScope[scope];
+    }
+
+}
+
 export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
 
     protected taskDefinitionRegistry: TaskDefinitionRegistry;
@@ -575,17 +577,7 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getDescription(): string {
-        if (!this.isMulti) {
-            return '';
-        }
-        if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
-            if (this.task._scope) {
-                return new URI(this.task._scope).displayName;
-            }
-            return this.task._source;
-        } else {
-            return new URI(this.task._source).displayName;
-        }
+        return renderScope(this.task._scope, this.isMulti);
     }
 
     run(mode: QuickOpenMode): boolean {
@@ -775,11 +767,7 @@ export class RunningTaskQuickOpenItem extends QuickOpenItem {
     }
 
     getDescription(): string {
-        if (!this.isMulti) {
-            return '';
-        }
-        const source = this.taskSourceResolver.resolve(this.taskInfo.config);
-        return source ? this.labelProvider.getName(new URI(source)) : '';
+        return renderScope(this.taskInfo.config._scope, this.isMulti);
     }
 
     run(mode: QuickOpenMode): boolean {

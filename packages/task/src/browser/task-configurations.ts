@@ -16,22 +16,23 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import {
-    ContributedTaskConfiguration,
     TaskConfiguration,
     TaskCustomization,
     TaskDefinition,
-    TaskOutputPresentation
+    TaskOutputPresentation,
+    TaskConfigurationScope,
+    TaskScope
 } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
-import { TaskConfigurationManager } from './task-configuration-manager';
+import { TaskConfigurationManager, TasksChange } from './task-configuration-manager';
 import { TaskSchemaUpdater } from './task-schema-updater';
 import { TaskSourceResolver } from './task-source-resolver';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
-import URI from '@theia/core/lib/common/uri';
-import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
+import { FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { OpenerService } from '@theia/core/lib/browser';
+import { USER_PREFERENCE_FOLDER } from '@theia/preferences/lib/browser/user-configs-preference-provider';
 
 export interface TaskConfigurationClient {
     /**
@@ -41,12 +42,13 @@ export interface TaskConfigurationClient {
     taskConfigurationChanged: (event: string[]) => void;
 }
 
+export const USER_TASKS_URI = USER_PREFERENCE_FOLDER.withPath('tasks.json');
+
 /**
  * Watches a tasks.json configuration file and provides a parsed version of the contained task configurations
  */
 @injectable()
 export class TaskConfigurations implements Disposable {
-
     protected readonly toDispose = new DisposableCollection();
     /**
      * Map of source (path of root folder that the task configs come from) and task config map.
@@ -139,8 +141,10 @@ export class TaskConfigurations implements Disposable {
         const detectedTasksAsConfigured: TaskConfiguration[] = [];
         for (const [rootFolder, customizations] of Array.from(this.taskCustomizationMap.entries())) {
             for (const cus of customizations) {
+                // TODO: getTasksToCustomize() will ask all task providers to contribute tasks. Doing this in a loop is bad.
                 const detected = await this.providedTaskConfigurations.getTaskToCustomize(cus, rootFolder);
                 if (detected) {
+                    // there might be a provided task that has a different scope from the task we're inspecting
                     detectedTasksAsConfigured.push({ ...detected, ...cus });
                 }
             }
@@ -148,16 +152,18 @@ export class TaskConfigurations implements Disposable {
         return [...configuredTasks, ...detectedTasksAsConfigured];
     }
 
-    getRawTaskConfigurations(rootFolder?: string): (TaskCustomization | TaskConfiguration)[] {
-        if (!rootFolder) {
+    getRawTaskConfigurations(scope?: TaskConfigurationScope): (TaskCustomization | TaskConfiguration)[] {
+        if (!scope) {
             const tasks: (TaskCustomization | TaskConfiguration)[] = [];
             for (const configs of this.rawTaskConfigurations.values()) {
                 tasks.push(...configs);
             }
             return tasks;
         }
-        if (this.rawTaskConfigurations.has(rootFolder)) {
-            return Array.from(this.rawTaskConfigurations.get(rootFolder)!.values());
+
+        const scopeKey = this.getKeyFromScope(scope);
+        if (this.rawTaskConfigurations.has(scopeKey)) {
+            return Array.from(this.rawTaskConfigurations.get(scopeKey)!.values());
         }
         return [];
     }
@@ -179,20 +185,20 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** returns the task configuration for a given label or undefined if none */
-    getTask(rootFolderPath: string, taskLabel: string): TaskConfiguration | undefined {
-        const labelConfigMap = this.tasksMap.get(rootFolderPath);
+    getTask(scope: TaskConfigurationScope, taskLabel: string): TaskConfiguration | undefined {
+        const labelConfigMap = this.tasksMap.get(this.getKeyFromScope(scope));
         if (labelConfigMap) {
             return labelConfigMap.get(taskLabel);
         }
     }
 
     /** returns the customized task for a given label or undefined if none */
-    async getCustomizedTask(rootFolderPath: string, taskLabel: string): Promise<TaskConfiguration | undefined> {
-        const customizations = this.taskCustomizationMap.get(rootFolderPath);
+    async getCustomizedTask(scope: TaskConfigurationScope, taskLabel: string): Promise<TaskConfiguration | undefined> {
+        const customizations = this.taskCustomizationMap.get(this.getKeyFromScope(scope));
         if (customizations) {
             const customization = customizations.find(cus => cus.label === taskLabel);
             if (customization) {
-                const detected = await this.providedTaskConfigurations.getTaskToCustomize(customization, rootFolderPath);
+                const detected = await this.providedTaskConfigurations.getTaskToCustomize(customization, scope);
                 if (detected) {
                     return {
                         ...detected,
@@ -205,8 +211,8 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** removes tasks configured in the given task config file */
-    private removeTasks(configFileUri: string): void {
-        const source = this.getSourceFolderFromConfigUri(configFileUri);
+    private removeTasks(scope: TaskConfigurationScope): void {
+        const source = this.getKeyFromScope(scope);
         this.tasksMap.delete(source);
         this.taskCustomizationMap.delete(source);
     }
@@ -215,8 +221,8 @@ export class TaskConfigurations implements Disposable {
      * Removes task customization objects found in the given task config file from the memory.
      * Please note: this function does not modify the task config file.
      */
-    private removeTaskCustomizations(configFileUri: string): void {
-        const source = this.getSourceFolderFromConfigUri(configFileUri);
+    private removeTaskCustomizations(scope: TaskConfigurationScope): void {
+        const source = this.getKeyFromScope(scope);
         this.taskCustomizationMap.delete(source);
     }
 
@@ -225,16 +231,13 @@ export class TaskConfigurations implements Disposable {
      * @param type the type of task customizations
      * @param rootFolder the root folder to find task customizations from. If `undefined`, this function returns an empty array.
      */
-    getTaskCustomizations(type: string, rootFolder?: string): TaskCustomization[] {
-        if (!rootFolder) {
-            return [];
-        }
-
-        const customizationInRootFolder = this.taskCustomizationMap.get(new URI(rootFolder).toString());
+    private getTaskCustomizations(type: string, scope: TaskConfigurationScope): TaskCustomization[] {
+        const customizationInRootFolder = this.taskCustomizationMap.get(this.getKeyFromScope(scope));
         if (customizationInRootFolder) {
             return customizationInRootFolder.filter(c => c.type === type);
+        } else {
+            return [];
         }
-        return [];
     }
 
     /**
@@ -265,13 +268,13 @@ export class TaskConfigurations implements Disposable {
     /**
      * Called when a change, to a config file we watch, is detected.
      */
-    protected async onDidTaskFileChange(fileChanges: FileChange[]): Promise<void> {
+    protected async onDidTaskFileChange(fileChanges: TasksChange[]): Promise<void> {
         for (const change of fileChanges) {
             if (change.type === FileChangeType.DELETED) {
-                this.removeTasks(change.uri);
+                this.removeTasks(change.scope);
             } else {
                 // re-parse the config file
-                await this.refreshTasks(change.uri);
+                await this.refreshTasks(change.scope);
             }
         }
     }
@@ -279,47 +282,55 @@ export class TaskConfigurations implements Disposable {
     /**
      * Read the task configs from the task configuration manager, and updates the list of available tasks.
      */
-    protected async refreshTasks(rootFolderUri: string): Promise<void> {
-        await this.readTasks(rootFolderUri);
+    protected async refreshTasks(scope: TaskConfigurationScope): Promise<void> {
+        await this.readTasks(scope);
 
-        this.removeTasks(rootFolderUri);
-        this.removeTaskCustomizations(rootFolderUri);
+        this.removeTasks(scope);
+        this.removeTaskCustomizations(scope);
 
         this.reorganizeTasks();
     }
 
     /** parses a config file and extracts the tasks launch configurations */
-    protected async readTasks(rootFolderUri: string): Promise<(TaskCustomization | TaskConfiguration)[] | undefined> {
-        const rawConfigArray = this.taskConfigurationManager.getTasks(rootFolderUri);
-        if (this.rawTaskConfigurations.has(rootFolderUri)) {
-            this.rawTaskConfigurations.delete(rootFolderUri);
+    protected async readTasks(scope: TaskConfigurationScope): Promise<(TaskCustomization | TaskConfiguration)[] | undefined> {
+        const rawConfigArray = this.taskConfigurationManager.getTasks(scope);
+        const key = this.getKeyFromScope(scope);
+        if (this.rawTaskConfigurations.has(key)) {
+            this.rawTaskConfigurations.delete(key);
         }
-        this.rawTaskConfigurations.set(rootFolderUri, rawConfigArray);
+        this.rawTaskConfigurations.set(key, rawConfigArray);
         return rawConfigArray;
+    }
+
+    async openUserTasks(): Promise<void> {
+        await this.openerService.getOpener(USER_TASKS_URI).then(opener => opener.open(USER_TASKS_URI));
     }
 
     /** Adds given task to a config file and opens the file to provide ability to edit task configuration. */
     async configure(task: TaskConfiguration): Promise<void> {
+        const scope = task._scope;
+        if (scope === TaskScope.Global) {
+            return this.openUserTasks();
+        } else if (typeof scope !== 'string') {
+            console.error('Global task cannot be customized');
+            // TODO detected tasks of scope workspace or user could be customized in those preferences.
+            return;
+        }
+
         const workspace = this.workspaceService.workspace;
         if (!workspace) {
             return;
         }
 
-        const sourceFolderUri: string | undefined = this.taskSourceResolver.resolve(task);
-        if (!sourceFolderUri) {
-            console.error('Global task cannot be customized');
-            return;
-        }
-
         const configuredAndCustomizedTasks = await this.getTasks();
         if (!configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) {
-            await this.saveTask(sourceFolderUri, { ...task, problemMatcher: [] });
+            await this.saveTask(scope, { ...task, problemMatcher: [] });
         }
 
         try {
-            await this.taskConfigurationManager.openConfiguration(sourceFolderUri);
+            await this.taskConfigurationManager.openConfiguration(scope);
         } catch (e) {
-            console.error(`Error occurred while opening 'tasks.json' in ${sourceFolderUri}.`, e);
+            console.error(`Error occurred while opening 'tasks.json' in ${this.taskSourceResolver.resolve(task)}.`, e);
         }
     }
 
@@ -359,7 +370,7 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** Writes the task to a config file. Creates a config file if this one does not exist */
-    saveTask(sourceFolderUri: string, task: TaskConfiguration): Promise<void> {
+    saveTask(sourceFolderUri: string, task: TaskConfiguration): Promise<boolean> {
         const { _source, $ident, ...preparedTask } = task;
         const customizedTaskTemplate = this.getTaskCustomizationTemplate(task) || preparedTask;
         return this.taskConfigurationManager.addTaskConfiguration(sourceFolderUri, customizedTaskTemplate);
@@ -389,17 +400,18 @@ export class TaskConfigurations implements Disposable {
             }
         };
 
-        for (const [rootFolder, taskConfigs] of this.rawTaskConfigurations.entries()) {
+        for (const [scopeKey, taskConfigs] of this.rawTaskConfigurations.entries()) {
             for (const taskConfig of taskConfigs) {
+                const scope = this.getScopeFromKey(scopeKey);
                 const isValid = this.isTaskConfigValid(taskConfig);
                 if (!isValid) {
                     continue;
                 }
-                const transformedTask = this.getTransformedRawTask(taskConfig, rootFolder);
+                const transformedTask = this.getTransformedRawTask(taskConfig, scope);
                 if (this.isDetectedTask(transformedTask)) {
-                    addCustomization(rootFolder, transformedTask);
+                    addCustomization(scopeKey, transformedTask);
                 } else {
-                    addConfiguredTask(rootFolder, transformedTask['label'] as string, transformedTask);
+                    addConfiguredTask(scopeKey, transformedTask['label'] as string, transformedTask);
                 }
             }
         }
@@ -408,20 +420,20 @@ export class TaskConfigurations implements Disposable {
         this.tasksMap = newTaskMap;
     }
 
-    private getTransformedRawTask(rawTask: TaskCustomization | TaskConfiguration, rootFolderUri: string): TaskCustomization | TaskConfiguration {
+    private getTransformedRawTask(rawTask: TaskCustomization | TaskConfiguration, scope: TaskConfigurationScope): TaskCustomization | TaskConfiguration {
         let taskConfig: TaskCustomization | TaskConfiguration;
         if (this.isDetectedTask(rawTask)) {
             const def = this.getTaskDefinition(rawTask);
             taskConfig = {
                 ...rawTask,
                 _source: def!.source,
-                _scope: rootFolderUri
+                _scope: scope
             };
         } else {
             taskConfig = {
                 ...rawTask,
-                _source: rootFolderUri,
-                _scope: rootFolderUri
+                _source: scope,
+                _scope: scope
             };
         }
         return {
@@ -447,14 +459,15 @@ export class TaskConfigurations implements Disposable {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateTaskConfig(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
-        const sourceFolderUri: string | undefined = this.taskSourceResolver.resolve(task);
-        if (!sourceFolderUri) {
+        const scope = task._scope;
+        if (typeof scope !== 'string') {
+            // ToDo: configure workspace and user-level scope tasks
             console.error('Global task cannot be customized');
             return;
         }
         const configuredAndCustomizedTasks = await this.getTasks();
         if (configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) { // task is already in `tasks.json`
-            const jsonTasks = this.taskConfigurationManager.getTasks(sourceFolderUri);
+            const jsonTasks = this.taskConfigurationManager.getTasks(scope);
             if (jsonTasks) {
                 const ind = jsonTasks.findIndex((t: TaskCustomization | TaskConfiguration) => {
                     if (t.type !== (task.taskType || task.type)) {
@@ -471,30 +484,41 @@ export class TaskConfigurations implements Disposable {
                     ...update
                 };
             }
-            this.taskConfigurationManager.setTaskConfigurations(sourceFolderUri, jsonTasks);
+            this.taskConfigurationManager.setTaskConfigurations(scope, jsonTasks);
         } else { // task is not in `tasks.json`
             Object.keys(update).forEach(taskProperty => {
                 task[taskProperty] = update[taskProperty];
             });
-            this.saveTask(sourceFolderUri, task);
+            this.saveTask(scope, task);
         }
     }
 
-    private getSourceFolderFromConfigUri(configFileUri: string): string {
-        return new URI(configFileUri).parent.parent.path.toString();
+    private getKeyFromScope(scope: TaskConfigurationScope): string {
+        // Converting the enums to string will not yield a valid URI, so the keys will be distinct from any URI.
+        return scope.toString();
+    }
+
+    private getScopeFromKey(key: string): TaskConfigurationScope {
+        if (TaskScope.Global.toString() === key) {
+            return TaskScope.Global;
+        } else if (TaskScope.Workspace.toString() === key) {
+            return TaskScope.Workspace;
+        } else {
+            return key;
+        }
     }
 
     /** checks if the config is a detected / contributed task */
-    private isDetectedTask(task: TaskConfiguration | TaskCustomization): task is ContributedTaskConfiguration {
+    private isDetectedTask(task: TaskConfiguration | TaskCustomization): boolean {
         const taskDefinition = this.getTaskDefinition(task);
         // it is considered as a customization if the task definition registry finds a def for the task configuration
         return !!taskDefinition;
     }
 
-    private getTaskDefinition(task: TaskConfiguration | TaskCustomization): TaskDefinition | undefined {
+    private getTaskDefinition(task: TaskCustomization): TaskDefinition | undefined {
         return this.taskDefinitionRegistry.getDefinition({
             ...task,
-            type: task.taskType || task.type
+            type: typeof task.taskType === 'string' ? task.taskType : task.type
         });
     }
 }

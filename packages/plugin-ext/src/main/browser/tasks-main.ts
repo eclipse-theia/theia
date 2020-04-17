@@ -52,7 +52,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
         this.toDispose.push(this.taskWatcher.onTaskCreated((event: TaskInfo) => {
             this.proxy.$onDidStartTask({
                 id: event.taskId,
-                task: event.config
+                task: this.fromTaskConfiguration(event.config)
             });
         }));
 
@@ -64,7 +64,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
             if (event.processId !== undefined) {
                 this.proxy.$onDidStartTaskProcess(event.processId, {
                     id: event.taskId,
-                    task: event.config
+                    task: this.fromTaskConfiguration(event.config)
                 });
             }
         }));
@@ -133,19 +133,19 @@ export class TasksMainImpl implements TasksMain, Disposable {
         if (taskInfo) {
             return {
                 id: taskInfo.taskId,
-                task: taskInfo.config
+                task: this.fromTaskConfiguration(taskInfo.config)
             };
         }
     }
 
     async $taskExecutions(): Promise<{
         id: number;
-        task: TaskConfiguration;
+        task: TaskDto;
     }[]> {
         const runningTasks = await this.taskService.getRunningTasks();
         return runningTasks.map(taskInfo => ({
             id: taskInfo.taskId,
-            task: taskInfo.config
+            task: this.fromTaskConfiguration(taskInfo.config)
         }));
     }
 
@@ -167,7 +167,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
     protected createTaskResolver(handle: number): TaskResolver {
         return {
             resolveTask: taskConfig =>
-                this.proxy.$resolveTask(handle, taskConfig).then(v =>
+                this.proxy.$resolveTask(handle, this.fromTaskConfiguration(taskConfig)).then(v =>
                     this.toTaskConfiguration(v!)
                 )
         };
@@ -175,8 +175,16 @@ export class TasksMainImpl implements TasksMain, Disposable {
 
     protected toTaskConfiguration(taskDto: TaskDto): TaskConfiguration {
         return Object.assign(taskDto, {
-            _source: taskDto.source || 'plugin',
+            _source: taskDto.source,
             _scope: taskDto.scope
         });
     }
+
+    protected fromTaskConfiguration(task: TaskConfiguration): TaskDto {
+        return Object.assign(task, {
+            source: task._source,
+            scope: task._scope
+        });
+    }
+
 }

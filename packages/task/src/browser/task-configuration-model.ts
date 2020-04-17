@@ -17,9 +17,13 @@
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { TaskCustomization, TaskConfiguration } from '../common/task-protocol';
-import { PreferenceService, PreferenceScope } from '@theia/core/lib/browser/preferences/preference-service';
+import { TaskCustomization, TaskConfiguration, TaskConfigurationScope } from '../common/task-protocol';
+import { PreferenceProvider, PreferenceProviderDataChanges, PreferenceProviderDataChange } from '@theia/core/lib/browser';
 
+/**
+ * Holds the task configurations associated with a particular file. Uses an editor model to facilitate
+ * non-destructive editing and coordination with editing the file by hand.
+ */
 export class TaskConfigurationModel implements Disposable {
 
     protected json: TaskConfigurationModel.JsonContent;
@@ -32,12 +36,13 @@ export class TaskConfigurationModel implements Disposable {
     );
 
     constructor(
-        public readonly workspaceFolderUri: string,
-        protected readonly preferences: PreferenceService
+        public readonly scope: TaskConfigurationScope,
+        protected readonly preferences: PreferenceProvider
     ) {
         this.reconcile();
-        this.toDispose.push(this.preferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'tasks' && e.affects(workspaceFolderUri)) {
+        this.toDispose.push(this.preferences.onDidPreferencesChanged((e: PreferenceProviderDataChanges) => {
+            const change = e['tasks'];
+            if (change && PreferenceProviderDataChange.affects(change, this.getWorkspaceFolder())) {
                 this.reconcile();
             }
         }));
@@ -45,6 +50,10 @@ export class TaskConfigurationModel implements Disposable {
 
     get uri(): URI | undefined {
         return this.json.uri;
+    }
+
+    getWorkspaceFolder(): string | undefined {
+        return typeof this.scope === 'string' ? this.scope : undefined;
     }
 
     dispose(): void {
@@ -63,14 +72,14 @@ export class TaskConfigurationModel implements Disposable {
         this.onDidChangeEmitter.fire(undefined);
     }
 
-    setConfigurations(value: object): Promise<void> {
-        return this.preferences.set('tasks.tasks', value, PreferenceScope.Folder, this.workspaceFolderUri);
+    setConfigurations(value: object): Promise<boolean> {
+        return this.preferences.setPreference('tasks.tasks', value, this.getWorkspaceFolder());
     }
 
     protected parseConfigurations(): TaskConfigurationModel.JsonContent {
         const configurations: (TaskCustomization | TaskConfiguration)[] = [];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { configUri, value } = this.preferences.resolve<any>('tasks', undefined, this.workspaceFolderUri);
+        const { configUri, value } = this.preferences.resolve<any>('tasks', this.getWorkspaceFolder());
         if (value && typeof value === 'object' && 'tasks' in value) {
             if (Array.isArray(value.tasks)) {
                 for (const taskConfig of value.tasks) {

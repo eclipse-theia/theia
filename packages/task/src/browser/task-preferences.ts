@@ -17,8 +17,6 @@
 import { interfaces } from 'inversify';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { taskSchemaId } from './task-schema-updater';
-import { TaskFolderPreferenceProvider } from './task-folder-preference-provider';
-import { FolderPreferenceProvider } from '@theia/preferences/lib/browser';
 import { PreferenceConfiguration } from '@theia/core/lib/browser/preferences/preference-configurations';
 
 export const taskPreferencesSchema: PreferenceSchema = {
@@ -37,6 +35,5 @@ export const taskPreferencesSchema: PreferenceSchema = {
 
 export function bindTaskPreferences(bind: interfaces.Bind): void {
     bind(PreferenceContribution).toConstantValue({ schema: taskPreferencesSchema });
-    bind(FolderPreferenceProvider).to(TaskFolderPreferenceProvider).inTransientScope().whenTargetNamed('tasks');
     bind(PreferenceConfiguration).toConstantValue({ name: 'tasks' });
 }

@@ -32,8 +32,16 @@ export interface PreferenceProviderDataChange {
     readonly domain?: string[];
 }
 
+export namespace PreferenceProviderDataChange {
+    export function affects(change: PreferenceProviderDataChange, resourceUri?: string): boolean {
+        const resourcePath = resourceUri && new URI(resourceUri).path;
+        const domain = change.domain;
+        return !resourcePath || !domain || domain.some(uri => new URI(uri).path.relativity(resourcePath) >= 0);
+    }
+}
+
 export interface PreferenceProviderDataChanges {
-    [preferenceName: string]: PreferenceProviderDataChange
+    [preferenceName: string]: PreferenceProviderDataChange;
 }
 
 export interface PreferenceResolveResult<T> {

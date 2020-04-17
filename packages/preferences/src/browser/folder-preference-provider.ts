@@ -17,40 +17,35 @@
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope } from '@theia/core/lib/browser';
-import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
 import { FileStat } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { SectionPreferenceProvider } from './section-preference-provider';
 
 export const FolderPreferenceProviderFactory = Symbol('FolderPreferenceProviderFactory');
 export interface FolderPreferenceProviderFactory {
-    (options: FolderPreferenceProviderOptions): FolderPreferenceProvider;
+    (uri: URI, section: string, folder: FileStat): FolderPreferenceProvider;
 }
 
-export const FolderPreferenceProviderOptions = Symbol('FolderPreferenceProviderOptions');
+export const FolderPreferenceProviderFolder = Symbol('FolderPreferenceProviderFolder');
 export interface FolderPreferenceProviderOptions {
-    readonly folder: FileStat;
     readonly configUri: URI;
+    readonly sectionName: string | undefined;
 }
 
 @injectable()
-export class FolderPreferenceProvider extends AbstractResourcePreferenceProvider {
+export class FolderPreferenceProvider extends SectionPreferenceProvider {
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(FolderPreferenceProviderOptions) protected readonly options: FolderPreferenceProviderOptions;
+    @inject(FolderPreferenceProviderFolder) protected readonly folder: FileStat;
 
     private _folderUri: URI;
 
     get folderUri(): URI {
         if (!this._folderUri) {
-            this._folderUri = new URI(this.options.folder.uri);
+            this._folderUri = new URI(this.folder.uri);
         }
         return this._folderUri;
     }
-
-    protected getUri(): URI {
-        return this.options.configUri;
-    }
-
     protected getScope(): PreferenceScope {
         if (!this.workspaceService.isMultiRootWorkspaceOpened) {
             // when FolderPreferenceProvider is used as a delegate of WorkspacePreferenceProvider in a one-folder workspace
@@ -62,5 +57,4 @@ export class FolderPreferenceProvider extends AbstractResourcePreferenceProvider
     getDomain(): string[] {
         return [this.folderUri.toString()];
     }
-
 }

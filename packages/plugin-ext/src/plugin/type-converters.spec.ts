@@ -183,7 +183,7 @@ describe('Type converters:', () => {
             type: shellType,
             label,
             source,
-            scope: undefined,
+            scope: 1,
             command,
             args,
             options: { cwd },
@@ -194,7 +194,7 @@ describe('Type converters:', () => {
             type: shellType,
             label,
             source,
-            scope: undefined,
+            scope: 2,
             command: commandLine,
             options: { cwd },
             additionalProperty
@@ -203,6 +203,7 @@ describe('Type converters:', () => {
         const shellPluginTask: theia.Task = {
             name: label,
             source,
+            scope: 1,
             definition: {
                 type: shellType,
                 additionalProperty
@@ -219,6 +220,7 @@ describe('Type converters:', () => {
         const pluginTaskWithCommandLine: theia.Task = {
             name: label,
             source,
+            scope: 2,
             definition: {
                 type: shellType,
                 additionalProperty
@@ -245,6 +247,7 @@ describe('Type converters:', () => {
         const customPluginTaskWithCommandLine: theia.Task = {
             name: label,
             source,
+            scope: 2,
             definition: {
                 type: customType,
                 additionalProperty
