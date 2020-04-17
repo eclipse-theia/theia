@@ -78,7 +78,7 @@ export class PluginWidget extends ReactWidget {
 
     protected renderPlugins(plugins: PluginMetadata[]): React.ReactNode {
         return <div id='pluginListContainer'>
-            {plugins.map(plugin => this.renderPlugin(plugin))}
+            {plugins.sort((a, b) => this.compareMetadata(a, b)).map(plugin => this.renderPlugin(plugin))}
         </div>;
     }
 
@@ -105,5 +105,24 @@ export class PluginWidget extends ReactWidget {
     protected createPluginClassName(plugin: PluginMetadata): string {
         const classNames = ['pluginHeaderContainer'];
         return classNames.join(' ');
+    }
+
+    /**
+     * Compare two plugins based on their names, and publishers.
+     * @param a the first plugin metadata.
+     * @param b the second plugin metadata.
+     */
+    protected compareMetadata(a: PluginMetadata, b: PluginMetadata): number {
+        // Determine the name of the plugins.
+        const nameA = a.model.name.toLowerCase();
+        const nameB = b.model.name.toLowerCase();
+
+        // Determine the publisher of the plugin (when names are equal).
+        const publisherA = a.model.publisher.toLowerCase();
+        const publisherB = b.model.publisher.toLowerCase();
+
+        return (nameA === nameA)
+            ? nameA.localeCompare(nameB)
+            : publisherA.localeCompare(publisherB);
     }
 }
