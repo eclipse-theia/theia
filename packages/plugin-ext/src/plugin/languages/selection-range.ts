@@ -63,7 +63,7 @@ export class SelectionRangeProviderAdapter {
 
                 while (true) {
                     if (!selectionRange.range.contains(last)) {
-                        return Promise.reject('INVALID selection range, must contain the previous range');
+                        return Promise.reject(new Error('INVALID selection range, must contain the previous range'));
                     }
                     oneResult.push(Converter.fromSelectionRange(selectionRange));
                     if (!selectionRange.parent) {
