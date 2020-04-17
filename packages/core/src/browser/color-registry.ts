@@ -130,6 +130,7 @@ export class ColorRegistry {
         return `--${prefix}-${id.replace(/\./g, '-')}`;
     }
 
+    // returns the current color of the given id
     getCurrentColor(id: string): string | undefined {
         return undefined;
     }
