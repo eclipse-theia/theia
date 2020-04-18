@@ -244,6 +244,10 @@
 .monaco-editor .theia-debug-breakpoint-column.theia-debug-breakpoint-column.debug-top-stack-frame-column {
 	background: url('current-and-breakpoint.svg') center center no-repeat;
 }
+.monaco-editor .theia-debug-top-stack-frame.theia-debug-breakpoint::before,
+.monaco-editor .theia-debug-breakpoint-column.theia-debug-breakpoint-column.debug-top-stack-frame-column::before {
+	content: '' !important;
+}
 .monaco-editor .view-overlays .theia-debug-top-stack-frame-line {
     background: var(--theia-editor-stackFrameHighlightBackground);
 }
@@ -253,6 +257,9 @@
 }
 .monaco-editor .theia-debug-focused-stack-frame.theia-debug-breakpoint {
 	background: url('stackframe-and-breakpoint.svg') center center no-repeat;
+}
+.monaco-editor .theia-debug-focused-stack-frame.theia-debug-breakpoint::before {
+	content: '' !important;
 }
 .monaco-editor .view-overlays .theia-debug-focused-stack-frame-line {
     background: var(--theia-editor-focusedStackFrameHighlightBackground);
