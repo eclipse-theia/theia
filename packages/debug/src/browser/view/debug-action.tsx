@@ -48,6 +48,5 @@ export namespace DebugAction {
         iconClass: string
         run: () => void
         enabled?: boolean
-        iconColor?: string
     }
 }
