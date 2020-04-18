@@ -1253,10 +1253,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 defaults: { dark: '#ffff0033', light: '#ffff6673', hc: '#fff600' },
                 description: 'Background color for the highlight of line at the top stack frame position.'
             }, {
-                id: 'editor.focusedStackFrameHighlightBackground',
-                defaults: { dark: '#7abd7a4d', light: '#cee7ce73', hc: '#cee7ce' },
-                description: 'Background color for the highlight of line at focused stack frame position.'
-            },
+            id: 'editor.focusedStackFrameHighlightBackground',
+            defaults: { dark: '#7abd7a4d', light: '#cee7ce73', hc: '#cee7ce' },
+            description: 'Background color for the highlight of line at focused stack frame position.'
+        },
             // Status bar colors should be aligned with debugging colors from https://code.visualstudio.com/api/references/theme-color#status-bar-colors
             {
                 id: 'statusBar.debuggingBackground', defaults: {
@@ -1286,9 +1286,56 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     dark: '#a31515', light: '#a31515', hc: '#a31515'
                 }, description: 'Exception widget border color.',
             }, {
-                id: 'debugExceptionWidget.background', defaults: {
-                    dark: '#420b0d', light: '#f1dfde', hc: '#420b0d'
-                }, description: 'Exception widget background color.'
+            id: 'debugExceptionWidget.background', defaults: {
+                dark: '#420b0d', light: '#f1dfde', hc: '#420b0d'
+            }, description: 'Exception widget background color.'
+        },
+            // Debug Icons colors should be aligned with
+            // https://github.com/microsoft/vscode/blob/master/src/vs/workbench/contrib/debug/browser/debugToolBar.ts#L282-L352
+            {
+                id: 'debugIcon.startForeground', defaults: {
+                    dark: '#89D185', light: '#388A34', hc: '#89D185'
+                }, description: 'Debug toolbar icon for start debugging.'
+            },
+            {
+                id: 'debugIcon.pauseForeground', defaults: {
+                    dark: '#75BEFF', light: '#007ACC', hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for pause.'
+            },
+            {
+                id: 'debugIcon.stopForeground', defaults: {
+                    dark: '#F48771', light: '#A1260D', hc: '#F48771'
+                }, description: 'Debug toolbar icon for stop.'
+            },
+            {
+                id: 'debugIcon.restartForeground', defaults: {
+                    dark: '#89D185', light: '#388A34', hc: '#89D185'
+                }, description: 'Debug toolbar icon for restart.'
+            },
+            {
+                id: 'debugIcon.stepOverForeground', defaults: {
+                    dark: '#75BEFF', light: '#007ACC', hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for step over.'
+            },
+            {
+                id: 'debugIcon.stepIntoForeground', defaults: {
+                    dark: '#75BEFF', light: '#007ACC', hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for step into.'
+            },
+            {
+                id: 'debugIcon.stepOutForeground', defaults: {
+                    dark: '#75BEFF', light: '#007ACC', hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for step over.'
+            },
+            {
+                id: 'debugIcon.continueForeground', defaults: {
+                    dark: '#75BEFF', light: '#007ACC', hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for continue.'
+            },
+            {
+                id: 'debugIcon.stepBackForeground', defaults: {
+                    dark: '#75BEFF', light: '#007ACC', hc: '#75BEFF'
+                }, description: 'Debug toolbar icon for step back.'
             }
         );
     }

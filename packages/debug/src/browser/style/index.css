@@ -310,28 +310,28 @@
 }
 
 .theia-debug-start {
-    background: var(--theia-debug-start) center center no-repeat;
+    color: var(--theia-debugIcon-startForeground)
 }
 .theia-debug-stop {
-    background: var(--theia-debug-stop) center center no-repeat;
+    color: var(--theia-debugIcon-stopForeground)
 }
 .theia-debug-restart {
-    background: var(--theia-debug-restart) center center no-repeat;
+    color: var(--theia-debugIcon-restartForeground)
 }
 .theia-debug-pause {
-    background: var(--theia-debug-pause) center center no-repeat;
+    color: var(--theia-debugIcon-pauseForeground)
 }
 .theia-debug-continue {
-    background: var(--theia-debug-continue) center center no-repeat;
+    color: var(--theia-debugIcon-continueForeground)
 }
 .theia-debug-step-over {
-    background: var(--theia-debug-step-over) center center no-repeat;
+    color: var(--theia-debugIcon-stepOverForeground)
 }
 .theia-debug-step-into {
-    background: var(--theia-debug-step-into) center center no-repeat;
+    color: var(--theia-debugIcon-stepIntoForeground)
 }
 .theia-debug-step-out {
-    background: var(--theia-debug-step-out) center center no-repeat;
+    color: var(--theia-debugIcon-stepOutForeground)
 }
 
 .breakpoints-activate {
