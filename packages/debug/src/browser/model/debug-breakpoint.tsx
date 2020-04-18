@@ -122,7 +122,7 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
     protected getUnverifiedBreakpointDecoration(): DebugBreakpointDecoration {
         const decoration = this.getBreakpointDecoration();
         return {
-            className: decoration.className + '-unverified',
+            className: decoration.className + '-unverified theia-debug-breakpoint-unverified',
             message: [this.message || 'Unverified ' + decoration.message[0]]
         };
     }
@@ -130,7 +130,7 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
     protected getDisabledBreakpointDecoration(message?: string): DebugBreakpointDecoration {
         const decoration = this.getBreakpointDecoration();
         return {
-            className: decoration.className + '-disabled',
+            className: decoration.className + ' theia-debug-breakpoint-disabled',
             message: [message || ('Disabled ' + decoration.message[0])]
         };
     }

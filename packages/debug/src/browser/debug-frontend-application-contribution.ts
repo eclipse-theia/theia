@@ -1336,6 +1336,23 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 id: 'debugIcon.stepBackForeground', defaults: {
                     dark: '#75BEFF', light: '#007ACC', hc: '#75BEFF'
                 }, description: 'Debug toolbar icon for step back.'
+            },
+            // Debug Decorations Icons colors should be aligned with
+            // https://github.com/microsoft/vscode/blob/a78d0d7b862ca8a8e662df2fe3aa95b6146a112b/src/vs/workbench/contrib/debug/browser/breakpointEditorContribution.ts#L690-L694
+            {
+                id: 'debugIcon.breakpointForeground', defaults: {
+                    dark: '#E51400', light: '#E51400', hc: '#E51400'
+                }, description: 'Icon color for breakpoints.'
+            },
+            {
+                id: 'debugIcon.breakpointDisabledForeground', defaults: {
+                    dark: '#848484', light: '#848484', hc: '#848484'
+                }, description: 'Icon color for disabled breakpoints.'
+            },
+            {
+                id: 'debugIcon.breakpointUnverifiedForeground', defaults: {
+                    dark: '#848484', light: '#848484', hc: '#848484'
+                }, description: 'Icon color for unverified breakpoints.'
             }
         );
     }

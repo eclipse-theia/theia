@@ -226,57 +226,14 @@
 	background: url('current-arrow.svg') center center no-repeat;
 }
 
-.theia-debug-breakpoint,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-breakpoint-column {
-	background: url('breakpoint.svg') center center no-repeat;
+.theia-debug-breakpoint {
+	color: var(--theia-debugIcon-breakpointForeground);
 }
-.theia-debug-breakpoint-disabled,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-breakpoint-disabled-column {
-    background: url('breakpoint-disabled.svg') center center no-repeat;
+.theia-debug-breakpoint.theia-debug-breakpoint-disabled {
+    color: var(--debugIcon--breakpointDisabledForeground);
 }
-.theia-debug-breakpoint-unverified,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-breakpoint-unverified-column {
-    background: url('breakpoint-unverified.svg') center center no-repeat;
-}
-.theia-debug-breakpoint-unsupported,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-breakpoint-unsupported-column {
-    background: url('breakpoint-unsupported.svg') center center no-repeat;
-}
-
-.theia-debug-conditional-breakpoint,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-conditional-breakpoint-column {
-    background: url('breakpoint-conditional.svg') center center no-repeat;
-}
-.theia-debug-conditional-breakpoint-disabled,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-conditional-breakpoint-disabled-column {
-    background: url('breakpoint-conditional-disabled.svg') center center no-repeat;
-}
-.theia-debug-conditional-breakpoint-unverified,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-conditional-breakpoint-unverified-column {
-    background: url('breakpoint-conditional-unverified.svg') center center no-repeat;
-}
-
-.theia-debug-logpoint,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-logpoint-column {
-	background: url('breakpoint-log.svg') center center no-repeat;
-}
-.theia-debug-logpoint-disabled,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-logpoint-disabled-columne {
-    background: url('breakpoint-log-disabled.svg') center center no-repeat;
-}
-.theia-debug-logpoint-unverified,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-logpoint-unverified-column {
-    background: url('breakpoint-log-unverified.svg') center center no-repeat;
-}
-
-.theia-debug-function {
-	background: url('breakpoint-function.svg') center center no-repeat;
-}
-.theia-debug-function-disabled {
-	background: url('breakpoint-function-disabled.svg') center center no-repeat;
-}
-.theia-debug-function-unverified {
-	background: url('breakpoint-function-unverified.svg') center center no-repeat;
+.theia-debug-breakpoint.theia-debug-breakpoint-unverified {
+    color: var(--debugIcon--breakpointUnverifiedForeground);
 }
 
 .monaco-editor .theia-debug-top-stack-frame {
