@@ -202,8 +202,9 @@
 }
 
 /** Editor **/
-.monaco-editor .theia-debug-breakpoint-hint {
-	background: url('breakpoint-hint.svg') center center no-repeat;
+.monaco-editor .theia-debug-breakpoint-hint::before {
+	color: var(--theia-debugIcon-breakpointForeground);
+    opacity: 0.4;
 }
 
 .theia-debug-breakpoint-icon {

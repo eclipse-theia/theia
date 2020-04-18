@@ -407,7 +407,7 @@ export class DebugEditorModel implements Disposable {
     static STICKINESS = monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges;
 
     static BREAKPOINT_HINT_DECORATION: monaco.editor.IModelDecorationOptions = {
-        glyphMarginClassName: 'theia-debug-breakpoint-hint',
+        glyphMarginClassName: 'theia-debug-breakpoint-hint codicon codicon-debug-breakpoint',
         stickiness: DebugEditorModel.STICKINESS
     };
 
