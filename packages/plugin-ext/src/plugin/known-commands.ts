@@ -282,6 +282,8 @@ export namespace KnownCommands {
     };
 
     // vscode-'executeXXX'-like commands
+    mappings['vscode.executeReferenceProvider'] = ['vscode.executeReferenceProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
+    mappings['vscode.executeImplementationProvider'] = ['vscode.executeImplementationProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.executeDefinitionProvider'] = ['vscode.executeDefinitionProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.executeDeclarationProvider'] = ['vscode.executeDeclarationProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
     mappings['vscode.executeTypeDefinitionProvider'] = ['vscode.executeTypeDefinitionProvider', CONVERT_VSCODE_TO_MONACO, CONVERT_MONACO_TO_VSCODE];
