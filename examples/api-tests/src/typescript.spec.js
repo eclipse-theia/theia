@@ -16,7 +16,7 @@
 
 // @ts-check
 describe('TypeScript', function () {
-    this.timeout(30000);
+    this.timeout(45000);
 
     const { assert } = chai;
 
@@ -38,6 +38,7 @@ describe('TypeScript', function () {
     const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
     const { ProgressStatusBarItem } = require('@theia/core/lib/browser/progress-status-bar-item');
     const { FileSystem } = require('@theia/filesystem/lib/common/filesystem');
+    const { PluginViewRegistry } = require('@theia/plugin-ext/lib/main/browser/view/plugin-view-registry');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -53,8 +54,10 @@ describe('TypeScript', function () {
     const progressStatusBarItem = container.get(ProgressStatusBarItem);
     /** @type {import('@theia/filesystem/lib/common/filesystem').FileSystem} */
     const fileSystem = container.get(FileSystem);
+    const pluginViewRegistry = container.get(PluginViewRegistry);
 
-    const pluginId = 'vscode.typescript-language-features';
+    const typescriptPluginId = 'vscode.typescript-language-features';
+    const referencesPluginId = 'ms-vscode.references-view';
     const rootUri = new Uri.default(workspaceService.tryGetRoots()[0].uri);
     const serverUri = rootUri.resolve('src-gen/backend/test-server.js');
     const inversifyUri = rootUri.resolve('../../node_modules/inversify/dts/inversify.d.ts').normalizePath();
@@ -128,10 +131,12 @@ module.exports = (port, host, argv) => Promise.resolve()
     `
         });
         await pluginService.didStart;
-        if (!pluginService.getPlugin(pluginId)) {
-            throw new Error(pluginId + ' should be started');
-        }
-        await pluginService.activatePlugin(pluginId);
+        Promise.all([typescriptPluginId, referencesPluginId].map(async pluginId => {
+            if (!pluginService.getPlugin(pluginId)) {
+                throw new Error(pluginId + ' should be started');
+            }
+            await pluginService.activatePlugin(pluginId);
+        }));
     });
 
     after(async function () {
@@ -772,5 +777,30 @@ SPAN {
         // @ts-ignore
         assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLenght + 1);
     });
+
+    for (const referenceViewCommand of ['references-view.find', 'references-view.findImplementations']) {
+        it(referenceViewCommand, async function () {
+            const editor = await openEditor(serverUri);
+            // const |container = new Container();
+            editor.getControl().setPosition({ lineNumber: 11, column: 7 });
+            // @ts-ignore
+            assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'container');
+
+            const view = await pluginViewRegistry.openView('references-view.tree');
+            if (!view) {
+                assert.isDefined(view);
+                return;
+            }
+
+            await commands.executeCommand('references-view.clear');
+            await waitForAnimation(() => view.title.label.toLowerCase() === 'results');
+            assert.equal(view.title.label.toLowerCase(), 'results');
+
+            await commands.executeCommand(referenceViewCommand);
+
+            await waitForAnimation(() => view.title.label.toLowerCase() !== 'results');
+            assert.notEqual(view.title.label.toLowerCase(), 'results');
+        });
+    }
 
 });
