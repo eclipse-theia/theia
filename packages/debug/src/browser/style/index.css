@@ -213,6 +213,11 @@
     min-width: 19px;
     margin-left: 0px !important;
 }
+.theia-source-breakpoint .theia-debug-breakpoint-icon {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
 
 .monaco-editor .theia-debug-breakpoint-column::before,
 .monaco-editor .theia-debug-top-stack-frame-column::before {
