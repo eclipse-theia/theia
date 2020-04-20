@@ -229,7 +229,7 @@
 }
 
 .monaco-editor .theia-debug-top-stack-frame-column {
-	background: url('current-arrow.svg') center center no-repeat;
+	color: var(--theia-debugIcon-breakpointCurrentStackframeForeground);
 }
 
 .theia-debug-breakpoint {
@@ -243,28 +243,28 @@
 }
 
 .monaco-editor .theia-debug-top-stack-frame {
-	background: url('current-arrow.svg') center center no-repeat;
+	color: var(--theia-debugIcon-breakpointCurrentStackframeForeground);
 }
 .monaco-editor .theia-debug-top-stack-frame.theia-debug-breakpoint,
 .monaco-editor .theia-debug-breakpoint-column.theia-debug-breakpoint-column.debug-top-stack-frame-column {
-	background: url('current-and-breakpoint.svg') center center no-repeat;
+	color: var(--theia-debugIcon-breakpointCurrentStackframeForeground);
 }
-.monaco-editor .theia-debug-top-stack-frame.theia-debug-breakpoint::before,
-.monaco-editor .theia-debug-breakpoint-column.theia-debug-breakpoint-column.debug-top-stack-frame-column::before {
-	content: '' !important;
+.monaco-editor .theia-debug-top-stack-frame.theia-debug-breakpoint::after,
+.monaco-editor .theia-debug-breakpoint-column.theia-debug-breakpoint-column.debug-top-stack-frame-column::after,
+.monaco-editor .theia-debug-focused-stack-frame.theia-debug-breakpoint::after {
+    content: '\eb8a'; /* codicon-debug-breakpoint-stackframe-dot */
+    color: var(--theia-debugIcon-breakpointForeground);;
+    position: absolute; /* display the dot inside stackframe icon */
 }
 .monaco-editor .view-overlays .theia-debug-top-stack-frame-line {
     background: var(--theia-editor-stackFrameHighlightBackground);
 }
 
 .monaco-editor .theia-debug-focused-stack-frame {
-	background: url('stackframe-arrow.svg') center center no-repeat;
+	color: var(--theia-debugIcon-breakpointStackframeForeground);
 }
 .monaco-editor .theia-debug-focused-stack-frame.theia-debug-breakpoint {
-	background: url('stackframe-and-breakpoint.svg') center center no-repeat;
-}
-.monaco-editor .theia-debug-focused-stack-frame.theia-debug-breakpoint::before {
-	content: '' !important;
+	color: var(--theia-debugIcon-breakpointStackframeForeground);
 }
 .monaco-editor .view-overlays .theia-debug-focused-stack-frame-line {
     background: var(--theia-editor-focusedStackFrameHighlightBackground);

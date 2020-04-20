@@ -412,11 +412,11 @@ export class DebugEditorModel implements Disposable {
     };
 
     static TOP_STACK_FRAME_MARGIN: monaco.editor.IModelDecorationOptions = {
-        glyphMarginClassName: 'theia-debug-top-stack-frame',
+        glyphMarginClassName: 'theia-debug-top-stack-frame codicon codicon-debug-breakpoint-stackframe-active',
         stickiness: DebugEditorModel.STICKINESS
     };
     static FOCUSED_STACK_FRAME_MARGIN: monaco.editor.IModelDecorationOptions = {
-        glyphMarginClassName: 'theia-debug-focused-stack-frame',
+        glyphMarginClassName: 'theia-debug-focused-stack-frame codicon codicon-debug-breakpoint-stackframe',
         stickiness: DebugEditorModel.STICKINESS
     };
     static TOP_STACK_FRAME_DECORATION: monaco.editor.IModelDecorationOptions = {
@@ -425,11 +425,11 @@ export class DebugEditorModel implements Disposable {
         stickiness: DebugEditorModel.STICKINESS
     };
     static TOP_STACK_FRAME_INLINE_DECORATION: monaco.editor.IModelDecorationOptions = {
-        beforeContentClassName: 'theia-debug-top-stack-frame-column'
+        beforeContentClassName: 'theia-debug-top-stack-frame-column codicon codicon-debug-breakpoint-stackframe-active'
     };
     static FOCUSED_STACK_FRAME_DECORATION: monaco.editor.IModelDecorationOptions = {
         isWholeLine: true,
-        className: 'theia-debug-focused-stack-frame-line',
+        className: 'theia-debug-focused-stack-frame-line codicon codicon-debug-breakpoint-stackframe',
         stickiness: DebugEditorModel.STICKINESS
     };
 

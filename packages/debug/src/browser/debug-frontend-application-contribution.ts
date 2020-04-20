@@ -1353,6 +1353,16 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 id: 'debugIcon.breakpointUnverifiedForeground', defaults: {
                     dark: '#848484', light: '#848484', hc: '#848484'
                 }, description: 'Icon color for unverified breakpoints.'
+            },
+            {
+                id: 'debugIcon.breakpointCurrentStackframeForeground', defaults: {
+                    dark: '#FFCC00', light: '#FFCC00', hc: '#FFCC00'
+                }, description: 'Icon color for the current breakpoint stack frame.'
+            },
+            {
+                id: 'debugIcon.breakpointStackframeForeground', defaults: {
+                    dark: '#89D185', light: '#89D185', hc: '#89D185'
+                }, description: 'Icon color for all breakpoint stack frames.'
             }
         );
     }
