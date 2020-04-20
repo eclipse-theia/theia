@@ -23,12 +23,17 @@ import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './t
 import { createTextmateTokenizer, TokenizerOption } from './textmate-tokenizer';
 import { TextmateRegistry } from './textmate-registry';
 import { MonacoThemeRegistry } from './monaco-theme-registry';
+import { EditorPreferences } from '@theia/editor/lib/browser/editor-preferences';
 
 export const OnigasmPromise = Symbol('OnigasmPromise');
 export type OnigasmPromise = Promise<IOnigLib>;
 
 @injectable()
 export class MonacoTextmateService implements FrontendApplicationContribution {
+
+    protected readonly tokenizerOption: TokenizerOption = {
+        lineLimit: 400
+    };
 
     protected readonly _activatedLanguages = new Set<string>();
 
@@ -51,6 +56,9 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
 
     @inject(MonacoThemeRegistry)
     protected readonly monacoThemeRegistry: MonacoThemeRegistry;
+
+    @inject(EditorPreferences)
+    protected readonly preferences: EditorPreferences;
 
     initialize(): void {
         if (!isBasicWasmSupported) {
@@ -89,6 +97,13 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
                     return provider.getInjections(scopeName);
                 }
                 return [];
+            }
+        });
+
+        this.tokenizerOption.lineLimit = this.preferences['editor.maxTokenizationLineLength'];
+        this.preferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'editor.maxTokenizationLineLength') {
+                this.tokenizerOption.lineLimit = this.preferences['editor.maxTokenizationLineLength'];
             }
         });
 
@@ -164,7 +179,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             if (!grammar) {
                 throw new Error(`no grammar for ${scopeName}, ${initialLanguage}, ${JSON.stringify(configuration)}`);
             }
-            const options = configuration.tokenizerOption ? configuration.tokenizerOption : TokenizerOption.DEFAULT;
+            const options = configuration.tokenizerOption ? configuration.tokenizerOption : this.tokenizerOption;
             const tokenizer = createTextmateTokenizer(grammar, options);
             toDispose.push(monaco.languages.setTokensProvider(languageId, tokenizer));
             const support = monaco.modes.TokenizationRegistry.get(languageId);
