@@ -16,11 +16,18 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
 import { MenuPath } from '../../common';
-import { ContextMenuRenderer, Anchor, RenderContextMenuOptions } from '../../browser';
+import { ContextMenuRenderer, Anchor, RenderContextMenuOptions, ContextMenuAccess } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
+
+export class ElectronContextMenuAccess implements ContextMenuAccess {
+    constructor(
+        public readonly menu: electron.Menu
+    ) { }
+}
 
 @injectable()
 export class ElectronContextMenuRenderer implements ContextMenuRenderer {
@@ -31,7 +38,7 @@ export class ElectronContextMenuRenderer implements ContextMenuRenderer {
     constructor(@inject(ElectronMainMenuFactory) private menuFactory: ElectronMainMenuFactory) {
     }
 
-    render(arg: MenuPath | RenderContextMenuOptions, arg2?: Anchor, arg3?: () => void): void {
+    render(arg: MenuPath | RenderContextMenuOptions, arg2?: Anchor, arg3?: () => void): ElectronContextMenuAccess {
         const { menuPath, args, onHide } = RenderContextMenuOptions.resolve(arg, arg2, arg3);
         const menu = this.menuFactory.createContextMenu(menuPath, args);
         menu.popup({});
@@ -40,6 +47,7 @@ export class ElectronContextMenuRenderer implements ContextMenuRenderer {
         if (onHide) {
             menu.once('menu-will-close', () => onHide());
         }
+        return new ElectronContextMenuAccess(menu);
     }
 
 }

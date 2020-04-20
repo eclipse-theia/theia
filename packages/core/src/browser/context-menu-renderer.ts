@@ -24,11 +24,14 @@ export function toAnchor(anchor: HTMLElement | { x: number, y: number }): Anchor
     return anchor instanceof HTMLElement ? { x: anchor.offsetLeft, y: anchor.offsetTop } : anchor;
 }
 
+export interface ContextMenuAccess {
+}
+
 export const ContextMenuRenderer = Symbol('ContextMenuRenderer');
 export interface ContextMenuRenderer {
-    render(options: RenderContextMenuOptions): void;
+    render(options: RenderContextMenuOptions): ContextMenuAccess;
     /** @deprecated since 0.7.2 pass `RenderContextMenuOptions` instead */
-    render(menuPath: MenuPath, anchor: Anchor, onHide?: () => void): void;
+    render(menuPath: MenuPath, anchor: Anchor, onHide?: () => void): ContextMenuAccess;
 }
 
 export interface RenderContextMenuOptions {

@@ -18,8 +18,15 @@
 
 import { inject, injectable } from 'inversify';
 import { MenuPath } from '../../common/menu';
-import { ContextMenuRenderer, Anchor, RenderContextMenuOptions } from '../context-menu-renderer';
+import { Menu } from '../widgets';
+import { ContextMenuAccess, ContextMenuRenderer, Anchor, RenderContextMenuOptions } from '../context-menu-renderer';
 import { BrowserMainMenuFactory } from './browser-menu-plugin';
+
+export class BrowserContextMenuAccess implements ContextMenuAccess {
+    constructor(
+        public readonly menu: Menu
+    ) { }
+}
 
 @injectable()
 export class BrowserContextMenuRenderer implements ContextMenuRenderer {
@@ -27,7 +34,7 @@ export class BrowserContextMenuRenderer implements ContextMenuRenderer {
     constructor(@inject(BrowserMainMenuFactory) private menuFactory: BrowserMainMenuFactory) {
     }
 
-    render(arg: MenuPath | RenderContextMenuOptions, arg2?: Anchor, arg3?: () => void): void {
+    render(arg: MenuPath | RenderContextMenuOptions, arg2?: Anchor, arg3?: () => void): BrowserContextMenuAccess {
         const { menuPath, anchor, args, onHide } = RenderContextMenuOptions.resolve(arg, arg2, arg3);
         const contextMenu = this.menuFactory.createContextMenu(menuPath, args);
         const { x, y } = anchor instanceof MouseEvent ? { x: anchor.clientX, y: anchor.clientY } : anchor!;
@@ -35,6 +42,7 @@ export class BrowserContextMenuRenderer implements ContextMenuRenderer {
             contextMenu.aboutToClose.connect(() => onHide!());
         }
         contextMenu.open(x, y);
+        return new BrowserContextMenuAccess(contextMenu);
     }
 
 }

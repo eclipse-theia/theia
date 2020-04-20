@@ -19,6 +19,7 @@ import { TabBarToolbar, TabBarToolbarRegistry, TabBarToolbarFactory } from './ta
 import { Message } from '@phosphor/messaging';
 import { BaseWidget } from '../widgets';
 import { Emitter } from '../../common/event';
+import { ContextMenuAccess, Anchor } from '../context-menu-renderer';
 
 export class SidePanelToolbar extends BaseWidget {
 
@@ -101,4 +102,13 @@ export class SidePanelToolbar extends BaseWidget {
             this.update();
         }
     }
+
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    showMoreContextMenu(anchor: Anchor): ContextMenuAccess {
+        if (this.toolbar) {
+            return this.toolbar.renderMoreContextMenu(anchor);
+        }
+        throw new Error(this.id + ' widget is not attached');
+    }
+
 }
