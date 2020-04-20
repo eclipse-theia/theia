@@ -44,13 +44,15 @@ export interface TokenizerOption {
      * If the `lineLimit` is not defined, it means, there are no line length limits. Otherwise, it must be a positive
      * integer or an error will be thrown.
      */
-    readonly lineLimit?: number;
+    lineLimit?: number;
 
 }
 
 export namespace TokenizerOption {
     /**
      * The default TextMate tokenizer option.
+     *
+     * @deprecated Use the current value of `editor.maxTokenizationLineLength` preference instead.
      */
     export const DEFAULT: TokenizerOption = {
         lineLimit: 400
