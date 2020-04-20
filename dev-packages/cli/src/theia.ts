@@ -153,7 +153,14 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
                     default: false,
                 }
             },
-            handler: args => downloadPlugins(args),
+            handler: async args => {
+                try {
+                    await downloadPlugins(args);
+                } catch (err) {
+                    console.error(err);
+                    process.exit(1);
+                }
+            },
         }).command({
             command: 'test',
             builder: {
