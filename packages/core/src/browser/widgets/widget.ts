@@ -261,21 +261,37 @@ export function addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element
     );
 }
 
+/**
+ * Resolves when the given widget is detached and hidden.
+ */
 export function waitForClosed(widget: Widget): Promise<void> {
-    return waitForVisible(widget, false);
+    return waitForVisible(widget, false, false);
 }
 
+/**
+ * Resolves when the given widget is attached and visible.
+ */
 export function waitForRevealed(widget: Widget): Promise<void> {
+    return waitForVisible(widget, true, true);
+}
+
+/**
+ * Resolves when the given widget is hidden regardless of attachment.
+ */
+export function waitForHidden(widget: Widget): Promise<void> {
     return waitForVisible(widget, true);
 }
 
-function waitForVisible(widget: Widget, visible: boolean): Promise<void> {
-    if (widget.isAttached === visible && (widget.isVisible === visible || (widget.node.style.visibility !== 'hidden') === visible)) {
+function waitForVisible(widget: Widget, visible: boolean, attached?: boolean): Promise<void> {
+    if ((typeof attached !== 'boolean' || widget.isAttached === attached) &&
+        (widget.isVisible === visible || (widget.node.style.visibility !== 'hidden') === visible)
+    ) {
         return new Promise(resolve => window.requestAnimationFrame(() => resolve()));
     }
     return new Promise(resolve => {
         const waitFor = () => window.requestAnimationFrame(() => {
-            if (widget.isAttached === visible && (widget.isVisible === visible || (widget.node.style.visibility !== 'hidden') === visible)) {
+            if ((typeof attached !== 'boolean' || widget.isAttached === attached) &&
+                (widget.isVisible === visible || (widget.node.style.visibility !== 'hidden') === visible)) {
                 window.requestAnimationFrame(() => resolve());
             } else {
                 waitFor();

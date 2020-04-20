@@ -25,7 +25,7 @@ import { CommandRegistry } from '../../common/command';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { ContextKeyService } from '../context-key-service';
 import { Event, Emitter } from '../../common/event';
-import { ContextMenuRenderer } from '../context-menu-renderer';
+import { ContextMenuRenderer, Anchor } from '../context-menu-renderer';
 import { MenuModelRegistry } from '../../common/menu';
 
 /**
@@ -145,6 +145,11 @@ export class TabBarToolbar extends ReactWidget {
         event.stopPropagation();
         event.preventDefault();
 
+        this.renderMoreContextMenu(event.nativeEvent);
+    };
+
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    renderMoreContextMenu(anchor: Anchor): any {
         const menuPath = ['TAB_BAR_TOOLBAR_CONTEXT_MENU'];
         const toDisposeOnHide = new DisposableCollection();
         for (const [, item] of this.more) {
@@ -154,13 +159,13 @@ export class TabBarToolbar extends ReactWidget {
                 when: item.when
             }));
         }
-        this.contextMenuRenderer.render({
+        return this.contextMenuRenderer.render({
             menuPath,
             args: [this.current],
-            anchor: event.nativeEvent,
+            anchor,
             onHide: () => toDisposeOnHide.dispose()
         });
-    };
+    }
 
     shouldHandleMouseEvent(event: MouseEvent): boolean {
         return event.target instanceof Element && (!!this.inline.get(event.target.id) || event.target.id === '__more__');

@@ -17,9 +17,15 @@
 // @ts-check
 describe('Menus', function () {
 
+    const { assert } = chai;
+
     const { BrowserMenuBarContribution } = require('@theia/core/lib/browser/menu/browser-menu-plugin');
+    const { BrowserContextMenuAccess } = require('@theia/core/lib/browser/menu/browser-context-menu-renderer');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
+    const { ViewContainer } = require('@theia/core/lib/browser/view-container');
+    const { waitForRevealed, waitForHidden } = require('@theia/core/lib/browser/widgets/widget');
     const { CallHierarchyContribution } = require('@theia/callhierarchy/lib/browser/callhierarchy-contribution');
+    const { EXPLORER_VIEW_CONTAINER_ID } = require('@theia/navigator/lib/browser/navigator-widget');
     const { FileNavigatorContribution } = require('@theia/navigator/lib/browser/navigator-contribution');
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
     const { ScmHistoryContribution } = require('@theia/scm-extra/lib/browser/history/scm-history-contribution');
@@ -28,11 +34,19 @@ describe('Menus', function () {
     const { PluginFrontendViewContribution } = require('@theia/plugin-ext/lib/main/browser/plugin-frontend-view-contribution');
     const { ProblemContribution } = require('@theia/markers/lib/browser/problem/problem-contribution');
     const { SearchInWorkspaceFrontendContribution } = require('@theia/search-in-workspace/lib/browser/search-in-workspace-frontend-contribution');
+    const { HostedPluginSupport } = require('@theia/plugin-ext/lib/hosted/browser/hosted-plugin');
 
     const container = window.theia.container;
     const shell = container.get(ApplicationShell);
     const menuBarContribution = container.get(BrowserMenuBarContribution);
     const menuBar = /** @type {import('@theia/core/lib/browser/menu/browser-menu-plugin').MenuBarWidget} */ (menuBarContribution.menuBar);
+    const pluginService = container.get(HostedPluginSupport);
+
+    before(async function () {
+        await pluginService.didStart;
+        // register views for the explorer view container
+        await pluginService.activatePlugin('vscode.npm');
+    });
 
     for (const contribution of [
         container.get(CallHierarchyContribution),
@@ -51,5 +65,36 @@ describe('Menus', function () {
             await shell.waitForActivation(contribution.viewId);
         });
     }
+
+    it('reveal more context menu in the explorer view container toolbar', async function () {
+        const viewContainer = await shell.revealWidget(EXPLORER_VIEW_CONTAINER_ID);
+        if (!(viewContainer instanceof ViewContainer)) {
+            assert.isTrue(viewContainer instanceof ViewContainer);
+            return;
+        }
+
+        const contribution = container.get(FileNavigatorContribution);
+        const waitForParts = [];
+        for (const part of viewContainer.getParts()) {
+            if (part.wrapped.id !== contribution.viewId) {
+                part.hide();
+                waitForParts.push(waitForHidden(part.wrapped));
+            } else {
+                part.show();
+                waitForParts.push(waitForRevealed(part.wrapped));
+            }
+        }
+        await Promise.all(waitForParts);
+
+        const contextMenuAccess = shell.leftPanelHandler.toolBar.showMoreContextMenu({ x: 0, y: 0 });
+        if (!(contextMenuAccess instanceof BrowserContextMenuAccess)) {
+            assert.isTrue(contextMenuAccess instanceof BrowserContextMenuAccess);
+            return;
+        }
+        const contextMenu = contextMenuAccess.menu;
+
+        await waitForRevealed(contextMenu);
+        assert.notEqual(contextMenu.items.length, 0);
+    });
 
 });
