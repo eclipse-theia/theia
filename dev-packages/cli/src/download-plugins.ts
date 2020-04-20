@@ -14,43 +14,65 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import * as fs from 'fs';
+import * as http from 'http';
+import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as process from 'process';
 import * as request from 'requestretry';
-
-import * as mkdirp from 'mkdirp';
+import * as stream from 'stream';
 import * as tar from 'tar';
 import * as zlib from 'zlib';
 
+import { promisify } from 'util';
+const mkdirpAsPromised = promisify<string, mkdirp.Made>(mkdirp);
+
 const unzip = require('unzip-stream');
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function downloadPlugins({ packed = false }: any = {}): void {
+type RetryResponse = http.IncomingMessage & { attempts: number };
 
-    console.log('Downloading plugins...');
+/**
+ * Available options when downloading.
+ */
+export interface DownloadPluginsOptions {
+    /**
+     * Determines if a plugin should be unpacked.
+     * Defaults to `false`.
+     */
+    packed?: boolean;
+}
+
+export default async function downloadPlugins(options: DownloadPluginsOptions = {}): Promise<void> {
+    const {
+        packed = false,
+    } = options;
+
+    console.log('--- downloading plugins ---');
 
     // Resolve the `package.json` at the current working directory.
     const pck = require(path.resolve(process.cwd(), 'package.json'));
 
     // Resolve the directory for which to download the plugins.
     const pluginsDir = pck.theiaPluginsDir || 'plugins';
-    mkdirp(pluginsDir, () => { });
 
-    for (const plugin in pck.theiaPlugins) {
+    await mkdirpAsPromised(pluginsDir);
+
+    await Promise.all(Object.keys(pck.theiaPlugins).map(async plugin => {
         if (!plugin) {
-            continue;
+            return;
         }
-
         const pluginUrl = pck.theiaPlugins[plugin];
-        let fileExt = '';
+
+        let fileExt: string;
         if (pluginUrl.endsWith('tar.gz')) {
             fileExt = '.tar.gz';
         } else if (pluginUrl.endsWith('vsix')) {
             fileExt = '.vsix';
         } else {
-            console.error('Error: Unsupported file type: ' + pluginUrl);
-            continue;
+            console.error(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`);
+            return;
         }
 
         const targetPath = path.join(process.cwd(), pluginsDir, `${plugin}${packed === true ? fileExt : ''}`);
@@ -58,44 +80,78 @@ export default function downloadPlugins({ packed = false }: any = {}): void {
         // Skip plugins which have previously been downloaded.
         if (isDownloaded(targetPath)) {
             console.log('- ' + plugin + ': already downloaded - skipping');
-            continue;
+            return;
         }
 
-        console.log(plugin + ': downloading from ' + pluginUrl);
+        // requestretry makes our life difficult: it supposedly hands back a readable stream,
+        // but if we try to use it later it will be too late and somehow the stream will already
+        // be consumed. Since we cannot handle said stream later, we'll buffer it to be able
+        // to replay it once we know everything went ok with the download.
+        const bufferingStream = new BufferingStream();
 
-        const download: request.RequestPromise = request({
-            ...pck.requestOptions,
-            url: pluginUrl,
-            maxAttempts: 5,
-            retryDelay: 2000,
-            retryStrategy: request.RetryStrategies.HTTPOrNetworkError
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        }, (err: any, response: any) => {
+        let download!: { res: RetryResponse, body: string };
+        try {
+            download = await new Promise<typeof download>((resolve, reject) => {
+                const req = request({
+                    ...pck.requestOptions,
+                    url: pluginUrl,
+                    maxAttempts: 5,
+                    retryDelay: 2000,
+                    retryStrategy: request.RetryStrategies.HTTPOrNetworkError,
+                }, (err: any, _res: any, body: string) => {
+                    const res: RetryResponse = _res;
+                    if (err) {
+                        reject({ res, err });
+                    } else {
+                        if (typeof res.statusCode !== 'number' || res.statusCode < 200 || res.statusCode > 299) {
+                            reject({ res, err });
+                        } else {
+                            resolve({ res, body });
+                        }
+                    }
+                });
+                // Buffer the stream right away:
+                req.pipe(bufferingStream);
+            });
+        } catch (object) {
+            const { err, res } = object as { err?: Error, res?: RetryResponse };
+            console.error(`x ${plugin}: failed to download ${res && res.attempts > 1 ? `(after ${res.attempts} attempts)` : ''}`);
             if (err) {
-                console.error(plugin + ': failed to download', err);
-            } else {
-                console.log('+ ' + plugin + ': downloaded successfully' + (response.attempts > 1 ? ` after ${response.attempts}  attempts` : ''));
+                console.error(err);
             }
-        });
+            return;
+        }
 
-        // unzip .tar.gz files
+        console.log(`+ ${plugin}: downloaded successfully ${download.res.attempts > 1 ? `(after ${download.res.attempts} attempts)` : ''}`);
+
+        // Get ready to re-stream downloaded data:
+        const replayStream = bufferingStream.replay();
+
         if (fileExt === '.tar.gz') {
-            mkdirp(targetPath, () => { });
+            // Decompress .tar.gz files.
+            await mkdirpAsPromised(targetPath);
             const gunzip = zlib.createGunzip({
                 finishFlush: zlib.Z_SYNC_FLUSH,
                 flush: zlib.Z_SYNC_FLUSH
             });
             const untar = tar.x({ cwd: targetPath });
-            download.pipe(gunzip).pipe(untar);
+            replayStream.pipe(gunzip).pipe(untar);
         } else {
             if (packed === true) {
+                // Download .vsix without decompressing.
                 const file = fs.createWriteStream(targetPath);
-                download.pipe(file);
+                replayStream.pipe(file);
             } else {
-                download.pipe(unzip.Extract({ path: targetPath }));
+                // Decompress .vsix.
+                replayStream.pipe(unzip.Extract({ path: targetPath }));
             }
         }
-    }
+
+        await new Promise((resolve, reject) => {
+            replayStream.on('end', resolve);
+            replayStream.on('error', reject);
+        });
+    }));
 }
 
 /**
@@ -106,4 +162,68 @@ export default function downloadPlugins({ packed = false }: any = {}): void {
  */
 function isDownloaded(filePath: string): boolean {
     return fs.existsSync(filePath);
+}
+
+/**
+ * Stores everything you write into it.
+ * You can then create a new readable stream based on the buffered data.'
+ * When getting the replay stream, the current instance will be invalidated.
+ */
+class BufferingStream extends stream.Writable {
+
+    protected _buffer: Buffer = Buffer.alloc(0);
+    protected _replay: ReplayStream | undefined;
+
+    replay(): ReplayStream {
+        if (typeof this._replay === 'undefined') {
+            this._replay = new ReplayStream(this._buffer);
+        }
+        return this._replay;
+    }
+
+    _write(chunk: Buffer | string, encoding: any, callback: Function): void {
+        if (typeof this._replay !== 'undefined') {
+            callback(new Error('unexpected write: replay is ongoing'));
+            return;
+        }
+        let data: Buffer;
+        if (typeof chunk === 'string' && Buffer.isEncoding(encoding)) {
+            data = Buffer.from(chunk, encoding);
+        } else if (Buffer.isBuffer(chunk)) {
+            data = chunk;
+        } else {
+            callback(new TypeError('cannot get a buffer from chunk'));
+            return;
+        }
+        this._buffer = Buffer.concat([this._buffer, data], this._buffer.length + data.length);
+        // eslint-disable-next-line no-null/no-null
+        callback(null);
+    }
+
+}
+
+/**
+ * Stream the content of a buffer.
+ */
+class ReplayStream extends stream.Readable {
+
+    protected _buffer: Buffer;
+    protected _head = 0;
+
+    constructor(buffer: Buffer) {
+        super();
+        this._buffer = buffer;
+    }
+
+    _read(size: number): void {
+        if (this._head > this._buffer.length - 1) {
+            // eslint-disable-next-line no-null/no-null
+            this.push(null); // end.
+        } else {
+            const chunk = this._buffer.slice(this._head, this._head + size);
+            this._head += size;
+            this.push(chunk);
+        }
+    }
+
 }
