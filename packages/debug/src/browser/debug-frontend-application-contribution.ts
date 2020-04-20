@@ -1066,7 +1066,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         const toggleBreakpointsEnabled: Mutable<TabBarToolbarItem> = {
             id: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
             command: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
-            icon: 'fa breakpoints-activate',
+            icon: 'codicon codicon-activate-breakpoints',
             onDidChange: onDidChangeToggleBreakpointsEnabled.event,
             priority: 1
         };

@@ -304,10 +304,6 @@
     color: var(--theia-debugIcon-stepOutForeground)
 }
 
-.breakpoints-activate {
-	background: var(--breakpoints-activate-url) center center no-repeat;
-}
-
 /** Hover */
 .theia-debug-hover {
     display: flex;

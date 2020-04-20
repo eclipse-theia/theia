@@ -1,5 +1,4 @@
 :root {
     --theia-debug-configure: url('configure.svg');
     --theia-debug-repl: url('repl.svg');
-    --breakpoints-activate-url: url('breakpoints-activate.svg');
 }
