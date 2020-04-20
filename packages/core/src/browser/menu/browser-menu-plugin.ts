@@ -362,7 +362,7 @@ class MenuCommandRegistry extends PhosphorCommandRegistry {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    registerActionMenu(menu: ActionMenuNode, ...args: any[]): void {
+    registerActionMenu(menu: ActionMenuNode, args: any[]): void {
         const { commandId } = menu.action;
         const { commandRegistry } = this.services;
         const command = commandRegistry.getCommand(commandId);
