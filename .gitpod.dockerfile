@@ -19,5 +19,7 @@ RUN bash -c ". .nvm/nvm.sh \
     && nvm install $NODE_VERSION \
     && nvm use $NODE_VERSION \
     && nvm alias default $NODE_VERSION \
+    && npm config set python $(which python) --global \
+    && n--pm config set python $(which python) \
     && npm install -g yarn"
 ENV PATH=$HOME/.nvm/versions/node/v${NODE_VERSION}/bin:$PATH
