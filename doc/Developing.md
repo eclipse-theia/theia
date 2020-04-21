@@ -327,7 +327,7 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 
  - Install [`scoop`](https://github.com/lukesampson/scoop#installation).
  - Install [`nvm`](https://github.com/coreybutler/nvm-windows) with scoop: `scoop install nvm`.
- - Install Node.js with `nvm`: `nvm install 10.15.3`, then use it: `nvm use 10.15.13`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
+ - Install Node.js with `nvm`: `nvm install 10.15.3`, then use it: `nvm use 10.15.3`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
  - Install `yarn`: `scoop install yarn`.
  - Install [`windows-build-tools`](https://github.com/felixrieseberg/windows-build-tools). Run `PowerShell` as _Administrator_ and copy paste the following: `npm --add-python-to-path install --global --production windows-build-tools`
 
@@ -339,6 +339,8 @@ Using Git Bash as administrator:
 If you do not have Git Bash installed on your system, [get one](https://gitforwindows.org/), or use `scoop`: `scoop install git`.
 
 ## Troubleshooting
+
+> First make sure that you follow the steps given in the [docs](https://github.com/eclipse-theia/theia/blob/master/doc/Developing.md#run-the-browser-based-example-applicatio) correctly.
 
 ### Linux
 
