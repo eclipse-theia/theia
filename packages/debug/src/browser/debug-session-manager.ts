@@ -439,6 +439,7 @@ export class DebugSessionManager {
             return true;
         }
 
+        this.taskService.clearCache();
         const taskInfo = await this.taskService.runWorkspaceTask(workspaceFolderUri, taskName);
         if (!checkErrors) {
             return true;

@@ -376,6 +376,10 @@ export class TaskService implements TaskConfigurationClient {
         return validTaskConfigs;
     }
 
+    clearCache(): void {
+        this.providedTaskConfigurations.clearCache();
+    }
+
     /** Returns an array of the task configurations which are provided by the extensions. */
     getProvidedTasks(): Promise<TaskConfiguration[]> {
         return this.providedTaskConfigurations.getTasks();

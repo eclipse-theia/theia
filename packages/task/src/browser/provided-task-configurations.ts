@@ -19,6 +19,7 @@ import { TaskProviderRegistry } from './task-contribution';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskConfiguration, TaskCustomization, TaskOutputPresentation } from '../common';
 import URI from '@theia/core/lib/common/uri';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 @injectable()
 export class ProvidedTaskConfigurations {
@@ -28,7 +29,7 @@ export class ProvidedTaskConfigurations {
      * For the second level of inner map, the key is task label.
      * For the third level of inner map, the key is the task scope and value TaskConfiguration.
      */
-    protected tasksMap = new Map<string, Map<string, Map<string | undefined, TaskConfiguration>>>();
+    protected tasksMap: Map<string, Map<string, Map<string | undefined, TaskConfiguration>>> | undefined;
 
     @inject(TaskProviderRegistry)
     protected readonly taskProviderRegistry: TaskProviderRegistry;
@@ -36,8 +37,38 @@ export class ProvidedTaskConfigurations {
     @inject(TaskDefinitionRegistry)
     protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
+    protected loading: Deferred<void> | undefined;
+
     /** returns a list of provided tasks */
     async getTasks(): Promise<TaskConfiguration[]> {
+        await this.ensureCachePopulated();
+        const tasks: TaskConfiguration[] = [];
+        for (const taskLabelMap of this.tasksMap!.values()) {
+            for (const taskScopeMap of taskLabelMap.values()) {
+                for (const task of taskScopeMap.values()) {
+                    tasks.push(task);
+                }
+            }
+        }
+        return tasks;
+    }
+
+    clearCache(): void {
+        this.tasksMap = undefined;
+    }
+
+    async ensureCachePopulated(): Promise<void> {
+        if (!this.tasksMap) {
+            if (this.loading) {
+                await this.loading.promise;
+            } else {
+                await this.populateCache();
+            }
+        }
+    }
+
+    async populateCache(): Promise<void> {
+        this.loading = new Deferred();
         const providers = await this.taskProviderRegistry.getProviders();
         const providedTasks: TaskConfiguration[] = (await Promise.all(providers.map(p => p.provideTasks())))
             .reduce((acc, taskArray) => acc.concat(taskArray), [])
@@ -52,17 +83,22 @@ export class ProvidedTaskConfigurations {
                 };
             });
         this.cacheTasks(providedTasks);
-        return providedTasks;
+        this.loading.resolve();
+        this.loading = undefined;
     }
 
     /** returns the task configuration for a given source and label or undefined if none */
     async getTask(source: string, taskLabel: string, scope?: string): Promise<TaskConfiguration | undefined> {
-        const task = this.getCachedTask(source, taskLabel, scope);
-        if (task) {
-            return task;
-        } else {
-            await this.getTasks();
-            return this.getCachedTask(source, taskLabel, scope);
+        await this.ensureCachePopulated();
+        const labelConfigMap = this.tasksMap!.get(source);
+        if (labelConfigMap) {
+            const scopeConfigMap = labelConfigMap.get(taskLabel);
+            if (scopeConfigMap) {
+                if (scope) {
+                    return scopeConfigMap.get(scope);
+                }
+                return Array.from(scopeConfigMap.values())[0];
+            }
         }
     }
 
@@ -111,20 +147,8 @@ export class ProvidedTaskConfigurations {
         return matchedTask;
     }
 
-    protected getCachedTask(source: string, taskLabel: string, scope?: string): TaskConfiguration | undefined {
-        const labelConfigMap = this.tasksMap.get(source);
-        if (labelConfigMap) {
-            const scopeConfigMap = labelConfigMap.get(taskLabel);
-            if (scopeConfigMap) {
-                if (scope) {
-                    return scopeConfigMap.get(scope);
-                }
-                return Array.from(scopeConfigMap.values())[0];
-            }
-        }
-    }
-
     protected cacheTasks(tasks: TaskConfiguration[]): void {
+        this.tasksMap = new Map();
         for (const task of tasks) {
             const label = task.label;
             const source = task._source;

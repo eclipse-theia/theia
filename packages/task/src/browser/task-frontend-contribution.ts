@@ -212,6 +212,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             {
                 isEnabled: () => true,
                 execute: async (label: string) => {
+                    this.taskService.clearCache();
                     const didExecute = await this.taskService.runTaskByLabel(label);
                     if (!didExecute) {
                         this.quickOpenTask.open();
@@ -228,6 +229,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
                 execute: (...args: any[]) => {
                     const [source, label, scope] = args;
                     if (source && label) {
+                        this.taskService.clearCache();
                         return this.taskService.run(source, label, scope);
                     }
                     return this.quickOpenTask.open();
@@ -239,8 +241,10 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             {
                 isEnabled: () => this.workspaceService.opened,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                execute: (...args: any[]) =>
-                    this.quickOpenTask.runBuildOrTestTask('build')
+                execute: (...args: any[]) => {
+                    this.taskService.clearCache();
+                    this.quickOpenTask.runBuildOrTestTask('build');
+                }
             }
         );
         registry.registerCommand(
@@ -248,8 +252,10 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             {
                 isEnabled: () => this.workspaceService.opened,
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                execute: (...args: any[]) =>
-                    this.quickOpenTask.runBuildOrTestTask('test')
+                execute: (...args: any[]) => {
+                    this.taskService.clearCache();
+                    this.quickOpenTask.runBuildOrTestTask('test');
+                }
             }
         );
         registry.registerCommand(
@@ -263,7 +269,10 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
             TaskCommands.TASK_RUN_LAST,
             {
                 isEnabled: () => !!this.taskService.getLastTask(),
-                execute: () => this.taskService.runLastTask()
+                execute: () => {
+                    this.taskService.clearCache();
+                    this.taskService.runLastTask();
+                }
             }
         );
         registry.registerCommand(
@@ -278,7 +287,10 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         registry.registerCommand(
             TaskCommands.TASK_CONFIGURE,
             {
-                execute: () => this.quickOpenTask.configure()
+                execute: () => {
+                    this.taskService.clearCache();
+                    this.quickOpenTask.configure();
+                }
             }
         );
 
@@ -306,7 +318,10 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         registry.registerCommand(
             TaskCommands.TASK_RESTART_RUNNING,
             {
-                execute: () => this.taskRestartRunningQuickOpen.open()
+                execute: () => {
+                    this.taskService.clearCache();
+                    this.taskRestartRunningQuickOpen.open();
+                }
             }
         );
     }

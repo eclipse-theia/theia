@@ -106,6 +106,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
         }
 
         let found: TaskConfiguration[] = [];
+        this.taskService.clearCache();
         const tasks = [...(await this.taskService.getConfiguredTasks()), ...(await this.taskService.getProvidedTasks())];
         if (taskType) {
             found = tasks.filter(t => {
