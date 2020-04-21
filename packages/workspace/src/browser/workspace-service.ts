@@ -427,7 +427,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
             if (uriStr.endsWith('/')) {
                 uriStr = uriStr.slice(0, -1);
             }
-            const fileStat = await this.fileSystem.getFileStat(uriStr);
+            const normalizedUriStr = new URI(uriStr).normalizePath().toString();
+            const fileStat = await this.fileSystem.getFileStat(normalizedUriStr);
             if (!fileStat) {
                 return undefined;
             }
