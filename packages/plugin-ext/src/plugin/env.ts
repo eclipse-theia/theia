@@ -24,11 +24,10 @@ export abstract class EnvExtImpl {
     private proxy: EnvMain;
     private queryParameters: QueryParameters;
     private lang: string;
+    private applicationName: string;
     private defaultShell: string;
     private envMachineId: string;
     private envSessionId: string;
-
-    public static readonly APP_NAME = 'Eclipse Theia';
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.ENV_MAIN);
@@ -57,6 +56,10 @@ export abstract class EnvExtImpl {
         this.queryParameters = queryParams;
     }
 
+    setApplicationName(applicationName: string): void {
+        this.applicationName = applicationName;
+    }
+
     setLanguage(lang: string): void {
         this.lang = lang;
     }
@@ -70,7 +73,7 @@ export abstract class EnvExtImpl {
     }
 
     get appName(): string {
-        return EnvExtImpl.APP_NAME;
+        return this.applicationName;
     }
 
     abstract get appRoot(): string;
