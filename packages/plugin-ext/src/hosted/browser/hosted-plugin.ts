@@ -59,6 +59,7 @@ import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -452,7 +453,8 @@ export class HostedPluginSupport {
                 env: {
                     queryParams: getQueryParameters(),
                     language: navigator.language,
-                    shell: defaultShell
+                    shell: defaultShell,
+                    appName: FrontendApplicationConfigProvider.get().applicationName
                 },
                 extApi,
                 webview: {

@@ -4,6 +4,7 @@
 
 - [task] fixed presentation.reveal & focus for detected tasks [#7548](https://github.com/eclipse-theia/theia/pull/7548)
 - [output] added optional argument `severity` to `OutputChannel.appendLine` method for coloring.
+- [plugin] env.appName is now reusing the value from `applicationName` defined in package.json under `theia/frontend/config/applicatioName` for example. It allows to customize the value with a single change.
 
 Breaking changes:
 

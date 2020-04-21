@@ -102,6 +102,7 @@ export interface EnvInit {
     queryParams: QueryParameters;
     language: string;
     shell: string;
+    appName: string;
 }
 
 export interface PluginAPI {
