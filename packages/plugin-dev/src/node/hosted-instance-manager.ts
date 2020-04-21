@@ -233,7 +233,12 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         const pckPath = path.join(FileUri.fsPath(uri), 'package.json');
         if (fs.existsSync(pckPath)) {
             const pck = require(pckPath);
-            return !!this.metadata.getScanner(pck);
+            try {
+               return !!this.metadata.getScanner(pck);
+            } catch (e) {
+                console.error(e);
+                return false;
+            }
         }
         return false;
     }
