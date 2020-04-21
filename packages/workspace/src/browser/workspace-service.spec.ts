@@ -229,6 +229,38 @@ describe('WorkspaceService', () => {
                 expect((<Map<string, Disposable>>wsService['rootWatchers']).has(rootB)).to.be.true;
             });
 
+        it(
+            'should resolve a relative workspace root path to a normalized root path',
+            async () => {
+                const workspaceFilePath = '/home/workspaceFile';
+                const workspaceFileUri = 'file://' + workspaceFilePath;
+                const workspaceFileStat = <FileStat>{
+                    uri: workspaceFileUri,
+                    lastModification: 0,
+                    isDirectory: false
+                };
+                const rootRelative = '../workspace';
+                const rootActual = 'file:///workspace';
+                (<sinon.SinonStub>mockWorkspaceServer.getMostRecentlyUsedWorkspace).resolves(workspaceFileStat.uri);
+                const stubGetFileStat = (<sinon.SinonStub>mockFilesystem.getFileStat);
+                stubGetFileStat.withArgs(workspaceFileUri).resolves(workspaceFileStat);
+                (<sinon.SinonStub>mockFilesystem.exists).resolves(true);
+                (<sinon.SinonStub>mockFilesystem.resolveContent).resolves({
+                    stat: workspaceFileStat,
+                    content: `{"folders":[{"path":"${rootRelative}"}],"settings":{}}`
+                });
+                stubGetFileStat.withArgs(rootActual).resolves(<FileStat>{
+                    uri: rootActual, lastModification: 0, isDirectory: true
+                });
+                (<sinon.SinonStub>mockFileSystemWatcher.watchFileChanges).resolves(new DisposableCollection());
+
+                await wsService['init']();
+                expect(wsService.workspace).to.eq(workspaceFileStat);
+                expect((await wsService.roots).length).to.eq(1);
+                expect(wsService.tryGetRoots().length).to.eq(1);
+                expect(wsService.tryGetRoots()[0].uri).to.eq(rootActual);
+            });
+
         it('should set the exposed roots an empty array if the workspace file stores invalid workspace data', async () => {
             const workspaceFileUri = 'file:///home/workspaceFile';
             const workspaceFileStat = <FileStat>{
