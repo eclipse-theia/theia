@@ -26,6 +26,8 @@ import * as stream from 'stream';
 import * as tar from 'tar';
 import * as zlib from 'zlib';
 
+import { green, red, bold } from 'colors/safe';
+
 import { promisify } from 'util';
 const mkdirpAsPromised = promisify<string, mkdirp.Made>(mkdirp);
 
@@ -71,7 +73,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         } else if (pluginUrl.endsWith('vsix')) {
             fileExt = '.vsix';
         } else {
-            console.error(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`);
+            console.error(bold(red(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`)));
             return;
         }
 
@@ -115,14 +117,15 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
             });
         } catch (object) {
             const { err, res } = object as { err?: Error, res?: RetryResponse };
-            console.error(`x ${plugin}: failed to download ${res && res.attempts > 1 ? `(after ${res.attempts} attempts)` : ''}`);
+            const status: string = res ? buildStatusStr(res.statusCode, res.statusMessage) : '';
+            console.error(bold(red(`x ${plugin}: failed to download ${res && res.attempts > 1 ? `(after ${res.attempts} attempts)` : ''} ${status}`)));
             if (err) {
                 console.error(err);
             }
             return;
         }
 
-        console.log(`+ ${plugin}: downloaded successfully ${download.res.attempts > 1 ? `(after ${download.res.attempts} attempts)` : ''}`);
+        console.log(green(`+ ${plugin}: downloaded successfully ${download.res.attempts > 1 ? `(after ${download.res.attempts} attempts)` : ''}`));
 
         // Get ready to re-stream downloaded data:
         const replayStream = bufferingStream.replay();
@@ -162,6 +165,23 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
  */
 function isDownloaded(filePath: string): boolean {
     return fs.existsSync(filePath);
+}
+
+/**
+ * Build a human-readable message about the response.
+ * @param code the status code of the response.
+ * @param message the status message of the response.
+ */
+function buildStatusStr(code: number | undefined, message: string | undefined): string {
+    if (code && message) {
+        return `{ statusCode: ${code}, statusMessage: ${message} }`;
+    } else if (code && !message) {
+        return `{ statusCode: ${code} }`;
+    } else if (!code && message) {
+        return `{ statusMessage: ${message} }`;
+    } else {
+        return '';
+    }
 }
 
 /**
