@@ -55,7 +55,7 @@ We follow the coding guidelines described
 Before your contribution can be accepted by the project team contributors must
 electronically sign the Eclipse Contributor Agreement (ECA).
 
-* http://www.eclipse.org/legal/ECA.php
+* https://www.eclipse.org/legal/ECA.php
 
 Commits that are provided by non-committers must have a Signed-off-by field in
 the footer indicating that the author is aware of the terms by which the
@@ -72,7 +72,7 @@ The sign-off is a simple line at the end of the explanation for the patch. Your
 signature certifies that you wrote the patch or otherwise have the right to
 pass it on as an open-source patch. The rules are pretty simple: if you can
 certify the below (from
-[developercertificate.org](http://developercertificate.org/)):
+[developercertificate.org](https://developercertificate.org/)):
 
 ```
 Developer Certificate of Origin
