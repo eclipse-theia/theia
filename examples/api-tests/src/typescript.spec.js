@@ -16,7 +16,7 @@
 
 // @ts-check
 describe('TypeScript', function () {
-    this.timeout(45000);
+    this.timeout(30000);
 
     const { assert } = chai;
 
@@ -247,7 +247,12 @@ module.exports = (port, host, argv) => Promise.resolve()
         assert.isTrue(contextKeyService.match('listFocus'));
     }
 
-    async function closePeek() {
+    /**
+     * @param {MonacoEditor} editor
+     */
+    async function closePeek(editor) {
+        await assertPeekOpened(editor);
+
         keybindings.dispatchKeyDown('Escape');
         await waitForAnimation(() => !contextKeyService.match('listFocus'));
         assert.isTrue(contextKeyService.match('editorTextFocus'));
@@ -362,7 +367,7 @@ module.exports = (port, host, argv) => Promise.resolve()
                 // @ts-ignore
                 assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'container');
 
-                await closePeek();
+                await closePeek(activeEditor);
             });
 
             it(`from ${from} to another editor`, async function () {
@@ -388,7 +393,7 @@ module.exports = (port, host, argv) => Promise.resolve()
                 // @ts-ignore
                 assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
 
-                await closePeek();
+                await closePeek(activeEditor);
             });
 
             it(`from ${from} to an editor preview`, async function () {
@@ -412,7 +417,7 @@ module.exports = (port, host, argv) => Promise.resolve()
                 // @ts-ignore
                 assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
 
-                await closePeek();
+                await closePeek(activeEditor);
             });
         }
     });
@@ -678,7 +683,7 @@ SPAN {
             if (link) {
                 link.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
                 await assertPeekOpened(editor);
-                await closePeek();
+                await closePeek(editor);
             } else {
                 assert.isDefined(link);
             }
