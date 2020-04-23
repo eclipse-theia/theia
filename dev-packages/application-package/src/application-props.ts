@@ -78,7 +78,7 @@ export namespace ApplicationProps {
         },
         frontend: {
             config: {
-                applicationName: 'Theia'
+                applicationName: 'Eclipse Theia'
             }
         },
         generator: {
