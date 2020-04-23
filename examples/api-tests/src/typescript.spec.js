@@ -131,7 +131,7 @@ module.exports = (port, host, argv) => Promise.resolve()
     `
         });
         await pluginService.didStart;
-        Promise.all([typescriptPluginId, referencesPluginId].map(async pluginId => {
+        await Promise.all([typescriptPluginId, referencesPluginId].map(async pluginId => {
             if (!pluginService.getPlugin(pluginId)) {
                 throw new Error(pluginId + ' should be started');
             }
