@@ -53,14 +53,15 @@ export = function (this: webpack.loader.LoaderContext, source: string, sourceMap
         this.cacheable();
     }
 
-    let modulePackage = modulePackages.find(({ dir }) => this.resourcePath.startsWith(dir + '/'));
+    let modulePackage = modulePackages.find(({ dir }) => this.resourcePath.startsWith(dir + path.sep));
     if (modulePackage) {
         this.callback(undefined, exposeModule(modulePackage, this.resourcePath, source), sourceMap);
         return;
     }
-    const index = this.resourcePath.lastIndexOf('/node_modules');
+    const searchString = path.sep + 'node_modules';
+    const index = this.resourcePath.lastIndexOf(searchString);
     if (index !== -1) {
-        const nodeModulesPath = this.resourcePath.substring(0, index + '/node_modules'.length);
+        const nodeModulesPath = this.resourcePath.substring(0, index + searchString.length);
         let dir = this.resourcePath;
         while ((dir = path.dirname(dir)) !== nodeModulesPath) {
             try {
