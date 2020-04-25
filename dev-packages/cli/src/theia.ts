@@ -218,7 +218,7 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
                 try {
                     await runTest({
                         start: async () => new Promise((resolve, reject) => {
-                            const serverArgs = commandArgs('test').filter(a => a.indexOf('test-') === -1);
+                            const serverArgs = commandArgs('test').filter(a => a.indexOf('--test-') !== 0);
                             const serverProcess = manager.start(serverArgs);
                             serverProcess.on('message', resolve);
                             serverProcess.on('error', reject);
