@@ -15,9 +15,10 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { TaskConfiguration, ContributedTaskConfiguration } from '../common';
+import { TaskConfiguration } from '../common';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskConfigurations } from './task-configurations';
+import { ProvidedTaskConfigurations } from './provided-task-configurations';
 
 @injectable()
 export class TaskNameResolver {
@@ -27,12 +28,14 @@ export class TaskNameResolver {
     @inject(TaskConfigurations)
     protected readonly taskConfigurations: TaskConfigurations;
 
+    @inject(ProvidedTaskConfigurations)
+    protected readonly providedTaskConfigurations: ProvidedTaskConfigurations;
     /**
      * Returns task name to display.
      * It is aligned with VS Code.
      */
     resolve(task: TaskConfiguration): string {
-        if (this.isDetectedTask(task)) {
+        if (this.providedTaskConfigurations.isDetectedTask(task)) {
             const scope = task._scope;
             const rawConfigs = this.taskConfigurations.getRawTaskConfigurations(scope);
             const jsonConfig = rawConfigs.find(rawConfig => this.taskDefinitionRegistry.compareTasks({
@@ -47,9 +50,5 @@ export class TaskNameResolver {
 
         // it is a hack, when task is customized but extension is absent
         return task.label || `${task.type}: ${task.task}`;
-    }
-
-    private isDetectedTask(task: TaskConfiguration): task is ContributedTaskConfiguration {
-        return !!this.taskDefinitionRegistry.getDefinition(task);
     }
 }

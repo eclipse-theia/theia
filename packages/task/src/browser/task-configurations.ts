@@ -17,7 +17,6 @@
 import * as Ajv from 'ajv';
 import { inject, injectable, postConstruct } from 'inversify';
 import {
-    ContributedTaskConfiguration,
     TaskConfiguration,
     TaskCustomization,
     TaskDefinition,
@@ -205,6 +204,23 @@ export class TaskConfigurations implements Disposable {
         }
     }
 
+    async getCustomizedTaskById(id: string): Promise<TaskConfiguration | undefined> {
+        const detectedTask = await this.providedTaskConfigurations.getTaskById(id);
+        if (detectedTask && detectedTask._scope) {
+            const customizations = this.taskCustomizationMap.get(detectedTask._scope);
+            if (customizations) {
+                const match = customizations.find(cus => this.taskDefinitionRegistry.compareTasks(cus, detectedTask));
+                if (match) {
+                    return {
+                        ...detectedTask,
+                        ...match,
+                        type: detectedTask.type
+                    };
+                }
+            }
+        }
+    }
+
     /** removes tasks configured in the given task config file */
     private removeTasks(configFileUri: string): void {
         const source = this.getSourceFolderFromConfigUri(configFileUri);
@@ -245,7 +261,7 @@ export class TaskConfigurations implements Disposable {
      * @param taskConfig The task config, which could either be a configured task or a detected task.
      */
     getCustomizationForTask(taskConfig: TaskConfiguration): TaskCustomization | undefined {
-        if (!this.isDetectedTask(taskConfig)) {
+        if (!this.providedTaskConfigurations.isDetectedTask(taskConfig)) {
             return undefined;
         }
 
@@ -397,7 +413,7 @@ export class TaskConfigurations implements Disposable {
                     continue;
                 }
                 const transformedTask = this.getTransformedRawTask(taskConfig, rootFolder);
-                if (this.isDetectedTask(transformedTask)) {
+                if (this.providedTaskConfigurations.isDetectedTask(transformedTask)) {
                     addCustomization(rootFolder, transformedTask);
                 } else {
                     addConfiguredTask(rootFolder, transformedTask['label'] as string, transformedTask);
@@ -411,7 +427,7 @@ export class TaskConfigurations implements Disposable {
 
     private getTransformedRawTask(rawTask: TaskCustomization | TaskConfiguration, rootFolderUri: string): TaskCustomization | TaskConfiguration {
         let taskConfig: TaskCustomization | TaskConfiguration;
-        if (this.isDetectedTask(rawTask)) {
+        if (this.providedTaskConfigurations.isDetectedTask(rawTask)) {
             const def = this.getTaskDefinition(rawTask);
             taskConfig = {
                 ...rawTask,
@@ -486,13 +502,6 @@ export class TaskConfigurations implements Disposable {
 
     private getSourceFolderFromConfigUri(configFileUri: string): string {
         return new URI(configFileUri).parent.parent.path.toString();
-    }
-
-    /** checks if the config is a detected / contributed task */
-    private isDetectedTask(task: TaskConfiguration | TaskCustomization): task is ContributedTaskConfiguration {
-        const taskDefinition = this.getTaskDefinition(task);
-        // it is considered as a customization if the task definition registry finds a def for the task configuration
-        return !!taskDefinition;
     }
 
     private getTaskDefinition(task: TaskConfiguration | TaskCustomization): TaskDefinition | undefined {

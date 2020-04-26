@@ -15,6 +15,7 @@ Breaking changes:
 Use `PluginManager.configStorage` property instead. [#7265](https://github.com/eclipse-theia/theia/pull/7265#discussion_r399956070)
 - [process] `TerminalProcess` doesn't handle shell quoting, the shell process arguments must be prepared from the caller. Removed all methods related to shell escaping inside this class. You should use functions located in `@theia/process/lib/common/shell-quoting.ts` in order to process arguments for shells.
 - [process/terminal] Moved shell escaping utilities into `@theia/process/lib/common/shell-quoting` and `@theia/process/lib/common/shell-command-builder` for creating shell inputs.
+- [task] added property `id` to interface `ContributedTaskConfiguration` [#7670](https://github.com/eclipse-theia/theia/pull/7670)
 
 ## v1.0.0
 

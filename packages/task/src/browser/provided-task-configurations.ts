@@ -17,7 +17,7 @@
 import { inject, injectable } from 'inversify';
 import { TaskProviderRegistry } from './task-contribution';
 import { TaskDefinitionRegistry } from './task-definition-registry';
-import { TaskConfiguration, TaskCustomization, TaskOutputPresentation } from '../common';
+import { ContributedTaskConfiguration, TaskConfiguration, TaskCustomization, TaskOutputPresentation } from '../common';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
@@ -66,6 +66,16 @@ export class ProvidedTaskConfigurations {
         }
     }
 
+    async getTaskById(id: string): Promise<TaskConfiguration | undefined> {
+        const task = this.getCachedTaskById(id);
+        if (task) {
+            return task;
+        } else {
+            await this.getTasks();
+            return this.getCachedTaskById(id);
+        }
+    }
+
     /**
      * Finds the detected task for the given task customization.
      * The detected task is considered as a "match" to the task customization if it has all the `required` properties.
@@ -111,6 +121,13 @@ export class ProvidedTaskConfigurations {
         return matchedTask;
     }
 
+    /** checks if the config is a detected / contributed task */
+    isDetectedTask(task: TaskCustomization | TaskConfiguration | TaskCustomization): task is ContributedTaskConfiguration {
+        const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
+        // it is considered as a customization if the task definition registry finds a def for the task configuration
+        return !!taskDefinition;
+    }
+
     protected getCachedTask(source: string, taskLabel: string, scope?: string): TaskConfiguration | undefined {
         const labelConfigMap = this.tasksMap.get(source);
         if (labelConfigMap) {
@@ -120,6 +137,18 @@ export class ProvidedTaskConfigurations {
                     return scopeConfigMap.get(scope);
                 }
                 return Array.from(scopeConfigMap.values())[0];
+            }
+        }
+    }
+
+    protected getCachedTaskById(id: string): TaskConfiguration | undefined {
+        for (const labelConfigMap of this.tasksMap.values()) {
+            for (const scopeConfigMap of labelConfigMap.values()) {
+                for (const taskConfig of scopeConfigMap.values()) {
+                    if (taskConfig.id === id) {
+                        return taskConfig;
+                    }
+                }
             }
         }
     }

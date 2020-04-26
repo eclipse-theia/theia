@@ -160,8 +160,13 @@ export interface TaskConfiguration extends TaskCustomization {
 
 export interface ContributedTaskConfiguration extends TaskConfiguration {
     /**
+     * ID of the provided/detected task.
+     * This field is not supposed to be used in `tasks.json`.
+     */
+    readonly id: string;
+    /**
      * Source of the task configuration.
-     * For a configured task, it is the name of the root folder, while for a provided task, it is the name of the provider.
+     * For a configured task, it is the name of the root folder, while for a provided/detected task, it is the name of the provider.
      * This field is not supposed to be used in `tasks.json`
      */
     readonly _source: string;

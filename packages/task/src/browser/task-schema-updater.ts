@@ -166,6 +166,8 @@ export class TaskSchemaUpdater {
             customizedDetectedTask.properties!.presentation = presentation;
             customizedDetectedTask.properties!.options = commandOptionsSchema;
             customizedDetectedTask.properties!.group = group;
+            customizedDetectedTask.properties!.dependsOn = dependsOn;
+            customizedDetectedTask.properties!.dependsOrder = dependsOrder;
             customizedDetectedTask.additionalProperties = true;
             customizedDetectedTasks.push(customizedDetectedTask);
         });
@@ -607,6 +609,40 @@ const taskIdentifier: IJSONSchema = {
     }
 };
 
+const dependsOn: IJSONSchema = {
+    anyOf: [
+        {
+            type: 'string',
+            description: 'Another task this task depends on.'
+        },
+        taskIdentifier,
+        {
+            type: 'array',
+            description: 'The other tasks this task depends on.',
+            items: {
+                anyOf: [
+                    {
+                        type: 'string'
+                    },
+                    taskIdentifier
+                ]
+            }
+        }
+    ],
+    description: 'Either a string representing another task or an array of other tasks that this task depends on.'
+};
+
+const dependsOrder: IJSONSchema = {
+    type: 'string',
+    enum: ['parallel', 'sequence'],
+    enumDescriptions: [
+        'Run all dependsOn tasks in parallel.',
+        'Run all dependsOn tasks in sequence.'
+    ],
+    default: 'parallel',
+    description: 'Determines the order of the dependsOn tasks for this task. Note that this property is not recursive.'
+};
+
 const processTaskConfigurationSchema: IJSONSchema = {
     type: 'object',
     required: ['type', 'label', 'command'],
@@ -619,38 +655,8 @@ const processTaskConfigurationSchema: IJSONSchema = {
             default: false,
             description: 'Whether the executed task is kept alive and is running in the background.'
         },
-        dependsOn: {
-            anyOf: [
-                {
-                    type: 'string',
-                    description: 'Another task this task depends on.'
-                },
-                taskIdentifier,
-                {
-                    type: 'array',
-                    description: 'The other tasks this task depends on.',
-                    items: {
-                        anyOf: [
-                            {
-                                type: 'string'
-                            },
-                            taskIdentifier
-                        ]
-                    }
-                }
-            ],
-            description: 'Either a string representing another task or an array of other tasks that this task depends on.'
-        },
-        dependsOrder: {
-            type: 'string',
-            enum: ['parallel', 'sequence'],
-            enumDescriptions: [
-                'Run all dependsOn tasks in parallel.',
-                'Run all dependsOn tasks in sequence.'
-            ],
-            default: 'parallel',
-            description: 'Determines the order of the dependsOn tasks for this task. Note that this property is not recursive.'
-        },
+        dependsOn,
+        dependsOrder,
         windows: {
             type: 'object',
             description: 'Windows specific command configuration that overrides the command, args, and options',

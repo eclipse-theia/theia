@@ -460,22 +460,40 @@ export class TaskService implements TaskConfigurationClient {
         return this.run(source, taskLabel, scope);
     }
 
+    isDetectedTask(task: TaskCustomization | TaskConfiguration): boolean {
+        return this.providedTaskConfigurations.isDetectedTask(task);
+    }
+
     /**
      * Runs a task, by the source and label of the task configuration.
      * It looks for configured and detected tasks.
      */
-    async run(source: string, taskLabel: string, scope?: string): Promise<TaskInfo | undefined> {
+    async run(id: string): Promise<TaskInfo | undefined>;
+    async run(source: string, taskLabel: string): Promise<TaskInfo | undefined>;
+    async run(source: string, taskLabel: string, scope: string | undefined): Promise<TaskInfo | undefined>;
+    async run(paramOne: string, taskLabel?: string, scope?: string): Promise<TaskInfo | undefined> {
         let task: TaskConfiguration | undefined;
-        task = await this.getProvidedTask(source, taskLabel, scope);
-        if (!task) { // if a detected task cannot be found, search from tasks.json
-            task = this.taskConfigurations.getTask(source, taskLabel);
-            if (!task && scope) { // find from the customized detected tasks
+        if (!taskLabel) {
+            const id = paramOne;
+            task = await this.taskConfigurations.getCustomizedTaskById(id);
+            if (!task) {
+                task = await this.providedTaskConfigurations.getTaskById(id);
+            }
+        } else {
+            const source = paramOne;
+            if (scope) { // find from the customized detected tasks
                 task = await this.taskConfigurations.getCustomizedTask(scope, taskLabel);
             }
-            if (!task) {
-                this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
-                return;
+            if (!task) { // find from detected tasks
+                task = await this.getProvidedTask(source, taskLabel, scope);
             }
+            if (!task) { // if a detected task cannot be found, search from tasks.json
+                task = this.taskConfigurations.getTask(source, taskLabel);
+            }
+        }
+        if (!task) {
+            this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
+            return;
         }
         const customizationObject = await this.getTaskCustomization(task);
 

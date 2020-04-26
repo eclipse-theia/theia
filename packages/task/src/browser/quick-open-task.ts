@@ -337,8 +337,8 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                     const taskToRun = (defaultBuildOrTestTask as TaskRunQuickOpenItem).getTask();
                     const scope = this.taskSourceResolver.resolve(taskToRun);
 
-                    if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(taskToRun)) {
-                        this.taskService.run(taskToRun.source, taskToRun.label, scope);
+                    if (this.taskService.isDetectedTask(taskToRun)) {
+                        this.taskService.run(taskToRun.id);
                     } else {
                         this.taskService.run(taskToRun._source, taskToRun.label, scope);
                     }
@@ -494,7 +494,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
         if (!this.isMulti) {
             return '';
         }
-        if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
+        if (this.taskService.isDetectedTask(this.task)) {
             if (this.task._scope) {
                 return new URI(this.task._scope).displayName;
             }
@@ -511,8 +511,8 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
         }
 
         const scope = this.taskSourceResolver.resolve(this.task);
-        if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
-            this.taskService.run(this.task.source || this.task._source, this.task.label, scope);
+        if (this.taskService.isDetectedTask(this.task)) {
+            this.taskService.run(this.task.id);
         } else {
             this.taskService.run(this.task._source, this.task.label, scope);
         }
@@ -578,7 +578,7 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
         if (!this.isMulti) {
             return '';
         }
-        if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
+        if (this.taskService.isDetectedTask(this.task)) {
             if (this.task._scope) {
                 return new URI(this.task._scope).displayName;
             }
