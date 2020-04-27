@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as Ajv from 'ajv';
 import { inject, injectable, postConstruct } from 'inversify';
 import {
     ContributedTaskConfiguration,
@@ -436,10 +435,7 @@ export class TaskConfigurations implements Disposable {
      * or contributed by Theia extensions and plugins, `false` otherwise.
      */
     private isTaskConfigValid(task: TaskCustomization): boolean {
-        const schema = this.taskSchemaUpdater.getTaskSchema();
-        const ajv = new Ajv();
-        const validateSchema = ajv.compile(schema);
-        return !!validateSchema({ tasks: [task] });
+        return this.taskSchemaUpdater.validate({ tasks: [task] });
     }
 
     /**
