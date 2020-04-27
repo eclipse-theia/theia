@@ -34,6 +34,7 @@
     "@types/chai": "^4.2.7",
     "@types/mkdirp": "^0.5.2",
     "@types/mocha": "^5.2.7",
+    "@types/node-fetch": "^2.5.7",
     "@types/puppeteer": "^2.0.0",
     "@types/requestretry": "^1.12.3",
     "@types/tar": "^4.0.3",
@@ -41,9 +42,9 @@
     "colors": "^1.4.0",
     "mkdirp": "^0.5.0",
     "mocha": "^7.0.0",
+    "node-fetch": "^2.6.0",
     "puppeteer": "^2.0.0",
     "puppeteer-to-istanbul": "^1.2.2",
-    "requestretry": "^3.1.0",
     "tar": "^4.0.0",
     "unzip-stream": "^0.3.0",
     "yargs": "^11.1.0"
