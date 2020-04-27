@@ -107,6 +107,44 @@ export const TerminalConfigSchema: PreferenceSchema = {
             type: 'number',
             default: 1
         },
+        'terminal.integrated.shell.windows': {
+            type: ['string', 'null'],
+            description: 'The path of the shell that the terminal uses on Windows. (default: C:\\Windows\\System32\\cmd.exe).',
+            markdownDescription: 'The path of the shell that the terminal uses on Windows. (default: C:\\Windows\\System32\\cmd.exe).',
+            default: undefined
+        },
+        'terminal.integrated.shell.osx': {
+            type: ['string', 'null'],
+            description: `The path of the shell that the terminal uses on macOS (default: ${process.env.SHELL || '/bin/bash'}).`,
+            markdownDescription: `The path of the shell that the terminal uses on macOS (default: ${process.env.SHELL || '/bin/bash'}).`,
+            default: undefined
+        },
+        'terminal.integrated.shell.linux': {
+            type: ['string', 'null'],
+            description: `The path of the shell that the terminal uses on Linux (default: ${process.env.SHELL || '/bin/bash'}).`,
+            markdownDescription: `The path of the shell that the terminal uses on Linux (default: ${process.env.SHELL || '/bin/bash'}).`,
+            default: undefined
+        },
+        'terminal.integrated.shellArgs.windows': {
+            type: 'array',
+            description: 'The command line arguments to use when on the Windows terminal.',
+            markdownDescription: 'The command line arguments to use when on the Windows terminal.',
+            default: []
+        },
+        'terminal.integrated.shellArgs.osx': {
+            type: 'array',
+            description: 'The command line arguments to use when on the macOS terminal.',
+            markdownDescription: 'The command line arguments to use when on the macOS terminal.',
+            default: [
+                '-l'
+            ]
+        },
+        'terminal.integrated.shellArgs.linux': {
+            type: 'array',
+            description: 'The command line arguments to use when on the Linux terminal.',
+            markdownDescription: 'The command line arguments to use when on the Linux terminal.',
+            default: []
+        },
     }
 };
 
@@ -126,7 +164,13 @@ export interface TerminalConfiguration {
     'terminal.integrated.copyOnSelection': boolean,
     'terminal.integrated.cursorBlinking': boolean,
     'terminal.integrated.cursorStyle': CursorStyleVSCode,
-    'terminal.integrated.cursorWidth': number
+    'terminal.integrated.cursorWidth': number,
+    'terminal.integrated.shell.windows': string | undefined,
+    'terminal.integrated.shell.osx': string | undefined,
+    'terminal.integrated.shell.linux': string | undefined,
+    'terminal.integrated.shellArgs.windows': string[],
+    'terminal.integrated.shellArgs.osx': string[],
+    'terminal.integrated.shellArgs.linux': string[],
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
