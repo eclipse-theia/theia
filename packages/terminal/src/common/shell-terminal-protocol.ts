@@ -16,6 +16,7 @@
 
 import { JsonRpcProxy } from '@theia/core';
 import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
+import { OS } from '@theia/core/lib/common/os';
 
 export const IShellTerminalServer = Symbol('IShellTerminalServer');
 
@@ -25,7 +26,17 @@ export interface IShellTerminalServer extends IBaseTerminalServer {
 
 export const shellTerminalPath = '/services/shell-terminal';
 
+export type ShellTerminalOSPreferences<T> = {
+    [key in OS.Type]: T
+};
+
+export interface IShellTerminalPreferences {
+    shell: ShellTerminalOSPreferences<string | undefined>,
+    shellArgs: ShellTerminalOSPreferences<string[]>
+};
+
 export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions {
+    shellPreferences?: IShellTerminalPreferences,
     shell?: string,
     args?: string[],
     rootURI?: string,

@@ -18,16 +18,18 @@ import { injectable, inject, named } from 'inversify';
 import * as os from 'os';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { TerminalProcess, TerminalProcessOptions, ProcessManager, MultiRingBuffer } from '@theia/process/lib/node';
-import { isWindows, isOSX } from '@theia/core/lib/common';
+import { isWindows, isOSX, OS } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { parseArgs } from '@theia/process/lib/node/utils';
+import { IShellTerminalPreferences } from '../common/shell-terminal-protocol';
 
 export const ShellProcessFactory = Symbol('ShellProcessFactory');
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
 
 export const ShellProcessOptions = Symbol('ShellProcessOptions');
 export interface ShellProcessOptions {
+    shellPreferences?: IShellTerminalPreferences,
     shell?: string,
     args?: string[],
     rootURI?: string,
@@ -75,8 +77,8 @@ export class ShellProcess extends TerminalProcess {
         @inject(ILogger) @named('terminal') logger: ILogger
     ) {
         super(<TerminalProcessOptions>{
-            command: options.shell || ShellProcess.getShellExecutablePath(),
-            args: options.args || ShellProcess.getShellExecutableArgs(),
+            command: options.shell || ShellProcess.getShellExecutablePath(options.shellPreferences),
+            args: options.args || ShellProcess.getShellExecutableArgs(options.shellPreferences),
             options: {
                 name: 'xterm-color',
                 cols: options.cols || ShellProcess.defaultCols,
@@ -87,28 +89,31 @@ export class ShellProcess extends TerminalProcess {
         }, processManager, ringBuffer, logger);
     }
 
-    public static getShellExecutablePath(): string {
+    public static getShellExecutablePath(preferences?: IShellTerminalPreferences): string {
         const shell = process.env.THEIA_SHELL;
         if (shell) {
             return shell;
         }
-        if (isWindows) {
+        if (preferences && preferences.shell[OS.type()]) {
+            return preferences.shell[OS.type()]!;
+        } else if (isWindows) {
             return 'cmd.exe';
         } else {
             return process.env.SHELL!;
         }
     }
 
-    public static getShellExecutableArgs(): string[] {
+    public static getShellExecutableArgs(preferences?: IShellTerminalPreferences): string[] {
         const args = process.env.THEIA_SHELL_ARGS;
         if (args) {
             return parseArgs(args);
         }
-        if (isOSX) {
+        if (preferences) {
+            return preferences.shellArgs[OS.type()];
+        } else if (isOSX) {
             return ['-l'];
         } else {
             return [];
         }
-
     }
 }

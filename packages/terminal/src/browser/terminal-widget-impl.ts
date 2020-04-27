@@ -21,7 +21,7 @@ import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCo
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
+import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/shell-terminal-protocol';
 import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
@@ -368,6 +368,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const { cols, rows } = this.term;
 
         const terminalId = await this.shellTerminalServer.create({
+            shellPreferences: this.shellPreferences,
             shell: this.options.shellPath,
             args: this.options.shellArgs,
             env: this.options.env,
@@ -579,6 +580,21 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected get enablePaste(): boolean {
         return this.preferences['terminal.enablePaste'];
+    }
+
+    protected get shellPreferences(): IShellTerminalPreferences {
+        return {
+            shell: {
+                Windows: this.preferences['terminal.integrated.shell.windows'],
+                Linux: this.preferences['terminal.integrated.shell.linux'],
+                OSX: this.preferences['terminal.integrated.shell.osx'],
+            },
+            shellArgs: {
+                Windows: this.preferences['terminal.integrated.shellArgs.windows'],
+                Linux: this.preferences['terminal.integrated.shellArgs.linux'],
+                OSX: this.preferences['terminal.integrated.shellArgs.osx'],
+            }
+        };
     }
 
     protected customKeyHandler(event: KeyboardEvent): boolean {
