@@ -20,6 +20,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import * as Ajv from 'ajv';
+import debounce = require('p-debounce');
 import { injectable, inject, postConstruct } from 'inversify';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources, deepClone, Emitter } from '@theia/core/lib/common';
@@ -70,12 +72,15 @@ export class TaskSchemaUpdater {
         this.taskDefinitionRegistry.onDidUnregisterTaskDefinition(() => this.updateSupportedTaskTypes());
     }
 
-    update(): void {
+    readonly update = debounce(() => this.doUpdate(), 0);
+    protected doUpdate(): void {
         const taskSchemaUri = new URI(taskSchemaId);
 
         taskConfigurationSchema.anyOf = [processTaskConfigurationSchema, ...customizedDetectedTasks, ...customSchemas];
 
-        const schemaContent = this.getStringifiedTaskSchema();
+        const schema = this.getTaskSchema();
+        this.doValidate = new Ajv().compile(schema);
+        const schemaContent = JSON.stringify(schema);
         try {
             this.inmemoryResources.update(taskSchemaUri, schemaContent);
         } catch (e) {
@@ -86,6 +91,12 @@ export class TaskSchemaUpdater {
             });
         }
     }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    validate(data: any): boolean {
+        return !!this.doValidate && !!this.doValidate(data);
+    }
+    protected doValidate: Ajv.ValidateFunction | undefined;
 
     /**
      * Adds given task schema to `taskConfigurationSchema` as `oneOf` subschema.
@@ -172,7 +183,7 @@ export class TaskSchemaUpdater {
     }
 
     /** Returns the task's JSON schema */
-    getTaskSchema(): IJSONSchema {
+    protected getTaskSchema(): IJSONSchema {
         return {
             type: 'object',
             properties: {
@@ -189,11 +200,6 @@ export class TaskSchemaUpdater {
             },
             additionalProperties: false
         };
-    }
-
-    /** Returns the task's JSON schema as a string */
-    private getStringifiedTaskSchema(): string {
-        return JSON.stringify(this.getTaskSchema());
     }
 
     /** Gets the most up-to-date names of problem matchers from the registry and update the task schema */
