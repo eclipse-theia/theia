@@ -67,7 +67,9 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
 
     protected updateStyles(): void {
         document.body.classList.remove('theia-no-open-workspace');
-        if (!this.workspaceService.tryGetRoots().length) {
+        // Display the 'no workspace opened' theme color when no folders are opened (single-root).
+        if (!this.workspaceService.isMultiRootWorkspaceOpened &&
+            !this.workspaceService.tryGetRoots().length) {
             document.body.classList.add('theia-no-open-workspace');
         }
     }
