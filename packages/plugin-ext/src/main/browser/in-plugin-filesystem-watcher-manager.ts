@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { parse, ParsedPattern, IRelativePattern } from '@theia/languages/lib/common/language-selector';
-import { FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange, FileMoveEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
+import { FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceExt } from '../../common/plugin-api-rpc';
 import { FileWatcherSubscriberOptions } from '../../common/plugin-api-rpc-model';
 import { RelativePattern } from '../../plugin/types-impl';
@@ -40,8 +40,6 @@ export class InPluginFileSystemWatcherManager {
     @postConstruct()
     protected init(): void {
         this.fileSystemWatcher.onFilesChanged(event => this.onFilesChangedEventHandler(event));
-        this.fileSystemWatcher.onDidMove(event => this.onDidMoveEventHandler(event));
-        this.fileSystemWatcher.onWillMove(event => this.onWillMoveEventHandler(event));
     }
 
     // Filter file system changes according to subscribers settings here to avoid unneeded traffic.
@@ -73,30 +71,8 @@ export class InPluginFileSystemWatcherManager {
         }
     }
 
-    // Filter file system changes according to subscribers settings here to avoid unneeded traffic.
-    protected onDidMoveEventHandler(change: FileMoveEvent): void {
-        for (const [id, subscriber] of this.subscribers) {
-            subscriber.proxy.$onFileRename({
-                subscriberId: id,
-                oldUri: theiaUritoUriComponents(change.sourceUri),
-                newUri: theiaUritoUriComponents(change.targetUri)
-            });
-        }
-    }
-
-    // Filter file system changes according to subscribers settings here to avoid unneeded traffic.
-    protected onWillMoveEventHandler(change: FileMoveEvent): void {
-        for (const [id, subscriber] of this.subscribers) {
-            subscriber.proxy.$onWillRename({
-                subscriberId: id,
-                oldUri: theiaUritoUriComponents(change.sourceUri),
-                newUri: theiaUritoUriComponents(change.targetUri)
-            });
-        }
-    }
-
     private uriMatches(subscriber: FileWatcherSubscriber, fileChange: FileChange): boolean {
-        return subscriber.mather(fileChange.uri.path.toString());
+        return subscriber.matcher(fileChange.uri.path.toString());
     }
 
     /**
@@ -118,7 +94,7 @@ export class InPluginFileSystemWatcherManager {
 
         const subscriber: FileWatcherSubscriber = {
             id: subscriberId,
-            mather: globPatternMatcher,
+            matcher: globPatternMatcher,
             ignoreCreateEvents: options.ignoreCreateEvents === true,
             ignoreChangeEvents: options.ignoreChangeEvents === true,
             ignoreDeleteEvents: options.ignoreDeleteEvents === true,
@@ -141,7 +117,7 @@ export class InPluginFileSystemWatcherManager {
 
 interface FileWatcherSubscriber {
     id: string;
-    mather: ParsedPattern;
+    matcher: ParsedPattern;
     ignoreCreateEvents: boolean;
     ignoreChangeEvents: boolean;
     ignoreDeleteEvents: boolean;

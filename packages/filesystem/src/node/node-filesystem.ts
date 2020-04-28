@@ -263,6 +263,25 @@ export class FileSystemNode implements FileSystem {
     }
 
     async createFile(uri: string, options?: { content?: string, encoding?: string }): Promise<FileStat> {
+        if (this.client) {
+            await this.client.willCreate(uri);
+        }
+        let result: FileStat;
+        let failed = false;
+        try {
+            result = await this.doCreateFile(uri, options);
+        } catch (e) {
+            failed = true;
+            throw e;
+        } finally {
+            if (this.client) {
+                await this.client.didCreate(uri, failed);
+            }
+        }
+        return result;
+    }
+
+    protected async doCreateFile(uri: string, options?: { content?: string, encoding?: string }): Promise<FileStat> {
         const _uri = new URI(uri);
         const parentUri = _uri.parent;
         const [stat, parentStat] = await Promise.all([this.doGetStat(_uri, 0), this.doGetStat(parentUri, 0)]);
@@ -284,6 +303,25 @@ export class FileSystemNode implements FileSystem {
     }
 
     async createFolder(uri: string): Promise<FileStat> {
+        if (this.client) {
+            await this.client.willCreate(uri);
+        }
+        let result: FileStat;
+        let failed = false;
+        try {
+            result = await this.doCreateFolder(uri);
+        } catch (e) {
+            failed = true;
+            throw e;
+        } finally {
+            if (this.client) {
+                await this.client.didCreate(uri, failed);
+            }
+        }
+        return result;
+    }
+
+    async doCreateFolder(uri: string): Promise<FileStat> {
         const _uri = new URI(uri);
         const stat = await this.doGetStat(_uri, 0);
         if (stat) {

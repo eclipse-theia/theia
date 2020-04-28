@@ -131,7 +131,7 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     /**
      * Perform deletion of a given URI.
      *
-     * @param uris URIs of selected resources.
+     * @param uri URI of selected resource.
      */
     protected async delete(uri: URI): Promise<void> {
         try {

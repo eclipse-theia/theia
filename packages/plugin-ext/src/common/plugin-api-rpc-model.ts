@@ -95,18 +95,6 @@ export interface FileChangeEvent {
     type: FileChangeEventType
 }
 
-export interface FileMoveEvent {
-    subscriberId: string,
-    oldUri: UriComponents,
-    newUri: UriComponents
-}
-
-export interface FileWillMoveEvent {
-    subscriberId: string,
-    oldUri: UriComponents,
-    newUri: UriComponents
-}
-
 export type FileChangeEventType = 'created' | 'updated' | 'deleted';
 
 export enum CompletionTriggerKind {
@@ -550,4 +538,16 @@ export interface CallHierarchyIncomingCall {
 export interface CallHierarchyOutgoingCall {
     to: CallHierarchyItem;
     fromRanges: Range[];
+}
+
+export interface CreateFilesEventDTO {
+    files: UriComponents[]
+}
+
+export interface RenameFilesEventDTO {
+    files: { oldUri: UriComponents, newUri: UriComponents }[]
+}
+
+export interface DeleteFilesEventDTO {
+    files: UriComponents[]
 }

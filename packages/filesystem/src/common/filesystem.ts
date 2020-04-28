@@ -212,6 +212,10 @@ export interface FileSystemClient {
      */
     shouldOverwrite: FileShouldOverwrite;
 
+    willCreate(uri: string): Promise<void>;
+
+    didCreate(uri: string, failed: boolean): Promise<void>;
+
     willDelete(uri: string): Promise<void>;
 
     didDelete(uri: string, failed: boolean): Promise<void>;
@@ -219,6 +223,7 @@ export interface FileSystemClient {
     willMove(sourceUri: string, targetUri: string): Promise<void>;
 
     didMove(sourceUri: string, targetUri: string, failed: boolean): Promise<void>;
+
 }
 
 @injectable()
@@ -227,25 +232,33 @@ export class DispatchingFileSystemClient implements FileSystemClient {
     readonly clients = new Set<FileSystemClient>();
 
     shouldOverwrite(originalStat: FileStat, currentStat: FileStat): Promise<boolean> {
-        return Promise.race([...this.clients].map(client =>
+        return Promise.race(Array.from(this.clients, client =>
             client.shouldOverwrite(originalStat, currentStat))
         );
     }
 
+    async willCreate(uri: string): Promise<void> {
+        await Promise.all(Array.from(this.clients, client => client.willCreate(uri)));
+    }
+
+    async didCreate(uri: string, failed: boolean): Promise<void> {
+        await Promise.all(Array.from(this.clients, client => client.didCreate(uri, failed)));
+    }
+
     async willDelete(uri: string): Promise<void> {
-        await Promise.all([...this.clients].map(client => client.willDelete(uri)));
+        await Promise.all(Array.from(this.clients, client => client.willDelete(uri)));
     }
 
     async didDelete(uri: string, failed: boolean): Promise<void> {
-        await Promise.all([...this.clients].map(client => client.didDelete(uri, failed)));
+        await Promise.all(Array.from(this.clients, client => client.didDelete(uri, failed)));
     }
 
     async willMove(sourceUri: string, targetUri: string): Promise<void> {
-        await Promise.all([...this.clients].map(client => client.willMove(sourceUri, targetUri)));
+        await Promise.all(Array.from(this.clients, client => client.willMove(sourceUri, targetUri)));
     }
 
     async didMove(sourceUri: string, targetUri: string, failed: boolean): Promise<void> {
-        await Promise.all([...this.clients].map(client => client.didMove(sourceUri, targetUri, failed)));
+        await Promise.all(Array.from(this.clients, client => client.didMove(sourceUri, targetUri, failed)));
     }
 
 }

@@ -19,7 +19,7 @@ import { interfaces, injectable } from 'inversify';
 import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { URI as Uri } from 'vscode-uri';
-import { UriComponents } from '../../common/uri-components';
+import { UriComponents, theiaUritoUriComponents } from '../../common/uri-components';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
 import { FileStat } from '@theia/filesystem/lib/common';
@@ -32,7 +32,7 @@ import { Emitter, Event, ResourceResolver } from '@theia/core';
 import { FileWatcherSubscriberOptions } from '../../common/plugin-api-rpc-model';
 import { InPluginFileSystemWatcherManager } from './in-plugin-filesystem-watcher-manager';
 import { PluginServer } from '../../common/plugin-protocol';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileSystemPreferences, FileSystemWatcher } from '@theia/filesystem/lib/browser';
 
 export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
@@ -56,6 +56,8 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     private fsPreferences: FileSystemPreferences;
 
+    private fileSystemWatcher: FileSystemWatcher;
+
     protected readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
@@ -67,11 +69,41 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         this.pluginServer = container.get(PluginServer);
         this.workspaceService = container.get(WorkspaceService);
         this.fsPreferences = container.get(FileSystemPreferences);
+        this.fileSystemWatcher = container.get(FileSystemWatcher);
         this.inPluginFileSystemWatcherManager = container.get(InPluginFileSystemWatcherManager);
 
         this.processWorkspaceFoldersChanged(this.workspaceService.tryGetRoots());
         this.toDispose.push(this.workspaceService.onWorkspaceChanged(roots => {
             this.processWorkspaceFoldersChanged(roots);
+        }));
+
+        this.toDispose.push(this.fileSystemWatcher.onWillCreate(event => {
+            event.waitUntil(this.proxy.$onWillCreateFiles({ files: [theiaUritoUriComponents(event.uri)] }));
+        }));
+        this.toDispose.push(this.fileSystemWatcher.onDidCreate(event => {
+            this.proxy.$onDidCreateFiles({ files: [theiaUritoUriComponents(event.uri)] });
+        }));
+        this.toDispose.push(this.fileSystemWatcher.onWillMove(event => {
+            event.waitUntil(this.proxy.$onWillRenameFiles({
+                files: [{
+                    oldUri: theiaUritoUriComponents(event.sourceUri),
+                    newUri: theiaUritoUriComponents(event.targetUri),
+                }],
+            }));
+        }));
+        this.toDispose.push(this.fileSystemWatcher.onDidMove(event => {
+            this.proxy.$onDidRenameFiles({
+                files: [{
+                    oldUri: theiaUritoUriComponents(event.sourceUri),
+                    newUri: theiaUritoUriComponents(event.targetUri),
+                }],
+            });
+        }));
+        this.toDispose.push(this.fileSystemWatcher.onWillDelete(event => {
+            event.waitUntil(this.proxy.$onWillDeleteFiles({ files: [theiaUritoUriComponents(event.uri)] }));
+        }));
+        this.toDispose.push(this.fileSystemWatcher.onDidDelete(event => {
+            this.proxy.$onDidDeleteFiles({ files: [theiaUritoUriComponents(event.uri)] });
         }));
     }
 
