@@ -105,42 +105,26 @@ export class TasksMainImpl implements TasksMain, Disposable {
             return [];
         }
 
-        let found: TaskConfiguration[] = [];
-        const tasks = [...(await this.taskService.getConfiguredTasks()), ...(await this.taskService.getProvidedTasks())];
-        if (taskType) {
-            found = tasks.filter(t => {
-                if (!!this.taskDefinitionRegistry.getDefinition(t)) {
-                    return t._source === taskType;
+        const [configured, provided] = await Promise.all([
+            this.taskService.getConfiguredTasks(),
+            this.taskService.getProvidedTasks()
+        ]);
+        const result: TaskDto[] = [];
+        for (const tasks of [configured, provided]) {
+            for (const task of tasks) {
+                if (!taskType || (!!this.taskDefinitionRegistry.getDefinition(task) ? task._source === taskType : task.type === taskType)) {
+                    const { type, label, _scope, _source, ...properties } = task;
+                    const dto: TaskDto = { type, label, scope: _scope, source: _source };
+                    for (const key in properties) {
+                        if (properties.hasOwnProperty(key)) {
+                            dto[key] = properties[key];
+                        }
+                    }
+                    result.push(dto);
                 }
-                return t.type === taskType;
-            });
-        } else {
-            found = tasks;
+            }
         }
-
-        const filtered: TaskConfiguration[] = [];
-        found.forEach((taskConfig, index) => {
-            const rest = found.slice(index + 1);
-            const isDuplicate = rest.some(restTask => this.taskDefinitionRegistry.compareTasks(taskConfig, restTask));
-            if (!isDuplicate) {
-                filtered.push(taskConfig);
-            }
-        });
-        return filtered.map(taskConfig => {
-            const dto: TaskDto = {
-                type: taskConfig.type,
-                label: taskConfig.label
-            };
-            const { _scope, _source, ...properties } = taskConfig;
-            dto.scope = _scope;
-            dto.source = _source;
-            for (const key in properties) {
-                if (properties.hasOwnProperty(key)) {
-                    dto[key] = properties[key];
-                }
-            }
-            return dto;
-        });
+        return result;
     }
 
     async $executeTask(taskDto: TaskDto): Promise<TaskExecutionDto | undefined> {
