@@ -44,7 +44,6 @@ export class FileSystemExtImpl implements FileSystemExt {
         this.usedSchemes.add(Schemes.DATA);
         this.usedSchemes.add(Schemes.COMMAND);
         this.fileSystem = new InPluginFileSystemProxy(this.proxy);
-
     }
 
     get fs(): theia.FileSystem {

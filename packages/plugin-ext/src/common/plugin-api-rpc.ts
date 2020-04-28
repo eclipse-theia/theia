@@ -58,8 +58,6 @@ import {
     Breakpoint,
     ColorPresentation,
     RenameLocation,
-    FileMoveEvent,
-    FileWillMoveEvent,
     SignatureHelpContext,
     CodeAction,
     CodeActionContext,
@@ -67,7 +65,10 @@ import {
     FoldingRange,
     SelectionRange,
     CallHierarchyDefinition,
-    CallHierarchyReference
+    CallHierarchyReference,
+    CreateFilesEventDTO,
+    RenameFilesEventDTO,
+    DeleteFilesEventDTO,
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -506,8 +507,13 @@ export interface WorkspaceExt {
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void;
     $provideTextDocumentContent(uri: string): Promise<string | undefined>;
     $fileChanged(event: FileChangeEvent): void;
-    $onFileRename(event: FileMoveEvent): void;
-    $onWillRename(event: FileWillMoveEvent): Promise<any>;
+
+    $onWillCreateFiles(event: CreateFilesEventDTO): Promise<any[]>;
+    $onDidCreateFiles(event: CreateFilesEventDTO): void;
+    $onWillRenameFiles(event: RenameFilesEventDTO): Promise<any[]>;
+    $onDidRenameFiles(event: RenameFilesEventDTO): void;
+    $onWillDeleteFiles(event: DeleteFilesEventDTO): Promise<any[]>;
+    $onDidDeleteFiles(event: DeleteFilesEventDTO): void;
 }
 
 export interface DialogsMain {

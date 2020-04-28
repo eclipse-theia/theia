@@ -35,21 +35,6 @@ declare module '@theia/plugin' {
         export function stop(id: string): void;
     }
 
-    // Experimental API
-    // https://github.com/Microsoft/vscode/blob/1.30.2/src/vs/vscode.proposed.d.ts#L1015
-    export interface FileRenameEvent {
-        readonly oldUri: Uri;
-        readonly newUri: Uri;
-    }
-
-    // Experimental API
-    // https://github.com/Microsoft/vscode/blob/1.30.2/src/vs/vscode.proposed.d.ts#L1020
-    export interface FileWillRenameEvent {
-        readonly oldUri: Uri;
-        readonly newUri: Uri;
-        waitUntil(thenable: PromiseLike<WorkspaceEdit>): void;
-    }
-
     /**
     * The language contribution interface defines an information about language server which should be registered.
     */
@@ -138,13 +123,6 @@ declare module '@theia/plugin' {
         Windows = 'Windows',
         Linux = 'Linux',
         OSX = 'OSX'
-    }
-
-    export namespace workspace {
-        // Experimental API
-        // https://github.com/Microsoft/vscode/blob/1.30.2/src/vs/vscode.proposed.d.ts#L1026-L1028
-        export const onWillRenameFile: Event<FileWillRenameEvent>;
-        export const onDidRenameFile: Event<FileRenameEvent>;
     }
 
     export namespace env {
