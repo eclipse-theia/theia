@@ -16,7 +16,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { injectable } from 'inversify';
 import { MenuPath } from '../common/menu';
+import { Disposable, DisposableCollection } from '../common/disposable';
 
 export type Anchor = MouseEvent | { x: number, y: number };
 
@@ -24,14 +26,63 @@ export function toAnchor(anchor: HTMLElement | { x: number, y: number }): Anchor
     return anchor instanceof HTMLElement ? { x: anchor.offsetLeft, y: anchor.offsetTop } : anchor;
 }
 
-export interface ContextMenuAccess {
+export abstract class ContextMenuAccess implements Disposable {
+
+    protected readonly toDispose = new DisposableCollection();
+    readonly onDispose = this.toDispose.onDispose;
+
+    constructor(toClose: Disposable) {
+        this.toDispose.push(toClose);
+    }
+
+    get disposed(): boolean {
+        return this.toDispose.disposed;
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
 }
 
-export const ContextMenuRenderer = Symbol('ContextMenuRenderer');
-export interface ContextMenuRenderer {
+@injectable()
+export abstract class ContextMenuRenderer {
+
+    protected _current: ContextMenuAccess | undefined;
+    protected readonly toDisposeOnSetCurrent = new DisposableCollection();
+    /**
+     * Currently opened context menu.
+     * Rendering a new context menu will close the current.
+     */
+    get current(): ContextMenuAccess | undefined {
+        return this._current;
+    }
+    protected setCurrent(current: ContextMenuAccess | undefined): void {
+        if (this._current === current) {
+            return;
+        }
+        this.toDisposeOnSetCurrent.dispose();
+        this._current = current;
+        if (current) {
+            this.toDisposeOnSetCurrent.push(current.onDispose(() => {
+                this._current = undefined;
+            }));
+            this.toDisposeOnSetCurrent.push(current);
+        }
+    }
+
     render(options: RenderContextMenuOptions): ContextMenuAccess;
     /** @deprecated since 0.7.2 pass `RenderContextMenuOptions` instead */
     render(menuPath: MenuPath, anchor: Anchor, onHide?: () => void): ContextMenuAccess;
+    render(menuPathOrOptions: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): ContextMenuAccess {
+        const resovledOptions = RenderContextMenuOptions.resolve(menuPathOrOptions, anchor, onHide);
+        const access = this.doRender(resovledOptions);
+        this.setCurrent(access);
+        return access;
+    }
+
+    protected abstract doRender(options: RenderContextMenuOptions): ContextMenuAccess;
+
 }
 
 export interface RenderContextMenuOptions {
@@ -41,17 +92,17 @@ export interface RenderContextMenuOptions {
     onHide?: () => void
 }
 export namespace RenderContextMenuOptions {
-    export function resolve(arg: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): RenderContextMenuOptions {
+    export function resolve(menuPathOrOptions: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): RenderContextMenuOptions {
         let menuPath: MenuPath;
         let args: any[];
-        if (Array.isArray(arg)) {
-            menuPath = arg;
+        if (Array.isArray(menuPathOrOptions)) {
+            menuPath = menuPathOrOptions;
             args = [anchor!];
         } else {
-            menuPath = arg.menuPath;
-            anchor = arg.anchor;
-            onHide = arg.onHide;
-            args = arg.args ? [...arg.args, anchor] : [anchor];
+            menuPath = menuPathOrOptions.menuPath;
+            anchor = menuPathOrOptions.anchor;
+            onHide = menuPathOrOptions.onHide;
+            args = menuPathOrOptions.args ? [...menuPathOrOptions.args, anchor] : [anchor];
         }
         return {
             menuPath,
