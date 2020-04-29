@@ -205,7 +205,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         });
         const elementInnerDiv = <React.Fragment>{children}</React.Fragment>;
 
-        return React.createElement('div', { key: id, ...this.createAttributes(entry) }, elementInnerDiv);
+        return React.createElement('div', { key: id, id, ...this.createAttributes(entry) }, elementInnerDiv);
     }
 
 }
