@@ -16,6 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import debounce = require('p-debounce');
 import { injectable } from 'inversify';
 import { JSONExt, JSONValue } from '@phosphor/coreutils/lib/json';
 import URI from '../../common/uri';
@@ -58,21 +59,56 @@ export abstract class PreferenceProvider implements Disposable {
         this.toDispose.dispose();
     }
 
+    protected deferredChanges: PreferenceProviderDataChanges | undefined;
+    protected _pendingChanges: Promise<boolean> = Promise.resolve(false);
+    get pendingChanges(): Promise<boolean> {
+        return this._pendingChanges;
+    }
+
     /**
      * Informs the listeners that one or more preferences of this provider are changed.
      * The listeners are able to find what was changed from the emitted event.
      */
-    protected emitPreferencesChangedEvent(changes: PreferenceProviderDataChanges | PreferenceProviderDataChange[]): void {
+    protected emitPreferencesChangedEvent(changes: PreferenceProviderDataChanges | PreferenceProviderDataChange[]): Promise<boolean> {
         if (Array.isArray(changes)) {
-            const prefChanges: PreferenceProviderDataChanges = {};
             for (const change of changes) {
-                prefChanges[change.preferenceName] = change;
+                this.mergePreferenceProviderDataChange(change);
             }
-            this.onDidPreferencesChangedEmitter.fire(prefChanges);
         } else {
-            this.onDidPreferencesChangedEmitter.fire(changes);
+            for (const preferenceName of Object.keys(changes)) {
+                this.mergePreferenceProviderDataChange(changes[preferenceName]);
+            }
+        }
+        return this._pendingChanges = this.fireDidPreferencesChanged();
+    }
+
+    protected mergePreferenceProviderDataChange(change: PreferenceProviderDataChange): void {
+        if (!this.deferredChanges) {
+            this.deferredChanges = {};
+        }
+        const current = this.deferredChanges[change.preferenceName];
+        const { newValue, scope, domain } = change;
+        if (!current) {
+            // new
+            this.deferredChanges[change.preferenceName] = change;
+        } else if (current.oldValue === newValue) {
+            // delete
+            delete this.deferredChanges[change.preferenceName];
+        } else {
+            // update
+            Object.assign(current, { newValue, scope, domain });
         }
     }
+
+    protected fireDidPreferencesChanged = debounce(() => {
+        const changes = this.deferredChanges;
+        this.deferredChanges = undefined;
+        if (changes && Object.keys(changes).length) {
+            this.onDidPreferencesChangedEmitter.fire(changes);
+            return true;
+        }
+        return false;
+    }, 0);
 
     get<T>(preferenceName: string, resourceUri?: string): T | undefined {
         return this.resolve<T>(preferenceName, resourceUri).value;
@@ -91,6 +127,12 @@ export abstract class PreferenceProvider implements Disposable {
 
     abstract getPreferences(resourceUri?: string): { [p: string]: any };
 
+    /**
+     * Resolves only if all changes were delivered.
+     * If changes were made then implementation must either
+     * await on `this.emitPreferencesChangedEvent(...)` or
+     * `this.pendingChanges` if chnages are fired indirectly.
+     */
     abstract setPreference(key: string, value: any, resourceUri?: string): Promise<boolean>;
 
     /**

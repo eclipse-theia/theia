@@ -152,7 +152,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
                 });
             }
             await this.workspace.applyBackgroundEdit(this.model, editOperations);
-            return true;
+            return await this.pendingChanges;
         } catch (e) {
             const message = `Failed to update the value of '${key}' in '${this.getUri()}'.`;
             this.messageService.error(`${message} Please check if it is corrupted.`);
