@@ -466,9 +466,9 @@ export class TaskService implements TaskConfigurationClient {
      */
     async run(source: string, taskLabel: string, scope?: string): Promise<TaskInfo | undefined> {
         let task: TaskConfiguration | undefined;
-        task = await this.getProvidedTask(source, taskLabel, scope);
-        if (!task) { // if a detected task cannot be found, search from tasks.json
-            task = this.taskConfigurations.getTask(source, taskLabel);
+        task = this.taskConfigurations.getTask(source, taskLabel);
+        if (!task) { // if a configured task cannot be found, search from detected tasks
+            task = await this.getProvidedTask(source, taskLabel, scope);
             if (!task && scope) { // find from the customized detected tasks
                 task = await this.taskConfigurations.getCustomizedTask(scope, taskLabel);
             }
