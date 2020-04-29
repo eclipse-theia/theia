@@ -506,20 +506,33 @@ export class TaskService implements TaskConfigurationClient {
             }
         }
 
-        const tasks = await this.getWorkspaceTasks(task._scope);
         const resolvedMatchers = await this.resolveProblemMatchers(task, customizationObject);
+        const runTaskOption: RunTaskOption = {
+            customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
+        };
+
+        if (task.dependsOn) {
+            return this.runCompoundTask(task, runTaskOption);
+        } else {
+            return this.runTask(task, runTaskOption).catch(error => {
+                console.error('Error at launching task', error);
+                return undefined;
+            });
+        }
+    }
+
+    async runCompoundTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        const tasks = await this.getWorkspaceTasks(task._scope);
         try {
             const rootNode = new TaskNode(task, [], []);
             this.detectDirectedAcyclicGraph(task, rootNode, tasks);
         } catch (error) {
-            this.logger.error(error.message);
+            console.error(`Error at launching task '${task.label}'`, error);
             this.messageService.error(error.message);
             return undefined;
         }
-        return this.runTasksGraph(task, tasks, {
-            customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
-        }).catch(error => {
-            console.log(error.message);
+        return this.runTasksGraph(task, tasks, option).catch(error => {
+            console.error(`Error at launching task '${task.label}'`, error);
             return undefined;
         });
     }
