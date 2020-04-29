@@ -51,6 +51,7 @@ import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 import { inject, injectable } from 'inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from 'vscode-uri';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -327,6 +328,19 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.reloadWindow' }, {
             execute: () => {
                 window.location.reload();
+            }
+        });
+
+        commands.registerCommand({ id: 'workbench.action.revertAndCloseActiveEditor' }, {
+            execute: async () => {
+                const editor = this.editorManager.currentEditor;
+                if (editor) {
+                    const monacoEditor = MonacoEditor.getCurrent(this.editorManager);
+                    if (monacoEditor) {
+                        await monacoEditor.document.revert();
+                        editor.close();
+                    }
+                }
             }
         });
 
