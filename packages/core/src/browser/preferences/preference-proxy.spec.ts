@@ -121,7 +121,7 @@ describe('Preference Proxy', () => {
         expect(Object.keys(proxy).join()).to.equal(['my', 'my.pref'].join());
     });
 
-    it('it should forward change events', () => {
+    it('it should forward change events', async () => {
         const proxy = getProxy(undefined, { style: 'both' });
         let theChange: PreferenceChangeEvent<{ [key: string]: any }>;
         proxy.onPreferenceChanged(change => {
@@ -134,7 +134,7 @@ describe('Preference Proxy', () => {
             theSecondChange = change;
         });
 
-        getProvider(PreferenceScope.User).setPreference('my.pref', 'bar');
+        await getProvider(PreferenceScope.User).setPreference('my.pref', 'bar');
 
         expect(theChange!.newValue).to.equal('bar');
         expect(theChange!.oldValue).to.equal(undefined);

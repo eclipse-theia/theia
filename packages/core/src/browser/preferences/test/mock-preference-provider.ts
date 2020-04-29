@@ -19,17 +19,12 @@
 import { interfaces } from 'inversify';
 import { PreferenceProvider } from '../';
 import { PreferenceScope } from '../preference-scope';
-import { PreferenceProviderDataChanges, PreferenceProviderDataChange } from '../preference-provider';
 
 export class MockPreferenceProvider extends PreferenceProvider {
     readonly prefs: { [p: string]: any } = {};
 
     constructor(protected scope: PreferenceScope) {
         super();
-    }
-
-    public emitPreferencesChangedEvent(changes: PreferenceProviderDataChanges | PreferenceProviderDataChange[]): void {
-        super.emitPreferencesChangedEvent(changes);
     }
 
     public markReady(): void {
@@ -39,11 +34,10 @@ export class MockPreferenceProvider extends PreferenceProvider {
     getPreferences(): { [p: string]: any } {
         return this.prefs;
     }
-    async setPreference(preferenceName: string, newValue: any, resourceUri?: string): Promise<boolean> {
+    setPreference(preferenceName: string, newValue: any, resourceUri?: string): Promise<boolean> {
         const oldValue = this.prefs[preferenceName];
         this.prefs[preferenceName] = newValue;
-        this.emitPreferencesChangedEvent([{ preferenceName, oldValue, newValue, scope: this.scope, domain: [] }]);
-        return true;
+        return this.emitPreferencesChangedEvent([{ preferenceName, oldValue, newValue, scope: this.scope, domain: [] }]);
     }
 }
 
