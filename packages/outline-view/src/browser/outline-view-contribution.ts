@@ -22,6 +22,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { Widget } from '@theia/core/lib/browser/widgets';
 import { OutlineViewWidget } from './outline-view-widget';
 import { CompositeTreeNode } from '@theia/core/lib/browser/tree';
+import { OS } from '@theia/core/lib/common/os';
 
 export const OUTLINE_WIDGET_FACTORY_ID = 'outline-view';
 
@@ -51,7 +52,9 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
                 rank: 500
             },
             toggleCommandId: 'outlineView:toggle',
-            toggleKeybinding: 'ctrlcmd+shift+i'
+            toggleKeybinding: OS.type() !== OS.Type.Linux
+                ? 'ctrlcmd+shift+i'
+                : undefined
         });
     }
 
