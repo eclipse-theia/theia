@@ -18,28 +18,31 @@
 
 import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
-import { MenuPath } from '../../common';
-import { ContextMenuRenderer, Anchor, RenderContextMenuOptions, ContextMenuAccess } from '../../browser';
+import { ContextMenuRenderer, RenderContextMenuOptions, ContextMenuAccess } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 
-export class ElectronContextMenuAccess implements ContextMenuAccess {
+export class ElectronContextMenuAccess extends ContextMenuAccess {
     constructor(
         public readonly menu: electron.Menu
-    ) { }
+    ) {
+        super({
+            dispose: () => menu.closePopup()
+        });
+    }
 }
 
 @injectable()
-export class ElectronContextMenuRenderer implements ContextMenuRenderer {
+export class ElectronContextMenuRenderer extends ContextMenuRenderer {
 
     @inject(ContextMenuContext)
     protected readonly context: ContextMenuContext;
 
     constructor(@inject(ElectronMainMenuFactory) private menuFactory: ElectronMainMenuFactory) {
+        super();
     }
 
-    render(arg: MenuPath | RenderContextMenuOptions, arg2?: Anchor, arg3?: () => void): ElectronContextMenuAccess {
-        const { menuPath, args, onHide } = RenderContextMenuOptions.resolve(arg, arg2, arg3);
+    protected doRender({ menuPath, anchor, args, onHide }: RenderContextMenuOptions): ElectronContextMenuAccess {
         const menu = this.menuFactory.createContextMenu(menuPath, args);
         menu.popup({});
         // native context menu stops the event loop, so there is no keyboard events

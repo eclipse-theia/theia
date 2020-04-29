@@ -17,25 +17,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable } from 'inversify';
-import { MenuPath } from '../../common/menu';
 import { Menu } from '../widgets';
-import { ContextMenuAccess, ContextMenuRenderer, Anchor, RenderContextMenuOptions } from '../context-menu-renderer';
+import { ContextMenuAccess, ContextMenuRenderer, RenderContextMenuOptions } from '../context-menu-renderer';
 import { BrowserMainMenuFactory } from './browser-menu-plugin';
 
-export class BrowserContextMenuAccess implements ContextMenuAccess {
+export class BrowserContextMenuAccess extends ContextMenuAccess {
     constructor(
         public readonly menu: Menu
-    ) { }
+    ) {
+        super(menu);
+    }
 }
 
 @injectable()
-export class BrowserContextMenuRenderer implements ContextMenuRenderer {
+export class BrowserContextMenuRenderer extends ContextMenuRenderer {
 
     constructor(@inject(BrowserMainMenuFactory) private menuFactory: BrowserMainMenuFactory) {
+        super();
     }
 
-    render(arg: MenuPath | RenderContextMenuOptions, arg2?: Anchor, arg3?: () => void): BrowserContextMenuAccess {
-        const { menuPath, anchor, args, onHide } = RenderContextMenuOptions.resolve(arg, arg2, arg3);
+    protected doRender({ menuPath, anchor, args, onHide }: RenderContextMenuOptions): BrowserContextMenuAccess {
         const contextMenu = this.menuFactory.createContextMenu(menuPath, args);
         const { x, y } = anchor instanceof MouseEvent ? { x: anchor.clientX, y: anchor.clientY } : anchor!;
         if (onHide) {

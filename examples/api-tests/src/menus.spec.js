@@ -20,6 +20,10 @@ describe('Menus', function () {
     const { assert } = chai;
 
     const { BrowserMenuBarContribution } = require('@theia/core/lib/browser/menu/browser-menu-plugin');
+    const { MenuModelRegistry } = require('@theia/core/lib/common/menu');
+    const { CommandRegistry } = require('@theia/core/lib/common/command');
+    const { DisposableCollection } = require('@theia/core/lib/common/disposable');
+    const { ContextMenuRenderer } = require('@theia/core/lib/browser/context-menu-renderer');
     const { BrowserContextMenuAccess } = require('@theia/core/lib/browser/menu/browser-context-menu-renderer');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
     const { ViewContainer } = require('@theia/core/lib/browser/view-container');
@@ -41,12 +45,18 @@ describe('Menus', function () {
     const menuBarContribution = container.get(BrowserMenuBarContribution);
     const menuBar = /** @type {import('@theia/core/lib/browser/menu/browser-menu-plugin').MenuBarWidget} */ (menuBarContribution.menuBar);
     const pluginService = container.get(HostedPluginSupport);
+    const menus = container.get(MenuModelRegistry);
+    const commands = container.get(CommandRegistry);
+    const contextMenuService = container.get(ContextMenuRenderer);
 
     before(async function () {
         await pluginService.didStart;
         // register views for the explorer view container
         await pluginService.activatePlugin('vscode.npm');
     });
+
+    const toTearDown = new DisposableCollection();
+    afterEach(() => toTearDown.dispose());
 
     for (const contribution of [
         container.get(CallHierarchyContribution),
@@ -87,6 +97,7 @@ describe('Menus', function () {
         await Promise.all(waitForParts);
 
         const contextMenuAccess = shell.leftPanelHandler.toolBar.showMoreContextMenu({ x: 0, y: 0 });
+        toTearDown.push(contextMenuAccess);
         if (!(contextMenuAccess instanceof BrowserContextMenuAccess)) {
             assert.isTrue(contextMenuAccess instanceof BrowserContextMenuAccess);
             return;
@@ -95,6 +106,65 @@ describe('Menus', function () {
 
         await waitForRevealed(contextMenu);
         assert.notEqual(contextMenu.items.length, 0);
+    });
+
+    it('rendering a new context menu should close the current', async function () {
+        const commandId = '__test_command_' + new Date();
+        const contextMenuPath = ['__test_first_context_menu_' + new Date()];
+        const contextMenuPath2 = ['__test_second_context_menu_' + new Date()];
+        toTearDown.push(commands.registerCommand({
+            id: commandId,
+            label: commandId
+        }, {
+            execute: () => { }
+        }));
+        toTearDown.push(menus.registerMenuAction(contextMenuPath, { commandId }));
+        toTearDown.push(menus.registerMenuAction(contextMenuPath2, { commandId }));
+
+        const access = contextMenuService.render({
+            anchor: { x: 0, y: 0 },
+            menuPath: contextMenuPath
+        });
+        toTearDown.push(access);
+        if (!(access instanceof BrowserContextMenuAccess)) {
+            assert.isTrue(access instanceof BrowserContextMenuAccess);
+            return;
+        }
+
+        assert.deepEqual(contextMenuService.current, access);
+        assert.isFalse(access.disposed);
+
+        await waitForRevealed(access.menu);
+        assert.notEqual(access.menu.items.length, 0);
+        assert.deepEqual(contextMenuService.current, access);
+        assert.isFalse(access.disposed);
+
+        const access2 = contextMenuService.render({
+            anchor: { x: 0, y: 0 },
+            menuPath: contextMenuPath2
+        });
+        toTearDown.push(access2);
+        if (!(access2 instanceof BrowserContextMenuAccess)) {
+            assert.isTrue(access2 instanceof BrowserContextMenuAccess);
+            return;
+        }
+
+        assert.deepEqual(contextMenuService.current, access2);
+        assert.isFalse(access2.disposed);
+        assert.isTrue(access.disposed);
+
+        await waitForRevealed(access2.menu);
+        assert.deepEqual(contextMenuService.current, access2);
+        assert.isFalse(access2.disposed);
+        assert.isTrue(access.disposed);
+
+        access2.dispose();
+        assert.deepEqual(contextMenuService.current, undefined);
+        assert.isTrue(access2.disposed);
+
+        await waitForHidden(access2.menu);
+        assert.deepEqual(contextMenuService.current, undefined);
+        assert.isTrue(access2.disposed);
     });
 
 });
