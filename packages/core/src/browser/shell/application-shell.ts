@@ -1620,6 +1620,15 @@ export class ApplicationShell extends Widget {
         return [...this.tracker.widgets];
     }
 
+    getWidgetById(id: string): Widget | undefined {
+        for (const widget of this.tracker.widgets) {
+            if (widget.id === id) {
+                return widget;
+            }
+        }
+        return undefined;
+    }
+
     canToggleMaximized(): boolean {
         const area = this.currentWidget && this.getAreaFor(this.currentWidget);
         return area === 'main' || area === 'bottom';

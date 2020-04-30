@@ -21,9 +21,9 @@ let disableJSDOM = enableJSDOM();
 import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
 import { Container } from 'inversify';
-import { ContributionProvider } from '@theia/core/lib/common';
+import { ContributionProvider, Event } from '@theia/core/lib/common';
 import { FileStat, FileSystem } from '@theia/filesystem/lib/common';
-import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution, ApplicationShell } from '@theia/core/lib/browser';
+import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution, ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
 import { MarkerInfoNode } from './marker-tree';
 import { MarkerTreeLabelProvider } from './marker-tree-label-provider';
 import { Signal } from '@phosphor/signaling';
@@ -46,7 +46,12 @@ before(() => {
     testContainer.bind(WorkspaceService).toConstantValue(workspaceService);
     testContainer.bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
     testContainer.bind(ApplicationShell).toConstantValue({
-        currentChanged: new Signal({})
+        currentChanged: new Signal({}),
+        widgets: () => []
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    testContainer.bind(WidgetManager).toConstantValue({
+        onDidCreateWidget: Event.None
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     testContainer.bind(FileSystem).to(MockFilesystem).inSingletonScope();
