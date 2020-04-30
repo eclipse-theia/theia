@@ -877,6 +877,8 @@ export class ApplicationShell extends Widget {
      */
     readonly activeChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
 
+    protected readonly toDisposeOnActiveChanged = new DisposableCollection();
+
     /**
      * Handle a change to the active widget.
      */
@@ -914,6 +916,28 @@ export class ApplicationShell extends Widget {
             }
             // Set the z-index so elements with `position: fixed` contained in the active widget are displayed correctly
             this.setZIndex(newValue.node, '1');
+
+            // activate another widget if an active widget gets closed
+            const onCloseRequest = newValue['onCloseRequest'];
+            newValue['onCloseRequest'] = msg => {
+                const currentTabBar = this.currentTabBar;
+                if (currentTabBar) {
+                    const recentlyUsedInTabBar = currentTabBar['_previousTitle'] as TabBar<Widget>['currentTitle'];
+                    if (recentlyUsedInTabBar && recentlyUsedInTabBar.owner !== newValue) {
+                        currentTabBar.currentIndex = ArrayExt.firstIndexOf(currentTabBar.titles, recentlyUsedInTabBar);
+                        if (currentTabBar.currentTitle) {
+                            currentTabBar.currentTitle.owner.activate();
+                        }
+                    } else if (!this.activateNextTabInTabBar(currentTabBar)) {
+                        if (!this.activatePreviousTabBar(currentTabBar)) {
+                            this.activateNextTabBar(currentTabBar);
+                        }
+                    }
+                }
+                newValue['onCloseRequest'] = onCloseRequest;
+                newValue['onCloseRequest'](msg);
+            };
+            this.toDisposeOnActiveChanged.push(Disposable.create(() => newValue['onCloseRequest'] = onCloseRequest));
         }
         this.activeChanged.emit(args);
         this.onDidChangeActiveWidgetEmitter.fire(args);
@@ -1502,7 +1526,33 @@ export class ApplicationShell extends Widget {
     /*
      * Activate the next tab in the current tab bar.
      */
-    activateNextTab(): void {
+    activateNextTabInTabBar(current: TabBar<Widget> | undefined = this.currentTabBar): boolean {
+        const index = this.nextTabIndexInTabBar(current);
+        if (!current || index === -1) {
+            return false;
+        }
+        current.currentIndex = index;
+        if (current.currentTitle) {
+            current.currentTitle.owner.activate();
+        }
+        return true;
+    }
+
+    nextTabIndexInTabBar(current: TabBar<Widget> | undefined = this.currentTabBar): number {
+        if (!current || current.titles.length <= 1) {
+            return -1;
+        }
+        const index = current.currentIndex;
+        if (index === -1) {
+            return -1;
+        }
+        if (index < current.titles.length - 1) {
+            return index + 1;
+        }
+        return 0;
+    }
+
+    activateNextTab(): boolean {
         const current = this.currentTabBar;
         if (current) {
             const ci = current.currentIndex;
@@ -1512,21 +1562,31 @@ export class ApplicationShell extends Widget {
                     if (current.currentTitle) {
                         current.currentTitle.owner.activate();
                     }
+                    return true;
                 } else if (ci === current.titles.length - 1) {
-                    const nextBar = this.nextTabBar(current);
-                    nextBar.currentIndex = 0;
-                    if (nextBar.currentTitle) {
-                        nextBar.currentTitle.owner.activate();
-                    }
+                    return this.activateNextTabBar(current);
                 }
             }
         }
+        return false;
+    }
+
+    activateNextTabBar(current: TabBar<Widget> | undefined = this.currentTabBar): boolean {
+        const nextBar = this.nextTabBar(current);
+        if (nextBar) {
+            nextBar.currentIndex = 0;
+            if (nextBar.currentTitle) {
+                nextBar.currentTitle.owner.activate();
+            }
+            return true;
+        }
+        return false;
     }
 
     /**
      * Return the tab bar next to the given tab bar; return the given tab bar if there is no adjacent one.
      */
-    private nextTabBar(current: TabBar<Widget>): TabBar<Widget> {
+    nextTabBar(current: TabBar<Widget> | undefined = this.currentTabBar): TabBar<Widget> | undefined {
         let bars = toArray(this.bottomPanel.tabBars());
         let len = bars.length;
         let ci = ArrayExt.firstIndexOf(bars, current);
@@ -1547,6 +1607,32 @@ export class ApplicationShell extends Widget {
     /*
      * Activate the previous tab in the current tab bar.
      */
+    activatePreviousTabInTabBar(current: TabBar<Widget> | undefined = this.currentTabBar): boolean {
+        const index = this.previousTabIndexInTabBar(current);
+        if (!current || index === -1) {
+            return false;
+        }
+        current.currentIndex = index;
+        if (current.currentTitle) {
+            current.currentTitle.owner.activate();
+        }
+        return true;
+    }
+
+    previousTabIndexInTabBar(current: TabBar<Widget> | undefined = this.currentTabBar): number {
+        if (!current || current.titles.length <= 1) {
+            return -1;
+        }
+        const index = current.currentIndex;
+        if (index === -1) {
+            return -1;
+        }
+        if (index > 0) {
+            return index - 1;
+        }
+        return current.titles.length - 1;
+    }
+
     activatePreviousTab(): void {
         const current = this.currentTabBar;
         if (current) {
@@ -1558,21 +1644,29 @@ export class ApplicationShell extends Widget {
                         current.currentTitle.owner.activate();
                     }
                 } else if (ci === 0) {
-                    const prevBar = this.previousTabBar(current);
-                    const len = prevBar.titles.length;
-                    prevBar.currentIndex = len - 1;
-                    if (prevBar.currentTitle) {
-                        prevBar.currentTitle.owner.activate();
-                    }
+                    this.activatePreviousTabBar(current);
                 }
             }
         }
     }
 
+    activatePreviousTabBar(current: TabBar<Widget> | undefined = this.currentTabBar): boolean {
+        const prevBar = this.previousTabBar(current);
+        if (!prevBar) {
+            return false;
+        }
+        const len = prevBar.titles.length;
+        prevBar.currentIndex = len - 1;
+        if (prevBar.currentTitle) {
+            prevBar.currentTitle.owner.activate();
+        }
+        return true;
+    }
+
     /**
      * Return the tab bar previous to the given tab bar; return the given tab bar if there is no adjacent one.
      */
-    private previousTabBar(current: TabBar<Widget>): TabBar<Widget> {
+    previousTabBar(current: TabBar<Widget> | undefined = this.currentTabBar): TabBar<Widget> | undefined {
         const bars = toArray(this.mainPanel.tabBars());
         const len = bars.length;
         const ci = ArrayExt.firstIndexOf(bars, current);
