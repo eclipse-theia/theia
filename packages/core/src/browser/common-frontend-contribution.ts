@@ -133,6 +133,26 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Switch to Previous Tab'
     };
+    export const NEXT_TAB_IN_GROUP: Command = {
+        id: 'core.nextTabInGroup',
+        category: VIEW_CATEGORY,
+        label: 'Switch to Next Tab in Group'
+    };
+    export const PREVIOUS_TAB_IN_GROUP: Command = {
+        id: 'core.previousTabInGroup',
+        category: VIEW_CATEGORY,
+        label: 'Switch to Previous Tab in Group'
+    };
+    export const NEXT_TAB_GROUP: Command = {
+        id: 'core.nextTabGroup',
+        category: VIEW_CATEGORY,
+        label: 'Switch to Next Tab Group'
+    };
+    export const PREVIOUS_TAB_GROUP: Command = {
+        id: 'core.previousTabBar',
+        category: VIEW_CATEGORY,
+        label: 'Switch to Previous Tab Group'
+    };
     export const CLOSE_TAB: Command = {
         id: 'core.close.tab',
         category: VIEW_CATEGORY,
@@ -528,6 +548,22 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.PREVIOUS_TAB, {
             isEnabled: () => this.shell.currentTabBar !== undefined,
             execute: () => this.shell.activatePreviousTab()
+        });
+        commandRegistry.registerCommand(CommonCommands.NEXT_TAB_IN_GROUP, {
+            isEnabled: () => this.shell.nextTabIndexInTabBar() !== -1,
+            execute: () => this.shell.activateNextTabInTabBar()
+        });
+        commandRegistry.registerCommand(CommonCommands.PREVIOUS_TAB_IN_GROUP, {
+            isEnabled: () => this.shell.previousTabIndexInTabBar() !== -1,
+            execute: () => this.shell.activatePreviousTabInTabBar()
+        });
+        commandRegistry.registerCommand(CommonCommands.NEXT_TAB_GROUP, {
+            isEnabled: () => this.shell.nextTabBar() !== undefined,
+            execute: () => this.shell.activateNextTabBar()
+        });
+        commandRegistry.registerCommand(CommonCommands.PREVIOUS_TAB_GROUP, {
+            isEnabled: () => this.shell.previousTabBar() !== undefined,
+            execute: () => this.shell.activatePreviousTabBar()
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_TAB, {
             isEnabled: (event?: Event) => {
