@@ -18,8 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
 import { FileSystem } from '@theia/filesystem/lib/common';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { ApplicationShell, NavigatableWidget } from '@theia/core/lib/browser';
+import { ApplicationShell, NavigatableWidget, WidgetManager } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
 
@@ -32,31 +31,62 @@ export class WorkspaceVariableContribution implements VariableContribution {
     protected readonly shell: ApplicationShell;
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
+    @inject(WidgetManager)
+    protected readonly widgetManager: WidgetManager;
 
     protected currentWidget: NavigatableWidget | undefined;
 
     @postConstruct()
     protected init(): void {
-        this.updateCurrentWidget();
         this.shell.currentChanged.connect(() => this.updateCurrentWidget());
+        this.widgetManager.onDidCreateWidget(({ widget }) => {
+            if (NavigatableWidget.is(widget)) {
+                widget.onDidChangeVisibility(() => {
+                    if (widget.isVisible) {
+                        this.addRecentlyVisible(widget);
+                        this.updateCurrentWidget();
+                    }
+                });
+                widget.onDidDispose(() => {
+                    this.removeRecentlyVisible(widget);
+                    this.updateCurrentWidget();
+                });
+            }
+        });
+        for (const widget of this.shell.widgets) {
+            if (NavigatableWidget.is(widget) && widget.isVisible) {
+                this.addRecentlyVisible(widget);
+            }
+        }
+        this.updateCurrentWidget();
     }
-    protected updateCurrentWidget(): void {
-        const { currentWidget } = this.shell;
-        if (NavigatableWidget.is(currentWidget)) {
-            this.setCurrentWidget(currentWidget);
+
+    protected readonly recentlyVisibleIds: string[] = [];
+    protected get recentlyVisible(): NavigatableWidget | undefined {
+        const id = this.recentlyVisibleIds[0];
+        const widget = id && this.shell.getWidgetById(id) || undefined;
+        if (NavigatableWidget.is(widget)) {
+            return widget;
+        }
+        return undefined;
+    }
+    protected addRecentlyVisible(widget: NavigatableWidget): void {
+        this.removeRecentlyVisible(widget);
+        this.recentlyVisibleIds.unshift(widget.id);
+    }
+    protected removeRecentlyVisible(widget: NavigatableWidget): void {
+        const index = this.recentlyVisibleIds.indexOf(widget.id);
+        if (index !== -1) {
+            this.recentlyVisibleIds.splice(index, 1);
         }
     }
 
-    protected readonly toDisposeOnUpdateCurrentWidget = new DisposableCollection();
-    protected setCurrentWidget(currentWidget: NavigatableWidget | undefined): void {
-        this.toDisposeOnUpdateCurrentWidget.dispose();
-        this.currentWidget = currentWidget;
-        if (currentWidget) {
-            const resetCurrentWidget = () => this.setCurrentWidget(undefined);
-            currentWidget.disposed.connect(resetCurrentWidget);
-            this.toDisposeOnUpdateCurrentWidget.push(Disposable.create(() =>
-                currentWidget.disposed.disconnect(resetCurrentWidget)
-            ));
+    protected updateCurrentWidget(): void {
+        const { currentWidget } = this.shell;
+        if (NavigatableWidget.is(currentWidget)) {
+            this.currentWidget = currentWidget;
+        } else if (!this.currentWidget || !this.currentWidget.isVisible) {
+            this.currentWidget = this.recentlyVisible;
         }
     }
 
@@ -178,7 +208,6 @@ export class WorkspaceVariableContribution implements VariableContribution {
     }
 
     getResourceUri(): URI | undefined {
-        // TODO replace with ResourceContextKey.get?
         return this.currentWidget && this.currentWidget.getResourceUri();
     }
 

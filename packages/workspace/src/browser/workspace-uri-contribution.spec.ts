@@ -21,7 +21,8 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from 'inversify';
 import { Signal } from '@phosphor/signaling';
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { Event } from '@theia/core/lib/common/event';
+import { ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
 import { FileStat, FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { MockFilesystem } from '@theia/filesystem/lib/common/test';
 import { DefaultUriLabelProviderContribution } from '@theia/core/lib/browser/label-provider';
@@ -44,7 +45,12 @@ beforeEach(() => {
 
     container = new Container();
     container.bind(ApplicationShell).toConstantValue({
-        currentChanged: new Signal({})
+        currentChanged: new Signal({}),
+        widgets: () => []
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    container.bind(WidgetManager).toConstantValue({
+        onDidCreateWidget: Event.None
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
     const workspaceService = new WorkspaceService();

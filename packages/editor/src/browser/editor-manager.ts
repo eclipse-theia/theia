@@ -52,7 +52,40 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         super.init();
         this.shell.activeChanged.connect(() => this.updateActiveEditor());
         this.shell.currentChanged.connect(() => this.updateCurrentEditor());
-        this.onCreated(widget => widget.disposed.connect(() => this.updateCurrentEditor()));
+        this.onCreated(widget => {
+            widget.onDidChangeVisibility(() => {
+                if (widget.isVisible) {
+                    this.addRecentlyVisible(widget);
+                    this.updateCurrentEditor();
+                }
+            });
+            widget.disposed.connect(() => {
+                this.removeRecentlyVisible(widget);
+                this.updateCurrentEditor();
+            });
+        });
+        for (const widget of this.all) {
+            if (widget.isVisible) {
+                this.addRecentlyVisible(widget);
+            }
+        }
+        this.updateCurrentEditor();
+    }
+
+    protected readonly recentlyVisibleIds: string[] = [];
+    protected get recentlyVisible(): EditorWidget | undefined {
+        const id = this.recentlyVisibleIds[0];
+        return id && this.all.find(w => w.id === id) || undefined;
+    }
+    protected addRecentlyVisible(widget: EditorWidget): void {
+        this.removeRecentlyVisible(widget);
+        this.recentlyVisibleIds.unshift(widget.id);
+    }
+    protected removeRecentlyVisible(widget: EditorWidget): void {
+        const index = this.recentlyVisibleIds.indexOf(widget.id);
+        if (index !== -1) {
+            this.recentlyVisibleIds.splice(index, 1);
+        }
     }
 
     protected _activeEditor: EditorWidget | undefined;
@@ -93,7 +126,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         if (widget instanceof EditorWidget) {
             this.setCurrentEditor(widget);
         } else if (!this._currentEditor || !this._currentEditor.isVisible) {
-            this.setCurrentEditor(undefined);
+            this.setCurrentEditor(this.recentlyVisible);
         }
     }
 
