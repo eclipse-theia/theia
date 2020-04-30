@@ -2,19 +2,95 @@
 
 ## v1.1.0
 
-- [plugin-ext] fixed custom Icon Themes & plugin Icons [#7583](https://github.com/eclipse-theia/theia/pull/7583)
-- [task] fixed presentation.reveal & focus for detected tasks [#7548](https://github.com/eclipse-theia/theia/pull/7548)
-- [output] added optional argument `severity` to `OutputChannel.appendLine` method for coloring.
-- [plugin] env.appName is now reusing the value from `applicationName` defined in package.json under `theia/frontend/config/applicatioName` for example. It allows to customize the value with a single change.
+- [application-manager] added meta tag to enable fullscreen on iOS devices [#7663](https://github.com/eclipse-theia/theia/pull/7663)
+- [application-package] added warning if an unknown target is provided [#7578](https://github.com/eclipse-theia/theia/pull/7578)
+- [application-package] updated default application name from 'Theia' to 'Eclipse Theia' [#7656](https://github.com/eclipse-theia/theia/pull/7656)
+- [cli] improved the `download:plugins` script including performance and error handling [#7677](https://github.com/eclipse-theia/theia/pull/7677)
+- [cli] updated the `download:plugins` script to include colors for better visibility [#7648](https://github.com/eclipse-theia/theia/pull/7648)
+- [core] added functionality to prevent pasting into the active editor when closing a tab with a middle mouse click [#7565](https://github.com/eclipse-theia/theia/pull/7565)
+- [core] added support to allow providing a custom node for ReactWidget [#7422](https://github.com/eclipse-theia/theia/pull/7422)
+- [core] aligned max listeners check with VS Code expectations [#7508](https://github.com/eclipse-theia/theia/pull/7508)
+- [core] fixed 'recently used commands' to be only added when triggered by the quick-command palette [#7552](https://github.com/eclipse-theia/theia/pull/7552)
+- [core] fixed 'recently used commands': [#7562](https://github.com/eclipse-theia/theia/pull/7562)
+  - added sorting of commands based on their human-readable label
+  - fixed issue where recently used commands where not correctly separated by a border and groupName
+- [core] fixed issue where menu args where unnecessarily wrapped into another array [#7622](https://github.com/eclipse-theia/theia/pull/7622)
+- [core] fixed leaking `DisposableCollection.onDispose` event [#7508](https://github.com/eclipse-theia/theia/pull/7508)
+- [core] fixed release of leaking editor from quick-open and goto references [#7508](https://github.com/eclipse-theia/theia/pull/7508)
+- [core] improved display for the 'Remove Folder from Workspace` dialog [#7449](https://github.com/eclipse-theia/theia/pull/7449)
+- [core] upgraded `nsfw` to 1.2.9 [#7535](https://github.com/eclipse-theia/theia/pull/7535)
+- [core] upgraded `vscode-uri` to version ^2.1.1 [#7506](https://github.com/eclipse-theia/theia/pull/7506)
+- [core] upgraded to LSP 6.0.0 [#7149](https://github.com/eclipse-theia/theia/pull/7149)
+- [documentation] updated developing documentation for Windows [#7640](https://github.com/eclipse-theia/theia/pull/7640)
+- [editor] updated binding of `EditorCommandContribution` and `EditorMenuContribution` [#7569](https://github.com/eclipse-theia/theia/pull/7569)
+- [electron] added functionality to fork the backend unless `--no-cluster` flag is specified [#7386](https://github.com/eclipse-theia/theia/pull/7386)
+- [electron] added functionality to pass arguments to the backend process [#7386](https://github.com/eclipse-theia/theia/pull/7386)
+- [electron] fixed setting `process.versions.electron` for sub-processes [#7386](https://github.com/eclipse-theia/theia/pull/7386)
+- [git] disabled the 'Git Initialize Repository' action when no workspace is opened [#7492](https://github.com/eclipse-theia/theia/pull/7492)
+- [git] updated `successExitCodes` and `expectedErrors` to arrays to fix serialization [#7627](https://github.com/eclipse-theia/theia/pull/7627)
+- [keymaps] updated the keybindings-widget sorting, and added category as part of the label if applicable [#7532](https://github.com/eclipse-theia/theia/pull/7532)
+- [monaco] added handling to respect `editor.maxTokenizationLineLength` preference [#7618](https://github.com/eclipse-theia/theia/pull/7618)
+- [monaco] fixed incorrect `isChord` call [#7468](https://github.com/eclipse-theia/theia/pull/7468)
+- [monaco] reworked Monaco commands to align with VS Code [#7539](https://github.com/eclipse-theia/theia/pull/7539)
+- [monaco] upgraded `onigasm` to version ^2.2.0 fixing syntax-highlighting [#7610](https://github.com/eclipse-theia/theia/pull/7610)
+- [monaco] upgraded to Monaco version 0.19.3 [#7149](https://github.com/eclipse-theia/theia/pull/7149)
+- [outline-view] fixed keybinding collision between toggling the outline-view and performing 'format document' on Linux [#7694](https://github.com/eclipse-theia/theia/pull/7694)
+- [output] added `Select All` in the output-view [#7523](https://github.com/eclipse-theia/theia/pull/7523)
+- [output] added optional argument `severity` to `OutputChannel.appendLine` method for coloring [#7549](https://github.com/eclipse-theia/theia/pull/7549)
+- [plugin-ext] fixed custom icon themes and icons for Electron [#7583](https://github.com/eclipse-theia/theia/pull/7583)
+- [plugin] added ability to override built-in commands [#7592](https://github.com/eclipse-theia/theia/pull/7592)
+- [plugin] added additional `vscode.execute...` commands [#7563](https://github.com/eclipse-theia/theia/pull/7563)
+- [plugin] added functionality preventing <kbd>F1</kbd> and <kbd>ctrlcmd</kbd>+<kbd>p</kbd> hotkeys in a webview iframe [#7496](https://github.com/eclipse-theia/theia/pull/7496)
+- [plugin] added functionality which makes `env.appName` reuse the value of `applicationName` (as defined in the `package.json`) [#7642](https://github.com/eclipse-theia/theia/pull/7642)
+- [plugin] added sorting of plugin in the plugins-view [#7601](https://github.com/eclipse-theia/theia/pull/7601)
+- [plugin] added support for `SelectionRange` and `SelectionRangeProvider` VS Code API [#7534](https://github.com/eclipse-theia/theia/pull/7534)
+- [plugin] aligned message-service behavior with VS Code [#7500](https://github.com/eclipse-theia/theia/pull/7500)
+- [plugin] fixed error handling when selecting an invalid node for hosted-plugins [#7636](https://github.com/eclipse-theia/theia/pull/7636)
+- [plugin] fixed incompatibility issues with `SaveFileDialog` [#7461](https://github.com/eclipse-theia/theia/pull/7461)
+- [plugin] fixed late textmate-grammar activation [#7544](https://github.com/eclipse-theia/theia/pull/7544)
+- [plugin] fixed overriding of built-in Monaco commands [#7539](https://github.com/eclipse-theia/theia/pull/7539)
+- [plugin] fixed parsing of DAP messages to match VS Code API [#7517](https://github.com/eclipse-theia/theia/pull/7517)
+- [plugin] removed filtering of duplicate tasks [#7676](https://github.com/eclipse-theia/theia/pull/7676)
+- [plugin] removed registration of commands provided by Monaco [#7592](https://github.com/eclipse-theia/theia/pull/7592)
+- [plugin] removed unused injections of `ResourceProvider` [#7595](https://github.com/eclipse-theia/theia/pull/7595)
+- [plugin] updated the VS Code API version to 1.44.0 [#7564](https://github.com/eclipse-theia/theia/pull/7564)
+- [preferences] added functionality which defers change events in the same tick [#7676](https://github.com/eclipse-theia/theia/pull/7676)
+- [scm] fixed `overviewRuler` and `minimap` theming for SCM decorations [#7330](https://github.com/eclipse-theia/theia/pull/7330)
+- [task] added functionality which saves the scope as part of the `TaskService.lastTask` [#7553](https://github.com/eclipse-theia/theia/pull/7553)
+- [task] added functionality which sets focus to the terminal that the attached task is running from [#7452](https://github.com/eclipse-theia/theia/pull/7452)
+- [task] added support for `presentation.clear` in the task configuration schema [#7454](https://github.com/eclipse-theia/theia/pull/7454)
+- [task] added support for `presentation.echo` in the task configuration schema [#7503](https://github.com/eclipse-theia/theia/pull/7503)
+- [task] added support for `presentation.panel` in the task configuration schema [#7260](https://github.com/eclipse-theia/theia/pull/7260)
+- [task] added support for `presentation.showReuseMessage` in the task configuration schema [#7454](https://github.com/eclipse-theia/theia/pull/7454)
+- [task] added support for modifying existing problem matchers [#7455](https://github.com/eclipse-theia/theia/pull/7455)
+- [task] added support for user-defined labels for detected tasks [#7574](https://github.com/eclipse-theia/theia/pull/7574)
+- [task] fixed `presentation.reveal` and `presentation.focus` for detected tasks [#7548](https://github.com/eclipse-theia/theia/pull/7548)
+- [task] fixed issue to only allow running selected texts in a user terminal [#7453](https://github.com/eclipse-theia/theia/pull/7453)
+- [terminal] added new terminal preferences [#7660](https://github.com/eclipse-theia/theia/pull/7660)
+  - `terminal.integrated.shell.linux`
+  - `terminal.integrated.shell.osx`
+  - `terminal.integrated.shell.windows`
+  - `terminal.integrated.shellArgs.linux`
+  - `terminal.integrated.shellArgs.osx`
+  - `terminal.integrated.shellArgs.windows`
+- [test] added API tests for the TypeScript language [#7265](https://github.com/eclipse-theia/theia/pull/7265)
+- [test] fixed API tests on Windows [#7655](https://github.com/eclipse-theia/theia/pull/7655)
+- [vsx-registry] fixed minor font-family inconsistency with the download count [#7380](https://github.com/eclipse-theia/theia/pull/7380)
+- [vsx-registry] fixed rendering of rating and downloads if they have no value [#7380](https://github.com/eclipse-theia/theia/pull/7380)
+- [vsx-registry] updated styling of extension information [#7439](https://github.com/eclipse-theia/theia/pull/7439)
+- [workspace] added normalization of workspace root paths [#7598](https://github.com/eclipse-theia/theia/pull/7598)
+- [workspace] fixed incorrect statusbar color when in a multi-root workspace without any root folders [#7688](https://github.com/eclipse-theia/theia/pull/7688)
 
 Breaking changes:
 
-- [plugin-ext] `PluginModel.packagePath` deprecated. `PluginModel.packageUri` should be used instead.
-- [core] `CommandRegistry.registerHandler` registers a new handler with a higher priority than previous [#7539](https://github.com/eclipse-theia/theia/pull/7539)
-- [plugin] removed `configStorage` argument from `PluginManager.registerPlugin`.
-Use `PluginManager.configStorage` property instead. [#7265](https://github.com/eclipse-theia/theia/pull/7265#discussion_r399956070)
-- [process] `TerminalProcess` doesn't handle shell quoting, the shell process arguments must be prepared from the caller. Removed all methods related to shell escaping inside this class. You should use functions located in `@theia/process/lib/common/shell-quoting.ts` in order to process arguments for shells.
-- [process/terminal] Moved shell escaping utilities into `@theia/process/lib/common/shell-quoting` and `@theia/process/lib/common/shell-command-builder` for creating shell inputs.
+- [core] `CommandRegistry.registerHandler` registers a new handler with a higher priority than previously [#7539](https://github.com/eclipse-theia/theia/pull/7539)
+- [plugin] deprecated is now `PluginModel.packagePath` and `PluginModel.packageUri` should be used instead [#7583](https://github.com/eclipse-theia/theia/pull/7583)
+- [plugin] removed `configStorage` argument from `PluginManager.registerPlugin` [#7265](https://github.com/eclipse-theia/theia/pull/7265)
+  - use `PluginManager.configStorage` property instead. [#7265](https://github.com/eclipse-theia/theia/pull/7265)
+- [process] `TerminalProcess` doesn't handle shell quoting, the shell process arguments must be prepared from the caller [#6836](https://github.com/eclipse-theia/theia/pull/6836)
+  - Removed all methods related to shell escaping inside this class. You should use functions located in `@theia/process/lib/common/shell-quoting.ts`
+  in order to process arguments for shells.
+- [process/terminal] moved shell escaping utilities into `@theia/process/lib/common/shell-quoting` and `@theia/process/lib/common/shell-command-builder` for creating shell inputs [#6836](https://github.com/eclipse-theia/theia/pull/6836)
 
 ## v1.0.0
 
