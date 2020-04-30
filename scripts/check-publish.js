@@ -20,7 +20,7 @@ const chalk = require('chalk').default;
 const cp = require('child_process');
 
 let code = 0;
-const workspaces = JSON.parse(JSON.parse(cp.execSync('yarn workspaces info --json').toString()).data);
+const workspaces = JSON.parse(cp.execSync('yarn --silent workspaces info').toString());
 for (const name in workspaces) {
     const workspace = workspaces[name];
     const location = path.resolve(process.cwd(), workspace.location);
