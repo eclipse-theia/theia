@@ -20,12 +20,14 @@ import { Message } from '@phosphor/messaging';
 import { injectable, inject, postConstruct } from 'inversify';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
-    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop} from '@theia/core/lib/browser';
+    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, PreferenceChangeEvent
+} from '@theia/core/lib/browser';
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmService } from './scm-service';
 import { ScmTreeWidget } from './scm-tree-widget';
+import { ScmPreferences, ScmConfiguration } from './scm-preferences';
 
 @injectable()
 export class ScmWidget extends BaseWidget implements StatefulWidget {
@@ -39,11 +41,12 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
     @inject(ScmTreeWidget) protected readonly resourceWidget: ScmTreeWidget;
     @inject(ScmAmendWidget) protected readonly amendWidget: ScmAmendWidget;
     @inject(ScmNoRepositoryWidget) protected readonly noRepositoryWidget: ScmNoRepositoryWidget;
+    @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
 
-    set viewMode(mode: 'tree' | 'flat') {
+    set viewMode(mode: 'tree' | 'list') {
         this.resourceWidget.viewMode = mode;
     }
-    get viewMode(): 'tree' | 'flat' {
+    get viewMode(): 'tree' | 'list' {
         return this.resourceWidget.viewMode;
     }
 
@@ -60,7 +63,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         const layout = new PanelLayout();
         this.layout = layout;
         this.panel = new Panel({
-            layout: new PanelLayout ({
+            layout: new PanelLayout({
             })
         });
         this.panel.node.tabIndex = -1;
@@ -74,10 +77,25 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
 
         this.refresh();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refresh()));
+        this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
+        this.toDispose.push(this.scmPreferences.onPreferenceChanged((e: PreferenceChangeEvent<ScmConfiguration>) => {
+            if (e.preferenceName === 'scm.defaultViewMode') {
+                this.updateViewMode(e.newValue!);
+            }
+        }));
+
     }
 
     get containerLayout(): PanelLayout {
         return this.panel.layout as PanelLayout;
+    }
+
+    /**
+     * Updates the view mode based on the preference value.
+     * @param preference the view mode preference.
+     */
+    protected updateViewMode(preference: 'tree' | 'list'): void {
+        this.viewMode = preference;
     }
 
     protected readonly toDisposeOnRefresh = new DisposableCollection();

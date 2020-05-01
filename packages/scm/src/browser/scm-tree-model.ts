@@ -83,8 +83,8 @@ export class ScmTreeModel extends TreeModelImpl {
         return this._languageId;
     }
 
-    protected _viewMode: 'tree' | 'flat' = 'flat';
-    set viewMode(id: 'tree' | 'flat') {
+    protected _viewMode: 'tree' | 'list' = 'list';
+    set viewMode(id: 'tree' | 'list') {
         const oldSelection = this.selectedNodes;
         this._viewMode = id;
         if (this._provider) {
@@ -98,7 +98,7 @@ export class ScmTreeModel extends TreeModelImpl {
             }
         }
     }
-    get viewMode(): 'tree' | 'flat' {
+    get viewMode(): 'tree' | 'list' {
         return this._viewMode;
     }
 
@@ -149,7 +149,7 @@ export class ScmTreeModel extends TreeModelImpl {
         };
 
         switch (this._viewMode) {
-            case 'flat':
+            case 'list':
                 groupNode.children = group.resources.map(fileChange => this.toFileChangeNode(fileChange, groupNode));
                 break;
             case 'tree':
