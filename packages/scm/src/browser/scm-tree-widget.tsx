@@ -79,10 +79,10 @@ export class ScmTreeWidget extends TreeWidget {
         }));
     }
 
-    set viewMode(id: 'tree' | 'flat') {
+    set viewMode(id: 'tree' | 'list') {
         this.model.viewMode = id;
     }
-    get viewMode(): 'tree' | 'flat' {
+    get viewMode(): 'tree' | 'list' {
         return this.model.viewMode;
     }
 
@@ -409,7 +409,7 @@ export class ScmTreeWidget extends TreeWidget {
 
     restoreState(oldState: any): void {
         const { mode, tree } = oldState;
-        this.model.viewMode = mode === 'tree' ? 'tree' : 'flat';
+        this.model.viewMode = mode === 'tree' ? 'tree' : 'list';
         super.restoreState(tree);
     }
 

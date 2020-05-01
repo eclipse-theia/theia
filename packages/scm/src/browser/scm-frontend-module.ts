@@ -44,6 +44,7 @@ import { ScmTreeLabelProvider } from './scm-tree-label-provider';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
+import { bindScmPreferences } from './scm-preferences';
 
 export default new ContainerModule(bind => {
     bind(ScmContextKeyService).toSelf().inSingletonScope();
@@ -115,6 +116,8 @@ export default new ContainerModule(bind => {
 
     bind(ScmTreeLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(ScmTreeLabelProvider);
+
+    bindScmPreferences(bind);
 });
 
 export function createFileChangeTreeContainer(parent: interfaces.Container): Container {

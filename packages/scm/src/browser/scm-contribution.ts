@@ -60,11 +60,11 @@ export namespace SCM_COMMANDS {
         iconClass: 'codicon codicon-list-tree',
         label: 'Toggle to Tree View',
     };
-    export const FLAT_VIEW_MODE = {
-        id: 'scm.viewmode.flat',
-        tooltip: 'Toggle to Flat View',
+    export const LIST_VIEW_MODE = {
+        id: 'scm.viewmode.list',
+        tooltip: 'Toggle to List View',
         iconClass: 'codicon codicon-list-flat',
-        label: 'Toggle to Flat View',
+        label: 'Toggle to List View',
     };
 }
 
@@ -151,7 +151,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
                 }
             }
         };
-        const registerToggleViewItem = (command: Command, mode: 'tree' | 'flat') => {
+        const registerToggleViewItem = (command: Command, mode: 'tree' | 'list') => {
             const id = command.id;
             const item: TabBarToolbarItem = {
                 id,
@@ -179,7 +179,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
             registry.registerItem(item);
         };
         registerToggleViewItem(SCM_COMMANDS.TREE_VIEW_MODE, 'tree');
-        registerToggleViewItem(SCM_COMMANDS.FLAT_VIEW_MODE, 'flat');
+        registerToggleViewItem(SCM_COMMANDS.LIST_VIEW_MODE, 'list');
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
