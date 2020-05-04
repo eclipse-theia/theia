@@ -298,4 +298,18 @@ export class ScmTreeModel extends TreeModelImpl {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    storeState(): any {
+        return {
+            ...super.storeState(),
+            mode: this.viewMode,
+        };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    restoreState(oldState: any): void {
+        super.restoreState(oldState);
+        this.viewMode = oldState.mode === 'tree' ? 'tree' : 'list';
+    }
+
 }
