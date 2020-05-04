@@ -419,7 +419,8 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                 const provider = this.repositoryProvider.selectedScmProvider;
                 return provider && this.withProgress(() => provider.unstage(uris));
             },
-            isEnabled: () => !!this.repositoryProvider.selectedScmProvider
+            isEnabled: (arg: string |  ScmResource[] | ScmResource) => !!this.repositoryProvider.selectedScmProvider
+                && (!Array.isArray(arg) || arg.length !== 0)
         });
         registry.registerCommand(GIT_COMMANDS.STAGE, {
             execute: (arg: string | ScmResource[] | ScmResource) => {
@@ -430,7 +431,8 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                 const provider = this.repositoryProvider.selectedScmProvider;
                 return provider && this.withProgress(() => provider.stage(uris));
             },
-            isEnabled: () => !!this.repositoryProvider.selectedScmProvider
+            isEnabled: (arg: string |  ScmResource[] | ScmResource) => !!this.repositoryProvider.selectedScmProvider
+                && (!Array.isArray(arg) || arg.length !== 0)
         });
         registry.registerCommand(GIT_COMMANDS.DISCARD, {
             execute: (arg: string | ScmResource[] | ScmResource) => {
@@ -441,7 +443,8 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                 const provider = this.repositoryProvider.selectedScmProvider;
                 return provider && this.withProgress(() => provider.discard(uris));
             },
-            isEnabled: () => !!this.repositoryProvider.selectedScmProvider
+            isEnabled: (arg: string |  ScmResource[] | ScmResource) => !!this.repositoryProvider.selectedScmProvider
+                && (!Array.isArray(arg) || arg.length !== 0)
         });
         registry.registerCommand(GIT_COMMANDS.OPEN_CHANGED_FILE, {
             execute: (arg: string | ScmResource) => {
