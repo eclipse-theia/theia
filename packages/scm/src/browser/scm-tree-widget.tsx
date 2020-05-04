@@ -113,11 +113,11 @@ export class ScmTreeWidget extends TreeWidget {
         const attributes = this.createNodeAttributes(node, props);
 
         if (ScmFileChangeGroupNode.is(node)) {
-            const group = repository.provider.groups.find(g => g.id === node.groupId)!;
             const content = <ScmResourceGroupElement
                 key={`${node.groupId}`}
                 repository={repository}
-                group={group}
+                groupId={node.groupId}
+                groupLabel={node.groupLabel}
                 renderExpansionToggle={ () => this.renderExpansionToggle(node, props) }
                 contextMenuRenderer={this.contextMenuRenderer}
                 commands={this.commands}
@@ -130,11 +130,10 @@ export class ScmTreeWidget extends TreeWidget {
 
         }
         if (ScmFileChangeFolderNode.is(node)) {
-            const group = repository.provider.groups.find(g => g.id === node.groupId)!;
             const content = <ScmResourceFolderElement
                 key={String(node.sourceUri)}
                 repository={repository}
-                group={group}
+                groupId={node.groupId}
                 path={node.path}
                 node={node}
                 sourceUri={new URI(node.sourceUri)}
@@ -154,7 +153,6 @@ export class ScmTreeWidget extends TreeWidget {
                 return '';
             }
             const groupId = parentNode.groupId;
-            const group = repository.provider.groups.find(g => g.id === groupId)!;
             const name = this.labelProvider.getName(new URI(node.sourceUri));
             const parentPath =
                 (node.parent && ScmFileChangeFolderNode.is(node.parent))
@@ -173,7 +171,7 @@ export class ScmTreeWidget extends TreeWidget {
                     ...this.props,
                     name,
                     parentPath,
-                    group,
+                    groupId,
                     sourceUri: node.sourceUri,
                     decorations: node.decorations,
                     renderExpansionToggle: () => this.renderExpansionToggle(node, props),
@@ -454,9 +452,9 @@ export abstract class ScmElement<P extends ScmElement.Props = ScmElement.Props> 
 
     protected renderContextMenu = (event: React.MouseEvent<HTMLElement>) => {
         event.preventDefault();
-        const { group, contextKeys, contextMenuRenderer } = this.props;
+        const { groupId, contextKeys, contextMenuRenderer } = this.props;
         const currentScmResourceGroup = contextKeys.scmResourceGroup.get();
-        contextKeys.scmResourceGroup.set(group.id);
+        contextKeys.scmResourceGroup.set(groupId);
         try {
             contextMenuRenderer.render({
                 menuPath: this.contextMenuPath,
@@ -468,13 +466,26 @@ export abstract class ScmElement<P extends ScmElement.Props = ScmElement.Props> 
         }
     };
 
+    /*
+     * Normally the group would always be expected to be found.  However if the tree is restored
+     * in restoreState then the tree may be rendered before the groups have been created
+     * in the provider.  The provider's groups property will exist be will be empty in such
+     * situation.  We want to render the tree (as that is the point of restoreState, we can render
+     * the tree in the saved state before the provider has provided status).  We therefore must
+     * be prepared to render the tree without having the ScmResourceGroup or ScmResource
+     * objects.
+     */
+    protected findGroup(repository: ScmRepository, groupId: string): ScmResourceGroup | undefined {
+        return repository.provider.groups.find(g => g.id === groupId);
+    }
+
     protected abstract get contextMenuPath(): MenuPath;
     protected abstract get contextMenuArgs(): any[];
 
 }
 export namespace ScmElement {
     export interface Props extends ScmTreeWidget.Props {
-        group: ScmResourceGroup
+        groupId: string
         renderExpansionToggle: () => React.ReactNode
     }
     export interface State {
@@ -486,7 +497,7 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
 
     render(): JSX.Element | undefined {
         const { hover } = this.state;
-        const { name, group, parentPath, sourceUri, decorations, labelProvider, commands, menus, contextKeys } = this.props;
+        const { name, groupId, parentPath, sourceUri, decorations, labelProvider, commands, menus, contextKeys } = this.props;
         const resourceUri = new URI(sourceUri);
 
         const icon = labelProvider.getIcon(resourceUri);
@@ -515,7 +526,7 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
                 args: this.contextMenuArgs,
                 commands,
                 contextKeys,
-                group
+                groupId
             }}>
                 <div title={tooltip} className='status' style={{ color }}>
                     {letter}
@@ -525,14 +536,23 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
     }
 
     protected open = () => {
-        const selectedResource = this.props.group.resources.find(r => String(r.sourceUri) === this.props.sourceUri)!;
-        selectedResource.open();
+        const group = this.findGroup(this.props.repository, this.props.groupId);
+        if (group) {
+            const selectedResource = group.resources.find(r => String(r.sourceUri) === this.props.sourceUri)!;
+            selectedResource.open();
+        }
     };
 
     protected readonly contextMenuPath = ScmTreeWidget.RESOURCE_CONTEXT_MENU;
     protected get contextMenuArgs(): any[] {
-        const selectedResource = this.props.group.resources.find(r => String(r.sourceUri) === this.props.sourceUri)!;
-        return [selectedResource, false];  // TODO support multiselection
+        const group = this.findGroup(this.props.repository, this.props.groupId);
+        if (group) {
+            const selectedResource = group.resources.find(r => String(r.sourceUri) === this.props.sourceUri)!;
+            return [selectedResource, false];  // TODO support multiselection
+        } else {
+            // Repository status not yet available. Empty args disables the action.
+            return [];
+        }
     }
 
     /**
@@ -567,25 +587,25 @@ export namespace ScmResourceComponent {
     }
 }
 
-export class ScmResourceGroupElement extends ScmElement {
+export class ScmResourceGroupElement extends ScmElement<ScmResourceGroupComponent.Props> {
 
     render(): JSX.Element {
         const { hover } = this.state;
-        const { group, menus, commands, contextKeys } = this.props;
+        const { groupId, groupLabel, menus, commands, contextKeys } = this.props;
         return <div className={`theia-header scm-theia-header ${TREE_NODE_SEGMENT_GROW_CLASS}`}
             onContextMenu={this.renderContextMenu}
             onMouseEnter={this.showHover}
             onMouseLeave={this.hideHover}
             ref={this.detectHover}>
             {this.props.renderExpansionToggle()}
-            <div className={`noWrapInfo ${TREE_NODE_SEGMENT_GROW_CLASS}`}>{group.label}</div>
+            <div className={`noWrapInfo ${TREE_NODE_SEGMENT_GROW_CLASS}`}>{groupLabel}</div>
             <ScmInlineActions {...{
                 hover,
                 args: this.contextMenuArgs,
                 menu: menus.getMenu(ScmTreeWidget.RESOURCE_GROUP_INLINE_MENU),
                 commands,
                 contextKeys,
-                group
+                groupId
             }}>
                 {this.renderChangeCount()}
             </ScmInlineActions>
@@ -593,14 +613,26 @@ export class ScmResourceGroupElement extends ScmElement {
     }
 
     protected renderChangeCount(): React.ReactNode {
+        const group = this.findGroup(this.props.repository, this.props.groupId);
         return <div className='notification-count-container scm-change-count'>
-            <span className='notification-count'>{this.props.group.resources.length}</span>
+            <span className='notification-count'>{group ? group.resources.length : 0}</span>
         </div>;
     }
 
     protected readonly contextMenuPath = ScmTreeWidget.RESOURCE_GROUP_CONTEXT_MENU;
     protected get contextMenuArgs(): any[] {
-        return [this.props.group];
+        const group = this.findGroup(this.props.repository, this.props.groupId);
+        if (group) {
+            return [group];
+        } else {
+            // Repository status not yet available. Empty args disables the action.
+            return [];
+        }
+    }
+}
+export namespace ScmResourceGroupComponent {
+    export interface Props extends ScmElement.Props {
+        groupLabel: string;
     }
 }
 
@@ -608,7 +640,7 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
 
     render(): JSX.Element {
         const { hover } = this.state;
-        const { group, sourceUri, path, labelProvider, commands, menus, contextKeys } = this.props;
+        const { groupId, sourceUri, path, labelProvider, commands, menus, contextKeys } = this.props;
         const sourceFileStat: FileStat = { uri: String(sourceUri), isDirectory: true, lastModification: 0 };
         const icon = labelProvider.getIcon(sourceFileStat);
 
@@ -630,7 +662,7 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
                 args: this.contextMenuArgs,
                 commands,
                 contextKeys,
-                group
+                groupId
             }}>
             </ScmInlineActions>
         </div >;
@@ -640,17 +672,20 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
     protected readonly contextMenuPath = ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU;
     protected get contextMenuArgs(): any[] {
         const uris: ScmResource[] = [];
-        this.collectUris(uris, this.props.node);
+        const group = this.findGroup(this.props.repository, this.props.groupId);
+        if (group) {
+            this.collectUris(uris, this.props.node, group);
+        }
         return [uris, true];
     }
 
-    protected collectUris(uris: ScmResource[], node: TreeNode): void {
+    protected collectUris(uris: ScmResource[], node: TreeNode, group: ScmResourceGroup): void {
         if (ScmFileChangeFolderNode.is(node)) {
             for (const child of node.children) {
-                this.collectUris(uris, child);
+                this.collectUris(uris, child, group);
             }
         } else if (ScmFileChangeNode.is(node)) {
-            const resource = this.props.group.resources.find(r => String(r.sourceUri) === node.sourceUri)!;
+            const resource = group.resources.find(r => String(r.sourceUri) === node.sourceUri)!;
             uris.push(resource);
         }
     }
@@ -666,11 +701,11 @@ export namespace ScmResourceFolderElement {
 
 export class ScmInlineActions extends React.Component<ScmInlineActions.Props> {
     render(): React.ReactNode {
-        const { hover, menu, args, commands, group, contextKeys, children } = this.props;
+        const { hover, menu, args, commands, groupId, contextKeys, children } = this.props;
         return <div className='theia-scm-inline-actions-container'>
             <div className='theia-scm-inline-actions'>
                 {hover && menu.children
-                    .map((node, index) => node instanceof ActionMenuNode && <ScmInlineAction key={index} {...{ node, args, commands, group, contextKeys }} />)}
+                    .map((node, index) => node instanceof ActionMenuNode && <ScmInlineAction key={index} {...{ node, args, commands, groupId, contextKeys }} />)}
             </div>
             {children}
         </div>;
@@ -681,7 +716,7 @@ export namespace ScmInlineActions {
         hover: boolean;
         menu: CompositeMenuNode;
         commands: CommandRegistry;
-        group: ScmResourceGroup;
+        groupId: string;
         contextKeys: ScmContextKeyService;
         args: any[];
         children?: React.ReactNode;
@@ -690,9 +725,9 @@ export namespace ScmInlineActions {
 
 export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
     render(): React.ReactNode {
-        const { node, args, commands, group, contextKeys } = this.props;
+        const { node, args, commands, groupId, contextKeys } = this.props;
         const currentScmResourceGroup = contextKeys.scmResourceGroup.get();
-        contextKeys.scmResourceGroup.set(group.id);
+        contextKeys.scmResourceGroup.set(groupId);
         try {
             if (!commands.isVisible(node.action.commandId, ...args) || !contextKeys.match(node.action.when)) {
                 return false;
@@ -716,7 +751,7 @@ export namespace ScmInlineAction {
     export interface Props {
         node: ActionMenuNode;
         commands: CommandRegistry;
-        group: ScmResourceGroup;
+        groupId: string;
         contextKeys: ScmContextKeyService;
         args: any[];
     }
