@@ -212,18 +212,18 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             id: toggleCommandId,
             label: 'Toggle ' + options.label + ' View'
         }, {
-            execute: async () => {
-                let widget = await this.getPluginViewContainer(id);
-                if (widget) {
-                    widget.dispose();
-                } else {
-                    widget = await this.openViewContainer(id);
+                execute: async () => {
+                    let widget = await this.getPluginViewContainer(id);
                     if (widget) {
-                        this.shell.activateWidget(widget.id);
+                        widget.dispose();
+                    } else {
+                        widget = await this.openViewContainer(id);
+                        if (widget) {
+                            this.shell.activateWidget(widget.id);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         toDispose.push(this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
             commandId: toggleCommandId,
             label: options.label
@@ -274,18 +274,13 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         toDispose.push(this.commands.registerCommand({
             id: `${view.id}.focus`
         }, {
-            execute: async () => {
-                const widget = await this.openView(view.id);
-                if (widget) {
-                    const data = this.views.get(view.id);
-                    if (data) {
-                        const [containerId] = data;
-                        const identifier = this.toViewContainerIdentifier(containerId);
-                        this.shell.activateWidget(identifier.id);
+                execute: async () => {
+                    const widget = await this.openView(view.id);
+                    if (widget) {
+                        await this.shell.activateWidget(widget.id);
                     }
                 }
-            }
-        }));
+            }));
 
         return toDispose;
     }
