@@ -28,7 +28,7 @@
 }
 
 .theia-file-icons-js.file-icon {
-    width: var(--theia-icon-size);
+    min-width: var(--theia-icon-size);
     height: var(--theia-icon-size);
     display: flex;
     justify-content: center;
