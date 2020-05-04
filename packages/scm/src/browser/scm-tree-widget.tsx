@@ -17,9 +17,10 @@
 /* eslint-disable no-null/no-null, @typescript-eslint/no-explicit-any */
 
 import * as React from 'react';
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
+import { Message } from '@phosphor/messaging';
 import { TreeWidget, TreeNode, TreeProps, NodeProps, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
 import { ScmTreeModel } from './scm-tree-model';
 import { MenuModelRegistry, ActionMenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
@@ -65,15 +66,13 @@ export class ScmTreeWidget extends TreeWidget {
     ) {
         super(props, model, contextMenuRenderer);
         this.id = 'resource_widget';
+        this.addClass('groups-outer-container');
     }
 
-    @postConstruct()
-    protected init(): void {
-        super.init();
-        this.addClass('groups-outer-container');
-
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
         this.refreshOnRepositoryChange();
-        this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => {
+        this.toDisposeOnDetach.push(this.scmService.onDidChangeSelectedRepository(() => {
             this.refreshOnRepositoryChange();
             this.forceUpdate();
         }));
@@ -397,20 +396,6 @@ export class ScmTreeWidget extends TreeWidget {
             return false;
         }
         return super.needsExpansionTogglePadding(node);
-    }
-
-    storeState(): any {
-        const state: object = {
-            mode: this.model.viewMode,
-            tree: super.storeState(),
-        };
-        return state;
-    }
-
-    restoreState(oldState: any): void {
-        const { mode, tree } = oldState;
-        this.model.viewMode = mode === 'tree' ? 'tree' : 'list';
-        super.restoreState(tree);
     }
 
 }
