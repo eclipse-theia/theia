@@ -840,11 +840,18 @@ declare module monaco.quickOpen {
         hideMessage(): void;
     }
 
+    export interface QuickOpenTree {
+        onDidChangeFocus: monaco.Event<any>;
+        getFocus(): monaco.quickOpen.QuickOpenEntry;
+    }
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/parts/quickopen/browser/quickOpenWidget.ts#L96
     export class QuickOpenWidget implements IDisposable {
         inputBox?: InputBox;
+        tree: QuickOpenTree;
         constructor(container: HTMLElement, callbacks: IQuickOpenCallbacks, options: IQuickOpenOptions);
         dispose(): void;
+        isVisible(): boolean;
         create(): HTMLElement;
         setInput(input: IModel<any>, autoFocus?: IAutoFocus, ariaLabel?: string): void;
         layout(dimension: monaco.editor.IDimension): void;

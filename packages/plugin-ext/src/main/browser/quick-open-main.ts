@@ -19,8 +19,7 @@ import { interfaces } from 'inversify';
 import {
     QuickOpenModel,
     QuickOpenItem,
-    QuickOpenMode,
-    QuickOpenItemOptions
+    QuickOpenMode
 } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import {
@@ -148,16 +147,15 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
         return Promise.resolve();
     }
 
-    private convertPickOpenItemToQuickOpenItem<T>(items: PickOpenItem[]): QuickPickItem<Object>[] {
-        const convertedItems: QuickPickItem<Object>[] = [];
+    private convertPickOpenItemToQuickOpenItem(items: PickOpenItem[]): QuickPickItem<number>[] {
+        const convertedItems: QuickPickValue<number>[] = [];
         for (const i of items) {
             convertedItems.push({
                 label: i.label,
                 description: i.description,
                 detail: i.detail,
-                type: i,
-                value: i.label
-            } as QuickPickValue<Object>);
+                value: i.handle
+            });
         }
         return convertedItems;
     }
@@ -238,20 +236,17 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
             validateInput: inputBox.validateInput
         });
 
-        toDispose.push(this.quickInput.onDidAccept(() => this.proxy.$acceptOnDidAccept(inputBox.quickInputIndex)));
-        toDispose.push(this.quickInput.onDidChangeValue(changedText => this.proxy.$acceptDidChangeValue(inputBox.quickInputIndex, changedText)));
+        toDispose.push(this.quickInput.onDidAccept(() => this.proxy.$acceptOnDidAccept(inputBox.id)));
+        toDispose.push(this.quickInput.onDidChangeValue(changedText => this.proxy.$acceptDidChangeValue(inputBox.id, changedText)));
         toDispose.push(this.quickTitleBar.onDidTriggerButton(button => {
-            this.proxy.$acceptOnDidTriggerButton(inputBox.quickInputIndex, button);
+            this.proxy.$acceptOnDidTriggerButton(inputBox.id, button);
         }));
         this.toDispose.push(toDispose);
-        quickInput.then(selection => {
+        quickInput.then(() => {
             if (toDispose.disposed) {
                 return;
             }
-            if (selection) {
-                this.proxy.$acceptDidChangeSelection(inputBox.quickInputIndex, selection as string);
-            }
-            this.proxy.$acceptOnDidHide(inputBox.quickInputIndex);
+            this.proxy.$acceptOnDidHide(inputBox.id);
             toDispose.dispose();
         });
     }
@@ -292,9 +287,11 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
                 break;
             }
             case 'items': {
-                this.quickPick.setItems(value.map((options: QuickOpenItemOptions) => new QuickOpenItem(options)));
+                this.quickPick.setItems(this.convertPickOpenItemToQuickOpenItem(value));
                 break;
             }
+            // TODO selectedItems, activeItems and other properties
+            // TODO we need better type checking here
         }
     }
 
@@ -313,8 +310,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
 
     async $showCustomQuickPick<T extends QuickPickItemExt>(options: TransferQuickPick<T>): Promise<void> {
         const toDispose = new DisposableCollection();
-        const items = this.convertPickOpenItemToQuickOpenItem(options.items);
-        const quickPick = this.quickPick.show(items, {
+        const quickPick = this.quickPick.show(this.convertPickOpenItemToQuickOpenItem(options.items), {
             buttons: options.buttons.map((btn, i) => this.convertQuickInputButton(btn, i, toDispose)),
             placeholder: options.placeholder,
             fuzzyMatchDescription: options.matchOnDescription,
@@ -327,21 +323,23 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
             runIfSingle: false,
         });
 
-        toDispose.push(this.quickPick.onDidAccept(() => this.proxy.$acceptOnDidAccept(options.quickInputIndex)));
-        toDispose.push(this.quickPick.onDidChangeActiveItems(changedItems => this.proxy.$acceptDidChangeActive(options.quickInputIndex, changedItems)));
-        toDispose.push(this.quickPick.onDidChangeValue(value => this.proxy.$acceptDidChangeValue(options.quickInputIndex, value)));
+        toDispose.push(this.quickPick.onDidAccept(() => this.proxy.$acceptOnDidAccept(options.id)));
+        toDispose.push(this.quickPick.onDidChangeActive((elements: QuickPickValue<number>[]) => {
+            this.proxy.$onDidChangeActive(options.id, elements.map(e => e.value));
+        }));
+        toDispose.push(this.quickPick.onDidChangeSelection((elements: QuickPickValue<number>[]) => {
+            this.proxy.$onDidChangeSelection(options.id, elements.map(e => e.value));
+        }));
+        toDispose.push(this.quickPick.onDidChangeValue(value => this.proxy.$acceptDidChangeValue(options.id, value)));
         toDispose.push(this.quickTitleBar.onDidTriggerButton(button => {
-            this.proxy.$acceptOnDidTriggerButton(options.quickInputIndex, button);
+            this.proxy.$acceptOnDidTriggerButton(options.id, button);
         }));
         this.toDispose.push(toDispose);
-        quickPick.then(selection => {
+        quickPick.then(() => {
             if (toDispose.disposed) {
                 return;
             }
-            if (selection) {
-                this.proxy.$acceptDidChangeSelection(options.quickInputIndex, selection as string);
-            }
-            this.proxy.$acceptOnDidHide(options.quickInputIndex);
+            this.proxy.$acceptOnDidHide(options.id);
             toDispose.dispose();
         });
     }

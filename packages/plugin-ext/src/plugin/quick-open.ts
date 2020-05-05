@@ -24,7 +24,6 @@ import { QuickInputButtons, QuickInputButton, ThemeIcon } from './types-impl';
 import { URI } from 'vscode-uri';
 import * as path from 'path';
 import { quickPickItemToPickOpenItem } from './type-converters';
-import { QuickOpenItem, QuickOpenItemOptions } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { PluginPackage } from '../common/plugin-protocol';
 
 export type Item = string | QuickPickItem;
@@ -34,7 +33,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
     private selectItemHandler: undefined | ((handle: number) => void);
     private validateInputHandler: undefined | ((input: string) => string | PromiseLike<string | undefined> | undefined);
 
-    private createdQuickInputs = new Map<number, QuickInputExt>(); // Each quickinput will have a number so that we know where to fire events
+    private _sessions = new Map<number, QuickInputExt>(); // Each quickinput will have a number so that we know where to fire events
     private currentQuickInputs = 0;
 
     constructor(rpc: RPCProtocol) {
@@ -113,7 +112,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
 
     createQuickPick<T extends QuickPickItem>(plugin: Plugin): QuickPick<T> {
         const newQuickInput = new QuickPickExt<T>(this, this.proxy, plugin, this.currentQuickInputs);
-        this.createdQuickInputs.set(this.currentQuickInputs, newQuickInput);
+        this._sessions.set(this.currentQuickInputs, newQuickInput);
         this.currentQuickInputs += 1;
         return newQuickInput;
     }
@@ -140,34 +139,34 @@ export class QuickOpenExtImpl implements QuickOpenExt {
 
     createInputBox(plugin: Plugin): InputBox {
         const newQuickInput = new InputBoxExt(this, this.proxy, plugin, this.currentQuickInputs);
-        this.createdQuickInputs.set(this.currentQuickInputs, newQuickInput);
+        this._sessions.set(this.currentQuickInputs, newQuickInput);
         this.currentQuickInputs += 1;
         return newQuickInput;
     }
 
-    async $acceptOnDidAccept(createdQuickInputNumber: number): Promise<void> {
-        const currentQuickInput = this.createdQuickInputs.get(createdQuickInputNumber);
+    async $acceptOnDidAccept(sessionId: number): Promise<void> {
+        const currentQuickInput = this._sessions.get(sessionId);
         if (currentQuickInput) {
             currentQuickInput._fireAccept();
         }
     }
 
-    async $acceptDidChangeValue(createdQuickInputNumber: number, changedValue: string): Promise<void> {
-        const currentQuickInput = this.createdQuickInputs.get(createdQuickInputNumber);
+    async $acceptDidChangeValue(sessionId: number, changedValue: string): Promise<void> {
+        const currentQuickInput = this._sessions.get(sessionId);
         if (currentQuickInput) {
             currentQuickInput._fireChangedValue(changedValue);
         }
     }
 
-    async $acceptOnDidHide(createdQuickInputNumber: number): Promise<void> {
-        const currentQuickInput = this.createdQuickInputs.get(createdQuickInputNumber);
+    async $acceptOnDidHide(sessionId: number): Promise<void> {
+        const currentQuickInput = this._sessions.get(sessionId);
         if (currentQuickInput) {
             currentQuickInput._fireHide();
         }
     }
 
-    async $acceptOnDidTriggerButton(createdQuickInputNumber: number, btn: QuickInputTitleButtonHandle): Promise<void> {
-        const thisQuickInput = this.createdQuickInputs.get(createdQuickInputNumber);
+    async $acceptOnDidTriggerButton(sessionId: number, btn: QuickInputTitleButtonHandle): Promise<void> {
+        const thisQuickInput = this._sessions.get(sessionId);
         if (thisQuickInput) {
             if (btn.index === -1) {
                 thisQuickInput._fireButtonTrigger(QuickInputButtons.Back);
@@ -178,21 +177,20 @@ export class QuickOpenExtImpl implements QuickOpenExt {
         }
     }
 
-    async $acceptDidChangeActive(createdQuickInputNumber: number, changedItems: QuickOpenItem<QuickOpenItemOptions>[]): Promise<void> {
-        const thisQuickInput = this.createdQuickInputs.get(createdQuickInputNumber);
-        if (thisQuickInput && thisQuickInput instanceof QuickPickExt) {
-            thisQuickInput._fireChangedActiveItem(changedItems);
+    $onDidChangeActive(sessionId: number, handles: number[]): void {
+        const session = this._sessions.get(sessionId);
+        if (session instanceof QuickPickExt) {
+            session._fireDidChangeActive(handles);
         }
     }
 
-    async $acceptDidChangeSelection(createdQuickInputNumber: number, selection: string): Promise<void> {
-        const currentQuickInput = this.createdQuickInputs.get(createdQuickInputNumber);
-        if (currentQuickInput && currentQuickInput instanceof QuickPickExt) {
-            // Find the item that matches that particular label
-            const findMatchingItem = currentQuickInput.items.filter(x => x.label === selection);
-            currentQuickInput._fireChangedSelection(findMatchingItem);
+    $onDidChangeSelection(sessionId: number, handles: number[]): void {
+        const session = this._sessions.get(sessionId);
+        if (session instanceof QuickPickExt) {
+            session._fireDidChangeSelection(handles);
         }
     }
+
 }
 
 export class QuickInputExt implements QuickInput {
@@ -471,7 +469,7 @@ export class InputBoxExt extends QuickInputExt implements InputBox {
             }
         };
         this.quickOpen.showInputBox({
-            quickInputIndex: this.quickInputIndex,
+            id: this.quickInputIndex,
             busy: this.busy,
             buttons: this.buttons.map(btn => ({
                 'iconPath': this.convertURL(btn.iconPath),
@@ -502,18 +500,21 @@ export class InputBoxExt extends QuickInputExt implements InputBox {
  */
 export class QuickPickExt<T extends QuickPickItem> extends QuickInputExt implements QuickPick<T> {
 
+    // TODO encapsulate and move up to QuickInputExt
     buttons: ReadonlyArray<QuickInputButton>;
-    canSelectMany: boolean;
-    matchOnDescription: boolean;
-    matchOnDetail: boolean;
-    selectedItems: ReadonlyArray<T>;
-    value: string;
-
-    private _items: T[];
-    private _activeItems: T[];
+    // TODO move up to QuickInputExt
     private _placeholder: string | undefined;
-    private readonly onDidChangeActiveEmitter: Emitter<T[]>;
-    private readonly onDidChangeSelectionEmitter: Emitter<T[]>;
+
+    private _items: T[] = [];
+    private _handlesToItems = new Map<number, T>();
+    private _itemsToHandles = new Map<T, number>();
+    private _canSelectMany = false;
+    private _matchOnDescription = true;
+    private _matchOnDetail = true;
+    private _activeItems: T[] = [];
+    private readonly _onDidChangeActiveEmitter = new Emitter<T[]>();
+    private _selectedItems: T[] = [];
+    private readonly _onDidChangeSelectionEmitter = new Emitter<T[]>();
 
     constructor(readonly quickOpen: QuickOpenExtImpl,
         readonly quickOpenMain: QuickOpenMain,
@@ -521,32 +522,10 @@ export class QuickPickExt<T extends QuickPickItem> extends QuickInputExt impleme
         readonly quickInputIndex: number) {
 
         super(quickOpen, quickOpenMain, plugin);
-        this._items = [];
-        this._activeItems = [];
-        this._placeholder = '';
         this.buttons = [];
-        this.value = '';
 
-        this.disposableCollection.push(this.onDidChangeActiveEmitter = new Emitter());
-        this.disposableCollection.push(this.onDidChangeSelectionEmitter = new Emitter());
-    }
-
-    get items(): T[] {
-        return this._items;
-    }
-
-    set items(items: T[]) {
-        this._items = items;
-        this.update({ items });
-    }
-
-    get activeItems(): T[] {
-        return this._activeItems;
-    }
-
-    set activeItems(activeItems: T[]) {
-        this._activeItems = activeItems;
-        this.update({ activeItems });
+        this.disposableCollection.push(this._onDidChangeActiveEmitter);
+        this.disposableCollection.push(this._onDidChangeSelectionEmitter);
     }
 
     get placeholder(): string | undefined {
@@ -558,26 +537,88 @@ export class QuickPickExt<T extends QuickPickItem> extends QuickInputExt impleme
         this.update({ placeholder });
     }
 
-    _fireChangedSelection(selections: T[]): void {
-        this.onDidChangeSelectionEmitter.fire(selections);
+    get items(): T[] {
+        return this._items;
     }
 
-    _fireChangedActiveItem(changedItems: QuickOpenItem<QuickOpenItemOptions>[]): void {
-        this.onDidChangeActiveEmitter.fire(changedItems as unknown as T[]);
+    set items(items: T[]) {
+        this._items = items.slice();
+        this._handlesToItems.clear();
+        this._itemsToHandles.clear();
+        items.forEach((item, i) => {
+            this._handlesToItems.set(i, item);
+            this._itemsToHandles.set(item, i);
+        });
+        this.update({
+            items: quickPickItemToPickOpenItem(items)
+        });
     }
 
-    get onDidChangeActive(): Event<T[]> {
-        return this.onDidChangeActiveEmitter.event;
+    get canSelectMany(): boolean {
+        return this._canSelectMany;
     }
 
-    get onDidChangeSelection(): Event<T[]> {
-        return this.onDidChangeSelectionEmitter.event;
+    set canSelectMany(canSelectMany: boolean) {
+        this._canSelectMany = canSelectMany;
+        this.update({ canSelectMany });
+    }
+
+    get matchOnDescription(): boolean {
+        return this._matchOnDescription;
+    }
+
+    set matchOnDescription(matchOnDescription: boolean) {
+        this._matchOnDescription = matchOnDescription;
+        this.update({ matchOnDescription });
+    }
+
+    get matchOnDetail(): boolean {
+        return this._matchOnDetail;
+    }
+
+    set matchOnDetail(matchOnDetail: boolean) {
+        this._matchOnDetail = matchOnDetail;
+        this.update({ matchOnDetail });
+    }
+
+    get activeItems(): T[] {
+        return this._activeItems;
+    }
+
+    set activeItems(activeItems: T[]) {
+        this._activeItems = activeItems.filter(item => this._itemsToHandles.has(item));
+        this.update({ activeItems: this._activeItems.map(item => this._itemsToHandles.get(item)) });
+    }
+
+    onDidChangeActive = this._onDidChangeActiveEmitter.event;
+
+    get selectedItems(): T[] {
+        return this._selectedItems;
+    }
+
+    set selectedItems(selectedItems: T[]) {
+        this._selectedItems = selectedItems.filter(item => this._itemsToHandles.has(item));
+        this.update({ selectedItems: this._selectedItems.map(item => this._itemsToHandles.get(item)) });
+    }
+
+    onDidChangeSelection = this._onDidChangeSelectionEmitter.event;
+
+    _fireDidChangeActive(handles: number[]): void {
+        const items = handles.map(handle => this._handlesToItems.get(handle)).filter(e => !!e) as T[];
+        this._activeItems = items;
+        this._onDidChangeActiveEmitter.fire(items);
+    }
+
+    _fireDidChangeSelection(handles: number[]): void {
+        const items = handles.map(handle => this._handlesToItems.get(handle)).filter(e => !!e) as T[];
+        this._selectedItems = items;
+        this._onDidChangeSelectionEmitter.fire(items);
     }
 
     show(): void {
         this.visible = true;
         this.quickOpen.showCustomQuickPick({
-            quickInputIndex: this.quickInputIndex,
+            id: this.quickInputIndex,
             title: this.title,
             step: this.step,
             totalSteps: this.totalSteps,
