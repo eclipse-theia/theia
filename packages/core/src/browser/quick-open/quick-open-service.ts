@@ -18,6 +18,8 @@ import { injectable } from 'inversify';
 import { QuickOpenModel } from './quick-open-model';
 import { MessageType } from '../../common/message-service-protocol';
 import * as common from '../../common/quick-open-service';
+import { QuickOpenItem } from '../../common/quick-open-model';
+import { Emitter } from '../../common/event';
 
 /**
  * @deprecated import from `@theia/core/lib/common/quick-open-service` instead
@@ -26,6 +28,18 @@ export { QuickOpenOptions } from '../../common/quick-open-service';
 
 @injectable()
 export class QuickOpenService {
+
+    /**
+     * Dom node of the QuickOpenWidget
+     */
+    widgetNode: HTMLElement;
+
+    protected readonly onDidChangeActiveEmitter = new Emitter<QuickOpenItem[]>();
+    readonly onDidChangeActive = this.onDidChangeActiveEmitter.event;
+    getActive(): QuickOpenItem[] {
+        return [];
+    }
+
     /**
      * It should be implemented by an extension, e.g. by the monaco extension.
      */
@@ -35,8 +49,4 @@ export class QuickOpenService {
     hideDecoration(): void { }
     refresh(): void { }
 
-    /**
-     * Dom node of the QuickOpenWidget
-     */
-    widgetNode: HTMLElement;
 }

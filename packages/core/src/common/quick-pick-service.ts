@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { QuickOpenHideReason } from './quick-open-service';
-import { QuickOpenItem, QuickOpenItemOptions, QuickTitleButton } from './quick-open-model';
+import { QuickTitleButton } from './quick-open-model';
 import { Event } from './event';
 
 export type QuickPickItem<T> = QuickPickValue<T> | QuickPickSeparator;
@@ -93,11 +93,12 @@ export interface QuickPickService {
 
     show<T>(elements: QuickPickItem<T>[], options?: QuickPickOptions): Promise<T | undefined>;
 
-    setItems(items: QuickOpenItem[]): void;
+    setItems<T>(elements: QuickPickItem<T>[]): void;
 
     hide(reason?: QuickOpenHideReason): void
 
     readonly onDidAccept: Event<void>;
     readonly onDidChangeValue: Event<string>;
-    readonly onDidChangeActiveItems: Event<QuickOpenItem<QuickOpenItemOptions>[]>;
+    readonly onDidChangeActive: Event<(string | QuickPickValue<Object>)[]>;
+    readonly onDidChangeSelection: Event<(string | QuickPickValue<Object>)[]>;
 }

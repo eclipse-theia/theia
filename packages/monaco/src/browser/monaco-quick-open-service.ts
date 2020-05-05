@@ -226,7 +226,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
         if (this._widget) {
             return this._widget;
         }
-        this._widget = new monaco.quickOpen.QuickOpenWidget(this.container, {
+        const widget = this._widget = new monaco.quickOpen.QuickOpenWidget(this.container, {
             onOk: () => {
                 this.previousActiveElement = undefined;
                 this.contextKeyService.activeContext = undefined;
@@ -253,13 +253,23 @@ export class MonacoQuickOpenService extends QuickOpenService {
             }
         }, {});
         this.attachQuickOpenStyler();
-        const newWidget = this._widget.create();
-        this._widgetNode = newWidget;
-        return this._widget;
+        this._widgetNode = widget.create();
+        widget.tree.onDidChangeFocus(() => this.onDidChangeActiveEmitter.fire(this.getActive()));
+        return widget;
     }
 
     get widgetNode(): HTMLElement {
         return this._widgetNode;
+    }
+
+    getActive(): QuickOpenItem[] {
+        if (this._widget && this._widget.isVisible()) {
+            const focus = this._widget.tree.getFocus();
+            if (focus instanceof QuickOpenEntry) {
+                return [focus.item];
+            }
+        }
+        return [];
     }
 
     protected attachQuickOpenStyler(): void {

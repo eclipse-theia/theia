@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { QuickOpenItem, QuickOpenMode, QuickOpenGroupItem, QuickOpenItemOptions } from './quick-open-model';
 import { QuickOpenService } from './quick-open-service';
 import { QuickPickService, QuickPickOptions, QuickPickItem, QuickPickSeparator, QuickPickValue } from '../../common/quick-pick-service';
 import { QuickOpenHideReason } from '../../common/quick-open-service';
 import { QuickTitleBar } from './quick-title-bar';
-import { Emitter, Event } from '../../common/event';
+import { Emitter } from '../../common/event';
 
 @injectable()
 export class QuickPickServiceImpl implements QuickPickService {
@@ -31,31 +31,60 @@ export class QuickPickServiceImpl implements QuickPickService {
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
 
-    private items: QuickOpenItem[] = [];
+    private readonly onDidChangeValueEmitter = new Emitter<string>();
+    readonly onDidChangeValue = this.onDidChangeValueEmitter.event;
+
+    private readonly onDidAcceptEmitter = new Emitter<void>();
+    readonly onDidAccept = this.onDidAcceptEmitter.event;
+
+    private readonly onDidChangeActiveEmitter = new Emitter<(string | QuickPickValue<Object>)[]>();
+    readonly onDidChangeActive = this.onDidChangeActiveEmitter.event;
+
+    private readonly onDidChangeSelectionEmitter = new Emitter<(string | QuickPickValue<Object>)[]>();
+    readonly onDidChangeSelection = this.onDidChangeSelectionEmitter.event;
+
+    private elements: (string | QuickPickItem<Object>)[] = [];
+
+    @postConstruct()
+    protected init(): void {
+        this.quickOpenService.onDidChangeActive(() => {
+            const active: (string | QuickPickValue<Object>)[] = [];
+            for (const item of this.quickOpenService.getActive()) {
+                if ('element' in item) {
+                    active.push(item['element']);
+                }
+            }
+            this.onDidChangeActiveEmitter.fire(active);
+        });
+    }
 
     show(elements: string[], options?: QuickPickOptions): Promise<string | undefined>;
     show<T>(elements: QuickPickItem<T>[], options?: QuickPickOptions): Promise<T | undefined>;
     async show(elements: (string | QuickPickItem<Object>)[], options?: QuickPickOptions): Promise<Object | undefined> {
+        // Set `runIfSingle` to the value passed through options, else defaults to true.
+        const runIfSingle: boolean = (options && options.runIfSingle !== undefined) ? options.runIfSingle : true;
         return new Promise<Object | undefined>(resolve => {
-            this.items = this.toItems(elements, resolve);
-            if (this.items.length === 0) {
+            this.elements = elements;
+            let items = this.toItems(elements, resolve);
+            if (runIfSingle && items.length === 0) {
                 resolve(undefined);
                 return;
             }
-            // Set `runIfSingle` to the value passed through options, else defaults to true.
-            const runIfSingle: boolean = (options && options.runIfSingle !== undefined) ? options.runIfSingle : true;
-            if (runIfSingle && this.items.length === 1) {
-                this.items[0].run(QuickOpenMode.OPEN);
+            if (runIfSingle && items.length === 1) {
+                items[0].run(QuickOpenMode.OPEN);
                 return;
             }
             const prefix = options && options.value ? options.value : '';
             let savedValue: string;
             this.quickOpenService.open({
                 onType: (value, acceptor) => {
-                    acceptor(this.items);
+                    if (this.elements !== elements) {
+                        elements = this.elements;
+                        items = this.toItems(elements, resolve);
+                        acceptor(items);
+                    }
                     if (savedValue !== value) {
                         this.onDidChangeValueEmitter.fire(value);
-                        this.onDidChangeActiveItemsEmitter.fire(this.items);
                         savedValue = value;
                     }
                 }
@@ -81,12 +110,14 @@ export class QuickPickServiceImpl implements QuickPickService {
                 groupLabel = element.label;
             } else {
                 const options = this.toItemOptions(element, resolve);
+                let item;
                 if (groupLabel) {
-                    items.push(new QuickOpenGroupItem(Object.assign(options, { groupLabel, showBorder: true })));
+                    item = new QuickOpenGroupItem(Object.assign(options, { groupLabel, showBorder: true }));
                     groupLabel = undefined;
                 } else {
-                    items.push(new QuickOpenItem(options));
+                    item = new QuickOpenItem(options);
                 }
+                items.push(Object.assign(item, { element }));
             }
         }
         return items;
@@ -106,8 +137,9 @@ export class QuickPickServiceImpl implements QuickPickService {
                 if (mode !== QuickOpenMode.OPEN) {
                     return false;
                 }
-                resolve(value);
+                this.onDidChangeSelectionEmitter.fire([element]);
                 this.onDidAcceptEmitter.fire(undefined);
+                resolve(value);
                 return true;
             }
         };
@@ -117,17 +149,9 @@ export class QuickPickServiceImpl implements QuickPickService {
         this.quickOpenService.hide(reason);
     }
 
-    private readonly onDidAcceptEmitter: Emitter<void> = new Emitter();
-    readonly onDidAccept: Event<void> = this.onDidAcceptEmitter.event;
-
-    private readonly onDidChangeActiveItemsEmitter: Emitter<QuickOpenItem<QuickOpenItemOptions>[]> = new Emitter<QuickOpenItem<QuickOpenItemOptions>[]>();
-    readonly onDidChangeActiveItems: Event<QuickOpenItem<QuickOpenItemOptions>[]> = this.onDidChangeActiveItemsEmitter.event;
-
-    private readonly onDidChangeValueEmitter: Emitter<string> = new Emitter();
-    readonly onDidChangeValue: Event<string> = this.onDidChangeValueEmitter.event;
-
-    setItems(items: QuickOpenItem[]): void {
-        this.items = items;
+    setItems<T>(elements: QuickPickItem<T>[]): void {
+        this.elements = elements;
         this.quickOpenService.refresh();
     }
+
 }

@@ -77,7 +77,6 @@ import { DebugProtocol } from 'vscode-debugprotocol';
 import { SymbolInformation } from 'vscode-languageserver-types';
 import { ArgumentProcessor } from '../plugin/command-registry';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { QuickOpenItem, QuickOpenItemOptions } from '@theia/core/lib/common/quick-open-model';
 import { QuickTitleButton } from '@theia/core/lib/common/quick-open-model';
 
 export interface PreferenceData {
@@ -293,7 +292,6 @@ export interface PickOptions {
 
 export interface PickOpenItem {
     handle: number;
-    id?: string;
     label: string;
     description?: string;
     detail?: string;
@@ -343,8 +341,8 @@ export interface QuickOpenExt {
     $acceptDidChangeValue(quickInputNumber: number, changedValue: string): Promise<void>;
     $acceptOnDidHide(quickInputNumber: number): Promise<void>;
     $acceptOnDidTriggerButton(quickInputNumber: number, btn: QuickTitleButton): Promise<void>;
-    $acceptDidChangeActive(quickInputNumber: number, changedItems: QuickOpenItem<QuickOpenItemOptions>[]): Promise<void>;
-    $acceptDidChangeSelection(quickInputNumber: number, selection: string): Promise<void>;
+    $onDidChangeActive(sessionId: number, handles: number[]): void;
+    $onDidChangeSelection(sessionId: number, handles: number[]): void;
 }
 
 /**
@@ -450,7 +448,7 @@ export interface QuickInputTitleButtonHandle extends QuickTitleButton {
 }
 
 export interface TransferQuickInput {
-    quickInputIndex: number;
+    id: number;
     title: string | undefined;
     step: number | undefined;
     totalSteps: number | undefined;
