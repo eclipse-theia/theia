@@ -516,11 +516,17 @@ export interface DialogsMain {
     $showUploadDialog(options: UploadDialogOptionsMain): Promise<string[] | undefined>;
 }
 
+export interface TreeViewRevealOptions {
+    select: boolean
+    focus: boolean
+    expand: boolean | number
+}
+
 export interface TreeViewsMain {
     $registerTreeDataProvider(treeViewId: string): void;
     $unregisterTreeDataProvider(treeViewId: string): void;
-    $refresh(treeViewId: string): void;
-    $reveal(treeViewId: string, treeItemId: string): Promise<any>;
+    $refresh(treeViewId: string): Promise<void>;
+    $reveal(treeViewId: string, treeItemId: string, options: TreeViewRevealOptions): Promise<any>;
     $setMessage(treeViewId: string, message: string): void;
     $setTitle(treeViewId: string, title: string): void;
 }
