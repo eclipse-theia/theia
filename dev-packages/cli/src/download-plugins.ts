@@ -16,7 +16,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import fetch, { Response } from 'node-fetch';
+import fetch, { Response, RequestInit } from 'node-fetch';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import { getProxyForUrl } from 'proxy-from-env';
 import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
@@ -96,7 +98,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
             }
             lastError = undefined;
             try {
-                response = await fetch(pluginUrl);
+                response = await xfetch(pluginUrl);
             } catch (error) {
                 lastError = error;
                 continue;
@@ -152,4 +154,16 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
  */
 function isDownloaded(filePath: string): boolean {
     return fs.existsSync(filePath);
+}
+
+/**
+ * Follow HTTP(S)_PROXY, ALL_PROXY and NO_PROXY environment variables.
+ */
+export function xfetch(url: string, options?: RequestInit): Promise<Response> {
+    const proxiedOptions: RequestInit = { ...options };
+    const proxy = getProxyForUrl(url);
+    if (!proxiedOptions.agent && proxy !== '') {
+        proxiedOptions.agent = new HttpsProxyAgent(proxy);
+    }
+    return fetch(url, proxiedOptions);
 }
