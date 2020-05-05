@@ -30,6 +30,7 @@ import { promisify } from 'util';
 const mkdirpAsPromised = promisify<string, mkdirp.Made>(mkdirp);
 
 const unzip = require('unzip-stream');
+const HttpsProxyAgent = require('https-proxy-agent');
 
 /**
  * Available options when downloading.
@@ -88,12 +89,17 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         let attempts: number;
         let lastError: Error | undefined;
 
-        for (attempts = 0; attempts < maxAttempts; attempts++, lastError = undefined) {
+        for (attempts = 0; attempts < maxAttempts; attempts++) {
+            lastError = undefined;
             if (attempts > 0) {
                 await new Promise(resolve => setTimeout(resolve, retryDelay));
             }
             try {
-                response = await fetch(pluginUrl);
+                if (process.env.http_proxy) {
+                    response = await fetch(pluginUrl, { agent: new HttpsProxyAgent(process.env.http_proxy) });
+                } else {
+                    response = await fetch(pluginUrl);
+                }
             } catch (error) {
                 lastError = error;
                 continue;
