@@ -21,6 +21,7 @@ import * as fs from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as process from 'process';
+import * as stream from 'stream';
 import * as tar from 'tar';
 import * as zlib from 'zlib';
 
@@ -28,6 +29,7 @@ import { green, red } from 'colors/safe';
 
 import { promisify } from 'util';
 const mkdirpAsPromised = promisify<string, mkdirp.Made>(mkdirp);
+const pipelineAsPromised = promisify(stream.pipeline);
 
 const unzip = require('unzip-stream');
 
@@ -84,14 +86,15 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         const maxAttempts = 5;
         const retryDelay = 2000;
 
-        let response!: Response;
         let attempts: number;
         let lastError: Error | undefined;
+        let response: Response | undefined;
 
-        for (attempts = 0; attempts < maxAttempts; attempts++, lastError = undefined) {
+        for (attempts = 0; attempts < maxAttempts; attempts++) {
             if (attempts > 0) {
                 await new Promise(resolve => setTimeout(resolve, retryDelay));
             }
+            lastError = undefined;
             try {
                 response = await fetch(pluginUrl);
             } catch (error) {
@@ -108,7 +111,11 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
             console.error(lastError);
             return;
         }
-        if (!response || response.status !== 200) {
+        if (typeof response === 'undefined') {
+            console.error(red(`x ${plugin}: failed to download (unknown reason)`));
+            return;
+        }
+        if (response.status !== 200) {
             console.error(red(`x ${plugin}: failed to download with: ${response.status} ${response.statusText}`));
             return;
         }
@@ -121,22 +128,17 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
                 flush: zlib.Z_SYNC_FLUSH
             });
             const untar = tar.x({ cwd: targetPath });
-            response.body.pipe(gunzip).pipe(untar);
+            await pipelineAsPromised(response.body, gunzip, untar);
         } else {
             if (packed === true) {
                 // Download .vsix without decompressing.
                 const file = fs.createWriteStream(targetPath);
-                response.body.pipe(file);
+                await pipelineAsPromised(response.body, file);
             } else {
                 // Decompress .vsix.
-                response.body.pipe(unzip.Extract({ path: targetPath }));
+                await pipelineAsPromised(response.body, unzip.Extract({ path: targetPath }));
             }
         }
-
-        await new Promise((resolve, reject) => {
-            response.body.on('end', resolve);
-            response.body.on('error', reject);
-        });
 
         console.warn(green(`+ ${plugin}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
     }));
