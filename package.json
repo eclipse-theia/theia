@@ -16,7 +16,7 @@
     "@types/node": "~10.3.6",
     "@types/sinon": "^2.3.5",
     "@types/temp": "^0.8.29",
-    "@types/uuid": "^3.4.3",
+    "@types/uuid": "^7.0.3",
     "@typescript-eslint/eslint-plugin": "^2.16.0",
     "@typescript-eslint/eslint-plugin-tslint": "^2.16.0",
     "@typescript-eslint/parser": "^2.16.0",
@@ -38,7 +38,7 @@
     "typedoc": "^0.15.0-0",
     "typedoc-plugin-external-module-map": "^1.0.0",
     "typescript": "~3.5.3",
-    "uuid": "^3.2.1"
+    "uuid": "^8.0.0"
   },
   "scripts": {
     "preinstall": "node-gyp install",

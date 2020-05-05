@@ -6,8 +6,8 @@
     "@theia/core": "^1.1.0",
     "@theia/editor": "^1.1.0",
     "@theia/languages": "^1.1.0",
-    "@types/uuid": "^3.4.3",
-    "uuid": "^3.2.1"
+    "@types/uuid": "^7.0.3",
+    "uuid": "^8.0.0"
   },
   "publishConfig": {
     "access": "public"

@@ -130,7 +130,7 @@ if (process.env.LC_ALL) {
 }
 process.env.LC_NUMERIC = 'C';
 
-const uuid = require('uuid');
+const { v4 } = require('uuid');
 const electron = require('electron');
 const { join, resolve } = require('path');
 const { fork } = require('child_process');
@@ -152,7 +152,7 @@ const Storage = require('electron-store');
 const electronStore = new Storage();
 
 const electronSecurityToken = {
-    value: uuid.v4(),
+    value: v4(),
 };
 
 app.on('ready', () => {
