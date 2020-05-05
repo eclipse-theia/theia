@@ -25,7 +25,7 @@ import {
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Disposable as PluginDisposable, ThemeIcon } from '../types-impl';
-import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem } from '../../common/plugin-api-rpc';
+import { Plugin, PLUGIN_RPC_CONTEXT, TreeViewsExt, TreeViewsMain, TreeViewItem, TreeViewRevealOptions } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { CommandRegistryImpl, CommandsConverter } from '../command-registry';
 import { TreeViewSelection } from '../../common';
@@ -100,9 +100,8 @@ export class TreeViewsExtImpl implements TreeViewsExt {
             set title(title: string) {
                 treeView.title = title;
             },
-            // tslint:enable:typedef
-            reveal: (element: T, selectionOptions: { select?: boolean }): Thenable<void> =>
-                treeView.reveal(element, selectionOptions),
+            reveal: (element: T, revealOptions?: Partial<TreeViewRevealOptions>): Thenable<void> =>
+                treeView.reveal(element, revealOptions),
 
             dispose: () => {
                 this.treeViews.delete(treeViewId);
@@ -166,6 +165,7 @@ class TreeViewExtImpl<T> implements Disposable {
     readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
 
     private readonly nodes = new Map<string, TreeExtNode<T>>();
+    private pendingRefresh = Promise.resolve();
 
     private readonly toDispose = new DisposableCollection(
         Disposable.create(() => this.clearAll()),
@@ -187,7 +187,7 @@ class TreeViewExtImpl<T> implements Disposable {
 
         if (treeDataProvider.onDidChangeTreeData) {
             treeDataProvider.onDidChangeTreeData((e: T) => {
-                proxy.$refresh(treeViewId);
+                this.pendingRefresh = proxy.$refresh(treeViewId);
             });
         }
     }
@@ -196,17 +196,20 @@ class TreeViewExtImpl<T> implements Disposable {
         this.toDispose.dispose();
     }
 
-    async reveal(element: T, selectionOptions?: { select?: boolean }): Promise<void> {
-        // find element id in a cache
+    async reveal(element: T, options?: Partial<TreeViewRevealOptions>): Promise<void> {
+        await this.pendingRefresh;
+
         let elementId;
         this.nodes.forEach((el, id) => {
-            if (Object.is(el, element)) {
+            if (Object.is(el.value, element)) {
                 elementId = id;
             }
         });
 
         if (elementId) {
-            return this.proxy.$reveal(this.treeViewId, elementId);
+            return this.proxy.$reveal(this.treeViewId, elementId, {
+                select: true, focus: false, expand: false, ...options
+            });
         }
     }
 

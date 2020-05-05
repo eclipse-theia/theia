@@ -263,25 +263,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
         toDispose.push(this.quickView.registerItem({
             label: view.name,
-            open: async () => {
-                const widget = await this.openView(view.id);
-                if (widget) {
-                    this.shell.activateWidget(widget.id);
-                }
-            }
+            open: () => this.openView(view.id, { activate: true })
         }));
-
-        toDispose.push(this.commands.registerCommand({
-            id: `${view.id}.focus`
-        }, {
-                execute: async () => {
-                    const widget = await this.openView(view.id);
-                    if (widget) {
-                        await this.shell.activateWidget(widget.id);
-                    }
-                }
-            }));
-
+        toDispose.push(this.commands.registerCommand({ id: `${view.id}.focus` }, {
+            execute: () => this.openView(view.id, { activate: true })
+        }));
         return toDispose;
     }
 
@@ -292,7 +278,14 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return this.widgetManager.getWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, this.toPluginViewWidgetIdentifier(viewId));
     }
 
-    async openView(viewId: string): Promise<PluginViewWidget | undefined> {
+    async openView(viewId: string, options?: { activate?: boolean }): Promise<PluginViewWidget | undefined> {
+        const view = await this.doOpenView(viewId);
+        if (view && options && options.activate === true) {
+            await this.shell.activateWidget(view.id);
+        }
+        return view;
+    }
+    protected async doOpenView(viewId: string): Promise<PluginViewWidget | undefined> {
         const widget = await this.getView(viewId);
         if (widget) {
             return widget;
