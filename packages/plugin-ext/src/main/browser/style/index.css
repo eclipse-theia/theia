@@ -34,6 +34,11 @@
     flex-direction: column;
 }
 
+.theia-plugin-view-container {
+    -webkit-mask: url('');
+    mask: url('');
+}
+
 .theia-plugin-test-tab-icon {
     -webkit-mask: url('test.svg');
     mask: url('test.svg');

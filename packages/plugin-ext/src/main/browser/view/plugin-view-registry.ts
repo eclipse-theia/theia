@@ -188,15 +188,16 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
+        const containerClass = 'theia-plugin-view-container';
         const iconClass = 'plugin-view-container-icon-' + viewContainer.id;
         const iconUrl = new Endpoint({ path: viewContainer.iconUrl }).getRestUrl().toString();
-        toDispose.push(this.style.insertRule('.' + iconClass, () => `
+        toDispose.push(this.style.insertRule('.' + containerClass + '.' + iconClass, () => `
                 mask: url('${iconUrl}') no-repeat 50% 50%;
                 -webkit-mask: url('${iconUrl}') no-repeat 50% 50%;
             `));
         toDispose.push(this.doRegisterViewContainer(viewContainer.id, location, {
             label: viewContainer.title,
-            iconClass,
+            iconClass: containerClass + ' ' + iconClass,
             closeable: true
         }));
         return toDispose;
