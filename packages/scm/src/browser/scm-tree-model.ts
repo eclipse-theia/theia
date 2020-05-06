@@ -69,6 +69,14 @@ export namespace ScmFileChangeNode {
         return 'sourceUri' in node
             && !ScmFileChangeFolderNode.is(node);
     }
+    export function getGroupId(node: ScmFileChangeNode): string {
+        const parentNode = node.parent;
+        if (!(parentNode && (ScmFileChangeFolderNode.is(parentNode) || ScmFileChangeGroupNode.is(parentNode)))) {
+            throw new Error('bad node');
+        }
+        return parentNode.groupId;
+    }
+
 }
 
 @injectable()

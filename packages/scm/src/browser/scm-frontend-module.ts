@@ -123,7 +123,8 @@ export default new ContainerModule(bind => {
 export function createScmTreeContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent, {
         virtualized: true,
-        search: true
+        search: true,
+        multiSelect: true,
     });
 
     child.unbind(TreeWidget);

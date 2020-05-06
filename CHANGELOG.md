@@ -2,6 +2,8 @@
 
 ## v1.3.0
 
+- [scm] added support for multi-select in the Source Control view [#7900](https://github.com/eclipse-theia/theia/pull/7900)
+
 Breaking Changes:
 
 - [task] Widened the scope of some methods in TaskManager and TaskConfigurations from string to TaskConfigurationScope. This is only breaking for extenders, not callers. [#7928](https://github.com/eclipse-theia/theia/pull/7928)

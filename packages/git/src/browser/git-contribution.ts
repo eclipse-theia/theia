@@ -411,47 +411,38 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.UNSTAGE, {
-            execute: (arg: string |  ScmResource[] | ScmResource) => {
-                const uris =
-                    typeof arg === 'string' ? [ arg ] :
-                    Array.isArray(arg) ? arg.map(r => r.sourceUri.toString()) :
-                    [ arg.sourceUri.toString() ];
+            execute: (...arg: ScmResource[]) => {
+                const resources = arg.filter(r => r.sourceUri).map(r => r.sourceUri.toString());
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && this.withProgress(() => provider.unstage(uris));
+                return provider && this.withProgress(() => provider.unstage(resources));
             },
-            isEnabled: (arg: string |  ScmResource[] | ScmResource) => !!this.repositoryProvider.selectedScmProvider
-                && (!Array.isArray(arg) || arg.length !== 0)
+            isEnabled: (...arg: ScmResource[]) => !!this.repositoryProvider.selectedScmProvider
+                && arg.some(r => r.sourceUri)
         });
         registry.registerCommand(GIT_COMMANDS.STAGE, {
-            execute: (arg: string | ScmResource[] | ScmResource) => {
-                const uris =
-                    typeof arg === 'string' ? [ arg ] :
-                    Array.isArray(arg) ? arg.map(r => r.sourceUri.toString()) :
-                    [ arg.sourceUri.toString() ];
+            execute: (...arg: ScmResource[]) => {
+                const resources = arg.filter(r => r.sourceUri).map(r => r.sourceUri.toString());
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && this.withProgress(() => provider.stage(uris));
+                return provider && this.withProgress(() => provider.stage(resources));
             },
-            isEnabled: (arg: string |  ScmResource[] | ScmResource) => !!this.repositoryProvider.selectedScmProvider
-                && (!Array.isArray(arg) || arg.length !== 0)
+            isEnabled: (...arg: ScmResource[]) => !!this.repositoryProvider.selectedScmProvider
+                && arg.some(r => r.sourceUri)
         });
         registry.registerCommand(GIT_COMMANDS.DISCARD, {
-            execute: (arg: string | ScmResource[] | ScmResource) => {
-                const uris =
-                    typeof arg === 'string' ? [ arg ] :
-                    Array.isArray(arg) ? arg.map(r => r.sourceUri.toString()) :
-                    [ arg.sourceUri.toString() ];
+            execute: (...arg: ScmResource[]) => {
+                const resources = arg.filter(r => r.sourceUri).map(r => r.sourceUri.toString());
                 const provider = this.repositoryProvider.selectedScmProvider;
-                return provider && this.withProgress(() => provider.discard(uris));
+                return provider && this.withProgress(() => provider.discard(resources));
             },
-            isEnabled: (arg: string |  ScmResource[] | ScmResource) => !!this.repositoryProvider.selectedScmProvider
-                && (!Array.isArray(arg) || arg.length !== 0)
+            isEnabled: (...arg: ScmResource[]) => !!this.repositoryProvider.selectedScmProvider
+                    && arg.some(r => r.sourceUri)
         });
         registry.registerCommand(GIT_COMMANDS.OPEN_CHANGED_FILE, {
-            execute: (arg: string | ScmResource) => {
-                const uri = typeof arg === 'string' ? new URI(arg) : arg.sourceUri;
-                this.editorManager.open(uri, { mode: 'reveal' });
-            },
-            isVisible: (arg: string | ScmResource, isFolder: boolean) => !isFolder
+            execute: (...arg: ScmResource[]) => {
+                for (const resource of arg) {
+                    this.editorManager.open(resource.sourceUri, { mode: 'reveal' });
+                }
+            }
         });
         registry.registerCommand(GIT_COMMANDS.STASH, {
             execute: () => this.quickOpenService.stash(),
@@ -862,6 +853,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             }
         });
     }
+
 }
 export interface GitOpenFileOptions {
     readonly uri: URI
