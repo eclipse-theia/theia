@@ -19,9 +19,10 @@
 import * as React from 'react';
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
+import { isOSX } from '@theia/core/lib/common/os';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Message } from '@phosphor/messaging';
-import { TreeWidget, TreeNode, TreeProps, NodeProps, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
+import { TreeWidget, TreeNode, SelectableTreeNode, TreeProps, NodeProps, TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
 import { ScmTreeModel } from './scm-tree-model';
 import { MenuModelRegistry, ActionMenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
 import { ScmResourceGroup, ScmResource, ScmResourceDecorations } from './scm-provider';
@@ -136,9 +137,10 @@ export class ScmTreeWidget extends TreeWidget {
                 groupId={node.groupId}
                 path={node.path}
                 node={node}
-                sourceUri={new URI(node.sourceUri)}
+                sourceUri={node.sourceUri}
                 renderExpansionToggle={() => this.renderExpansionToggle(node, props)}
                 contextMenuRenderer={this.contextMenuRenderer}
+                model={this.model}
                 commands={this.commands}
                 menus={this.menus}
                 contextKeys={this.contextKeys}
@@ -148,11 +150,7 @@ export class ScmTreeWidget extends TreeWidget {
             return React.createElement('div', attributes, content);
         }
         if (ScmFileChangeNode.is(node)) {
-            const parentNode = node.parent;
-            if (!(parentNode && (ScmFileChangeFolderNode.is(parentNode) || ScmFileChangeGroupNode.is(parentNode)))) {
-                return '';
-            }
-            const groupId = parentNode.groupId;
+            const groupId = ScmFileChangeNode.getGroupId(node);
             const name = this.labelProvider.getName(new URI(node.sourceUri));
             const parentPath =
                 (node.parent && ScmFileChangeFolderNode.is(node.parent))
@@ -162,6 +160,7 @@ export class ScmTreeWidget extends TreeWidget {
                 key={node.sourceUri}
                 repository={repository}
                 contextMenuRenderer={this.contextMenuRenderer}
+                model={this.model}
                 commands={this.commands}
                 menus={this.menus}
                 contextKeys={this.contextKeys}
@@ -185,19 +184,8 @@ export class ScmTreeWidget extends TreeWidget {
     protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
         const repository = this.scmService.selectedRepository;
         if (repository) {
-            const select = () => {
-                const selectedResource = this.selectionService.selection;
-                if (!TreeNode.is(selectedResource) || !ScmFileChangeFolderNode.is(selectedResource) && !ScmFileChangeNode.is(selectedResource)) {
-                    const nonEmptyGroup = repository.provider.groups
-                        .find(g => g.resources.length !== 0);
-                    if (nonEmptyGroup) {
-                        this.selectionService.selection = nonEmptyGroup.resources[0];
-                    }
-                }
-            };
             return {
                 ...super.createContainerAttributes(),
-                onFocus: select,
                 tabIndex: 0
             };
         }
@@ -324,11 +312,7 @@ export class ScmTreeWidget extends TreeWidget {
         if (!repository) {
             return;
         }
-        const parentNode = node.parent;
-        if (!(parentNode && (ScmFileChangeFolderNode.is(parentNode) || ScmFileChangeGroupNode.is(parentNode)))) {
-            return;
-        }
-        const groupId = parentNode.groupId;
+        const groupId = ScmFileChangeNode.getGroupId(node);
         const group = repository.provider.groups.find(g => g.id === groupId)!;
         return group.resources.find(r => String(r.sourceUri) === node.sourceUri)!;
     }
@@ -474,11 +458,46 @@ export abstract class ScmElement<P extends ScmElement.Props = ScmElement.Props> 
         }
     };
 
+    protected getSelectionArgs(selectedNodes: Readonly<SelectableTreeNode[]>): ScmResource[] {
+        const resources: ScmResource[] = [];
+        for (const node of selectedNodes) {
+            if (ScmFileChangeNode.is(node)) {
+                const groupId = ScmFileChangeNode.getGroupId(node);
+                const group = this.findGroup(this.props.repository, groupId);
+                if (group) {
+                    const selectedResource = group.resources.find(r => String(r.sourceUri) === node.sourceUri);
+                    if (selectedResource) {
+                        resources.push(selectedResource);
+                    }
+                }
+            }
+            if (ScmFileChangeFolderNode.is(node)) {
+                const group = this.findGroup(this.props.repository, node.groupId);
+                if (group) {
+                    this.collectResources(resources, node, group);
+                }
+            }
+        }
+        // Remove duplicates which may occur if user selected folder and nested folder
+        return resources.filter((item1, index) => resources.findIndex(item2 => item1.sourceUri === item2.sourceUri) === index);
+    }
+
+    protected collectResources(resources: ScmResource[], node: TreeNode, group: ScmResourceGroup): void {
+        if (ScmFileChangeFolderNode.is(node)) {
+            for (const child of node.children) {
+                this.collectResources(resources, child, group);
+            }
+        } else if (ScmFileChangeNode.is(node)) {
+            const resource = group.resources.find(r => String(r.sourceUri) === node.sourceUri)!;
+            resources.push(resource);
+        }
+    }
+
     /*
      * Normally the group would always be expected to be found.  However if the tree is restored
      * in restoreState then the tree may be rendered before the groups have been created
-     * in the provider.  The provider's groups property will exist be will be empty in such
-     * situation.  We want to render the tree (as that is the point of restoreState, we can render
+     * in the provider.  The provider's groups property will be empty in such a situation.
+     * We want to render the tree (as that is the point of restoreState, we can render
      * the tree in the saved state before the provider has provided status).  We therefore must
      * be prepared to render the tree without having the ScmResourceGroup or ScmResource
      * objects.
@@ -515,7 +534,7 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
         const relativePath = parentPath.relative(resourceUri.parent);
         const path = relativePath ? relativePath.toString() : labelProvider.getLongName(resourceUri.parent);
         return <div key={sourceUri}
-            className={`scmItem ${TREE_NODE_SEGMENT_GROW_CLASS}`}
+            className={`scmItem ${TREE_NODE_SEGMENT_CLASS} ${TREE_NODE_SEGMENT_GROW_CLASS}`}
             onContextMenu={this.renderContextMenu}
             onMouseEnter={this.showHover}
             onMouseLeave={this.hideHover}
@@ -553,24 +572,39 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
 
     protected readonly contextMenuPath = ScmTreeWidget.RESOURCE_CONTEXT_MENU;
     protected get contextMenuArgs(): any[] {
+        if (!this.props.model.selectedNodes.some(node => ScmFileChangeNode.is(node) && node.sourceUri === this.props.sourceUri)) {
+            // Clicked node is not in selection, so ignore selection and action on just clicked node
+            return this.singleNodeArgs;
+        } else {
+            return this.getSelectionArgs(this.props.model.selectedNodes);
+        }
+    }
+    protected get singleNodeArgs(): any[] {
         const group = this.findGroup(this.props.repository, this.props.groupId);
         if (group) {
             const selectedResource = group.resources.find(r => String(r.sourceUri) === this.props.sourceUri)!;
-            return [selectedResource, false];  // TODO support multiselection
+            return [selectedResource];
         } else {
             // Repository status not yet available. Empty args disables the action.
             return [];
         }
     }
 
+    protected hasCtrlCmdOrShiftMask(event: TreeWidget.ModifierAwareEvent): boolean {
+        const { metaKey, ctrlKey, shiftKey } = event;
+        return (isOSX && metaKey) || ctrlKey || shiftKey;
+    }
+
     /**
      * Handle the single clicking of nodes present in the widget.
      */
-    protected handleClick = () => {
-        // Determine the behavior based on the preference value.
-        const isSingle = this.props.corePreferences && this.props.corePreferences['workbench.list.openMode'] === 'singleClick';
-        if (isSingle) {
-            this.open();
+    protected handleClick = (event: React.MouseEvent) => {
+        if (!this.hasCtrlCmdOrShiftMask(event)) {
+            // Determine the behavior based on the preference value.
+            const isSingle = this.props.corePreferences && this.props.corePreferences['workbench.list.openMode'] === 'singleClick';
+            if (isSingle) {
+                this.open();
+            }
         }
     };
 
@@ -592,6 +626,7 @@ export namespace ScmResourceComponent {
         parentPath: URI;
         sourceUri: string;
         decorations?: ScmResourceDecorations;
+        model: ScmTreeModel;
     }
 }
 
@@ -649,11 +684,11 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
     render(): JSX.Element {
         const { hover } = this.state;
         const { groupId, sourceUri, path, labelProvider, commands, menus, contextKeys } = this.props;
-        const sourceFileStat: FileStat = { uri: String(sourceUri), isDirectory: true, lastModification: 0 };
+        const sourceFileStat: FileStat = { uri: sourceUri, isDirectory: true, lastModification: 0 };
         const icon = labelProvider.getIcon(sourceFileStat);
 
-        return <div key={String(sourceUri)}
-            className={`scmItem ${TREE_NODE_SEGMENT_GROW_CLASS} ${ScmTreeWidget.Styles.NO_SELECT}`}
+        return <div key={sourceUri}
+            className={`scmItem  ${TREE_NODE_SEGMENT_CLASS} ${TREE_NODE_SEGMENT_GROW_CLASS} ${ScmTreeWidget.Styles.NO_SELECT}`}
             onContextMenu={this.renderContextMenu}
             onMouseEnter={this.showHover}
             onMouseLeave={this.hideHover}
@@ -679,31 +714,30 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
 
     protected readonly contextMenuPath = ScmTreeWidget.RESOURCE_FOLDER_CONTEXT_MENU;
     protected get contextMenuArgs(): any[] {
-        const uris: ScmResource[] = [];
+        if (!this.props.model.selectedNodes.some(node => ScmFileChangeFolderNode.is(node) && node.sourceUri === this.props.sourceUri)) {
+            // Clicked node is not in selection, so ignore selection and action on just clicked node
+            return this.singleNodeArgs;
+        } else {
+            return this.getSelectionArgs(this.props.model.selectedNodes);
+        }
+    }
+    protected get singleNodeArgs(): any[] {
+        const resources: ScmResource[] = [];
         const group = this.findGroup(this.props.repository, this.props.groupId);
         if (group) {
-            this.collectUris(uris, this.props.node, group);
+            this.collectResources(resources, this.props.node, group);
         }
-        return [uris, true];
+        return resources;
     }
 
-    protected collectUris(uris: ScmResource[], node: TreeNode, group: ScmResourceGroup): void {
-        if (ScmFileChangeFolderNode.is(node)) {
-            for (const child of node.children) {
-                this.collectUris(uris, child, group);
-            }
-        } else if (ScmFileChangeNode.is(node)) {
-            const resource = group.resources.find(r => String(r.sourceUri) === node.sourceUri)!;
-            uris.push(resource);
-        }
-    }
 }
 
 export namespace ScmResourceFolderElement {
     export interface Props extends ScmElement.Props {
         node: ScmFileChangeFolderNode;
-        sourceUri: URI;
+        sourceUri: string;
         path: string;
+        model: ScmTreeModel;
     }
 }
 
