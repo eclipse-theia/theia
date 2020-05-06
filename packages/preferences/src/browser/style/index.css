@@ -263,7 +263,7 @@
 
 .theia-settings-container .pref-description {
     padding: var(--theia-ui-padding) 0;
-    color: var(--theia-descriptionforeground);
+    color: var(--theia-descriptionForeground);
     line-height: 18px;
 }
 
