@@ -69,8 +69,7 @@ export class PreferenceTreeGenerator {
     });
 
     protected createLeafNode = (property: string, preferencesGroup: Preference.Branch): SelectableTreeNode => {
-        const splitter = /[\W_]|(?<=[^A-Z])(?=[A-Z])/; // Any non-word character or the 0-length space between a non-upper-case character and an upper-case character
-        const propertySpecifier = property.split(splitter).slice(1);
+        const propertySpecifier = this.split(property).slice(1);
         const name = propertySpecifier.map(word => word.slice(0, 1).toLocaleUpperCase() + word.slice(1)).join(' ').trim();
         return {
             id: property,
@@ -100,11 +99,24 @@ export class PreferenceTreeGenerator {
 
     protected toTitleCase(nonTitle: string): string {
         // Any non-word character or the 0-length space between a non-upper-case character and an upper-case character
-        const splitter = /[\W_]|(?<=[^A-Z])(?=[A-Z])/;
-        return nonTitle.split(splitter).map(word => this.capitalizeFirst(word)).join(' ').trim();
+        return this.split(nonTitle).map(word => this.capitalizeFirst(word)).join(' ').trim();
     }
 
     protected capitalizeFirst(maybeLowerCase: string): string {
         return maybeLowerCase.slice(0, 1).toLocaleUpperCase() + maybeLowerCase.slice(1);
     }
+
+    /**
+     * Split based on any non-word character or the 0-length space between a non-upper-case character and an upper-case character
+     */
+    private split(string: string): string[] {
+        const split: string[] = [];
+        const regex = /[A-Z]+[a-z0-9]*|[A-Z]*[a-z0-9]+/g;
+        // eslint-disable-next-line no-null/no-null
+        let match; while ((match = regex.exec(string)) !== null) {
+            split.push(match[0]);
+        }
+        return split;
+    }
+
 }
