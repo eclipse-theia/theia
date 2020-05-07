@@ -102,8 +102,8 @@ export class PluginSharedStyle {
     protected createPluginIcon(key: PluginIconKey): PluginIcon {
         const iconUrl = key.url;
         const size = key.size;
-        const darkIconUrl = new Endpoint({ path: `${typeof iconUrl === 'object' ? iconUrl.dark : iconUrl}` }).getRestUrl().toString();
-        const lightIconUrl = new Endpoint({ path: `${typeof iconUrl === 'object' ? iconUrl.light : iconUrl}` }).getRestUrl().toString();
+        const darkIconUrl = PluginSharedStyle.toExternalIconUrl(`${typeof iconUrl === 'object' ? iconUrl.dark : iconUrl}`);
+        const lightIconUrl = PluginSharedStyle.toExternalIconUrl(`${typeof iconUrl === 'object' ? iconUrl.light : iconUrl}`);
         const iconClass = 'plugin-icon-' + this.iconSequence++;
         const toDispose = new DisposableCollection();
         toDispose.push(this.insertRule('.' + iconClass, theme => `
@@ -118,6 +118,13 @@ export class PluginSharedStyle {
             iconClass,
             dispose: () => toDispose.dispose()
         };
+    }
+
+    static toExternalIconUrl(iconUrl: string): string {
+        if (iconUrl.startsWith('hostedPlugin/')) {
+            return new Endpoint({ path: iconUrl }).getRestUrl().toString();
+        }
+        return iconUrl;
     }
 
 }

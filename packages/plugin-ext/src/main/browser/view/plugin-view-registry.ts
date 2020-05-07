@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
-    StatefulWidget, CommonMenus, BaseWidget, Endpoint
+    StatefulWidget, CommonMenus, BaseWidget
 } from '@theia/core/lib/browser';
 import { ViewContainer, View } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
@@ -190,7 +190,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const toDispose = new DisposableCollection();
         const containerClass = 'theia-plugin-view-container';
         const iconClass = 'plugin-view-container-icon-' + viewContainer.id;
-        const iconUrl = new Endpoint({ path: viewContainer.iconUrl }).getRestUrl().toString();
+        const iconUrl = PluginSharedStyle.toExternalIconUrl(viewContainer.iconUrl);
         toDispose.push(this.style.insertRule('.' + containerClass + '.' + iconClass, () => `
                 mask: url('${iconUrl}') no-repeat 50% 50%;
                 -webkit-mask: url('${iconUrl}') no-repeat 50% 50%;
