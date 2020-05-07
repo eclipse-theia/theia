@@ -14,12 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { QuickOpenModel, QuickOpenHandler, QuickOpenOptions, QuickOpenItem, QuickOpenMode, QuickOpenContribution, QuickOpenHandlerRegistry } from './quick-open';
 import { Disposable } from '../common/disposable';
+import { ContextKeyService } from './context-key-service';
 
 export interface QuickViewItem {
     readonly label: string;
+    readonly when?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     readonly open: () => any;
 }
@@ -31,10 +33,13 @@ export class QuickViewService implements QuickOpenModel, QuickOpenHandler, Quick
 
     readonly description: string = 'Open View';
 
-    protected readonly items: QuickOpenItem[] = [];
+    protected readonly items: (QuickOpenItem & { when?: string })[] = [];
+
+    @inject(ContextKeyService)
+    protected readonly contextKexService: ContextKeyService;
 
     registerItem(item: QuickViewItem): Disposable {
-        const quickOpenItem = new QuickOpenItem({
+        const quickOpenItem = Object.assign(new QuickOpenItem({
             label: item.label,
             run: mode => {
                 if (mode !== QuickOpenMode.OPEN) {
@@ -43,7 +48,7 @@ export class QuickViewService implements QuickOpenModel, QuickOpenHandler, Quick
                 item.open();
                 return true;
             }
-        });
+        }), { when: item.when });
         this.items.push(quickOpenItem);
         this.items.sort((a, b) => a.getLabel()!.localeCompare(b.getLabel()!));
         return Disposable.create(() => {
@@ -66,7 +71,10 @@ export class QuickViewService implements QuickOpenModel, QuickOpenHandler, Quick
     }
 
     onType(_: string, acceptor: (items: QuickOpenItem[]) => void): void {
-        acceptor(this.items);
+        const items = this.items.filter(item =>
+            item.when === undefined || this.contextKexService.match(item.when)
+        );
+        acceptor(items);
     }
 
     registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
