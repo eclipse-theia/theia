@@ -263,6 +263,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
         toDispose.push(this.quickView.registerItem({
             label: view.name,
+            when: view.when,
             open: () => this.openView(view.id, { activate: true })
         }));
         toDispose.push(this.commands.registerCommand({ id: `${view.id}.focus` }, {
