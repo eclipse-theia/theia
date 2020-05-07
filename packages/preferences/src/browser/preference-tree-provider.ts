@@ -36,6 +36,7 @@ const filterDefaults: Required<PreferenceFilterOptions> = {
 @injectable()
 export class PreferencesTreeProvider {
 
+    protected _isFiltered: boolean = false;
     protected lastSearchedLiteral: string = '';
     protected lastSearchedFuzzy: string = '';
     protected baseSchema: PreferenceDataSchema;
@@ -46,7 +47,6 @@ export class PreferencesTreeProvider {
         (options: PreferenceFilterOptions, newScope?: Preference.SelectedScopeDetails) => this.updateUnderlyingData(options, newScope),
         200
     );
-    protected handleSearchChange = debounce((term: string) => this.updateDisplay(term), 100);
 
     @inject(PreferencesEventService) protected readonly preferencesEventService: PreferencesEventService;
     @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
@@ -91,27 +91,26 @@ export class PreferencesTreeProvider {
 
         this.lastSearchedLiteral = searchTerm;
         this.lastSearchedFuzzy = searchTerm.replace(/\s/g, '');
-        const reset = searchTerm.length < minLength;
+        this._isFiltered = searchTerm.length >= minLength;
 
-        return this.recurseAndSetVisible(currentScope, tree, reset);
+        return this.recurseAndSetVisible(currentScope, tree);
     }
 
     protected recurseAndSetVisible<Tree extends TreeNode>(
         scope: PreferenceScope,
         tree: Tree,
-        reset: boolean,
     ): Tree {
         let currentNodeShouldBeVisible = false;
 
         if (CompositeTreeNode.is(tree)) {
             tree.children = tree.children.map(child => {
-                const newChild = this.recurseAndSetVisible(scope, child, reset);
+                const newChild = this.recurseAndSetVisible(scope, child);
                 currentNodeShouldBeVisible = currentNodeShouldBeVisible || !!newChild.visible;
                 return newChild;
             });
             if (Preference.Branch.is(tree)) {
                 tree.leaves = (tree.leaves || []).map(child => {
-                    const newChild = this.recurseAndSetVisible(scope, child, reset);
+                    const newChild = this.recurseAndSetVisible(scope, child);
                     currentNodeShouldBeVisible = currentNodeShouldBeVisible || !!newChild.visible;
                     return newChild;
                 });
@@ -119,7 +118,7 @@ export class PreferencesTreeProvider {
         } else {
             currentNodeShouldBeVisible = this.schemaProvider.isValidInScope(tree.id, scope)
                 && (
-                    reset // search too short.
+                    !this._isFiltered // search too short.
                     || fuzzy.test(this.lastSearchedFuzzy, tree.id || '') // search matches preference name.
                     // search matches description. Fuzzy isn't ideal here because the score dependens on the order of discovery.
                     || (this.baseSchema.properties[tree.id].description || '').includes(this.lastSearchedLiteral)
@@ -135,6 +134,10 @@ export class PreferencesTreeProvider {
 
     get propertyList(): { [key: string]: PreferenceDataProperty; } {
         return this.baseSchema.properties;
+    }
+
+    get isFiltered(): boolean {
+        return this._isFiltered;
     }
 
 }

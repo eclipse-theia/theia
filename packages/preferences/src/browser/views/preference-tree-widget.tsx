@@ -84,7 +84,7 @@ export class PreferencesTreeWidget extends TreeWidget {
         });
     }
 
-    protected getAncestorsForVisibleNode(visibleNodeID: string): { selectionAncestor: SelectableTreeNode, expansionAncestor: ExpandableTreeNode } {
+    protected getAncestorsForVisibleNode(visibleNodeID: string): { selectionAncestor: SelectableTreeNode, expansionAncestor: ExpandableTreeNode; } {
         const isNonLeafNode = visibleNodeID.endsWith('-id');
         const isSubgroupNode = isNonLeafNode && visibleNodeID.includes('.');
         let expansionAncestor: ExpandableTreeNode;
@@ -140,15 +140,38 @@ export class PreferencesTreeWidget extends TreeWidget {
         if (!TreeNode.isVisible(node)) {
             return undefined;
         }
+
         const attributes = this.createNodeAttributes(node, props);
+        const printedNameWithVisibleChildren = node.name && this.preferenceTreeProvider.isFiltered
+            ? `${node.name} (${this.calculateVisibleLeaves(node)})`
+            : node.name;
+
         const content = <div className={TREE_NODE_CONTENT_CLASS}>
-            {this.renderExpansionToggle(node as Preference.Branch, props)}
-            {this.renderCaption(node, props)}
+            {this.renderExpansionToggle(node, props)}
+            {this.renderCaption({ ...node, name: printedNameWithVisibleChildren }, props)}
         </div>;
         return React.createElement('div', attributes, content);
     }
 
-    protected renderExpansionToggle(node: Preference.Branch, props: NodeProps): React.ReactNode {
+    protected calculateVisibleLeaves(node: Preference.TreeExtension): number {
+        let visibleLeaves = 0;
+        // The check for node.name prevents recursion at the level of `root`.
+        if (node.children) {
+            node.children.forEach(child => {
+                visibleLeaves += this.calculateVisibleLeaves(child);
+            });
+        }
+        if (node.leaves) {
+            node.leaves.forEach(leaf => {
+                if (leaf.visible) {
+                    visibleLeaves++;
+                };
+            });
+        }
+        return visibleLeaves;
+    }
+
+    protected renderExpansionToggle(node: Preference.TreeExtension, props: NodeProps): React.ReactNode {
         if (node.children && node.children.every(child => !child.visible)) {
             return <div className='preferences-tree-spacer' />;
         }
