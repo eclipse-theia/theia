@@ -130,9 +130,6 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected onUpdateRequest(msg: Message): void {
-        if (!this.isAttached || !this.isVisible) {
-            return;
-        }
         MessageLoop.sendMessage(this.commitWidget, msg);
         MessageLoop.sendMessage(this.resourceWidget, msg);
         MessageLoop.sendMessage(this.amendWidget, msg);
