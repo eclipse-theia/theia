@@ -56,8 +56,10 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             widget.onDidChangeVisibility(() => {
                 if (widget.isVisible) {
                     this.addRecentlyVisible(widget);
-                    this.updateCurrentEditor();
+                } else {
+                    this.removeRecentlyVisible(widget);
                 }
+                this.updateCurrentEditor();
             });
             widget.disposed.connect(() => {
                 this.removeRecentlyVisible(widget);

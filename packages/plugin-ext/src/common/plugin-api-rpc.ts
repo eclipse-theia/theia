@@ -968,7 +968,12 @@ export interface EditorsAndDocumentsDelta {
     addedDocuments?: ModelAddedData[];
     removedEditors?: string[];
     addedEditors?: TextEditorAddData[];
-    newActiveEditor?: string;
+    /**
+     * undefined means no changes
+     * null means no active
+     * string means id of active
+     */
+    newActiveEditor?: string | null;
 }
 
 export interface EditorsAndDocumentsExt {
