@@ -25,17 +25,17 @@ import { dispose } from '../common/disposable-util';
 import { URI } from 'vscode-uri';
 
 export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
-    private activeEditorId: string | undefined;
+    private activeEditorId: string | null = null;
 
     private readonly _onDidAddDocuments = new Emitter<DocumentDataExt[]>();
     private readonly _onDidRemoveDocuments = new Emitter<DocumentDataExt[]>();
     private readonly _onDidChangeVisibleTextEditors = new Emitter<TextEditorExt[]>();
-    private readonly _onDidChangeActiveTextEditors = new Emitter<TextEditorExt | undefined>();
+    private readonly _onDidChangeActiveTextEditor = new Emitter<TextEditorExt | undefined>();
 
     readonly onDidAddDocuments: Event<DocumentDataExt[]> = this._onDidAddDocuments.event;
     readonly onDidRemoveDocuments: Event<DocumentDataExt[]> = this._onDidRemoveDocuments.event;
     readonly onDidChangeVisibleTextEditors: Event<TextEditorExt[]> = this._onDidChangeVisibleTextEditors.event;
-    readonly onDidChangeActiveTextEditor: Event<TextEditorExt | undefined> = this._onDidChangeActiveTextEditors.event;
+    readonly onDidChangeActiveTextEditor: Event<TextEditorExt | undefined> = this._onDidChangeActiveTextEditor.event;
 
     private readonly documents = new Map<string, DocumentDataExt>();
     private readonly editors = new Map<string, TextEditorExt>();
@@ -108,37 +108,35 @@ export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
             }
         }
 
+        // TODO investigate how to get rid of it to align with VS Code extension host code
         if (this.activeEditorId && delta.removedEditors && delta.removedEditors.indexOf(this.activeEditorId) !== -1 && this.editors.size !== 0) {
             // to be compatible with VSCode, when active editor is closed onDidChangeActiveTextEditor
             // should be triggered with undefined before next editor, if any, become active.
-            this._onDidChangeActiveTextEditors.fire(undefined);
+            this.activeEditorId = null;
+            this._onDidChangeActiveTextEditor.fire(undefined);
         }
 
-        if (delta.removedDocuments) {
-            this._onDidRemoveDocuments.fire(removedDocuments);
+        if (delta.newActiveEditor !== undefined) {
+            ok(delta.newActiveEditor === null || this.editors.has(delta.newActiveEditor), `active editor '${delta.newActiveEditor}' does not exist`);
+            this.activeEditorId = delta.newActiveEditor;
         }
 
         dispose(removedDocuments);
         dispose(removedEditors);
 
+        // now that the internal state is complete, fire events
+        if (delta.removedDocuments) {
+            this._onDidRemoveDocuments.fire(removedDocuments);
+        }
         if (delta.addedDocuments) {
             this._onDidAddDocuments.fire(addedDocuments);
         }
 
-        if ((delta.removedEditors && delta.removedEditors.length > 0) || (delta.addedEditors && delta.addedEditors.length > 0)) {
+        if (delta.removedEditors || delta.addedEditors) {
             this._onDidChangeVisibleTextEditors.fire(this.allEditors());
         }
-
         if (delta.newActiveEditor !== undefined) {
-            ok(delta.newActiveEditor === null || this.editors.has(delta.newActiveEditor), `active editor '${delta.newActiveEditor}' doesn't exist`);
-            // do not fire event if focus returns to the same editor
-            if (delta.newActiveEditor !== this.activeEditorId) {
-                this.activeEditorId = delta.newActiveEditor;
-                this._onDidChangeActiveTextEditors.fire(this.activeEditor());
-            }
-        } else if (this.editors.size === 0 && delta.removedEditors) {
-            this.activeEditorId = undefined;
-            this._onDidChangeActiveTextEditors.fire(undefined);
+            this._onDidChangeActiveTextEditor.fire(this.activeEditor());
         }
     }
 

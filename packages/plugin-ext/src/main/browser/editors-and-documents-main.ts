@@ -16,7 +16,6 @@
 
 import { interfaces } from 'inversify';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { TextEditorService } from './text-editor-service';
 import {
     MAIN_RPC_CONTEXT,
     EditorsAndDocumentsExt,
@@ -32,6 +31,7 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TextEditorMain } from './text-editor-main';
 import { Emitter } from '@theia/core';
 import { DisposableCollection } from '@theia/core';
+import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 
 export class EditorsAndDocumentsMain implements Disposable {
 
@@ -59,7 +59,7 @@ export class EditorsAndDocumentsMain implements Disposable {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT);
 
-        const editorService = container.get(TextEditorService);
+        const editorService = container.get(EditorManager);
         this.modelService = container.get(EditorModelService);
 
         this.stateComputer = new EditorAndDocumentStateComputer(d => this.onDelta(d), editorService, this.modelService);
@@ -179,7 +179,7 @@ class EditorAndDocumentStateComputer implements Disposable {
 
     constructor(
         private callback: (delta: EditorAndDocumentStateDelta) => void,
-        private readonly editorService: TextEditorService,
+        private readonly editorService: EditorManager,
         private readonly modelService: EditorModelService
     ) { }
 
@@ -187,16 +187,17 @@ class EditorAndDocumentStateComputer implements Disposable {
         if (this.toDispose.disposed) {
             return;
         }
-        this.toDispose.push(this.editorService.onTextEditorAdd(e => {
-            this.onTextEditorAdd(e);
+        this.toDispose.push(this.editorService.onCreated(widget => {
+            this.onTextEditorAdd(widget);
+            this.update();
         }));
-        this.toDispose.push(this.editorService.onTextEditorRemove(e => {
-            this.onTextEditorRemove(e);
-        }));
+        this.toDispose.push(this.editorService.onCurrentEditorChanged(() => this.update()));
         this.toDispose.push(this.modelService.onModelAdded(this.onModelAdded, this));
         this.toDispose.push(this.modelService.onModelRemoved(() => this.update()));
 
-        this.editorService.listTextEditors().forEach(e => this.onTextEditorAdd(e));
+        for (const widget of this.editorService.all) {
+            this.onTextEditorAdd(widget);
+        }
         this.update();
     }
 
@@ -224,15 +225,18 @@ class EditorAndDocumentStateComputer implements Disposable {
         ));
     }
 
-    private onTextEditorAdd(editor: MonacoEditor): void {
+    private onTextEditorAdd(widget: EditorWidget): void {
+        const editor = MonacoEditor.get(widget);
+        if (!editor) {
+            return;
+        }
         const id = editor.getControl().getId();
         const toDispose = new DisposableCollection(
-            editor.onFocusChanged(_ => this.update()),
+            editor.onDispose(() => this.onTextEditorRemove(editor)),
             Disposable.create(() => this.editors.delete(id))
         );
         this.editors.set(id, toDispose);
         this.toDispose.push(toDispose);
-        this.update();
     }
 
     private onTextEditorRemove(e: MonacoEditor): void {
@@ -249,32 +253,27 @@ class EditorAndDocumentStateComputer implements Disposable {
             models.add(model);
         }
 
-        let activeEditor: string | undefined = undefined;
+        let activeId: string | null = null;
+        const activeEditor = MonacoEditor.getCurrent(this.editorService);
 
         const editors = new Map<string, EditorSnapshot>();
-        for (const editor of this.editorService.listTextEditors()) {
+        for (const widget of this.editorService.all) {
+            const editor = MonacoEditor.get(widget);
+            // VS Code tracks only visibles widgets
+            if (!editor || !widget.isVisible) {
+                continue;
+            }
             const model = editor.getControl().getModel();
             if (model && !model.isDisposed()) {
                 const editorSnapshot = new EditorSnapshot(editor);
                 editors.set(editorSnapshot.id, editorSnapshot);
-                if (editor.isFocused()) {
-                    activeEditor = editorSnapshot.id;
+                if (activeEditor === editor) {
+                    activeId = editorSnapshot.id;
                 }
             }
         }
 
-        if (!activeEditor) {
-            const managerEditor = this.editorService.getActiveEditor();
-            if (managerEditor) {
-                editors.forEach(snapshot => {
-                    if (managerEditor.editor === snapshot.editor) {
-                        activeEditor = snapshot.id;
-                    }
-                });
-            }
-        }
-
-        const newState = new EditorAndDocumentState(models, editors, activeEditor);
+        const newState = new EditorAndDocumentState(models, editors, activeId);
         const delta = EditorAndDocumentState.compute(this.currentState, newState);
         if (!delta.isEmpty) {
             this.currentState = newState;
@@ -292,8 +291,8 @@ class EditorAndDocumentStateDelta {
         readonly addedDocuments: MonacoEditorModel[],
         readonly removedEditors: EditorSnapshot[],
         readonly addedEditors: EditorSnapshot[],
-        readonly oldActiveEditor: string | undefined,
-        readonly newActiveEditor: string | undefined
+        readonly oldActiveEditor: string | null | undefined,
+        readonly newActiveEditor: string | null | undefined
     ) {
         this.isEmpty = this.removedDocuments.length === 0
             && this.addedDocuments.length === 0
@@ -308,7 +307,7 @@ class EditorAndDocumentState {
     constructor(
         readonly documents: Set<MonacoEditorModel>,
         readonly editors: Map<string, EditorSnapshot>,
-        readonly activeEditor: string | undefined) {
+        readonly activeEditor: string | null | undefined) {
     }
 
     static compute(before: EditorAndDocumentState | undefined, after: EditorAndDocumentState): EditorAndDocumentStateDelta {

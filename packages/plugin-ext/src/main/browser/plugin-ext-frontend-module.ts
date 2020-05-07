@@ -33,7 +33,6 @@ import { ModalNotification } from './dialogs/modal-notification';
 import { PluginWidget } from './plugin-ext-widget';
 import { PluginFrontendViewContribution } from './plugin-frontend-view-contribution';
 import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
-import { TextEditorService } from './text-editor-service';
 import { EditorModelService } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
@@ -98,7 +97,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(PluginApiFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(PluginApiFrontendContribution);
 
-    bind(TextEditorService).toSelf().inSingletonScope();
     bind(EditorModelService).toSelf().inSingletonScope();
 
     bind(UntitledResourceResolver).toSelf().inSingletonScope();

@@ -44,8 +44,10 @@ export class WorkspaceVariableContribution implements VariableContribution {
                 widget.onDidChangeVisibility(() => {
                     if (widget.isVisible) {
                         this.addRecentlyVisible(widget);
-                        this.updateCurrentWidget();
+                    } else {
+                        this.removeRecentlyVisible(widget);
                     }
+                    this.updateCurrentWidget();
                 });
                 widget.onDidDispose(() => {
                     this.removeRecentlyVisible(widget);
