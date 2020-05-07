@@ -16,12 +16,11 @@
 
 import { injectable, inject } from 'inversify';
 import { Message } from '@phosphor/messaging';
-import { SelectionService } from '@theia/core/lib/common';
 import * as React from 'react';
 import TextareaAutosize from 'react-autosize-textarea';
 import { ScmInput } from './scm-input';
 import {
-    ContextMenuRenderer, ReactWidget, LabelProvider, KeybindingRegistry, StatefulWidget} from '@theia/core/lib/browser';
+    ContextMenuRenderer, ReactWidget, KeybindingRegistry, StatefulWidget} from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 
 @injectable()
@@ -30,8 +29,6 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
     static ID = 'scm-commit-widget';
 
     @inject(ScmService) protected readonly scmService: ScmService;
-    @inject(SelectionService) protected readonly selectionService: SelectionService;
-    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
 
     protected shouldScrollToRow = true;
@@ -58,13 +55,6 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
 
     public focus(): void {
         (this.inputRef.current || this.node).focus();
-    }
-
-    protected onUpdateRequest(msg: Message): void {
-        if (!this.isAttached || !this.isVisible) {
-            return;
-        }
-        super.onUpdateRequest(msg);
     }
 
     protected render(): React.ReactNode {

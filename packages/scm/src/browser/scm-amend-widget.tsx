@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { Message } from '@phosphor/messaging';
 import { SelectionService } from '@theia/core/lib/common';
 import * as React from 'react';
 import {
@@ -49,13 +48,6 @@ export class ScmAmendWidget extends ReactWidget {
         };
         this.addClass('theia-scm-commit-container');
         this.id = ScmAmendWidget.ID;
-    }
-
-    protected onUpdateRequest(msg: Message): void {
-        if (!this.isAttached || !this.isVisible) {
-            return;
-        }
-        super.onUpdateRequest(msg);
     }
 
     protected render(): React.ReactNode {
