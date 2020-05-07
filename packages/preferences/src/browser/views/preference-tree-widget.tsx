@@ -106,7 +106,7 @@ export class PreferencesTreeWidget extends TreeWidget {
                 selectionAncestor = this.model.getNode(subgroupID) as SelectableTreeNode;
             } else {
                 // The last selectable child that precedes the visible item alphabetically
-                selectionAncestor = [...expansionAncestor.children].reverse().find(child => child.id < visibleNodeID) as SelectableTreeNode || expansionAncestor;
+                selectionAncestor = [...expansionAncestor.children].reverse().find(child => child.visible && child.id < visibleNodeID) as SelectableTreeNode || expansionAncestor;
             }
         }
         return { selectionAncestor, expansionAncestor };
