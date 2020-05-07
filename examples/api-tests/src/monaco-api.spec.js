@@ -61,27 +61,55 @@ describe('Monaco API', async function () {
             const chord = resolvedKeybinding.isChord();
             const parts = resolvedKeybinding.getParts();
             const dispatchParts = resolvedKeybinding.getDispatchParts();
+
+            const platform = window.navigator.platform;
+            let expected;
+            if (platform.includes("Mac")){
+                // Mac os
+                expected = {
+                    label: '⌃⇧⌥⌘K',
+                    ariaLabel: "⌃⇧⌥⌘K",
+                    electronAccelerator: 'Ctrl+Shift+Alt+Cmd+K',
+                    userSettingsLabel: 'ctrl+shift+alt+cmd+K',
+                    WYSIWYG: true,
+                    chord: false,
+                    parts: [{
+                        altKey: true,
+                        ctrlKey: true,
+                        keyAriaLabel: 'K',
+                        keyLabel: 'K',
+                        metaKey: true,
+                        shiftKey: true
+                    }],
+                    dispatchParts: [
+                        'ctrl+shift+alt+meta+K'
+                    ]
+                }
+            } else {
+                expected = {
+                    label: 'Ctrl+Shift+Alt+K',
+                    ariaLabel: 'Ctrl+Shift+Alt+K',
+                    electronAccelerator: 'Ctrl+Shift+Alt+K',
+                    userSettingsLabel: 'ctrl+shift+alt+K',
+                    WYSIWYG: true,
+                    chord: false,
+                    parts: [{
+                        altKey: true,
+                        ctrlKey: true,
+                        keyAriaLabel: 'K',
+                        keyLabel: 'K',
+                        metaKey: false,
+                        shiftKey: true
+                    }],
+                    dispatchParts: [
+                        'ctrl+shift+alt+K'
+                    ]
+                }
+            }
+
             assert.deepStrictEqual({
                 label, ariaLabel, electronAccelerator, userSettingsLabel, WYSIWYG, chord, parts, dispatchParts
-            }, {
-                label: 'Ctrl+Shift+Alt+K',
-                ariaLabel: 'Ctrl+Shift+Alt+K',
-                electronAccelerator: 'Ctrl+Shift+Alt+K',
-                userSettingsLabel: 'ctrl+shift+alt+K',
-                WYSIWYG: true,
-                chord: false,
-                parts: [{
-                    altKey: true,
-                    ctrlKey: true,
-                    keyAriaLabel: 'K',
-                    keyLabel: 'K',
-                    metaKey: false,
-                    shiftKey: true
-                }],
-                dispatchParts: [
-                    'ctrl+shift+alt+K'
-                ]
-            });
+            }, expected);
         } else {
             assert.fail(`resolvedKeybinding must be of ${MonacoResolvedKeybinding.name} type`);
         }
