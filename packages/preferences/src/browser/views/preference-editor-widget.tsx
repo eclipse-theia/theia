@@ -108,10 +108,14 @@ export class PreferencesEditorWidget extends ReactWidget {
 
     protected onScroll = (): void => {
         const scrollContainer = this.node;
+        const scrollIsTop = scrollContainer.scrollTop === 0;
         const visibleChildren: string[] = [];
         this.addFirstVisibleChildId(scrollContainer, visibleChildren);
         if (visibleChildren.length) {
-            this.preferencesEventService.onEditorScroll.fire({ firstVisibleChildId: visibleChildren[0] });
+            this.preferencesEventService.onEditorScroll.fire({
+                firstVisibleChildId: visibleChildren[0],
+                isTop: scrollIsTop
+            });
         }
     };
 

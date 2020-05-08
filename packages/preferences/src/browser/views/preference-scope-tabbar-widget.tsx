@@ -36,6 +36,8 @@ const GENERAL_FOLDER_TAB_CLASSNAME = 'preference-folder';
 const LABELED_FOLDER_TAB_CLASSNAME = 'preferences-folder-tab';
 const FOLDER_DROPDOWN_CLASSNAME = 'preferences-folder-dropdown';
 const FOLDER_DROPDOWN_ICON_CLASSNAME = 'preferences-folder-dropdown-icon';
+const TABBAR_UNDERLINE_CLASSNAME = 'tabbar-underline';
+const SHADOW_CLASSNAME = 'with-shadow';
 const SINGLE_FOLDER_TAB_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${LABELED_FOLDER_TAB_CLASSNAME}`;
 const UNSELECTED_FOLDER_DROPDOWN_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${FOLDER_DROPDOWN_CLASSNAME}`;
 const SELECTED_FOLDER_DROPDOWN_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${LABELED_FOLDER_TAB_CLASSNAME} ${FOLDER_DROPDOWN_CLASSNAME}`;
@@ -53,6 +55,7 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
     protected folderTitle: Title<Widget>;
     protected currentWorkspaceRoots: FileStat[] = [];
     protected currentSelection: Preference.SelectedScopeDetails = Preference.DEFAULT_SCOPE;
+    protected editorScrollAtTop = true;
     protected setNewScopeSelection(newSelection: Preference.SelectedScopeDetails): void {
 
         const newIndex = this.titles.findIndex(title => title.dataset.scope === newSelection.scope);
@@ -79,6 +82,19 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
             this.doUpdateDisplay(newRoots);
         });
         this.workspaceService.onWorkspaceLocationChanged(() => this.updateWorkspaceTab());
+        this.preferencesEventService.onEditorScroll.event((e: Preference.MouseScrollDetails) => {
+            if (e.isTop !== this.editorScrollAtTop) {
+                this.editorScrollAtTop = e.isTop;
+                if (this.editorScrollAtTop) {
+                    this.removeClass(SHADOW_CLASSNAME);
+                } else {
+                    this.addClass(SHADOW_CLASSNAME);
+                }
+            }
+        });
+        const tabUnderline = document.createElement('div');
+        tabUnderline.className = TABBAR_UNDERLINE_CLASSNAME;
+        this.node.append(tabUnderline);
     }
 
     protected setupInitialDisplay(): void {
@@ -98,7 +114,7 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
             tab.onkeypress = () => {
                 if (tab.className.includes(GENERAL_FOLDER_TAB_CLASSNAME) && this.currentWorkspaceRoots.length > 1) {
                     const tabRect = tab.getBoundingClientRect();
-                    this.openContextMenu(tabRect);
+                    this.openContextMenu(tabRect, tab, 'keypress');
                 } else {
                     this.setNewScopeSelection(this.titles[index].dataset as unknown as Preference.SelectedScopeDetails);
                 }
@@ -190,17 +206,20 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
         const folderTab = this.contentNode.querySelector(`.${GENERAL_FOLDER_TAB_CLASSNAME}`);
         if (folderTab && folderTab.contains(e.target as HTMLElement) && this.currentWorkspaceRoots.length > 1) {
             const tabRect = folderTab.getBoundingClientRect();
-            this.openContextMenu(tabRect);
+            this.openContextMenu(tabRect, (folderTab as HTMLElement), 'click');
             return;
         }
         super.handleEvent(e);
     }
 
-    protected openContextMenu(tabRect: DOMRect | ClientRect): void {
+    protected openContextMenu(tabRect: DOMRect | ClientRect, folderTabNode: HTMLElement, source: 'click' | 'keypress'): void {
         this.contextMenuRenderer.render({
             menuPath: FOLDER_SCOPE_MENU_PATH,
             anchor: { x: tabRect.left, y: tabRect.bottom },
-            args: [this.folderSelectionCallback, 'from-tabbar']
+            args: [this.folderSelectionCallback, 'from-tabbar'],
+            onHide: () => {
+                if (source === 'click') { folderTabNode.blur(); }
+            }
         });
     }
 

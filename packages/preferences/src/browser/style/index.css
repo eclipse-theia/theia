@@ -58,6 +58,9 @@
 .theia-settings-container .preferences-tabbar-widget {
     grid-area: tabbar;
     margin: 3px 24px 0px 24px;
+}
+
+.theia-settings-container .preferences-tabbar-widget.with-shadow {
     box-shadow: 0px 6px 5px -5px var(--theia-widget-shadow);
 }
 
@@ -67,13 +70,26 @@
 
 #theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab {
     background: var(--theia-editor-background);
+    border-right: unset;
+    border-bottom: var(--theia-border-width) solid var(--theia-tab-unfocusedInactiveForeground);
+}
+
+#theia-main-content-panel .theia-settings-container .tabbar-underline {
+    width: 100%;
+    position:absolute;
+    top: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2 - 1px);
+    border-top: 1px solid var(--theia-tab-unfocusedInactiveForeground);
+    z-index: -1;
 }
 
 #theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab.p-mod-current {
     color: var(--theia-panelTitle-activeForeground);
-    border-top: var(--theia-border-width) solid var(--theia-panelTitle-activeBorder);
+    border-bottom: var(--theia-border-width) solid var(--theia-panelTitle-activeBorder);
 }
 
+#theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab.p-mod-current:not(.theia-mod-active) {
+    border-top: unset;
+}
 
 #theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab.preferences-folder-tab .p-TabBar-tabLabel::after {
     content: 'Folder';

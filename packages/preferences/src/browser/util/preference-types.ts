@@ -98,6 +98,7 @@ export namespace Preference {
 
     export interface MouseScrollDetails {
         firstVisibleChildId: string;
+        isTop: boolean;
     };
 
     export interface SelectedTreeNode {
