@@ -214,7 +214,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                                     if (mode !== QuickOpenMode.OPEN) {
                                         return false;
                                     }
-                                    this.taskService.attach(task.terminalId!, task.taskId);
+                                    this.taskService.attach(task.terminalId!, task);
                                     return true;
                                 }
                             },

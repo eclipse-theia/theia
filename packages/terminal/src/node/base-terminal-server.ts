@@ -41,10 +41,10 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
     abstract create(options: IBaseTerminalServerOptions): Promise<number>;
 
     async attach(id: number): Promise<number> {
-        const term = this.processManager.get(id);
+        const terminal = this.processManager.get(id);
 
-        if (term && term instanceof TerminalProcess) {
-            return term.id;
+        if (terminal && terminal instanceof TerminalProcess) {
+            return terminal.id;
         } else {
             this.logger.error(`Couldn't attach - can't find terminal with id: ${id} `);
             return -1;
@@ -53,7 +53,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     async getProcessId(id: number): Promise<number> {
         const terminal = this.processManager.get(id);
-        if (!(terminal instanceof TerminalProcess)) {
+        if (!(terminal && terminal instanceof TerminalProcess)) {
             throw new Error(`terminal "${id}" does not exist`);
         }
         return terminal.pid;
@@ -61,7 +61,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     async getProcessInfo(id: number): Promise<TerminalProcessInfo> {
         const terminal = this.processManager.get(id);
-        if (!(terminal instanceof TerminalProcess)) {
+        if (!(terminal && terminal instanceof TerminalProcess)) {
             throw new Error(`terminal "${id}" does not exist`);
         }
         return {
@@ -71,18 +71,18 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
     }
 
     async getCwdURI(id: number): Promise<string> {
-        const terminal = this.processManager.get(id);
-        if (!(terminal instanceof TerminalProcess)) {
+        const terminal = this.processManager.getAlive(id);
+        if (!(terminal && terminal instanceof TerminalProcess)) {
             throw new Error(`terminal "${id}" does not exist`);
         }
         return terminal.getCwdURI();
     }
 
     async close(id: number): Promise<void> {
-        const term = this.processManager.get(id);
+        const terminal = this.processManager.getAlive(id);
 
-        if (term instanceof TerminalProcess) {
-            term.kill();
+        if (terminal && terminal instanceof TerminalProcess) {
+            terminal.kill();
         }
     }
 
@@ -95,9 +95,9 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
     }
 
     async resize(id: number, cols: number, rows: number): Promise<void> {
-        const term = this.processManager.get(id);
-        if (term && term instanceof TerminalProcess) {
-            term.resize(cols, rows);
+        const terminal = this.processManager.getAlive(id);
+        if (terminal && terminal instanceof TerminalProcess) {
+            terminal.resize(cols, rows);
         } else {
             console.error("Couldn't resize terminal " + id + ", because it doesn't exist.");
         }
@@ -108,31 +108,31 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         this.client = client;
     }
 
-    protected postCreate(term: TerminalProcess): void {
+    protected postCreate(terminal: TerminalProcess): void {
         const toDispose = new DisposableCollection();
 
-        toDispose.push(term.onError(error => {
-            this.logger.error(`Terminal pid: ${term.pid} error: ${error}, closing it.`);
+        toDispose.push(terminal.onError(error => {
+            this.logger.error(`Terminal pid: ${terminal.pid} error: ${error}, closing it.`);
 
             if (this.client !== undefined) {
                 this.client.onTerminalError({
-                    'terminalId': term.id,
+                    'terminalId': terminal.id,
                     'error': new Error(`Failed to execute terminal process (${error.code})`),
                 });
             }
         }));
 
-        toDispose.push(term.onExit(event => {
+        toDispose.push(terminal.onExit(event => {
             if (this.client !== undefined) {
                 this.client.onTerminalExitChanged({
-                    'terminalId': term.id,
+                    'terminalId': terminal.id,
                     'code': event.code,
                     'signal': event.signal
                 });
             }
         }));
 
-        this.terminalToDispose.set(term.id, toDispose);
+        this.terminalToDispose.set(terminal.id, toDispose);
     }
 
 }

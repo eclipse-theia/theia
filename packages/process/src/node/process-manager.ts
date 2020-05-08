@@ -24,12 +24,15 @@ export class ProcessManager implements BackendApplicationContribution {
 
     protected id: number = 0;
     protected readonly processes: Map<number, Process>;
+    protected readonly willReapProcesses: Map<number, Process>;
     protected readonly deleteEmitter: Emitter<number>;
+    protected readonly REAP_TIMEOUT: number = 1000;
 
     constructor(
         @inject(ILogger) @named('process') protected logger: ILogger
     ) {
         this.processes = new Map();
+        this.willReapProcesses = new Map();
         this.deleteEmitter = new Emitter<number>();
     }
 
@@ -63,13 +66,32 @@ export class ProcessManager implements BackendApplicationContribution {
         }
         if (this.processes.delete(process.id)) {
             this.deleteEmitter.fire(process.id);
+            // Process will be recorded in willReapProcesses for a while so that it's still possible to get information of it before it's automatically reaped
+            this.willReapProcesses.set(process.id, process);
+            setTimeout(() => {
+                this.willReapProcesses.delete(process.id);
+            }, this.REAP_TIMEOUT);
             this.logger.debug(`The process was successfully unregistered. ${processLabel}`);
         } else {
             this.logger.warn(`This process was not registered or was already unregistered. ${processLabel}`);
         }
     }
 
+    /**
+     * Get a process given its id. The process could be either alive, or dead and will be reaped soon.
+     *
+     * @param id the process id.
+     */
     get(id: number): Process | undefined {
+        return this.processes.get(id) || this.willReapProcesses.get(id);
+    }
+
+    /**
+     * Get a process given its id. Only process marked alive will be returned.
+     *
+     * @param id the process id.
+     */
+    getAlive(id: number): Process | undefined {
         return this.processes.get(id);
     }
 

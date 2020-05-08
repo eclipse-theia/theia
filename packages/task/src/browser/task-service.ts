@@ -936,7 +936,7 @@ export class TaskService implements TaskConfigurationClient {
              *       Reason: Maybe a new task type wants to also be displayed in a terminal.
              */
             if (typeof taskInfo.terminalId === 'number') {
-                this.attach(taskInfo.terminalId, taskInfo.taskId);
+                this.attach(taskInfo.terminalId, taskInfo);
             }
             return taskInfo;
         } catch (error) {
@@ -997,24 +997,19 @@ export class TaskService implements TaskConfigurationClient {
         terminal.sendText(selectedText);
     }
 
-    async attach(terminalId: number, taskId: number): Promise<void> {
-        // Get the list of all available running tasks.
-        const runningTasks: TaskInfo[] = await this.getRunningTasks();
-        // Get the corresponding task information based on task id if available.
-        const taskInfo: TaskInfo | undefined = runningTasks.find((t: TaskInfo) => t.taskId === taskId);
+    async attach(terminalId: number, taskInfo: TaskInfo): Promise<void> {
         let widgetOpenMode: WidgetOpenMode = 'open';
-        if (taskInfo) {
-            const terminalWidget = this.terminalService.getByTerminalId(terminalId);
-            if (terminalWidget) {
-                this.messageService.error('Task is already running in terminal');
-                return this.terminalService.open(terminalWidget, { mode: 'activate' });
-            }
-            if (TaskOutputPresentation.shouldAlwaysRevealTerminal(taskInfo.config)) {
-                if (TaskOutputPresentation.shouldSetFocusToTerminal(taskInfo.config)) { // assign focus to the terminal if presentation.focus is true
-                    widgetOpenMode = 'activate';
-                } else { // show the terminal but not assign focus
-                    widgetOpenMode = 'reveal';
-                }
+        const { taskId } = taskInfo;
+        const terminalWidget = this.terminalService.getByTerminalId(terminalId);
+        if (terminalWidget) {
+            this.messageService.error('Task is already running in terminal');
+            return this.terminalService.open(terminalWidget, { mode: 'activate' });
+        }
+        if (TaskOutputPresentation.shouldAlwaysRevealTerminal(taskInfo.config)) {
+            if (TaskOutputPresentation.shouldSetFocusToTerminal(taskInfo.config)) { // assign focus to the terminal if presentation.focus is true
+                widgetOpenMode = 'activate';
+            } else { // show the terminal but not assign focus
+                widgetOpenMode = 'reveal';
             }
         }
         // Create / find a terminal widget to display an execution output of a task that was launched as a command inside a shell.
@@ -1026,11 +1021,11 @@ export class TaskService implements TaskConfigurationClient {
                 : `Task: #${taskId}`,
             destroyTermOnClose: true
         }, {
-            taskId,
-            widgetOptions: { area: 'bottom' },
-            mode: widgetOpenMode,
-            taskInfo
-        });
+                taskId,
+                widgetOptions: { area: 'bottom' },
+                mode: widgetOpenMode,
+                taskInfo
+            });
         widget.start(terminalId);
     }
 
