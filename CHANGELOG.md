@@ -5,6 +5,7 @@
 Breaking changes:
 
 - [scm] support file tree mode in Source Control view.  Classes that extend ScmWidget will likely require changes [#7505](https://github.com/eclipse-theia/theia/pull/7505)
+- [task] removed `taskId` from `TaskTerminalWidgetOpenerOptions` [#7765](https://github.com/eclipse-theia/theia/pull/7765)
 
 ## v1.1.0
 

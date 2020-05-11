@@ -326,7 +326,7 @@ export class TaskService implements TaskConfigurationClient {
         });
     }
 
-    private getTaskIdentifier(taskConfig: TaskConfiguration): string {
+    protected getTaskIdentifier(taskConfig: TaskConfiguration): string {
         const taskName = this.taskNameResolver.resolve(taskConfig);
         const sourceStrUri = this.taskSourceResolver.resolve(taskConfig);
         return `${taskName} (${this.labelProvider.getName(new URI(sourceStrUri))})`;
@@ -896,7 +896,7 @@ export class TaskService implements TaskConfigurationClient {
         return customizationObject;
     }
 
-    private async removeProblemMarkers(option?: RunTaskOption): Promise<void> {
+    protected async removeProblemMarkers(option?: RunTaskOption): Promise<void> {
         if (option && option.customization) {
             const matchersFromOption = option.customization.problemMatcher || [];
             for (const matcher of matchersFromOption) {
@@ -910,7 +910,7 @@ export class TaskService implements TaskConfigurationClient {
         }
     }
 
-    private async getResolvedTask(task: TaskConfiguration): Promise<TaskConfiguration | undefined> {
+    protected async getResolvedTask(task: TaskConfiguration): Promise<TaskConfiguration | undefined> {
         let resolver = undefined;
         let resolvedTask: TaskConfiguration;
         try {
@@ -930,7 +930,7 @@ export class TaskService implements TaskConfigurationClient {
      * @param resolvedTask the resolved task
      * @param option options to run the resolved task
      */
-    private async runResolvedTask(resolvedTask: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+    protected async runResolvedTask(resolvedTask: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
         const source = resolvedTask._source;
         const taskLabel = resolvedTask.label;
         try {
@@ -955,7 +955,7 @@ export class TaskService implements TaskConfigurationClient {
         }
     }
 
-    private getCustomizeProblemMatcherItems(): QuickPickItem<QuickPickProblemMatcherItem>[] {
+    protected getCustomizeProblemMatcherItems(): QuickPickItem<QuickPickProblemMatcherItem>[] {
         const items: QuickPickItem<QuickPickProblemMatcherItem>[] = [];
         items.push({
             label: 'Continue without scanning the task output',
@@ -1035,7 +1035,6 @@ export class TaskService implements TaskConfigurationClient {
                 : `Task: #${taskId}`,
             destroyTermOnClose: true
         }, {
-            taskId,
             widgetOptions: { area: 'bottom' },
             mode: widgetOpenMode,
             taskInfo
