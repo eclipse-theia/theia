@@ -2,6 +2,8 @@
 
 ## v1.2.0
 
+- [application-manager] enable clients to persistenly change windowOptions [#7787](https://github.com/eclipse-theia/theia/pull/7787)
+
 Breaking changes:
 
 - [scm] support file tree mode in Source Control view.  Classes that extend ScmWidget will likely require changes [#7505](https://github.com/eclipse-theia/theia/pull/7505)

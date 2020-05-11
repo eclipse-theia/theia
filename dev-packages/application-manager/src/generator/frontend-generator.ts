@@ -188,17 +188,22 @@ app.on('ready', () => {
             width, height, x, y
         });
 
-        let windowOptions = {
-            show: false,
-            title: applicationName,
-            width: windowState.width,
-            height: windowState.height,
-            minWidth: 200,
-            minHeight: 120,
-            x: windowState.x,
-            y: windowState.y,
-            isMaximized: windowState.isMaximized
-        };
+        let windowOptions = electronStore.get('windowOptions');
+
+        if (!windowOptions) {
+            windowOptions = {
+                show: false,
+                title: applicationName,
+                width: windowState.width,
+                height: windowState.height,
+                minWidth: 200,
+                minHeight: 120,
+                x: windowState.x,
+                y: windowState.y,
+                isMaximized: windowState.isMaximized
+            };
+            electronStore.set('windowOptions', windowOptions);
+        }
 
         // Always hide the window, we will show the window when it is ready to be shown in any case.
         const newWindow = new BrowserWindow(windowOptions);
@@ -286,6 +291,12 @@ app.on('ready', () => {
     });
     ipcMain.on('open-external', (event, url) => {
         shell.openExternal(url);
+    });
+    ipcMain.on('set-window-options', (event, options) => {
+        electronStore.set('windowOptions', options);
+    });
+    ipcMain.on('get-window-options', event => {
+        event.returnValue = electronStore.get('windowOptions');
     });
 
     // Check whether we are in bundled application or development mode.
