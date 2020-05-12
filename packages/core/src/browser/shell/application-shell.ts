@@ -947,7 +947,7 @@ export class ApplicationShell extends Widget {
      * Set the z-index of the given element and its ancestors to the value `z`.
      */
     private setZIndex(element: HTMLElement, z: string | null): void {
-        element.style.zIndex = z;
+        element.style.zIndex = z || '';
         const parent = element.parentElement;
         if (parent && parent !== this.node) {
             this.setZIndex(parent, z);
