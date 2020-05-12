@@ -53,6 +53,6 @@ export class PluginTheiaFileHandler implements PluginDeployerFileHandler {
         if (context.pluginEntry().type === PluginType.User) {
             pluginsDirUri = await this.environment.getPluginsDirUri();
         }
-        return FileUri.fsPath(pluginsDirUri.resolve(filenamify(context.pluginEntry().id())));
+        return FileUri.fsPath(pluginsDirUri.resolve(filenamify(context.pluginEntry().id(), { replacement: '_' })));
     }
 }
