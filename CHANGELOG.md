@@ -2,11 +2,15 @@
 
 ## v1.2.0
 
+- [application-manager] enabled clients to add `windowOptions` using an IPC-Event [#7803](https://github.com/eclipse-theia/theia/pull/7803)
+- [application-package] enabled client to change default `windowOptions` [#7803](https://github.com/eclipse-theia/theia/pull/7803)
+
 Breaking changes:
 
 - [scm] support file tree mode in Source Control view.  Classes that extend ScmWidget will likely require changes [#7505](https://github.com/eclipse-theia/theia/pull/7505)
 - [task] removed `taskId` from `TaskTerminalWidgetOpenerOptions` [#7765](https://github.com/eclipse-theia/theia/pull/7765)
 - [core] `KeybindingRegistry` registers a new keybinding with a higher priority than previously in the same scope [#7839](https://github.com/eclipse-theia/theia/pull/7839)
+- [application-package] moved `disallowReloadKeybinding` under the `electron` subsection [#7803](https://github.com/eclipse-theia/theia/pull/7803)
 
 ## v1.1.0
 
