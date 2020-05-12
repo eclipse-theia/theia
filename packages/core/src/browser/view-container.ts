@@ -1231,8 +1231,7 @@ export class ViewContainerLayout extends SplitLayout {
             } else {
                 const minSize = `${this.options.headerSize + part.minSize}px`;
                 style.minHeight = minSize;
-                // eslint-disable-next-line no-null/no-null
-                style.maxHeight = null;
+                style.maxHeight = '';
             }
         }
         super.onFitRequest(msg);

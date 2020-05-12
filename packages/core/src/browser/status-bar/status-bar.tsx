@@ -110,8 +110,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
 
     protected internalSetBackgroundColor(color?: string): void {
         this.backgroundColor = color;
-        // eslint-disable-next-line no-null/no-null
-        this.node.style.backgroundColor = this.backgroundColor ? this.backgroundColor : null;
+        this.node.style.backgroundColor = this.backgroundColor || '';
     }
 
     async setColor(color?: string): Promise<void> {

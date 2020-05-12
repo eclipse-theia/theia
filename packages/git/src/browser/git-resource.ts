@@ -27,7 +27,11 @@ export class GitResource implements Resource {
     async readContents(options?: { encoding?: string }): Promise<string> {
         if (this.repository) {
             const commitish = this.uri.query;
-            return this.git.show(this.repository, this.uri.toString(), Object.assign({ commitish }, options));
+            let encoding: Git.Options.Show['encoding'];
+            if (options?.encoding === 'utf8' || options?.encoding === 'binary') {
+                encoding = options?.encoding;
+            }
+            return this.git.show(this.repository, this.uri.toString(), { commitish, encoding });
         }
         return '';
     }

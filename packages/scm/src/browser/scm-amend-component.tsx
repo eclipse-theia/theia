@@ -518,8 +518,6 @@ export class ScmAmendComponent extends React.Component<ScmAmendComponentProps, S
                         };
                 }
         }
-
-        throw new Error('Invalid value for transition state: ' + this.state.transition.state);
     }
 
     protected styleLastCommitMovingUp(transitionState: 'start' | 'transitioning'): React.CSSProperties {

@@ -66,7 +66,7 @@ export class GitLocatorImpl implements GitLocator {
         context.visited.set(realBasePath, true);
         return new Promise<string[]>(resolve => {
             fs.stat(realBasePath).then(async stat => {
-                if (stat.isDirectory) {
+                if (stat.isDirectory()) {
                     const progress: string[] = [];
                     const paths = await findGitRepositories(realBasePath, repositories => {
                         progress.push(...repositories);
