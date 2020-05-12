@@ -139,7 +139,9 @@ const { ElectronSecurityToken } = require('@theia/core/lib/electron-common/elect
 
 const applicationName = \`${this.pck.props.frontend.config.applicationName}\`;
 const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
-const disallowReloadKeybinding = ${this.pck.props.frontend.config.disallowReloadKeybinding === true ? 'true' : 'false'};
+const disallowReloadKeybinding = ${this.pck.props.frontend.config.electron?.disallowReloadKeybinding === true ? 'true' : 'false'};
+const defaultWindowOptionsAdditions = ${this.prettyStringify(this.pck.props.frontend.config.electron?.windowOptions || {})};
+
 
 if (isSingleInstance && !app.requestSingleInstanceLock()) {
     // There is another instance running, exit now. The other instance will request focus.
@@ -184,6 +186,13 @@ app.on('ready', () => {
             width, height, x, y
         });
 
+        const persistedWindowOptionsAdditions = electronStore.get('windowOptions');
+
+        const windowOptionsAdditions = {
+            ...defaultWindowOptionsAdditions,
+            ...persistedWindowOptionsAdditions
+        };
+
         let windowOptions = {
             show: false,
             title: applicationName,
@@ -193,7 +202,8 @@ app.on('ready', () => {
             minHeight: 120,
             x: windowState.x,
             y: windowState.y,
-            isMaximized: windowState.isMaximized
+            isMaximized: windowState.isMaximized,
+            ...windowOptionsAdditions
         };
 
         // Always hide the window, we will show the window when it is ready to be shown in any case.
@@ -290,6 +300,12 @@ app.on('ready', () => {
     });
     ipcMain.on('open-external', (event, url) => {
         shell.openExternal(url);
+    });
+    ipcMain.on('set-window-options', (event, options) => {
+        electronStore.set('windowOptions', options);
+    });
+    ipcMain.on('get-persisted-window-options-additions', event => {
+        event.returnValue = electronStore.get('windowOptions');
     });
 
     // Check whether we are in bundled application or development mode.
