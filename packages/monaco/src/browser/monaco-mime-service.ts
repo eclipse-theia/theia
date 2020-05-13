@@ -14,22 +14,46 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MimeAssociation, MimeService } from '@theia/core/lib/browser/mime-service';
+import debounce = require('lodash.debounce');
 import { injectable } from 'inversify';
+import { MimeAssociation, MimeService } from '@theia/core/lib/browser/mime-service';
 
 @injectable()
 export class MonacoMimeService extends MimeService {
 
-    setAssociations(associations: MimeAssociation[]): void {
-        monaco.mime.clearTextMimes(true);
+    protected associations: MimeAssociation[] = [];
+    protected updatingAssociations = false;
 
-        for (const association of associations) {
-            const mimetype = this.getMimeForMode(association.id) || `text/x-${association.id}`;
-            monaco.mime.registerTextMime({ id: association.id, mime: mimetype, filepattern: association.filepattern, userConfigured: true }, false);
-        }
-
-        monaco.services.StaticServices.modeService.get()._onLanguagesMaybeChanged.fire(undefined);
+    constructor() {
+        super();
+        monaco.services.StaticServices.modeService.get()._onLanguagesMaybeChanged.event(() => {
+            if (this.updatingAssociations) {
+                return;
+            }
+            this.updateAssociations();
+        });
     }
+
+    setAssociations(associations: MimeAssociation[]): void {
+        this.associations = associations;
+        this.updateAssociations();
+    }
+
+    protected updateAssociations = debounce(() => {
+        this.updatingAssociations = true;
+        try {
+            monaco.mime.clearTextMimes(true);
+
+            for (const association of this.associations) {
+                const mimetype = this.getMimeForMode(association.id) || `text/x-${association.id}`;
+                monaco.mime.registerTextMime({ id: association.id, mime: mimetype, filepattern: association.filepattern, userConfigured: true }, false);
+            }
+
+            monaco.services.StaticServices.modeService.get()._onLanguagesMaybeChanged.fire(undefined);
+        } finally {
+            this.updatingAssociations = false;
+        }
+    });
 
     protected getMimeForMode(langId: string): string | undefined {
         for (const language of monaco.languages.getLanguages()) {
