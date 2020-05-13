@@ -53,6 +53,7 @@ import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from 'vscode-uri';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
+import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -90,6 +91,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly workspaceService: WorkspaceService;
     @inject(TerminalFrontendContribution)
     protected readonly terminalContribution: TerminalFrontendContribution;
+    @inject(QuickOpenWorkspace)
+    protected readonly quickOpenWorkspace: QuickOpenWorkspace;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -570,5 +573,11 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     commands.executeCommand<CallHierarchyOutgoingCall[]>('_executeProvideOutgoingCalls', { item }))
             }
         );
+
+        commands.registerCommand({
+            id: 'workbench.action.openRecent'
+        }, {
+            execute: () => this.quickOpenWorkspace.select()
+        });
     }
 }
