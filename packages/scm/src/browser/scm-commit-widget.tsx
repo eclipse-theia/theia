@@ -50,6 +50,7 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
+        this.update();
         this.focus();
     }
 
