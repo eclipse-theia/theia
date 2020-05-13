@@ -666,6 +666,7 @@ declare module monaco.services {
     export interface IModeService {
         // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/services/modeServiceImpl.ts#L46
         private readonly _instantiatedModes: { [modeId: string]: IMode; };
+        private readonly _onLanguagesMaybeChanged: Emitter<void>;
         readonly onDidCreateMode: monaco.IEvent<IMode>;
         createByFilepathOrFirstLine(rsource: monaco.Uri | null, firstLine?: string): ILanguageSelection;
         getLanguageIdentifier(modeId: string | LanguageId): LanguageIdentifier | null;

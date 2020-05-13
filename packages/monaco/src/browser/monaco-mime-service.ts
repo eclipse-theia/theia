@@ -27,6 +27,8 @@ export class MonacoMimeService extends MimeService {
             const mimetype = this.getMimeForMode(association.id) || `text/x-${association.id}`;
             monaco.mime.registerTextMime({ id: association.id, mime: mimetype, filepattern: association.filepattern, userConfigured: true }, false);
         }
+
+        monaco.services.StaticServices.modeService.get()._onLanguagesMaybeChanged.fire(undefined);
     }
 
     protected getMimeForMode(langId: string): string | undefined {
