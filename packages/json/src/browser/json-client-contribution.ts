@@ -55,13 +55,14 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         this.initializeJsonSchemaStoreAssociations();
     }
 
-    protected async updateSchemas(client: ILanguageClient): Promise<void> {
+    protected updateSchemas(client: ILanguageClient): void {
         this.schemaRegistry = {};
-        this.updateJsonSchemaStoreSchemas();
-        this.initializeJsonPreferencesAssociations().then(() => client.sendNotification('json/schemaAssociations', this.schemaRegistry));
+        this.updateJsonSchemaStoreAssociations();
+        this.initializeJsonPreferencesAssociations();
+        client.sendNotification('json/schemaAssociations', this.schemaRegistry);
     }
 
-    protected updateJsonSchemaStoreSchemas(client?: ILanguageClient): void {
+    protected updateJsonSchemaStoreAssociations(): void {
         const schemaStoreConfigs = [...this.jsonSchemaStore.getJsonSchemaConfigurations()];
         for (const schemaConfig of schemaStoreConfigs) {
             if (schemaConfig.fileMatch) {
@@ -73,48 +74,25 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
                 }
             }
         }
-        if (client) {
-            client.sendNotification('json/schemaAssociations', this.schemaRegistry);
-        }
     }
 
-    protected async setJsonPreferencesSchemas(schemaConfigs: JsonSchemaConfiguration[], scope: PreferenceScope, workspaceRoot?: string): Promise<void> {
-        await this.asyncForEach(schemaConfigs, async (schemaConfig: JsonSchemaConfiguration) => {
-            await this.asyncForEach(schemaConfig.fileMatch, async (fileMatch: string) => {
+    protected setJsonPreferencesSchemas(schemaConfigs: JsonSchemaConfiguration[], scope: PreferenceScope, rootPath?: string): void {
+        schemaConfigs.forEach((schemaConfig: JsonSchemaConfiguration) => {
+            schemaConfig.fileMatch.forEach((fileMatch: string) => {
                 if (!fileMatch.startsWith('/') && !fileMatch.match(/\w+:/)) {
                     fileMatch = '/' + fileMatch;
                 }
-
-                if (workspaceRoot) {
-                    workspaceRoot = new URI(workspaceRoot).path.toString();
-                    if (scope !== PreferenceScope.User) {
-                        fileMatch = new Path(workspaceRoot).join(fileMatch).normalize().toString();
+                let url = schemaConfig.url;
+                if (rootPath) {
+                    fileMatch = new Path(rootPath).join(fileMatch).normalize().toString();
+                    if (url.match(rootPath)) {
+                        url = new URI(new Path(url).toString()).toString();
+                    } else if ((url.startsWith('.') || url.startsWith('/') || url.match(/^\w+\//))) {
+                        url = new URI(rootPath).resolve(url).normalizePath().toString();
                     }
                 }
-
-                const fileUri = new URI(schemaConfig.url);
-                if (fileUri.scheme === 'file') {
-                    await this.fileSystem.exists(fileUri.toString()).then(async fileExists => {
-                        const filePath = fileUri.path.toString();
-                        if (fileExists) {
-                            this.schemaRegistry[fileMatch] = [filePath];
-                        } else {
-                            if (workspaceRoot && !filePath.startsWith(workspaceRoot)) {
-                                const absolutePath = new Path(workspaceRoot).join(filePath).normalize().toString();
-                                await this.fileSystem.exists(absolutePath).then(exists => {
-                                    if (exists) {
-                                        this.schemaRegistry[fileMatch] = [absolutePath];
-                                    } else {
-                                        console.error('JSON schema configuration for fileMatch: \'' + fileMatch + '\' and url: \'' + absolutePath + '\' could not be registered.');
-                                    }
-                                });
-                            } else {
-                                console.error('JSON schema configuration for fileMatch: \'' + fileMatch + '\' and url: \'' + filePath + '\' could not be registered.');
-                            }
-                        }
-                    });
-                } else {
-                    this.schemaRegistry[fileMatch] = [schemaConfig.url];
+                if (url) {
+                    this.schemaRegistry[fileMatch] = [url];
                 }
             });
         });
@@ -171,42 +149,22 @@ export class JsonClientContribution extends BaseLanguageClientContribution {
         }
     }
 
-    protected async initializeJsonPreferencesAssociations(): Promise<void> {
-        const userPreferenceValues = this.preferenceService.inspect<JsonSchemaConfiguration[]>('json.schemas');
-        if (userPreferenceValues) {
-            if (userPreferenceValues.globalValue) {
-                await this.setJsonPreferencesSchemas(userPreferenceValues.globalValue, PreferenceScope.User);
+    protected initializeJsonPreferencesAssociations(): void {
+        const userSettings = this.preferenceService.inspect<JsonSchemaConfiguration[]>('json.schemas');
+        if (userSettings) {
+            if (userSettings.globalValue) {
+                this.setJsonPreferencesSchemas(userSettings.globalValue, PreferenceScope.User);
             }
         }
 
         if (this.workspaceService.isMultiRootWorkspaceOpened) {
-            await this.asyncForEach(this.workspace.workspaceFolders, async (workspaceFolder: { name: string; uri: { path: string; }; }) => {
+            this.workspace.workspaceFolders.forEach((workspaceFolder: { name: string; uri: { path: string; }; }) => {
                 const workspaceFolderPath = workspaceFolder.uri.path;
-                const multiRootInspectValue = this.preferenceService.inspect<JsonSchemaConfiguration[]>('json.schemas', workspaceFolderPath);
-                if (multiRootInspectValue) {
-                    if (multiRootInspectValue.workspaceValue) {
-                        await this.setJsonPreferencesSchemas(multiRootInspectValue.workspaceValue, PreferenceScope.Workspace, workspaceFolderPath);
-                    }
-                    if (multiRootInspectValue.workspaceFolderValue) {
-                        await this.setJsonPreferencesSchemas(multiRootInspectValue.workspaceFolderValue, PreferenceScope.Folder, workspaceFolderPath);
-                    }
+                const folderSettings = this.preferenceService.inspect<JsonSchemaConfiguration[]>('json.schemas', workspaceFolderPath);
+                if (folderSettings && folderSettings.workspaceFolderValue) {
+                    this.setJsonPreferencesSchemas(folderSettings.workspaceFolderValue, PreferenceScope.Folder, workspaceFolderPath);
                 }
             });
-        } else {
-            const workspaceRootPath = this.workspace.rootPath || undefined;
-            const singleRootInspectValue = this.preferenceService.inspect<JsonSchemaConfiguration[]>('json.schemas', workspaceRootPath);
-            if (singleRootInspectValue) {
-                if (singleRootInspectValue.workspaceValue) {
-                    await this.setJsonPreferencesSchemas(singleRootInspectValue.workspaceValue, PreferenceScope.Workspace, workspaceRootPath);
-                }
-            }
-        }
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private async asyncForEach(array: any[], callback: any): Promise<void> {
-        for (const element of array) {
-            await callback(element);
         }
     }
 }

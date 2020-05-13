@@ -16,9 +16,11 @@
 
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceScope } from '@theia/core/lib/browser';
+import { PreferenceScope, PreferenceResolveResult } from '@theia/core/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { JsonSchemaConfiguration } from '@theia/core/src/browser/json-schema-store';
+import { Path } from '@theia/core';
 import { SectionPreferenceProvider } from './section-preference-provider';
 
 export const FolderPreferenceProviderFactory = Symbol('FolderPreferenceProviderFactory');
@@ -56,5 +58,31 @@ export class FolderPreferenceProvider extends SectionPreferenceProvider {
 
     getDomain(): string[] {
         return [this.folderUri.toString()];
+    }
+
+    resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
+        // resolve relative paths for json schema settings in workspace scope
+        if (preferenceName === 'json.schemas' && this.getScope() === PreferenceScope.Workspace) {
+            const workspaceSettings = this.getPreferences(resourceUri)[preferenceName];
+            if (workspaceSettings && resourceUri) {
+                const rootPath = new URI(resourceUri).path.toString();
+                workspaceSettings.forEach((schemaConfig: JsonSchemaConfiguration) => {
+                    let url = schemaConfig.url;
+                    if (url.match(rootPath)) {
+                        url = new URI(new Path(url).toString()).toString();
+                    } else if ((url.startsWith('.') || url.startsWith('/') || url.match(/^\w+\//))) {
+                        url = new URI(rootPath).resolve(url).normalizePath().toString();
+                    }
+                    if (url) {
+                        schemaConfig.url = url;
+                    }
+                });
+            }
+            return {
+                value: workspaceSettings,
+                configUri: this.getConfigUri(resourceUri)
+            };
+        }
+        return super.resolve(preferenceName, resourceUri);
     }
 }
