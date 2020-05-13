@@ -43,6 +43,7 @@ export class QuickPickServiceImpl implements QuickPickService {
     private readonly onDidChangeSelectionEmitter = new Emitter<(string | QuickPickValue<Object>)[]>();
     readonly onDidChangeSelection = this.onDidChangeSelectionEmitter.event;
 
+    // TODO when to release last elements?
     private elements: (string | QuickPickItem<Object>)[] = [];
 
     @postConstruct()
@@ -81,8 +82,8 @@ export class QuickPickServiceImpl implements QuickPickService {
                     if (this.elements !== elements) {
                         elements = this.elements;
                         items = this.toItems(elements, resolve);
-                        acceptor(items);
                     }
+                    acceptor(items);
                     if (savedValue !== value) {
                         this.onDidChangeValueEmitter.fire(value);
                         savedValue = value;
