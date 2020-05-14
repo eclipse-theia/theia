@@ -35,6 +35,7 @@ import { WorkspaceCompareHandler } from './workspace-compare-handler';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { WorkspaceInputDialog } from './workspace-input-dialog';
+import { Emitter, Event } from '@theia/core/lib/common';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -169,6 +170,11 @@ export class EditMenuContribution implements MenuContribution {
 
 }
 
+export interface DidCreateNewResourceEvent {
+    uri: URI
+    parent: URI
+}
+
 @injectable()
 export class WorkspaceCommandContribution implements CommandContribution {
 
@@ -184,6 +190,25 @@ export class WorkspaceCommandContribution implements CommandContribution {
     @inject(WorkspaceDeleteHandler) protected readonly deleteHandler: WorkspaceDeleteHandler;
     @inject(WorkspaceDuplicateHandler) protected readonly duplicateHandler: WorkspaceDuplicateHandler;
     @inject(WorkspaceCompareHandler) protected readonly compareHandler: WorkspaceCompareHandler;
+
+    private readonly onDidCreateNewFileEmitter = new Emitter<DidCreateNewResourceEvent>();
+    private readonly onDidCreateNewFolderEmitter = new Emitter<DidCreateNewResourceEvent>();
+
+    get onDidCreateNewFile(): Event<DidCreateNewResourceEvent> {
+        return this.onDidCreateNewFileEmitter.event;
+    }
+
+    get onDidCreateNewFolder(): Event<DidCreateNewResourceEvent> {
+        return this.onDidCreateNewFolderEmitter.event;
+    }
+
+    protected fireCreateNewFile(uri: DidCreateNewResourceEvent): void {
+        this.onDidCreateNewFileEmitter.fire(uri);
+    }
+
+    protected fireCreateNewFolder(uri: DidCreateNewResourceEvent): void {
+        this.onDidCreateNewFolderEmitter.fire(uri);
+    }
 
     registerCommands(registry: CommandRegistry): void {
         this.openerService.getOpeners().then(openers => {
@@ -214,6 +239,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         if (name) {
                             const fileUri = parentUri.resolve(name);
                             this.fileSystem.createFile(fileUri.toString()).then(() => {
+                                this.fireCreateNewFile({ parent: parentUri, uri: fileUri });
                                 open(this.openerService, fileUri);
                             });
                         }
@@ -232,9 +258,11 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent, true)
                     }, this.labelProvider);
-                    dialog.open().then(name => {
+                    dialog.open().then(async name => {
                         if (name) {
-                            this.fileSystem.createFolder(parentUri.resolve(name).toString());
+                            const folderUri = parentUri.resolve(name);
+                            await this.fileSystem.createFolder(parentUri.resolve(name).toString());
+                            this.fireCreateNewFile({ parent: parentUri, uri: folderUri });
                         }
                     });
                 }
