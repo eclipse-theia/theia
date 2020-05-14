@@ -1166,7 +1166,7 @@ export interface PluginInfo {
 export interface LanguagesExt {
     $provideCompletionItems(handle: number, resource: UriComponents, position: Position,
         context: CompletionContext, token: CancellationToken): Promise<CompletionResultDto | undefined>;
-    $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion, token: CancellationToken): Promise<Completion | undefined>;
+    $resolveCompletionItem(handle: number, parentId: number, id: number, token: CancellationToken): Promise<Completion | undefined>;
     $releaseCompletionItems(handle: number, id: number): void;
     $provideImplementation(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | undefined>;
     $provideTypeDefinition(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Definition | undefined>;
