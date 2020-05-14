@@ -22,7 +22,7 @@ import {
     bindViewContribution, FrontendApplicationContribution,
     WidgetFactory, ViewContainer,
     WidgetManager, ApplicationShellLayoutMigration,
-    createTreeContainer, TreeWidget, TreeModel, TreeModelImpl, TreeProps
+    createTreeContainer, TreeWidget, TreeModel, TreeModelImpl
 } from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID, SCM_VIEW_CONTAINER_TITLE_OPTIONS } from './scm-contribution';
@@ -63,7 +63,7 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
 
     bind(ScmTreeWidget).toDynamicValue(ctx => {
-        const child = createFileChangeTreeContainer(ctx.container);
+        const child = createScmTreeContainer(ctx.container);
         return child.get(ScmTreeWidget);
     });
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
@@ -120,8 +120,11 @@ export default new ContainerModule(bind => {
     bindScmPreferences(bind);
 });
 
-export function createFileChangeTreeContainer(parent: interfaces.Container): Container {
-    const child = createTreeContainer(parent);
+export function createScmTreeContainer(parent: interfaces.Container): Container {
+    const child = createTreeContainer(parent, {
+        virtualized: true,
+        search: true
+    });
 
     child.unbind(TreeWidget);
     child.bind(ScmTreeWidget).toSelf();
@@ -130,12 +133,6 @@ export function createFileChangeTreeContainer(parent: interfaces.Container): Con
     child.bind(ScmTreeModel).toSelf();
     child.rebind(TreeModel).toService(ScmTreeModel);
 
-    child.rebind(TreeProps).toConstantValue({
-        leftPadding: 8,
-        expansionTogglePadding: 22,
-        virtualized: true,
-        search: true,
-    });
     child.bind(ScmTreeModelProps).toConstantValue({
         defaultExpansion: 'expanded',
     });
