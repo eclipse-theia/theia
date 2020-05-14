@@ -20,7 +20,8 @@ import * as React from 'react';
 import TextareaAutosize from 'react-autosize-textarea';
 import { ScmInput } from './scm-input';
 import {
-    ContextMenuRenderer, ReactWidget, KeybindingRegistry, StatefulWidget} from '@theia/core/lib/browser';
+    ContextMenuRenderer, ReactWidget, KeybindingRegistry, StatefulWidget
+} from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 
 @injectable()
@@ -33,7 +34,10 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
 
     protected shouldScrollToRow = true;
 
-    /** don't modify DOM use React! only exposed for `focusInput` */
+    /**
+     * Don't modify DOM use React! only exposed for `focusInput`
+     * Use `this.scmService.selectedRepository?.input.value` as a single source of truth!
+     */
     protected readonly inputRef = React.createRef<HTMLTextAreaElement>();
 
     constructor(
@@ -121,23 +125,34 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
     /**
      * Store the tree state.
      */
-    storeState(): object {
-        const message = this.inputRef.current ? this.inputRef.current.value : '';
-        const state: object = {
-            message
-        };
-        return state;
+    storeState(): ScmCommitWidget.State {
+        const message = this.scmService.selectedRepository?.input.value;
+        return { message };
     }
 
     /**
      * Restore the state.
      * @param oldState the old state object.
      */
-    restoreState(oldState: object): void {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { message } = (oldState as any);
-        if (message && this.inputRef.current) {
-            this.inputRef.current.value = message;
+    restoreState(oldState: ScmCommitWidget.State): void {
+        const value = oldState.message;
+        if (!value) {
+            return;
+        }
+        let repository = this.scmService.selectedRepository;
+        if (repository) {
+            repository.input.value = value;
+        } else {
+            const listener = this.scmService.onDidChangeSelectedRepository(() => {
+                repository = this.scmService.selectedRepository;
+                if (repository) {
+                    listener.dispose();
+                    if (!repository.input.value) {
+                        repository.input.value = value;
+                    }
+                }
+            });
+            this.toDispose.push(listener);
         }
     }
 
@@ -150,5 +165,9 @@ export namespace ScmCommitWidget {
         export const INPUT_MESSAGE = 'theia-scm-input-message';
         export const VALIDATION_MESSAGE = 'theia-scm-input-validation-message';
         export const NO_SELECT = 'no-select';
+    }
+
+    export interface State {
+        message?: string
     }
 }
