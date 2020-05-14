@@ -37,7 +37,7 @@ import {
 import { injectable, inject } from 'inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
-    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction
+    MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto
 } from '../../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { fromLanguageSelector } from '../../plugin/type-converters';
@@ -57,6 +57,7 @@ import { toDefinition, toUriComponents, fromDefinition, fromPosition, toCaller }
 import { Position, DocumentUri } from 'vscode-languageserver-types';
 import { ObjectIdentifier } from '../../common/object-identifier';
 import { WorkspaceSymbolProvider } from '@theia/languages/lib/browser/language-client-services';
+import { mixin } from '../../common/types';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -142,7 +143,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                 return undefined;
             }
             return {
-                suggestions: result.completions,
+                suggestions: result.completions.map(c => Object.assign(c, {
+                    range: c.range || result.defaultRange
+                })),
                 incomplete: result.incomplete,
                 dispose: () => this.proxy.$releaseCompletionItems(handle, result.id)
             };
@@ -151,7 +154,13 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     protected resolveCompletionItem(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
         item: monaco.languages.CompletionItem, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.CompletionItem> {
-        return this.proxy.$resolveCompletionItem(handle, model.uri, position, item, token);
+        const { parentId, id } = item as CompletionDto;
+        return this.proxy.$resolveCompletionItem(handle, parentId, id, token).then(resolved => {
+            if (resolved) {
+                mixin(item, resolved, true);
+            }
+            return item;
+        });
     }
 
     $registerDefinitionProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {

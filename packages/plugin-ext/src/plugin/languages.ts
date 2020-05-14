@@ -235,8 +235,8 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, CompletionAdapter, adapter => adapter.provideCompletionItems(URI.revive(resource), position, context, token), undefined);
     }
 
-    $resolveCompletionItem(handle: number, resource: UriComponents, position: Position, completion: Completion, token: theia.CancellationToken): Promise<Completion | undefined> {
-        return this.withAdapter(handle, CompletionAdapter, adapter => adapter.resolveCompletionItem(URI.revive(resource), position, completion, token), undefined);
+    $resolveCompletionItem(handle: number, parentId: number, id: number, token: theia.CancellationToken): Promise<Completion | undefined> {
+        return this.withAdapter(handle, CompletionAdapter, adapter => adapter.resolveCompletionItem(parentId, id, token), undefined);
     }
 
     $releaseCompletionItems(handle: number, id: number): void {

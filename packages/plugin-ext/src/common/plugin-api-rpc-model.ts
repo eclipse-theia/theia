@@ -135,7 +135,7 @@ export interface Completion {
     preselect?: boolean;
     insertText: string;
     insertTextRules?: CompletionItemInsertTextRule;
-    range: Range | {
+    range?: Range | {
         insert: Range;
         replace: Range;
     };
@@ -201,6 +201,10 @@ export interface CompletionDto extends Completion {
 
 export interface CompletionResultDto extends IdObject {
     id: number;
+    defaultRange: {
+        insert: Range,
+        replace: Range
+    }
     completions: CompletionDto[];
     incomplete?: boolean;
 }

@@ -390,7 +390,8 @@ export class Range {
         return new Range(start, end);
     }
 
-    static isRange(thing: {}): thing is theia.Range {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static isRange(thing: any): thing is theia.Range {
         if (thing instanceof Range) {
             return true;
         }
@@ -2013,17 +2014,17 @@ export enum FoldingRangeKind {
 
 export class SelectionRange {
 
-	range: Range;
-	parent?: SelectionRange;
+    range: Range;
+    parent?: SelectionRange;
 
-	constructor(range: Range, parent?: SelectionRange) {
-		this.range = range;
-		this.parent = parent;
+    constructor(range: Range, parent?: SelectionRange) {
+        this.range = range;
+        this.parent = parent;
 
-		if (parent && !parent.range.contains(this.range)) {
-			throw new Error('Invalid argument: parent must contain this range');
-		}
-	}
+        if (parent && !parent.range.contains(this.range)) {
+            throw new Error('Invalid argument: parent must contain this range');
+        }
+    }
 }
 
 /**

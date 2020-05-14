@@ -19,7 +19,6 @@ import * as theia from '@theia/plugin';
 import { CompletionList, Range, SnippetString } from '../types-impl';
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
-import { mixin } from '../../common/types';
 import { Position } from '../../common/plugin-api-rpc';
 import { CompletionContext, CompletionResultDto, Completion, CompletionDto, CompletionItemInsertTextRule } from '../../common/plugin-api-rpc-model';
 import { CommandRegistryImpl } from '../command-registry';
@@ -45,6 +44,13 @@ export class CompletionAdapter {
         const doc = document.document;
 
         const pos = Converter.toPosition(position);
+
+        // The default insert/replace ranges. It's important to compute them
+        // before asynchronously asking the provider for its results. See
+        // https://github.com/microsoft/vscode/issues/83400#issuecomment-546851421
+        const replacing = doc.getWordRangeAtPosition(pos) || new Range(pos, pos);
+        const inserting = replacing.with({ end: pos });
+
         return Promise.resolve(this.delegate.provideCompletionItems(doc, pos, token, context)).then(value => {
             const id = this.cacheId++;
 
@@ -54,6 +60,10 @@ export class CompletionAdapter {
             const result: CompletionResultDto = {
                 id,
                 completions: [],
+                defaultRange: {
+                    insert: Converter.fromRange(inserting),
+                    replace: Converter.fromRange(replacing)
+                }
             };
 
             let list: CompletionList;
@@ -66,11 +76,8 @@ export class CompletionAdapter {
                 result.incomplete = list.isIncomplete;
             }
 
-            const wordRangeBeforePos = (doc.getWordRangeAtPosition(pos) as Range || new Range(pos, pos))
-                .with({ end: pos });
-
             for (let i = 0; i < list.items.length; i++) {
-                const suggestion = this.convertCompletionItem(list.items[i], pos, wordRangeBeforePos, i, id);
+                const suggestion = this.convertCompletionItem(list.items[i], i, id, inserting, replacing);
                 if (suggestion) {
                     result.completions.push(suggestion);
                 }
@@ -81,33 +88,19 @@ export class CompletionAdapter {
         });
     }
 
-    resolveCompletionItem(resource: URI, position: Position, completion: Completion, token: theia.CancellationToken): Promise<Completion> {
+    async resolveCompletionItem(parentId: number, id: number, token: theia.CancellationToken): Promise<Completion | undefined> {
         if (typeof this.delegate.resolveCompletionItem !== 'function') {
-            return Promise.resolve(completion);
+            return undefined;
         }
-
-        const { parentId, id } = (<CompletionDto>completion);
-        const item = this.cache.has(parentId) && this.cache.get(parentId)![id];
+        const item = this.cache.get(parentId)?.[id];
         if (!item) {
-            return Promise.resolve(completion);
+            return undefined;
         }
-
-        return Promise.resolve(this.delegate.resolveCompletionItem(item, token)).then(resolvedItem => {
-
-            if (!resolvedItem) {
-                return completion;
-            }
-
-            const doc = this.documents.getDocumentData(resource)!.document;
-            const pos = Converter.toPosition(position);
-            const wordRangeBeforePos = (doc.getWordRangeAtPosition(pos) as Range || new Range(pos, pos)).with({ end: pos });
-            const newCompletion = this.convertCompletionItem(resolvedItem, pos, wordRangeBeforePos, id, parentId);
-            if (newCompletion) {
-                mixin(completion, newCompletion, true);
-            }
-
-            return completion;
-        });
+        const resolvedItem = await this.delegate.resolveCompletionItem(item, token);
+        if (!resolvedItem) {
+            return undefined;
+        }
+        return this.convertCompletionItem(resolvedItem, id, parentId);
     }
 
     async releaseCompletionItems(id: number): Promise<void> {
@@ -119,7 +112,8 @@ export class CompletionAdapter {
         }
     }
 
-    private convertCompletionItem(item: theia.CompletionItem, position: theia.Position, defaultRange: theia.Range, id: number, parentId: number): CompletionDto | undefined {
+    private convertCompletionItem(item: theia.CompletionItem, id: number, parentId: number,
+        defaultInserting?: theia.Range, defaultReplacing?: theia.Range): CompletionDto | undefined {
         if (typeof item.label !== 'string' || item.label.length === 0) {
             console.warn('Invalid Completion Item -> must have at least a label');
             return undefined;
@@ -128,12 +122,6 @@ export class CompletionAdapter {
         const toDispose = this.disposables.get(parentId);
         if (!toDispose) {
             throw Error('DisposableCollection is missing...');
-        }
-
-        const range = item.textEdit ? item.textEdit.range : item.range || defaultRange;
-        if (range && (!range.isSingleLine || range.start.line !== position.line)) {
-            console.warn('Invalid Completion Item -> must be single line and on the same line');
-            return undefined;
         }
 
         let insertText = item.label;
@@ -145,6 +133,17 @@ export class CompletionAdapter {
         } else if (item.insertText instanceof SnippetString) {
             insertText = item.insertText.value;
             insertTextRules |= CompletionItemInsertTextRule.InsertAsSnippet;
+        }
+
+        let range: Completion['range'] | undefined;
+        const itemRange = item.textEdit?.range || item.range;
+        if (Range.isRange(itemRange)) {
+            range = Converter.fromRange(itemRange);
+        } else if (itemRange && (!defaultInserting?.isEqual(itemRange.inserting) || !defaultReplacing?.isEqual(itemRange.replacing))) {
+            range = {
+                insert: Converter.fromRange(itemRange.inserting),
+                replace: Converter.fromRange(itemRange.replacing)
+            };
         }
 
         return {
@@ -159,7 +158,7 @@ export class CompletionAdapter {
             preselect: item.preselect,
             insertText,
             insertTextRules,
-            range: Converter.fromRange(range),
+            range,
             additionalTextEdits: item.additionalTextEdits && item.additionalTextEdits.map(Converter.fromTextEdit),
             command: this.commands.converter.toSafeCommand(item.command, toDispose),
             commitCharacters: item.commitCharacters
