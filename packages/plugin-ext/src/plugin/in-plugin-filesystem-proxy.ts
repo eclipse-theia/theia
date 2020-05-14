@@ -18,7 +18,8 @@ import * as theia from '@theia/plugin';
 import { TextEncoder, TextDecoder } from 'util';
 import { FileSystemMain } from '../common/plugin-api-rpc';
 import { UriComponents } from '../common/uri-components';
-import { FileSystemError } from './types-impl';
+import { FileSystemError, FileType } from './types-impl';
+import { FileStat, Uri } from '@theia/plugin';
 
 /**
  * This class is managing FileSystem proxy
@@ -31,6 +32,28 @@ export class InPluginFileSystemProxy implements theia.FileSystem {
         this.proxy = proxy;
     }
 
+    async stat(uri: Uri): Promise<FileStat> {
+        try {
+            return this.proxy.$stat(uri);
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    async readDirectory(uri: UriComponents): Promise<[string, FileType][]> {
+        try {
+            return this.proxy.$readDirectory(uri);
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    async createDirectory(uri: Uri): Promise<void> {
+        try {
+            return this.proxy.$createDirectory(uri);
+        } catch (error) {
+            throw this.handleError(error);
+        }
+
+    }
     async readFile(uri: UriComponents): Promise<Uint8Array> {
         try {
             const val = await this.proxy.$readFile(uri);
@@ -43,7 +66,28 @@ export class InPluginFileSystemProxy implements theia.FileSystem {
         const encoded = new TextDecoder().decode(content);
 
         try {
-            await this.proxy.$writeFile(uri, encoded);
+            return this.proxy.$writeFile(uri, encoded);
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    async delete(uri: Uri, options?: { recursive?: boolean, useTrash?: boolean }): Promise<void> {
+        try {
+            return this.proxy.$delete(uri, { ...{ recursive: false }, ...options });
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    async rename(source: Uri, target: Uri, options?: { overwrite?: boolean }): Promise<void> {
+        try {
+            return this.proxy.$rename(source, target, { ...{ overwrite: false }, ...options });
+        } catch (error) {
+            throw this.handleError(error);
+        }
+    }
+    async copy(source: Uri, target: Uri, options?: { overwrite?: boolean }): Promise<void> {
+        try {
+            return this.proxy.$copy(source, target, { ...{ overwrite: false }, ...options });
         } catch (error) {
             throw this.handleError(error);
         }

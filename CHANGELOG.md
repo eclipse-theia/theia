@@ -2,6 +2,7 @@
 
 ## v1.2.0
 
+- [plugin] support all vscode.workspace.fs APIs for registered fs providers only (not yet real file system)
 - [application-manager] enabled clients to add `windowOptions` using an IPC-Event [#7803](https://github.com/eclipse-theia/theia/pull/7803)
 - [application-package] enabled client to change default `windowOptions` [#7803](https://github.com/eclipse-theia/theia/pull/7803)
 

@@ -1328,6 +1328,13 @@ export enum FileType {
     SymbolicLink = 64
 }
 
+export interface FileStat {
+    readonly type: FileType;
+    readonly ctime: number;
+    readonly mtime: number;
+    readonly size: number;
+}
+
 export class ProgressOptions {
     /**
      * The location at which progress should show.

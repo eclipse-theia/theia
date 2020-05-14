@@ -22,6 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 import { MAIN_RPC_CONTEXT, FileSystemMain, FileSystemExt } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { UriComponents } from '../../common/uri-components';
+import { FileStat, FileType } from '../../plugin/types-impl';
 
 export class FileSystemMainImpl implements FileSystemMain, Disposable {
 
@@ -29,6 +30,7 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
     private readonly resourceResolver: FSResourceResolver;
     private readonly resourceProvider: ResourceProvider;
     private readonly providers = new Map<number, Disposable>();
+    private readonly providersBySchema = new Map<string, number>();
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
@@ -44,9 +46,16 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
     async $registerFileSystemProvider(handle: number, scheme: string): Promise<void> {
         const toDispose = new DisposableCollection(
             this.resourceResolver.registerResourceProvider(handle, scheme, this.proxy),
-            Disposable.create(() => this.providers.delete(handle))
+            Disposable.create(() => {
+                this.providers.delete(handle);
+                this.providersBySchema.delete(scheme);
+            })
         );
         this.providers.set(handle, toDispose);
+        if (this.providersBySchema.has(scheme)) {
+            throw new Error(`Resource Provider for scheme '${scheme}' is already registered`);
+        }
+        this.providersBySchema.set(scheme, handle);
         this.toDispose.push(toDispose);
     }
 
@@ -55,6 +64,35 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
         if (disposable) {
             disposable.dispose();
         }
+    }
+
+    private getHandle(uri: UriComponents): number {
+        const handle = this.providersBySchema.get(uri.scheme);
+        if (handle === undefined) {
+            throw new Error(`'No available file system provider for schema ${uri.scheme}`);
+        }
+        return handle;
+    }
+
+    // currently only support registered file system providers (and not real file system)
+    async $stat(uriComponents: UriComponents): Promise<FileStat> {
+        const uri = Uri.revive(uriComponents);
+        const handle = this.getHandle(uri);
+        return this.proxy.$stat(handle, uri);
+    }
+
+    // currently only support registered file system providers (and not real file system)
+    async $readDirectory(uriComponents: UriComponents): Promise<[string, FileType][]> {
+        const uri = Uri.revive(uriComponents);
+        const handle = this.getHandle(uri);
+        return this.proxy.$readDirectory(handle, uri);
+    }
+
+    // currently only support registered file system providers (and not real file system)
+    async $createDirectory(uriComponents: UriComponents): Promise<void> {
+        const uri = Uri.revive(uriComponents);
+        const handle = this.getHandle(uri);
+        return this.proxy.$createDirectory(handle, uri);
     }
 
     async $readFile(uriComponents: UriComponents): Promise<string> {
@@ -72,6 +110,34 @@ export class FileSystemMainImpl implements FileSystemMain, Disposable {
         return resource.saveContents(content);
     }
 
+    // currently only support registered file system providers (and not real file system)
+    async $delete(uriComponents: UriComponents, options: { recursive: boolean }): Promise<void> {
+        const uri = Uri.revive(uriComponents);
+        const handle = this.getHandle(uri);
+        return this.proxy.$delete(handle, uri, options);
+    }
+
+    // currently only support registered file system providers (and not real file system)
+    async $rename(source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void> {
+        const sourceUri = Uri.revive(source);
+        const targetUri = Uri.revive(target);
+        const sourceHandle = this.getHandle(sourceUri);
+        if (sourceHandle !== this.getHandle(targetUri)) {
+            throw new Error(`'No matching file system provider for ${sourceUri} and ${targetUri}`);
+        }
+        return this.proxy.$rename(sourceHandle, sourceUri, targetUri, options);
+    }
+
+    // currently only support registered file system providers (and not real file system)
+    async $copy(source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void> {
+        const sourceUri = Uri.revive(source);
+        const targetUri = Uri.revive(target);
+        const sourceHandle = this.getHandle(sourceUri);
+        if (sourceHandle !== this.getHandle(targetUri)) {
+            throw new Error(`'No matching file system provider for ${sourceUri} and ${targetUri}`);
+        }
+        return this.proxy.$copy(sourceHandle, sourceUri, targetUri, options);
+    }
 }
 
 @injectable()
