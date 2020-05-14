@@ -157,10 +157,6 @@ const electronSecurityToken = {
 
 app.on('ready', () => {
 
-    if (disallowReloadKeybinding) {
-        globalShortcut.register('CmdOrCtrl+R', () => {});
-    }
-
     // Explicitly set the app name to have better menu items on macOS. ("About", "Hide", and "Quit")
     // See: https://github.com/electron-userland/electron-builder/issues/2468
     app.setName(applicationName);
@@ -211,6 +207,14 @@ app.on('ready', () => {
             newWindow.maximize();
         }
         newWindow.on('ready-to-show', () => newWindow.show());
+        if (disallowReloadKeybinding) {
+            newWindow.on('focus', event => {
+                for (const accelerator of ['CmdOrCtrl+R','F5']) {
+                    globalShortcut.register(accelerator, () => {});
+                }
+            });
+            newWindow.on('blur', event => globalShortcut.unregisterAll());
+        }
 
         // Prevent calls to "window.open" from opening an ElectronBrowser window,
         // and rather open in the OS default web browser.
