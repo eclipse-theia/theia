@@ -97,8 +97,7 @@
     line-height: var(--theia-content-line-height);
     resize: none;
     box-sizing: border-box;
-    height: 26px;
-    min-height: 26px;
+    min-height: 32px;
     padding: 4px;
     border: none;
 }
