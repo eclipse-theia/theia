@@ -19,7 +19,7 @@ import * as theia from '@theia/plugin';
 import { PLUGIN_RPC_CONTEXT, FileSystemExt, FileSystemMain } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { UriComponents, Schemes } from '../common/uri-components';
-import { Disposable } from './types-impl';
+import { Disposable, FileStat, FileType } from './types-impl';
 import { InPluginFileSystemProxy } from './in-plugin-filesystem-proxy';
 
 export class FileSystemExtImpl implements FileSystemExt {
@@ -27,7 +27,7 @@ export class FileSystemExtImpl implements FileSystemExt {
     private readonly proxy: FileSystemMain;
     private readonly usedSchemes = new Set<string>();
     private readonly fsProviders = new Map<number, theia.FileSystemProvider>();
-    private fileSystem: InPluginFileSystemProxy;
+    private readonly fileSystem: InPluginFileSystemProxy;
 
     private handlePool: number = 0;
 
@@ -69,21 +69,41 @@ export class FileSystemExtImpl implements FileSystemExt {
         });
     }
 
-    private checkProviderExists(handle: number): void {
-        if (!this.fsProviders.has(handle)) {
+    private safeGetProvider(handle: number): theia.FileSystemProvider {
+        const provider = this.fsProviders.get(handle);
+        if (!provider) {
             const err = new Error();
             err.name = 'ENOPRO';
             err.message = 'no provider';
             throw err;
         }
+        return provider;
     }
 
     // forwarding calls
 
-    $readFile(handle: number, resource: UriComponents, options?: { encoding?: string }): Promise<string> {
-        this.checkProviderExists(handle);
+    $stat(handle: number, resource: UriComponents): Promise<FileStat> {
+        const fileSystemProvider = this.safeGetProvider(handle);
+        const uri = URI.revive(resource);
+        return Promise.resolve(fileSystemProvider.stat(uri));
+    }
 
-        return Promise.resolve(this.fsProviders.get(handle)!.readFile(URI.revive(resource))).then(data => {
+    $readDirectory(handle: number, resource: UriComponents): Promise<[string, FileType][]> {
+        const fileSystemProvider = this.safeGetProvider(handle);
+        const uri = URI.revive(resource);
+        return Promise.resolve(fileSystemProvider.readDirectory(uri));
+    }
+
+    $createDirectory(handle: number, resource: UriComponents): Promise<void> {
+        const fileSystemProvider = this.safeGetProvider(handle);
+        const uri = URI.revive(resource);
+        return Promise.resolve(fileSystemProvider.createDirectory(uri));
+    }
+
+    $readFile(handle: number, resource: UriComponents, options?: { encoding?: string }): Promise<string> {
+        const fileSystemProvider = this.safeGetProvider(handle);
+
+        return Promise.resolve(fileSystemProvider.readFile(URI.revive(resource))).then(data => {
             const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data.buffer, data.byteOffset, data.byteLength);
             const encoding = options === null ? undefined : options && options.encoding;
             return buffer.toString(encoding);
@@ -92,11 +112,32 @@ export class FileSystemExtImpl implements FileSystemExt {
     }
 
     $writeFile(handle: number, resource: UriComponents, content: string, options?: { encoding?: string }): Promise<void> {
-        this.checkProviderExists(handle);
+        const fileSystemProvider = this.safeGetProvider(handle);
         const uri = URI.revive(resource);
         const encoding = options === null ? undefined : options && options.encoding;
         const buffer = Buffer.from(content, encoding);
         const opts = { create: true, overwrite: true };
-        return Promise.resolve(this.fsProviders.get(handle)!.writeFile(uri, buffer, opts));
+        return Promise.resolve(fileSystemProvider.writeFile(uri, buffer, opts));
     }
+
+    $delete(handle: number, resource: UriComponents, options: { recursive: boolean }): Promise<void> {
+        const fileSystemProvider = this.safeGetProvider(handle);
+        const uri = URI.revive(resource);
+        return Promise.resolve(fileSystemProvider.delete(uri, options));
+    }
+
+    $rename(handle: number, source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void> {
+        const fileSystemProvider = this.safeGetProvider(handle);
+        const sourceUri = URI.revive(source);
+        const targetUri = URI.revive(target);
+        return Promise.resolve(fileSystemProvider.rename(sourceUri, targetUri, options));
+    }
+
+    $copy(handle: number, source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void> {
+        const fileSystemProvider = this.safeGetProvider(handle);
+        const sourceUri = URI.revive(source);
+        const targetUri = URI.revive(target);
+        return Promise.resolve(fileSystemProvider.copy && fileSystemProvider.copy(sourceUri, targetUri, options));
+    }
+
 }

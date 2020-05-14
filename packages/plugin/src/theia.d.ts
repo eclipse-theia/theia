@@ -4528,6 +4528,32 @@ declare module '@theia/plugin' {
     export interface FileSystem {
 
         /**
+         * Retrieve metadata about a file.
+         *
+         * @param uri The uri of the file to retrieve metadata about.
+         * @return The file metadata about the file.
+         */
+        stat(uri: Uri): PromiseLike<FileStat>;
+
+        /**
+         * Retrieve all entries of a [directory](#FileType.Directory).
+         *
+         * @param uri The uri of the folder.
+         * @return An array of name/type-tuples or a PromiseLike that resolves to such.
+         */
+        readDirectory(uri: Uri): PromiseLike<[string, FileType][]>;
+
+        /**
+         * Create a new directory (Note, that new files are created via `write`-calls).
+         *
+         * *Note* that missing directories are created automatically, e.g this call has
+         * `mkdirp` semantics.
+         *
+         * @param uri The uri of the new folder.
+         */
+        createDirectory(uri: Uri): PromiseLike<void>;
+
+        /**
          * Read the entire contents of a file.
          *
          * @param uri The uri of the file.
@@ -4542,6 +4568,32 @@ declare module '@theia/plugin' {
          * @param content The new content of the file.
          */
         writeFile(uri: Uri, content: Uint8Array): PromiseLike<void>;
+
+        /**
+         * Delete a file.
+         *
+         * @param uri The resource that is to be deleted.
+         * @param options Defines if trash can should be used and if deletion of folders is recursive
+         */
+        delete(uri: Uri, options?: { recursive?: boolean, useTrash?: boolean }): PromiseLike<void>;
+
+        /**
+         * Rename a file or folder.
+         *
+         * @param source The existing file.
+         * @param target The new location.
+         * @param options Defines if existing files should be overwritten.
+         */
+        rename(source: Uri, target: Uri, options?: { overwrite?: boolean }): PromiseLike<void>;
+
+        /**
+         * Copy files or folders.
+         *
+         * @param source The existing file.
+         * @param target The destination location.
+         * @param options Defines if existing files should be overwritten.
+         */
+        copy(source: Uri, target: Uri, options?: { overwrite?: boolean }): PromiseLike<void>;
     }
 
     /**

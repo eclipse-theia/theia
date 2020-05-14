@@ -30,7 +30,7 @@ import {
     QuickInputButton
 } from '../plugin/types-impl';
 import { UriComponents } from './uri-components';
-import { ConfigurationTarget } from '../plugin/types-impl';
+import { ConfigurationTarget, FileType, FileStat } from '../plugin/types-impl';
 import {
     SerializedDocumentFilter,
     CompletionContext,
@@ -1341,13 +1341,25 @@ export interface DebugMain {
 }
 
 export interface FileSystemExt {
+    $stat(handle: number, resource: UriComponents): Promise<FileStat>;
+    $readDirectory(handle: number, resource: UriComponents): Promise<[string, FileType][]>;
+    $createDirectory(handle: number, uri: UriComponents): Promise<void>;
     $readFile(handle: number, resource: UriComponents, options?: { encoding?: string }): Promise<string>;
     $writeFile(handle: number, resource: UriComponents, content: string, options?: { encoding?: string }): Promise<void>;
+    $delete(handle: number, resource: UriComponents, options: { recursive: boolean }): Promise<void>;
+    $rename(handle: number, source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void>;
+    $copy(handle: number, source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void>;
 }
 
 export interface FileSystemMain {
+    $stat(uri: UriComponents): Promise<FileStat>
+    $readDirectory(uri: UriComponents): Promise<[string, FileType][]>;
+    $createDirectory(uri: UriComponents): Promise<void>
     $readFile(uri: UriComponents): Promise<string>;
     $writeFile(uri: UriComponents, content: string): Promise<void>;
+    $delete(uri: UriComponents, options: { recursive: boolean }): Promise<void>;
+    $rename(source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void>;
+    $copy(source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void>;
     $registerFileSystemProvider(handle: number, scheme: string): void;
     $unregisterProvider(handle: number): void;
 }
