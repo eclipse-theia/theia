@@ -28,7 +28,7 @@ import { ScmResourceGroup, ScmResource, ScmResourceDecorations } from './scm-pro
 import { ScmService } from './scm-service';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { ScmRepository } from './scm-repository';
-import { ContextMenuRenderer, LabelProvider, CorePreferences, DiffUris} from '@theia/core/lib/browser';
+import { ContextMenuRenderer, LabelProvider, CorePreferences, DiffUris } from '@theia/core/lib/browser';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { EditorWidget } from '@theia/editor/lib/browser';
 import { EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser';
@@ -65,7 +65,7 @@ export class ScmTreeWidget extends TreeWidget {
         @inject(ScmService) protected readonly scmService: ScmService,
     ) {
         super(props, model, contextMenuRenderer);
-        this.id = 'resource_widget';
+        this.id = ScmTreeWidget.ID;
         this.addClass('groups-outer-container');
     }
 
@@ -118,7 +118,7 @@ export class ScmTreeWidget extends TreeWidget {
                 repository={repository}
                 groupId={node.groupId}
                 groupLabel={node.groupLabel}
-                renderExpansionToggle={ () => this.renderExpansionToggle(node, props) }
+                renderExpansionToggle={() => this.renderExpansionToggle(node, props)}
                 contextMenuRenderer={this.contextMenuRenderer}
                 commands={this.commands}
                 menus={this.menus}
@@ -137,7 +137,7 @@ export class ScmTreeWidget extends TreeWidget {
                 path={node.path}
                 node={node}
                 sourceUri={new URI(node.sourceUri)}
-                renderExpansionToggle={ () => this.renderExpansionToggle(node, props) }
+                renderExpansionToggle={() => this.renderExpansionToggle(node, props)}
                 contextMenuRenderer={this.contextMenuRenderer}
                 commands={this.commands}
                 menus={this.menus}
@@ -156,7 +156,7 @@ export class ScmTreeWidget extends TreeWidget {
             const name = this.labelProvider.getName(new URI(node.sourceUri));
             const parentPath =
                 (node.parent && ScmFileChangeFolderNode.is(node.parent))
-                ? new URI(node.parent.sourceUri) : new URI(repository.provider.rootUri);
+                    ? new URI(node.parent.sourceUri) : new URI(repository.provider.rootUri);
 
             const content = <ScmResourceComponent
                 key={node.sourceUri}
@@ -198,8 +198,7 @@ export class ScmTreeWidget extends TreeWidget {
             return {
                 ...super.createContainerAttributes(),
                 onFocus: select,
-                tabIndex: 0,
-                id: ScmTreeWidget.ID,
+                tabIndex: 0
             };
         }
         return super.createContainerAttributes();
@@ -386,6 +385,15 @@ export class ScmTreeWidget extends TreeWidget {
         }
         // fallback to standalone editor
         return standaloneEditor;
+    }
+
+    protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
+        if (this.viewMode === 'list') {
+            if (props.depth === 1) {
+                return this.props.expansionTogglePadding;
+            }
+        }
+        return super.getPaddingLeft(node, props);
     }
 
     protected needsExpansionTogglePadding(node: TreeNode): boolean {
@@ -645,12 +653,12 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
         const icon = labelProvider.getIcon(sourceFileStat);
 
         return <div key={String(sourceUri)}
-                className={`scmItem ${TREE_NODE_SEGMENT_GROW_CLASS} ${ScmTreeWidget.Styles.NO_SELECT}`}
-                onContextMenu={this.renderContextMenu}
-                onMouseEnter={this.showHover}
-                onMouseLeave={this.hideHover}
-                ref={this.detectHover}
-            >
+            className={`scmItem ${TREE_NODE_SEGMENT_GROW_CLASS} ${ScmTreeWidget.Styles.NO_SELECT}`}
+            onContextMenu={this.renderContextMenu}
+            onMouseEnter={this.showHover}
+            onMouseLeave={this.hideHover}
+            ref={this.detectHover}
+        >
             {this.props.renderExpansionToggle()}
             <span className={icon + ' file-icon'} />
             <div className={`noWrapInfo ${TREE_NODE_SEGMENT_GROW_CLASS}`} >
