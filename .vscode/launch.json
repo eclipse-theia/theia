@@ -33,7 +33,8 @@
         "--no-cluster",
         "--app-project-path=${workspaceRoot}/examples/electron",
         "--remote-debugging-port=9222",
-        "--no-app-auto-install"
+        "--no-app-auto-install",
+        "--plugins=local-dir:../../plugins"
       ],
       "env": {
         "NODE_ENV": "development",
