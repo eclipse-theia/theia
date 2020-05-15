@@ -52,7 +52,7 @@ export class Endpoint {
         return this.location.pathname;
     }
 
-    protected get host(): string {
+    get host(): string {
         if (this.options.host) {
             return this.options.host;
         }
