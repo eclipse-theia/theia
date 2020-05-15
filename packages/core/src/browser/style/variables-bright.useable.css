@@ -50,7 +50,7 @@ is not optimized for dense, information rich UIs.
   --theia-code-line-height: 17px;
   --theia-code-padding: 5px;
   --theia-code-font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
-  --theia-terminal-font-family: monospace;
+  --theia-monospace-font-family: monospace;
   --theia-ui-padding: 6px;
 
   /* Icons */
@@ -87,7 +87,7 @@ is not optimized for dense, information rich UIs.
 
   /* Statusbar */
   --theia-statusBar-font-size: 12px;
- 
+
   /* Opacity for disabled mod  */
   --theia-mod-disabled-opacity: 0.4;
 }

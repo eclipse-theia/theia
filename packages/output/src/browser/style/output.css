@@ -32,7 +32,7 @@
 #outputView #outputChannelList {
     line-height: var(--theia-content-line-height);
     font-size: var(--theia-ui-font-size1);
-    
+
     -webkit-appearance: none;
     -moz-appearance: none;
     background-position: calc(100% - 6px) 8px, calc(100% - 2px) 8px, 100% 0;
@@ -58,6 +58,12 @@
 
 #outputView #outputClear.enabled:hover {
     opacity: 1;
+}
+
+#outputView .theia-output-lines {
+    font-family: var( --theia-monospace-font-family);
+    font-weight: 600;
+    white-space: pre;
 }
 
 .output-tab-icon::before {
