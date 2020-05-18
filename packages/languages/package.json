@@ -9,7 +9,6 @@
     "@theia/output": "^1.1.0",
     "@theia/process": "^1.1.0",
     "@theia/workspace": "^1.1.0",
-    "@types/uuid": "^7.0.3",
     "monaco-languageclient": "^0.13.0",
     "uuid": "^8.0.0"
   },
