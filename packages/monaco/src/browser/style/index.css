@@ -98,3 +98,9 @@
 .monaco-editor .reference-zone-widget .ref-tree .referenceMatch .highlight {
     color: unset !important;
 }
+
+.monaco-editor .find-widget .monaco-inputbox.synthetic-focus {
+    outline: var(--theia-border-width) solid;
+    outline-offset: calc(-1*var(--theia-border-width));
+    outline-color: var(--theia-focusBorder);
+}
