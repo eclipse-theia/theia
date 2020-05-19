@@ -155,6 +155,9 @@ const electronSecurityToken = {
     value: v4(),
 };
 
+// Make it easy for renderer process to fetch the ElectronSecurityToken:
+global[ElectronSecurityToken] = electronSecurityToken;
+
 app.on('ready', () => {
 
     // Explicitly set the app name to have better menu items on macOS. ("About", "Hide", and "Quit")
@@ -322,19 +325,26 @@ app.on('ready', () => {
         })
     }
 
-    const loadMainWindow = (port) => {
-        if (!mainWindow.isDestroyed()) {
-            mainWindow.webContents.session.cookies.set({
+    const setElectronSecurityToken = port => {
+        return new Promise((resolve, reject) => {
+            electron.session.defaultSession.cookies.set({
                 url: \`http://localhost:\${port}/\`,
                 name: ElectronSecurityToken,
                 value: JSON.stringify(electronSecurityToken),
+                httpOnly: true,
             }, error => {
                 if (error) {
-                    console.error(error);
+                    reject(error);
                 } else {
-                    mainWindow.loadURL('file://' + join(__dirname, '../../lib/index.html') + '?port=' + port);
+                    resolve();
                 }
             });
+        })
+    }
+
+    const loadMainWindow = port => {
+        if (!mainWindow.isDestroyed()) {
+            mainWindow.loadURL('file://' + join(__dirname, '../../lib/index.html') + '?port=' + port);
         }
     };
 
@@ -354,7 +364,8 @@ app.on('ready', () => {
     // But when in debugging we want to run everything in the same process to make things easier.
     if (noBackendFork) {
         process.env[ElectronSecurityToken] = JSON.stringify(electronSecurityToken);
-        require(mainPath).then(address => {
+        require(mainPath).then(async (address) => {
+            await setElectronSecurityToken(address.port);
             loadMainWindow(address.port);
         }).catch((error) => {
             console.error(error);
@@ -367,7 +378,8 @@ app.on('ready', () => {
         const cp = fork(mainPath, process.argv.slice(devMode ? 2 : 1), { env: Object.assign({
             [ElectronSecurityToken]: JSON.stringify(electronSecurityToken),
         }, process.env) });
-        cp.on('message', (address) => {
+        cp.on('message', async (address) => {
+            await setElectronSecurityToken(address.port);
             loadMainWindow(address.port);
         });
         cp.on('error', (error) => {
