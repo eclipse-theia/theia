@@ -75,7 +75,8 @@ declare module monaco.editor {
             'editor.contrib.referencesController': monaco.referenceSearch.ReferencesController
             'editor.contrib.hover': ModesHoverController
             'css.editor.codeLens': CodeLensContribution
-            'editor.contrib.quickFixController': QuickFixController
+            'editor.contrib.quickFixController': QuickFixController,
+            'editor.contrib.suggestController': monaco.suggest.SuggestController
         }
         readonly _modelData: {
             cursor: ICursor
@@ -1185,6 +1186,19 @@ declare module monaco.suggest {
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/contrib/suggest/suggest.ts#L106
     export const enum SnippetSortOrder {
         Top, Inline, Bottom
+    }
+
+    // https://github.com/theia-ide/vscode/blob/d24b5f70c69b3e75cd10c6b5247a071265ccdd38/src/vs/editor/contrib/suggest/suggestController.ts#L97
+    export interface SuggestController {
+        readonly widget: {
+            getValue(): SuggestWidget
+        }
+    }
+    export interface SuggestWidget {
+        getFocusedItem(): ISelectedSuggestion | undefined;
+    }
+    export interface ISelectedSuggestion {
+        item: CompletionItem;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/contrib/suggest/suggest.ts#L28

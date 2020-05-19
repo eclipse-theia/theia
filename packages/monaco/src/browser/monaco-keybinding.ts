@@ -29,10 +29,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
 
     registerKeybindings(registry: KeybindingRegistry): void {
         const defaultKeybindings = monaco.keybindings.KeybindingsRegistry.getDefaultKeybindings();
-        // register in reverse order to align with Monaco dispatch logic:
-        // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/platform/keybinding/common/keybindingResolver.ts#L302
-        for (let i = defaultKeybindings.length - 1; i >= 0; i--) {
-            const item = defaultKeybindings[i];
+        for (const item of defaultKeybindings) {
             const command = this.commands.validate(item.command);
             if (command) {
                 const when = item.when && item.when.serialize();
