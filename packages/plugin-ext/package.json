@@ -51,6 +51,9 @@
       "backend": "lib/plugin-ext-backend-module",
       "backendElectron": "lib/plugin-ext-backend-electron-module",
       "frontend": "lib/plugin-ext-frontend-module"
+    },
+    {
+      "frontendElectron": "lib/plugin-ext-frontend-electron-module"
     }
   ],
   "keywords": [
