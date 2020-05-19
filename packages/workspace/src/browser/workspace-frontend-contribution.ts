@@ -32,6 +32,22 @@ import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 
+export enum WorkspaceStates {
+    /**
+     * The state is `empty` when no workspace is opened.
+     */
+    empty = 'empty',
+    /**
+     * The state is `workspace` when a workspace is opened.
+     */
+    workspace = 'workspace',
+    /**
+     * The state is `folder` when a folder is opened. (1 folder)
+     */
+    folder = 'folder',
+};
+export type WorkspaceState = keyof typeof WorkspaceStates;
+
 @injectable()
 export class WorkspaceFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
 
@@ -58,9 +74,15 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const workspaceFolderCountKey = this.contextKeyService.createKey<number>('workspaceFolderCount', 0);
         const updateWorkspaceFolderCountKey = () => workspaceFolderCountKey.set(this.workspaceService.tryGetRoots().length);
         updateWorkspaceFolderCountKey();
+
+        const workspaceStateKey = this.contextKeyService.createKey<WorkspaceState>('workspaceState', 'empty');
+        const updateWorkspaceStateKey = () => workspaceStateKey.set(this.updateWorkspaceStateKey());
+        updateWorkspaceStateKey();
+
         this.updateStyles();
         this.workspaceService.onWorkspaceChanged(() => {
             updateWorkspaceFolderCountKey();
+            updateWorkspaceStateKey();
             this.updateStyles();
         });
     }
@@ -383,6 +405,13 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 console.warn(e);
             }
         }
+    }
+
+    protected updateWorkspaceStateKey(): WorkspaceState {
+        if (this.workspaceService.opened) {
+            return this.workspaceService.isMultiRootWorkspaceOpened ? 'folder' : 'workspace';
+        }
+        return 'empty';
     }
 
     private async confirmOverwrite(uri: URI): Promise<boolean> {
