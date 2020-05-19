@@ -397,55 +397,6 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
-        keybindings.registerKeybinding({
-            command: TerminalCommands.NEW.id,
-            keybinding: 'ctrl+shift+`'
-        });
-        keybindings.registerKeybinding({
-            command: TerminalCommands.NEW_ACTIVE_WORKSPACE.id,
-            keybinding: 'ctrl+`'
-        });
-        keybindings.registerKeybinding({
-            command: TerminalCommands.TERMINAL_CLEAR.id,
-            keybinding: 'ctrlcmd+k',
-            context: TerminalKeybindingContexts.terminalActive
-        });
-        keybindings.registerKeybinding({
-            command: TerminalCommands.TERMINAL_FIND_TEXT.id,
-            keybinding: 'ctrlcmd+f',
-            context: TerminalKeybindingContexts.terminalActive
-        });
-        keybindings.registerKeybinding({
-            command: TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id,
-            keybinding: 'esc',
-            context: TerminalKeybindingContexts.terminalHideSearch
-        });
-        keybindings.registerKeybinding({
-            command: TerminalCommands.SCROLL_LINE_UP.id,
-            keybinding: 'ctrl+shift+up',
-            context: TerminalKeybindingContexts.terminalActive
-        });
-        keybindings.registerKeybinding({
-            command: TerminalCommands.SCROLL_LINE_DOWN.id,
-            keybinding: 'ctrl+shift+down',
-            context: TerminalKeybindingContexts.terminalActive
-        });
-        keybindings.registerKeybinding({
-            command: TerminalCommands.SCROLL_TO_TOP.id,
-            keybinding: 'shift-home',
-            context: TerminalKeybindingContexts.terminalActive
-        });
-        keybindings.registerKeybinding({
-            command: TerminalCommands.SCROLL_PAGE_UP.id,
-            keybinding: 'shift-pageUp',
-            context: TerminalKeybindingContexts.terminalActive
-        });
-        keybindings.registerKeybinding({
-            command: TerminalCommands.SCROLL_PAGE_DOWN.id,
-            keybinding: 'shift-pageDown',
-            context: TerminalKeybindingContexts.terminalActive
-        });
-
         /* Register passthrough keybindings for combinations recognized by
            xterm.js and converted to control characters.
 
@@ -529,6 +480,55 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
                 context: TerminalKeybindingContexts.terminalActive
             });
         }
+
+        keybindings.registerKeybinding({
+            command: TerminalCommands.NEW.id,
+            keybinding: 'ctrl+shift+`'
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.NEW_ACTIVE_WORKSPACE.id,
+            keybinding: 'ctrl+`'
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.TERMINAL_CLEAR.id,
+            keybinding: 'ctrlcmd+k',
+            context: TerminalKeybindingContexts.terminalActive
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.TERMINAL_FIND_TEXT.id,
+            keybinding: 'ctrlcmd+f',
+            context: TerminalKeybindingContexts.terminalActive
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.TERMINAL_FIND_TEXT_CANCEL.id,
+            keybinding: 'esc',
+            context: TerminalKeybindingContexts.terminalHideSearch
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.SCROLL_LINE_UP.id,
+            keybinding: 'ctrl+shift+up',
+            context: TerminalKeybindingContexts.terminalActive
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.SCROLL_LINE_DOWN.id,
+            keybinding: 'ctrl+shift+down',
+            context: TerminalKeybindingContexts.terminalActive
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.SCROLL_TO_TOP.id,
+            keybinding: 'shift-home',
+            context: TerminalKeybindingContexts.terminalActive
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.SCROLL_PAGE_UP.id,
+            keybinding: 'shift-pageUp',
+            context: TerminalKeybindingContexts.terminalActive
+        });
+        keybindings.registerKeybinding({
+            command: TerminalCommands.SCROLL_PAGE_DOWN.id,
+            keybinding: 'shift-pageDown',
+            context: TerminalKeybindingContexts.terminalActive
+        });
     }
 
     async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {

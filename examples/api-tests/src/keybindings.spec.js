@@ -20,6 +20,8 @@ describe('Keybindings', function () {
     const { assert } = chai;
 
     const { Disposable, DisposableCollection } = require('@theia/core/lib/common/disposable');
+    const { isOSX } = require('@theia/core/lib/common/os');
+    const { CommonCommands } = require('@theia/core/lib/browser/common-frontend-contribution');
     const { TerminalService } = require('@theia/terminal/lib/browser/base/terminal-service');
     const { TerminalCommands } = require('@theia/terminal/lib/browser/terminal-frontend-contribution');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
@@ -30,7 +32,6 @@ describe('Keybindings', function () {
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
     const Uri = require('@theia/core/lib/common/uri');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
-    const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
 
     /** @type {import('inversify').Container} */
     const container = window['theia'].container;
@@ -55,23 +56,23 @@ describe('Keybindings', function () {
         toTearDown.push(commands.onWillExecuteCommand(e => waitForCommand.resolve(e.commandId)));
         keybindings.dispatchKeyDown({
             code: Key.KEY_K.code,
-            metaKey: true,
-            ctrlKey: true
+            metaKey: isOSX,
+            ctrlKey: !isOSX
         }, terminal.node);
         const executedCommand = await waitForCommand.promise;
         assert.equal(executedCommand, TerminalCommands.TERMINAL_CLEAR.id);
     });
 
-    it("disabled keybinding should not override enabled", async () => {
+    it('disabled keybinding should not override enabled', async () => {
         const id = '__test:keybindings.left';
         toTearDown.push(commands.registerCommand({ id }, {
             execute: () => { }
         }));
         toTearDown.push(keybindings.registerKeybinding({
-            command: '__test:keybindings.left',
+            command: id,
             keybinding: 'left',
             when: 'false'
-        }, true));
+        }));
 
         const editor = await editorManager.open(new Uri.default(workspaceService.tryGetRoots()[0].uri).resolve('package.json'), {
             mode: 'activate',
@@ -91,6 +92,27 @@ describe('Keybindings', function () {
         }, editor.node);
         const executedCommand = await waitForCommand.promise;
         assert.notEqual(executedCommand, id);
+    });
+
+    it('later registered keybinding should has higher priority', async () => {
+        const id = '__test:keybindings.copy';
+        toTearDown.push(commands.registerCommand({ id }, {
+            execute: () => { }
+        }));
+        const keybiding = keybindings.getKeybindingsForCommand(CommonCommands.COPY.id)[0];
+        toTearDown.push(keybindings.registerKeybinding({
+            command: id,
+            keybinding: keybiding.keybinding
+        }));
+        const waitForCommand = new Deferred();
+        toTearDown.push(commands.onWillExecuteCommand(e => waitForCommand.resolve(e.commandId)));
+        keybindings.dispatchKeyDown({
+            code: Key.KEY_C.code,
+            metaKey: isOSX,
+            ctrlKey: !isOSX
+        });
+        const executedCommand = await waitForCommand.promise;
+        assert.equal(executedCommand, id);
     });
 
 });

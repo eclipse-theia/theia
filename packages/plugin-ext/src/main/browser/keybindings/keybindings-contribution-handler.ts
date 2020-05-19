@@ -36,7 +36,7 @@ export class KeybindingsContributionPointHandler {
         for (const raw of contributions.keybindings) {
             const keybinding = this.toKeybinding(raw);
             if (keybinding) {
-                toDispose.push(this.keybindingRegistry.registerKeybinding(keybinding, true));
+                toDispose.push(this.keybindingRegistry.registerKeybinding(keybinding));
             }
         }
         return toDispose;

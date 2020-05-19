@@ -455,6 +455,48 @@ module.exports = (port, host, argv) => Promise.resolve()
         assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
     });
 
+    it('editor.action.triggerSuggest navigate', async function () {
+        const editor = await openEditor(serverUri);
+        // const { [|Container] } = require('inversify');
+        editor.getControl().setPosition({ lineNumber: 5, column: 9 });
+        editor.getControl().setSelection({ startLineNumber: 5, startColumn: 9, endLineNumber: 5, endColumn: 18 });
+        // @ts-ignore
+        assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'Container');
+
+        const suggest = editor.getControl()._contributions['editor.contrib.suggestController'];
+        const getFocusedLabel = () => {
+            const focusedItem = suggest.widget.getValue().getFocusedItem();
+            return focusedItem && focusedItem.item.completion.label;
+        };
+
+        assert.isUndefined(getFocusedLabel());
+        assert.isFalse(contextKeyService.match('suggestWidgetVisible'));
+
+        await commands.executeCommand('editor.action.triggerSuggest');
+        await waitForAnimation(() => contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === 'Container');
+
+        assert.equal(getFocusedLabel(), 'Container');
+        assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
+
+        keybindings.dispatchKeyDown('ArrowDown');
+        await waitForAnimation(() => contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === 'ContainerModule');
+
+        assert.equal(getFocusedLabel(), 'ContainerModule');
+        assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
+
+        keybindings.dispatchKeyDown('ArrowUp');
+        await waitForAnimation(() => contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === 'Container');
+
+        assert.equal(getFocusedLabel(), 'Container');
+        assert.isTrue(contextKeyService.match('suggestWidgetVisible'));
+
+        keybindings.dispatchKeyDown('Escape');
+        await waitForAnimation(() => !contextKeyService.match('suggestWidgetVisible') && getFocusedLabel() === undefined);
+
+        assert.isUndefined(getFocusedLabel());
+        assert.isFalse(contextKeyService.match('suggestWidgetVisible'));
+    });
+
     it('editor.action.rename', async function () {
         const editor = await openEditor(serverUri);
         // const |container = new Container();
