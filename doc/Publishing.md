@@ -2,6 +2,7 @@
 
 In order to release one should:
 
+- update the release page (Pre-release)
 - announce upcoming release
 - pre-publishing steps
 - login to the npm registry
@@ -10,6 +11,34 @@ In order to release one should:
 - reset local HEAD to match release commit
 - tag the published version
 - announce release is done
+- update the release page (Post-release)
+
+## Updating the release page on Eclipse Foundation (Pre-release)
+
+`One week` before the release, the project's release page should be updated in order to announce upcoming changes.
+
+Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/projects/ecd.theia)
+- On the right side panel, select Release / Create a new release
+
+    Create a new version
+    - Name: enter the new version for this release. (ex: 1.2.0).
+    - Date: enter the date for this release.
+
+    Select the edit tab
+    - In "The Basic" section
+        - Select the  "Type A" in the IP Due Diligence type.
+    - In the "Project Plan"
+        - Deliverables section
+            - Paste the content of the changelog.md.
+        - Compatibility section
+            - Paste the content of the "Breaking changes"
+
+
+- When completing the edition, select "Save" at the bottom of the page.
+- To confirm the release is successful,
+    - Open the page https://projects.eclipse.org/projects/ecd.theia
+        - Select the version you just created.
+        - Open the Review plan section, you should see the data provided before.
 
 ## Announce upcoming release
 
@@ -86,6 +115,22 @@ For example, if you picked `0.1.0` as a version then you should run:
     git push origin v0.1.0
 
 To confirm that the tagging was correctly done, check the repo's [releases](https://github.com/eclipse-theia/theia/releases) page and confirm the release just done is listed there.
+
+## Updating the release page on Eclipse Foundation (Post-release)
+
+- Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/projects/ecd.theia)
+-   Select the edit tab from the current release
+    - In the "Project Plan"
+        - Deliverables section
+            - Paste the content of the new changelog.md.
+        - Compatibility section
+            - Paste the content of the "Breaking changes"
+
+- When completing the edition, select "Save" at the bottom of the page.
+- To confirm the release is successful,
+    - Open the page https://projects.eclipse.org/projects/ecd.theia
+        - Select the version you just created.
+        - Open the Review plan section, you should see the data provided before.
 
 ## Announce release is done
 
