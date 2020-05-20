@@ -75,9 +75,9 @@ export class GettingStartedWidget extends ReactWidget {
     /**
      * Collection of useful links to display for end users.
      */
-    protected readonly documentationUrl = 'https://www.theia-ide.org/doc/';
-    protected readonly extensionUrl = 'https://www.theia-ide.org/doc/Authoring_Extensions.html';
-    protected readonly pluginUrl = 'https://www.theia-ide.org/doc/Authoring_Plugins.html';
+    protected readonly documentationUrl = 'https://www.theia-ide.org/docs/';
+    protected readonly extensionUrl = 'https://www.theia-ide.org/docs/authoring_extensions';
+    protected readonly pluginUrl = 'https://www.theia-ide.org/docs/authoring_plugins';
 
     @inject(ApplicationServer)
     protected readonly appServer: ApplicationServer;
