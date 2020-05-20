@@ -99,7 +99,8 @@ export class PluginHostRPC {
         const { extensionTestsPath } = process.env;
         const self = this;
         const pluginManager = new PluginManagerExtImpl({
-            loadPlugin(plugin: Plugin): void {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            loadPlugin(plugin: Plugin): any {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
                 try {
                     // cleaning the cache for all files of that plug-in.
@@ -137,7 +138,9 @@ export class PluginHostRPC {
                         }
 
                     });
-                    return require(plugin.pluginPath);
+                    if (plugin.pluginPath) {
+                        return require(plugin.pluginPath);
+                    }
                 } catch (e) {
                     console.error(e);
                 }
