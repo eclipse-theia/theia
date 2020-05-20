@@ -434,6 +434,8 @@ export class KeybindingRegistry {
     /**
      * Tries to execute a keybinding.
      *
+     * **IMPORTANT:** This method has to be synchronous.
+     *
      * @param binding to execute
      * @param event keyboard event.
      */
@@ -502,6 +504,8 @@ export class KeybindingRegistry {
 
     /**
      * Run the command matching to the given keyboard event.
+     *
+     * **IMPORTANT:** This method has to be synchronous.
      */
     run(event: KeyboardEvent): void {
         if (event.defaultPrevented) {

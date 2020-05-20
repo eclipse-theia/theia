@@ -5,6 +5,8 @@ ENV TRIGGER_REBUILD 3
 
 # Install custom tools, runtime, etc.
 RUN sudo apt-get update \
+    # firefox for testing via VNC
+    && sudo apt-get install -y firefox \
     # window manager
     && sudo apt-get install -y jwm \
     # electron

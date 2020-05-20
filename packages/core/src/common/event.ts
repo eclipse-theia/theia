@@ -199,8 +199,8 @@ export class Emitter<T = any> {
 
                 return result;
             }, {
-                    maxListeners: Emitter.LEAK_WARNING_THRESHHOLD
-                }
+                maxListeners: Emitter.LEAK_WARNING_THRESHHOLD
+            }
             );
         }
         return this._event;
@@ -308,11 +308,14 @@ export interface WaitUntilEvent {
     /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 export namespace WaitUntilEvent {
-    export async function fire<T extends WaitUntilEvent>(
+    /**
+     * **IMPORTANT:** This method has to be synchronous.
+     */
+    export function fire<T extends WaitUntilEvent>(
         emitter: Emitter<T>,
         event: Pick<T, Exclude<keyof T, 'waitUntil'>>,
         timeout: number | undefined = undefined
-    ): Promise<void> {
+    ): MaybePromise<void> {
         const waitables: Promise<void>[] = [];
         const asyncEvent = Object.assign(event, {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -333,10 +336,12 @@ export namespace WaitUntilEvent {
         if (!waitables.length) {
             return;
         }
+        let invocation;
         if (timeout !== undefined) {
-            await Promise.race([Promise.all(waitables), new Promise(resolve => setTimeout(resolve, timeout))]);
+            invocation = Promise.race([Promise.all(waitables), new Promise(resolve => setTimeout(resolve, timeout))]);
         } else {
-            await Promise.all(waitables);
+            invocation = Promise.all(waitables);
         }
+        return invocation.then(() => Promise.resolve());
     }
 }

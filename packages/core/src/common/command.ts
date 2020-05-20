@@ -18,6 +18,7 @@ import { injectable, inject, named } from 'inversify';
 import { Event, Emitter, WaitUntilEvent } from './event';
 import { Disposable, DisposableCollection } from './disposable';
 import { ContributionProvider } from './contribution-provider';
+import { MaybePromise } from './types';
 
 /**
  * A command is a unique identifier of a function
@@ -285,24 +286,34 @@ export class CommandRegistry implements CommandService {
      * Execute the active handler for the given command and arguments.
      *
      * Reject if a command cannot be executed.
+     *
+     * **IMPORTANT:** This method has to be synchronous.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async executeCommand<T>(commandId: string, ...args: any[]): Promise<T | undefined> {
+    executeCommand<T>(commandId: string, ...args: any[]): Promise<T | undefined> {
         const handler = this.getActiveHandler(commandId, ...args);
-        if (handler) {
-            await this.fireWillExecuteCommand(commandId, args);
-            const result = await handler.execute(...args);
+        if (!handler) {
+            const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';
+            // eslint-disable-next-line max-len
+            throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.${argsMessage}`), { code: 'NO_ACTIVE_HANDLER' });
+        }
+        let invocation: MaybePromise<T | undefined>;
+        const waitForCommand = this.fireWillExecuteCommand(commandId, args);
+        if (waitForCommand) {
+            invocation = waitForCommand.then(() => handler.execute(...args));
+        } else {
+            // execute already registered command in the same tick, see https://github.com/eclipse-theia/theia/issues/7542#issuecomment-631452852
+            invocation = handler.execute(...args);
+        }
+        return Promise.resolve(invocation).then(result => {
             this.onDidExecuteCommandEmitter.fire({ commandId, args });
             return result;
-        }
-        const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';
-        // eslint-disable-next-line max-len
-        throw Object.assign(new Error(`The command '${commandId}' cannot be executed. There are no active handlers available for the command.${argsMessage}`), { code: 'NO_ACTIVE_HANDLER' });
+        });
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected async fireWillExecuteCommand(commandId: string, args: any[] = []): Promise<void> {
-        await WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId, args }, 30000);
+    protected fireWillExecuteCommand(commandId: string, args: any[] = []): MaybePromise<void> {
+        return WaitUntilEvent.fire(this.onWillExecuteCommandEmitter, { commandId, args }, 30000);
     }
 
     /**
