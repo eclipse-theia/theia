@@ -343,9 +343,8 @@ export namespace KnownCommands {
         return L.create(l.uri.toString(), fromRangeToR(l.range));
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/tslint/config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function vscodeToMonacoArgsConverter(args: any[]) {
-        // tslint:disable-next-line:typedef
         return cloneAndChange(args, function (value) {
             if (Position.isPosition(value)) {
                 return fromPosition(value);
@@ -365,9 +364,8 @@ export namespace KnownCommands {
         });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/tslint/config
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function monacoToVscodeArgsConverter(args: any[]) {
-        // tslint:disable-next-line:typedef
         return cloneAndChange(args, function (value) {
             if (isModelLocation(value)) {
                 return toLocation(value);
@@ -390,7 +388,6 @@ export namespace KnownCommands {
 }
 
 function toArrayConversion<T, U>(f: (a: T) => U): (a: T[]) => U[] {
-    // tslint:disable-next-line:typedef
     return function (a: T[]) {
         return a.map(f);
     };

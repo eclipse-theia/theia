@@ -208,12 +208,6 @@ theia-cpp-extension npm node (n/a)
    CC-BY-3.0 AND ISC AND MPL-2.0 AND License-Ref-Public-Domain AND BSL-1.0 AND
    (AFL-2.1 OR BSD-3.0) AND Unlicense AND Artist
 
-tslint (5.10.0)
-
-* License: Apache-2.0 AND MIT
-* Project: http://palantir.github.io/tslint/
-* Source: https://github.com/palantir/tslint
-
 typefox/monaco-language-client (0.5.0)
 
 * License: MIT

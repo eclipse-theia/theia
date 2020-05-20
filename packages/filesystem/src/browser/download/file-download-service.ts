@@ -149,9 +149,7 @@ export class FileDownloadService {
     protected url(uris: URI[]): string {
         const endpoint = this.endpoint();
         if (uris.length === 1) {
-            // tslint:disable-next-line:whitespace
-            const [uri,] = uris;
-            return `${endpoint}/?uri=${uri.toString()}`;
+            return `${endpoint}/?uri=${uris[0].toString()}`;
         }
         return endpoint;
 

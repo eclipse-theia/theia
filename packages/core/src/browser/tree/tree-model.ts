@@ -226,13 +226,11 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return this.tree.refresh();
     }
 
-    // tslint:disable-next-line:typedef
-    get selectedNodes() {
+    get selectedNodes(): readonly Readonly<SelectableTreeNode>[] {
         return this.selectionService.selectedNodes;
     }
 
-    // tslint:disable-next-line:typedef
-    get onSelectionChanged() {
+    get onSelectionChanged(): Event<readonly Readonly<SelectableTreeNode>[]> {
         return this.selectionService.onSelectionChanged;
     }
 

@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* tslint:disable:typedef */
 
 import * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';

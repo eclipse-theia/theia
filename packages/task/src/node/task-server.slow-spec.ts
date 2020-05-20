@@ -16,7 +16,6 @@
 
 /* eslint-disable no-unused-expressions */
 
-// tslint:disable-next-line:no-implicit-dependencies
 import 'reflect-metadata';
 import { createTaskTestContainer } from './test/task-test-container';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';

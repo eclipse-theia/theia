@@ -136,7 +136,6 @@ describe('GitRepositoryProvider', () => {
         expect(gitRepositoryProvider.selectedRepository && gitRepositoryProvider.selectedRepository.localUri).to.eq(allRepos[0].localUri);
     });
 
-    // tslint:disable-next-line:no-void-expression
     it.skip('should refresh git repo(s) on receiving a root change event from WorkspaceService', done => {
         const allReposA = [repoA1, repoA2];
         const oldRoots = [folderA];
@@ -173,7 +172,6 @@ describe('GitRepositoryProvider', () => {
         );
     });
 
-    // tslint:disable-next-line:no-void-expression
     it.skip('should refresh git repo(s) on receiving a file system change event', done => {
         const allReposA = [repoA1, repoA2];
         const oldRoots = [folderA];
@@ -212,7 +210,6 @@ describe('GitRepositoryProvider', () => {
         );
     });
 
-    // tslint:disable-next-line:no-void-expression
     it.skip('should ignore the invalid or nonexistent root(s)', async () => {
         const allReposA = [repoA1, repoA2];
         const roots = [folderA, folderB];

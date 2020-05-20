@@ -34,7 +34,6 @@
     "rimraf": "^2.6.1",
     "sinon": "^3.3.0",
     "temp": "^0.8.3",
-    "tslint": "^5.12.0",
     "typedoc": "^0.15.0-0",
     "typedoc-plugin-external-module-map": "^1.0.0",
     "typescript": "^3.9.2",

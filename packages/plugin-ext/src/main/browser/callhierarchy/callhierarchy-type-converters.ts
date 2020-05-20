@@ -66,7 +66,6 @@ export function toRange(range: model.Range): callhierarchy.Range {
 }
 
 export namespace SymbolKindConverter {
-    // tslint:disable-next-line:no-null-keyword
     const fromMapping: { [kind: number]: model.SymbolKind } = Object.create(null);
     fromMapping[callhierarchy.SymbolKind.File] = model.SymbolKind.File;
     fromMapping[callhierarchy.SymbolKind.Module] = model.SymbolKind.Module;
@@ -99,7 +98,6 @@ export namespace SymbolKindConverter {
         return fromMapping[kind] || model.SymbolKind.Property;
     }
 
-    // tslint:disable-next-line:no-null-keyword
     const toMapping: { [kind: number]: callhierarchy.SymbolKind } = Object.create(null);
     toMapping[model.SymbolKind.File] = callhierarchy.SymbolKind.File;
     toMapping[model.SymbolKind.Module] = callhierarchy.SymbolKind.Module;

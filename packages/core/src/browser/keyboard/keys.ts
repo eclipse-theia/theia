@@ -371,7 +371,6 @@ export namespace KeyCode {
             }
         }
 
-        // tslint:disable-next-line: deprecation
         const keyCode = event.keyCode;
         if (keyCode) {
             const key = Key.getKey(keyCode);

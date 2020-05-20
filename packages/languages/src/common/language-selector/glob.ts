@@ -129,7 +129,6 @@ function parseRegExp(pattern: string): string {
     }
 
     // Build regex over segments
-    // tslint:disable-next-line:one-line
     else {
         let previousSegmentWasGlobStar = false;
         segments.forEach((segment, index) => {
@@ -173,20 +172,17 @@ function parseRegExp(pattern: string): string {
                     }
 
                     // negation operator (only valid on first index in bracket)
-                    // tslint:disable-next-line:one-line
                     else if ((char === '^' || char === '!') && !bracketVal) {
                         res = '^';
                     }
 
                     // glob split matching is not allowed within character ranges
                     // see http://man7.org/linux/man-pages/man7/glob.7.html
-                    // tslint:disable-next-line:one-line
                     else if (char === GLOB_SPLIT) {
                         res = '';
                     }
 
                     // anything else gets escaped
-                    // tslint:disable-next-line:one-line
                     else {
                         res = strings.escapeRegExpCharacters(char);
                     }
@@ -343,7 +339,6 @@ function parsePattern(arg1: string | IRelativePattern, options: IGlobOptions): P
     }
 
     // Otherwise convert to pattern
-    // tslint:disable-next-line:one-line
     else {
         parsedPattern = toRegExp(pattern);
     }
@@ -593,7 +588,6 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
         // eslint-disable-next-line no-shadow
         const resultExpression: ParsedStringPattern = function (path: string, basename: string): string | Promise<string> {
             // eslint-disable-next-line no-shadow
-            // tslint:disable-next-line:one-variable-per-declaration
             for (let i = 0, n = parsedPatterns.length; i < n; i++) {
                 // Pattern matches path
                 const result = (<ParsedStringPattern>parsedPatterns[i])(path, basename);
@@ -707,7 +701,6 @@ function aggregateBasenameMatches(parsedPatterns: (ParsedStringPattern | ParsedE
     let patterns: string[];
     if (result) {
         patterns = [];
-        // tslint:disable-next-line:one-variable-per-declaration
         for (let i = 0, n = basenames.length; i < n; i++) {
             patterns.push(result);
         }

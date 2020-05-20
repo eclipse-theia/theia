@@ -105,7 +105,7 @@ class CallbackList implements Iterable<Callback> {
         }
     }
 
-    // tslint:disable-next-line:typedef
+    // eslint-disable-next-line
     public [Symbol.iterator]() {
         if (!this._callbacks) {
             return [][Symbol.iterator]();
@@ -199,8 +199,8 @@ export class Emitter<T = any> {
 
                 return result;
             }, {
-                    maxListeners: Emitter.LEAK_WARNING_THRESHHOLD
-                }
+                maxListeners: Emitter.LEAK_WARNING_THRESHHOLD
+            }
             );
         }
         return this._event;

@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-// tslint:disable-next-line
 import * as ws from 'ws';
 import { injectable } from 'inversify';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';

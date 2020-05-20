@@ -139,7 +139,6 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         </div>;
     }
 
-    // tslint:disable-next-line:typedef
     protected toIconClass(symbolKind: number) {
         switch (symbolKind) {
             case SymbolKind.File: return 'file';
@@ -178,9 +177,9 @@ export class CallHierarchyTreeWidget extends TreeWidget {
     private doOpenEditor(uri: DocumentUri, range: Range, keepFocus: boolean): void {
         this.editorManager.open(
             new URI(uri), {
-                mode: keepFocus ? 'reveal' : 'activate',
-                selection: range
-            }
+            mode: keepFocus ? 'reveal' : 'activate',
+            selection: range
+        }
         ).then(editorWidget => {
             if (editorWidget.parent instanceof DockPanel) {
                 editorWidget.parent.selectWidget(editorWidget);

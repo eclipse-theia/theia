@@ -28,7 +28,7 @@ import {
     bgRed, bgWhite, bgYellow,
     black, green, magenta, red, white, yellow,
     bold,
-} from 'colors/safe'; // tslint:disable-line:no-implicit-dependencies
+} from 'colors/safe';
 
 export interface TestProcessInfo extends ProcessInfo {
     shell: ChildProcess
@@ -242,16 +242,16 @@ for (const shellConfig of shellConfigs) {
                         [envName]: envValue,
                     }
                 }, [
-                    // stderr
-                    scanLines<void>(context, processInfo.shell.stderr, errorScanner, stderrFormat(context.name)),
-                    // stdout
-                    scanLines<void>(context, processInfo.shell.stdout, handle => {
-                        errorScanner(handle);
-                        if (handle.line.includes(`[${envValue}]`)) {
-                            handle.resolve();
-                        }
-                    }, stdoutFormat(context.name)),
-                ]);
+                // stderr
+                scanLines<void>(context, processInfo.shell.stderr, errorScanner, stderrFormat(context.name)),
+                // stdout
+                scanLines<void>(context, processInfo.shell.stdout, handle => {
+                    errorScanner(handle);
+                    if (handle.line.includes(`[${envValue}]`)) {
+                        handle.resolve();
+                    }
+                }, stdoutFormat(context.name)),
+            ]);
         });
 
         it('use problematic environment variables', async () => {
@@ -265,19 +265,19 @@ for (const shellConfig of shellConfigs) {
                         [envName]: envValue,
                     }
                 }, [
-                    // stderr
-                    scanLines<void>(context, processInfo.shell.stderr, errorScanner, stderrFormat(context.name)),
-                    // stdout
-                    scanLines<void>(context, processInfo.shell.stdout, handle => {
-                        errorScanner(handle);
-                        if (handle.line.includes(`[${envValue}]`)) {
-                            handle.resolve();
-                        }
-                        if (handle.line.includes('[undefined]')) {
-                            handle.reject(new Error(handle.text));
-                        }
-                    }, stdoutFormat(context.name)),
-                ]);
+                // stderr
+                scanLines<void>(context, processInfo.shell.stderr, errorScanner, stderrFormat(context.name)),
+                // stdout
+                scanLines<void>(context, processInfo.shell.stdout, handle => {
+                    errorScanner(handle);
+                    if (handle.line.includes(`[${envValue}]`)) {
+                        handle.resolve();
+                    }
+                    if (handle.line.includes('[undefined]')) {
+                        handle.reject(new Error(handle.text));
+                    }
+                }, stdoutFormat(context.name)),
+            ]);
         });
 
         it('command with complex arguments', async () => {
@@ -292,16 +292,16 @@ for (const shellConfig of shellConfigs) {
                         console.log(\`[\${left}|\${right}]\`);
                     }`],
                 }, [
-                    // stderr
-                    scanLines<void>(context, processInfo.shell.stderr, errorScanner, stderrFormat(context.name)),
-                    // stdout
-                    scanLines<void>(context, processInfo.shell.stdout, handle => {
-                        errorScanner(handle);
-                        if (handle.line.includes(`[${left}|${right}]`)) {
-                            handle.resolve();
-                        }
-                    }, stdoutFormat(context.name)),
-                ]);
+                // stderr
+                scanLines<void>(context, processInfo.shell.stderr, errorScanner, stderrFormat(context.name)),
+                // stdout
+                scanLines<void>(context, processInfo.shell.stdout, handle => {
+                    errorScanner(handle);
+                    if (handle.line.includes(`[${left}|${right}]`)) {
+                        handle.resolve();
+                    }
+                }, stdoutFormat(context.name)),
+            ]);
         });
 
     });

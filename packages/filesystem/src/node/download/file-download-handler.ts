@@ -285,9 +285,7 @@ export class MultiFileDownloadHandler extends FileDownloadHandler {
             }
             const options: PrepareDownloadOptions = { filePath: '', downloadId, remove: true, root: outputRootPath };
             if (tarPaths.length === 1) {
-                // tslint:disable-next-line:whitespace
-                const [outputPath,] = tarPaths;
-                options.filePath = outputPath;
+                options.filePath = tarPaths[0];
                 await this.prepareDownload(request, response, options);
             } else {
                 // We need to tar the tars.

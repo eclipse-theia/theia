@@ -69,7 +69,6 @@ export class TreeViewsExtImpl implements TreeViewsExt {
         this.treeViews.set(treeViewId, treeView);
 
         return {
-            // tslint:disable:typedef
             get onDidExpandElement() {
                 return treeView.onDidExpandElement;
             },

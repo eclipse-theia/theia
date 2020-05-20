@@ -78,7 +78,6 @@ function doEqualsIgnoreCase(a: string, b: string, stopAt = a.length): boolean {
         }
 
         // Any other charcode
-        // tslint:disable-next-line:one-line
         else {
             if (String.fromCharCode(codeA).toLowerCase() !== String.fromCharCode(codeB).toLowerCase()) {
                 return false;

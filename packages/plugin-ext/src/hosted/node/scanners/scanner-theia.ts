@@ -650,7 +650,6 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         let result: AutoClosingPairConditional[] | undefined = undefined;
-        // tslint:disable-next-line:one-variable-per-declaration
         for (let i = 0, len = source.length; i < len; i++) {
             const pair = source[i];
             if (Array.isArray(pair)) {
@@ -697,7 +696,6 @@ export class TheiaPluginScanner implements PluginScanner {
         }
 
         let result: AutoClosingPair[] | undefined = undefined;
-        // tslint:disable-next-line:one-variable-per-declaration
         for (let i = 0, len = source.length; i < len; i++) {
             const pair = source[i];
             if (Array.isArray(pair)) {
@@ -740,7 +738,6 @@ function isStringArr(something: string[]): boolean {
     if (!Array.isArray(something)) {
         return false;
     }
-    // tslint:disable-next-line:one-variable-per-declaration
     for (let i = 0, len = something.length; i < len; i++) {
         if (typeof something[i] !== 'string') {
             return false;
