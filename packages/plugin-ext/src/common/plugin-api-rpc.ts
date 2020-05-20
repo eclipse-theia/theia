@@ -84,7 +84,7 @@ export interface PreferenceData {
 }
 
 export interface Plugin {
-    pluginPath: string;
+    pluginPath: string | undefined;
     pluginFolder: string;
     model: PluginModel;
     rawModel: PluginPackage;

@@ -65,10 +65,12 @@ const webviewExt = new WebviewsExtImpl(rpc, workspaceExt);
 const pluginManager = new PluginManagerExtImpl({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     loadPlugin(plugin: Plugin): any {
-        if (isElectron()) {
-            ctx.importScripts(plugin.pluginPath);
-        } else {
-            ctx.importScripts('/hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+        if (plugin.pluginPath) {
+            if (isElectron()) {
+                ctx.importScripts(plugin.pluginPath);
+            } else {
+                ctx.importScripts('/hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+            }
         }
 
         if (plugin.lifecycle.frontendModuleName) {
@@ -107,7 +109,7 @@ const pluginManager = new PluginManagerExtImpl({
                 pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
             } else {
                 foreign.push({
-                    pluginPath: pluginModel.entryPoint.backend!,
+                    pluginPath: pluginModel.entryPoint.backend,
                     pluginFolder: pluginModel.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
