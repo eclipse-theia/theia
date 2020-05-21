@@ -147,7 +147,7 @@ export class GitQuickOpenService {
                     await this.git.pull(repository, { remote: defaultRemote });
                     console.log(`Git Pull: successfully completed from ${defaultRemote}.`);
                 } else if (action === GitAction.PUSH) {
-                    await this.git.push(repository, { remote: defaultRemote });
+                    await this.git.push(repository, { remote: defaultRemote, setUpstream: true });
                     console.log(`Git Push: successfully completed to ${defaultRemote}.`);
                 }
             } catch (error) {
@@ -165,7 +165,7 @@ export class GitQuickOpenService {
             const [remotes, currentBranch] = await Promise.all([this.getRemotes(), this.getCurrentBranch()]);
             const execute = async (item: QuickOpenItem) => {
                 try {
-                    await this.git.push(repository, { remote: item.getLabel() });
+                    await this.git.push(repository, { remote: item.getLabel(), setUpstream: true });
                 } catch (error) {
                     this.gitErrorHandler.handleError(error);
                 }
