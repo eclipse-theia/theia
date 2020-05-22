@@ -234,4 +234,177 @@ declare module '@theia/plugin' {
         constructor(label: TreeItemLabel, collapsibleState?: TreeItemCollapsibleState);
     }
     //#endregion
+
+    //#region search in workspace
+    /**
+     * The parameters of a query for text search.
+     */
+    export interface TextSearchQuery {
+        /**
+         * The text pattern to search for.
+         */
+        pattern: string;
+
+        /**
+         * Whether or not `pattern` should match multiple lines of text.
+         */
+        isMultiline?: boolean;
+
+        /**
+         * Whether or not `pattern` should be interpreted as a regular expression.
+         */
+        isRegExp?: boolean;
+
+        /**
+         * Whether or not the search should be case-sensitive.
+         */
+        isCaseSensitive?: boolean;
+
+        /**
+         * Whether or not to search for whole word matches only.
+         */
+        isWordMatch?: boolean;
+    }
+
+    /**
+     * Options that can be set on a findTextInFiles search.
+     */
+    export interface FindTextInFilesOptions {
+        /**
+         * A [glob pattern](#GlobPattern) that defines the files to search for. The glob pattern
+         * will be matched against the file paths of files relative to their workspace. Use a [relative pattern](#RelativePattern)
+         * to restrict the search results to a [workspace folder](#WorkspaceFolder).
+         */
+        include?: GlobPattern;
+
+        /**
+         * A [glob pattern](#GlobPattern) that defines files and folders to exclude. The glob pattern
+         * will be matched against the file paths of resulting matches relative to their workspace. When `undefined`, default excludes will
+         * apply.
+         */
+        exclude?: GlobPattern;
+
+        /**
+         * Whether to use the default and user-configured excludes. Defaults to true.
+         */
+        useDefaultExcludes?: boolean;
+
+        /**
+         * The maximum number of results to search for
+         */
+        maxResults?: number;
+
+        /**
+         * Whether external files that exclude files, like .gitignore, should be respected.
+         * See the vscode setting `"search.useIgnoreFiles"`.
+         */
+        useIgnoreFiles?: boolean;
+
+        /**
+         * Whether global files that exclude files, like .gitignore, should be respected.
+         * See the vscode setting `"search.useGlobalIgnoreFiles"`.
+         */
+        useGlobalIgnoreFiles?: boolean;
+
+        /**
+         * Whether symlinks should be followed while searching.
+         * See the vscode setting `"search.followSymlinks"`.
+         */
+        followSymlinks?: boolean;
+
+        /**
+         * Interpret files using this encoding.
+         * See the vscode setting `"files.encoding"`
+         */
+        encoding?: string;
+
+        /**
+         * Options to specify the size of the result text preview.
+         */
+        previewOptions?: TextSearchPreviewOptions;
+
+        /**
+         * Number of lines of context to include before each match.
+         */
+        beforeContext?: number;
+
+        /**
+         * Number of lines of context to include after each match.
+         */
+        afterContext?: number;
+    }
+
+    /**
+     * A match from a text search
+     */
+    export interface TextSearchMatch {
+        /**
+         * The uri for the matching document.
+         */
+        uri: Uri;
+
+        /**
+         * The range of the match within the document, or multiple ranges for multiple matches.
+         */
+        ranges: Range | Range[];
+
+        /**
+         * A preview of the text match.
+         */
+        preview: TextSearchMatchPreview;
+    }
+
+    /**
+     * A preview of the text result.
+     */
+    export interface TextSearchMatchPreview {
+        /**
+         * The matching lines of text, or a portion of the matching line that contains the match.
+         */
+        text: string;
+
+        /**
+         * The Range within `text` corresponding to the text of the match.
+         * The number of matches must match the TextSearchMatch's range property.
+         */
+        matches: Range | Range[];
+    }
+
+    /**
+     * A line of context surrounding a TextSearchMatch.
+     */
+    export interface TextSearchContext {
+        /**
+         * The uri for the matching document.
+         */
+        uri: Uri;
+
+        /**
+         * One line of text.
+         * previewOptions.charsPerLine applies to this
+         */
+        text: string;
+
+        /**
+         * The line number of this line of context.
+         */
+        lineNumber: number;
+    }
+
+    export type TextSearchResult = TextSearchMatch | TextSearchContext;
+
+    /**
+     * Information collected when text search is complete.
+     */
+    export interface TextSearchComplete {
+        /**
+         * Whether the search hit the limit on the maximum number of search results.
+         * `maxResults` on [`TextSearchOptions`](#TextSearchOptions) specifies the max number of results.
+         * - If exactly that number of matches exist, this should be false.
+         * - If `maxResults` matches are returned and more exist, this should be true.
+         * - If search hits an internal limit which is less than `maxResults`, this should be true.
+         */
+        limitHit?: boolean;
+    }
+    //#endregion
 }

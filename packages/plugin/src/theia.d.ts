@@ -5132,6 +5132,16 @@ declare module '@theia/plugin' {
         export function findFiles(include: GlobPattern, exclude?: GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]>;
 
         /**
+         * Find text in files across all [workspace folders] in the workspace
+         * @param query What to search 
+         * @param optionsOrCallback 
+         * @param callbackOrToken 
+         * @param token 
+         */
+        export function findTextInFiles(query: TextSearchQuery, optionsOrCallback: FindTextInFilesOptions | ((result: TextSearchResult) => void),
+            callbackOrToken?: CancellationToken | ((result: TextSearchResult) => void), token?: CancellationToken): Promise<TextSearchComplete>
+
+        /**
          * Save all dirty files.
          *
          * @param includeUntitled Also save files that have been created during this session.

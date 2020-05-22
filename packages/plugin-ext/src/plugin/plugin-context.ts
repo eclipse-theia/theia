@@ -475,6 +475,10 @@ export function createAPIFactory(
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
                 return workspaceExt.findFiles(include, exclude, maxResults, token);
             },
+            findTextInFiles(query: theia.TextSearchQuery, optionsOrCallback: theia.FindTextInFilesOptions | ((result: theia.TextSearchResult) => void),
+                callbackOrToken?: CancellationToken | ((result: theia.TextSearchResult) => void), token?: CancellationToken): Promise<theia.TextSearchComplete> {
+                return workspaceExt.findTextInFiles(query, optionsOrCallback, callbackOrToken, token);
+            },
             saveAll(includeUntitled?: boolean): PromiseLike<boolean> {
                 return editors.saveAll(includeUntitled);
             },
