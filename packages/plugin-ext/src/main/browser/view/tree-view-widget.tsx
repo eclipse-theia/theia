@@ -281,7 +281,7 @@ export class TreeViewWidget extends TreeWidget {
             });
         }
 
-        return <div className='noWrapInfo'>
+        return <div className='noWrapInfoTree'>
             {...nodes}
             {work && <span>{work}</span>}
             {description && <span className='theia-tree-view-description'>

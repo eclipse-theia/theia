@@ -28,11 +28,12 @@ import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { Resource } from '@theia/core/lib/common/resource';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Emitter, Event, ResourceResolver } from '@theia/core';
+import { Emitter, Event, ResourceResolver, CancellationToken } from '@theia/core';
 import { FileWatcherSubscriberOptions } from '../../common/plugin-api-rpc-model';
 import { InPluginFileSystemWatcherManager } from './in-plugin-filesystem-watcher-manager';
 import { PluginServer } from '../../common/plugin-protocol';
 import { FileSystemPreferences, FileSystemWatcher } from '@theia/filesystem/lib/browser';
+import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 
 export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
@@ -43,6 +44,8 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     private quickOpenService: MonacoQuickOpenService;
 
     private fileSearchService: FileSearchService;
+
+    private searchInWorkspaceService: SearchInWorkspaceService;
 
     private inPluginFileSystemWatcherManager: InPluginFileSystemWatcherManager;
 
@@ -60,11 +63,14 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     protected readonly toDispose = new DisposableCollection();
 
+    protected workspaceSearch: Set<number> = new Set<number>();
+
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WORKSPACE_EXT);
         this.storageProxy = rpc.getProxy(MAIN_RPC_CONTEXT.STORAGE_EXT);
         this.quickOpenService = container.get(MonacoQuickOpenService);
         this.fileSearchService = container.get(FileSearchService);
+        this.searchInWorkspaceService = container.get(SearchInWorkspaceService);
         this.resourceResolver = container.get(TextContentResourceResolver);
         this.pluginServer = container.get(PluginServer);
         this.workspaceService = container.get(WorkspaceService);
@@ -225,6 +231,69 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         }
         const uriStrs = await this.fileSearchService.find('', opts);
         return uriStrs.map(uriStr => Uri.parse(uriStr));
+    }
+
+    async $findTextInFiles(query: theia.TextSearchQuery, options: theia.FindTextInFilesOptions, searchRequestId: number,
+        token: theia.CancellationToken = CancellationToken.None): Promise<theia.TextSearchComplete> {
+        const maxHits = options.maxResults ? options.maxResults : 150;
+        const excludes = options.exclude ? (typeof options.exclude === 'string' ? options.exclude : (<theia.RelativePattern>options.exclude).pattern) : undefined;
+        const includes = options.include ? (typeof options.include === 'string' ? options.include : (<theia.RelativePattern>options.include).pattern) : undefined;
+        let canceledRequest = false;
+        return new Promise(resolve => {
+            let matches = 0;
+            const what: string = query.pattern;
+            const rootUris = this.roots.map(r => r.uri);
+            this.searchInWorkspaceService.searchWithCallback(what, rootUris, {
+                onResult: (searchId, result) => {
+                    if (canceledRequest) {
+                        return;
+                    }
+                    const hasSearch = this.workspaceSearch.has(searchId);
+                    if (!hasSearch) {
+                        this.workspaceSearch.add(searchId);
+                        token.onCancellationRequested(() => {
+                            this.searchInWorkspaceService.cancel(searchId);
+                            canceledRequest = true;
+                        });
+                    }
+                    if (token.isCancellationRequested) {
+                        this.searchInWorkspaceService.cancel(searchId);
+                        canceledRequest = true;
+                        return;
+                    }
+                    if (result && result.matches && result.matches.length) {
+                        while ((matches + result.matches.length) > maxHits) {
+                            result.matches.splice(result.matches.length - 1, 1);
+                        }
+                        this.proxy.$onTextSearchResult(searchRequestId, false, result);
+                        matches += result.matches.length;
+                        if (maxHits <= matches) {
+                            this.searchInWorkspaceService.cancel(searchId);
+                        }
+                    }
+                },
+                onDone: (searchId, _error) => {
+                    const hasSearch = this.workspaceSearch.has(searchId);
+                    if (hasSearch) {
+                        this.searchInWorkspaceService.cancel(searchId);
+                        this.workspaceSearch.delete(searchId);
+                    }
+                    this.proxy.$onTextSearchResult(searchRequestId, true);
+                    if (maxHits <= matches) {
+                        resolve({ limitHit: true });
+                    } else {
+                        resolve({ limitHit: false });
+                    }
+                }
+            }, {
+                useRegExp: query.isRegExp,
+                matchCase: query.isCaseSensitive,
+                matchWholeWord: query.isWordMatch,
+                exclude: excludes ? [excludes] : undefined,
+                include: includes ? [includes] : undefined,
+                maxResults: maxHits
+            });
+        });
     }
 
     async $registerFileSystemWatcher(options: FileWatcherSubscriberOptions): Promise<string> {

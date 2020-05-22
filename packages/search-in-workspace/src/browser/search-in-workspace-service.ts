@@ -15,7 +15,12 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { SearchInWorkspaceServer, SearchInWorkspaceClient, SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
+import {
+    SearchInWorkspaceServer,
+    SearchInWorkspaceClient,
+    SearchInWorkspaceResult,
+    SearchInWorkspaceOptions
+} from '../common/search-in-workspace-interface';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ILogger } from '@theia/core';
 
@@ -46,7 +51,6 @@ export type SearchInWorkspaceCallbacks = SearchInWorkspaceClient;
 /**
  * Service to search text in the workspace files.
  */
-
 @injectable()
 export class SearchInWorkspaceService implements SearchInWorkspaceClient {
 
@@ -110,7 +114,11 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
         }
 
         const roots = await this.workspaceService.roots;
-        const searchId = await this.searchServer.search(what, roots.map(r => r.uri), opts);
+        return this.doSearch(what, roots.map(r => r.uri), callbacks, opts);
+    }
+
+    protected async doSearch(what: string, rootsUris: string[], callbacks: SearchInWorkspaceCallbacks, opts?: SearchInWorkspaceOptions): Promise<number> {
+        const searchId = await this.searchServer.search(what, rootsUris, opts);
         this.pendingSearches.set(searchId, callbacks);
         this.lastKnownSearchId = searchId;
 
@@ -130,6 +138,10 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
         }
 
         return searchId;
+    }
+
+    async searchWithCallback(what: string, rootsUris: string[], callbacks: SearchInWorkspaceClient, opts?: SearchInWorkspaceOptions | undefined): Promise<number> {
+        return this.doSearch(what, rootsUris, callbacks, opts);
     }
 
     // Cancel an ongoing search.

@@ -69,6 +69,7 @@ import {
     CreateFilesEventDTO,
     RenameFilesEventDTO,
     DeleteFilesEventDTO,
+    SearchInWorkspaceResult
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -526,6 +527,8 @@ export interface WorkspaceMain {
     $pickWorkspaceFolder(options: WorkspaceFolderPickOptionsMain): Promise<theia.WorkspaceFolder | undefined>;
     $startFileSearch(includePattern: string, includeFolder: string | undefined, excludePatternOrDisregardExcludes: string | false,
         maxResults: number | undefined, token: theia.CancellationToken): PromiseLike<UriComponents[]>;
+    $findTextInFiles(query: theia.TextSearchQuery, options: theia.FindTextInFilesOptions, searchRequestId: number,
+        token?: theia.CancellationToken): Promise<theia.TextSearchComplete>
     $registerTextDocumentContentProvider(scheme: string): Promise<void>;
     $unregisterTextDocumentContentProvider(scheme: string): void;
     $onTextDocumentContentChange(uri: string, content: string): void;
@@ -545,6 +548,7 @@ export interface WorkspaceExt {
     $onDidRenameFiles(event: RenameFilesEventDTO): void;
     $onWillDeleteFiles(event: DeleteFilesEventDTO): Promise<any[]>;
     $onDidDeleteFiles(event: DeleteFilesEventDTO): void;
+    $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void;
 }
 
 export interface DialogsMain {

@@ -294,3 +294,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.noWrapInfoTree {
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
