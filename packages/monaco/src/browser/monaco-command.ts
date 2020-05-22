@@ -165,6 +165,17 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                         return !!editor;
                     }
                     return true;
+                },
+                isVisible: () => {
+                    const editor = codeEditorService.getFocusedCodeEditor() || codeEditorService.getActiveCodeEditor();
+                    if (editorActions.has(id)) {
+                        const action = editor && editor.getAction(id);
+                        return !!action && action.isSupported();
+                    }
+                    if (!!editorRegistry.getEditorCommand(id)) {
+                        return !!editor;
+                    }
+                    return true;
                 }
             };
             const label = editorActions.get(id);
