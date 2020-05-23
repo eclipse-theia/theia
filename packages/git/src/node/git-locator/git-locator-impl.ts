@@ -58,35 +58,36 @@ export class GitLocatorImpl implements GitLocator {
         });
     }
 
-    protected doLocate(basePath: string, context: GitLocateContext): Promise<string[]> {
+    protected async doLocate(basePath: string, context: GitLocateContext): Promise<string[]> {
         const realBasePath = fs.realpathSync(basePath);
         if (context.visited.has(realBasePath)) {
-            return Promise.resolve([]);
+            return [];
         }
         context.visited.set(realBasePath, true);
-        return new Promise<string[]>(resolve => {
-            fs.stat(realBasePath).then(async stat => {
-                if (stat.isDirectory()) {
-                    const progress: string[] = [];
-                    const paths = await findGitRepositories(realBasePath, repositories => {
-                        progress.push(...repositories);
-                        if (context.maxCount >= 0 && progress.length >= context.maxCount) {
-                            resolve(progress.slice(0, context.maxCount).map(GitLocatorImpl.map));
-                        }
-                    });
-                    if (context.maxCount >= 0 && paths.length >= context.maxCount) {
-                        resolve(paths.slice(0, context.maxCount).map(GitLocatorImpl.map));
-                        return;
-                    }
-                    const repositoryPaths = paths.map(GitLocatorImpl.map);
-                    resolve(this.locateFrom(
-                        newContext => this.generateNested(repositoryPaths, newContext),
-                        context,
-                        repositoryPaths
-                    ));
+        try {
+            const stat = await fs.stat(realBasePath);
+            if (!stat.isDirectory()) {
+                return [];
+            }
+            const progress: string[] = [];
+            const paths = await findGitRepositories(realBasePath, repositories => {
+                progress.push(...repositories);
+                if (context.maxCount >= 0 && progress.length >= context.maxCount) {
+                    return progress.slice(0, context.maxCount).map(GitLocatorImpl.map);
                 }
-            }, () => []);
-        });
+            });
+            if (context.maxCount >= 0 && paths.length >= context.maxCount) {
+                return paths.slice(0, context.maxCount).map(GitLocatorImpl.map);
+            }
+            const repositoryPaths = paths.map(GitLocatorImpl.map);
+            return this.locateFrom(
+                newContext => this.generateNested(repositoryPaths, newContext),
+                context,
+                repositoryPaths
+            );
+        } catch (e) {
+            return [];
+        }
     }
 
     protected * generateNested(repositoryPaths: string[], context: GitLocateContext): IterableIterator<Promise<string[]>> {
