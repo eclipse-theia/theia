@@ -27,6 +27,17 @@ import { ContextKeyService } from '../../browser/context-key-service';
 import debounce = require('lodash.debounce');
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 
+/**
+ * Representation of possible electron menu options.
+ */
+export interface ElectronMenuOptions {
+    /**
+     * Controls whether to render disabled menu items.
+     * Defaults to `true`.
+     */
+    readonly showDisabled?: boolean;
+}
+
 @injectable()
 export class ElectronMainMenuFactory {
 
@@ -76,15 +87,16 @@ export class ElectronMainMenuFactory {
 
     createContextMenu(menuPath: MenuPath, args?: any[]): Electron.Menu {
         const menuModel = this.menuProvider.getMenu(menuPath);
-        const template = this.fillMenuTemplate([], menuModel, args);
-
+        const template = this.fillMenuTemplate([], menuModel, args, { showDisabled: false });
         return electron.remote.Menu.buildFromTemplate(template);
     }
 
     protected fillMenuTemplate(items: Electron.MenuItemConstructorOptions[],
         menuModel: CompositeMenuNode,
-        args: any[] = []
+        args: any[] = [],
+        options?: ElectronMenuOptions
     ): Electron.MenuItemConstructorOptions[] {
+        const showDisabled = (options?.showDisabled === undefined) ? true : options?.showDisabled;
         for (const menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
                 if (menu.children.length > 0) {
@@ -92,7 +104,7 @@ export class ElectronMainMenuFactory {
 
                     if (menu.isSubmenu) { // submenu node
 
-                        const submenu = this.fillMenuTemplate([], menu, args);
+                        const submenu = this.fillMenuTemplate([], menu, args, options);
                         if (submenu.length === 0) {
                             continue;
                         }
@@ -105,7 +117,7 @@ export class ElectronMainMenuFactory {
                     } else { // group node
 
                         // process children
-                        const submenu = this.fillMenuTemplate([], menu, args);
+                        const submenu = this.fillMenuTemplate([], menu, args, options);
                         if (submenu.length === 0) {
                             continue;
                         }
@@ -133,6 +145,11 @@ export class ElectronMainMenuFactory {
 
                 if (!this.commandRegistry.isVisible(commandId, ...args)
                     || (!!node.action.when && !this.contextKeyService.match(node.action.when))) {
+                    continue;
+                }
+
+                // We should omit rendering context-menu items which are disabled.
+                if (!showDisabled && !this.commandRegistry.isEnabled(commandId, ...args)) {
                     continue;
                 }
 
