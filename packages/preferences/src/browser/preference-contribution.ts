@@ -153,7 +153,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     }
 
     protected async openPreferencesJSON(preferenceNode: Preference.NodeWithValueInAllScopes): Promise<void> {
-        const wasOpenedFromEditor = preferenceNode.constructor.name !== 'PreferencesWidget';
+        const wasOpenedFromEditor = preferenceNode.constructor !== PreferencesWidget;
         const { scope, activeScopeIsFolder, uri } = this.preferencesScope;
         const preferenceId = wasOpenedFromEditor ? preferenceNode.id : '';
         // when opening from toolbar, widget is passed as arg by default (we don't need this info)
