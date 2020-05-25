@@ -24,7 +24,14 @@ interface PreferenceArrayInputProps {
 }
 
 export const PreferenceArrayInput: React.FC<PreferenceArrayInputProps> = ({ preferenceDisplayNode, setPreference }) => {
-    const values = preferenceDisplayNode.preference.value || [] as string[];
+    const values: string[] = [];
+    if (Array.isArray(preferenceDisplayNode.preference.value)) {
+        for (const preferenceValue of preferenceDisplayNode.preference.value) {
+            if (typeof preferenceValue === 'string') {
+                values.push(preferenceValue);
+            }
+        }
+    }
     const { id: preferenceID } = preferenceDisplayNode;
     const [value, setValue] = React.useState('');
 

@@ -179,15 +179,15 @@ export class SinglePreferenceWrapper extends React.Component<SinglePreferenceWra
                 setPreference={this.setPreference}
             />;
         } if (type === 'array') {
-            if (items && items.type === 'object') {
-                return <PreferenceJSONInput
+            if (items && items.type === 'string') {
+                return <PreferenceArrayInput
                     preferenceDisplayNode={preferenceDisplayNode}
-                    onClick={this.openJSONForCurrentPreference}
+                    setPreference={this.setPreference}
                 />;
             }
-            return <PreferenceArrayInput
+            return <PreferenceJSONInput
                 preferenceDisplayNode={preferenceDisplayNode}
-                setPreference={this.setPreference}
+                onClick={this.openJSONForCurrentPreference}
             />;
         } if (type === 'object') {
             return <PreferenceJSONInput

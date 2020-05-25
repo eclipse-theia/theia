@@ -24,7 +24,7 @@ interface PreferenceBooleanInputProps {
 
 export const PreferenceBooleanInput: React.FC<PreferenceBooleanInputProps> = ({ preferenceDisplayNode, setPreference }) => {
     const { id } = preferenceDisplayNode;
-    const value = preferenceDisplayNode.preference.value as boolean | undefined;
+    const value = typeof preferenceDisplayNode.preference.value === 'boolean' ? preferenceDisplayNode.preference.value : undefined;
 
     // Tracks local state for quicker refreshes on user click.
     const [checked, setChecked] = React.useState<boolean>(!!value);
