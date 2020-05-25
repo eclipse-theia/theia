@@ -186,7 +186,7 @@ app.on('ready', () => {
             width, height, x, y
         });
 
-        const persistedWindowOptionsAdditions = electronStore.get('windowOptions');
+        const persistedWindowOptionsAdditions = electronStore.get('windowOptions', {});
 
         const windowOptionsAdditions = {
             ...defaultWindowOptionsAdditions,
@@ -305,7 +305,7 @@ app.on('ready', () => {
         electronStore.set('windowOptions', options);
     });
     ipcMain.on('get-persisted-window-options-additions', event => {
-        event.returnValue = electronStore.get('windowOptions');
+        event.returnValue = electronStore.get('windowOptions', {});
     });
 
     // Check whether we are in bundled application or development mode.
