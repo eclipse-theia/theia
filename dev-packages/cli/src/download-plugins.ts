@@ -47,6 +47,10 @@ export interface DownloadPluginsOptions {
 }
 
 export default async function downloadPlugins(options: DownloadPluginsOptions = {}): Promise<void> {
+
+    // Collect the list of failures to be appended at the end of the script.
+    const failures: string[] = [];
+
     const {
         packed = false,
     } = options;
@@ -109,16 +113,15 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
             }
         }
         if (lastError) {
-            console.error(red(`x ${plugin}: failed to download, last error:`));
-            console.error(lastError);
+            failures.push(red(`x ${plugin}: failed to download, last error:\n ${lastError}`));
             return;
         }
         if (typeof response === 'undefined') {
-            console.error(red(`x ${plugin}: failed to download (unknown reason)`));
+            failures.push(red(`x ${plugin}: failed to download (unknown reason)`));
             return;
         }
         if (response.status !== 200) {
-            console.error(red(`x ${plugin}: failed to download with: ${response.status} ${response.statusText}`));
+            failures.push(red(`x ${plugin}: failed to download with: ${response.status} ${response.statusText}`));
             return;
         }
 
@@ -144,6 +147,9 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
 
         console.warn(green(`+ ${plugin}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
     }));
+    failures.forEach(failure => {
+        console.log(failure);
+    });
 }
 
 /**
