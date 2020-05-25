@@ -409,6 +409,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         super.onAfterAttach(msg);
         this.update();
     }
+    protected onBeforeDetach(msg: Message): void {
+        Widget.detach(this.searchBox);
+        super.onBeforeDetach(msg);
+    }
     protected onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         this.needsResize = true;
