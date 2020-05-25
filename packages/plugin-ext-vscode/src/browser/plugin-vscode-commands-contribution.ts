@@ -579,5 +579,10 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         }, {
             execute: () => this.quickOpenWorkspace.select()
         });
+        commands.registerCommand({
+            id: 'explorer.newFolder'
+        }, {
+            execute: () => commands.executeCommand(WorkspaceCommands.NEW_FOLDER.id)
+        });
     }
 }
