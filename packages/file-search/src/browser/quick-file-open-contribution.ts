@@ -39,8 +39,7 @@ export class QuickFileOpenFrontendContribution implements CommandContribution, K
                 } else {
                     this.quickFileOpenService.open();
                 }
-            },
-            isEnabled: () => this.quickFileOpenService.isEnabled()
+            }
         });
     }
 

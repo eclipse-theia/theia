@@ -147,9 +147,6 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         const token = this.cancelIndicator.token;
 
         const roots = this.workspaceService.tryGetRoots();
-        if (roots.length === 0) {
-            return;
-        }
 
         this.currentLookFor = lookFor;
         const alreadyCollected = new Set<string>();
@@ -170,6 +167,12 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                     return;
                 }
                 const fileSearchResultItems: QuickOpenItem[] = [];
+
+                if (results.length <= 0) {
+                    acceptor([this.toNoResultsItem()]);
+                    return;
+                }
+
                 for (const fileUri of results) {
                     if (!alreadyCollected.has(fileUri)) {
                         const item = this.toItem(fileUri);
@@ -192,6 +195,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 // Return the recently used items, followed by the search results.
                 acceptor([...recentlyUsedItems, ...sortedResults]);
             };
+
             this.fileSearchService.find(lookFor, {
                 rootUris: roots.map(r => r.uri),
                 fuzzyMatch: true,
@@ -200,7 +204,9 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 excludePatterns: ['*.git*']
             }, token).then(handler);
         } else {
-            acceptor(recentlyUsedItems);
+            if (roots.length !== 0) {
+                acceptor(recentlyUsedItems);
+            }
         }
     }
 
@@ -333,5 +339,13 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         } else {
             return new QuickOpenItem<QuickOpenItemOptions>(options);
         }
+    }
+
+    private toNoResultsItem(): QuickOpenItem<QuickOpenItemOptions> {
+        const options: QuickOpenItemOptions = {
+            label: 'No matching results',
+            run: () => false
+        };
+        return new QuickOpenItem<QuickOpenItemOptions>(options);
     }
 }
