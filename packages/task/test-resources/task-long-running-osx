@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 for i in {1..300}
 do
