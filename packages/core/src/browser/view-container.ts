@@ -403,10 +403,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             const part = parts[index];
             const partState = partStates.find(s => part.partId === s.partId);
             if (partState) {
+                part.setHidden(partState.hidden);
                 part.collapsed = partState.collapsed || !partState.relativeSize;
-                if (part.canHide) {
-                    part.setHidden(partState.hidden);
-                }
             } else if (part.canHide) {
                 part.hide();
             }
