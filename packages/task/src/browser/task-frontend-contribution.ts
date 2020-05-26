@@ -268,8 +268,11 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         registry.registerCommand(
             TaskCommands.TASK_RUN_LAST,
             {
-                isEnabled: () => !!this.taskService.getLastTask(),
-                execute: () => this.taskService.runLastTask()
+                execute: async () => {
+                    if (!await this.taskService.runLastTask()) {
+                        await this.quickOpenTask.open();
+                    }
+                }
             }
         );
         registry.registerCommand(
@@ -388,7 +391,8 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: TaskCommands.TASK_RUN_LAST.id,
-            keybinding: 'ctrlcmd+shift+k'
+            keybinding: 'ctrlcmd+shift+k',
+            when: '!textInputFocus || editorReadonly'
         });
     }
 
