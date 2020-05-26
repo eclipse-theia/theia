@@ -190,6 +190,10 @@ export class ProcessTaskRunner implements TaskRunner {
             } else if (/(ps|pwsh|powershell)(.exe)?/.test(command)) {
                 quotingFunctions = PowershellQuotingFunctions;
                 execArgs = ['-c'];
+            } else {
+                quotingFunctions = BashQuotingFunctions;
+                execArgs = ['-l', '-c'];
+
             }
             // Allow overriding shell options from task configuration.
             if (shell && shell.args) {
