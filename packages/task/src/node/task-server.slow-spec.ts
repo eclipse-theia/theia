@@ -101,6 +101,9 @@ describe('Task server / back-end', function (): void {
         const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', `${command} ${someString}`), wsRoot);
         const terminalId = taskInfo.terminalId;
 
+        const messagesToWaitFor = 10;
+        const messages: string[] = [];
+
         // hook-up to terminal's ws and confirm that it outputs expected tasks' output
         await new Promise((resolve, reject) => {
             const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
@@ -109,12 +112,19 @@ describe('Task server / back-end', function (): void {
             channel.onMessage(msg => {
                 // check output of task on terminal is what we expect
                 const expected = `${isOSX ? 'tasking osx' : 'tasking'}... ${someString}`;
-                if (msg.toString().indexOf(expected) !== -1) {
+                // Instead of waiting for one message from the terminal, we wait for several ones as the very first message can be something unexpected.
+                // For instance: `nvm is not compatible with the \"PREFIX\" environment variable: currently set to \"/usr/local\"\r\n`
+                const currentMessage = msg.toString();
+                messages.unshift(currentMessage);
+                if (currentMessage.indexOf(expected) !== -1) {
                     resolve();
-                } else {
-                    reject(new Error(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual: "${msg.toString()}"`));
+                    channel.close();
+                    return;
                 }
-                channel.close();
+                if (messages.length >= messagesToWaitFor) {
+                    reject(new Error(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual messages: ${JSON.stringify(messages)}`));
+                    channel.close();
+                }
             });
         });
     });
