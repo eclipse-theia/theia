@@ -883,6 +883,7 @@ export class ApplicationShell extends Widget {
      * Handle a change to the active widget.
      */
     private onActiveChanged(sender: FocusTracker<Widget>, args: FocusTracker.IChangedArgs<Widget>): void {
+        this.toDisposeOnActiveChanged.dispose();
         const { newValue, oldValue } = args;
         if (oldValue) {
             let w: Widget | null = oldValue;
@@ -917,7 +918,7 @@ export class ApplicationShell extends Widget {
             // Set the z-index so elements with `position: fixed` contained in the active widget are displayed correctly
             this.setZIndex(newValue.node, '1');
 
-            // activate another widget if an active widget gets closed
+            // activate another widget if an active widget will be closed
             const onCloseRequest = newValue['onCloseRequest'];
             newValue['onCloseRequest'] = msg => {
                 const currentTabBar = this.currentTabBar;
