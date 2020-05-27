@@ -54,6 +54,7 @@ import { URI } from 'vscode-uri';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
+import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -93,6 +94,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly terminalContribution: TerminalFrontendContribution;
     @inject(QuickOpenWorkspace)
     protected readonly quickOpenWorkspace: QuickOpenWorkspace;
+    @inject(TerminalService)
+    protected readonly terminalService: TerminalService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -583,6 +586,36 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             id: 'explorer.newFolder'
         }, {
             execute: () => commands.executeCommand(WorkspaceCommands.NEW_FOLDER.id)
+        });
+        commands.registerCommand({
+            id: 'workbench.action.terminal.sendSequence'
+        }, {
+            execute: (args?: { text?: string }) => {
+                if (args === undefined || args.text === undefined) {
+                    return;
+                }
+
+                const currentTerminal = this.terminalService.currentTerminal;
+
+                if (currentTerminal === undefined) {
+                    return;
+                }
+
+                currentTerminal.sendText(args.text);
+            }
+        });
+        commands.registerCommand({
+            id: 'workbench.action.terminal.kill'
+        }, {
+            execute: () => {
+                const currentTerminal = this.terminalService.currentTerminal;
+
+                if (currentTerminal === undefined) {
+                    return;
+                }
+
+                currentTerminal.dispose();
+            }
         });
     }
 }
