@@ -268,7 +268,17 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     focus(): void {
-        this.editor.focus();
+        /**
+         * `this.editor.focus` forcefully changes the focus editor state,
+         * regardless whether the textarea actually received the focus.
+         * It could lead to issues like https://github.com/eclipse-theia/theia/issues/7902
+         * Instead we focus the underlying textarea.
+         */
+        const node = this.editor.getDomNode();
+        if (node) {
+            const textarea = node.querySelector('textarea') as HTMLElement;
+            textarea.focus();
+        }
     }
 
     blur(): void {

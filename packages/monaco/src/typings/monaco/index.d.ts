@@ -1074,10 +1074,10 @@ declare module monaco.quickOpen {
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/standalone/browser/quickOpen/editorQuickOpen.ts#L25
     export interface QuickOpenController extends IDisposable {
         static readonly ID: string;
+        dispose(): void;
         run(opts: IQuickOpenControllerOpts): void;
 
-        // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/standalone/browser/quickOpen/editorQuickOpen.ts#L168-L169
-        decorateLine(range: Range, editor: monaco.editor.ICodeEditor): void;
+        // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/standalone/browser/quickOpen/editorQuickOpen.ts#L169
         clearDecorations(): void;
     }
 }

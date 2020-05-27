@@ -163,6 +163,10 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
     selection: Range;
     readonly onSelectionChanged: Event<Range>;
 
+    /**
+     * The text editor should be revealed,
+     * otherwise it won't receive the focus.
+     */
     focus(): void;
     blur(): void;
     isFocused(): boolean;
