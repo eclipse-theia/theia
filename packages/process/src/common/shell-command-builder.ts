@@ -151,7 +151,8 @@ export class ShellCommandBuilder {
     }
 
     protected buildForDefault(args: Array<string | ShellQuotedString>, cwd?: string, env?: Array<[string, string | null]>): string {
-        return args.join(' ');
+        const stringArgs = args.map(arg => typeof arg === 'string' ? arg : arg.value);
+        return stringArgs.join(' ');
     }
 
 }
