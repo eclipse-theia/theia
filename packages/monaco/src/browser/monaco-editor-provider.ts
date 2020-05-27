@@ -377,18 +377,31 @@ export class MonacoEditorProvider {
         const control = editor.getControl();
         const quickOpenController = control._contributions['editor.controller.quickOpenController'];
         const originalRun = quickOpenController.run;
+        const toDispose = new DisposableCollection();
+        quickOpenController.dispose = () => toDispose.dispose();
         quickOpenController.run = options => {
+            const toDisposeOnClose = toDispose.push(Disposable.create(() => this.quickOpenService.hide()));
+
             const selection = control.getSelection();
             this.quickOpenService.internalOpen({
                 ...options,
                 onClose: canceled => {
+                    toDisposeOnClose.dispose();
+
                     quickOpenController.clearDecorations();
 
+                    // Restore selection if canceled
                     if (canceled && selection) {
                         control.setSelection(selection);
                         control.revealRangeInCenterIfOutsideViewport(selection);
                     }
-                    editor.focus();
+
+                    // Return focus to the editor if
+                    // - focus is back on the <body> element because no other focusable element was clicked
+                    // - a command was picked from the picker which indicates the editor should get focused
+                    if (document.activeElement === document.body || !canceled) {
+                        editor.focus();
+                    }
                 }
             });
         };

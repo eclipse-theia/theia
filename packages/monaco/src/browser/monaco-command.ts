@@ -136,6 +136,10 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             }
             const handler: CommandHandler = {
                 execute: (...args) => {
+                    /*
+                     * We check monaco focused code editor first since they can contain inline like the debug console and embedded editors like in the peek reference.
+                     * If there is not such then we check last focused editor tracked by us.
+                     */
                     const editor = codeEditorService.getFocusedCodeEditor() || codeEditorService.getActiveCodeEditor();
                     if (editorActions.has(id)) {
                         const action = editor && editor.getAction(id);
