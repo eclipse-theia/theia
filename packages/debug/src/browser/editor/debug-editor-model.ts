@@ -28,6 +28,7 @@ import { DebugHoverWidget, createDebugHoverWidgetContainer } from './debug-hover
 import { DebugBreakpointWidget } from './debug-breakpoint-widget';
 import { DebugExceptionWidget } from './debug-exception-widget';
 import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugInlineValueDecorator, INLINE_VALUE_DECORATION_KEY } from './debug-inline-value-decorator';
 
 export const DebugEditorModelFactory = Symbol('DebugEditorModelFactory');
 export type DebugEditorModelFactory = (editor: DebugEditor) => DebugEditorModel;
@@ -83,6 +84,9 @@ export class DebugEditorModel implements Disposable {
     @inject(DebugExceptionWidget)
     readonly exceptionWidget: DebugExceptionWidget;
 
+    @inject(DebugInlineValueDecorator)
+    readonly inlineValueDecorator: DebugInlineValueDecorator;
+
     @postConstruct()
     protected init(): void {
         this.uri = new URI(this.editor.getControl().getModel()!.uri.toString());
@@ -94,6 +98,7 @@ export class DebugEditorModel implements Disposable {
             this.editor.getControl().onMouseMove(event => this.handleMouseMove(event)),
             this.editor.getControl().onMouseLeave(event => this.handleMouseLeave(event)),
             this.editor.getControl().onKeyDown(() => this.hover.hide({ immediate: false })),
+            this.editor.getControl().onDidChangeModelContent(() => this.renderFrames()),
             this.editor.getControl().getModel()!.onDidChangeDecorations(() => this.updateBreakpoints()),
             this.sessions.onDidChange(() => this.renderFrames())
         ]);
@@ -105,14 +110,29 @@ export class DebugEditorModel implements Disposable {
         this.toDispose.dispose();
     }
 
-    protected readonly renderFrames = debounce(() => {
+    protected readonly renderFrames = debounce(async () => {
         if (this.toDispose.disposed) {
             return;
         }
         this.toggleExceptionWidget();
-        const decorations = this.createFrameDecorations();
-        this.frameDecorations = this.deltaDecorations(this.frameDecorations, decorations);
+        const [newFrameDecorations, inlineValueDecorations] = await Promise.all([
+            this.createFrameDecorations(),
+            this.createInlineValueDecorations()
+        ]);
+        const codeEditor = this.editor.getControl();
+        codeEditor.removeDecorations(INLINE_VALUE_DECORATION_KEY);
+        codeEditor.setDecorations(INLINE_VALUE_DECORATION_KEY, inlineValueDecorations);
+        this.frameDecorations = this.deltaDecorations(this.frameDecorations, newFrameDecorations);
     }, 100);
+
+    protected async createInlineValueDecorations(): Promise<monaco.editor.IDecorationOptions[]> {
+        const { currentFrame } = this.sessions;
+        if (!currentFrame || !currentFrame.source || currentFrame.source.uri.toString() !== this.uri.toString()) {
+            return [];
+        }
+        return this.inlineValueDecorator.calculateDecorations(this, currentFrame);
+    }
+
     protected createFrameDecorations(): monaco.editor.IModelDeltaDecoration[] {
         const decorations: monaco.editor.IModelDeltaDecoration[] = [];
         const { currentFrame, topFrame } = this.sessions;

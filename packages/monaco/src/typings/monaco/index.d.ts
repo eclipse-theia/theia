@@ -28,6 +28,18 @@ declare module monaco.editor {
 
     export interface ICodeEditor {
         protected readonly _instantiationService: monaco.instantiation.IInstantiationService;
+
+        /**
+         * @internal
+         */
+        // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/browser/editorBrowser.ts#L644-L647
+        setDecorations(decorationTypeKey: string, ranges: editorCommon.IDecorationOptions[]): void;
+
+        /**
+         * @internal
+         */
+        // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/browser/editorBrowser.ts#L654-L657
+        removeDecorations(decorationTypeKey: string): void;
     }
 
     export interface IBulkEditResult {
@@ -331,6 +343,24 @@ declare module monaco.editor {
         before?: IContentDecorationRenderOptions;
         after?: IContentDecorationRenderOptions;
     }
+
+    export interface ITextModel {
+        /**
+         * Get the tokens for the line `lineNumber`.
+         * The tokens might be inaccurate. Use `forceTokenization` to ensure accurate tokens.
+         * @internal
+         */
+        // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/model.ts#L826-L831
+        getLineTokens(lineNumber: number): LineTokens;
+
+        /**
+         * Force tokenization information for `lineNumber` to be accurate.
+         * @internal
+         */
+        // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/model.ts#L806-L810
+        forceTokenization(lineNumber: number): void;
+    }
+
 }
 
 declare module monaco.commands {
@@ -1317,6 +1347,11 @@ declare module monaco.mime {
 declare module monaco.error {
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/common/errors.ts#L77
     export function onUnexpectedError(e: any): undefined;
+}
+
+declare module monaco.wordHelper {
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/model/wordHelper.ts#L30
+    export const DEFAULT_WORD_REGEXP: RegExp;
 }
 
 /**
