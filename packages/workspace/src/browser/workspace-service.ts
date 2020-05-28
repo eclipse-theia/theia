@@ -25,7 +25,7 @@ import {
 } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService } from '@theia/core';
 import { WorkspacePreferences } from './workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from 'ajv';
@@ -69,6 +69,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
     @inject(EnvVariablesServer)
     protected readonly envVariableServer: EnvVariablesServer;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
     protected applicationName: string;
 
     @postConstruct()
@@ -102,11 +105,21 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * to a non-existing location.
      */
     protected getDefaultWorkspaceUri(): MaybePromise<string | undefined> {
+        return this.doGetDefaultWorkspaceUri();
+    }
+
+    protected async doGetDefaultWorkspaceUri(): Promise<string | undefined> {
         // Prefer the workspace path specified as the URL fragment, if present.
         if (window.location.hash.length > 1) {
             // Remove the leading # and decode the URI.
             const wpPath = decodeURI(window.location.hash.substring(1));
-            return new URI().withPath(wpPath).withScheme('file').toString();
+            const workspaceUri = new URI().withPath(wpPath).withScheme('file');
+            const workspaceStat = await this.fileSystem.getFileStat(workspaceUri.toString());
+            if (workspaceStat && !workspaceStat.isDirectory && !await this.isWorkspaceFile(workspaceStat)) {
+                this.messageService.error(`Not a valid workspace file: ${workspaceUri}`);
+                return undefined;
+            }
+            return workspaceUri.toString();
         } else {
             // Else, ask the server for its suggested workspace (usually the one
             // specified on the CLI, or the most recent).
@@ -229,14 +242,17 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 return {
                     folders: [{ path: this._workspace.uri }]
                 };
+            } else if (await this.isWorkspaceFile(this._workspace)) {
+                const { stat, content } = await this.fileSystem.resolveContent(this._workspace.uri);
+                const strippedContent = jsoncparser.stripComments(content);
+                const data = jsoncparser.parse(strippedContent);
+                if (data && WorkspaceData.is(data)) {
+                    return WorkspaceData.transformToAbsolute(data, stat);
+                }
+                this.logger.error(`Unable to retrieve workspace data from the file: '${this._workspace.uri}'. Please check if the file is corrupted.`);
+            } else {
+                this.logger.warn(`Not a valid workspace file: ${this._workspace.uri}`);
             }
-            const { stat, content } = await this.fileSystem.resolveContent(this._workspace.uri);
-            const strippedContent = jsoncparser.stripComments(content);
-            const data = jsoncparser.parse(strippedContent);
-            if (data && WorkspaceData.is(data)) {
-                return WorkspaceData.transformToAbsolute(data, stat);
-            }
-            this.logger.error(`Unable to retrieve workspace data from the file: '${this._workspace.uri}'. Please check if the file is corrupted.`);
         }
     }
 
@@ -306,6 +322,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
         const rootUri = uri.toString();
         const stat = await this.toFileStat(rootUri);
         if (stat) {
+            if (!stat.isDirectory && !await this.isWorkspaceFile(stat)) {
+                const message = `Not a valid workspace file: ${uri}`;
+                this.messageService.error(message);
+                throw new Error(message);
+            }
             // The same window has to be preserved too (instead of opening a new one), if the workspace root is not yet available and we are setting it for the first time.
             // Option passed as parameter has the highest priority (for api developers), then the preference, then the default.
             await this.roots;
@@ -585,6 +606,15 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
         const rootUris = new Set(this.tryGetRoots().map(root => root.uri));
         return uris.every(uri => rootUris.has(uri.toString()));
+    }
+
+    /**
+     * Check if the file should be considered as a workspace file.
+     *
+     * Example: We should not try to read the contents of an .exe file.
+     */
+    protected async isWorkspaceFile(fileStat: FileStat): Promise<boolean> {
+        return fileStat.uri.endsWith(`.${THEIA_EXT}`) || fileStat.uri.endsWith(`.${VSCODE_EXT}`);
     }
 
 }

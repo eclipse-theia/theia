@@ -27,12 +27,13 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DefaultWindowService } from '@theia/core/lib/browser/window/default-window-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
-import { WorkspaceServer } from '../common';
+import { WorkspaceServer, THEIA_EXT, VSCODE_EXT } from '../common';
 import { DefaultWorkspaceServer } from '../node/default-workspace-server';
 import { Emitter, Disposable, DisposableCollection, ILogger, Logger } from '@theia/core';
 import { PreferenceServiceImpl, PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { WorkspacePreferences } from './workspace-preferences';
 import { createMockPreferenceProxy } from '@theia/core/lib/browser/preferences/test';
+import { MessageService } from '@theia/core/lib/common';
 import * as jsoncparser from 'jsonc-parser';
 import * as sinon from 'sinon';
 import * as chai from 'chai';
@@ -116,6 +117,7 @@ describe('WorkspaceService', () => {
         testContainer.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(FileUri.create(track.mkdirSync())));
         testContainer.bind(PreferenceServiceImpl).toConstantValue(mockPreferenceServiceImpl);
         testContainer.bind(PreferenceSchemaProvider).toConstantValue(mockPreferenceSchemaProvider);
+        testContainer.bind(MessageService).toConstantValue({} as MessageService);
 
         // stub the updateTitle() & reloadWindow() function because `document` and `window` are unavailable
         updateTitleStub = sinon.stub(WorkspaceService.prototype, <any>'updateTitle').callsFake(() => { });
@@ -193,7 +195,7 @@ describe('WorkspaceService', () => {
             'should set the exposed roots and workspace to the folders listed in the workspace file returned by the server, ' +
             'and start watching the workspace file and all the folders',
             async () => {
-                const workspaceFilePath = '/home/workspaceFile';
+                const workspaceFilePath = '/home/workspaceFile.theia-workspace';
                 const workspaceFileUri = 'file://' + workspaceFilePath;
                 const workspaceFileStat = <FileStat>{
                     uri: workspaceFileUri,
@@ -232,7 +234,7 @@ describe('WorkspaceService', () => {
         it(
             'should resolve a relative workspace root path to a normalized root path',
             async () => {
-                const workspaceFilePath = '/home/workspaceFile';
+                const workspaceFilePath = '/home/workspaceFile.theia-workspace';
                 const workspaceFileUri = 'file://' + workspaceFilePath;
                 const workspaceFileStat = <FileStat>{
                     uri: workspaceFileUri,
@@ -262,7 +264,7 @@ describe('WorkspaceService', () => {
             });
 
         it('should set the exposed roots an empty array if the workspace file stores invalid workspace data', async () => {
-            const workspaceFileUri = 'file:///home/workspaceFile';
+            const workspaceFileUri = 'file:///home/workspaceFile.theia-workspace';
             const workspaceFileStat = <FileStat>{
                 uri: workspaceFileUri,
                 lastModification: 0,
@@ -313,7 +315,7 @@ describe('WorkspaceService', () => {
         });
 
         it('should send server the uri of current workspace if there is workspace opened', () => {
-            const uri = 'file:///home/testUri';
+            const uri = 'file:///home/testUri.theia-workspace';
             wsService['_workspace'] = <FileStat>{
                 uri,
                 lastModification: 0,
@@ -480,7 +482,7 @@ describe('WorkspaceService', () => {
 
         it('should throw an error if the added uri points to a file instead of a folder', done => {
             (<sinon.SinonStub>mockFilesystem.getFileStat).resolves(<FileStat>{
-                uri: 'file:///home/file',
+                uri: 'file:///home/file.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             });
@@ -510,7 +512,7 @@ describe('WorkspaceService', () => {
 
         it('should write new data into the workspace file when the workspace data is stored in a file', async () => {
             const workspaceFileStat = <FileStat>{
-                uri: 'file:///home/file',
+                uri: 'file:///home/file.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             };
@@ -531,7 +533,7 @@ describe('WorkspaceService', () => {
     describe('save() function', () => {
         it('should leave the current workspace unchanged if the passed in uri points to the current workspace', async () => {
             const file = <FileStat>{
-                uri: 'file:///home/file',
+                uri: 'file:///home/file.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             };
@@ -552,12 +554,12 @@ describe('WorkspaceService', () => {
 
         it('should create a new workspace file, save the workspace data into that new file, and update the title of theia', async () => {
             const oldFile = <FileStat>{
-                uri: 'file:///home/oldfile',
+                uri: 'file:///home/oldfile.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             };
             const newFile = <FileStat>{
-                uri: 'file:///home/newfile',
+                uri: 'file:///home/newfile.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             };
@@ -582,22 +584,22 @@ describe('WorkspaceService', () => {
 
         it('should use relative paths or translate relative paths to absolute path when necessary before saving, and emit "savedLocationChanged" event', done => {
             const oldFile = <FileStat>{
-                uri: 'file:///home/oldFolder/oldFile',
+                uri: 'file:///home/oldFolder/oldFile.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             };
             const newFile = <FileStat>{
-                uri: 'file:///home/newFolder/newFile',
+                uri: 'file:///home/newFolder/newFile.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             };
             const folder1 = <FileStat>{
-                uri: 'file:///home/thirdFolder/folder1',
+                uri: 'file:///home/thirdFolder/folder1.theia-workspace',
                 lastModification: 0,
                 isDirectory: true
             };
             const folder2 = <FileStat>{
-                uri: 'file:///home/newFolder/folder2',
+                uri: 'file:///home/newFolder/folder2.theia-workspace',
                 lastModification: 0,
                 isDirectory: true
             };
@@ -628,7 +630,7 @@ describe('WorkspaceService', () => {
     describe('saved status', () => {
         it('should be true if there is an opened workspace, and the opened workspace is not a folder, otherwise false', () => {
             const file = <FileStat>{
-                uri: 'file:///home/file',
+                uri: 'file:///home/file.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             };
@@ -647,7 +649,7 @@ describe('WorkspaceService', () => {
             expect(wsService.isMultiRootWorkspaceEnabled).to.be.false;
 
             const file = <FileStat>{
-                uri: 'file:///home/file',
+                uri: 'file:///home/file.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             };
@@ -665,7 +667,7 @@ describe('WorkspaceService', () => {
             expect(wsService.isMultiRootWorkspaceOpened).to.be.false;
 
             const file = <FileStat>{
-                uri: 'file:///home/file',
+                uri: 'file:///home/file.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             };
@@ -731,9 +733,9 @@ describe('WorkspaceService', () => {
             expect(stubWriteWorkspaceFile.called).to.be.false;
         });
 
-        it('should update the working space file with remaining folders', async () => {
+        it('should update the workspace file with remaining folders', async () => {
             const file = <FileStat>{
-                uri: 'file:///home/oneFile',
+                uri: 'file:///home/oneFile.theia-workspace',
                 lastModification: 0,
                 isDirectory: false
             };
@@ -854,7 +856,7 @@ describe('WorkspaceService', () => {
     }).timeout(2000);
 
     it('should emit updated roots when workspace file is changed', done => {
-        const workspaceFileUri = 'file:///home/workspaceFile';
+        const workspaceFileUri = 'file:///home/workspaceFile.theia-workspace';
         const workspaceFileStat = <FileStat>{
             uri: workspaceFileUri,
             lastModification: 0,
@@ -899,4 +901,35 @@ describe('WorkspaceService', () => {
             mockFileChangeEmitter.fire([{ uri: new URI(workspaceFileUri), type: FileChangeType.UPDATED }]);
         });
     }).timeout(2000);
+
+    describe('isWorkspaceFile()', () => {
+        it(`should return true for '${THEIA_EXT}' files`, async () => {
+            const uri = `/home/foo/bar.${THEIA_EXT}`;
+            const stat = <FileStat>{
+                uri: uri,
+                lastModification: 0,
+                isDirectory: false
+            };
+            expect(await wsService['isWorkspaceFile'](stat)).equal(true);
+        });
+        it(`should return true for '${VSCODE_EXT}' files`, async () => {
+            const uri = `/home/foo/bar.${VSCODE_EXT}`;
+            const stat = <FileStat>{
+                uri: uri,
+                lastModification: 0,
+                isDirectory: false
+            };
+            expect(await wsService['isWorkspaceFile'](stat)).equal(true);
+        });
+        it(`should return false if not a '${THEIA_EXT}' or '${VSCODE_EXT} file`, async () => {
+            const uri = '/home/foo/foo.bar';
+            const stat = <FileStat>{
+                uri: uri,
+                lastModification: 0,
+                isDirectory: false
+            };
+            expect(await wsService['isWorkspaceFile'](stat)).equal(false);
+        });
+    });
+
 });
