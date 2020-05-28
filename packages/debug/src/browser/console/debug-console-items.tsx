@@ -359,4 +359,16 @@ export class DebugScope extends ExpressionContainer {
         return this.raw.name;
     }
 
+    get expensive(): boolean {
+        return this.raw.expensive;
+    }
+
+    get range(): monaco.Range | undefined {
+        const { line, column, endLine, endColumn } = this.raw;
+        if (line !== undefined && column !== undefined && endLine !== undefined && endColumn !== undefined) {
+            return new monaco.Range(line, column, endLine, endColumn);
+        }
+        return undefined;
+    }
+
 }

@@ -39,6 +39,11 @@ export const debugPreferencesSchema: PreferenceSchema = {
             enum: ['neverOpen', 'openOnSessionStart', 'openOnFirstSessionStart'],
             default: 'openOnFirstSessionStart',
             description: 'Controls when the internal debug console should open.'
+        },
+        'debug.inlineValues': {
+            type: 'boolean',
+            default: false,
+            description: 'Show variable values inline in editor while debugging.'
         }
     }
 };
@@ -48,6 +53,7 @@ export class DebugConfiguration {
     'debug.debugViewLocation': 'default' | 'left' | 'right' | 'bottom';
     'debug.openDebug': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart' | 'openOnDebugBreak';
     'debug.internalConsoleOptions': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart';
+    'debug.inlineValues': boolean;
 }
 
 export const DebugPreferences = Symbol('DebugPreferences');

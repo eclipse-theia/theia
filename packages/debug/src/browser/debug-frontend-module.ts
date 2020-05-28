@@ -55,6 +55,7 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { DebugWatchManager } from './debug-watch-manager';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { DebugBreakpointWidget } from './editor/debug-breakpoint-widget';
+import { DebugInlineValueDecorator } from './editor/debug-inline-value-decorator';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
@@ -85,6 +86,9 @@ export default new ContainerModule((bind: interfaces.Bind) => {
 
     bind(DebugSchemaUpdater).toSelf().inSingletonScope();
     bind(DebugConfigurationManager).toSelf().inSingletonScope();
+
+    bind(DebugInlineValueDecorator).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(DebugInlineValueDecorator);
 
     bind(DebugService).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, DebugPath)).inSingletonScope();
     bind(DebugResourceResolver).toSelf().inSingletonScope();
