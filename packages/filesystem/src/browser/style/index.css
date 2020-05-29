@@ -30,6 +30,6 @@
 
   background: var(--theia-list-activeSelectionBackground);
   color: var(--theia-list-activeSelectionForeground);
-  outline: 1px solid var(--theia-contrastActiveBorder); 
+  outline: 1px solid var(--theia-contrastActiveBorder);
   outline-offset: -1px;
 }

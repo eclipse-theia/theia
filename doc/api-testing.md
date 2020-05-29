@@ -142,7 +142,7 @@ only when the application is ready, workspace is initialized and all preferences
 
 Since tests are executed within the same process,
 each test suite should take care to bring the application in the proper state.
-For instance, an example test awaits when all editors are closed before testing the open function. 
+For instance, an example test awaits when all editors are closed before testing the open function.
 
 ## Running tests
 
