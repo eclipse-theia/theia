@@ -20,6 +20,11 @@ import { CommandLineOptions } from '@theia/process/lib/common/shell-command-buil
 import { TerminalSearchWidget } from '../search/terminal-search-widget';
 import { TerminalProcessInfo } from '../../common/base-terminal-protocol';
 
+export interface TerminalDimensions {
+    cols: number;
+    rows: number;
+}
+
 /**
  * Terminal UI widget.
  */
@@ -36,6 +41,8 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract readonly kind: 'user' | string;
 
     abstract readonly terminalId: number;
+
+    abstract readonly dimensions: TerminalDimensions;
 
     /**
      * Start terminal and return terminal id.
@@ -66,6 +73,12 @@ export abstract class TerminalWidget extends BaseWidget {
     /** Event that fires when the terminal fails to connect or reconnect */
     abstract onDidOpenFailure: Event<void>;
 
+    /** Event that fires when the terminal size changed */
+    abstract onSizeChanged: Event<{ cols: number; rows: number; }>;
+
+    /** Event that fires when the terminal input data */
+    abstract onData: Event<string>;
+
     abstract scrollLineUp(): void;
 
     abstract scrollLineDown(): void;
@@ -90,6 +103,10 @@ export abstract class TerminalWidget extends BaseWidget {
     abstract clearOutput(): void;
 
     abstract writeLine(line: string): void;
+
+    abstract write(data: string): void;
+
+    abstract rezise(cols: number, rows: number): void;
 
     /**
      * Return Terminal search box widget.
@@ -145,6 +162,11 @@ export interface TerminalWidgetOptions {
      * useServerTitle = true then display this title, otherwise display title defined by 'title' argument.
      */
     readonly useServerTitle?: boolean;
+
+    /**
+     * Whether it is a pseudo terminal where an extension controls its input and output.
+     */
+    readonly isPseudoTerminal?: boolean;
 
     /**
      * Terminal id. Should be unique for all DOM.

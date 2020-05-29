@@ -36,6 +36,7 @@ export interface ShellProcessOptions {
     cols?: number,
     rows?: number,
     env?: { [key: string]: string | null },
+    isPseudo?: boolean,
 }
 
 function setUpEnvVariables(customEnv?: { [key: string]: string | null }): { [key: string]: string } {
@@ -85,7 +86,8 @@ export class ShellProcess extends TerminalProcess {
                 rows: options.rows || ShellProcess.defaultRows,
                 cwd: getRootPath(options.rootURI),
                 env: setUpEnvVariables(options.env),
-            }
+            },
+            isPseudo: options.isPseudo,
         }, processManager, ringBuffer, logger);
     }
 

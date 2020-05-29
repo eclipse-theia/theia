@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { UUID } from '@phosphor/coreutils/lib/uuid';
-import { Terminal, TerminalOptions } from '@theia/plugin';
+import { Terminal, TerminalOptions, PseudoTerminalOptions } from '@theia/plugin';
 import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
@@ -30,6 +30,8 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     private readonly proxy: TerminalServiceMain;
 
     private readonly _terminals = new Map<string, TerminalExtImpl>();
+
+    private readonly _pseudoTerminals = new Map<string, PseudoTerminal>();
 
     private readonly onDidCloseTerminalEmitter = new Emitter<Terminal>();
     readonly onDidCloseTerminal: theia.Event<Terminal> = this.onDidCloseTerminalEmitter.event;
@@ -48,10 +50,20 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         return [...this._terminals.values()];
     }
 
-    createTerminal(nameOrOptions: TerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): Terminal {
+    createTerminal(nameOrOptions: TerminalOptions | PseudoTerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): Terminal {
         let options: TerminalOptions;
+        let pseudoTerminal: theia.Pseudoterminal | undefined = undefined;
+        const id = `plugin-terminal-${UUID.uuid4()}`;
         if (typeof nameOrOptions === 'object') {
-            options = nameOrOptions;
+            if ('pty' in nameOrOptions) {
+                pseudoTerminal = nameOrOptions.pty;
+                options = {
+                    name: nameOrOptions.name,
+                };
+                this._pseudoTerminals.set(id, new PseudoTerminal(id, this.proxy, pseudoTerminal));
+            } else {
+                options = nameOrOptions;
+            }
         } else {
             options = {
                 name: nameOrOptions,
@@ -59,8 +71,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
                 shellArgs: shellArgs
             };
         }
-        const id = `plugin-terminal-${UUID.uuid4()}`;
-        this.proxy.$createTerminal(id, options);
+        this.proxy.$createTerminal(id, options, !!pseudoTerminal);
         return this.obtainTerminal(id, options.name || 'Terminal');
     }
 
@@ -72,6 +83,22 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         }
         terminal.name = name;
         return terminal;
+    }
+
+    $terminalOnInput(id: string, data: string): void {
+        const terminal = this._pseudoTerminals.get(id);
+        if (!terminal) {
+            return;
+        }
+        terminal.emitOnInput(data);
+    }
+
+    $terminalSizeChanged(id: string, clos: number, rows: number): void {
+        const terminal = this._pseudoTerminals.get(id);
+        if (!terminal) {
+            return;
+        }
+        terminal.emitOnResize(clos, rows);
     }
 
     $terminalCreated(id: string, name: string): void {
@@ -87,7 +114,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         }
     }
 
-    $terminalOpened(id: string, processId: number): void {
+    $terminalOpened(id: string, processId: number, cols: number, rows: number): void {
         const terminal = this._terminals.get(id);
         if (terminal) {
             // resolve for existing clients
@@ -96,6 +123,10 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
             terminal.deferredProcessId = new Deferred<number>();
             terminal.deferredProcessId.resolve(processId);
         }
+        const pseudoTerminal = this._pseudoTerminals.get(id);
+        if (pseudoTerminal) {
+            pseudoTerminal.emitOnOpen(cols, rows);
+        }
     }
 
     $terminalClosed(id: string): void {
@@ -103,6 +134,11 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         if (terminal) {
             this.onDidCloseTerminalEmitter.fire(terminal);
             this._terminals.delete(id);
+        }
+        const pseudoTerminal = this._pseudoTerminals.get(id);
+        if (pseudoTerminal) {
+            pseudoTerminal.emitOnClose();
+            this._pseudoTerminals.delete(id);
         }
     }
 
@@ -146,4 +182,51 @@ export class TerminalExtImpl implements Terminal {
         this.id.promise.then(id => this.proxy.$dispose(id));
     }
 
+}
+
+export class PseudoTerminal {
+    constructor(
+        id: string,
+        private readonly proxy: TerminalServiceMain,
+        private readonly pseudoTerminal: theia.Pseudoterminal
+    ) {
+        pseudoTerminal.onDidWrite(data => {
+            this.proxy.$write(id, data);
+        });
+        if (pseudoTerminal.onDidClose) {
+            pseudoTerminal.onDidClose(() => {
+                this.proxy.$dispose(id);
+            });
+        }
+        if (pseudoTerminal.onDidOverrideDimensions) {
+            pseudoTerminal.onDidOverrideDimensions(e => {
+                if (e) {
+                    this.proxy.$resize(id, e.columns, e.rows);
+                }
+            });
+        }
+    }
+
+    emitOnClose(): void {
+        this.pseudoTerminal.close();
+    }
+
+    emitOnInput(data: string): void {
+        if (this.pseudoTerminal.handleInput) {
+            this.pseudoTerminal.handleInput(data);
+        }
+    }
+
+    emitOnOpen(cols: number, rows: number): void {
+        this.pseudoTerminal.open({
+            rows,
+            columns: cols,
+        });
+    }
+
+    emitOnResize(cols: number, rows: number): void {
+        if (this.pseudoTerminal.setDimensions) {
+            this.pseudoTerminal.setDimensions({ columns: cols, rows });
+        }
+    }
 }

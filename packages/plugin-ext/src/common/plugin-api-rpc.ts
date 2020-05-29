@@ -217,11 +217,12 @@ export interface CommandRegistryExt {
 export interface TerminalServiceExt {
     $terminalCreated(id: string, name: string): void;
     $terminalNameChanged(id: string, name: string): void;
-    $terminalOpened(id: string, processId: number): void;
+    $terminalOpened(id: string, processId: number, cols: number, rows: number): void;
     $terminalClosed(id: string): void;
+    $terminalOnInput(id: string, data: string): void;
+    $terminalSizeChanged(id: string, cols: number, rows: number): void;
     $currentTerminalChanged(id: string | undefined): void;
 }
-
 export interface OutputChannelRegistryExt {
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel
 }
@@ -245,7 +246,7 @@ export interface TerminalServiceMain {
      * Create new Terminal with Terminal options.
      * @param options - object with parameters to create new terminal.
      */
-    $createTerminal(id: string, options: theia.TerminalOptions): Promise<string>;
+    $createTerminal(id: string, options: theia.TerminalOptions, isPseudoTerminal?: boolean): Promise<string>;
 
     /**
      * Send text to the terminal by id.
@@ -254,6 +255,21 @@ export interface TerminalServiceMain {
      * @param addNewLine - in case true - add new line after the text, otherwise - don't apply new line.
      */
     $sendText(id: string, text: string, addNewLine?: boolean): void;
+
+    /**
+     * Write data to the terminal by id.
+     * @param id - terminal id.
+     * @param data - data.
+     */
+    $write(id: string, data: string): void;
+
+    /**
+     * Resize the terminal by id.
+     * @param id - terminal id.
+     * @param cols - columns.
+     * @param rows - rows.
+     */
+    $resize(id: string, cols: number, rows: number): void;
 
     /**
      * Show terminal on the UI panel.

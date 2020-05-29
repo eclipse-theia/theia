@@ -68,15 +68,37 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
         this.toDispose.push(Disposable.create(() => terminal.title.changed.disconnect(updateTitle)));
 
         const updateProcessId = () => terminal.processId.then(
-            processId => this.extProxy.$terminalOpened(terminal.id, processId),
+            processId => this.extProxy.$terminalOpened(terminal.id, processId, terminal.dimensions.cols, terminal.dimensions.rows),
             () => {/* no-op */ }
         );
         updateProcessId();
         this.toDispose.push(terminal.onDidOpen(() => updateProcessId()));
         this.toDispose.push(terminal.onTerminalDidClose(() => this.extProxy.$terminalClosed(terminal.id)));
+        this.toDispose.push(terminal.onSizeChanged(({ cols, rows }) => {
+            this.extProxy.$terminalSizeChanged(terminal.id, cols, rows);
+        }));
+        this.toDispose.push(terminal.onData(data => {
+            this.extProxy.$terminalOnInput(terminal.id, data);
+        }));
     }
 
-    async $createTerminal(id: string, options: TerminalOptions): Promise<string> {
+    $write(id: string, data: string): void {
+        const terminal = this.terminals.getById(id);
+        if (!terminal) {
+            return;
+        }
+        terminal.write(data);
+    }
+
+    $resize(id: string, cols: number, rows: number): void {
+        const terminal = this.terminals.getById(id);
+        if (!terminal) {
+            return;
+        }
+        terminal.rezise(cols, rows);
+    }
+
+    async $createTerminal(id: string, options: TerminalOptions, isPseudoTerminal?: boolean): Promise<string> {
         try {
             const terminal = await this.terminals.newTerminal({
                 id,
@@ -87,7 +109,8 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
                 env: options.env,
                 destroyTermOnClose: true,
                 useServerTitle: false,
-                attributes: options.attributes
+                attributes: options.attributes,
+                isPseudoTerminal,
             });
             terminal.start();
             return terminal.id;

@@ -2630,6 +2630,83 @@ declare module '@theia/plugin' {
     }
 
     /**
+     *  The dimensions of a terminal.
+     */
+    export interface TerminalDimensions {
+        /**
+         * The number of columns of the terminal.
+         */
+        readonly columns: number;
+
+        /**
+         * The number of rows of the terminal.
+         */
+        readonly rows: number;
+    }
+
+    /**
+     * Options a virtual process terminal.
+     */
+    export interface PseudoTerminalOptions {
+        /**
+         * The name of the terminal.
+         */
+        name: string;
+
+        /**
+         * An implementation of [Pseudoterminal](#Pseudoterminal) where an extension can
+         * control it.
+         */
+        pty: Pseudoterminal;
+    }
+
+    /**
+     * Defines the interface of a terminal pty, enabling extensions to control a terminal.
+     */
+    interface Pseudoterminal {
+        /**
+         * An event that when fired will write data to the terminal.
+         */
+        onDidWrite: Event<string>;
+
+        /**
+         * An event that when fired allows resizing the terminal.
+         */
+        onDidOverrideDimensions?: Event<TerminalDimensions | undefined>;
+
+        /**
+         * An event that when fired will close the pty.
+         */
+        onDidClose?: Event<void | number>;
+
+        /**
+         * Implement to handle when the pty is opened.
+         *
+         * @param dimensions The dimensions of the terminal.
+         */
+        open(dimensions: TerminalDimensions | undefined): void;
+
+        /**
+         * Implement to handle when the terminal is closed.
+         */
+        close(): void;
+
+        /**
+         * Implement to handle inputing data in the terminal.
+         *
+         * @param data The inputing data.
+         */
+        handleInput?(data: string): void;
+
+        /**
+         * Implement to handle when the number of rows and columns changes.
+         *
+         * @param dimensions The new dimensions.
+         */
+        setDimensions?(dimensions: TerminalDimensions): void;
+    }
+
+    /**
      * A plug-in context is a collection of utilities private to a
      * plug-in.
      *
@@ -3509,6 +3586,15 @@ declare module '@theia/plugin' {
          * @param - terminal options.
          */
         export function createTerminal(options: TerminalOptions): Terminal;
+
+        /**
+         * Creates a pseudo where an extension controls its input and output.
+         *
+         * @param options PseudoTerminalOptions.
+         * @return A new Terminal.
+         */
+        export function createTerminal(options: PseudoTerminalOptions): Terminal;
+
 
         /**
          * Register a [TreeDataProvider](#TreeDataProvider) for the view contributed using the extension point `views`.

@@ -23,6 +23,7 @@ import { IPty, spawn } from '@theia/node-pty';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
 import { DevNullStream } from './dev-null-stream';
 import { signame } from './utils';
+import { PseudoPty } from './pseudo-pty';
 import { Writable } from 'stream';
 
 export const TerminalProcessOptions = Symbol('TerminalProcessOptions');
@@ -30,7 +31,8 @@ export interface TerminalProcessOptions extends ProcessOptions {
     /**
      * Windows only. Allow passing complex command lines already escaped for CommandLineToArgvW.
      */
-    commandLine?: string
+    commandLine?: string;
+    isPseudo?: boolean;
 }
 
 export const TerminalProcessFactory = Symbol('TerminalProcessFactory');
@@ -59,6 +61,13 @@ export class TerminalProcess extends Process {
         @inject(ILogger) @named('process') logger: ILogger
     ) {
         super(processManager, logger, ProcessType.Terminal, options);
+
+        if (options.isPseudo) {
+            // do not need to spawn a process, new a pseudo pty instead
+            this.terminal = new PseudoPty();
+            this.inputStream = new DevNullStream({ autoDestroy: true });
+            return;
+        }
 
         if (this.isForkOptions(this.options)) {
             throw new Error('terminal processes cannot be forked as of today');
