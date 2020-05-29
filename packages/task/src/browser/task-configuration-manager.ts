@@ -139,17 +139,17 @@ export class TaskConfigurationManager {
         }
     }
 
-    async addTaskConfiguration(sourceFolderUri: string, taskConfig: TaskCustomization): Promise<boolean> {
-        const taskPrefModel = this.getModel(sourceFolderUri);
+    async addTaskConfiguration(scope: TaskConfigurationScope, taskConfig: TaskCustomization): Promise<boolean> {
+        const taskPrefModel = this.getModel(scope);
         if (taskPrefModel) {
             const configurations = taskPrefModel.configurations;
-            return this.setTaskConfigurations(sourceFolderUri, [...configurations, taskConfig]);
+            return this.setTaskConfigurations(scope, [...configurations, taskConfig]);
         }
         return false;
     }
 
-    async setTaskConfigurations(sourceFolderUri: string, taskConfigs: (TaskCustomization | TaskConfiguration)[]): Promise<boolean> {
-        const taskPrefModel = this.getModel(sourceFolderUri);
+    async setTaskConfigurations(scope: TaskConfigurationScope, taskConfigs: (TaskCustomization | TaskConfiguration)[]): Promise<boolean> {
+        const taskPrefModel = this.getModel(scope);
         if (taskPrefModel) {
             return taskPrefModel.setConfigurations(taskConfigs);
         }

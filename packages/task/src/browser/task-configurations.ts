@@ -370,10 +370,10 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** Writes the task to a config file. Creates a config file if this one does not exist */
-    saveTask(sourceFolderUri: string, task: TaskConfiguration): Promise<boolean> {
+    saveTask(scope: TaskConfigurationScope, task: TaskConfiguration): Promise<boolean> {
         const { _source, $ident, ...preparedTask } = task;
         const customizedTaskTemplate = this.getTaskCustomizationTemplate(task) || preparedTask;
-        return this.taskConfigurationManager.addTaskConfiguration(sourceFolderUri, customizedTaskTemplate);
+        return this.taskConfigurationManager.addTaskConfiguration(scope, customizedTaskTemplate);
     }
 
     /**
@@ -460,11 +460,6 @@ export class TaskConfigurations implements Disposable {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async updateTaskConfig(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
         const scope = task._scope;
-        if (typeof scope !== 'string') {
-            // ToDo: configure workspace and user-level scope tasks
-            console.error('Global task cannot be customized');
-            return;
-        }
         const configuredAndCustomizedTasks = await this.getTasks();
         if (configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) { // task is already in `tasks.json`
             const jsonTasks = this.taskConfigurationManager.getTasks(scope);
