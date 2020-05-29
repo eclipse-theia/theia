@@ -25,7 +25,7 @@ import { ShellTerminalServerProxy, IShellTerminalPreferences } from '../common/s
 import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
+import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions } from './base/terminal-widget';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
@@ -80,6 +80,12 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected readonly onDidOpenFailureEmitter = new Emitter<void>();
     readonly onDidOpenFailure: Event<void> = this.onDidOpenFailureEmitter.event;
+
+    protected readonly onSizeChangedEmitter = new Emitter<{ cols: number; rows: number; }>();
+    readonly onSizeChanged: Event<{ cols: number; rows: number; }> = this.onSizeChangedEmitter.event;
+
+    protected readonly onDataEmitter = new Emitter<string>();
+    readonly onData: Event<string> = this.onDataEmitter.event;
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
@@ -200,6 +206,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.onTermDidClose);
         this.toDispose.push(this.onDidOpenEmitter);
         this.toDispose.push(this.onDidOpenFailureEmitter);
+        this.toDispose.push(this.onSizeChangedEmitter);
+        this.toDispose.push(this.onDataEmitter);
 
         const touchEndListener = (event: TouchEvent) => {
             if (this.node.contains(event.target as Node)) {
@@ -215,6 +223,14 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             if (this.copyOnSelection) {
                 this.copyOnSelectionHandler.copy(this.term.getSelection());
             }
+        }));
+
+        this.toDispose.push(this.term.onResize(data => {
+            this.onSizeChangedEmitter.fire(data);
+        }));
+
+        this.toDispose.push(this.term.onData(data => {
+            this.onDataEmitter.fire(data);
         }));
 
         for (const contribution of this.terminalContributionProvider.getContributions()) {
@@ -269,6 +285,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.searchBox;
     }
 
+    get dimensions(): TerminalDimensions {
+        return {
+            cols: this.term.cols,
+            rows: this.term.rows,
+        };
+    }
+
     get cwd(): Promise<URI> {
         if (!IBaseTerminalServer.validateId(this.terminalId)) {
             return Promise.reject(new Error('terminal is not started'));
@@ -316,10 +339,18 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     storeState(): object {
         this.closeOnDispose = false;
+        if (this.options.isPseudoTerminal) {
+            return {};
+        }
         return { terminalId: this.terminalId, titleLabel: this.title.label };
     }
 
     restoreState(oldState: object): void {
+        // pseudo terminal can not restore
+        if (this.options.isPseudoTerminal) {
+            this.dispose();
+            return;
+        }
         if (this.restored === false) {
             const state = oldState as { terminalId: number, titleLabel: string };
             /* This is a workaround to issue #879 */
@@ -372,6 +403,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             shell: this.options.shellPath,
             args: this.options.shellArgs,
             env: this.options.env,
+            isPseudo: this.options.isPseudoTerminal,
             rootURI,
             cols,
             rows
@@ -444,6 +476,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (typeof this.terminalId !== 'number') {
             return;
         }
+        if (this.options.isPseudoTerminal) {
+            return;
+        }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
         const waitForConnection = this.waitForConnection = new Deferred<MessageConnection>();
@@ -471,6 +506,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }, { reconnecting: false });
     }
     protected async reconnectTerminalProcess(): Promise<void> {
+        if (this.options.isPseudoTerminal) {
+            return;
+        }
         if (typeof this.terminalId === 'number') {
             await this.start(this.terminalId);
         }
@@ -496,12 +534,17 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             }
         }
     }
-    protected write(data: string): void {
+
+    write(data: string): void {
         if (this.termOpened) {
             this.term.write(data);
         } else {
             this.initialData += data;
         }
+    }
+
+    rezise(cols: number, rows: number): void {
+        this.term.resize(cols, rows);
     }
 
     sendText(text: string): void {
@@ -570,6 +613,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected resizeTerminalProcess(): void {
+        if (this.options.isPseudoTerminal) {
+            return;
+        }
         if (!IBaseTerminalServer.validateId(this.terminalId)
             && !this.terminalService.getById(this.id)) {
             return;
