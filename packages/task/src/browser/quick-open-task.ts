@@ -243,8 +243,8 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         let isFirstGroup = true;
         const { filteredConfiguredTasks, filteredProvidedTasks } = this.getFilteredTasks([], configuredTasks, providedTasks);
         const groupedTasks = this.getGroupedTasksByWorkspaceFolder([...filteredConfiguredTasks, ...filteredProvidedTasks]);
-        if (groupedTasks.has(undefined)) {
-            const configs = groupedTasks.get(undefined)!;
+        if (groupedTasks.has(TaskScope.Global.toString())) {
+            const configs = groupedTasks.get(TaskScope.Global.toString())!;
             this.items.push(
                 ...configs.map(taskConfig => {
                     const item = new TaskConfigureQuickOpenItem(
@@ -264,10 +264,9 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
         const rootUris = (await this.workspaceService.roots).map(rootStat => rootStat.uri);
         for (const rootFolder of rootUris) {
-            const uri = new URI(rootFolder).withScheme('file');
-            const folderName = uri.displayName;
-            if (groupedTasks.has(uri.toString())) {
-                const configs = groupedTasks.get(uri.toString())!;
+            const folderName = new URI(rootFolder).displayName;
+            if (groupedTasks.has(rootFolder)) {
+                const configs = groupedTasks.get(rootFolder.toString())!;
                 this.items.push(
                     ...configs.map((taskConfig, index) => {
                         const item = new TaskConfigureQuickOpenItem(
@@ -286,7 +285,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                     })
                 );
             } else {
-                const { configUri } = this.preferences.resolve('tasks', [], uri.toString());
+                const { configUri } = this.preferences.resolve('tasks', [], rootFolder);
                 const existTaskConfigFile = !!configUri;
                 this.items.push(new QuickOpenGroupItem({
                     label: existTaskConfigFile ? 'Open tasks.json file' : 'Create tasks.json file from template',
@@ -294,7 +293,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                         if (mode !== QuickOpenMode.OPEN) {
                             return false;
                         }
-                        setTimeout(() => this.taskConfigurationManager.openConfiguration(uri.toString()));
+                        setTimeout(() => this.taskConfigurationManager.openConfiguration(rootFolder));
                         return true;
                     },
                     showBorder: !isFirstGroup,
@@ -447,14 +446,14 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         };
     }
 
-    private getGroupedTasksByWorkspaceFolder(tasks: TaskConfiguration[]): Map<string | undefined, TaskConfiguration[]> {
-        const grouped = new Map<string | undefined, TaskConfiguration[]>();
+    private getGroupedTasksByWorkspaceFolder(tasks: TaskConfiguration[]): Map<string, TaskConfiguration[]> {
+        const grouped = new Map<string, TaskConfiguration[]>();
         for (const task of tasks) {
-            const folder = task._scope;
-            if (grouped.has(folder.toString())) {
-                grouped.get(folder.toString())!.push(task);
+            const scope = task._scope;
+            if (grouped.has(scope.toString())) {
+                grouped.get(scope.toString())!.push(task);
             } else {
-                grouped.set(folder.toString(), [task]);
+                grouped.set(scope.toString(), [task]);
             }
         }
         for (const taskConfigs of grouped.values()) {
