@@ -70,6 +70,10 @@ export class EditorMenuContribution implements MenuContribution {
             commandId: CommonCommands.PASTE.id,
             order: '2'
         });
+        registry.registerMenuAction(EditorContextMenu.CUT_COPY_PASTE, {
+            commandId: CommonCommands.COPY_PATH.id,
+            order: '3'
+        });
 
         // Editor navigation. Go > Back and Go > Forward.
         registry.registerSubmenu(EditorMainMenu.GO, 'Go');

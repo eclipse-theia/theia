@@ -47,6 +47,7 @@ import { ColorRegistry, Color } from './color-registry';
 import { CorePreferences } from './core-preferences';
 import { ThemeService } from './theming';
 import { PreferenceService, PreferenceScope } from './preferences';
+import { ClipboardService } from './clipboard-service';
 
 export namespace CommonMenus {
 
@@ -99,6 +100,11 @@ export namespace CommonCommands {
     export const PASTE: Command = {
         id: 'core.paste',
         label: 'Paste'
+    };
+
+    export const COPY_PATH: Command = {
+        id: 'core.copy.path',
+        label: 'Copy Path'
     };
 
     export const UNDO: Command = {
@@ -308,6 +314,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
+
     @postConstruct()
     protected init(): void {
         this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);
@@ -434,6 +443,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.PASTE.id,
             order: '2'
         });
+        registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
+            commandId: CommonCommands.COPY_PATH.id,
+            order: '3'
+        });
 
         registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
             commandId: CommonCommands.TOGGLE_BOTTOM_PANEL.id,
@@ -523,6 +536,17 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }
             }
         });
+        commandRegistry.registerCommand(CommonCommands.COPY_PATH, new UriAwareCommandHandler<URI[]>(this.selectionService, {
+            execute: async uris => {
+                if (uris.length) {
+                    const lineDelimiter = isWindows ? '\r\n' : '\n';
+                    const text = uris.map(resource => resource.path).join(lineDelimiter);
+                    await this.clipboardService.writeText(text);
+                } else {
+                    await this.messageService.info('Open a file first to copy its path');
+                }
+            }
+        }, { multi: true }));
 
         commandRegistry.registerCommand(CommonCommands.UNDO, {
             execute: () => document.execCommand('undo')
@@ -746,6 +770,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 keybinding: 'ctrlcmd+v'
             });
         }
+        registry.registerKeybinding({
+            command: CommonCommands.COPY_PATH.id,
+            keybinding: isWindows ? 'shift+alt+c' : 'ctrlcmd+alt+c'
+        });
         registry.registerKeybindings(
             // Edition
             {
