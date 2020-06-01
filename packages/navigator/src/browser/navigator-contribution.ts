@@ -347,6 +347,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             order: 'b'
         });
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
+            commandId: CommonCommands.COPY_PATH.id,
+            order: 'c'
+        });
+        registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
             commandId: FileDownloadCommands.COPY_DOWNLOAD_LINK.id,
             order: 'z'
         });

@@ -617,5 +617,10 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 currentTerminal.dispose();
             }
         });
+        commands.registerCommand({
+            id: 'copyFilePath'
+        }, {
+            execute: () => commands.executeCommand(CommonCommands.COPY_PATH.id)
+        });
     }
 }
