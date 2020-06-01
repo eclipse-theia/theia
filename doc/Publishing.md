@@ -116,6 +116,30 @@ For example, if you picked `0.1.0` as a version then you should run:
 
 To confirm that the tagging was correctly done, check the repo's [releases](https://github.com/eclipse-theia/theia/releases) page and confirm the release just done is listed there.
 
+## Create a release
+
+The next step of the release process is to create a new **release** on the GitHub [releases](https://github.com/eclipse-theia/theia/releases) page for the project. This will create a new release, attach the necessary assets (`.zip`, `tar.gz`, changelog link), and also notify GitHub subscribers of a new release.
+
+In order to create a new release on GitHub, one must:
+
+- navigate to the [tags](https://github.com/eclipse-theia/theia/tags) page for the project
+- select the latest tag, and click `create release` from the 'more' (`...`) toolbar item
+- update the release description to include a reference to the `changelog` at the respective `sha` and release version:
+
+   ```md
+   [Release Changelog](https://github.com/eclipse-theia/theia/blob/${sha}/CHANGELOG.md#${changelog-version-header})
+   ```
+
+   For example (version `v1.2.0`):
+
+   ```md
+   [Release Changelog](https://github.com/eclipse-theia/theia/blob/2aa2fa1ab091ec36ef851c4e364b322301cddb40/CHANGELOG.md#v120)
+   ```
+
+- select `create release` at the bottom of the page
+
+For additional information, please consult the official GitHub documentation regarding [creating releases](https://help.github.com/en/github/administering-a-repository/managing-releases-in-a-repository#creating-a-release).
+
 ## Updating the release page on Eclipse Foundation (Post-release)
 
 - Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/projects/ecd.theia)
