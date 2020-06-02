@@ -23,5 +23,5 @@ export class PreferencesEventService {
     onSearch = new Emitter<Preference.SearchQuery>();
     onEditorScroll = new Emitter<Preference.MouseScrollDetails>();
     onNavTreeSelection = new Emitter<Preference.SelectedTreeNode>();
-    onDisplayChanged = new Emitter<void>();
+    onDisplayChanged = new Emitter<boolean>();
 }
