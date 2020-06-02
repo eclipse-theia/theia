@@ -23,6 +23,7 @@ import { VSXExtensionsModel } from './vsx-extensions-model';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 
 export namespace VSXExtensionsCommands {
     export const CLEAR_ALL: Command = {
@@ -34,7 +35,8 @@ export namespace VSXExtensionsCommands {
 }
 
 @injectable()
-export class VSXExtensionsContribution extends AbstractViewContribution<VSXExtensionsViewContainer> implements ColorContribution, TabBarToolbarContribution {
+export class VSXExtensionsContribution extends AbstractViewContribution<VSXExtensionsViewContainer>
+    implements ColorContribution, FrontendApplicationContribution, TabBarToolbarContribution {
 
     @inject(VSXExtensionsModel)
     protected readonly model: VSXExtensionsModel;
@@ -50,6 +52,10 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             toggleCommandId: 'vsxExtensions.toggle',
             toggleKeybinding: 'ctrlcmd+shift+x'
         });
+    }
+
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView({ activate: false });
     }
 
     registerCommands(commands: CommandRegistry): void {
