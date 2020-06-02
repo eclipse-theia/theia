@@ -18,7 +18,7 @@ import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution } from '../../common';
 import { FrontendApplicationContribution, ContextMenuRenderer, KeybindingContribution, KeybindingContext } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
-import { ElectronContextMenuRenderer } from './electron-context-menu-renderer';
+import { ElectronContextMenuRenderer, ElectronTextInputContextMenuContribution } from './electron-context-menu-renderer';
 import { ElectronMenuContribution } from './electron-menu-contribution';
 
 export default new ContainerModule(bind => {
@@ -33,4 +33,6 @@ export default new ContainerModule(bind => {
     for (const serviceIdentifier of [FrontendApplicationContribution, KeybindingContribution, CommandContribution, MenuContribution]) {
         bind(serviceIdentifier).toService(ElectronMenuContribution);
     }
+    bind(FrontendApplicationContribution).to(ElectronTextInputContextMenuContribution).inSingletonScope();
+    bind(MenuContribution).to(ElectronTextInputContextMenuContribution).inSingletonScope();
 });
