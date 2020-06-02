@@ -26,11 +26,13 @@ import { Preference } from './util/preference-types';
 interface PreferenceFilterOptions {
     minLength?: number;
     baseSchemaAltered?: boolean;
+    requiresFilter?: boolean;
 };
 
 const filterDefaults: Required<PreferenceFilterOptions> = {
     minLength: 1,
     baseSchemaAltered: false,
+    requiresFilter: true,
 };
 
 @injectable()
@@ -58,7 +60,15 @@ export class PreferencesTreeProvider {
         this.updateUnderlyingData({ baseSchemaAltered: true });
         this.schemaProvider.onDidPreferenceSchemaChanged(() => this.handleUnderlyingDataChange({ baseSchemaAltered: true }));
         this.preferencesEventService.onSearch.event(searchEvent => this.updateDisplay(searchEvent.query));
-        this.preferencesEventService.onTabScopeSelected.event(scopeEvent => this.handleUnderlyingDataChange({}, scopeEvent));
+        this.preferencesEventService.onTabScopeSelected.event(scopeEvent => {
+            const newScope = Number(scopeEvent.scope);
+            const currentScope = Number(this.currentScope.scope);
+            const scopeChangesPreferenceVisibility =
+                ((newScope === PreferenceScope.User || newScope === PreferenceScope.Workspace) && currentScope === PreferenceScope.Folder)
+                || (newScope === PreferenceScope.Folder && (currentScope === PreferenceScope.User || currentScope === PreferenceScope.Workspace));
+
+            this.handleUnderlyingDataChange({ requiresFilter: scopeChangesPreferenceVisibility }, scopeEvent);
+        });
     }
 
     protected updateUnderlyingData(options: PreferenceFilterOptions, newScope?: Preference.SelectedScopeDetails): void {
@@ -75,10 +85,12 @@ export class PreferencesTreeProvider {
         if (options.baseSchemaAltered) {
             this.baseTree = this.preferencesTreeGenerator.generateTree();
         }
+        const shouldBuildNewTree = options.requiresFilter !== false;
+        if (shouldBuildNewTree) {
+            this._currentTree = this.filter(term, Number(this.currentScope.scope), this.baseTree, options);
+        }
 
-        this._currentTree = this.filter(term, Number(this.currentScope.scope), this.baseTree, options);
-
-        this.preferencesEventService.onDisplayChanged.fire();
+        this.preferencesEventService.onDisplayChanged.fire(shouldBuildNewTree || !!options.baseSchemaAltered);
     }
 
     protected filter<Tree extends TreeNode>(

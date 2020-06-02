@@ -55,7 +55,11 @@ export class PreferencesTreeWidget extends TreeWidget {
     @postConstruct()
     init(): void {
         super.init();
-        this.preferencesEventService.onDisplayChanged.event(() => this.updateDisplay());
+        this.preferencesEventService.onDisplayChanged.event(didChangeTree => {
+            if (didChangeTree) {
+                this.updateDisplay();
+            }
+        });
         this.preferencesEventService.onEditorScroll.event(e => {
             this.handleEditorScroll(e.firstVisibleChildId);
         });
@@ -70,12 +74,14 @@ export class PreferencesTreeWidget extends TreeWidget {
             this.firstVisibleLeafNodeID = firstVisibleChildId;
             this.model.expandNode(expansionAncestor);
             this.collapseAllExcept(expansionAncestor);
-            this.model.selectNode(selectionAncestor);
+            if (selectionAncestor) {
+                this.model.selectNode(selectionAncestor);
+            }
         }
         this.shouldFireSelectionEvents = true;
     }
 
-    protected collapseAllExcept(openNode: Preference.TreeExtension): void {
+    protected collapseAllExcept(openNode: Preference.TreeExtension | undefined): void {
         const children = (this.model.root as CompositeTreeNode).children as ExpandableTreeNode[];
         children.forEach(child => {
             if (child !== openNode && child.expanded) {
@@ -84,7 +90,7 @@ export class PreferencesTreeWidget extends TreeWidget {
         });
     }
 
-    protected getAncestorsForVisibleNode(visibleNodeID: string): { selectionAncestor: SelectableTreeNode, expansionAncestor: ExpandableTreeNode; } {
+    protected getAncestorsForVisibleNode(visibleNodeID: string): { selectionAncestor: SelectableTreeNode | undefined, expansionAncestor: ExpandableTreeNode | undefined; } {
         const isNonLeafNode = visibleNodeID.endsWith('-id');
         const isSubgroupNode = isNonLeafNode && visibleNodeID.includes('.');
         let expansionAncestor: ExpandableTreeNode;
@@ -92,7 +98,7 @@ export class PreferencesTreeWidget extends TreeWidget {
 
         if (isSubgroupNode) {
             selectionAncestor = this.model.getNode(visibleNodeID) as SelectableTreeNode;
-            expansionAncestor = selectionAncestor.parent as ExpandableTreeNode;
+            expansionAncestor = selectionAncestor?.parent as ExpandableTreeNode;
         } else if (isNonLeafNode) {
             selectionAncestor = this.model.getNode(visibleNodeID) as SelectableTreeNode;
             expansionAncestor = selectionAncestor as Preference.TreeExtension as ExpandableTreeNode;
@@ -106,7 +112,8 @@ export class PreferencesTreeWidget extends TreeWidget {
                 selectionAncestor = this.model.getNode(subgroupID) as SelectableTreeNode;
             } else {
                 // The last selectable child that precedes the visible item alphabetically
-                selectionAncestor = [...expansionAncestor.children].reverse().find(child => child.visible && child.id < visibleNodeID) as SelectableTreeNode || expansionAncestor;
+                selectionAncestor = [...(expansionAncestor?.children || [])]
+                    .reverse().find(child => child.visible && child.id < visibleNodeID) as SelectableTreeNode || expansionAncestor;
             }
         }
         return { selectionAncestor, expansionAncestor };
@@ -124,6 +131,13 @@ export class PreferencesTreeWidget extends TreeWidget {
             const nodes = Object.keys(this.preferenceTreeProvider.propertyList)
                 .map(propertyName => ({ [propertyName]: this.preferenceTreeProvider.propertyList[propertyName] }));
             this.decorator.fireDidChangeDecorations(nodes);
+            // If the tree has changed but we know the visible node, scroll to it.
+            if (this.firstVisibleLeafNodeID) {
+                const { selectionAncestor } = this.getAncestorsForVisibleNode(this.firstVisibleLeafNodeID);
+                if (selectionAncestor?.visible) {
+                    this.preferencesEventService.onNavTreeSelection.fire({ nodeID: this.firstVisibleLeafNodeID });
+                }
+            }
             this.update();
         }
     }

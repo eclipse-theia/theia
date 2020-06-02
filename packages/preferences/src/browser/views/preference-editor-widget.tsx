@@ -60,7 +60,7 @@ export class PreferencesEditorWidget extends ReactWidget {
         this.preferenceValueRetrievalService.onPreferenceChanged((preferenceChange): void => {
             this.update();
         });
-        this.preferencesEventService.onDisplayChanged.event(() => this.handleChangeDisplay());
+        this.preferencesEventService.onDisplayChanged.event(didChangeTree => this.handleChangeDisplay(didChangeTree));
         this.preferencesEventService.onNavTreeSelection.event(e => this.scrollToEditorElement(e.nodeID));
         this.currentDisplay = this.preferenceTreeProvider.currentTree;
         this.properties = this.preferenceTreeProvider.propertyList;
@@ -98,11 +98,12 @@ export class PreferencesEditorWidget extends ReactWidget {
         );
     }
 
-    protected handleChangeDisplay = (): void => {
-        // This is here to avoid using the synthetic event asynchronously
-        this.currentDisplay = this.preferenceTreeProvider.currentTree;
-        this.properties = this.preferenceTreeProvider.propertyList;
-        this.node.scrollTop = 0;
+    protected handleChangeDisplay = (didGenerateNewTree: boolean): void => {
+        if (didGenerateNewTree) {
+            this.currentDisplay = this.preferenceTreeProvider.currentTree;
+            this.properties = this.preferenceTreeProvider.propertyList;
+            this.node.scrollTop = 0;
+        }
         this.update();
     };
 
@@ -180,7 +181,8 @@ export class PreferencesEditorWidget extends ReactWidget {
         if (nodeID) {
             const el = document.getElementById(`${nodeID}-editor`);
             if (el) {
-                el.scrollIntoView();
+                // Timeout to allow render cycle to finish.
+                setTimeout(() => el.scrollIntoView());
             }
         }
     }
