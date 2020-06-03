@@ -122,8 +122,8 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
     registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(OutputCommands.CLEAR__WIDGET, {
-            isEnabled: () => this.withWidget(),
-            isVisible: () => this.withWidget(),
+            isEnabled: w => this.withWidget(w, () => true),
+            isVisible: w => this.withWidget(w, () => true),
             execute: () => this.widget.then(widget => widget.clear())
         });
         registry.registerCommand(OutputCommands.LOCK__WIDGET, {
