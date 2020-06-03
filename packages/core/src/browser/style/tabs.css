@@ -112,7 +112,7 @@ body.theia-editor-highlightModifiedTabs
     border-bottom: 1px solid var(--theia-tab-unfocusedActiveBorder);
 }
 
-/* inactive tab in an unfocused group */ 
+/* inactive tab in an unfocused group */
 body.theia-editor-highlightModifiedTabs
 #theia-main-content-panel .p-TabBar .p-TabBar-tab:not(.p-mod-current):not(.theia-mod-active).theia-mod-dirty {
     border-top: 1px solid var(--theia-tab-unfocusedInactiveModifiedBorder);

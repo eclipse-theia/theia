@@ -26,14 +26,14 @@
     z-index: calc(var(--theia-tabbar-toolbar-z-index) + 1);
     border: var(--theia-border-width) solid var(--theia-editor-background);
 }
-  
+
 .theia-search-input {
     flex-grow: 1;
     line-height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
     max-width: 6rem;
     background-color: var(--theia-input-background);
 }
-  
+
 .theia-search-button {
     min-width: 1rem;
     text-align: center;
@@ -57,7 +57,7 @@
 .theia-search-button-next:hover:before {
     content: "\f107";
 }
-  
+
 .theia-search-button-previous:before {
     content: "\f106";
 }
@@ -65,7 +65,7 @@
 .theia-search-button-previous:hover:before {
     content: "\f106";
 }
-  
+
 .theia-search-button-close:before {
     content: "\f00d";
  }

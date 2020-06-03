@@ -12,7 +12,7 @@
 
 ## Description
 
-The `@theia/workspace` extension provides functionality and services to handle workspaces (projects) within the application. 
+The `@theia/workspace` extension provides functionality and services to handle workspaces (projects) within the application.
 
 ## Additional Information
 

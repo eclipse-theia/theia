@@ -348,7 +348,7 @@
     height: 324px;
     border: 1px solid var(--theia-editorHoverWidget-border);
     background: var(--theia-editorHoverWidget-background);
-    /* TODO color: var(--theia-editorHoverWidget-foreground); with a newer Monaco version */ 
+    /* TODO color: var(--theia-editorHoverWidget-foreground); with a newer Monaco version */
     color: var(--theia-editorWidget-foreground);
 }
 
