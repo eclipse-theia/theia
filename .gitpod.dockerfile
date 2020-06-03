@@ -14,7 +14,7 @@ RUN sudo apt-get update \
     && sudo rm -rf /var/lib/apt/lists/*
 
 # Pin Node.js to v10.
-ENV NODE_VERSION="10.19.0"
+ENV NODE_VERSION="10.21.0"
 RUN bash -c ". .nvm/nvm.sh \
     && nvm install $NODE_VERSION \
     && nvm use $NODE_VERSION \
