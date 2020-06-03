@@ -122,8 +122,8 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
     registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(OutputCommands.CLEAR__WIDGET, {
-            isEnabled: () => this.withWidget(),
-            isVisible: () => this.withWidget(),
+            isEnabled: widget => this.withWidget(widget),
+            isVisible: widget => this.withWidget(widget),
             execute: () => this.widget.then(widget => widget.clear())
         });
         registry.registerCommand(OutputCommands.LOCK__WIDGET, {
@@ -167,7 +167,7 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
     }
 
     protected withWidget(
-        widget: Widget | undefined = this.tryGetWidget(),
+        widget: Widget | undefined,
         predicate: (output: OutputWidget) => boolean = () => true
     ): boolean | false {
 
