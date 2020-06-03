@@ -11,5 +11,5 @@
     "editor.tabSize": 2
   },
   "typescript.tsdk": "node_modules/typescript/lib",
-  "clang-format.language.typescript.enable": false    
+  "clang-format.language.typescript.enable": false
 }

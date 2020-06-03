@@ -70,7 +70,7 @@
     padding: 2px 10px 5px 10px;
 }
 
-.th-label, .th-source, .th-context, .th-keybinding, 
+.th-label, .th-source, .th-context, .th-keybinding,
 .kb-label, .kb-source, .kb-context {
     padding: 2px 10px 5px 10px;
     min-height: 18px;

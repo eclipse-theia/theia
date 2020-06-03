@@ -60,7 +60,7 @@ export interface StableInterface {
 
     /**
      * Adding new API to stable API should be explicit.
-     * 
+     *
      * @since 1.1.0
      * @experimental
      */
@@ -111,14 +111,14 @@ It ensures control of API for such adopters and reduces the API surface of the f
 If APIs are based on design decisions that are subject to change, then
 one could postpone finalization before such decisions are resolved.
 
-> Why? Some design decisions are only temporarily subject to change, for instance, 
-which layout framework should be used. After it is resolved, 
+> Why? Some design decisions are only temporarily subject to change, for instance,
+which layout framework should be used. After it is resolved,
 such a design decision becomes fundamental, cannot be changed, and can be adopted.
 
 If it is not possible, then APIs should be refactored to hide such assumptions.
 
-> Why? Some design decisions are changeable by nature, for instance, for the LSP, 
-kind of symbols of a concrete language. In such a case, 
+> Why? Some design decisions are changeable by nature, for instance, for the LSP,
+kind of symbols of a concrete language. In such a case,
 API should be changed to operate abstract symbol data type to hide concrete symbols.
 
 If sufficient adoption and API stability are established,

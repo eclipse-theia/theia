@@ -99,7 +99,7 @@ electron@2.0.14 (2.0.14)
 * License: MIT AND BSD-2-Clause AND Apache-2.0 AND (AFL-2.1 OR BSD-3-Clause)
    AND BSD-3-Clause AND ISC AND X11 AND Public-Domain AND (GPL-2.0 OR MIT) AND
    Unlicense AND IJG AND ICU AND UNICODE-TOU AND NTP AND (MIT OR BSD-3-Clause)
-   AND Libpng AND MPL-2.0 AND LGPL-2.1+ 
+   AND Libpng AND MPL-2.0 AND LGPL-2.1+
 * Project: https://github.com/electron/electron
 * Source: https://github.com/electron/electron/releases/tag/v2.0.14
 
@@ -316,7 +316,7 @@ permitted.
 
 NOTICE:
 
-Please note Electron combines Chromium and Node.js into a single runtime. 
+Please note Electron combines Chromium and Node.js into a single runtime.
 While Electron, Chromium and Node.js are generally licensed under very
 permissive MIT and BSD-3-Clause licenses, both Electron and Chromium distribute
 FFmpeg.  While FFmpeg is under the LGPL-2.1-or-later license it incorporates

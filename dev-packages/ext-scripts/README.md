@@ -1,6 +1,6 @@
 # Shared NPM script for Theia packages.
 
-`theiaext` is a command line tool to run shared npm scripts in Theia packages. 
+`theiaext` is a command line tool to run shared npm scripts in Theia packages.
 
 For instance, if you want add a new `hello` script that prints `Hello World`:
 

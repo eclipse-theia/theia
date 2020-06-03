@@ -30,11 +30,11 @@ const electron = require('electron');
  * --all           Include all keys in the output, not only the relevant ones.
  * --pretty        Pretty-print the JSON output.
  * --output file   Write the output to the given file instead of stdout.
- * 
+ *
  * Hint: keyboard layouts are stored in packages/core/src/common/keyboard/layouts
  * and have the following file name scheme:
  *     <language>-<name>-<hardware>.json
- * 
+ *
  * <language>      A language subtag according to IETF BCP 47
  * <name>          Display name of the keyboard layout (without dashes)
  * <hardware>      `pc` or `mac`
