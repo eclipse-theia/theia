@@ -41,7 +41,8 @@ export namespace MenuAction {
 }
 
 export interface SubMenuOptions {
-    iconClass: string
+    iconClass?: string
+    order?: string
 }
 
 export type MenuPath = string[];
@@ -93,7 +94,7 @@ export class MenuModelRegistry {
         const parent = this.findGroup(groupPath);
         let groupNode = this.findSubMenu(parent, menuId);
         if (!groupNode) {
-            groupNode = new CompositeMenuNode(menuId, label, options ? options.iconClass : undefined);
+            groupNode = new CompositeMenuNode(menuId, label, options);
             return parent.addNode(groupNode);
         } else {
             if (!groupNode.label) {
@@ -101,8 +102,13 @@ export class MenuModelRegistry {
             } else if (groupNode.label !== label) {
                 throw new Error("The group '" + menuPath.join('/') + "' already has a different label.");
             }
-            if (!groupNode.iconClass && options) {
-                groupNode.iconClass = options.iconClass;
+            if (options) {
+                if (!groupNode.iconClass) {
+                    groupNode.iconClass = options.iconClass;
+                }
+                if (!groupNode.order) {
+                    groupNode.order = options.order;
+                }
             }
             return { dispose: () => { } };
         }
@@ -187,11 +193,19 @@ export interface MenuNode {
 
 export class CompositeMenuNode implements MenuNode {
     protected readonly _children: MenuNode[] = [];
+    public iconClass?: string;
+    public order?: string;
+
     constructor(
         public readonly id: string,
         public label?: string,
-        public iconClass?: string
-    ) { }
+        options?: SubMenuOptions
+    ) {
+        if (options) {
+            this.iconClass = options.iconClass;
+            this.order = options.order;
+        }
+    }
 
     get children(): ReadonlyArray<MenuNode> {
         return this._children;
@@ -236,7 +250,7 @@ export class CompositeMenuNode implements MenuNode {
     }
 
     get sortString(): string {
-        return this.id;
+        return this.order || this.id;
     }
 
     get isSubmenu(): boolean {
