@@ -237,7 +237,7 @@ export class ElectronMainMenuFactory {
                     role: 'hide'
                 },
                 {
-                    role: 'hideothers'
+                    role: 'hideOthers'
                 },
                 {
                     role: 'unhide'

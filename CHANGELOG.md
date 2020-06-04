@@ -4,6 +4,7 @@
 
 - [core] fixed handling of environment variables on Windows [#7973](https://github.com/eclipse-theia/theia/pull/7973)
 - [plugin-ext] fix file-icon incorrectly displays name icon with a dot in name [#7680](https://github.com/eclipse-theia/theia/pull/7680)
+- [core] Added support for Node.js `12.x`. From now on, you can use Node.js `12.x` to build Theia from the sources. The recommended minimum version is aligned with `electron`: Node.js `12.14.1`. The support for Node.js `10.x` will be dropped in one of the forthcoming releases. [#7968](https://github.com/eclipse-theia/theia/pull/7968)
 
 Breaking Changes:
 
