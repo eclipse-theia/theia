@@ -114,22 +114,22 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         this.updateFocusedView();
         this.shell.onDidChangeActiveWidget(() => this.updateFocusedView());
 
-        this.widgetManager.onDidCreateWidget(({ factoryId, widget }) => {
+        this.widgetManager.onWillCreateWidget(({ factoryId, widget, waitUntil }) => {
             if (factoryId === EXPLORER_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
-                this.prepareViewContainer('explorer', widget);
+                waitUntil(this.prepareViewContainer('explorer', widget));
             }
             if (factoryId === SCM_VIEW_CONTAINER_ID && widget instanceof ViewContainerWidget) {
-                this.prepareViewContainer('scm', widget);
+                waitUntil(this.prepareViewContainer('scm', widget));
             }
             if (factoryId === DebugWidget.ID && widget instanceof DebugWidget) {
                 const viewContainer = widget['sessionWidget']['viewContainer'];
-                this.prepareViewContainer('debug', viewContainer);
+                waitUntil(this.prepareViewContainer('debug', viewContainer));
             }
             if (factoryId === PLUGIN_VIEW_CONTAINER_FACTORY_ID && widget instanceof ViewContainerWidget) {
-                this.prepareViewContainer(this.toViewContainerId(widget.options), widget);
+                waitUntil(this.prepareViewContainer(this.toViewContainerId(widget.options), widget));
             }
             if (factoryId === PLUGIN_VIEW_FACTORY_ID && widget instanceof PluginViewWidget) {
-                this.prepareView(widget);
+                waitUntil(this.prepareView(widget));
             }
         });
         this.doRegisterViewContainer('test', 'left', {
@@ -212,18 +212,18 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             id: toggleCommandId,
             label: 'Toggle ' + options.label + ' View'
         }, {
-                execute: async () => {
-                    let widget = await this.getPluginViewContainer(id);
+            execute: async () => {
+                let widget = await this.getPluginViewContainer(id);
+                if (widget) {
+                    widget.dispose();
+                } else {
+                    widget = await this.openViewContainer(id);
                     if (widget) {
-                        widget.dispose();
-                    } else {
-                        widget = await this.openViewContainer(id);
-                        if (widget) {
-                            this.shell.activateWidget(widget.id);
-                        }
+                        this.shell.activateWidget(widget.id);
                     }
                 }
-            }));
+            }
+        }));
         toDispose.push(this.menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
             commandId: toggleCommandId,
             label: options.label
@@ -309,6 +309,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         widget.title.label = view.name;
         const currentDataWidget = widget.widgets[0];
         const viewDataWidget = await this.createViewDataWidget(view.id);
+        if (widget.isDisposed) {
+            // eslint-disable-next-line no-unused-expressions
+            viewDataWidget?.dispose();
+            return;
+        }
         if (currentDataWidget !== viewDataWidget) {
             if (currentDataWidget) {
                 currentDataWidget.dispose();

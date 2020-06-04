@@ -198,9 +198,8 @@ export class EditorPreviewWidget extends BaseWidget implements ApplicationShell.
         }
     }
 
-    getTrackableWidgets(): Promise<Widget[]> {
-        return new Promise(
-            resolve => resolve(this.editorWidget_ ? [this.editorWidget_] : []));
+    getTrackableWidgets(): Widget[] {
+        return this.editorWidget_ ? [this.editorWidget_] : [];
     }
 
     storeState(): PreviewViewState {
