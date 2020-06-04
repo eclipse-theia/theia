@@ -373,7 +373,7 @@ class MessageFactory {
         if (typeof res === 'undefined') {
             return `{${prefix}"type":${MessageType.Reply},"id":"${req}"}`;
         }
-        return `{${prefix}"type":${MessageType.Reply},"id":"${req}","res":${JSON.stringify(res, ObjectsTransferrer.replacer)}}`;
+        return `{${prefix}"type":${MessageType.Reply},"id":"${req}","res":${safeStringify(res, ObjectsTransferrer.replacer)}}`;
     }
 
     public static replyErr(req: string, err: any, messageToSendHostId?: string): string {
@@ -383,7 +383,7 @@ class MessageFactory {
         }
         err = typeof err === 'string' ? new Error(err) : err;
         if (err instanceof Error) {
-            return `{${prefix}"type":${MessageType.ReplyErr},"id":"${req}","err":${JSON.stringify(transformErrorForSerialization(err))}}`;
+            return `{${prefix}"type":${MessageType.ReplyErr},"id":"${req}","err":${safeStringify(transformErrorForSerialization(err))}}`;
         }
         return `{${prefix}"type":${MessageType.ReplyErr},"id":"${req}","err":null}`;
     }
@@ -531,4 +531,16 @@ export function transformErrorForSerialization(error: Error): SerializedError {
 
     // return as is
     return error;
+}
+
+interface JSONStringifyReplacer {
+    (key: string, value: any): any;
+}
+
+function safeStringify(obj: any, replacer?: JSONStringifyReplacer): string {
+    try {
+        return JSON.stringify(obj, replacer);
+    } catch (err) {
+        return 'null';
+    }
 }
