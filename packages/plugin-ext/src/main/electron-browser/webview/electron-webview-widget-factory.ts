@@ -23,7 +23,7 @@ export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
 
     async createWidget(identifier: WebviewWidgetIdentifier): Promise<WebviewWidget> {
         const widget = await super.createWidget(identifier);
-        this.attachElectronSecurityCookie(widget.externalEndpoint);
+        await this.attachElectronSecurityCookie(widget.externalEndpoint);
         return widget;
     }
 
