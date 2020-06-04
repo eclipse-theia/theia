@@ -55,6 +55,7 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
+import { FileNavigatorCommands } from '@theia/navigator/lib/browser/navigator-contribution';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -616,6 +617,11 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
                 currentTerminal.dispose();
             }
+        });
+        commands.registerCommand({
+            id: 'workbench.view.explorer'
+        }, {
+            execute: () => commands.executeCommand(FileNavigatorCommands.FOCUS.id)
         });
         commands.registerCommand({
             id: 'copyFilePath'
