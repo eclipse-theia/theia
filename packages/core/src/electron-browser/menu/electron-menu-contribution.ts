@@ -154,17 +154,13 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         registry.registerCommand(ElectronCommands.ZOOM_IN, {
             execute: () => {
                 const webContents = currentWindow.webContents;
-                webContents.getZoomLevel(zoomLevel =>
-                    webContents.setZoomLevel(zoomLevel + 0.5)
-                );
+                webContents.setZoomLevel(webContents.zoomLevel + 0.5);
             }
         });
         registry.registerCommand(ElectronCommands.ZOOM_OUT, {
             execute: () => {
                 const webContents = currentWindow.webContents;
-                webContents.getZoomLevel(zoomLevel =>
-                    webContents.setZoomLevel(zoomLevel - 0.5)
-                );
+                webContents.setZoomLevel(webContents.zoomLevel - 0.5);
             }
         });
         registry.registerCommand(ElectronCommands.RESET_ZOOM, {

@@ -34,8 +34,7 @@ export class ElectronKeyboardLayoutChangeNotifier implements KeyboardLayoutChang
 
     @postConstruct()
     protected initialize(): void {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ipcRenderer.on('keyboardLayoutChanged', (event: Event<any>, newLayout: NativeKeyboardLayout) => this.nativeLayoutChanged.fire(newLayout));
+        ipcRenderer.on('keyboardLayoutChanged', (event: Electron.IpcRendererEvent, newLayout: NativeKeyboardLayout) => this.nativeLayoutChanged.fire(newLayout));
     }
 
 }

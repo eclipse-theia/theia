@@ -170,7 +170,7 @@ app.on('ready', () => {
 
     // Remove the default electron menus, waiting for the application to set its own.
     Menu.setApplicationMenu(Menu.buildFromTemplate([{
-        role: 'help', submenu: [{ role: 'toggledevtools'}]
+        role: 'help', submenu: [{ role: 'toggleDevTools' }]
     }]));
 
     function createNewWindow(theUrl) {
@@ -206,7 +206,10 @@ app.on('ready', () => {
             x: windowState.x,
             y: windowState.y,
             isMaximized: windowState.isMaximized,
-            ...windowOptionsAdditions
+            ...windowOptionsAdditions,
+            webPreferences: {
+                nodeIntegration: true
+            }
         };
 
         // Always hide the window, we will show the window when it is ready to be shown in any case.
@@ -263,16 +266,15 @@ app.on('ready', () => {
         newWindow.on('move', saveWindowStateDelayed);
 
         // Fired when a beforeunload handler tries to prevent the page unloading
-        newWindow.webContents.on('will-prevent-unload', event => {
-            const preventStop = 0 !== dialog.showMessageBox(newWindow, {
+        newWindow.webContents.on('will-prevent-unload', async event => {
+            const { response } = await dialog.showMessageBox(newWindow, {
                 type: 'question',
                 buttons: ['Yes', 'No'],
                 title: 'Confirm',
                 message: 'Are you sure you want to quit?',
                 detail: 'Any unsaved changes will not be saved.'
             });
-
-            if (!preventStop) {
+            if (response === 0) { // 'Yes'
                 // This ignores the beforeunload callback, allowing the page to unload
                 event.preventDefault();
             }
@@ -330,22 +332,14 @@ app.on('ready', () => {
         })
     }
 
-    const setElectronSecurityToken = port => {
-        return new Promise((resolve, reject) => {
-            electron.session.defaultSession.cookies.set({
-                url: \`http://localhost:\${port}/\`,
-                name: ElectronSecurityToken,
-                value: JSON.stringify(electronSecurityToken),
-                httpOnly: true,
-            }, error => {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve();
-                }
-            });
-        })
-    }
+    const setElectronSecurityToken = async port => {
+        await electron.session.defaultSession.cookies.set({
+            url: \`http://localhost:\${port}/\`,
+            name: ElectronSecurityToken,
+            value: JSON.stringify(electronSecurityToken),
+            httpOnly: true
+        });
+    };
 
     const loadMainWindow = port => {
         if (!mainWindow.isDestroyed()) {

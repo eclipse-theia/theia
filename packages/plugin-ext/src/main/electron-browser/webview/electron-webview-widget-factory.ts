@@ -32,20 +32,12 @@ export class ElectronWebviewWidgetFactory extends WebviewWidgetFactory {
      *
      * @param endpoint cookie's target url
      */
-    protected attachElectronSecurityCookie(endpoint: string): Promise<void> {
-        return new Promise((resolve, reject) => {
-            remote.session.defaultSession!.cookies.set({
-                url: endpoint,
-                name: ElectronSecurityToken,
-                value: JSON.stringify(this.container.get(ElectronSecurityToken)),
-                httpOnly: true,
-            }, error => {
-                if (error) {
-                    reject(error);
-                } else {
-                    resolve();
-                }
-            });
+    protected async attachElectronSecurityCookie(endpoint: string): Promise<void> {
+        await remote.session.defaultSession!.cookies.set({
+            url: endpoint,
+            name: ElectronSecurityToken,
+            value: JSON.stringify(this.container.get(ElectronSecurityToken)),
+            httpOnly: true
         });
     }
 

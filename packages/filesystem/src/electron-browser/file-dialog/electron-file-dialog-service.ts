@@ -24,10 +24,10 @@ import { FileStat } from '../../common';
 import { FileAccess } from '../../common/filesystem';
 import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog';
 
-// See https://github.com/electron/electron/blob/v4.2.12/docs/api/dialog.md
+// See https://github.com/electron/electron/blob/v9.0.2/docs/api/dialog.md
 // These properties get extended with newer versions of Electron
 type DialogProperties = 'openFile' | 'openDirectory' | 'multiSelections' | 'showHiddenFiles' |
-    'createDirectory' | 'promptToCreate' | 'noResolveAliases' | 'treatPackageAsDirectory';
+    'createDirectory' | 'promptToCreate' | 'noResolveAliases' | 'treatPackageAsDirectory' | 'dontAddToRecent';
 
 //
 // We are OK to use this here because the electron backend and frontend are on the same host.
@@ -47,19 +47,15 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     async showOpenDialog(props: OpenFileDialogProps, folder?: FileStat): Promise<MaybeArray<URI> | undefined> {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
-            return new Promise<MaybeArray<URI> | undefined>(resolve => {
-                remote.dialog.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props), async (filePaths: string[] | undefined) => {
-                    if (!filePaths || filePaths.length === 0) {
-                        resolve(undefined);
-                        return;
-                    }
+            const { filePaths } = await remote.dialog.showOpenDialog(this.toOpenDialogOptions(rootNode.uri, props));
+            if (filePaths.length === 0) {
+                return undefined;
+            }
 
-                    const uris = filePaths.map(path => FileUri.create(path));
-                    const canAccess = await this.canReadWrite(uris);
-                    const result = canAccess ? uris.length === 1 ? uris[0] : uris : undefined;
-                    resolve(result);
-                });
-            });
+            const uris = filePaths.map(path => FileUri.create(path));
+            const canAccess = await this.canReadWrite(uris);
+            const result = canAccess ? uris.length === 1 ? uris[0] : uris : undefined;
+            return result;
         }
         return undefined;
     }
@@ -67,24 +63,19 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
     async showSaveDialog(props: SaveFileDialogProps, folder?: FileStat): Promise<URI | undefined> {
         const rootNode = await this.getRootNode(folder);
         if (rootNode) {
-            return new Promise<URI | undefined>(resolve => {
-                remote.dialog.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props), async (filename: string | undefined) => {
-                    if (!filename) {
-                        resolve(undefined);
-                        return;
-                    }
+            const { filePath } = await remote.dialog.showSaveDialog(this.toSaveDialogOptions(rootNode.uri, props));
+            if (!filePath) {
+                return undefined;
+            }
 
-                    const uri = FileUri.create(filename);
-                    const exists = await this.fileSystem.exists(uri.toString());
-                    if (!exists) {
-                        resolve(uri);
-                        return;
-                    }
+            const uri = FileUri.create(filePath);
+            const exists = await this.fileSystem.exists(uri.toString());
+            if (!exists) {
+                return uri;
+            }
 
-                    const canAccess = await this.canReadWrite(uri);
-                    resolve(canAccess ? uri : undefined);
-                });
-            });
+            const canAccess = await this.canReadWrite(uri);
+            return canAccess ? uri : undefined;
         }
         return undefined;
     }
