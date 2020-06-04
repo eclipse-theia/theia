@@ -1,8 +1,11 @@
 # Change Log
 
+## v1.3.0
+
 Breaking Changes:
 
 - [task] Widened the scope of some methods in TaskManager and TaskConfigurations from string to TaskConfigurationScope. This is only breaking for extenders, not callers. [#7928](https://github.com/eclipse-theia/theia/pull/7928)
+- [shell] `ApplicationShell.TrackableWidgetProvider.getTrackableWidgets` is sync to register child widgets in the same tick, use `ApplicationShell.TrackableWidgetProvider.onDidChangeTrackableWidgets` if child widgets are added async
 
 ## v1.2.0
 

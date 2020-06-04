@@ -16,7 +16,7 @@
 
 import { inject, named, injectable } from 'inversify';
 import { Widget } from '@phosphor/widgets';
-import { ILogger, Emitter, Event, ContributionProvider, MaybePromise } from '../common';
+import { ILogger, Emitter, Event, ContributionProvider, MaybePromise, WaitUntilEvent } from '../common';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const WidgetFactory = Symbol('WidgetFactory');
@@ -54,6 +54,20 @@ export interface WidgetConstructionOptions {
 }
 
 /**
+ * Representation of a `willCreateWidgetEvent`.
+ */
+export interface WillCreateWidgetEvent extends WaitUntilEvent {
+    /**
+     * The widget which will be created.
+     */
+    readonly widget: Widget;
+    /**
+     * The widget factory id.
+     */
+    readonly factoryId: string;
+}
+
+/**
  * Representation of a `didCreateWidgetEvent`.
  */
 export interface DidCreateWidgetEvent {
@@ -83,6 +97,13 @@ export class WidgetManager {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
+
+    protected readonly onWillCreateWidgetEmitter = new Emitter<WillCreateWidgetEvent>();
+    /**
+     * An event can be used to participate in the widget creation.
+     * Listeners may not dispose the given widget.
+     */
+    readonly onWillCreateWidget: Event<WillCreateWidgetEvent> = this.onWillCreateWidgetEmitter.event;
 
     protected readonly onDidCreateWidgetEmitter = new Emitter<DidCreateWidgetEvent>();
     readonly onDidCreateWidget: Event<DidCreateWidgetEvent> = this.onDidCreateWidgetEmitter.event;
@@ -154,15 +175,14 @@ export class WidgetManager {
             const widgetPromise = factory.createWidget(options);
             this.pendingWidgetPromises.set(key, widgetPromise);
             const widget = await widgetPromise;
+            await WaitUntilEvent.fire(this.onWillCreateWidgetEmitter, { factoryId, widget });
             this.widgetPromises.set(key, widgetPromise);
             this.widgets.set(key, widget);
             widget.disposed.connect(() => {
                 this.widgets.delete(key);
                 this.widgetPromises.delete(key);
             });
-            this.onDidCreateWidgetEmitter.fire({
-                factoryId, widget
-            });
+            this.onDidCreateWidgetEmitter.fire({ factoryId, widget });
             return widget as T;
         } finally {
             this.pendingWidgetPromises.delete(key);

@@ -23,7 +23,7 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial, MaybePromise, Event as CommonEvent, DisposableCollection, Disposable } from '../../common';
+import { RecursivePartial, Event as CommonEvent, DisposableCollection, Disposable } from '../../common';
 import { animationFrame } from '../browser';
 import { Saveable, SaveableWidget } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
@@ -610,18 +610,18 @@ export class ApplicationShell extends Widget {
         const { mainPanel, bottomPanel, leftPanel, rightPanel, activeWidgetId } = layoutData;
         if (leftPanel) {
             this.leftPanelHandler.setLayoutData(leftPanel);
-            await this.registerWithFocusTracker(leftPanel);
+            this.registerWithFocusTracker(leftPanel);
         }
         if (rightPanel) {
             this.rightPanelHandler.setLayoutData(rightPanel);
-            await this.registerWithFocusTracker(rightPanel);
+            this.registerWithFocusTracker(rightPanel);
         }
         // Proceed with the bottom panel once the side panels are set up
         await Promise.all([this.leftPanelHandler.state.pendingUpdate, this.rightPanelHandler.state.pendingUpdate]);
         if (bottomPanel) {
             if (bottomPanel.config) {
                 this.bottomPanel.restoreLayout(bottomPanel.config);
-                await this.registerWithFocusTracker(bottomPanel.config.main);
+                this.registerWithFocusTracker(bottomPanel.config.main);
             }
             if (bottomPanel.size) {
                 this.bottomPanelState.lastPanelSize = bottomPanel.size;
@@ -637,7 +637,7 @@ export class ApplicationShell extends Widget {
         await this.bottomPanelState.pendingUpdate;
         if (mainPanel) {
             this.mainPanel.restoreLayout(mainPanel);
-            await this.registerWithFocusTracker(mainPanel.main);
+            this.registerWithFocusTracker(mainPanel.main);
         }
         if (activeWidgetId) {
             this.activateWidget(activeWidgetId);
@@ -679,22 +679,22 @@ export class ApplicationShell extends Widget {
     /**
      * Track all widgets that are referenced by the given layout data.
      */
-    protected async registerWithFocusTracker(data: DockLayout.ITabAreaConfig | DockLayout.ISplitAreaConfig | SidePanel.LayoutData | null): Promise<void> {
+    protected registerWithFocusTracker(data: DockLayout.ITabAreaConfig | DockLayout.ISplitAreaConfig | SidePanel.LayoutData | null): void {
         if (data) {
             if (data.type === 'tab-area') {
                 for (const widget of data.widgets) {
                     if (widget) {
-                        await this.track(widget);
+                        this.track(widget);
                     }
                 }
             } else if (data.type === 'split-area') {
                 for (const child of data.children) {
-                    await this.registerWithFocusTracker(child);
+                    this.registerWithFocusTracker(child);
                 }
             } else if (data.type === 'sidepanel' && data.items) {
                 for (const item of data.items) {
                     if (item.widget) {
-                        await this.track(item.widget);
+                        this.track(item.widget);
                     }
                 }
             }
@@ -759,7 +759,7 @@ export class ApplicationShell extends Widget {
                 throw new Error('Unexpected area: ' + options.area);
         }
         if (area !== 'top') {
-            await this.track(widget);
+            this.track(widget);
         }
     }
 
@@ -958,7 +958,7 @@ export class ApplicationShell extends Widget {
     /**
      * Track the given widget so it is considered in the `current` and `active` state of the shell.
      */
-    protected async track(widget: Widget): Promise<void> {
+    protected track(widget: Widget): void {
         if (this.tracker.widgets.indexOf(widget) !== -1) {
             return;
         }
@@ -966,8 +966,8 @@ export class ApplicationShell extends Widget {
         this.checkActivation(widget);
         Saveable.apply(widget);
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
-            for (const toTrack of await widget.getTrackableWidgets()) {
-                await this.track(toTrack);
+            for (const toTrack of widget.getTrackableWidgets()) {
+                this.track(toTrack);
             }
             if (widget.onDidChangeTrackableWidgets) {
                 widget.onDidChangeTrackableWidgets(widgets => widgets.forEach(w => this.track(w)));
@@ -1860,7 +1860,7 @@ export namespace ApplicationShell {
      * Exposes widgets which activation state should be tracked by shell.
      */
     export interface TrackableWidgetProvider {
-        getTrackableWidgets(): MaybePromise<Widget[]>
+        getTrackableWidgets(): Widget[]
         readonly onDidChangeTrackableWidgets?: CommonEvent<Widget[]>
         /**
          * Make visible and focus a trackable widget for the given id.
