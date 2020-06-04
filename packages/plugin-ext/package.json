@@ -5,6 +5,7 @@
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
+    "@phosphor/widgets": "^1.9.3",
     "@theia/callhierarchy": "^1.2.0",
     "@theia/core": "^1.2.0",
     "@theia/debug": "^1.2.0",
