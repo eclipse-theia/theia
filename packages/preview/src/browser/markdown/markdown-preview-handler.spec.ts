@@ -130,11 +130,11 @@ See [here](https://github.com/eclipse-theia/theia).
 `;
 
 const exampleHtml1 = //
-    `<h1 id="theia---preview-extension" class="line" data-line="0">Theia - Preview Extension</h1>
-<p class="line" data-line="1">Shows a preview of supported resources.
+    `<h1 data-line="0" class="line" id="theia---preview-extension">Theia - Preview Extension</h1>
+<p data-line="1" class="line">Shows a preview of supported resources.
 See <a href="https://github.com/eclipse-theia/theia">here</a>.</p>
-<h2 id="license" class="line" data-line="4">License</h2>
-<p class="line" data-line="5"><a href="https://github.com/eclipse-theia/theia/blob/master/LICENSE">Apache-2.0</a></p>
+<h2 data-line="4" class="line" id="license">License</h2>
+<p data-line="5" class="line"><a href="https://github.com/eclipse-theia/theia/blob/master/LICENSE">Apache-2.0</a></p>
 `;
 
 const exampleMarkdown2 = //
@@ -143,8 +143,8 @@ const exampleMarkdown2 = //
 `;
 
 const exampleHtml2 = //
-    `<h1 id="heading" class="line" data-line="0">Heading</h1>
-<p class="line" data-line="1"><img src="endpoint/workspace/subfolder/image.png" alt="alternativetext"></p>
+    `<h1 data-line="0" class="line" id="heading">Heading</h1>
+<p data-line="1" class="line"><img alt="alternativetext" src="endpoint/workspace/subfolder/image.png"></p>
 `;
 
 const exampleMarkdown3 = //
@@ -156,10 +156,10 @@ const exampleMarkdown3 = //
 `;
 
 const exampleHtml3 = //
-    `<h1 id="block-html-image" class="line" data-line="0">Block HTML Image</h1>
-<img src="endpoint/workspace/subfolder/image1.png" alt="tada">
-<h1 id="block-html-image-2" class="line" data-line="3">Block HTML Image</h1>
-<img src="endpoint/workspace/subfolder/image3.png" alt="tada">
+    `<h1 data-line="0" class="line" id="block-html-image">Block HTML Image</h1>
+<img alt="tada" src="endpoint/workspace/subfolder/image1.png">
+<h1 data-line="3" class="line" id="block-html-image-2">Block HTML Image</h1>
+<img alt="tada" src="endpoint/workspace/subfolder/image3.png">
 `;
 
 const exampleMarkdown4 = //
@@ -168,8 +168,8 @@ text in paragraph <img src="subfolder/image2.png" alt="tada"/>
 `;
 
 const exampleHtml4 = //
-    `<h1 id="inlined-html-image" class="line" data-line="0">Inlined HTML Image</h1>
-<p class="line" data-line="1">text in paragraph <img src="endpoint/workspace/subfolder/image2.png" alt="tada"></p>
+    `<h1 data-line="0" class="line" id="inlined-html-image">Inlined HTML Image</h1>
+<p data-line="1" class="line">text in paragraph <img alt="tada" src="endpoint/workspace/subfolder/image2.png"></p>
 `;
 
 const exampleMarkdown5 = //
@@ -184,12 +184,12 @@ word  <p>
 `;
 
 const exampleHtml5 = //
-    `<h1 id="multiple-html-images-nested-in-blocks" class="line" data-line="0">Multiple HTML Images nested in blocks</h1>
-<p class="line" data-line="1">word  </p><p>
-<img src="endpoint/workspace/subfolder/image2.png" alt="tada"></p>
+    `<h1 data-line="0" class="line" id="multiple-html-images-nested-in-blocks">Multiple HTML Images nested in blocks</h1>
+<p data-line="1" class="line">word  </p><p>
+<img alt="tada" src="endpoint/workspace/subfolder/image2.png"></p>
 <p></p>
 <p>
-<img src="endpoint/workspace/subfolder/image2.png" alt="tada">
+<img alt="tada" src="endpoint/workspace/subfolder/image2.png">
 </p>
 `;
 
