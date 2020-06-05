@@ -10,9 +10,11 @@
     "@types/highlight.js": "^9.12.2",
     "@types/markdown-it": "*",
     "@types/markdown-it-anchor": "^4.0.1",
+    "@types/dompurify": "^2.0.2",
     "highlight.js": "^9.12.0",
     "markdown-it": "^8.4.0",
-    "markdown-it-anchor": "~5.0.0"
+    "markdown-it-anchor": "~5.0.0",
+    "dompurify": "^2.0.11"
   },
   "publishConfig": {
     "access": "public"
