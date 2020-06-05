@@ -44,8 +44,6 @@ export function loadMonaco(vsRequire: any): Promise<void> {
     return new Promise<void>(resolve => {
         vsRequire(['vs/editor/editor.main'], () => {
             vsRequire([
-                'vs/language/css/monaco.contribution',
-                'vs/language/html/monaco.contribution',
                 'vs/platform/commands/common/commands',
                 'vs/platform/actions/common/actions',
                 'vs/platform/keybinding/common/keybindingsRegistry',
@@ -78,7 +76,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/contextkey/common/contextkey',
                 'vs/platform/contextkey/browser/contextKeyService',
                 'vs/base/common/errors'
-            ], (css: any, html: any, commands: any, actions: any,
+            ], (commands: any, actions: any,
                 keybindingsRegistry: any, keybindingResolver: any, resolvedKeybinding: any, keybindingLabels: any,
                 keyCodes: any, mime: any, editorExtensions: any, simpleServices: any,
                 standaloneServices: any, standaloneLanguages: any, quickOpenWidget: any, quickOpenModel: any,
