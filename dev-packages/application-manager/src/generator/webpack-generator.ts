@@ -72,22 +72,12 @@ const { mode, staticCompression }  = yargs.option('mode', {
 }).argv;
 const development = mode === 'development';${this.ifMonaco(() => `
 
-const monacoEditorCorePath = development ? '${this.resolve('@theia/monaco-editor-core', 'dev/vs')}' : '${this.resolve('@theia/monaco-editor-core', 'min/vs')}';
-const monacoCssLanguagePath = '${this.resolve('monaco-css', 'release/min')}';
-const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`)}
+const monacoEditorCorePath = development ? '${this.resolve('@theia/monaco-editor-core', 'dev/vs')}' : '${this.resolve('@theia/monaco-editor-core', 'min/vs')}';`)}
 
 const plugins = [new CopyWebpackPlugin([${this.ifMonaco(() => `
     {
         from: monacoEditorCorePath,
         to: 'vs'
-    },
-    {
-        from: monacoCssLanguagePath,
-        to: 'vs/language/css'
-    },
-    {
-        from: monacoHtmlLanguagePath,
-        to: 'vs/language/html'
     }`)}
 ])];
 // it should go after copy-plugin in order to compress monaco as well
