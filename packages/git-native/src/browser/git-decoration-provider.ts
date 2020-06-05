@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { GitFileChange, GitFileStatus, GitStatusChangeEvent } from '../common';
+import { GitFileChange, GitFileStatus, GitStatusChangeEvent } from '@theia/git/lib//common';
 import { CancellationToken, Emitter, Event } from '@theia/core/lib/common';
 import { Decoration, DecorationsProvider } from '@theia/core/lib/browser/decorations-service';
 import { GitRepositoryTracker } from './git-repository-tracker';
@@ -63,4 +63,3 @@ export class GitDecorationProvider implements DecorationsProvider {
         return this.decorations.get(uri.toString());
     }
 }
-

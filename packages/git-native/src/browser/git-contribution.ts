@@ -32,13 +32,13 @@ import {
     TabBarToolbarRegistry
 } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { EditorContextMenu, EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
-import { Git, GitFileChange, GitFileStatus } from '../common';
+import { Git, GitFileChange, GitFileStatus } from '@theia/git/lib/common';
 import { GitRepositoryTracker } from './git-repository-tracker';
-import { GitAction, GitQuickOpenService } from './git-quick-open-service';
+import { GitAction, GitQuickOpenService } from '@theia/git/lib/browser/git-quick-open-service';
 import { GitSyncService } from './git-sync-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { GitRepositoryProvider } from './git-repository-provider';
-import { GitErrorHandler } from '../browser/git-error-handler';
+import { GitErrorHandler } from '@theia/git/lib/browser/git-error-handler';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { ScmCommand, ScmResource } from '@theia/scm/lib/browser/scm-provider';
@@ -544,8 +544,9 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             }
 
             try {
-                const lastCommit = await scmRepository.provider.amendSupport.getLastCommit();
-                if (lastCommit === undefined) {
+                const repository = { localUri: scmRepository.provider.rootUri };
+                const commits = await this.git.log(repository, { maxCount: 1 });
+                if (commits.length === 0) {
                     scmRepository.input.issue = {
                         type: ScmInputIssueType.Error,
                         message: 'No previous commit to amend'

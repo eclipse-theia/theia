@@ -18,8 +18,8 @@ import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { MessageService, Emitter, Event } from '@theia/core';
 import { ConfirmDialog, QuickInputService } from '@theia/core/lib/browser';
 import { GitRepositoryTracker } from './git-repository-tracker';
-import { Git, Repository, WorkingDirectoryStatus } from '../common';
-import { GitErrorHandler } from './git-error-handler';
+import { Git, Repository, WorkingDirectoryStatus } from '@theia/git/lib/common';
+import { GitErrorHandler } from '@theia/git/lib/browser/git-error-handler';
 
 @injectable()
 export class GitSyncService {
