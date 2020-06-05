@@ -78,7 +78,7 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
             return undefined;
         }
         if (ApplicationShell.TrackableWidgetProvider.is(widget)) {
-            for (const childWidget of await widget.getTrackableWidgets()) {
+            for (const childWidget of widget.getTrackableWidgets()) {
                 const editorWidget = await this.findEditorWidgetByUri(childWidget, uriAsString);
                 if (editorWidget) {
                     return editorWidget;
