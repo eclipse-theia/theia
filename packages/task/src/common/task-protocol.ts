@@ -28,15 +28,15 @@ export enum DependsOrder {
 }
 
 export enum RevealKind {
-    Always,
-    Silent,
-    Never
+    Always = 'always',
+    Silent = 'silent',
+    Never = 'never'
 }
 
 export enum PanelKind {
-    Shared,
-    Dedicated,
-    New
+    Shared = 'shared',
+    Dedicated = 'dedicated',
+    New = 'new'
 }
 
 export interface TaskOutputPresentation {
