@@ -15,23 +15,24 @@
  ********************************************************************************/
 
 import { interfaces, Container } from 'inversify';
-import { WidgetFactory, OpenHandler } from '@theia/core/lib/browser';
-import { GitCommitDetailWidget, GitCommitDetailWidgetOptions } from './git-commit-detail-widget';
+import { WidgetFactory, OpenHandler, TreeModel } from '@theia/core/lib/browser';
+import { GitCommitDetailWidgetOptions } from './git-commit-detail-widget-options';
+import { GitCommitDetailWidget } from './git-commit-detail-widget';
+import { GitCommitDetailHeaderWidget } from './git-commit-detail-header-widget';
+import { GitDiffTreeModel } from '../diff/git-diff-tree-model';
 import { GitCommitDetailOpenHandler } from './git-commit-detail-open-handler';
 import { GitScmProvider } from '../git-scm-provider';
-import { ScmHistoryCommit } from '@theia/scm-extra/lib/browser/scm-file-change-node';
-
+import { createScmTreeContainer } from '@theia/scm/lib/browser/scm-frontend-module';
+import { GitResourceOpener } from '../diff/git-resource-opener';
+import { GitOpenerInSecondaryArea } from './git-opener-in-secondary-area';
 import '../../../src/browser/style/git-icons.css';
 
 export function bindGitHistoryModule(bind: interfaces.Bind): void {
 
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: GitScmProvider.GIT_COMMIT_DETAIL,
-        createWidget: (options: ScmHistoryCommit) => {
-            const child = new Container({ defaultScope: 'Singleton' });
-            child.parent = ctx.container;
-            child.bind(GitCommitDetailWidget).toSelf();
-            child.bind(GitCommitDetailWidgetOptions).toConstantValue(options);
+        createWidget: (options: GitCommitDetailWidgetOptions) => {
+            const child = createGitCommitDetailWidgetContainer(ctx.container, options);
             return child.get(GitCommitDetailWidget);
         }
     }));
@@ -39,4 +40,21 @@ export function bindGitHistoryModule(bind: interfaces.Bind): void {
     bind(GitCommitDetailOpenHandler).toSelf();
     bind(OpenHandler).toService(GitCommitDetailOpenHandler);
 
+}
+
+export function createGitCommitDetailWidgetContainer(parent: interfaces.Container, options: GitCommitDetailWidgetOptions): Container {
+    const child = createScmTreeContainer(parent);
+    child.bind(GitCommitDetailWidget).toSelf();
+    child.bind(GitCommitDetailHeaderWidget).toSelf();
+    child.bind(GitDiffTreeModel).toSelf();
+    child.bind(TreeModel).toService(GitDiffTreeModel);
+    child.bind(GitOpenerInSecondaryArea).toSelf();
+    child.bind(GitResourceOpener).toService(GitOpenerInSecondaryArea);
+    child.bind(GitCommitDetailWidgetOptions).toConstantValue(options);
+
+    const opener = child.get(GitOpenerInSecondaryArea);
+    const widget = child.get(GitCommitDetailWidget);
+    opener.setRefWidget(widget);
+
+    return child;
 }

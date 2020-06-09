@@ -19,11 +19,29 @@
     mask: url('git-diff.svg');
 }
 
-.theia-git .git-diff-container {
+.theia-git.git-diff-container {
     display: flex;
     flex-direction: column;
     position: relative;
     height: 100%;
+}
+
+.theia-git.git-diff-container .noWrapInfo {
+    width: 100%;
+}
+
+.theia-git .listContainer {
+    flex: 1;
+    position: relative;
+}
+
+.theia-git .listContainer .commitList {
+    height: 100%;
+}
+
+.theia-git .subject {
+    font-size: var(--theia-ui-font-size2);
+    font-weight: bold;
 }
 
 .theia-git .revision .row-title {
@@ -62,30 +80,18 @@
     padding-right: 5px;
 }
 
-.theia-git .lrBtns {
-    display:flex;
-    align-items: center;
-    margin-right: 2px;
+.theia-git .diff-header .subject {
+    font-size: var(--theia-ui-font-size2);
+    font-weight: bold;
 }
 
-.theia-git .lrBtns span {
-    display: inline-block;
-    margin-left: 10px;
-    cursor: pointer;
-}
-
-.theia-git .listContainer.filesChanged {
-    flex: 1;
-    overflow: auto;
-}
-
-.theia-git .scm-diff-container .commit-info {
+.theia-git .commit-info {
     padding-left: 10px;
     box-sizing: border-box;
     overflow: hidden;
 }
 
-.theia-git .scm-diff-container .commit-info-row {
+.theia-git .commit-info-row {
     align-items: center;
     margin-top: 10px;
 }
@@ -105,4 +111,3 @@
 .theia-git .commit-info-row .image-container {
     display: flex;
 }
-

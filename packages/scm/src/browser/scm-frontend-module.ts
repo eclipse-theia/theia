@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import '../../src/browser/style/index.css';
-import '../../src/browser/style/diff.css';
 
 import { interfaces, ContainerModule, Container } from 'inversify';
 import {
@@ -31,7 +30,8 @@ import { ScmTreeWidget } from './scm-tree-widget';
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
-import { ScmTreeModel, ScmTreeModelProps } from './scm-tree-model';
+import { ScmTreeModelProps } from './scm-tree-model';
+import { ScmGroupsTreeModel } from './scm-groups-tree-model';
 import { ScmQuickOpenService } from './scm-quick-open-service';
 import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser';
@@ -55,7 +55,10 @@ export default new ContainerModule(bind => {
     bind(ScmWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: SCM_WIDGET_FACTORY_ID,
-        createWidget: () => container.get(ScmWidget)
+        createWidget: () => {
+            const child = createScmWidgetContainer(container);
+            return child.get(ScmWidget);
+        }
     })).inSingletonScope();
 
     bind(ScmCommitWidget).toSelf();
@@ -64,10 +67,6 @@ export default new ContainerModule(bind => {
         createWidget: () => container.get(ScmCommitWidget)
     })).inSingletonScope();
 
-    bind(ScmTreeWidget).toDynamicValue(ctx => {
-        const child = createScmTreeContainer(ctx.container);
-        return child.get(ScmTreeWidget);
-    });
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: ScmTreeWidget.ID,
         createWidget: () => container.get(ScmTreeWidget)
@@ -133,14 +132,20 @@ export function createScmTreeContainer(parent: interfaces.Container): Container 
     });
 
     child.unbind(TreeWidget);
-    child.bind(ScmTreeWidget).toSelf();
-
+    child.unbind(TreeModel);
     child.unbind(TreeModelImpl);
-    child.bind(ScmTreeModel).toSelf();
-    child.rebind(TreeModel).toService(ScmTreeModel);
+
+    child.bind(ScmTreeWidget).toSelf();
 
     child.bind(ScmTreeModelProps).toConstantValue({
         defaultExpansion: 'expanded',
     });
+    return child;
+}
+
+export function createScmWidgetContainer(parent: interfaces.Container): Container {
+    const child = createScmTreeContainer(parent);
+    child.bind(ScmGroupsTreeModel).toSelf();
+    child.bind(TreeModel).toService(ScmGroupsTreeModel);
     return child;
 }
