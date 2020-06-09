@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2020 Arm and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,104 +14,123 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
-import { Widget } from '@phosphor/widgets';
-import { LabelProvider } from '@theia/core/lib/browser';
-import { GitFileChange } from '../../common';
-import { GitDiffWidget } from '../diff/git-diff-widget';
-import { GitRepositoryProvider } from '../git-repository-provider';
-import { ScmAvatarService } from '@theia/scm/lib/browser/scm-avatar-service';
-import * as React from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-export const GitCommitDetailWidgetOptions = Symbol('GitCommitDetailWidgetOptions');
-export interface GitCommitDetailWidgetOptions {
-    commitSha: string;
-    commitMessage: string;
-    messageBody?: string;
-    authorName: string;
-    authorEmail: string;
-    authorDate: string;
-    authorDateRelative: string;
-}
+import { Message } from '@phosphor/messaging';
+import { injectable, inject, postConstruct } from 'inversify';
+import {
+    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, PreferenceChangeEvent
+} from '@theia/core/lib/browser';
+import { GitCommitDetailWidgetOptions } from './git-commit-detail-widget-options';
+import { GitCommitDetailHeaderWidget } from './git-commit-detail-header-widget';
+import { ScmService } from '@theia/scm/lib/browser/scm-service';
+import { GitDiffTreeModel } from '../diff/git-diff-tree-model';
+import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
+import { ScmPreferences, ScmConfiguration } from '@theia/scm/lib/browser/scm-preferences';
 
 @injectable()
-export class GitCommitDetailWidget extends GitDiffWidget {
+export class GitCommitDetailWidget extends BaseWidget implements StatefulWidget {
 
-    protected authorAvatar: string;
+    protected panel: Panel;
+
+    @inject(ScmService) protected readonly scmService: ScmService;
+    @inject(GitCommitDetailHeaderWidget) protected readonly commitDetailHeaderWidget: GitCommitDetailHeaderWidget;
+    @inject(ScmTreeWidget) protected readonly resourceWidget: ScmTreeWidget;
+    @inject(GitDiffTreeModel) protected readonly model: GitDiffTreeModel;
+    @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
+
+    set viewMode(mode: 'tree' | 'list') {
+        this.resourceWidget.viewMode = mode;
+    }
+    get viewMode(): 'tree' | 'list' {
+        return this.resourceWidget.viewMode;
+    }
 
     constructor(
-        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
-        @inject(ScmAvatarService) protected readonly avatarService: ScmAvatarService,
-        @inject(GitCommitDetailWidgetOptions) protected readonly commitDetailOptions: GitCommitDetailWidgetOptions
+        @inject(GitCommitDetailWidgetOptions) protected readonly options: GitCommitDetailWidgetOptions
     ) {
         super();
-        this.id = 'commit' + commitDetailOptions.commitSha;
-        this.title.label = commitDetailOptions.commitSha.substr(0, 8);
-        this.options = {
-            range: {
-                fromRevision: commitDetailOptions.commitSha + '~1',
-                toRevision: commitDetailOptions.commitSha
-            }
-        };
+        this.id = 'commit' + options.commitSha;
+        this.title.label = options.commitSha.substr(0, 8);
         this.title.closable = true;
         this.title.iconClass = 'icon-git-commit tab-git-icon';
+
+        this.addClass('theia-scm');
+        this.addClass('theia-git');
+        this.addClass('git-diff-container');
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
-        this.authorAvatar = await this.avatarService.getAvatar(this.commitDetailOptions.authorEmail);
+    protected init(): void {
+        const layout = new PanelLayout();
+        this.layout = layout;
+        this.panel = new Panel({
+            layout: new PanelLayout({
+            })
+        });
+        this.panel.node.tabIndex = -1;
+        this.panel.node.setAttribute('class', 'theia-scm-panel');
+        layout.addWidget(this.panel);
+
+        this.containerLayout.addWidget(this.commitDetailHeaderWidget);
+        this.containerLayout.addWidget(this.resourceWidget);
+
+        this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
+        this.toDispose.push(this.scmPreferences.onPreferenceChanged((e: PreferenceChangeEvent<ScmConfiguration>) => {
+            if (e.preferenceName === 'scm.defaultViewMode') {
+                this.updateViewMode(e.newValue!);
+            }
+        }));
+
+        const diffOptions = {
+            range: {
+                fromRevision: this.options.commitSha + '~1',
+                toRevision: this.options.commitSha
+            }
+        };
+        this.model.setContent({ rootUri: this.options.rootUri, diffOptions });
     }
 
-    protected renderDiffListHeader(): React.ReactNode {
-        const authorEMail = this.commitDetailOptions.authorEmail;
-        const subject = <div className='subject'>{this.commitDetailOptions.commitMessage}</div>;
-        const body = <div className='body'>{this.commitDetailOptions.messageBody || ''}</div>;
-        const subjectRow = <div className='header-row'><div className='subjectContainer'>{subject}{body}</div></div>;
-        const author = <div className='author header-value noWrapInfo'>{this.commitDetailOptions.authorName}</div>;
-        const mail = <div className='mail header-value noWrapInfo'>{`<${authorEMail}>`}</div>;
-        const authorRow = <div className='header-row noWrapInfo'><div className='theia-header'>author: </div>{author}</div>;
-        const mailRow = <div className='header-row noWrapInfo'><div className='theia-header'>e-mail: </div>{mail}</div>;
-        const authorDate = new Date(this.commitDetailOptions.authorDate);
-        const dateStr = authorDate.toLocaleDateString('en', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour12: true,
-            hour: 'numeric',
-            minute: 'numeric'
-        });
-        const date = <div className='date header-value noWrapInfo'>{dateStr}</div>;
-        const dateRow = <div className='header-row noWrapInfo'><div className='theia-header'>date: </div>{date}</div>;
-        const revisionRow = <div className='header-row noWrapInfo'>
-            <div className='theia-header'>revision: </div>
-            <div className='header-value noWrapInfo'>{this.commitDetailOptions.commitSha}</div>
-        </div>;
-        const gravatar = <div className='image-container'>
-            <img className='gravatar' src={this.authorAvatar}></img></div>;
-        const commitInfo = <div className='header-row commit-info-row'>{gravatar}<div className='commit-info'>{authorRow}{mailRow}{dateRow}{revisionRow}</div></div>;
-        const header = <div className='theia-header'>Files changed</div>;
-
-        return <div className='diff-header'>{subjectRow}{commitInfo}{header}</div>;
+    get containerLayout(): PanelLayout {
+        return this.panel.layout as PanelLayout;
     }
 
-    protected ref: Widget | undefined;
-    protected async revealChange(change: GitFileChange): Promise<void> {
-        const ref = this.ref;
-        const widget = await this.openChange(change, {
-            mode: 'reveal',
-            widgetOptions: ref ?
-                { area: 'main', mode: 'tab-after', ref } :
-                { area: 'main', mode: 'split-right', ref: this }
-        });
-        this.ref = widget instanceof Widget ? widget : undefined;
-        if (this.ref) {
-            this.ref.disposed.connect(() => {
-                if (this.ref === widget) {
-                    this.ref = undefined;
-                }
-            });
-        }
+    /**
+     * Updates the view mode based on the preference value.
+     * @param preference the view mode preference.
+     */
+    protected updateViewMode(preference: 'tree' | 'list'): void {
+        this.viewMode = preference;
+    }
+
+    protected updateImmediately(): void {
+        this.onUpdateRequest(Widget.Msg.UpdateRequest);
+    }
+
+    protected onUpdateRequest(msg: Message): void {
+        MessageLoop.sendMessage(this.commitDetailHeaderWidget, msg);
+        MessageLoop.sendMessage(this.resourceWidget, msg);
+        super.onUpdateRequest(msg);
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        this.node.appendChild(this.commitDetailHeaderWidget.node);
+        this.node.appendChild(this.resourceWidget.node);
+
+        super.onAfterAttach(msg);
+        this.update();
+    }
+
+    storeState(): any {
+        const state: object = {
+            changesTreeState: this.resourceWidget.storeState(),
+        };
+        return state;
+    }
+
+    restoreState(oldState: any): void {
+        const { changesTreeState } = oldState;
+        this.resourceWidget.restoreState(changesTreeState);
     }
 
 }
