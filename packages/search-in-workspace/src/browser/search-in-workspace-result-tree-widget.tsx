@@ -212,10 +212,15 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         this.cancelIndicator = new CancellationTokenSource();
         const cancelIndicator = this.cancelIndicator;
         const token = this.cancelIndicator.token;
+        const progress = await this.progressService.showProgress({ text: `search: ${searchTerm}`, options: { location: 'search' } });
         token.onCancellationRequested(() => {
+            progress.cancel();
+            if (searchId) {
+                this.searchService.cancel(searchId);
+            }
+            this.cancelIndicator = undefined;
             this.changeEmitter.fire(this.resultTree);
         });
-        const progress = await this.progressService.showProgress({ text: `search: ${searchTerm}`, options: { location: 'search' } });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let pendingRefreshTimeout: any;
         const searchId = await this.searchService.search(searchTerm, {
@@ -260,13 +265,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 this.refreshModelChildren();
             }
         }, searchOptions).catch(() => undefined);
-        token.onCancellationRequested(() => {
-            progress.cancel();
-            if (searchId) {
-                this.searchService.cancel(searchId);
-            }
-            this.cancelIndicator = undefined;
-        });
     }
 
     focusFirstResult(): void {
