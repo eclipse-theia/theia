@@ -1808,6 +1808,10 @@ export class Task {
     }
 }
 
+export class Task2 extends Task {
+    detail?: string;
+}
+
 export class DebugAdapterExecutable {
     /**
      * The command or path of the debug adapter executable.
