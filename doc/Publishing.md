@@ -42,7 +42,7 @@ Login to [Eclipse Foundation Theia project page]( https://projects.eclipse.org/p
 
 ## Announce upcoming release
 
-It's good to give a heads-up to the Theia developers some hours before a release. One can use whatever forum is appropriate. At the time of writing this is `spectrum`. Here is an [example](https://spectrum.chat/theia/dev/0-11-0-release~f8181a53-436a-4b35-a3e3-a447a298a334).
+It's good to give a heads-up to the Theia developers some hours before a release. One can use whatever forum is appropriate. At the time of writing this is `Discourse`. Here is an [example](https://community.theia-ide.org/t/0-11-0-release/373).
 
 ## Pre-Publishing Steps
 
