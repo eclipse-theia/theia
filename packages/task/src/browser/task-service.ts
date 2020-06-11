@@ -332,18 +332,38 @@ export class TaskService implements TaskConfigurationClient {
         return `${taskName} (${this.labelProvider.getName(new URI(sourceStrUri))})`;
     }
 
-    /** Returns an array of the task configurations configured in tasks.json and provided by the extensions. */
-    async getTasks(): Promise<TaskConfiguration[]> {
-        const configuredTasks = await this.getConfiguredTasks();
-        const providedTasks = await this.getProvidedTasks();
+    /**
+     * Client should call this method to indicate that a new user-level action related to tasks has been started,
+     * like invoking "Run Task..."
+     * This method returns a token that can be used with various methods in this service.
+     * As long as a client uses the same token, task providers will only asked once to contribute
+     * tasks and the set of tasks will be cached. Each time the a new token is used, the cache of
+     * contributed tasks is cleared.
+     * @returns a token to be used for task-related actions
+     */
+    startUserAction(): number {
+        return this.providedTaskConfigurations.startUserAction();
+    }
+
+    /**
+     * Returns an array of the task configurations configured in tasks.json and provided by the extensions.
+     * @param token  The cache token for the user interaction in progress
+     */
+    async getTasks(token: number): Promise<TaskConfiguration[]> {
+        const configuredTasks = await this.getConfiguredTasks(token);
+        const providedTasks = await this.getProvidedTasks(token);
         const notCustomizedProvidedTasks = providedTasks.filter(provided =>
             !configuredTasks.some(configured => this.taskDefinitionRegistry.compareTasks(configured, provided))
         );
         return [...configuredTasks, ...notCustomizedProvidedTasks];
     }
 
-    /** Returns an array of the valid task configurations which are configured in tasks.json files */
-    async getConfiguredTasks(): Promise<TaskConfiguration[]> {
+    /**
+     * Returns an array of the valid task configurations which are configured in tasks.json files
+     * @param token  The cache token for the user interaction in progress
+     *
+     */
+    async getConfiguredTasks(token: number): Promise<TaskConfiguration[]> {
         const invalidTaskConfig = this.taskConfigurations.getInvalidTaskConfigurations()[0];
         if (invalidTaskConfig) {
             const widget = <ProblemWidget>await this.widgetManager.getOrCreateWidget(PROBLEMS_WIDGET_ID);
@@ -373,13 +393,16 @@ export class TaskService implements TaskConfigurationClient {
             }
         }
 
-        const validTaskConfigs = await this.taskConfigurations.getTasks();
+        const validTaskConfigs = await this.taskConfigurations.getTasks(token);
         return validTaskConfigs;
     }
 
-    /** Returns an array of the task configurations which are provided by the extensions. */
-    getProvidedTasks(): Promise<TaskConfiguration[]> {
-        return this.providedTaskConfigurations.getTasks();
+    /**
+     * Returns an array of the task configurations which are provided by the extensions.
+     * @param token  The cache token for the user interaction in progress
+     */
+    getProvidedTasks(token: number): Promise<TaskConfiguration[]> {
+        return this.providedTaskConfigurations.getTasks(token);
     }
 
     addRecentTasks(tasks: TaskConfiguration | TaskConfiguration[]): void {
@@ -417,11 +440,15 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
-     * Returns a task configuration provided by an extension by task source and label.
+     * Returns a task configuration provided by an extension by task source, scope and label.
      * If there are no task configuration, returns undefined.
+     * @param token  The cache token for the user interaction in progress
+     * @param source The source for configured tasks
+     * @param label  The label of the task to find
+     * @param scope  The task scope to look in
      */
-    async getProvidedTask(source: string, label: string, scope: TaskConfigurationScope): Promise<TaskConfiguration | undefined> {
-        return this.providedTaskConfigurations.getTask(source, label, scope);
+    async getProvidedTask(token: number, source: string, label: string, scope: TaskConfigurationScope): Promise<TaskConfiguration | undefined> {
+        return this.providedTaskConfigurations.getTask(token, source, label, scope);
     }
 
     /** Returns an array of running tasks 'TaskInfo' objects */
@@ -446,39 +473,47 @@ export class TaskService implements TaskConfigurationClient {
     /**
      * Runs a task, by task configuration label.
      * Note, it looks for a task configured in tasks.json only.
+     * @param token  The cache token for the user interaction in progress
+     * @param scope The scope where to look for tasks
+     * @param taskLabel the label to look for
      */
-    async runConfiguredTask(scope: TaskConfigurationScope, taskLabel: string): Promise<void> {
+    async runConfiguredTask(token: number, scope: TaskConfigurationScope, taskLabel: string): Promise<void> {
         const task = this.taskConfigurations.getTask(scope, taskLabel);
         if (!task) {
             this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
             return;
         }
 
-        this.run(task._source, taskLabel, scope);
+        this.run(token, task._source, taskLabel, scope);
     }
 
     /**
      * Run the last executed task.
+     * @param token  The cache token for the user interaction in progress
      */
-    async runLastTask(): Promise<TaskInfo | undefined> {
+    async runLastTask(token: number): Promise<TaskInfo | undefined> {
         if (!this.lastTask) {
             return;
         }
         const { source, taskLabel, scope } = this.lastTask;
-        return this.run(source, taskLabel, scope);
+        return this.run(token, source, taskLabel, scope);
     }
 
     /**
      * Runs a task, by the source and label of the task configuration.
      * It looks for configured and detected tasks.
+     * @param token  The cache token for the user interaction in progress
+     * @param source The source for configured tasks
+     * @param taskLabel The label to look for
+     * @param scope  The scope where to look for tasks
      */
-    async run(source: string, taskLabel: string, scope: TaskConfigurationScope): Promise<TaskInfo | undefined> {
+    async run(token: number, source: string, taskLabel: string, scope: TaskConfigurationScope): Promise<TaskInfo | undefined> {
         let task: TaskConfiguration | undefined;
         task = this.taskConfigurations.getTask(scope, taskLabel);
         if (!task) { // if a configured task cannot be found, search from detected tasks
-            task = await this.getProvidedTask(source, taskLabel, scope);
+            task = await this.getProvidedTask(token, source, taskLabel, scope);
             if (!task) { // find from the customized detected tasks
-                task = await this.taskConfigurations.getCustomizedTask(scope, taskLabel);
+                task = await this.taskConfigurations.getCustomizedTask(token, scope, taskLabel);
             }
             if (!task) {
                 this.logger.error(`Can't get task launch configuration for label: ${taskLabel}`);
@@ -504,7 +539,7 @@ export class TaskService implements TaskConfigurationClient {
                     customizationObject.problemMatcher = matcherNames;
 
                     // write the selected matcher (or the decision of "never parse") into the `tasks.json`
-                    this.updateTaskConfiguration(task, { problemMatcher: matcherNames });
+                    this.updateTaskConfiguration(token, task, { problemMatcher: matcherNames });
                 } else if (selected.learnMore) { // user wants to learn more about parsing task output
                     open(this.openerService, new URI('https://code.visualstudio.com/docs/editor/tasks#_processing-task-output-with-problem-matchers'));
                 }
@@ -520,7 +555,7 @@ export class TaskService implements TaskConfigurationClient {
         };
 
         if (task.dependsOn) {
-            return this.runCompoundTask(task, runTaskOption);
+            return this.runCompoundTask(token, task, runTaskOption);
         } else {
             return this.runTask(task, runTaskOption).catch(error => {
                 console.error('Error at launching task', error);
@@ -529,8 +564,14 @@ export class TaskService implements TaskConfigurationClient {
         }
     }
 
-    async runCompoundTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
-        const tasks = await this.getWorkspaceTasks(task._scope);
+    /**
+     * Runs a compound task
+     * @param token  The cache token for the user interaction in progress
+     * @param task The task to be executed
+     * @param option options for executing the task
+     */
+    async runCompoundTask(token: number, task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        const tasks = await this.getWorkspaceTasks(token, task._scope);
         try {
             const rootNode = new TaskNode(task, [], []);
             this.detectDirectedAcyclicGraph(task, rootNode, tasks);
@@ -785,8 +826,14 @@ export class TaskService implements TaskConfigurationClient {
         }
     }
 
-    async runTaskByLabel(taskLabel: string): Promise<TaskInfo | undefined> {
-        const tasks: TaskConfiguration[] = await this.getTasks();
+    /**
+     * Runs the first task with the given label.
+     *
+     * @param token  The cache token for the user interaction in progress
+     * @param taskLabel The label of the task to be executed
+     */
+    async runTaskByLabel(token: number, taskLabel: string): Promise<TaskInfo | undefined> {
+        const tasks: TaskConfiguration[] = await this.getTasks(token);
         for (const task of tasks) {
             if (task.label === taskLabel) {
                 return this.runTask(task);
@@ -795,8 +842,15 @@ export class TaskService implements TaskConfigurationClient {
         return;
     }
 
-    async runWorkspaceTask(workspaceFolderUri: string | undefined, taskIdentifier: string | TaskIdentifier): Promise<TaskInfo | undefined> {
-        const tasks = await this.getWorkspaceTasks(workspaceFolderUri);
+    /**
+     * Runs a task identified by the given identifier, but only if found in the give workspace folder
+     *
+     * @param token  The cache token for the user interaction in progress
+     * @param workspaceFolderUri  The folder to restrict the search to
+     * @param taskIdentifier The identifier to look for
+     */
+    async runWorkspaceTask(token: number, workspaceFolderUri: string | undefined, taskIdentifier: string | TaskIdentifier): Promise<TaskInfo | undefined> {
+        const tasks = await this.getWorkspaceTasks(token, workspaceFolderUri);
         const task = this.getDependentTask(taskIdentifier, tasks);
         if (!task) {
             return undefined;
@@ -824,11 +878,12 @@ export class TaskService implements TaskConfigurationClient {
      * Updates the task configuration in the `tasks.json`.
      * The task config, together with updates, will be written into the `tasks.json` if it is not found in the file.
      *
+     * @param token  The cache token for the user interaction in progress
      * @param task task that the updates will be applied to
      * @param update the updates to be applied
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async updateTaskConfiguration(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
+    async updateTaskConfiguration(token: number, task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
         if (update.problemMatcher) {
             if (Array.isArray(update.problemMatcher)) {
                 update.problemMatcher.forEach((name, index) => {
@@ -840,11 +895,11 @@ export class TaskService implements TaskConfigurationClient {
                 update.problemMatcher = `$${update.problemMatcher}`;
             }
         }
-        this.taskConfigurations.updateTaskConfig(task, update);
+        this.taskConfigurations.updateTaskConfig(token, task, update);
     }
 
-    protected async getWorkspaceTasks(restrictToFolder: TaskConfigurationScope | undefined): Promise<TaskConfiguration[]> {
-        const tasks = await this.getTasks();
+    protected async getWorkspaceTasks(token: number, restrictToFolder: TaskConfigurationScope | undefined): Promise<TaskConfiguration[]> {
+        const tasks = await this.getTasks(token);
         // if we pass undefined, return everything, otherwise only tasks with the same uri or workspace/global scope tasks
         return tasks.filter(t => typeof t._scope !== 'string' || t._scope === restrictToFolder);
     }
@@ -1049,8 +1104,14 @@ export class TaskService implements TaskConfigurationClient {
         }
     }
 
-    async configure(task: TaskConfiguration): Promise<void> {
-        await this.taskConfigurations.configure(task);
+    /**
+     * Opens an editor to configure the given task.
+     *
+     * @param token  The cache token for the user interaction in progress
+     * @param task The task to configure
+     */
+    async configure(token: number, task: TaskConfiguration): Promise<void> {
+        await this.taskConfigurations.configure(token, task);
     }
 
     protected isEventForThisClient(context: string | undefined): boolean {

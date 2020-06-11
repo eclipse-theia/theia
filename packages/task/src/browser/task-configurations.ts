@@ -136,13 +136,13 @@ export class TaskConfigurations implements Disposable {
      *
      * The invalid task configs are not returned.
      */
-    async getTasks(): Promise<TaskConfiguration[]> {
+    async getTasks(token: number): Promise<TaskConfiguration[]> {
         const configuredTasks = Array.from(this.tasksMap.values()).reduce((acc, labelConfigMap) => acc.concat(Array.from(labelConfigMap.values())), [] as TaskConfiguration[]);
         const detectedTasksAsConfigured: TaskConfiguration[] = [];
         for (const [rootFolder, customizations] of Array.from(this.taskCustomizationMap.entries())) {
             for (const cus of customizations) {
                 // TODO: getTasksToCustomize() will ask all task providers to contribute tasks. Doing this in a loop is bad.
-                const detected = await this.providedTaskConfigurations.getTaskToCustomize(cus, rootFolder);
+                const detected = await this.providedTaskConfigurations.getTaskToCustomize(token, cus, rootFolder);
                 if (detected) {
                     // there might be a provided task that has a different scope from the task we're inspecting
                     detectedTasksAsConfigured.push({ ...detected, ...cus });
@@ -193,12 +193,12 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** returns the customized task for a given label or undefined if none */
-    async getCustomizedTask(scope: TaskConfigurationScope, taskLabel: string): Promise<TaskConfiguration | undefined> {
+    async getCustomizedTask(token: number, scope: TaskConfigurationScope, taskLabel: string): Promise<TaskConfiguration | undefined> {
         const customizations = this.taskCustomizationMap.get(this.getKeyFromScope(scope));
         if (customizations) {
             const customization = customizations.find(cus => cus.label === taskLabel);
             if (customization) {
-                const detected = await this.providedTaskConfigurations.getTaskToCustomize(customization, scope);
+                const detected = await this.providedTaskConfigurations.getTaskToCustomize(token, customization, scope);
                 if (detected) {
                     return {
                         ...detected,
@@ -307,7 +307,7 @@ export class TaskConfigurations implements Disposable {
     }
 
     /** Adds given task to a config file and opens the file to provide ability to edit task configuration. */
-    async configure(task: TaskConfiguration): Promise<void> {
+    async configure(token: number, task: TaskConfiguration): Promise<void> {
         const scope = task._scope;
         if (scope === TaskScope.Global) {
             return this.openUserTasks();
@@ -322,7 +322,7 @@ export class TaskConfigurations implements Disposable {
             return;
         }
 
-        const configuredAndCustomizedTasks = await this.getTasks();
+        const configuredAndCustomizedTasks = await this.getTasks(token);
         if (!configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) {
             await this.saveTask(scope, { ...task, problemMatcher: [] });
         }
@@ -458,9 +458,9 @@ export class TaskConfigurations implements Disposable {
      * @param update the updates to be applied
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async updateTaskConfig(task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
+    async updateTaskConfig(token: number, task: TaskConfiguration, update: { [name: string]: any }): Promise<void> {
         const scope = task._scope;
-        const configuredAndCustomizedTasks = await this.getTasks();
+        const configuredAndCustomizedTasks = await this.getTasks(token);
         if (configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) { // task is already in `tasks.json`
             const jsonTasks = this.taskConfigurationManager.getTasks(scope);
             if (jsonTasks) {

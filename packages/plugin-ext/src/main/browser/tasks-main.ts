@@ -105,9 +105,10 @@ export class TasksMainImpl implements TasksMain, Disposable {
             return [];
         }
 
+        const token: number = this.taskService.startUserAction();
         const [configured, provided] = await Promise.all([
-            this.taskService.getConfiguredTasks(),
-            this.taskService.getProvidedTasks()
+            this.taskService.getConfiguredTasks(token),
+            this.taskService.getProvidedTasks(token)
         ]);
         const result: TaskDto[] = [];
         for (const tasks of [configured, provided]) {

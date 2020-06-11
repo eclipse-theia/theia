@@ -44,7 +44,7 @@ export class ConfigureTaskAction extends QuickOpenBaseAction {
 
     async run(item?: QuickOpenItem): Promise<void> {
         if (item instanceof TaskRunQuickOpenItem) {
-            this.taskService.configure(item.getTask());
+            this.taskService.configure(item.getToken(), item.getTask());
         }
     }
 
@@ -111,25 +111,29 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
+    init(): Promise<void> {
+        return this.doInit(this.taskService.startUserAction());
+    }
+
     /** Initialize this quick open model with the tasks. */
-    async init(): Promise<void> {
+    protected async doInit(token: number): Promise<void> {
         const recentTasks = this.taskService.recentTasks;
-        const configuredTasks = await this.taskService.getConfiguredTasks();
-        const providedTasks = await this.taskService.getProvidedTasks();
+        const configuredTasks = await this.taskService.getConfiguredTasks(token);
+        const providedTasks = await this.taskService.getProvidedTasks(token);
 
         const { filteredRecentTasks, filteredConfiguredTasks, filteredProvidedTasks } = this.getFilteredTasks(recentTasks, configuredTasks, providedTasks);
         const isMulti: boolean = this.workspaceService.isMultiRootWorkspaceOpened;
         this.items = [];
         this.items.push(
             ...filteredRecentTasks.map((task, index) => {
-                const item = new TaskRunQuickOpenItem(task, this.taskService, isMulti, {
+                const item = new TaskRunQuickOpenItem(token, task, this.taskService, isMulti, {
                     groupLabel: index === 0 ? 'recently used tasks' : undefined,
                     showBorder: false
                 }, this.taskDefinitionRegistry, this.taskNameResolver, this.taskSourceResolver);
                 return item;
             }),
             ...filteredConfiguredTasks.map((task, index) => {
-                const item = new TaskRunQuickOpenItem(task, this.taskService, isMulti, {
+                const item = new TaskRunQuickOpenItem(token, task, this.taskService, isMulti, {
                     groupLabel: index === 0 ? 'configured tasks' : undefined,
                     showBorder: (
                         filteredRecentTasks.length <= 0
@@ -140,7 +144,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                 return item;
             }),
             ...filteredProvidedTasks.map((task, index) => {
-                const item = new TaskRunQuickOpenItem(task, this.taskService, isMulti, {
+                const item = new TaskRunQuickOpenItem(token, task, this.taskService, isMulti, {
                     groupLabel: index === 0 ? 'detected tasks' : undefined,
                     showBorder: (
                         filteredRecentTasks.length <= 0 && filteredConfiguredTasks.length <= 0
@@ -156,7 +160,8 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
     }
 
     async open(): Promise<void> {
-        await this.init();
+        const token: number = this.taskService.startUserAction();
+        await this.doInit(token);
         if (!this.items.length) {
             this.items.push(new QuickOpenItem({
                 label: 'No task to run found. Configure Tasks...',
@@ -235,8 +240,10 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         this.actionProvider = undefined;
         const isMulti: boolean = this.workspaceService.isMultiRootWorkspaceOpened;
 
-        const configuredTasks = await this.taskService.getConfiguredTasks();
-        const providedTasks = await this.taskService.getProvidedTasks();
+        const token: number = this.taskService.startUserAction();
+
+        const configuredTasks = await this.taskService.getConfiguredTasks(token);
+        const providedTasks = await this.taskService.getProvidedTasks(token);
 
         // check if tasks.json exists. If not, display "Create tasks.json file from template"
         // If tasks.json exists and empty, display 'Open tasks.json file'
@@ -248,6 +255,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
             this.items.push(
                 ...configs.map(taskConfig => {
                     const item = new TaskConfigureQuickOpenItem(
+                        token,
                         taskConfig,
                         this.taskService,
                         this.taskNameResolver,
@@ -270,6 +278,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                 this.items.push(
                     ...configs.map((taskConfig, index) => {
                         const item = new TaskConfigureQuickOpenItem(
+                            token,
                             taskConfig,
                             this.taskService,
                             this.taskNameResolver,
@@ -319,7 +328,8 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
     async runBuildOrTestTask(buildOrTestType: 'build' | 'test'): Promise<void> {
         const shouldRunBuildTask = buildOrTestType === 'build';
-        await this.init();
+        const token: number = this.taskService.startUserAction();
+        await this.doInit(token);
         if (this.items.length > 1 ||
             this.items.length === 1 && (this.items[0] as TaskRunQuickOpenItem).getTask !== undefined) { // the item in `this.items` is not 'No tasks found'
 
@@ -337,9 +347,9 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                     const scope = taskToRun._scope;
 
                     if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(taskToRun)) {
-                        this.taskService.run(taskToRun.source, taskToRun.label, scope);
+                        this.taskService.run(token, taskToRun.source, taskToRun.label, scope);
                     } else {
-                        this.taskService.run(taskToRun._source, taskToRun.label, scope);
+                        this.taskService.run(token, taskToRun._source, taskToRun.label, scope);
                     }
                     return;
                 }
@@ -356,10 +366,11 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
                             return false;
                         }
 
-                        this.init().then(() => {
+                        this.doInit(token).then(() => {
                             // update the `tasks.json` file, instead of running the task itself
                             this.items = this.items.map((item: TaskRunQuickOpenItem) => {
                                 const newItem = new ConfigureBuildOrTestTaskQuickOpenItem(
+                                    token,
                                     item.getTask(),
                                     this.taskService,
                                     this.workspaceService.isMultiRootWorkspaceOpened,
@@ -466,6 +477,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
 
     constructor(
+        protected readonly token: number,
         protected readonly task: TaskConfiguration,
         protected taskService: TaskService,
         protected isMulti: boolean,
@@ -485,6 +497,10 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
         return this.taskNameResolver.resolve(this.task);
     }
 
+    getToken(): number {
+        return this.token;
+    }
+
     getGroupLabel(): string {
         return this.options.groupLabel || '';
     }
@@ -500,9 +516,9 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
 
         const scope = this.task._scope;
         if (this.taskDefinitionRegistry && !!this.taskDefinitionRegistry.getDefinition(this.task)) {
-            this.taskService.run(this.task.source || this.task._source, this.task.label, scope);
+            this.taskService.run(this.token, this.task.source || this.task._source, this.task.label, scope);
         } else {
-            this.taskService.run(this.task._source, this.task.label, scope);
+            this.taskService.run(this.token, this.task._source, this.task.label, scope);
         }
         return true;
     }
@@ -514,6 +530,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
 
 export class ConfigureBuildOrTestTaskQuickOpenItem extends TaskRunQuickOpenItem {
     constructor(
+        protected readonly token: number,
         protected readonly task: TaskConfiguration,
         protected taskService: TaskService,
         protected isMulti: boolean,
@@ -524,14 +541,14 @@ export class ConfigureBuildOrTestTaskQuickOpenItem extends TaskRunQuickOpenItem 
         protected readonly taskDefinitionRegistry: TaskDefinitionRegistry,
         protected readonly taskSourceResolver: TaskSourceResolver
     ) {
-        super(task, taskService, isMulti, options, taskDefinitionRegistry, taskNameResolver, taskSourceResolver);
+        super(token, task, taskService, isMulti, options, taskDefinitionRegistry, taskNameResolver, taskSourceResolver);
     }
 
     run(mode: QuickOpenMode): boolean {
         if (mode !== QuickOpenMode.OPEN) {
             return false;
         }
-        this.taskService.updateTaskConfiguration(this.task, { group: { kind: this.isBuildTask ? 'build' : 'test', isDefault: true } })
+        this.taskService.updateTaskConfiguration(this.token, this.task, { group: { kind: this.isBuildTask ? 'build' : 'test', isDefault: true } })
             .then(() => {
                 if (this.task._scope) {
                     this.taskConfigurationManager.openConfiguration(this.task._scope);
@@ -559,6 +576,7 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
     protected taskDefinitionRegistry: TaskDefinitionRegistry;
 
     constructor(
+        protected readonly token: number,
         protected readonly task: TaskConfiguration,
         protected readonly taskService: TaskService,
         protected readonly taskNameResolver: TaskNameResolver,
@@ -587,7 +605,7 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
         if (mode !== QuickOpenMode.OPEN) {
             return false;
         }
-        this.taskService.configure(this.task);
+        this.taskService.configure(this.token, this.task);
 
         return true;
     }

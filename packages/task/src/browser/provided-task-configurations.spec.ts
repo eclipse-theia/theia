@@ -38,7 +38,7 @@ describe('provided-task-configurations', () => {
             }
         });
 
-        const task = await container.get(ProvidedTaskConfigurations).getTask('test', 'task from test', 'test');
+        const task = await container.get(ProvidedTaskConfigurations).getTask(1, 'test', 'task from test', 'test');
         assert.isOk(task);
         assert.equal(task!.type, 'test');
         assert.equal(task!.label, 'task from test');
