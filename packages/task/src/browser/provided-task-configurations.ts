@@ -21,7 +21,6 @@ import { TaskConfiguration, TaskCustomization, TaskOutputPresentation, TaskConfi
 
 @injectable()
 export class ProvidedTaskConfigurations {
-
     /**
      * Map of source (name of extension, or path of root folder that the task config comes from) and `task config map`.
      * For the second level of inner map, the key is task label.
@@ -35,34 +34,51 @@ export class ProvidedTaskConfigurations {
     @inject(TaskDefinitionRegistry)
     protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
 
+    private currentToken: number = 0;
+    private nextToken = 1;
+
+    startUserAction(): number {
+        return this.nextToken++;
+    }
+
     /** returns a list of provided tasks */
-    async getTasks(): Promise<TaskConfiguration[]> {
-        const providers = await this.taskProviderRegistry.getProviders();
-        const providedTasks: TaskConfiguration[] = (await Promise.all(providers.map(p => p.provideTasks())))
-            .reduce((acc, taskArray) => acc.concat(taskArray), [])
-            .map(providedTask => {
-                const originalPresentation = providedTask.presentation || {};
-                return {
-                    ...providedTask,
-                    presentation: {
-                        ...TaskOutputPresentation.getDefault(),
-                        ...originalPresentation
-                    }
-                };
-            });
-        this.cacheTasks(providedTasks);
-        return providedTasks;
+    async getTasks(token: number): Promise<TaskConfiguration[]> {
+        await this.refreshTasks(token);
+        const tasks: TaskConfiguration[] = [];
+        for (const taskLabelMap of this.tasksMap!.values()) {
+            for (const taskScopeMap of taskLabelMap.values()) {
+                for (const task of taskScopeMap.values()) {
+                    tasks.push(task);
+                }
+            }
+        }
+        return tasks;
+    }
+
+    protected async refreshTasks(token: number): Promise<void> {
+        if (token !== this.currentToken) {
+            this.currentToken = token;
+            const providers = await this.taskProviderRegistry.getProviders();
+            const providedTasks: TaskConfiguration[] = (await Promise.all(providers.map(p => p.provideTasks())))
+                .reduce((acc, taskArray) => acc.concat(taskArray), [])
+                .map(providedTask => {
+                    const originalPresentation = providedTask.presentation || {};
+                    return {
+                        ...providedTask,
+                        presentation: {
+                            ...TaskOutputPresentation.getDefault(),
+                            ...originalPresentation
+                        }
+                    };
+                });
+            this.cacheTasks(providedTasks);
+        }
     }
 
     /** returns the task configuration for a given source and label or undefined if none */
-    async getTask(source: string, taskLabel: string, scope: TaskConfigurationScope): Promise<TaskConfiguration | undefined> {
-        const task = this.getCachedTask(source, taskLabel, scope);
-        if (task) {
-            return task;
-        } else {
-            await this.getTasks();
-            return this.getCachedTask(source, taskLabel, scope);
-        }
+    async getTask(token: number, source: string, taskLabel: string, scope: TaskConfigurationScope): Promise<TaskConfiguration | undefined> {
+        await this.refreshTasks(token);
+        return this.getCachedTask(source, taskLabel, scope);
     }
 
     /**
@@ -73,7 +89,7 @@ export class ProvidedTaskConfigurations {
      * @param customization the task customization
      * @return the detected task for the given task customization. If the task customization is not found, `undefined` is returned.
      */
-    async getTaskToCustomize(customization: TaskCustomization, scope: TaskConfigurationScope): Promise<TaskConfiguration | undefined> {
+    async getTaskToCustomize(token: number, customization: TaskCustomization, scope: TaskConfigurationScope): Promise<TaskConfiguration | undefined> {
         const definition = this.taskDefinitionRegistry.getDefinition(customization);
         if (!definition) {
             return undefined;
@@ -81,7 +97,7 @@ export class ProvidedTaskConfigurations {
 
         const matchedTasks: TaskConfiguration[] = [];
         let highest = -1;
-        const tasks = await this.getTasks();
+        const tasks = await this.getTasks(token);
         for (const task of tasks) { // find detected tasks that match the `definition`
             let score = 0;
             if (!definition.properties.required.every(requiredProp => customization[requiredProp] !== undefined)) {
@@ -123,6 +139,7 @@ export class ProvidedTaskConfigurations {
     }
 
     protected cacheTasks(tasks: TaskConfiguration[]): void {
+        this.tasksMap.clear();
         for (const task of tasks) {
             const label = task.label;
             const source = task._source;

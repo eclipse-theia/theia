@@ -443,7 +443,7 @@ export class DebugSessionManager {
             return true;
         }
 
-        const taskInfo = await this.taskService.runWorkspaceTask(workspaceFolderUri, taskName);
+        const taskInfo = await this.taskService.runWorkspaceTask(this.taskService.startUserAction(), workspaceFolderUri, taskName);
         if (!checkErrors) {
             return true;
         }
