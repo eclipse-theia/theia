@@ -9,7 +9,7 @@
 
   [![Gitpod Ready-to-Code](https://img.shields.io/badge/Gitpod-Ready--to--Code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/eclipse-theia/theia)
   [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/help%20wanted)
-  [![Spectrum](https://img.shields.io/badge/Chat-on%20Spectrum-blue.svg)](https://spectrum.chat/theia)
+  [![Discourse status](https://img.shields.io/discourse/status?label=Chat&server=https%3A%2F%2Fcommunity.theia-ide.org%2F)](https://community.theia-ide.org/)
   [![Build Status](https://travis-ci.com/eclipse-theia/theia.svg?branch=master)](https://travis-ci.com/eclipse-theia/theia)
   [![Publish VS Code Built-in Extensions](https://github.com/theia-ide/vscode-builtin-extensions/workflows/publish-vscode-built-in-extensions/badge.svg)](https://github.com/theia-ide/vscode-builtin-extensions/actions)
   [![Open questions](https://img.shields.io/badge/Open-questions-blue.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/question)
@@ -70,7 +70,7 @@ Read below to learn how to take part in improving Theia:
 ## Feedback
 
 Read below how to engage with Theia community:
-- Join the discussion on [Spectrum](https://spectrum.chat/theia).
+- Join the discussion on [Discourse](https://community.theia-ide.org/).
 - Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/eclipse-theia/theia/issues/new).
 - Star the repository to show your support.
 - Follow Theia on [Twitter](https://twitter.com/theia_ide).
