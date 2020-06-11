@@ -112,7 +112,7 @@
     "vscode-builtin-markdown": "https://open-vsx.org/api/vscode/markdown/1.44.2/file/vscode.markdown-1.44.2.vsix",
     "vscode-builtin-markdown-language-features": "https://open-vsx.org/api/vscode/markdown-language-features/1.39.1/file/vscode.markdown-language-features-1.39.1.vsix",
     "vscode-builtin-merge-conflict": "https://open-vsx.org/api/vscode/merge-conflict/1.44.2/file/vscode.merge-conflict-1.44.2.vsix",
-    "vscode-builtin-npm": "https://open-vsx.org/api/vscode/npm/1.39.1/file/vscode.npm-1.39.1.vsix",
+    "vscode-builtin-npm": "https://open-vsx.org/api/vscode/npm/1.44.2/file/vscode.npm-1.44.2.vsix",
     "vscode-builtin-node-debug": "https://github.com/theia-ide/vscode-node-debug/releases/download/v1.35.3/node-debug-1.35.3.vsix",
     "vscode-builtin-node-debug2": "https://open-vsx.org/api/ms-vscode/node-debug2/1.33.0/file/ms-vscode.node-debug2-1.33.0.vsix",
     "vscode-builtin-objective-c": "https://open-vsx.org/api/vscode/objective-c/1.44.2/file/vscode.objective-c-1.44.2.vsix",

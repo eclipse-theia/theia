@@ -8884,6 +8884,10 @@ declare module '@theia/plugin' {
         problemMatchers?: string[];
     }
 
+    export class Task2 extends Task {
+        detail?: string;
+    }
+
     export interface TaskProvider {
         /**
          * Provides tasks.
