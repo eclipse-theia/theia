@@ -49,6 +49,12 @@ export namespace ProblemsCommands {
     export const COPY_MESSAGE: Command = {
         id: 'problems.copy.message',
     };
+    export const CLEAR_ALL: Command = {
+        id: 'problems.clear.all',
+        category: 'Problems',
+        label: 'Clear All',
+        iconClass: 'clear-all'
+    };
 }
 
 @injectable()
@@ -145,6 +151,11 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
                 execute: selection => this.copyMessage(selection)
             })
         );
+        commands.registerCommand(ProblemsCommands.CLEAR_ALL, {
+            isEnabled: widget => this.withWidget(widget, () => true),
+            isVisible: widget => this.withWidget(widget, () => true),
+            execute: widget => this.withWidget(widget, () => this.problemManager.cleanAllMarkers())
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -172,6 +183,12 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             command: ProblemsCommands.COLLAPSE_ALL_TOOLBAR.id,
             tooltip: 'Collapse All',
             priority: 0,
+        });
+        toolbarRegistry.registerItem({
+            id: ProblemsCommands.CLEAR_ALL.id,
+            command: ProblemsCommands.CLEAR_ALL.id,
+            tooltip: 'Clear All',
+            priority: 1,
         });
     }
 
