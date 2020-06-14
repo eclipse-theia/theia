@@ -1167,6 +1167,7 @@ export interface TaskDto {
     label: string;
     source?: string;
     scope: string | number;
+    detail?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
 }

@@ -708,6 +708,9 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     const taskDto = {} as TaskDto;
     taskDto.label = task.name;
     taskDto.source = task.source;
+    if ('detail' in task) {
+        taskDto.detail = (task as theia.Task2).detail;
+    }
     if (typeof task.scope === 'object') {
         taskDto.scope = task.scope.uri.toString();
     } else if (typeof task.scope === 'number') {
@@ -748,10 +751,13 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, label, source, scope, command, args, options, windows, ...properties } = taskDto;
+    const { type, label, source, scope, detail, command, args, options, windows, ...properties } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
+    if (detail) {
+        (result as theia.Task2).detail = detail;
+    }
     if (typeof scope === 'string') {
         const uri = URI.parse(scope);
         result.scope = {
