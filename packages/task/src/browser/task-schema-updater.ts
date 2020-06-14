@@ -178,6 +178,7 @@ export class TaskSchemaUpdater {
             customizedDetectedTask.properties!.presentation = presentation;
             customizedDetectedTask.properties!.options = commandOptionsSchema;
             customizedDetectedTask.properties!.group = group;
+            customizedDetectedTask.properties!.detail = detail;
             customizedDetectedTask.additionalProperties = true;
             customizedDetectedTasks.push(customizedDetectedTask);
         });
@@ -603,6 +604,11 @@ const presentation: IJSONSchema = {
     }
 };
 
+const detail: IJSONSchema = {
+    type: 'string',
+    description: 'An optional description of a task that shows in the Run Task quick pick as a detail.'
+};
+
 const taskIdentifier: IJSONSchema = {
     type: 'object',
     additionalProperties: true,
@@ -675,7 +681,8 @@ const processTaskConfigurationSchema: IJSONSchema = {
         },
         group,
         problemMatcher,
-        presentation
+        presentation,
+        detail,
     },
     additionalProperties: true
 };

@@ -506,6 +506,10 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
         }
         return true;
     }
+
+    getDetail(): string | undefined {
+        return this.task.detail;
+    }
 }
 
 export class ConfigureBuildOrTestTaskQuickOpenItem extends TaskRunQuickOpenItem {
@@ -774,6 +778,10 @@ export class RunningTaskQuickOpenItem extends QuickOpenItem {
             return false;
         }
         return this.options.run(mode);
+    }
+
+    getDetail(): string | undefined {
+        return this.taskInfo.config.detail;
     }
 }
 
