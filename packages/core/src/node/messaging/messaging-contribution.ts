@@ -19,7 +19,7 @@ import * as url from 'url';
 import * as net from 'net';
 import * as http from 'http';
 import * as https from 'https';
-import { injectable, inject, named, postConstruct, interfaces } from 'inversify';
+import { injectable, inject, named, postConstruct, interfaces, Container } from 'inversify';
 import { MessageConnection } from 'vscode-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
@@ -173,9 +173,14 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         });
     }
 
-    protected getConnectionChannelHandlers(socket: ws): MessagingContribution.ConnectionHandlers<WebSocketChannel> {
-        const connectionContainer = this.container.createChild();
+    protected createSocketContainer(socket: ws): Container {
+        const connectionContainer: Container = this.container.createChild() as Container;
         connectionContainer.bind(ws).toConstantValue(socket);
+        return connectionContainer;
+    }
+
+    protected getConnectionChannelHandlers(socket: ws): MessagingContribution.ConnectionHandlers<WebSocketChannel> {
+        const connectionContainer = this.createSocketContainer(socket);
         bindContributionProvider(connectionContainer, ConnectionHandler);
         connectionContainer.load(...this.connectionModules.getContributions());
         const connectionChannelHandlers = new MessagingContribution.ConnectionHandlers(this.channelHandlers);
