@@ -19,8 +19,7 @@ import { Position as P, Range as R, SymbolInformation, SymbolKind as S } from 'v
 import { URI } from 'vscode-uri';
 import * as rpc from '../common/plugin-api-rpc';
 import {
-    DecorationOptions, EditorPosition, PickOpenItem, Plugin, Position, ResourceFileEditDto,
-    ResourceTextEditDto, Selection, TaskDto, WorkspaceEditDto
+    DecorationOptions, EditorPosition, PickOpenItem, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
 } from '../common/plugin-api-rpc';
 import * as model from '../common/plugin-api-rpc-model';
 import { LanguageFilter, LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
@@ -507,10 +506,10 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
         if (Array.isArray(uriOrEdits)) {
             // text edits
             const doc = documents ? documents.getDocument(uri.toString()) : undefined;
-            result.edits.push(<ResourceTextEditDto>{ resource: uri, modelVersionId: doc && doc.version, edits: uriOrEdits.map(fromTextEdit) });
+            result.edits.push(<WorkspaceTextEditDto>{ resource: uri, modelVersionId: doc && doc.version, edit: uriOrEdits.map(fromTextEdit)[0] }); // todo
         } else {
             // resource edits
-            result.edits.push(<ResourceFileEditDto>{ oldUri: uri, newUri: uriOrEdits, options: entry[2] });
+            result.edits.push(<WorkspaceFileEditDto>{ oldUri: uri, newUri: uriOrEdits, options: entry[2] });
         }
     }
     return result;

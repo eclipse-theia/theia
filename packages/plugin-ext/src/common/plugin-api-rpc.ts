@@ -1127,28 +1127,33 @@ export interface CodeActionDto {
     diagnostics?: MarkerData[];
     command?: Command;
     kind?: string;
+    isPreferred?: boolean;
+    disabled?: string;
 }
 
-export interface ResourceFileEditDto {
-    oldUri: UriComponents;
-    newUri: UriComponents;
-    options: FileOperationOptions;
+export interface WorkspaceFileEditDto {
+    oldUri?: UriComponents;
+    newUri?: UriComponents;
+    options?: FileOperationOptions;
 }
 
-export interface ResourceTextEditDto {
+export interface WorkspaceTextEditDto {
     resource: UriComponents;
     modelVersionId?: number;
-    edits: TextEdit[];
+    edit: TextEdit;
 }
-export namespace ResourceTextEditDto {
-    export function is(arg: Object): arg is ResourceTextEditDto {
-        return !!arg && typeof arg === 'object' && 'resource' in arg && 'edits' in arg;
+export namespace WorkspaceTextEditDto {
+    export function is(arg: WorkspaceTextEditDto | WorkspaceFileEditDto): arg is WorkspaceTextEditDto {
+        return !!arg
+            && 'resource' in arg
+            && 'edit' in arg
+            && arg.edit !== null
+            && typeof arg.edit === 'object';
     }
 }
 
 export interface WorkspaceEditDto {
-    edits: (ResourceFileEditDto | ResourceTextEditDto)[];
-    rejectReason?: string;
+    edits: Array<WorkspaceTextEditDto | WorkspaceFileEditDto>;
 }
 
 export interface CommandProperties {

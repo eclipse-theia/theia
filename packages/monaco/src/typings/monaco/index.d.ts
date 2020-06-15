@@ -748,7 +748,7 @@ declare module monaco.services {
         updateModel(model: monaco.editor.ITextModel, value: string | monaco.editor.ITextBufferFactory): void;
     }
 
-    // https://github.com/microsoft/vscode/blob/2277c8e2a3e1cc630a6397301ba54a1dccd8a60d/src/vs/editor/common/services/editorWorkerService.ts#L21
+    // https://github.com/microsoft/vscode/blob/standalone/0.20.x/src/vs/editor/common/services/editorWorkerService.ts#L21
     export interface IEditorWorkerService {
         computeMoreMinimalEdits(resource: monaco.Uri, edits: monaco.languages.TextEdit[] | null | undefined): Promise<monaco.languages.TextEdit[] | undefined>;
     }
