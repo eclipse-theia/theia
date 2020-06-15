@@ -27,4 +27,7 @@ export class MonacoBulkEditService implements monaco.editor.IBulkEditService {
         return this.workspace.applyBulkEdit(edit);
     }
 
+    hasPreviewHandler(): boolean {
+		return false; // todo
+	}
 }

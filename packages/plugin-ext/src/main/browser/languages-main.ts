@@ -31,7 +31,7 @@ import {
     MAIN_RPC_CONTEXT,
     LanguagesExt,
     WorkspaceEditDto,
-    ResourceTextEditDto,
+    WorkspaceTextEditDto,
     PluginInfo
 } from '../../common/plugin-api-rpc';
 import { injectable, inject } from 'inversify';
@@ -916,8 +916,8 @@ function toMonacoRelatedInformation(relatedInfo: RelatedInformation): monaco.edi
 export function toMonacoWorkspaceEdit(data: WorkspaceEditDto | undefined): monaco.languages.WorkspaceEdit {
     return {
         edits: (data && data.edits || []).map(edit => {
-            if (ResourceTextEditDto.is(edit)) {
-                return { resource: monaco.Uri.revive(edit.resource), edits: edit.edits };
+            if (WorkspaceTextEditDto.is(edit)) {
+                return { resource: monaco.Uri.revive(edit.resource), edit: edit.edit };
             } else {
                 return { newUri: monaco.Uri.revive(edit.newUri), oldUri: monaco.Uri.revive(edit.oldUri), options: edit.options };
             }

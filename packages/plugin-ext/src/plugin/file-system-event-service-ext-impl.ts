@@ -40,7 +40,7 @@ import { flatten } from '../common/arrays';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import {
     Plugin, TextEditorsMain as MainThreadTextEditorsShape, PLUGIN_RPC_CONTEXT, FileSystemEvents, ExtHostFileSystemEventServiceShape,
-    ResourceFileEditDto as IWorkspaceFileEditDto, ResourceTextEditDto as IWorkspaceTextEditDto
+    WorkspaceFileEditDto, WorkspaceTextEditDto
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 
@@ -245,7 +245,7 @@ export class ExtHostFileSystemEventService implements ExtHostFileSystemEventServ
         if (edits.length > 0) {
             // flatten all WorkspaceEdits collected via waitUntil-call
             // and apply them in one go.
-            const allEdits = new Array<Array<IWorkspaceFileEditDto | IWorkspaceTextEditDto>>();
+            const allEdits = new Array<Array<WorkspaceFileEditDto | WorkspaceTextEditDto>>();
             for (const edit of edits) {
                 const { edits } = typeConverter.fromWorkspaceEdit(edit, this._extHostDocumentsAndEditors);
                 allEdits.push(edits);

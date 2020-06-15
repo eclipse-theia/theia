@@ -346,21 +346,20 @@ export interface CodeActionProvider {
     providedCodeActionKinds?: string[];
 }
 
-export interface ResourceFileEdit {
-    oldUri: UriComponents;
-    newUri: UriComponents;
-    options: { overwrite?: boolean, ignoreIfNotExists?: boolean, ignoreIfExists?: boolean, recursive?: boolean };
+export interface WorkspaceFileEdit {
+    oldUri?: UriComponents;
+    newUri?: UriComponents;
+    options?: { overwrite?: boolean, ignoreIfNotExists?: boolean, ignoreIfExists?: boolean, recursive?: boolean };
 }
 
-export interface ResourceTextEdit {
+export interface WorkspaceTextEdit {
     resource: UriComponents;
     modelVersionId?: number;
-    edits: TextEdit[];
+    edit: TextEdit;
 }
 
 export interface WorkspaceEdit {
-    edits: Array<ResourceTextEdit | ResourceFileEdit>;
-    rejectReason?: string;
+    edits: Array<WorkspaceTextEdit | WorkspaceFileEdit>;
 }
 
 export enum SymbolKind {
