@@ -772,7 +772,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         }
         registry.registerKeybinding({
             command: CommonCommands.COPY_PATH.id,
-            keybinding: isWindows ? 'shift+alt+c' : 'ctrlcmd+alt+c'
+            keybinding: isWindows ? 'shift+alt+c' : 'ctrlcmd+alt+c',
+            when: '!editorFocus'
         });
         registry.registerKeybindings(
             // Edition
