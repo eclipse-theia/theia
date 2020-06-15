@@ -18,7 +18,7 @@ import { injectable, inject, optional, postConstruct } from 'inversify';
 import { MessageType } from '@theia/core/lib/common/message-service-protocol';
 import {
     QuickOpenService, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem,
-    QuickOpenMode, KeySequence, KeybindingRegistry
+    QuickOpenMode, KeySequence, KeybindingRegistry, QuickOpenGroupItemOptions
 } from '@theia/core/lib/browser';
 import { QuickOpenModel, QuickOpenActionProvider, QuickOpenAction } from '@theia/core/lib/common/quick-open-model';
 import { ContextKey } from '@theia/core/lib/browser/context-key-service';
@@ -346,12 +346,23 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
         this.options.onClose(cancelled);
     }
 
-    private toOpenModel(lookFor: string, items: QuickOpenItem[], actionProvider?: QuickOpenActionProvider): monaco.quickOpen.QuickOpenModel {
+    protected toOpenModel(lookFor: string, items: QuickOpenItem[], actionProvider?: QuickOpenActionProvider): monaco.quickOpen.QuickOpenModel {
         const entries: monaco.quickOpen.QuickOpenEntry[] = [];
-        for (const item of items) {
+        let groupOptionsToMerge: QuickOpenGroupItemOptions | undefined = undefined;
+        for (let item of items) {
+            if (!(item instanceof QuickOpenGroupItem) && groupOptionsToMerge) {
+                item = new QuickOpenGroupItem({ ...groupOptionsToMerge, ...item.options });
+                groupOptionsToMerge = undefined;
+            }
             const entry = this.createEntry(item, lookFor);
             if (entry) {
                 entries.push(entry);
+            } else {
+                // If a group with the `groupLabel` and `showBorder` props was filtered out, we must merge the these props into the next quick open item.
+                // Otherwise, we lose this info. (eclipse-theia/theia#7772)
+                if (item instanceof QuickOpenGroupItem) {
+                    groupOptionsToMerge = item.options;
+                }
             }
         }
         if (this.options.fuzzySort) {

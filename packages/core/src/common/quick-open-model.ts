@@ -51,7 +51,7 @@ export interface QuickOpenGroupItemOptions extends QuickOpenItemOptions {
 export class QuickOpenItem<T extends QuickOpenItemOptions = QuickOpenItemOptions> {
 
     constructor(
-        protected options: T = {} as T
+        readonly options: T = {} as T
     ) { }
 
     getTooltip(): string | undefined {

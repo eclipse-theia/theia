@@ -560,7 +560,7 @@ export class TaskConfigureQuickOpenItem extends QuickOpenGroupItem {
         protected readonly taskNameResolver: TaskNameResolver,
         protected readonly workspaceService: WorkspaceService,
         protected readonly isMulti: boolean,
-        protected readonly options: QuickOpenGroupItemOptions
+        readonly options: QuickOpenGroupItemOptions
     ) {
         super(options);
         const stat = this.workspaceService.workspace;
