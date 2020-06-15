@@ -392,13 +392,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeDefinitionProvider'
             },
             {
-                execute: ((resource: URI, position: Position) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        position: position
-                    };
-                    return commands.executeCommand<Location[]>('_executeDefinitionProvider', args);
-                })
+                execute: ((resource: URI, position: Position) =>
+                    commands.executeCommand<Location[]>('_executeDefinitionProvider', monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -406,13 +401,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeDeclarationProvider'
             },
             {
-                execute: ((resource: URI, position: Position) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        position: position
-                    };
-                    return commands.executeCommand<Location[]>('_executeDeclarationProvider', args);
-                })
+                execute: ((resource: URI, position: Position) =>
+                    commands.executeCommand<Location[]>('_executeDeclarationProvider', monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -420,13 +410,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeTypeDefinitionProvider'
             },
             {
-                execute: ((resource: URI, position: Position) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        position: position
-                    };
-                    return commands.executeCommand<Location[]>('_executeTypeDefinitionProvider', args);
-                })
+                execute: ((resource: URI, position: Position) =>
+                    commands.executeCommand<Location[]>('_executeTypeDefinitionProvider', monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -434,13 +419,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeImplementationProvider'
             },
             {
-                execute: ((resource: URI, position: Position) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        position: position
-                    };
-                    return commands.executeCommand<Location[]>('_executeImplementationProvider', args);
-                })
+                execute: ((resource: URI, position: Position) =>
+                    commands.executeCommand<Location[]>('_executeImplementationProvider', monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -448,13 +428,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeHoverProvider'
             },
             {
-                execute: ((resource: URI, position: Position) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        position: position
-                    };
-                    return commands.executeCommand<Hover[]>('_executeHoverProvider', args);
-                })
+                execute: ((resource: URI, position: Position) =>
+                    commands.executeCommand<Hover[]>('_executeHoverProvider', monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -462,13 +437,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeDocumentHighlights'
             },
             {
-                execute: ((resource: URI, position: Position) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        position: position
-                    };
-                    return commands.executeCommand<DocumentHighlight[]>('_executeDocumentHighlights', args);
-                })
+                execute: ((resource: URI, position: Position) =>
+                    commands.executeCommand<DocumentHighlight[]>('_executeDocumentHighlights', monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -476,13 +446,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeReferenceProvider'
             },
             {
-                execute: ((resource: URI, position: Position) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        position: position
-                    };
-                    return commands.executeCommand<Location[]>('_executeReferenceProvider', args);
-                })
+                execute: ((resource: URI, position: Position) => commands.executeCommand<Location[]>('_executeReferenceProvider', monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
@@ -491,7 +455,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             },
             {
                 execute: (resource: URI) => commands.executeCommand('_executeDocumentSymbolProvider',
-                    { resource: monaco.Uri.parse(resource.toString()) }
+                    monaco.Uri.parse(resource.toString())
                 ).then((value: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
                     if (!Array.isArray(value) || value === undefined) {
                         return undefined;
@@ -505,13 +469,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeFormatDocumentProvider'
             },
             {
-                execute: ((resource: URI, options: FormattingOptions) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        options: options
-                    };
-                    return commands.executeCommand<TextEdit[]>('_executeFormatDocumentProvider', args);
-                })
+                execute: ((resource: URI, options: FormattingOptions) =>
+                    commands.executeCommand<TextEdit[]>('_executeFormatDocumentProvider', monaco.Uri.from(resource), options))
             }
         );
         commands.registerCommand(
@@ -519,14 +478,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeFormatRangeProvider'
             },
             {
-                execute: ((resource: URI, range: Range, options: FormattingOptions) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        range: range,
-                        options: options
-                    };
-                    return commands.executeCommand<TextEdit[]>('_executeFormatRangeProvider', args);
-                })
+                execute: ((resource: URI, range: Range, options: FormattingOptions) =>
+                    commands.executeCommand<TextEdit[]>('_executeFormatRangeProvider', monaco.Uri.from(resource), range, options))
             }
         );
         commands.registerCommand(
@@ -534,15 +487,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.executeFormatOnTypeProvider'
             },
             {
-                execute: ((resource: URI, position: Position, ch: string, options: FormattingOptions) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        position: position,
-                        ch: ch,
-                        options: options
-                    };
-                    return commands.executeCommand<TextEdit[]>('_executeFormatOnTypeProvider', args);
-                })
+                execute: ((resource: URI, position: Position, ch: string, options: FormattingOptions) =>
+                    commands.executeCommand<TextEdit[]>('_executeFormatOnTypeProvider', monaco.Uri.from(resource), position, ch, options))
             }
         );
         commands.registerCommand(
@@ -550,13 +496,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                 id: 'vscode.prepareCallHierarchy'
             },
             {
-                execute: ((resource: URI, position: Position) => {
-                    const args = {
-                        resource: monaco.Uri.from(resource),
-                        position: position
-                    };
-                    return commands.executeCommand<CallHierarchyItem[]>('_executePrepareCallHierarchy', args);
-                })
+                execute: ((resource: URI, position: Position) =>
+                    commands.executeCommand<CallHierarchyItem[]>('_executePrepareCallHierarchy', monaco.Uri.from(resource), position))
             }
         );
         commands.registerCommand(
