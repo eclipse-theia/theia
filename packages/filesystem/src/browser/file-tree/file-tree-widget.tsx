@@ -16,7 +16,8 @@
 
 import * as React from 'react';
 import { injectable, inject } from 'inversify';
-import { DisposableCollection, Disposable } from '@theia/core/lib/common';
+import { environment } from '@theia/application-package';
+import { DisposableCollection, Disposable, CommandService } from '@theia/core/lib/common';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
 import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget, CompositeTreeNode } from '@theia/core/lib/browser';
@@ -40,6 +41,9 @@ export class FileTreeWidget extends TreeWidget {
 
     @inject(IconThemeService)
     protected readonly iconThemeService: IconThemeService;
+
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -241,6 +245,14 @@ export class FileTreeWidget extends TreeWidget {
             return false;
         }
         return super.needsExpansionTogglePadding(node);
+    }
+
+    protected handleEnter(event: KeyboardEvent): void {
+        if (environment.electron.is()) {
+            this.commandService.executeCommand('file.rename');
+        } else {
+            super.handleEnter(event);
+        }
     }
 
 }
