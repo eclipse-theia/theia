@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as React from 'react';
-import { Menu, PreferenceDataProperty, PreferenceScope, PreferenceItem, PreferenceService, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { Menu, PreferenceScope, PreferenceItem, PreferenceService, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { PreferenceSelectInput, PreferenceBooleanInput, PreferenceStringInput, PreferenceNumberInput, PreferenceJSONInput, PreferenceArrayInput } from '.';
 import { Preference, PreferenceMenus } from '../../util/preference-types';
 
@@ -91,7 +91,7 @@ export class SinglePreferenceWrapper extends React.Component<SinglePreferenceWra
             >
                 <div className="pref-name">
                     {preferenceDisplayNode.name}
-                    {this.renderOtherModifiedScopes(values, data, this.props.currentScope)}
+                    {this.renderOtherModifiedScopes(singlePreferenceValueDisplayNode.id, values, this.props.currentScope, this.props.preferencesService)}
                 </div>
                 <div className={`pref-context-gutter ${!currentValueIsDefaultValue ? 'theia-mod-item-modified' : ''}`}
                     onMouseOver={this.showCog}
@@ -133,22 +133,52 @@ export class SinglePreferenceWrapper extends React.Component<SinglePreferenceWra
     }
 
     protected renderOtherModifiedScopes(
+        id: string,
         preferenceValuesInAllScopes: Preference.ValuesInAllScopes | undefined,
-        data: PreferenceDataProperty,
-        currentScope: number): React.ReactNode[] | undefined {
+        currentScope: number,
+        service: PreferenceService): React.ReactNode[] | undefined {
         if (preferenceValuesInAllScopes) {
             return ['User', 'Workspace'].map((scope: 'User' | 'Workspace') => {
                 const matchingScope = PreferenceScope[scope];
-                const valueInCurrentScope = preferenceValuesInAllScopes[Preference.LookupKeys[currentScope] as keyof Preference.ValuesInAllScopes];
                 if (currentScope !== matchingScope) {
-                    const valueInOtherScope = preferenceValuesInAllScopes[Preference.LookupKeys[matchingScope] as keyof Preference.ValuesInAllScopes];
-                    if (valueInOtherScope && valueInOtherScope !== data.defaultValue) {
-                        const message = valueInCurrentScope && valueInCurrentScope !== data.defaultValue ? `Also modified in: ${scope}.` : `Modified in: ${scope}.`;
-                        return <i key={`modified-in-${scope}-alert`}><span> {message}</span></i>;
+                    const info = service.inspect<PreferenceItem>(id);
+                    if (!info) {
+                        return;
                     }
+
+                    const defaultValue = info.defaultValue;
+                    const currentValue = this.getValueByScope(info, currentScope);
+                    const matchingValue = this.getValueByScope(info, matchingScope);
+
+                    if (matchingValue !== undefined) {
+
+                        const bothOverridden = (
+                            (currentValue !== defaultValue && currentValue !== undefined) &&
+                            (matchingValue !== defaultValue && matchingValue !== undefined)
+                        );
+
+                        const message = bothOverridden ? 'Also modified in:' : 'Modified in:';
+                        return <i key={`modified-in-${scope}-alert`}><span> ({message} <span className='settings-scope-underlined'>{scope}</span>)</span></i>;
+                    }
+
                 }
             });
         }
+    }
+
+    protected getValueByScope(info: {
+        preferenceName: string;
+        defaultValue: PreferenceItem | undefined;
+        globalValue: PreferenceItem | undefined;
+        workspaceValue: PreferenceItem | undefined;
+        workspaceFolderValue: PreferenceItem | undefined;
+    }, scope: number): PreferenceItem | undefined {
+        if (scope === PreferenceScope.User) {
+            return info.globalValue;
+        } else if (scope === PreferenceScope.Workspace) {
+            return info.workspaceValue;
+        }
+        return undefined;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
