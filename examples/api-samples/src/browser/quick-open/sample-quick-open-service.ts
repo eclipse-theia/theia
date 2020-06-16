@@ -37,7 +37,7 @@ export class SampleQuickOpenService implements QuickOpenContribution, QuickOpenM
     protected readonly quickOpenService: QuickOpenService;
 
     registerQuickOpenHandlers(registry: QuickOpenHandlerRegistry): void {
-        registry.registerHandler({ ...this, prefix: '' });
+        registry.registerHandler({ ...this, prefix: 'blabla' });
     }
 
     getModel(): QuickOpenModel {
