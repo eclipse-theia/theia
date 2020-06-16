@@ -346,7 +346,7 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
         this.options.onClose(cancelled);
     }
 
-    private toOpenModel(lookFor: string, items: QuickOpenItem[], actionProvider?: QuickOpenActionProvider): monaco.quickOpen.QuickOpenModel {
+    protected toOpenModel(lookFor: string, items: QuickOpenItem[], actionProvider?: QuickOpenActionProvider): monaco.quickOpen.QuickOpenModel {
         const entries: monaco.quickOpen.QuickOpenEntry[] = [];
         for (const item of items) {
             const entry = this.createEntry(item, lookFor);
