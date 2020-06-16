@@ -346,3 +346,7 @@
 .theia-settings-container .settings-section>li:last-child {
     margin-bottom: 20px;
 }
+
+.theia-settings-container .settings-scope-underlined {
+    text-decoration: underline;
+}
