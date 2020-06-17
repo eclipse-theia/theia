@@ -110,7 +110,7 @@ const codeEditorPreferenceProperties = {
     },
     'editor.maxTokenizationLineLength': {
         'type': 'integer',
-        'default': 20_000,
+        'default': 400,
         'description': 'Lines above this length will not be tokenized for performance reasons'
     },
     'diffEditor.maxComputationTime': {
