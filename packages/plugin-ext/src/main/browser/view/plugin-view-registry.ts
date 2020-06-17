@@ -228,6 +228,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             commandId: toggleCommandId,
             label: options.label
         }));
+        toDispose.push(this.quickView.registerItem({
+            label: options.label,
+            type: 'view container',
+            open: () => this.commands.executeCommand(toggleCommandId)
+        }));
         toDispose.push(Disposable.create(async () => {
             const widget = await this.getPluginViewContainer(id);
             if (widget) {
@@ -264,6 +269,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         toDispose.push(this.quickView.registerItem({
             label: view.name,
             when: view.when,
+            type: 'view',
             open: () => this.openView(view.id, { activate: true })
         }));
         toDispose.push(this.commands.registerCommand({ id: `${view.id}.focus` }, {

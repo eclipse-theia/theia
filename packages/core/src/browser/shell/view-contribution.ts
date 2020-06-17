@@ -142,6 +142,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
         }
         this.quickView.registerItem({
             label: this.viewLabel,
+            type: 'view container',
             open: () => this.openView({ activate: true })
         });
     }
