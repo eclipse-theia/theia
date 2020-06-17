@@ -98,10 +98,24 @@ export interface ConfigStorage {
     hostGlobalStoragePath: string;
 }
 
+export enum UIKind {
+
+    /**
+     * Extensions are accessed from a desktop application.
+     */
+    Desktop = 1,
+
+    /**
+     * Extensions are accessed from a web browser.
+     */
+    Web = 2
+}
+
 export interface EnvInit {
     queryParams: QueryParameters;
     language: string;
     shell: string;
+    uiKind: UIKind,
     appName: string;
 }
 

@@ -26,6 +26,7 @@ export abstract class EnvExtImpl {
     private lang: string;
     private applicationName: string;
     private defaultShell: string;
+    private ui: theia.UIKind;
     private envMachineId: string;
     private envSessionId: string;
 
@@ -68,6 +69,10 @@ export abstract class EnvExtImpl {
         this.defaultShell = shell;
     }
 
+    setUIKind(uiKind: theia.UIKind): void {
+        this.ui = uiKind;
+    }
+
     getClientOperatingSystem(): Promise<theia.OperatingSystem> {
         return this.proxy.$getClientOperatingSystem();
     }
@@ -92,5 +97,8 @@ export abstract class EnvExtImpl {
     }
     get shell(): string {
         return this.defaultShell;
+    }
+    get uiKind(): theia.UIKind {
+        return this.ui;
     }
 }

@@ -112,6 +112,7 @@ import {
     ColorPresentation,
     OperatingSystem,
     WebviewPanelTargetArea,
+    UIKind,
     FileSystemError,
     CommentThreadCollapsibleState,
     QuickInputButtons,
@@ -511,6 +512,7 @@ export function createAPIFactory(
             get sessionId(): string { return envExt.sessionId; },
             get uriScheme(): string { return envExt.uriScheme; },
             get shell(): string { return envExt.shell; },
+            get uiKind(): theia.UIKind { return envExt.uiKind; },
             clipboard,
             getEnvVariable(envVarName: string): PromiseLike<string | undefined> {
                 return envExt.getEnvVariable(envVarName);
@@ -878,6 +880,7 @@ export function createAPIFactory(
             FoldingRangeKind,
             OperatingSystem,
             WebviewPanelTargetArea,
+            UIKind,
             FileSystemError,
             CommentThreadCollapsibleState,
             QuickInputButtons,
