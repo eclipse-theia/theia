@@ -30,7 +30,11 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
     constructor() {
         const prEnv = process.env;
         Object.keys(prEnv).forEach((key: string) => {
-            this.envs[key] = { 'name': key, 'value': prEnv[key] };
+            let keyName = key;
+            if (isWindows) {
+                keyName = key.toLowerCase();
+            }
+            this.envs[keyName] = { 'name': keyName, 'value': prEnv[key] };
         });
     }
 
