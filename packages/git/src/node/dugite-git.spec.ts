@@ -719,7 +719,11 @@ describe('git', async function (): Promise<void> {
 
     describe('branch', () => {
 
-        it('should list the branch in chronological order', async () => {
+        it('should list the branch in chronological order', async function (): Promise<void> {
+            if (isWindows) {
+                this.skip(); // https://github.com/eclipse-theia/theia/issues/8023
+                return;
+            }
             const root = track.mkdirSync('branch-order');
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
