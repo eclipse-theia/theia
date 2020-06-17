@@ -27,7 +27,7 @@ import { injectable, inject, interfaces, named, postConstruct } from 'inversify'
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage } from '../../common/plugin-api-rpc';
+import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage, UIKind } from '../../common/plugin-api-rpc';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
@@ -60,6 +60,7 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { environment } from '@theia/application-package/lib/environment';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -454,6 +455,7 @@ export class HostedPluginSupport {
                     queryParams: getQueryParameters(),
                     language: navigator.language,
                     shell: defaultShell,
+                    uiKind: environment.electron.is() ? UIKind.Desktop : UIKind.Web,
                     appName: FrontendApplicationConfigProvider.get().applicationName
                 },
                 extApi,

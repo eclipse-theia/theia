@@ -3151,6 +3151,22 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Possible kinds of UI that can use extensions.
+     */
+    export enum UIKind {
+
+        /**
+         * Extensions are accessed from a desktop application.
+         */
+        Desktop = 1,
+
+        /**
+         * Extensions are accessed from a web browser.
+         */
+        Web = 2
+    }
+
+    /**
      * A uri handler is responsible for handling system-wide [uris](#Uri).
      *
      * @see [window.registerUriHandler](#window.registerUriHandler).
@@ -5294,6 +5310,13 @@ declare module '@theia/plugin' {
          * The detected default shell for the extension host.
          */
         export const shell: string;
+
+        /**
+        * The UI kind property indicates from which UI extensions
+        * are accessed from. For example, extensions could be accessed
+        * from a desktop application or a web browser.
+        */
+        export const uiKind: UIKind;
 
         /**
          * The system clipboard.
