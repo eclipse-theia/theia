@@ -28,7 +28,13 @@ export namespace OutputUri {
     }
 
     export function create(name: string): URI {
-        return new URI(name).withScheme(SCHEME);
+        if (!name) {
+            throw new Error("'name' must be defined.");
+        }
+        if (!name.trim().length) {
+            throw new Error("'name' must contain at least one non-whitespace character.");
+        }
+        return new URI(encodeURIComponent(name)).withScheme(SCHEME);
     }
 
     export function channelName(uri: string | URI): string {
