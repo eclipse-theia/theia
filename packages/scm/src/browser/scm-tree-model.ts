@@ -158,19 +158,23 @@ export class ScmTreeModel extends TreeModelImpl {
             expanded: true,
         };
 
+        const sortedResources = group.resources.sort((r1, r2) =>
+            r1.sourceUri.toString().localeCompare(r2.sourceUri.toString())
+        );
+
         switch (this._viewMode) {
             case 'list':
-                groupNode.children = group.resources.map(fileChange => this.toFileChangeNode(fileChange, groupNode));
+                groupNode.children = sortedResources.map(resource => this.toFileChangeNode(resource, groupNode));
                 break;
             case 'tree':
                 const rootUri = group.provider.rootUri;
                 if (rootUri) {
-                    const resourcePaths = group.resources.map(resource => {
+                    const resourcePaths = sortedResources.map(resource => {
                         const relativePath = new URI(rootUri).relative(resource.sourceUri);
                         const pathParts = relativePath ? relativePath.toString().split('/') : [];
                         return { resource, pathParts };
                     });
-                    groupNode.children = this.buildFileChangeTree(resourcePaths, 0, group.resources.length, 0, groupNode);
+                    groupNode.children = this.buildFileChangeTree(resourcePaths, 0, sortedResources.length, 0, groupNode);
                 }
                 break;
         }
@@ -179,7 +183,7 @@ export class ScmTreeModel extends TreeModelImpl {
     }
 
     protected buildFileChangeTree(
-        resources: { resource: ScmResource, pathParts: string[] }[],
+        sortedResources: { resource: ScmResource, pathParts: string[] }[],
         start: number,
         end: number,
         level: number,
@@ -189,14 +193,14 @@ export class ScmTreeModel extends TreeModelImpl {
 
         let folderStart = start;
         while (folderStart < end) {
-            const firstFileChange = resources[folderStart];
+            const firstFileChange = sortedResources[folderStart];
             if (level === firstFileChange.pathParts.length - 1) {
                 result.push(this.toFileChangeNode(firstFileChange.resource, parent));
                 folderStart++;
             } else {
                 let index = folderStart + 1;
                 while (index < end) {
-                    if (resources[index].pathParts[level] !== firstFileChange.pathParts[level]) {
+                    if (sortedResources[index].pathParts[level] !== firstFileChange.pathParts[level]) {
                         break;
                     }
                     index++;
@@ -207,11 +211,11 @@ export class ScmTreeModel extends TreeModelImpl {
                 if (folderEnd - folderStart < nestingThreshold) {
                     // Inline these (i.e. do not create another level in the tree)
                     for (let i = folderStart; i < folderEnd; i++) {
-                        result.push(this.toFileChangeNode(resources[i].resource, parent));
+                        result.push(this.toFileChangeNode(sortedResources[i].resource, parent));
                     }
                 } else {
                     const firstFileParts = firstFileChange.pathParts;
-                    const lastFileParts = resources[folderEnd - 1].pathParts;
+                    const lastFileParts = sortedResources[folderEnd - 1].pathParts;
                     // Multiple files with first folder.
                     // See if more folder levels match and include those if so.
                     let thisLevel = level + 1;
@@ -219,7 +223,7 @@ export class ScmTreeModel extends TreeModelImpl {
                         thisLevel++;
                     }
                     const nodeRelativePath = firstFileParts.slice(level, thisLevel).join('/');
-                    result.push(this.toFileChangeFolderNode(resources, folderStart, folderEnd, thisLevel, nodeRelativePath, parent));
+                    result.push(this.toFileChangeFolderNode(sortedResources, folderStart, folderEnd, thisLevel, nodeRelativePath, parent));
                 }
                 folderStart = folderEnd;
             }
