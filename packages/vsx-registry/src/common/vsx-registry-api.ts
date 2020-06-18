@@ -68,7 +68,7 @@ export class VSXRegistryAPI {
         return this.fetchJson(apiUri.resolve(id.replace('.', '/')).toString());
     }
 
-    protected async fetchJson<T>(url: string): Promise<T> {
+    async fetchJson<T>(url: string): Promise<T> {
         const result = await fetchJson(url);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return result as any as T;

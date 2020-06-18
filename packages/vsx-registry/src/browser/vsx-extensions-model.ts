@@ -21,12 +21,15 @@ import * as sanitize from 'sanitize-html';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { VSXRegistryAPI, VSXResponseError } from '../common/vsx-registry-api';
-import { VSXSearchParam } from '../common/vsx-registry-types';
+import { VSXSearchParam, VSXExtensionRaw } from '../common/vsx-registry-types';
+import { VSXEnvironment } from '../common/vsx-environment';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
 import { VSXExtension, VSXExtensionFactory } from './vsx-extension';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { VSCODE_DEFAULT_API_VERSION } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-environment';
+import * as semver from 'semver';
 
 @injectable()
 export class VSXExtensionsModel {
@@ -48,6 +51,9 @@ export class VSXExtensionsModel {
 
     @inject(VSXExtensionsSearchModel)
     readonly search: VSXExtensionsSearchModel;
+
+    @inject(VSXEnvironment)
+    protected readonly environment: VSXEnvironment;
 
     protected readonly initialized = new Deferred<void>();
 
@@ -139,17 +145,80 @@ export class VSXExtensionsModel {
             const searchResult = new Set<string>();
             for (const data of result.extensions) {
                 const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
+                const latestCompatibleVersion = await this.getLatestCompatibleVersion(id);
+                if (!latestCompatibleVersion) {
+                    // no compatible version of the extension found
+                    // this extension will not be displayed in the search result
+                    continue;
+                }
+                if (latestCompatibleVersion !== 'latest') {
+                    // the latest version of the extension is not compatible with Theia
+                    // update the download link to the latest compatible version
+                    const apiUri = await this.environment.getRegistryApiUri();
+                    const updatedDownloadLink =
+                        apiUri.resolve(id.replace('.', '/')).toString() + `/${latestCompatibleVersion}/file/${id}-${latestCompatibleVersion}.vsix`;
+                    data.files.download = updatedDownloadLink;
+                }
+
                 this.setExtension(id).update(Object.assign(data, {
                     publisher: data.namespace,
                     downloadUrl: data.files.download,
                     iconUrl: data.files.icon,
                     readmeUrl: data.files.readme,
                     licenseUrl: data.files.license,
+                    version: latestCompatibleVersion
                 }));
                 searchResult.add(id);
             }
             this._searchResult = searchResult;
+
         }, token);
+    }
+
+    /**
+     * Query all versions of the extension from open-vsx api
+     * Find the latest compatible version by checking each version's 'engines.vscode' value
+     */
+    protected async getLatestCompatibleVersion(id: string): Promise<string | undefined> {
+
+        const extension = await this.api.getExtension(id);
+        let latestCompatibleVersion: string | undefined;
+
+        for (const version in extension.allVersions) {
+            if (version === 'latest') {
+                continue;
+            }
+
+            const apiUri = await this.environment.getRegistryApiUri();
+            const { engines, versionAlias }: VSXExtensionRaw = await this.api.fetchJson(apiUri.resolve(id.replace('.', '/')).toString() + `/${version}`);
+
+            if (!engines || !engines.length) {
+                // no engine tag found, return the latest version of the extension
+                return latestCompatibleVersion = 'latest';
+            }
+
+            if (engines && versionAlias && this.isEngineValid(engines[0]) && versionAlias[0] === 'latest') {
+                // the latest version of the extension is compatible
+                return latestCompatibleVersion = 'latest';
+            } else if (engines && this.isEngineValid(engines[0])) {
+                return latestCompatibleVersion = version;
+            }
+        }
+
+        // no compatible version of the extension found
+        return latestCompatibleVersion;
+    }
+
+    // Checks if Theia's current version of 'vscode api engine' satisfy the given 'engines.vscode' range required by the extension
+    protected isEngineValid(engine: string): boolean {
+        const currentEngine = this.getCurrentVersion();
+        const parsedEngine = engine.split('@')[1];
+        return semver.satisfies(currentEngine, parsedEngine);
+    }
+
+    // Gets the current version of 'vscode api engine' that Theia's plugin system supports
+    protected getCurrentVersion(): string {
+        return VSCODE_DEFAULT_API_VERSION;
     }
 
     protected async updateInstalled(): Promise<void> {

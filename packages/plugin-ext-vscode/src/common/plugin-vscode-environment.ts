@@ -18,6 +18,8 @@ import { injectable, inject } from 'inversify';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 
+export const VSCODE_DEFAULT_API_VERSION = '1.44.0';
+
 @injectable()
 export class PluginVSCodeEnvironment {
 

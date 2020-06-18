@@ -102,4 +102,6 @@ export interface VSXExtensionRaw {
     readonly galleryColor?: string;
     readonly galleryTheme?: string;
     readonly qna?: string;
+    readonly engines?: string[];
+    readonly versionAlias?: string[];
 }
