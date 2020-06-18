@@ -164,13 +164,14 @@ export class FileResource implements Resource {
     }
 
     protected async sync(): Promise<void> {
-        if (await this.isInSync(this.version && this.version.stat)) {
+        if (await this.isInSync()) {
             return;
         }
         this.onDidChangeContentsEmitter.fire(undefined);
     }
-    protected async isInSync(current: FileStat | undefined): Promise<boolean> {
+    protected async isInSync(): Promise<boolean> {
         const stat = await this.getFileStat();
+        const current = this.version && this.version.stat;
         if (!current) {
             return !stat;
         }
