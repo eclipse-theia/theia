@@ -122,19 +122,42 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
     registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(OutputCommands.CLEAR__WIDGET, {
-            isEnabled: widget => this.withWidget(widget),
-            isVisible: widget => this.withWidget(widget),
-            execute: () => this.widget.then(widget => widget.clear())
+            isEnabled: arg => {
+                if (arg instanceof Widget) {
+                    return arg instanceof OutputWidget;
+                }
+                return this.shell.currentWidget instanceof OutputWidget;
+            },
+            isVisible: arg => {
+                if (arg instanceof Widget) {
+                    return arg instanceof OutputWidget;
+                }
+                return this.shell.currentWidget instanceof OutputWidget;
+            },
+            execute: () => {
+                this.widget.then(widget => {
+                    this.withWidget(widget, output => {
+                        output.clear();
+                        return true;
+                    });
+                });
+            }
         });
         registry.registerCommand(OutputCommands.LOCK__WIDGET, {
             isEnabled: widget => this.withWidget(widget, output => !output.isLocked),
             isVisible: widget => this.withWidget(widget, output => !output.isLocked),
-            execute: () => this.widget.then(widget => widget.lock())
+            execute: widget => this.withWidget(widget, output => {
+                output.lock();
+                return true;
+            })
         });
         registry.registerCommand(OutputCommands.UNLOCK__WIDGET, {
             isEnabled: widget => this.withWidget(widget, output => output.isLocked),
             isVisible: widget => this.withWidget(widget, output => output.isLocked),
-            execute: () => this.widget.then(widget => widget.unlock())
+            execute: widget => this.withWidget(widget, output => {
+                output.unlock();
+                return true;
+            })
         });
     }
 
@@ -167,10 +190,9 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
     }
 
     protected withWidget(
-        widget: Widget | undefined,
+        widget: Widget | undefined = this.tryGetWidget(),
         predicate: (output: OutputWidget) => boolean = () => true
     ): boolean | false {
-
         return widget instanceof OutputWidget ? predicate(widget) : false;
     }
 
