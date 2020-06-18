@@ -60,7 +60,7 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
         toolbarRegistry.registerItem({
             id: OutputCommands.CLEAR__WIDGET.id,
             command: OutputCommands.CLEAR__WIDGET.id,
-            tooltip: OutputCommands.CLEAR__WIDGET.label,
+            tooltip: 'Clear Output',
             priority: 1,
         });
         toolbarRegistry.registerItem({
