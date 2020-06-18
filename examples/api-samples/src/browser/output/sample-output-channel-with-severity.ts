@@ -23,7 +23,7 @@ export class SampleOutputChannelWithSeverity
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
     public onStart(): void {
-        const channel = this.outputChannelManager.getChannel('my test channel');
+        const channel = this.outputChannelManager.getChannel('API Sample: my test channel');
         channel.appendLine('hello info1'); // showed without color
         channel.appendLine('hello info2', OutputChannelSeverity.Info);
         channel.appendLine('hello error', OutputChannelSeverity.Error);
