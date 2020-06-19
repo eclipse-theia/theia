@@ -18,7 +18,7 @@ import { ContributionProvider } from '@theia/core/lib/common/contribution-provid
 import { MaybePromise } from '@theia/core/lib/common/types';
 import URI from '@theia/core/lib/common/uri';
 import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-token';
-import { ChildProcess, fork, ForkOptions } from 'child_process';
+import { fork, ForkOptions } from 'child_process';
 import * as electron from 'electron';
 import { app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent, shell, dialog } from 'electron';
 import { realpathSync } from 'fs';
@@ -27,8 +27,8 @@ import { AddressInfo } from 'net';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { FileUri } from '@theia/core/lib/node';
-import { SyncPromise } from '@theia/core/lib/common/promise-util';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { SyncPromise, Deferred } from '@theia/core/lib/common/promise-util';
+import { FrontendApplicationConfig } from '@theia/application-package';
 const Storage = require('electron-store');
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
 
@@ -99,26 +99,16 @@ export class ElectronApplication {
      * This field is undefined otherwise.
      */
     protected stoppingTask: SyncPromise<void> | undefined;
+    protected config: FrontendApplicationConfig;
+    readonly backendPort = new Deferred<number>();
 
-    /**
-     * Note: There is no backend process while in `devMode`.
-     */
-    protected backendProcess: ChildProcess | undefined;
-
-    protected _backendPort: number | undefined;
-
-    get backendPort(): number {
-        if (typeof this._backendPort === 'undefined') {
-            throw new Error('backend port is not set');
-        }
-        return this._backendPort;
-    }
-
-    async start(): Promise<void> {
+    async start(config: FrontendApplicationConfig): Promise<void> {
+        this.config = config;
         this.hookApplicationEvents();
-        this._backendPort = await this.startBackend();
+        const port = await this.startBackend();
+        this.backendPort.resolve(port);
         await app.whenReady();
-        await this.attachElectronSecurityToken(this.backendPort);
+        await this.attachElectronSecurityToken(await this.backendPort.promise);
         await this.startContributions();
         await this.launch({
             secondInstance: false,
@@ -146,8 +136,8 @@ export class ElectronApplication {
             throw new Error('cannot create new windows when the app is stopping.');
         }
         const electronWindow = new BrowserWindow(options);
-        this.attachWebContentsNewWindow(electronWindow);
         this.attachReadyToShow(electronWindow);
+        this.attachWebContentsNewWindow(electronWindow);
         this.attachSaveWindowState(electronWindow);
         this.attachWillPreventUnload(electronWindow);
         this.attachGlobalShortcuts(electronWindow);
@@ -188,8 +178,8 @@ export class ElectronApplication {
     }
 
     protected async createWindowUri(): Promise<URI> {
-        return FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH)
-            .withQuery(`port=${this.backendPort}`);
+        const port = await this.backendPort.promise;
+        return FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH).withQuery(`port=${port}`);
     }
 
     protected getBrowserWindowOptions(): BrowserWindowConstructorOptions {
@@ -297,7 +287,7 @@ export class ElectronApplication {
      * Catch certain keybindings to prevent reloading the window using keyboard shortcuts.
      */
     protected attachGlobalShortcuts(electronWindow: BrowserWindow): void {
-        if (FrontendApplicationConfigProvider.get().electron?.disallowReloadKeybinding) {
+        if (this.config.electron?.disallowReloadKeybinding) {
             const accelerators = ['CmdOrCtrl+R', 'F5'];
             electronWindow.on('focus', () => {
                 for (const accelerator of accelerators) {
@@ -336,7 +326,7 @@ export class ElectronApplication {
             const address: AddressInfo = await require(this.globals.THEIA_BACKEND_MAIN_PATH);
             return address.port;
         } else {
-            const backendProcess = this.backendProcess = fork(this.globals.THEIA_BACKEND_MAIN_PATH, backendArgv, await this.getForkOptions());
+            const backendProcess = fork(this.globals.THEIA_BACKEND_MAIN_PATH, backendArgv, await this.getForkOptions());
             return new Promise((resolve, reject) => {
                 const timeout = setTimeout(console.warn, 5000, 'backend is taking a long time to start, something could be wrong?');
                 // The backend server main file is also supposed to send the resolved http(s) server port via IPC.

@@ -136,14 +136,11 @@ process.env.LC_NUMERIC = 'C';
 
 const { default: electronApplicationModule } = require('@theia/electron/lib/electron-main/electron-application-module');
 const { ElectronApplication, ElectronApplicationGlobals } = require('@theia/electron/lib/electron-main/electron-application');
-const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/frontend-application-config-provider');
 const { Container } = require('inversify');
 const { resolve } = require('path');
 const { app } = require('electron');
 
-FrontendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.frontend.config)});
-
-const applicationName = \`${this.pck.props.frontend.config.applicationName}\`;
+const config = ${this.prettyStringify(this.pck.props.frontend.config)};
 const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
 
 if (isSingleInstance && !app.requestSingleInstanceLock()) {
@@ -155,7 +152,7 @@ if (isSingleInstance && !app.requestSingleInstanceLock()) {
 const container = new Container();
 container.load(electronApplicationModule);
 container.bind(ElectronApplicationGlobals).toConstantValue({
-    THEIA_APPLICATION_NAME: applicationName,
+    THEIA_APPLICATION_NAME: config.applicationName,
     THEIA_APP_PROJECT_PATH: resolve(__dirname, '..', '..'),
     THEIA_BACKEND_MAIN_PATH: resolve(__dirname, '..', 'backend', 'main.js'),
     THEIA_FRONTEND_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'index.html'),
@@ -169,7 +166,7 @@ function load(raw) {
 
 async function start() {
     const application = container.get(ElectronApplication);
-    await application.start();
+    await application.start(config);
 }
 
 module.exports = Promise.resolve()${this.compileElectronMainModuleImports(electronMainModules)}
@@ -178,7 +175,8 @@ module.exports = Promise.resolve()${this.compileElectronMainModuleImports(electr
         if (reason) {
             console.error(reason);
         }
-    }); `;
+    });
+`;
     }
 
 }
