@@ -55,7 +55,6 @@ commands:
       - type: exec
         component: che-dev
         command: >
-          killall node;
           yarn watch
         workdir: ${workspaceRoot}/theia
   - name: >
@@ -64,6 +63,5 @@ commands:
       - type: exec
         component: che-dev
         command: >
-          killall node;
           yarn watch
         workdir: ${workspaceRoot}/theia/examples/browser
