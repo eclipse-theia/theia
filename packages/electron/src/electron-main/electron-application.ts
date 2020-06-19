@@ -358,7 +358,7 @@ export class ElectronApplication {
     }
 
     protected onWillQuit(event: ElectronEvent): void {
-        this.stop();
+        this.stopContributions();
     }
 
     protected async onSecondInstance(event: ElectronEvent, argv: string[], cwd: string): Promise<void> {
@@ -381,10 +381,6 @@ export class ElectronApplication {
                 contribution.onStop(this);
             }
         }
-    }
-
-    protected stop(): void {
-        this.stopContributions();
     }
 
 }
