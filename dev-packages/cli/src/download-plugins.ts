@@ -65,6 +65,11 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
 
     await mkdirpAsPromised(pluginsDir);
 
+    if (!pck.theiaPlugins) {
+        console.log(red('error: missing mandatory \'theiaPlugins\' property.'));
+        return;
+    }
+
     await Promise.all(Object.keys(pck.theiaPlugins).map(async plugin => {
         if (!plugin) {
             return;
