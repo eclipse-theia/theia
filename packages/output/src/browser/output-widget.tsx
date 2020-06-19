@@ -220,6 +220,17 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         return undefined;
     }
 
+    getText(): string | undefined {
+        const editor = this.editor;
+        if (editor) {
+            const model = editor.getControl().getModel();
+            if (model) {
+                return model.getValue();
+            }
+        }
+        return undefined;
+    }
+
 }
 
 export namespace OutputWidget {
