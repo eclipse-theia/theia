@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Widget } from '@theia/core/lib/browser/widgets/widget';
 import { MaybePromise } from '@theia/core/lib/common/types';
@@ -24,6 +24,7 @@ import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-con
 import { OutputWidget } from './output-widget';
 import { OutputContextMenu } from './output-context-menu';
 import { OutputUri } from '../common/output-uri';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 export namespace OutputCommands {
 
@@ -100,10 +101,16 @@ export namespace OutputCommands {
         category: OUTPUT_CATEGORY
     };
 
+    export const COPY_ALL: Command = {
+        id: 'output:copy-all',
+    };
 }
 
 @injectable()
 export class OutputContribution extends AbstractViewContribution<OutputWidget> implements OpenHandler {
+
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
 
     readonly id: string = `${OutputWidget.ID}-opener`;
 
@@ -136,12 +143,24 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
             isVisible: widget => this.withWidget(widget, output => output.isLocked),
             execute: () => this.widget.then(widget => widget.unlock())
         });
+        registry.registerCommand(OutputCommands.COPY_ALL, {
+            execute: () => {
+                const textToCopy = this.tryGetWidget()?.getText();
+                if (textToCopy) {
+                    this.clipboardService.writeText(textToCopy);
+                }
+            }
+        });
     }
 
     registerMenus(registry: MenuModelRegistry): void {
         super.registerMenus(registry);
         registry.registerMenuAction(OutputContextMenu.TEXT_EDIT_GROUP, {
             commandId: CommonCommands.COPY.id
+        });
+        registry.registerMenuAction(OutputContextMenu.TEXT_EDIT_GROUP, {
+            commandId: OutputCommands.COPY_ALL.id,
+            label: 'Copy All'
         });
         registry.registerMenuAction(OutputContextMenu.COMMAND_GROUP, {
             commandId: quickCommand.id,
@@ -173,5 +192,4 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
 
         return widget instanceof OutputWidget ? predicate(widget) : false;
     }
-
 }
