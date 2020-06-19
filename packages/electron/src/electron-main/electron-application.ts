@@ -21,26 +21,17 @@ import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-
 import { fork, ForkOptions } from 'child_process';
 import * as electron from 'electron';
 import { app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent, shell, dialog } from 'electron';
-import { realpathSync } from 'fs';
 import { inject, injectable, named } from 'inversify';
 import { AddressInfo } from 'net';
-import * as path from 'path';
-import { Argv } from 'yargs';
 import { FileUri } from '@theia/core/lib/node';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FrontendApplicationConfig } from '@theia/application-package';
 const Storage = require('electron-store');
-const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
 
 /**
  * Options passed to the main/default command handler.
  */
 export interface MainCommandOptions {
-
-    /**
-     * By default, the first positional argument. Should be a file or a folder.
-     */
-    file?: string
 
 }
 
@@ -52,16 +43,15 @@ export interface MainCommandOptions {
  *  2. The app is already running but user relaunches it, `secondInstance` is true.
  */
 export interface ExecutionParams {
-    secondInstance: boolean
-    argv: string[]
-    cwd: string
+    readonly secondInstance: boolean;
+    readonly argv: string[];
 }
 
 export const ElectronApplicationGlobals = Symbol('ElectronApplicationSettings');
 export interface ElectronApplicationGlobals {
-    THEIA_APP_PROJECT_PATH: string
-    THEIA_BACKEND_MAIN_PATH: string
-    THEIA_FRONTEND_HTML_PATH: string
+    readonly THEIA_APP_PROJECT_PATH: string
+    readonly THEIA_BACKEND_MAIN_PATH: string
+    readonly THEIA_FRONTEND_HTML_PATH: string
 }
 
 export const ElectronMainContribution = Symbol('ElectronApplicationContribution');
@@ -106,18 +96,12 @@ export class ElectronApplication {
         await this.startContributions();
         await this.launch({
             secondInstance: false,
-            argv: process.argv,
-            cwd: process.cwd(),
+            argv: process.argv
         });
     }
 
     async launch(params: ExecutionParams): Promise<void> {
-        createYargs(params.argv, params.cwd)
-            .command('$0 [<file>]', false,
-                cmd => cmd
-                    .positional('file', { type: 'string' }),
-                args => this.handleMainCommand(params, { file: args.file }),
-            ).parse();
+        this.handleMainCommand(params);
     }
 
     /**
@@ -142,13 +126,6 @@ export class ElectronApplication {
         return electronWindow;
     }
 
-    async openWindowWithWorkspace(workspace: string): Promise<BrowserWindow> {
-        const uri = (await this.createWindowUri()).withFragment(workspace);
-        const electronWindow = await this.createWindow(this.getBrowserWindowOptions());
-        electronWindow.loadURL(uri.toString(true));
-        return electronWindow;
-    }
-
     /**
      * "Gently" close all windows, application will not stop if a `beforeunload` handler returns `false`.
      */
@@ -156,12 +133,8 @@ export class ElectronApplication {
         app.quit();
     }
 
-    protected async handleMainCommand(params: ExecutionParams, options: MainCommandOptions): Promise<void> {
-        if (typeof options.file === 'undefined') {
-            await this.openDefaultWindow();
-        } else {
-            await this.openWindowWithWorkspace(realpathSync(path.resolve(params.cwd, options.file)));
-        }
+    protected async handleMainCommand(params: ExecutionParams): Promise<void> {
+        await this.openDefaultWindow();
     }
 
     protected async createWindowUri(): Promise<URI> {
@@ -361,8 +334,8 @@ export class ElectronApplication {
         this.stopContributions();
     }
 
-    protected async onSecondInstance(event: ElectronEvent, argv: string[], cwd: string): Promise<void> {
-        await this.launch({ argv, cwd, secondInstance: true });
+    protected async onSecondInstance(event: ElectronEvent, argv: string[]): Promise<void> {
+        await this.launch({ argv, secondInstance: true });
     }
 
     protected async startContributions(): Promise<void> {
