@@ -27,7 +27,7 @@ import { AddressInfo } from 'net';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { FileUri } from '@theia/core/lib/node';
-import { SyncPromise, Deferred } from '@theia/core/lib/common/promise-util';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FrontendApplicationConfig } from '@theia/application-package';
 const Storage = require('electron-store');
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
@@ -74,9 +74,9 @@ export interface ElectronMainContribution {
      */
     onStart?(application?: ElectronApplication): MaybePromise<void>;
     /**
-     * The application is stopping.
+     * The application is stopping. Contributions must perform only synchronous operations.
      */
-    onStop?(application?: ElectronApplication): MaybePromise<void>;
+    onStop?(application?: ElectronApplication): void;
 }
 
 @injectable()
@@ -93,11 +93,6 @@ export class ElectronApplication {
 
     protected readonly electronStore = new Storage();
 
-    /**
-     * When the application is stopping, this field will contain the task encapsulating the stopping process.
-     * This field is undefined otherwise.
-     */
-    protected stoppingTask: SyncPromise<void> | undefined;
     protected config: FrontendApplicationConfig;
     readonly backendPort = new Deferred<number>();
 
@@ -131,9 +126,6 @@ export class ElectronApplication {
      * @param options
      */
     async createWindow(options: BrowserWindowConstructorOptions): Promise<BrowserWindow> {
-        if (this.isStopping()) {
-            throw new Error('cannot create new windows when the app is stopping.');
-        }
         const electronWindow = new BrowserWindow(options);
         this.attachReadyToShow(electronWindow);
         this.attachWebContentsNewWindow(electronWindow);
@@ -162,10 +154,6 @@ export class ElectronApplication {
      */
     requestStop(): void {
         app.quit();
-    }
-
-    isStopping(): boolean {
-        return typeof this.stoppingTask !== 'undefined';
     }
 
     protected async handleMainCommand(params: ExecutionParams, options: MainCommandOptions): Promise<void> {
@@ -327,15 +315,17 @@ export class ElectronApplication {
         } else {
             const backendProcess = fork(this.globals.THEIA_BACKEND_MAIN_PATH, backendArgv, await this.getForkOptions());
             return new Promise((resolve, reject) => {
-                const timeout = setTimeout(console.warn, 5000, 'backend is taking a long time to start, something could be wrong?');
                 // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
                 backendProcess.on('message', (address: AddressInfo) => {
-                    clearTimeout(timeout);
                     resolve(address.port);
                 });
                 backendProcess.on('error', error => {
-                    clearTimeout(timeout);
                     reject(error);
+                });
+                app.on('quit', () => {
+                    // If we forked the process for the clusters, we need to manually terminate it.
+                    // See: https://github.com/eclipse-theia/theia/issues/835
+                    process.kill(backendProcess.pid);
                 });
             });
         }
@@ -345,7 +335,6 @@ export class ElectronApplication {
         return {
             env: {
                 ...process.env,
-                ELECTRON_RUN_AS_NODE: 1,
                 [ElectronSecurityToken]: JSON.stringify(this.electronSecurityToken),
             },
         };
@@ -365,21 +354,11 @@ export class ElectronApplication {
     protected hookApplicationEvents(): void {
         app.on('will-quit', this.onWillQuit.bind(this));
         app.on('second-instance', this.onSecondInstance.bind(this));
+        app.on('window-all-closed', () => this.requestStop.bind(this));
     }
 
     protected onWillQuit(event: ElectronEvent): void {
-        if (typeof this.stoppingTask === 'undefined') {
-            event.preventDefault();
-            this.stoppingTask = new SyncPromise(this.stop());
-            // Once the stopping process is done, we should quit for real:
-            this.stoppingTask.promise.then(
-                () => app.quit(),
-                () => app.quit(),
-            );
-        } else if (!this.stoppingTask.finished) {
-            event.preventDefault();
-        }
-        // `stoppingTask.finished === true`: let the process quit.
+        this.stop();
     }
 
     protected async onSecondInstance(event: ElectronEvent, argv: string[], cwd: string): Promise<void> {
@@ -396,23 +375,16 @@ export class ElectronApplication {
         await Promise.all(promises);
     }
 
-    protected async stopContributions(): Promise<void> {
-        const promises = [];
+    protected stopContributions(): void {
         for (const contribution of this.electronApplicationContributions.getContributions()) {
             if (contribution.onStop) {
-                promises.push(contribution.onStop(this));
+                contribution.onStop(this);
             }
         }
-        await Promise.all(promises);
     }
 
-    protected async stop(): Promise<void> {
-        try {
-            await this.stopContributions();
-        } catch (error) {
-            console.error(error);
-            process.exitCode = error && error.code || 1;
-        }
+    protected stop(): void {
+        this.stopContributions();
     }
 
 }
