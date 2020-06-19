@@ -22,6 +22,7 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { VSXRegistryAPI, VSXResponseError } from '../common/vsx-registry-api';
 import { VSXSearchParam } from '../common/vsx-registry-types';
+import { VSXEnvironment } from '../common/vsx-environment';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
 import { VSXExtension, VSXExtensionFactory } from './vsx-extension';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
@@ -48,6 +49,9 @@ export class VSXExtensionsModel {
 
     @inject(VSXExtensionsSearchModel)
     readonly search: VSXExtensionsSearchModel;
+
+    @inject(VSXEnvironment)
+    protected readonly environment: VSXEnvironment;
 
     protected readonly initialized = new Deferred<void>();
 
@@ -139,12 +143,18 @@ export class VSXExtensionsModel {
             const searchResult = new Set<string>();
             for (const data of result.extensions) {
                 const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
+                const extension = await this.api.getLatestCompatibleExtension(id);
+                if (!extension) {
+                    continue;
+                }
+
                 this.setExtension(id).update(Object.assign(data, {
-                    publisher: data.namespace,
-                    downloadUrl: data.files.download,
-                    iconUrl: data.files.icon,
-                    readmeUrl: data.files.readme,
-                    licenseUrl: data.files.license,
+                    publisher: extension.namespace,
+                    downloadUrl: extension.files.download,
+                    iconUrl: extension.files.icon,
+                    readmeUrl: extension.files.readme,
+                    licenseUrl: extension.files.license,
+                    version: extension.version,
                 }));
                 searchResult.add(id);
             }
@@ -212,7 +222,10 @@ export class VSXExtensionsModel {
 
     protected async refresh(id: string): Promise<VSXExtension | undefined> {
         try {
-            const data = await this.api.getExtension(id);
+            const data = await this.api.getLatestCompatibleExtension(id);
+            if (!data) {
+                return;
+            }
             if (data.error) {
                 return this.onDidFailRefresh(id, data.error);
             }
@@ -223,6 +236,7 @@ export class VSXExtensionsModel {
                 iconUrl: data.files.icon,
                 readmeUrl: data.files.readme,
                 licenseUrl: data.files.license,
+                version: data.version
             }));
             return extension;
         } catch (e) {

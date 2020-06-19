@@ -65,6 +65,17 @@ export interface VSXUser {
 }
 
 /**
+ * Should be aligned with https://github.com/eclipse/openvsx/blob/master/server/src/main/java/org/eclipse/openvsx/entities/FileResource.java
+ */
+export interface VSXFiles {
+    download: string;
+    readme?: string;
+    license?: string;
+    icon?: string;
+    manifest?: string;
+}
+
+/**
  * Should be aligned with https://github.com/eclipse/openvsx/blob/master/server/src/main/java/org/eclipse/openvsx/json/ExtensionJson.java
  */
 export interface VSXExtensionRaw {
@@ -75,12 +86,7 @@ export interface VSXExtensionRaw {
     readonly namespace: string;
     readonly publishedBy: VSXUser
     readonly namespaceAccess: VSXExtensionNamespaceAccess;
-    readonly files: {
-        download: string
-        readme?: string
-        license?: string
-        icon?: string
-    }
+    readonly files: VSXFiles;
     readonly allVersions: {
         [version: string]: string
     }
@@ -102,4 +108,6 @@ export interface VSXExtensionRaw {
     readonly galleryColor?: string;
     readonly galleryTheme?: string;
     readonly qna?: string;
+    readonly engines?: string[];
+    readonly versionAlias?: string[];
 }

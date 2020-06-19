@@ -18,6 +18,7 @@ import * as bent from 'bent';
 import { injectable, inject } from 'inversify';
 import { VSXExtensionRaw, VSXSearchParam, VSXSearchResult } from './vsx-registry-types';
 import { VSXEnvironment } from './vsx-environment';
+import { isEngineValid } from './vsx-utils';
 
 const fetchText = bent('GET', 'string', 200);
 const fetchJson = bent('GET', 'json', 200);
@@ -68,13 +69,34 @@ export class VSXRegistryAPI {
         return this.fetchJson(apiUri.resolve(id.replace('.', '/')).toString());
     }
 
+    /**
+     * Get the latest compatible extension version.
+     * - an extension satisfies compatibility if its `engines.vscode` version is supported.
+     * @param id the extension id.
+     *
+     * @returns the data for the latest compatible extension version if available, else `undefined`.
+     */
+    async getLatestCompatibleExtension(id: string): Promise<VSXExtensionRaw | undefined> {
+        const extension = await this.getExtension(id);
+        for (const extensionVersion in extension.allVersions) {
+            if (extensionVersion === 'latest') {
+                continue;
+            }
+            const apiUri = await this.environment.getRegistryApiUri();
+            const data: VSXExtensionRaw = await this.fetchJson(apiUri.resolve(id.replace('.', '/')).toString() + `/${extensionVersion}`);
+            if (data.engines && isEngineValid(data.engines)) {
+                return data;
+            }
+        }
+    }
+
     protected async fetchJson<T>(url: string): Promise<T> {
         const result = await fetchJson(url);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return result as any as T;
     }
 
-    fetchText(url: string): Promise<string> {
+    async fetchText(url: string): Promise<string> {
         return fetchText(url);
     }
 

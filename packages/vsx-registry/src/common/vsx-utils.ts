@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2020 TypeFox and others.
+ * Copyright (C) 2020 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,25 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import URI from '@theia/core/lib/common/uri';
+import * as semver from 'semver';
+import { VSCODE_DEFAULT_API_VERSION } from '@theia/plugin-ext-vscode/lib/common/plugin-vscode-environment';
 
-export const VSCODE_DEFAULT_API_VERSION = '1.44.0';
-
-@injectable()
-export class PluginVSCodeEnvironment {
-
-    @inject(EnvVariablesServer)
-    protected readonly environments: EnvVariablesServer;
-
-    protected _extensionsDirUri: URI | undefined;
-    async getExtensionsDirUri(): Promise<URI> {
-        if (!this._extensionsDirUri) {
-            const configDir = new URI(await this.environments.getConfigDirUri());
-            this._extensionsDirUri = configDir.resolve('extensions');
-        }
-        return this._extensionsDirUri;
+/**
+ * Determine if the engine is valid.
+ * @param engine the engine.
+ *
+ * @returns `true` if the engine satisfies the API version.
+ */
+export function isEngineValid(engines: string[]): boolean {
+    const engine = engines.find(e => e.startsWith('vscode'));
+    if (engine) {
+        return engine === '*' || semver.satisfies(VSCODE_DEFAULT_API_VERSION, engine.split('@')[1]);
     }
-
+    return false;
 }
