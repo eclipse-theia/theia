@@ -152,7 +152,6 @@ if (isSingleInstance && !app.requestSingleInstanceLock()) {
 const container = new Container();
 container.load(electronApplicationModule);
 container.bind(ElectronApplicationGlobals).toConstantValue({
-    THEIA_APPLICATION_NAME: config.applicationName,
     THEIA_APP_PROJECT_PATH: resolve(__dirname, '..', '..'),
     THEIA_BACKEND_MAIN_PATH: resolve(__dirname, '..', 'backend', 'main.js'),
     THEIA_FRONTEND_HTML_PATH: resolve(__dirname, '..', '..', 'lib', 'index.html'),

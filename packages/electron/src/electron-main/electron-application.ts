@@ -59,7 +59,6 @@ export interface ExecutionParams {
 
 export const ElectronApplicationGlobals = Symbol('ElectronApplicationSettings');
 export interface ElectronApplicationGlobals {
-    THEIA_APPLICATION_NAME: string
     THEIA_APP_PROJECT_PATH: string
     THEIA_BACKEND_MAIN_PATH: string
     THEIA_FRONTEND_HTML_PATH: string
@@ -190,7 +189,7 @@ export class ElectronApplication {
         return {
             ...windowState,
             show: false,
-            title: this.globals.THEIA_APPLICATION_NAME,
+            title: this.config.applicationName,
             minWidth: 200,
             minHeight: 120,
         };
