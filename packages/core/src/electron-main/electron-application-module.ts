@@ -33,7 +33,7 @@ const electronSecurityToken: ElectronSecurityToken = { value: v4() };
 export default new ContainerModule(bind => {
     bind(ElectronApplication).toSelf().inSingletonScope();
     bind(ElectronMessagingContribution).toSelf().inSingletonScope();
-    bind<ElectronSecurityToken>(ElectronSecurityToken).toConstantValue(electronSecurityToken);
+    bind(ElectronSecurityToken).toConstantValue(electronSecurityToken);
 
     bindContributionProvider(bind, ElectronConnectionHandler);
     bindContributionProvider(bind, ElectronMessagingService.Contribution);
