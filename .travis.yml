@@ -15,6 +15,7 @@ cache:
     - dev-packages/cli/node_modules
     - examples/api-samples/node_modules
     - examples/browser/node_modules
+    - examples/electron-api-samples/node_modules
     - examples/electron/node_modules
     - node_modules
     - packages/callhierarchy/node_modules

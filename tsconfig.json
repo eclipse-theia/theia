@@ -167,6 +167,9 @@
       ],
       "@theia/electron/lib/*": [
         "packages/electron/src/*"
+      ],
+      "@theia/electron-api-samples/lib/*": [
+        "examples/electron-api-samples/src/*"
       ]
     }
   }
