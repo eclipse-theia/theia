@@ -10,6 +10,10 @@
   "theiaExtensions": [
     {
       "frontend": "lib/browser/api-samples-frontend-module"
+    },
+    {
+      "electronMain": "lib/electron-main/update/sample-updater-main-module",
+      "frontendElectron": "lib/electron-browser/updater/sample-updater-frontend-module"
     }
   ],
   "keywords": [
