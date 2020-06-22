@@ -156,7 +156,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
             }
         }));
         this.watcherOptions.set(watcherId, {
-            ignored: options.ignored.map(pattern => new Minimatch(pattern))
+            ignored: options.ignored.map(pattern => new Minimatch(pattern, { dot: true }))
         });
     }
 
