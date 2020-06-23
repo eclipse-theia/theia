@@ -23,11 +23,29 @@ export class MonacoBulkEditService implements monaco.editor.IBulkEditService {
     @inject(MonacoWorkspace)
     protected readonly workspace: MonacoWorkspace;
 
+    private _previewHandler?: monaco.editor.IBulkEditPreviewHandler;
+
     apply(edit: monaco.languages.WorkspaceEdit): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
         return this.workspace.applyBulkEdit(edit);
     }
 
     hasPreviewHandler(): boolean {
-		return false; // todo
-	}
+        return Boolean(this._previewHandler);
+    }
+
+    setPreviewHandler(handler: monaco.editor.IBulkEditPreviewHandler): monaco.IDisposable {
+        this._previewHandler = handler;
+
+        const disposePreviewHandler = () => {
+            if (this._previewHandler === handler) {
+                this._previewHandler = undefined;
+            }
+        };
+
+        return {
+            dispose(): void {
+                disposePreviewHandler();
+            }
+        };
+    }
 }

@@ -51,14 +51,15 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         this.registerPeekSubmenu(registry);
 
         registry.registerSubmenu(MonacoMenus.SELECTION, 'Selection');
-        for (const item of MenuRegistry.getMenuItems(23)) {
+        for (const item of MenuRegistry.getMenuItems(25)) {
             if (!monaco.actions.isIMenuItem(item)) {
                 continue;
             }
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
                 const menuPath = [...MonacoMenus.SELECTION, (item.group || '')];
-                const label = this.removeMnemonic(item.command.title);
+                const title = typeof item.command.title === 'string' ? item.command.title : item.command.title.value;
+                const label = this.removeMnemonic(title);
                 const order = item.order ? String(item.order) : '';
                 registry.registerMenuAction(menuPath, { commandId, order, label });
             }
@@ -69,6 +70,9 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         registry.registerSubmenu(MonacoMenus.PEEK_CONTEXT_SUBMENU, 'Peek');
 
         for (const item of MenuRegistry.getMenuItems(8)) {
+            if (!monaco.actions.isIMenuItem(item)) {
+                continue;
+            }
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
                 const order = item.order ? String(item.order) : '';
