@@ -350,7 +350,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
     render(): React.ReactNode {
         const {
             builtin, preview, id, iconUrl, publisher, displayName, description,
-            averageRating, downloadCount, repository, license, readme
+            averageRating, downloadCount, repository, license, readme, version
         } = this.props.extension;
         return <React.Fragment>
             <div className='header'>
@@ -374,6 +374,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                         {averageRating !== undefined && <span className='average-rating' onClick={this.openAverageRating}>{this.renderStars()}</span>}
                         {repository && <span className='repository' onClick={this.openRepository}>Repository</span>}
                         {license && <span className='license' onClick={this.openLicense}>{license}</span>}
+                        {version && <span className='version'>{version}</span>}
                     </div>
                     <div className='description noWrapInfo'>{description}</div>
                     {this.renderAction()}
