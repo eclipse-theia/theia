@@ -137,18 +137,49 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    padding: var(--theia-ui-padding);
+    padding-top: 0;
+    position: relative;
 }
 
 .theia-vsx-extension-editor .header {
     display: flex;
-    padding: calc(var(--theia-ui-padding)*3) calc(var(--theia-ui-padding)*3) calc(var(--theia-ui-padding)*2);
-    overflow: hidden;
+    padding: calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3);
     flex-shrink: 0;
+    border-bottom: 1px solid hsla(0, 0% ,50% ,.5);
+    position: sticky;
+    top: 0;
+    width: 100%;
+    background: var(--theia-editor-background);
+}
+
+.theia-vsx-extension-editor .scroll-container {
+    position: absolute;
+    bottom: 0;
+    padding-top: 0;
+    max-width: 100%;
+    width: 100%;
 }
 
 .theia-vsx-extension-editor .body {
     flex: 1;
+    padding: calc(var(--theia-ui-padding)*2);
+    padding-top: 0;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.theia-vsx-extension-editor .body h2:first-of-type {
+    padding-bottom: var(--theia-ui-padding);
+    border-bottom: 1px solid hsla(0, 0%, 50%, .5);
+    margin-top: calc(var(--theia-ui-padding) * 5);
+}
+
+.theia-vsx-extension-editor .scroll-container .body pre {
+    white-space: normal;
+}
+
+.theia-vsx-extension-editor .body img {
+    max-width: 100%;
 }
 
 .theia-vsx-extension-editor .header .icon-container {
