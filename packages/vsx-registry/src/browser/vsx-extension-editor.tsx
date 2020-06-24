@@ -16,9 +16,10 @@
 
 import * as React from 'react';
 import { inject, injectable, postConstruct } from 'inversify';
-import { ReactWidget, Message } from '@theia/core/lib/browser';
-import { VSXExtension } from './vsx-extension';
+import { ReactWidget, Message, Widget } from '@theia/core/lib/browser';
+import { VSXExtension, VSXExtensionEditorComponent } from './vsx-extension';
 import { VSXExtensionsModel } from './vsx-extensions-model';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 @injectable()
 export class VSXExtensionEditor extends ReactWidget {
@@ -31,6 +32,8 @@ export class VSXExtensionEditor extends ReactWidget {
     @inject(VSXExtensionsModel)
     protected readonly model: VSXExtensionsModel;
 
+    protected readonly deferredScrollContainer = new Deferred<HTMLElement>();
+
     @postConstruct()
     protected init(): void {
         this.addClass('theia-vsx-extension-editor');
@@ -39,9 +42,12 @@ export class VSXExtensionEditor extends ReactWidget {
         this.updateTitle();
         this.title.iconClass = 'fa fa-puzzle-piece';
         this.node.tabIndex = -1;
-
         this.update();
         this.toDispose.push(this.model.onDidChange(() => this.update()));
+    }
+
+    getScrollContainer(): Promise<HTMLElement> {
+        return this.deferredScrollContainer.promise;
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -54,14 +60,30 @@ export class VSXExtensionEditor extends ReactWidget {
         this.updateTitle();
     }
 
+    protected onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
+        this.update();
+    }
+
     protected updateTitle(): void {
         const label = 'Extension: ' + (this.extension.displayName || this.extension.name);
         this.title.label = label;
         this.title.caption = label;
     }
 
-    protected render(): React.ReactNode {
-        return this.extension.renderEditor();
-    }
+    protected onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
+        this.update();
+    };
 
+    protected resolveScrollContainer = (element: VSXExtensionEditorComponent | null) => {
+        this.deferredScrollContainer.resolve(element?.scrollContainer);
+    };
+
+    protected render(): React.ReactNode {
+        return <VSXExtensionEditorComponent
+            ref={this.resolveScrollContainer}
+            extension={this.extension}
+        />;
+    }
 }

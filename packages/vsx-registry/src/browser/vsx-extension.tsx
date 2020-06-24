@@ -264,11 +264,6 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     render(): React.ReactNode {
         return <VSXExtensionComponent extension={this} />;
     }
-
-    renderEditor(): React.ReactNode {
-        return <VSXExtensionEditorComponent extension={this} />;
-    }
-
 }
 
 export abstract class AbstractVSXExtensionComponent extends React.Component<AbstractVSXExtensionComponent.Props> {
@@ -315,7 +310,7 @@ export abstract class AbstractVSXExtensionComponent extends React.Component<Abst
 }
 export namespace AbstractVSXExtensionComponent {
     export interface Props {
-        extension: VSXExtension
+        extension: VSXExtension;
     }
 }
 
@@ -351,13 +346,24 @@ export class VSXExtensionComponent extends AbstractVSXExtensionComponent {
 }
 
 export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
+    protected header: HTMLElement | undefined;
+    protected body: HTMLElement | undefined;
+    protected _scrollContainer: HTMLElement | undefined;
+
+    get scrollContainer(): HTMLElement | undefined {
+        return this._scrollContainer;
+    }
+
     render(): React.ReactNode {
         const {
-            builtin, preview, id, iconUrl, publisher, displayName, description,
-            averageRating, downloadCount, repository, license, readme, version
+            builtin, preview, id, iconUrl, publisher, displayName, description, version,
+            averageRating, downloadCount, repository, license, readme
         } = this.props.extension;
+
+        const { baseStyle, scrollStyle } = this.getSubcomponentStyles();
+
         return <React.Fragment>
-            <div className='header'>
+            <div className='header' style={baseStyle} ref={ref => this.header = (ref || undefined)}>
                 {iconUrl ?
                     <img className='icon-container' src={iconUrl} /> :
                     <div className='icon-container placeholder' />}
@@ -384,11 +390,20 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                     {this.renderAction()}
                 </div>
             </div>
-            {readme && <div className='body'
-                ref={body => this.body = (body || undefined)}
-                onClick={this.openLink}
-                dangerouslySetInnerHTML={{ __html: readme }} />}
-        </React.Fragment>;
+            {
+                readme &&
+                < div className='scroll-container'
+                    style={scrollStyle}
+                    ref={ref => this._scrollContainer = (ref || undefined)}>
+                    <div className='body'
+                        ref={ref => this.body = (ref || undefined)}
+                        onClick={this.openLink}
+                        style={baseStyle}
+                        dangerouslySetInnerHTML={{ __html: readme }}
+                    />
+                </div>
+            }
+        </React.Fragment >;
     }
 
     protected renderNamespaceAccess(): React.ReactNode {
@@ -421,7 +436,13 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
         </React.Fragment>;
     }
 
-    protected body: HTMLElement | undefined;
+    protected getSubcomponentStyles(): { baseStyle: React.CSSProperties, scrollStyle: React.CSSProperties; } {
+        const visibility: 'unset' | 'hidden' = this.header ? 'unset' : 'hidden';
+        const baseStyle = { visibility };
+        const scrollStyle = this.header?.clientHeight ? { visibility, height: `calc(100% - (${this.header.clientHeight}px + 1px))` } : baseStyle;
+
+        return { baseStyle, scrollStyle };
+    }
 
     // TODO replace with webview
     readonly openLink = (event: React.MouseEvent) => {
