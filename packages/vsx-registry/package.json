@@ -1,10 +1,10 @@
 {
   "name": "@theia/vsx-registry",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Theia - VSX Registry",
   "dependencies": {
-    "@theia/core": "^1.2.0",
-    "@theia/plugin-ext-vscode": "^1.2.0",
+    "@theia/core": "^1.3.0",
+    "@theia/plugin-ext-vscode": "^1.3.0",
     "@types/bent": "^7.0.1",
     "@types/sanitize-html": "^1.13.31",
     "@types/showdown": "^1.7.1",
@@ -49,7 +49,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.2.0"
+    "@theia/ext-scripts": "^1.3.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
