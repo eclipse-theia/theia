@@ -467,7 +467,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
         registry.registerKeybinding({
             command: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id,
-            keybinding: isWindows ? 'ctrl+shift+alt+c' : 'ctrlcmd+shift+alt+c',
+            keybinding: isWindows ? 'ctrl+k ctrl+shift+c' : 'ctrlcmd+shift+alt+c',
             when: '!editorFocus'
         });
     }
