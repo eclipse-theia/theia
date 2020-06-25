@@ -2,12 +2,53 @@
 
 ## v1.3.0
 
-- [scm] added support for multi-select in the Source Control view [#7900](https://github.com/eclipse-theia/theia/pull/7900)
+- [cli] updated the download script to warn about mandatory `theiaPlugins` field [#8058](https://github.com/eclipse-theia/theia/pull/8058)
+- [core] added `copy path` command [#7934](https://github.com/eclipse-theia/theia/pull/7934)
+- [core] added missing `vscode-languageserver-protocol` dependency [#8036](https://github.com/eclipse-theia/theia/pull/8036)
+- [core] adds support for ordering submenus [#7963](https://github.com/eclipse-theia/theia/pull/7963)
+- [core] implemented a context-menu for `input` and `textArea` fields [#7943](https://github.com/eclipse-theia/theia/pull/7943)
+- [core] improved sub-classing of `messaging` [#8008](https://github.com/eclipse-theia/theia/pull/8008)
+- [core] updated `react` and `react-dom` to v16.8 [#7883](https://github.com/eclipse-theia/theia/pull/7883)
+- [debug] added support for inline variable values [#7921](https://github.com/eclipse-theia/theia/pull/7921)
+- [editor] updated the default tokenization length [#8027](https://github.com/eclipse-theia/theia/pull/8027)
+- [filesystem] exposed `nsfw` to downstream `NsfwFilesystemWatcher` [#7465](https://github.com/eclipse-theia/theia/pull/7465)
+- [filesystem] fixed file filter issue in the `FileDialog` [#8073](https://github.com/eclipse-theia/theia/pull/8073)
+- [filesystem] improved `isInSync` method [#8044](https://github.com/eclipse-theia/theia/pull/8044)
+- [filesystem] updated minimatch when ignoring to include folders starting with a dot [#8074](https://github.com/eclipse-theia/theia/pull/8074)
+- [markers] added the `clear-all` command for the problems-view [#8002](https://github.com/eclipse-theia/theia/pull/8002)
+- [monaco] added support for `vscode-builtin-css-language-features` [#7972](https://github.com/eclipse-theia/theia/pull/7972)
+- [monaco] added support for `vscode-builtin-html-language-features` [#7972](https://github.com/eclipse-theia/theia/pull/7972)
+- [monaco] exposed `toOpenModel` method [#8024](https://github.com/eclipse-theia/theia/pull/8024)
+- [output] added scroll-lock to the output view [#7570](https://github.com/eclipse-theia/theia/pull/7570)
+- [output] added support for special output URI characters [#8046](https://github.com/eclipse-theia/theia/pull/8046)
+- [plugin] added command `copyFilePath` [#7934](https://github.com/eclipse-theia/theia/pull/7934)
+- [plugin] added support for `env.uiKind` API [#8038](https://github.com/eclipse-theia/theia/pull/8038)
+- [plugin] added support for `workbench.view.explorer` command [#7965](https://github.com/eclipse-theia/theia/pull/7965)
+- [plugin] added support for the `Task2` class [#8000](https://github.com/eclipse-theia/theia/pull/8000)
+- [plugin] added the registration of view-containers in the `open view` menu [#8034](https://github.com/eclipse-theia/theia/pull/8034)
+- [plugin] fixed handling to not fail if a command returns a non-serializable result or error [#7957](https://github.com/eclipse-theia/theia/pull/7957)
+- [plugin] implemented the pseudo terminal plugin API [#7925](https://github.com/eclipse-theia/theia/pull/7925)
+- [plugin] improved activation of views to ensure they are ready before activated [#7957](https://github.com/eclipse-theia/theia/pull/7957)
+- [preferences] fixed modified scope label for updated preferences [#8025](https://github.com/eclipse-theia/theia/pull/8025)
+- [preferences] improved the statefulness of the preferences when switching scopes [#7936](https://github.com/eclipse-theia/theia/pull/7936)
+- [preview] added sanitization of the markdown text for security purposes [#7971](https://github.com/eclipse-theia/theia/pull/7971)
+- [scm] added multi-select support for the 'source control manager' view [#7900](https://github.com/eclipse-theia/theia/pull/7900)
+- [scm] fixed the `scm` tree to sort results correctly [#8048](https://github.com/eclipse-theia/theia/pull/8048)
+- [search-in-workspace] fixed incorrect or duplicate search results [#7990](https://github.com/eclipse-theia/theia/pull/7990)
+- [task] added `detail` property to the task configuration schema [#8000](https://github.com/eclipse-theia/theia/pull/8000)
+- [task] added support to update user-level tasks [#7928](https://github.com/eclipse-theia/theia/pull/7928)
+- [task] fixed error due to incorrect `RevealKind` and `PanelKind` enums [#7982](https://github.com/eclipse-theia/theia/pull/7982)
+- [task] included global tasks in the 'configure tasks' menu [#7929](https://github.com/eclipse-theia/theia/pull/7929)
+- [vsx-registry] adjusted the width of the search input [#7984](https://github.com/eclipse-theia/theia/pull/7984)
+- [vsx-registry] included 'extensions-view' in the default layout [#7944](https://github.com/eclipse-theia/theia/pull/7944)
+- [workspace] added logic preventing arbitrary files from being opened as a workspace [#7922](https://github.com/eclipse-theia/theia/pull/7922)
 
 Breaking Changes:
 
 - [task] Widened the scope of some methods in TaskManager and TaskConfigurations from string to TaskConfigurationScope. This is only breaking for extenders, not callers. [#7928](https://github.com/eclipse-theia/theia/pull/7928)
-- [shell] `ApplicationShell.TrackableWidgetProvider.getTrackableWidgets` is sync to register child widgets in the same tick, use `ApplicationShell.TrackableWidgetProvider.onDidChangeTrackableWidgets` if child widgets are added async
+- [shell] updated `ApplicationShell.TrackableWidgetProvider.getTrackableWidgets` to be synchronous in order to register child widgets in the same tick [#7957](https://github.com/eclipse-theia/theia/pull/7957)
+  - use `ApplicationShell.TrackableWidgetProvider.onDidChangeTrackableWidgets` if child widgets are added asynchronously
+
 
 ## v1.2.0
 
