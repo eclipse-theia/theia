@@ -628,5 +628,10 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         }, {
             execute: () => commands.executeCommand(CommonCommands.COPY_PATH.id)
         });
+        commands.registerCommand({
+            id: 'copyRelativeFilePath'
+        }, {
+            execute: () => commands.executeCommand(FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id)
+        });
     }
 }
