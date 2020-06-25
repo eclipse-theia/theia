@@ -38,7 +38,8 @@ import {
     isOSX,
     MenuModelRegistry,
     MenuPath,
-    Mutable
+    Mutable,
+    isWindows
 } from '@theia/core/lib/common';
 import {
     DidCreateNewResourceEvent,
@@ -63,6 +64,10 @@ import { NavigatorDiff, NavigatorDiffCommands } from './navigator-diff';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { DirNode } from '@theia/filesystem/lib/browser';
 import { FileNavigatorModel } from './navigator-model';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
+import { SelectionService } from '@theia/core/lib/common/selection-service';
+import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
+import URI from '@theia/core/lib/common/uri';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR: Command = {
@@ -97,6 +102,9 @@ export namespace FileNavigatorCommands {
         id: 'workbench.files.action.focusFilesExplorer',
         category: 'File',
         label: 'Focus on Files Explorer'
+    };
+    export const COPY_RELATIVE_FILE_PATH: Command = {
+        id: 'navigator.copyRelativeFilePath'
     };
 }
 
@@ -144,6 +152,9 @@ export namespace NavigatorContextMenu {
 @injectable()
 export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
 
+    @inject(ClipboardService)
+    protected readonly clipboardService: ClipboardService;
+
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
@@ -161,6 +172,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(SelectionService)
+    protected readonly selectionService: SelectionService;
 
     @inject(WorkspaceCommandContribution)
     protected readonly workspaceCommandContribution: WorkspaceCommandContribution;
@@ -302,6 +316,20 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             isEnabled: () => this.navigatorDiff.isFirstFileSelected,
             isVisible: () => this.navigatorDiff.isFirstFileSelected
         });
+        registry.registerCommand(FileNavigatorCommands.COPY_RELATIVE_FILE_PATH, new UriAwareCommandHandler<URI[]>(this.selectionService, {
+            isEnabled: uris => !!uris.length,
+            isVisible: uris => !!uris.length,
+            execute: async uris => {
+                const lineDelimiter = isWindows ? '\r\n' : '\n';
+                const text = uris.map((uri: URI) => {
+                    const workspaceRoot = this.workspaceService.getWorkspaceRootUri(uri);
+                    if (workspaceRoot) {
+                        return workspaceRoot.relative(uri);
+                    }
+                }).join(lineDelimiter);
+                await this.clipboardService.writeText(text);
+            }
+        }, { multi: true }));
     }
 
     protected withWidget<T>(widget: Widget | undefined = this.tryGetWidget(), cb: (navigator: FileNavigatorWidget) => T): T | false {
@@ -349,6 +377,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
             commandId: CommonCommands.COPY_PATH.id,
             order: 'c'
+        });
+        registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
+            commandId: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id,
+            label: 'Copy Relative Path',
+            order: 'd'
         });
         registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
             commandId: FileDownloadCommands.COPY_DOWNLOAD_LINK.id,
@@ -430,6 +463,12 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             command: FileNavigatorCommands.TOGGLE_HIDDEN_FILES.id,
             keybinding: 'ctrlcmd+i',
             context: NavigatorKeybindingContexts.navigatorActive
+        });
+
+        registry.registerKeybinding({
+            command: FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id,
+            keybinding: isWindows ? 'ctrl+shift+alt+c' : 'ctrlcmd+shift+alt+c',
+            when: '!editorFocus'
         });
     }
 
