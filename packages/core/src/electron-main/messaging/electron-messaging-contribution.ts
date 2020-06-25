@@ -110,12 +110,14 @@ export class ElectronMessagingContribution implements ElectronMainContribution, 
                     console.error('The ipc channel does not exist', id);
                 }
             }
-            sender.on('destroyed', () => {
+            const close = () => {
                 for (const channel of Array.from(channels.values())) {
                     channel.close(undefined, 'webContent destroyed');
                 }
                 channels.clear();
-            });
+            };
+            sender.once('did-navigate', close); // When refreshing the browser windows.
+            sender.once('destroyed', close); // When browser window is closed
         } catch (error) {
             console.error('IPC: Failed to handle message', { error, data });
         }

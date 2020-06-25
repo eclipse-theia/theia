@@ -60,8 +60,8 @@
     "build": "theiaext compile && yarn bundle",
     "bundle": "theia build --mode development",
     "watch": "concurrently -n compile,bundle \"theiaext watch --preserveWatchOutput\" \"theia build --watch --mode development\"",
-    "start": "theia start --plugins=local-dir:../../plugins",
-    "start:debug": "yarn start --log-level=debug",
+    "start": "theia start ../.. --plugins=local-dir:../../plugins",
+    "start:debug": "yarn start ../.. --log-level=debug",
     "test": "electron-mocha --timeout 60000 \"./lib/test/**/*.espec.js\""
   },
   "devDependencies": {

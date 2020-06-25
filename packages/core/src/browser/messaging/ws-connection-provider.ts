@@ -58,7 +58,7 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
 
     openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
         if (this.socket.readyState === WebSocket.OPEN) {
-            super.openChannel(path, handler, options);
+            this.doOpenChannel(path, handler, options);
         } else {
             const openChannel = () => {
                 this.socket.removeEventListener('open', openChannel);
@@ -66,6 +66,24 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             };
             this.socket.addEventListener('open', openChannel);
         }
+    }
+
+    protected doOpenChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
+        const id = this.channelIdSeq++;
+        const channel = this.createChannel(id);
+        this.channels.set(id, channel);
+        channel.onClose(() => {
+            if (this.channels.delete(channel.id)) {
+                const { reconnecting } = { reconnecting: true, ...options };
+                if (reconnecting) {
+                    this.openChannel(path, handler, options);
+                }
+            } else {
+                console.error('The ws channel does not exist', channel.id);
+            }
+        });
+        channel.onOpen(() => handler(channel));
+        channel.open(path);
     }
 
     protected createChannel(id: number): WebSocketChannel {

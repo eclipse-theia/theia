@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { session, screen, globalShortcut, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent, shell, dialog } from 'electron';
+import { session, screen, globalShortcut, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent, dialog } from 'electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -142,9 +142,9 @@ export class ElectronApplication {
     protected processArgv: ProcessArgv;
 
     protected readonly electronStore = new Storage();
+    protected readonly backendPort = new Deferred<number>();
 
     protected config: FrontendApplicationConfig;
-    readonly backendPort = new Deferred<number>();
 
     async start(config: FrontendApplicationConfig): Promise<void> {
         this.config = config;
@@ -178,7 +178,6 @@ export class ElectronApplication {
     async createWindow(options: BrowserWindowConstructorOptions): Promise<BrowserWindow> {
         const electronWindow = new BrowserWindow(options);
         this.attachReadyToShow(electronWindow);
-        this.attachWebContentsNewWindow(electronWindow);
         this.attachSaveWindowState(electronWindow);
         this.attachWillPreventUnload(electronWindow);
         this.attachGlobalShortcuts(electronWindow);
@@ -256,16 +255,6 @@ export class ElectronApplication {
         const y = Math.floor(bounds.y + (bounds.height - height) / 2);
         const x = Math.floor(bounds.x + (bounds.width - width) / 2);
         return { width, height, x, y };
-    }
-
-    /**
-     * Prevent opening links into new electron browser windows by default.
-     */
-    protected attachWebContentsNewWindow(electronWindow: BrowserWindow): void {
-        electronWindow.webContents.on('new-window', (event, url) => {
-            event.preventDefault();
-            shell.openExternal(url);
-        });
     }
 
     /**

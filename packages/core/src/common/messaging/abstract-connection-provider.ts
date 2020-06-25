@@ -41,8 +41,7 @@ export abstract class AbstractConnectionProvider<AbstractOptions extends object>
      * An optional target can be provided to handle
      * notifications and requests from a remote side.
      */
-    static createProxy<T extends object>(container: interfaces.Container, path: string, target?: object): JsonRpcProxy<T>;
-    static createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): JsonRpcProxy<T> {
+    static createProxy<T extends object>(container: interfaces.Container, path: string, target?: object): JsonRpcProxy<T> {
         throw new Error('abstract');
     }
 
