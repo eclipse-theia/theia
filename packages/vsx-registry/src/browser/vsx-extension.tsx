@@ -190,12 +190,16 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get licenseUrl(): string | undefined {
-        const plugin = this.plugin;
-        const licenseUrl = plugin && plugin.metadata.model.licenseUrl;
+        let licenseUrl = this.data['licenseUrl'];
         if (licenseUrl) {
-            return new Endpoint({ path: licenseUrl }).getRestUrl().toString();
+            return licenseUrl;
+        } else {
+            const plugin = this.plugin;
+            licenseUrl = plugin && plugin.metadata.model.licenseUrl;
+            if (licenseUrl) {
+                return new Endpoint({ path: licenseUrl }).getRestUrl().toString();
+            }
         }
-        return this.data['licenseUrl'];
     }
 
     get repository(): string | undefined {
