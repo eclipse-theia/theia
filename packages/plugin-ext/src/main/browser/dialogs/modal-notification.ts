@@ -64,7 +64,7 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
 
         const textContainer = messageNode.appendChild(document.createElement('div'));
         textContainer.classList.add(TEXT);
-        const textElement = textContainer.appendChild(document.createElement('pre'));
+        const textElement = textContainer.appendChild(document.createElement('p'));
         textElement.textContent = text;
 
         actions.forEach((action: MainMessageItem) => {
