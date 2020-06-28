@@ -102,47 +102,43 @@ export class PluginHostRPC {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             loadPlugin(plugin: Plugin): any {
                 console.log('PLUGIN_HOST(' + process.pid + '): PluginManagerExtImpl/loadPlugin(' + plugin.pluginPath + ')');
-                try {
-                    // cleaning the cache for all files of that plug-in.
-                    Object.keys(require.cache).forEach(function (key): void {
-                        const mod: NodeJS.Module = require.cache[key];
+                // cleaning the cache for all files of that plug-in.
+                Object.keys(require.cache).forEach(function (key): void {
+                    const mod: NodeJS.Module = require.cache[key];
 
-                        // attempting to reload a native module will throw an error, so skip them
-                        if (mod.id.endsWith('.node')) {
-                            return;
-                        }
-
-                        // remove children that are part of the plug-in
-                        let i = mod.children.length;
-                        while (i--) {
-                            const childMod: NodeJS.Module = mod.children[i];
-                            // ensure the child module is not null, is in the plug-in folder, and is not a native module (see above)
-                            if (childMod && childMod.id.startsWith(plugin.pluginFolder) && !childMod.id.endsWith('.node')) {
-                                // cleanup exports - note that some modules (e.g. ansi-styles) define their
-                                // exports in an immutable manner, so overwriting the exports throws an error
-                                delete childMod.exports;
-                                mod.children.splice(i, 1);
-                                for (let j = 0; j < childMod.children.length; j++) {
-                                    delete childMod.children[j];
-                                }
-                            }
-                        }
-
-                        if (key.startsWith(plugin.pluginFolder)) {
-                            // delete entry
-                            delete require.cache[key];
-                            const ix = mod.parent!.children.indexOf(mod);
-                            if (ix >= 0) {
-                                mod.parent!.children.splice(ix, 1);
-                            }
-                        }
-
-                    });
-                    if (plugin.pluginPath) {
-                        return require(plugin.pluginPath);
+                    // attempting to reload a native module will throw an error, so skip them
+                    if (mod.id.endsWith('.node')) {
+                        return;
                     }
-                } catch (e) {
-                    console.error(e);
+
+                    // remove children that are part of the plug-in
+                    let i = mod.children.length;
+                    while (i--) {
+                        const childMod: NodeJS.Module = mod.children[i];
+                        // ensure the child module is not null, is in the plug-in folder, and is not a native module (see above)
+                        if (childMod && childMod.id.startsWith(plugin.pluginFolder) && !childMod.id.endsWith('.node')) {
+                            // cleanup exports - note that some modules (e.g. ansi-styles) define their
+                            // exports in an immutable manner, so overwriting the exports throws an error
+                            delete childMod.exports;
+                            mod.children.splice(i, 1);
+                            for (let j = 0; j < childMod.children.length; j++) {
+                                delete childMod.children[j];
+                            }
+                        }
+                    }
+
+                    if (key.startsWith(plugin.pluginFolder)) {
+                        // delete entry
+                        delete require.cache[key];
+                        const ix = mod.parent!.children.indexOf(mod);
+                        if (ix >= 0) {
+                            mod.parent!.children.splice(ix, 1);
+                        }
+                    }
+
+                });
+                if (plugin.pluginPath) {
+                    return require(plugin.pluginPath);
                 }
             },
             async init(raw: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> {
