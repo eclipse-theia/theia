@@ -14,8 +14,6 @@
     "fast-plist": "^0.1.2",
     "idb": "^4.0.5",
     "jsonc-parser": "^2.0.2",
-    "monaco-css": "^2.5.0",
-    "monaco-html": "^2.5.2",
     "onigasm": "^2.2.0",
     "vscode-textmate": "^4.0.1"
   },

@@ -8762,16 +8762,6 @@ moment@2.24.0, moment@^2.6.0:
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.24.0.tgz#0d055d53f5052aa653c9f6eb68bb5d12bf5c2b5b"
   integrity sha512-bV7f+6l2QigeBBZSM/6yTNq4P2fNpSWj/0e7jQcy87A8e7o2nAfP/34/2ky5Vw4B9S446EtIhodAzkFCcR4dQg==
 
-monaco-css@^2.5.0:
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/monaco-css/-/monaco-css-2.6.0.tgz#40f1291e01ff297b99a92806f5cc12a0394715d7"
-  integrity sha512-p+qZxteFlSkWx2pXnK9k11FKvC8q3qt1gL2yH4F3bLjKs1ngD65XncVxC5fuKdMhH23im9dv/ZF6rKP93+04tg==
-
-monaco-html@^2.5.2:
-  version "2.6.0"
-  resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-2.6.0.tgz#42d4441b9ba3e023d8895e5a1569d1df623c1691"
-  integrity sha512-UVvgqFFuzCjwsfINKmc2nm4qvQhBsu1luw4lUz+YF3CxAcVQBmscWiz5fb6/MFRG77K0h+7uADseNmc9APzEgA==
-
 monaco-languageclient@^0.13.0:
   version "0.13.0"
   resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.13.0.tgz#59b68b42fb7633171502d6557f597c2752f6c266"
