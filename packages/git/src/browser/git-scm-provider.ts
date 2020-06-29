@@ -195,6 +195,13 @@ export class GitScmProvider implements ScmProvider {
 
     getUriToOpen(change: GitFileChange): URI {
         const changeUri: URI = new URI(change.uri);
+        if (change.status === GitFileStatus.Deleted) {
+            if (change.staged) {
+                return changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD');
+            } else {
+                return changeUri.withScheme(GIT_RESOURCE_SCHEME);
+            }
+        }
         if (change.status !== GitFileStatus.New) {
             if (change.staged) {
                 return DiffUris.encode(
