@@ -18,7 +18,7 @@
 
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { Event, Emitter, DisposableCollection, Disposable } from '@theia/core';
+import { Event, Emitter, DisposableCollection, Disposable, MaybePromise } from '@theia/core';
 import { OutputChannel } from '@theia/output/lib/common/output-channel';
 import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 
@@ -27,7 +27,7 @@ export interface DebugExitEvent {
     reason?: string | Error
 }
 
-export type DebugRequestHandler = (request: DebugProtocol.Request) => any;
+export type DebugRequestHandler = (request: DebugProtocol.Request) => MaybePromise<any>;
 
 export interface DebugRequestTypes {
     'attach': [DebugProtocol.AttachRequestArguments, DebugProtocol.AttachResponse]
@@ -252,7 +252,7 @@ export class DebugSessionConnection implements Disposable {
         const handler = this.requestHandlers.get(request.command);
         if (handler) {
             try {
-                response.body = handler(request);
+                response.body = await handler(request);
             } catch (error) {
                 response.success = false;
                 response.message = error.message;
