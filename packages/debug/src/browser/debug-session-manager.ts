@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DisposableCollection, Emitter, Event, MessageService, ProgressService, WaitUntilEvent } from '@theia/core';
-import { LabelProvider } from '@theia/core/lib/browser';
+import { LabelProvider, ApplicationShell } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import URI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
@@ -141,6 +141,9 @@ export class DebugSessionManager {
     @inject(QuickOpenTask)
     protected readonly quickOpenTask: QuickOpenTask;
 
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
     protected debugTypeKey: ContextKey<string>;
     protected inDebugModeKey: ContextKey<boolean>;
 
@@ -166,6 +169,7 @@ export class DebugSessionManager {
     async start(options: DebugSessionOptions): Promise<DebugSession | undefined> {
         return this.progressService.withProgress('Start...', 'debug', async () => {
             try {
+                await this.shell.saveAll();
                 await this.fireWillStartDebugSession();
                 const resolved = await this.resolveConfiguration(options);
 
