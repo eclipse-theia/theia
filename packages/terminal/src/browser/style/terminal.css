@@ -17,7 +17,8 @@
 .terminal-container {
     width:100%;
     height:100%;
-    padding: var(--theia-code-padding);
+    padding-top: var(--theia-code-padding);
+    padding-bottom: var(--theia-code-padding);
     background: var(--theia-terminal-background);
 }
 
