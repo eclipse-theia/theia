@@ -20,8 +20,7 @@ import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution } f
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { HostedPluginServer } from '../common/plugin-dev-protocol';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
-import URI from '@theia/core/lib/common/uri';
-import { FileStat } from '@theia/filesystem/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 
 /**
@@ -90,7 +89,7 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
 
     private updateTitle(root: FileStat | undefined): void {
         if (root) {
-            const uri = new URI(root.uri);
+            const uri = root.resource;
             document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE + ' - ' + uri.displayName;
         } else {
             document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE;

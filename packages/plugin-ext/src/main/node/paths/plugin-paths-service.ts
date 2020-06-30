@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
+import URI from '@theia/core/lib/common/uri';
 import * as path from 'path';
+import * as fs from 'fs-extra';
 import { readdir, remove } from 'fs-extra';
 import * as crypto from 'crypto';
-import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import { PluginPaths } from './const';
@@ -37,9 +37,6 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
-
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;
 
@@ -54,53 +51,51 @@ export class PluginPathsServiceImpl implements PluginPathsService {
         }
 
         const pluginDirPath = path.join(parentLogsDir, this.generateTimeFolderName(), 'host');
-        await this.fileSystem.createFolder(pluginDirPath);
+        await fs.mkdirs(pluginDirPath);
         // no `await` as We should never wait for the cleanup
         this.cleanupOldLogs(parentLogsDir);
-        return new URI(pluginDirPath).path.toString();
+        return pluginDirPath;
     }
 
-    async getHostStoragePath(workspace: FileStat | undefined, roots: FileStat[]): Promise<string | undefined> {
+    async getHostStoragePath(workspaceUri: string | undefined, rootUris: string[]): Promise<string | undefined> {
         const parentStorageDir = await this.getWorkspaceStorageDirPath();
 
         if (!parentStorageDir) {
             throw new Error('Unable to get parent storage directory');
         }
 
-        if (!workspace) {
+        if (!workspaceUri) {
             return undefined;
         }
 
-        if (!await this.fileSystem.exists(parentStorageDir)) {
-            await this.fileSystem.createFolder(parentStorageDir);
-        }
+        await fs.mkdirs(parentStorageDir);
 
-        const storageDirName = await this.buildWorkspaceId(workspace, roots);
+        const storageDirName = await this.buildWorkspaceId(workspaceUri, rootUris);
         const storageDirPath = path.join(parentStorageDir, storageDirName);
-        if (!await this.fileSystem.exists(storageDirPath)) {
-            await this.fileSystem.createFolder(storageDirPath);
-        }
+        await fs.mkdirs(storageDirPath);
 
-        return new URI(storageDirPath).path.toString();
+        return storageDirPath;
     }
 
-    protected async buildWorkspaceId(workspace: FileStat, roots: FileStat[]): Promise<string> {
+    protected async buildWorkspaceId(workspaceUri: string, rootUris: string[]): Promise<string> {
         const untitledWorkspace = await getTemporaryWorkspaceFileUri(this.envServer);
 
-        if (untitledWorkspace.toString() === workspace.uri) {
+        if (untitledWorkspace.toString() === workspaceUri) {
             // if workspace is temporary
             // then let create a storage path for each set of workspace roots
-            const rootsStr = roots.map(root => root.uri).sort().join(',');
+            const rootsStr = rootUris.sort().join(',');
             return crypto.createHash('md5').update(rootsStr).digest('hex');
         } else {
-            const uri = new URI(workspace.uri);
-            let displayName = uri.displayName;
-
-            if ((!workspace || !workspace.isDirectory) && (displayName.endsWith(`.${THEIA_EXT}`) || displayName.endsWith(`.${VSCODE_EXT}`))) {
+            let stat;
+            try {
+                stat = await fs.stat(FileUri.fsPath(workspaceUri));
+            } catch { /* no-op */ }
+            let displayName = new URI(workspaceUri).displayName;
+            if ((!stat || !stat.isDirectory()) && (displayName.endsWith(`.${THEIA_EXT}`) || displayName.endsWith(`.${VSCODE_EXT}`))) {
                 displayName = displayName.slice(0, displayName.lastIndexOf('.'));
             }
 
-            return crypto.createHash('md5').update(uri.toString()).digest('hex');
+            return crypto.createHash('md5').update(workspaceUri).digest('hex');
         }
     }
 

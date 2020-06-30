@@ -16,7 +16,6 @@
 
 import * as theia from '@theia/plugin';
 import { UriComponents } from './uri-components';
-import { FileStat } from '@theia/filesystem/lib/common';
 
 // Should contains internal Plugin API types
 
@@ -81,21 +80,6 @@ export interface SerializedDocumentFilter {
     scheme?: string;
     pattern?: theia.GlobPattern;
 }
-
-export interface FileWatcherSubscriberOptions {
-    globPattern: theia.GlobPattern;
-    ignoreCreateEvents?: boolean;
-    ignoreChangeEvents?: boolean;
-    ignoreDeleteEvents?: boolean;
-}
-
-export interface FileChangeEvent {
-    subscriberId: string,
-    uri: UriComponents,
-    type: FileChangeEventType
-}
-
-export type FileChangeEventType = 'created' | 'updated' | 'deleted';
 
 export enum CompletionTriggerKind {
     Invoke = 0,
@@ -424,7 +408,7 @@ export interface DocumentSymbol {
 }
 
 export interface WorkspaceRootsChangeEvent {
-    roots: FileStat[];
+    roots: string[];
 }
 
 export interface WorkspaceFolder {
@@ -538,18 +522,6 @@ export interface CallHierarchyIncomingCall {
 export interface CallHierarchyOutgoingCall {
     to: CallHierarchyItem;
     fromRanges: Range[];
-}
-
-export interface CreateFilesEventDTO {
-    files: UriComponents[]
-}
-
-export interface RenameFilesEventDTO {
-    files: { oldUri: UriComponents, newUri: UriComponents }[]
-}
-
-export interface DeleteFilesEventDTO {
-    files: UriComponents[]
 }
 
 export interface SearchInWorkspaceResult {

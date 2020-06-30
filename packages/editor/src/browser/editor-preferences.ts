@@ -25,7 +25,6 @@ import {
     PreferenceSchemaProperties
 } from '@theia/core/lib/browser/preferences';
 import { isWindows, isOSX, OS } from '@theia/core/lib/common/os';
-import { SUPPORTED_ENCODINGS } from './supported-encodings';
 
 const DEFAULT_WINDOWS_FONT_FAMILY = 'Consolas, \'Courier New\', monospace';
 const DEFAULT_MAC_FONT_FAMILY = 'Menlo, Monaco, \'Courier New\', monospace';
@@ -1225,11 +1224,6 @@ export const editorPreferenceSchema: PreferenceSchema = {
             ],
             'default': 'auto',
             'description': 'The default end of line character.'
-        },
-        'files.encoding': {
-            'enum': Object.keys(SUPPORTED_ENCODINGS).sort(),
-            'default': 'utf8',
-            'description': 'The default character set encoding to use when reading and writing files.'
         }
     }
 };
@@ -1248,7 +1242,6 @@ export interface EditorConfiguration extends CodeEditorConfiguration {
     'editor.formatOnSave': boolean
     'editor.formatOnSaveTimeout': number
     'files.eol': EndOfLinePreference
-    'files.encoding': string
 }
 export type EndOfLinePreference = '\n' | '\r\n' | 'auto';
 

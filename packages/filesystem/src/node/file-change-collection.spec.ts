@@ -17,7 +17,7 @@
 import * as assert from 'assert';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileChangeCollection } from './file-change-collection';
-import { FileChangeType } from '../common/filesystem-watcher-protocol';
+import { FileChangeType } from '../common/files';
 
 describe('FileChangeCollection', () => {
 
@@ -91,16 +91,20 @@ describe('FileChangeCollection', () => {
         expected: FileChangeType[] | FileChangeType
     }): void {
         const expectedTypes = Array.isArray(expected) ? expected : [expected];
-        const expectation = expectedTypes.map(type => FileChangeType[type]).join(' + ');
-        it(`${changes.map(type => FileChangeType[type]).join(' + ')} => ${expectation}`, () => {
+        const expectation = expectedTypes.map(type => typeAsString(type)).join(' + ');
+        it(`${changes.map(type => typeAsString(type)).join(' + ')} => ${expectation}`, () => {
             const collection = new FileChangeCollection();
             const uri = FileUri.create('/root/foo/bar.txt').toString();
             for (const type of changes) {
                 collection.push({ uri, type });
             }
-            const actual = collection.values().map(({ type }) => FileChangeType[type]).join(' + ');
+            const actual = collection.values().map(({ type }) => typeAsString(type)).join(' + ');
             assert.equal(expectation, actual);
         });
+    }
+
+    function typeAsString(type: FileChangeType): string {
+        return type === FileChangeType.UPDATED ? 'UPDATED' : type === FileChangeType.ADDED ? 'ADDED' : 'DELETED';
     }
 
 });

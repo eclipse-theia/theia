@@ -92,6 +92,7 @@ import { TreeLabelProvider } from './tree/tree-label-provider';
 import { ProgressBar } from './progress-bar';
 import { ProgressBarFactory, ProgressBarOptions } from './progress-bar-factory';
 import { CommandOpenHandler } from './command-open-handler';
+import { EncodingService } from './encoding-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -208,6 +209,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         WebSocketConnectionProvider.createProxy(container, messageServicePath, client);
         return messages;
     });
+
+    bind(EncodingService).toSelf().inSingletonScope();
 
     bind(ResourceContextKey).toSelf().inSingletonScope();
     bind(CommonFrontendContribution).toSelf().inSingletonScope();

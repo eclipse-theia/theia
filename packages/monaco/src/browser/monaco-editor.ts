@@ -38,6 +38,7 @@ import {
     EncodingMode
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
+import { UTF8 } from '@theia/core/lib/browser/encoding-service';
 
 import IStandaloneEditorConstructionOptions = monaco.editor.IStandaloneEditorConstructionOptions;
 import IModelDeltaDecoration = monaco.editor.IModelDeltaDecoration;
@@ -80,8 +81,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     protected readonly onLanguageChangedEmitter = new Emitter<string>();
     readonly onLanguageChanged = this.onLanguageChangedEmitter.event;
     protected readonly onScrollChangedEmitter = new Emitter<void>();
-    protected readonly onEncodingChangedEmitter = new Emitter<string>();
-    readonly onEncodingChanged = this.onEncodingChangedEmitter.event;
+    readonly onEncodingChanged = this.document.onDidChangeEncoding;
 
     readonly documents = new Set<MonacoEditorModel>();
 
@@ -101,8 +101,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             this.onDocumentContentChangedEmitter,
             this.onMouseDownEmitter,
             this.onLanguageChangedEmitter,
-            this.onScrollChangedEmitter,
-            this.onEncodingChangedEmitter
+            this.onScrollChangedEmitter
         ]);
         this.documents.add(document);
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
@@ -113,19 +112,16 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     }
 
     getEncoding(): string {
-        return this.document.getEncoding() || 'utf8';
+        return this.document.getEncoding() || UTF8;
     }
 
-    setEncoding(encoding: string, mode: EncodingMode): void {
+    setEncoding(encoding: string, mode: EncodingMode): Promise<void> {
         if (mode === EncodingMode.Decode) {
             // reopen file with encoding
-            this.document.reopenWithEncoding(encoding)
-                .then(() => this.onEncodingChangedEmitter.fire(encoding));
-        } else {
-            // encode and save file
-            this.document.saveWithEncoding(encoding)
-                .then(() => this.onEncodingChangedEmitter.fire(encoding));
+            return this.document.reopenWithEncoding(encoding);
         }
+        // encode and save file
+        return this.document.saveWithEncoding(encoding);
     }
 
     protected create(options?: IStandaloneEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {

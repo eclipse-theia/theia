@@ -17,7 +17,7 @@
 /* eslint-disable max-len, @typescript-eslint/indent */
 
 import debounce = require('lodash.debounce');
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { TabBar, Widget, Title } from '@phosphor/widgets';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
@@ -48,6 +48,8 @@ import { CorePreferences } from './core-preferences';
 import { ThemeService } from './theming';
 import { PreferenceService, PreferenceScope } from './preferences';
 import { ClipboardService } from './clipboard-service';
+import { EncodingService, UTF8 } from './encoding-service';
+import { EnvVariablesServer } from '../common/env-variables';
 
 export namespace CommonMenus {
 
@@ -317,8 +319,20 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(ClipboardService)
     protected readonly clipboardService: ClipboardService;
 
-    @postConstruct()
-    protected init(): void {
+    @inject(EncodingService)
+    protected readonly encodingService: EncodingService;
+
+    @inject(EnvVariablesServer)
+    protected readonly environments: EnvVariablesServer;
+
+    async configure(): Promise<void> {
+        const configDirUri = await this.environments.getConfigDirUri();
+        // Global settings
+        this.encodingService.registerOverride({
+            encoding: UTF8,
+            parent: new URI(configDirUri)
+        });
+
         this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
@@ -925,16 +939,16 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-                placeholder: 'Select File Icon Theme',
-                fuzzyMatchLabel: true,
-                selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-                onClose: () => {
-                    if (resetTo) {
-                        previewTheme.cancel();
-                        this.iconThemes.current = resetTo;
-                    }
+            placeholder: 'Select File Icon Theme',
+            fuzzyMatchLabel: true,
+            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
+            onClose: () => {
+                if (resetTo) {
+                    previewTheme.cancel();
+                    this.iconThemes.current = resetTo;
                 }
-            });
+            }
+        });
     }
 
     protected selectColorTheme(): void {
@@ -964,19 +978,19 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.quickOpenService.open({
             onType: (_, accept) => accept(items)
         }, {
-                placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
-                fuzzyMatchLabel: true,
-                selectIndex: () => {
-                    const current = this.themeService.getCurrentTheme().id;
-                    return items.findIndex(item => item.id === current);
-                },
-                onClose: () => {
-                    if (resetTo) {
-                        previewTheme.cancel();
-                        this.themeService.setCurrentTheme(resetTo);
-                    }
+            placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
+            fuzzyMatchLabel: true,
+            selectIndex: () => {
+                const current = this.themeService.getCurrentTheme().id;
+                return items.findIndex(item => item.id === current);
+            },
+            onClose: () => {
+                if (resetTo) {
+                    previewTheme.cancel();
+                    this.themeService.setCurrentTheme(resetTo);
                 }
-            });
+            }
+        });
     }
 
     registerColors(colors: ColorRegistry): void {

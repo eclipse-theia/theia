@@ -60,6 +60,6 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
 
     getDomain(): string[] {
         // workspace file is treated as part of the workspace
-        return this.workspaceService.tryGetRoots().map(r => r.uri).concat([this.options.workspaceUri.toString()]);
+        return this.workspaceService.tryGetRoots().map(r => r.resource.toString()).concat([this.options.workspaceUri.toString()]);
     }
 }

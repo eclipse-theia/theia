@@ -17,7 +17,7 @@
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope } from '@theia/core/lib/browser';
-import { FileStat } from '@theia/filesystem/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { SectionPreferenceProvider } from './section-preference-provider';
 
@@ -42,7 +42,7 @@ export class FolderPreferenceProvider extends SectionPreferenceProvider {
 
     get folderUri(): URI {
         if (!this._folderUri) {
-            this._folderUri = new URI(this.folder.uri);
+            this._folderUri = this.folder.resource;
         }
         return this._folderUri;
     }

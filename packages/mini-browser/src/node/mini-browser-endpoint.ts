@@ -22,7 +22,6 @@ import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { MiniBrowserService } from '../common/mini-browser-service';
@@ -35,7 +34,7 @@ export interface FileStatWithContent {
     /**
      * The file stat.
      */
-    readonly stat: FileStat;
+    readonly stat: fs.Stats & { uri: string };
 
     /**
      * The content of the file as a UTF-8 encoded string.
@@ -80,9 +79,6 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
-
     @inject(ContributionProvider)
     @named(MiniBrowserEndpointHandler)
     protected readonly contributions: ContributionProvider<MiniBrowserEndpointHandler>;
@@ -110,13 +106,13 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     }
 
     protected async response(uri: string, response: Response): Promise<Response> {
-        const exists = await this.fileSystem.exists(uri);
+        const exists = await fs.pathExists(FileUri.fsPath(uri));
         if (!exists) {
             return this.missingResourceHandler()(uri, response);
         }
         const statWithContent = await this.readContent(uri);
         try {
-            if (!statWithContent.stat.isDirectory) {
+            if (!statWithContent.stat.isDirectory()) {
                 const extension = uri.split('.').pop();
                 if (!extension) {
                     return this.defaultHandler()(statWithContent, response);
@@ -143,7 +139,9 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     }
 
     protected async readContent(uri: string): Promise<FileStatWithContent> {
-        return this.fileSystem.resolveContent(uri);
+        const fsPath = FileUri.fsPath(uri);
+        const [stat, content] = await Promise.all([fs.stat(fsPath), fs.readFile(fsPath, 'utf8')]);
+        return { stat: Object.assign(stat, { uri }), content };
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -176,8 +174,8 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
 
     protected defaultHandler(): (statWithContent: FileStatWithContent, response: Response) => MaybePromise<Response> {
         return async (statWithContent: FileStatWithContent, response: Response) => {
-            const { stat, content } = statWithContent;
-            const mimeType = lookup(FileUri.fsPath(stat.uri));
+            const { content } = statWithContent;
+            const mimeType = lookup(FileUri.fsPath(statWithContent.stat.uri));
             if (!mimeType) {
                 this.logger.warn(`Cannot handle unexpected resource. URI: ${statWithContent.stat.uri}.`);
                 response.contentType('application/octet-stream');

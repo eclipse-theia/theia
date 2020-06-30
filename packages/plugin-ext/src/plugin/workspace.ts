@@ -21,7 +21,7 @@
 
 import * as paths from 'path';
 import * as theia from '@theia/plugin';
-import { Event, Emitter, WaitUntilEvent } from '@theia/core/lib/common/event';
+import { Event, Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import {
     WorkspaceExt,
@@ -32,19 +32,9 @@ import {
 } from '../common/plugin-api-rpc';
 import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../common/rpc-protocol';
-import {
-    WorkspaceRootsChangeEvent,
-    FileChangeEvent,
-    CreateFilesEventDTO,
-    RenameFilesEventDTO,
-    DeleteFilesEventDTO,
-    SearchInWorkspaceResult,
-    Range
-} from '../common/plugin-api-rpc-model';
+import { WorkspaceRootsChangeEvent, SearchInWorkspaceResult, Range } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
-import { InPluginFileSystemWatcherProxy } from './in-plugin-filesystem-watcher-proxy';
 import { URI } from 'vscode-uri';
-import { FileStat } from '@theia/filesystem/lib/common';
 import { normalize } from '@theia/languages/lib/common/language-selector/paths';
 import { relative } from '../common/paths-util';
 import { Schemes } from '../common/uri-components';
@@ -55,28 +45,9 @@ import * as Converter from './type-converters';
 export class WorkspaceExtImpl implements WorkspaceExt {
 
     private proxy: WorkspaceMain;
-    private fileSystemWatcherManager: InPluginFileSystemWatcherProxy;
 
     private workspaceFoldersChangedEmitter = new Emitter<theia.WorkspaceFoldersChangeEvent>();
     public readonly onDidChangeWorkspaceFolders: Event<theia.WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
-
-    private willCreateFilesEmitter = new Emitter<theia.FileWillCreateEvent>();
-    public readonly onWillCreateFiles = this.willCreateFilesEmitter.event;
-
-    private didCreateFileEmitter = new Emitter<theia.FileCreateEvent>();
-    public readonly onDidCreateFiles = this.didCreateFileEmitter.event;
-
-    private willRenameFilesEmitter = new Emitter<theia.FileWillRenameEvent>();
-    public readonly onWillRenameFiles = this.willRenameFilesEmitter.event;
-
-    private didRenameFilesEmitter = new Emitter<theia.FileRenameEvent>();
-    public readonly onDidRenameFiles = this.didRenameFilesEmitter.event;
-
-    private willDeleteFilesEmitter = new Emitter<theia.FileWillDeleteEvent>();
-    public readonly onWillDeleteFiles = this.willDeleteFilesEmitter.event;
-
-    private didDeleteFilesEmitter = new Emitter<theia.FileDeleteEvent>();
-    public readonly onDidDeleteFiles = this.didDeleteFilesEmitter.event;
 
     private folders: theia.WorkspaceFolder[] | undefined;
     private documentContentProviders = new Map<string, theia.TextDocumentContentProvider>();
@@ -87,7 +58,6 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         private editorsAndDocuments: EditorsAndDocumentsExtImpl,
         private messageService: MessageRegistryExt) {
         this.proxy = rpc.getProxy(Ext.WORKSPACE_MAIN);
-        this.fileSystemWatcherManager = new InPluginFileSystemWatcherProxy(this.proxy);
     }
 
     get rootPath(): string | undefined {
@@ -159,8 +129,8 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return folder1.filter(folder => map.has(folder.uri.toString()));
     }
 
-    private toWorkspaceFolder(root: FileStat, index: number): theia.WorkspaceFolder {
-        const uri = URI.parse(root.uri);
+    private toWorkspaceFolder(root: string, index: number): theia.WorkspaceFolder {
+        const uri = URI.parse(root);
         const path = new Path(uri.path);
         return {
             uri: uri,
@@ -250,19 +220,11 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return this.proxy.$findTextInFiles(query, options || {}, nextSearchID, token);
     }
 
-    createFileSystemWatcher(globPattern: theia.GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
-        return this.fileSystemWatcherManager.createFileSystemWatcher(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
-    }
-
-    $fileChanged(event: FileChangeEvent): void {
-        this.fileSystemWatcherManager.onFileSystemEvent(event.subscriberId, URI.revive(event.uri), event.type);
-    }
-
     registerTextDocumentContentProvider(scheme: string, provider: theia.TextDocumentContentProvider): theia.Disposable {
         // `file` and `untitled` schemas are reserved by `workspace.openTextDocument` API:
         // `file`-scheme for opening a file
         // `untitled`-scheme for opening a new file that should be saved
-        if (scheme === Schemes.FILE || scheme === Schemes.UNTITLED || this.documentContentProviders.has(scheme)) {
+        if (scheme === Schemes.file || scheme === Schemes.untitled || this.documentContentProviders.has(scheme)) {
             throw new Error(`Text Content Document Provider for scheme '${scheme}' is already registered`);
         }
 
@@ -429,57 +391,5 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
         return true;
     }
-
-    // #region files api
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async $onWillCreateFiles(event: CreateFilesEventDTO): Promise<any[]> {
-        await WaitUntilEvent.fire(this.willCreateFilesEmitter, {
-            files: event.files.map<URI>(URI.revive),
-        });
-        return [];
-    }
-
-    $onDidCreateFiles(event: CreateFilesEventDTO): void {
-        this.didCreateFileEmitter.fire({
-            files: event.files.map<URI>(URI.revive),
-        });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async $onWillRenameFiles(event: RenameFilesEventDTO): Promise<any[]> {
-        await WaitUntilEvent.fire(this.willRenameFilesEmitter, {
-            files: event.files.map(file => ({
-                oldUri: URI.revive(file.oldUri),
-                newUri: URI.revive(file.newUri),
-            })),
-        });
-        return [];
-    }
-
-    $onDidRenameFiles(event: RenameFilesEventDTO): void {
-        this.didRenameFilesEmitter.fire({
-            files: event.files.map(file => ({
-                oldUri: URI.revive(file.oldUri),
-                newUri: URI.revive(file.newUri),
-            })),
-        });
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async $onWillDeleteFiles(event: DeleteFilesEventDTO): Promise<any[]> {
-        await WaitUntilEvent.fire(this.willDeleteFilesEmitter, {
-            files: event.files.map<URI>(URI.revive),
-        });
-        return [];
-    }
-
-    $onDidDeleteFiles(event: DeleteFilesEventDTO): void {
-        this.didDeleteFilesEmitter.fire({
-            files: event.files.map<URI>(URI.revive),
-        });
-    }
-
-    // #endregion files api
 
 }

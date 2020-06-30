@@ -17,6 +17,13 @@ Breaking Changes:
 <a name="1_4_0_deprecate_languages"></a>
 - [[languages]](#1_4_0_deprecate_languages) `@theia/languages` extension is deprecated, use VS Code extensions to provide language smartness: 
   https://code.visualstudio.com/api/language-extensions/language-server-extension-guide [#8112](https://github.com/eclipse-theia/theia/pull/8112)
+<a name="1_4_0_deprecate_file_sytem"></a>
+- [[filesystem]](#1_4_0_deprecate_file_sytem) `FileSystem` and `FileSystemWatcher` services are deprecated [#7908](https://github.com/eclipse-theia/theia/pull/7908)
+  - On the backend there is no anymore `FileSystem` implementation. One has to use Node.js APIs instead.
+  - On the frontend `FileService` should be used instead. It was ported from VS Code for compatibility with VS Code extensions.
+  - On the frontend `EnvVariableServer` should be used instead to access the current user home and available drives.
+<a name="1_4_0_usestorage_as_fs_provider"></a>
+- [[userstorage]](#1_4_0_usestorage_as_fs_provider) `UserStorageService` was replaced by the user data fs provider [#7908](https://github.com/eclipse-theia/theia/pull/7908)
 
 ## v1.3.0
 

@@ -1065,7 +1065,7 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     protected getContext(): string | undefined {
-        return this.workspaceService.workspace && this.workspaceService.workspace.uri;
+        return this.workspaceService.workspace?.resource.toString();
     }
 
     /** Kill task for a given id if task is found */

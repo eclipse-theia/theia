@@ -16,28 +16,19 @@
 
 import { ContainerModule, interfaces } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from '@theia/core/lib/common';
-import { FileSystemNode } from './node-filesystem';
-import { FileSystem, FileSystemClient, fileSystemPath, DispatchingFileSystemClient } from '../common';
-import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
+import { FileSystemWatcherServer } from '../common/filesystem-watcher-protocol';
 import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
 import { NsfwFileSystemWatcherServer } from './nsfw-watcher/nsfw-filesystem-watcher';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { NodeFileUploadService } from './node-file-upload-service';
 import { NsfwOptions } from './nsfw-watcher/nsfw-options';
+import { DiskFileSystemProvider } from './disk-file-system-provider';
+import {
+    remoteFileSystemPath, RemoteFileSystemServer, RemoteFileSystemClient, FileSystemProviderServer, RemoteFileSystemProxyFactory
+} from '../common/remote-file-system-provider';
+import { FileSystemProvider } from '../common/files';
 
 const SINGLE_THREADED = process.argv.indexOf('--no-cluster') !== -1;
-
-export function bindFileSystem(bind: interfaces.Bind, props?: {
-    onFileSystemActivation: (context: interfaces.Context, fs: FileSystem) => void
-}): void {
-    bind(FileSystemNode).toSelf().inSingletonScope().onActivation((context, fs) => {
-        if (props && props.onFileSystemActivation) {
-            props.onFileSystemActivation(context, fs);
-        }
-        return fs;
-    });
-    bind(FileSystem).toService(FileSystemNode);
-}
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind, { singleThreaded }: { singleThreaded: boolean } = { singleThreaded: SINGLE_THREADED }): void {
     bind(NsfwOptions).toConstantValue({});
@@ -59,32 +50,18 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind, { singleThrea
 }
 
 export default new ContainerModule(bind => {
-    bind(DispatchingFileSystemClient).toSelf().inSingletonScope();
-    bindFileSystem(bind, {
-        onFileSystemActivation: ({ container }, fs) => {
-            fs.setClient(container.get(DispatchingFileSystemClient));
-            fs.setClient = () => {
-                throw new Error('use DispatchingFileSystemClient');
-            };
-        }
-    });
-    bind(ConnectionHandler).toDynamicValue(({ container }) =>
-        new JsonRpcConnectionHandler<FileSystemClient>(fileSystemPath, client => {
-            const dispatching = container.get(DispatchingFileSystemClient);
-            dispatching.clients.add(client);
-            client.onDidCloseConnection(() => dispatching.clients.delete(client));
-            return container.get(FileSystem);
-        })
-    ).inSingletonScope();
-
     bindFileSystemWatcherServer(bind);
+    bind(DiskFileSystemProvider).toSelf();
+    bind(FileSystemProvider).toService(DiskFileSystemProvider);
+    bind(FileSystemProviderServer).toSelf();
+    bind(RemoteFileSystemServer).toService(FileSystemProviderServer);
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<FileSystemWatcherClient>(fileSystemWatcherPath, client => {
-            const server = ctx.container.get<FileSystemWatcherServer>(FileSystemWatcherServer);
+        new JsonRpcConnectionHandler<RemoteFileSystemClient>(remoteFileSystemPath, client => {
+            const server = ctx.container.get<RemoteFileSystemServer>(RemoteFileSystemServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
-        })
+        }, RemoteFileSystemProxyFactory)
     ).inSingletonScope();
 
     bind(NodeFileUploadService).toSelf().inSingletonScope();

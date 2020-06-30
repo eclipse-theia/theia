@@ -22,16 +22,17 @@ import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
 import { CompletionTriggerKind } from '@theia/languages/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError } from '@theia/filesystem/lib/common/files';
 
 @injectable()
 export class MonacoSnippetSuggestProvider implements monaco.languages.CompletionItemProvider {
 
     private static readonly _maxPrefix = 10000;
 
-    @inject(FileSystem)
-    protected readonly filesystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     protected readonly snippets = new Map<string, Snippet[]>();
     protected readonly pendingSnippets = new Map<string, Promise<void>[]>();
@@ -138,14 +139,15 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
      */
     protected async loadURI(uri: string | URI, options: SnippetLoadOptions, toDispose: DisposableCollection): Promise<void> {
         try {
-            const { content } = await this.filesystem.resolveContent(uri.toString(), { encoding: 'utf-8' });
+            const resource = typeof uri === 'string' ? new URI(uri) : uri;
+            const { value } = await this.fileService.read(resource);
             if (toDispose.disposed) {
                 return;
             }
-            const snippets = content && jsoncparser.parse(content, undefined, { disallowComments: false });
+            const snippets = value && jsoncparser.parse(value, undefined, { disallowComments: false });
             toDispose.push(this.fromJSON(snippets, options));
         } catch (e) {
-            if (!FileSystemError.FileNotFound.is(e) && !FileSystemError.FileIsDirectory.is(e)) {
+            if (!(e instanceof FileOperationError)) {
                 console.error(e);
             }
         }

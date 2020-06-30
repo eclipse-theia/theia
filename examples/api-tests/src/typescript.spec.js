@@ -37,7 +37,7 @@ describe('TypeScript', function () {
     const { animationFrame } = require('@theia/core/lib/browser/browser');
     const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
     const { ProgressStatusBarItem } = require('@theia/core/lib/browser/progress-status-bar-item');
-    const { FileSystem } = require('@theia/filesystem/lib/common/filesystem');
+    const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { PluginViewRegistry } = require('@theia/plugin-ext/lib/main/browser/view/plugin-view-registry');
 
     const container = window.theia.container;
@@ -52,20 +52,18 @@ describe('TypeScript', function () {
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
     const preferences = container.get(PreferenceService);
     const progressStatusBarItem = container.get(ProgressStatusBarItem);
-    /** @type {import('@theia/filesystem/lib/common/filesystem').FileSystem} */
-    const fileSystem = container.get(FileSystem);
+    const fileService = container.get(FileService);
     const pluginViewRegistry = container.get(PluginViewRegistry);
 
     const typescriptPluginId = 'vscode.typescript-language-features';
     const referencesPluginId = 'ms-vscode.references-view';
-    const rootUri = new Uri.default(workspaceService.tryGetRoots()[0].uri);
+    const rootUri = workspaceService.tryGetRoots()[0].resource;
     const serverUri = rootUri.resolve('src-gen/backend/test-server.js');
     const inversifyUri = rootUri.resolve('../../node_modules/inversify/dts/inversify.d.ts').normalizePath();
     const containerUri = rootUri.resolve('../../node_modules/inversify/dts/container/container.d.ts').normalizePath();
 
     before(async function () {
-        await fileSystem.createFile(serverUri.toString(), {
-            content: `// @ts-check
+        await fileService.create(serverUri, `// @ts-check
 require('reflect-metadata');
 const path = require('path');
 const express = require('express');
@@ -128,8 +126,7 @@ module.exports = (port, host, argv) => Promise.resolve()
         }
         throw reason;
     });
-    `
-        });
+    `, { fromUserGesture: false, overwrite: true });
         await pluginService.didStart;
         await Promise.all([typescriptPluginId, referencesPluginId].map(async pluginId => {
             if (!pluginService.getPlugin(pluginId)) {
@@ -140,7 +137,7 @@ module.exports = (port, host, argv) => Promise.resolve()
     });
 
     after(async function () {
-        await fileSystem.delete(serverUri.toString());
+        await fileService.delete(serverUri, { fromUserGesture: false });
     });
 
     beforeEach(async function () {
@@ -260,7 +257,7 @@ module.exports = (port, host, argv) => Promise.resolve()
         assert.isFalse(contextKeyService.match('listFocus'));
     }
 
-    it('document formating should be visible and enabled', async () => {
+    it('document formating should be visible and enabled', async function () {
         await openEditor(serverUri);
         const menu = menuFactory.createContextMenu(EDITOR_CONTEXT_MENU);
         const item = menu.items.find(i => i.command === 'editor.action.formatDocument');

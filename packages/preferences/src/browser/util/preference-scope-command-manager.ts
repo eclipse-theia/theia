@@ -16,8 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { PreferenceScope, LabelProvider } from '@theia/core/lib/browser';
-import { FileStat } from '@theia/filesystem/lib/common';
-import URI from '@theia/core/lib/common/uri';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import { CommandRegistry, MenuModelRegistry, Command } from '@theia/core/lib/common';
 import { Preference } from './preference-types';
 
@@ -42,11 +41,11 @@ export class PreferenceScopeCommandManager {
         this.foldersAsCommands.length = 0;
 
         folderWorkspaces.forEach(folderWorkspace => {
-            const folderLabel = this.labelProvider.getName(new URI(folderWorkspace.uri));
+            const folderLabel = this.labelProvider.getName(folderWorkspace.resource);
 
-            const iconClass = currentFolderURI === folderWorkspace.uri ? 'fa fa-check' : '';
+            const iconClass = currentFolderURI === folderWorkspace.resource.toString() ? 'fa fa-check' : '';
             const newFolderAsCommand = {
-                id: `preferenceScopeCommand:${folderWorkspace.uri}`,
+                id: `preferenceScopeCommand:${folderWorkspace.resource.toString()}`,
                 label: folderLabel,
                 iconClass: iconClass
             };
@@ -57,7 +56,7 @@ export class PreferenceScopeCommandManager {
                 isVisible: (callback, check) => check === 'from-tabbar',
                 isEnabled: (callback, check) => check === 'from-tabbar',
                 execute: (callback: (scopeDetails: Preference.SelectedScopeDetails) => void) => {
-                    callback({ scope: PreferenceScope.Folder.toString(), uri: folderWorkspace.uri, activeScopeIsFolder: 'true' });
+                    callback({ scope: PreferenceScope.Folder.toString(), uri: folderWorkspace.resource.toString(), activeScopeIsFolder: 'true' });
                 }
             });
 

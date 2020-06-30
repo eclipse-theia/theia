@@ -22,7 +22,7 @@ import { PreferenceProvider, PreferenceResolveResult } from '@theia/core/lib/bro
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider';
-import { FileStat } from '@theia/filesystem/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 @injectable()
 export class FoldersPreferencesProvider extends PreferenceProvider {
@@ -58,7 +58,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         for (const folder of roots) {
             for (const configPath of this.configurations.getPaths()) {
                 for (const configName of [...this.configurations.getSectionNames(), this.configurations.getConfigName()]) {
-                    const sectionUri = this.configurations.createUri(new URI(folder.uri), configPath, configName);
+                    const sectionUri = this.configurations.createUri(folder.resource, configPath, configName);
                     const sectionKey = sectionUri.toString();
                     toDelete.delete(sectionKey);
                     if (!this.providers.has(sectionKey)) {
@@ -98,7 +98,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     }
 
     getDomain(): string[] {
-        return this.workspaceService.tryGetRoots().map(root => root.uri);
+        return this.workspaceService.tryGetRoots().map(root => root.resource.toString());
     }
 
     resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {

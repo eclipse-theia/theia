@@ -80,7 +80,7 @@ export class EditorModelService {
         const saves = [];
         for (const model of this.monacoModelService.models) {
             const { uri } = model.textEditorModel;
-            if (model.dirty && (includeUntitled || uri.scheme !== Schemes.UNTITLED)) {
+            if (model.dirty && (includeUntitled || uri.scheme !== Schemes.untitled)) {
                 saves.push((async () => {
                     try {
                         await model.save();

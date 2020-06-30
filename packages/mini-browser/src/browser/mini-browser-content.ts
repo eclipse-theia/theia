@@ -20,11 +20,9 @@ import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Emitter } from '@theia/core/lib/common/event';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { parseCssTime, Key, KeyCode } from '@theia/core/lib/browser';
-import { FileSystemWatcher, FileChangeEvent } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { BaseWidget, addEventListener } from '@theia/core/lib/browser/widgets/widget';
 import { LocationMapperService } from './location-mapper-service';
@@ -32,6 +30,8 @@ import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/appl
 
 import debounce = require('lodash.debounce');
 import { MiniBrowserContentStyle } from './mini-browser-content-style';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 
 /**
  * Initializer properties for the embedded browser widget.
@@ -177,11 +177,8 @@ export class MiniBrowserContent extends BaseWidget {
     @inject(ApplicationShellMouseTracker)
     protected readonly mouseTracker: ApplicationShellMouseTracker;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
-
-    @inject(FileSystemWatcher)
-    protected readonly fileSystemWatcher: FileSystemWatcher;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     protected readonly submitInputEmitter = new Emitter<string>();
     protected readonly navigateBackEmitter = new Emitter<void>();
@@ -254,18 +251,18 @@ export class MiniBrowserContent extends BaseWidget {
 
     protected async listenOnContentChange(location: string): Promise<void> {
         if (location.startsWith('file://')) {
-            if (await this.fileSystem.exists(location)) {
+            if (await this.fileService.exists(new URI(location))) {
                 const fileUri = new URI(location);
-                const watcher = await this.fileSystemWatcher.watchFileChanges(fileUri);
+                const watcher = this.fileService.watch(fileUri);
                 this.toDispose.push(watcher);
-                const onFileChange = (event: FileChangeEvent) => {
-                    if (FileChangeEvent.isChanged(event, fileUri)) {
+                const onFileChange = (event: FileChangesEvent) => {
+                    if (event.contains(fileUri, FileChangeType.ADDED) || event.contains(fileUri, FileChangeType.UPDATED)) {
                         this.go(location, {
                             showLoadIndicator: false
                         });
                     }
                 };
-                this.toDispose.push(this.fileSystemWatcher.onFilesChanged(debounce(onFileChange, 500)));
+                this.toDispose.push(this.fileService.onDidFilesChange(debounce(onFileChange, 500)));
             }
         }
     }

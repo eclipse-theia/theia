@@ -22,7 +22,6 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandService } from '@theia/core/lib/common/command';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { EditorOpenerOptions, EditorManager } from '@theia/editor/lib/browser/editor-manager';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { Repository, Git, CommitWithChanges, GitFileChange, WorkingDirectoryStatus, GitFileStatus } from '../common';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
@@ -32,6 +31,7 @@ import { ScmProvider, ScmCommand, ScmResourceGroup, ScmAmendSupport, ScmCommit }
 import { ScmHistoryCommit, ScmFileChange } from '@theia/scm-extra/lib/browser/scm-file-change-node';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GitCommitDetailWidgetOptions } from './history/git-commit-detail-widget';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
 export class GitScmProviderOptions {
@@ -61,8 +61,8 @@ export class GitScmProvider implements ScmProvider {
     @inject(GitErrorHandler)
     protected readonly gitErrorHandler: GitErrorHandler;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(Git)
     protected readonly git: Git;
@@ -200,13 +200,13 @@ export class GitScmProvider implements ScmProvider {
                 return DiffUris.encode(
                     changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
                     changeUri.withScheme(GIT_RESOURCE_SCHEME),
-                    changeUri.displayName + ' (Index)');
+                    this.labelProvider.getName(changeUri) + ' (Index)');
             }
             if (this.stagedChanges.find(c => c.uri === change.uri)) {
                 return DiffUris.encode(
                     changeUri.withScheme(GIT_RESOURCE_SCHEME),
                     changeUri,
-                    changeUri.displayName + ' (Working tree)');
+                    this.labelProvider.getName(changeUri) + ' (Working tree)');
             }
             if (this.mergeChanges.find(c => c.uri === change.uri)) {
                 return changeUri;
@@ -214,7 +214,7 @@ export class GitScmProvider implements ScmProvider {
             return DiffUris.encode(
                 changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
                 changeUri,
-                changeUri.displayName + ' (Working tree)');
+                this.labelProvider.getName(changeUri) + ' (Working tree)');
         }
         if (change.staged) {
             return changeUri.withScheme(GIT_RESOURCE_SCHEME);
@@ -223,7 +223,7 @@ export class GitScmProvider implements ScmProvider {
             return DiffUris.encode(
                 changeUri.withScheme(GIT_RESOURCE_SCHEME),
                 changeUri,
-                changeUri.displayName + ' (Working tree)');
+                this.labelProvider.getName(changeUri) + ' (Working tree)');
         }
         return changeUri;
     }
@@ -258,14 +258,14 @@ export class GitScmProvider implements ScmProvider {
     async stage(uriArg: string | string[]): Promise<void> {
         try {
             const { repository, unstagedChanges, mergeChanges } = this;
-            const uris = Array.isArray(uriArg) ? uriArg : [ uriArg ];
+            const uris = Array.isArray(uriArg) ? uriArg : [uriArg];
             const unstagedUris = uris
                 .filter(uri => {
                     const resourceUri = new URI(uri);
                     return unstagedChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)))
                         || mergeChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)));
                 }
-            );
+                );
             if (unstagedUris.length !== 0) {
                 // TODO resolve deletion conflicts
                 // TODO confirm staging of a unresolved file
@@ -288,13 +288,13 @@ export class GitScmProvider implements ScmProvider {
     async unstage(uriArg: string | string[]): Promise<void> {
         try {
             const { repository, stagedChanges } = this;
-            const uris = Array.isArray(uriArg) ? uriArg : [ uriArg ];
+            const uris = Array.isArray(uriArg) ? uriArg : [uriArg];
             const stagedUris = uris
                 .filter(uri => {
                     const resourceUri = new URI(uri);
                     return stagedChanges.some(change => resourceUri.isEqualOrParent(new URI(change.uri)));
                 }
-            );
+                );
             if (stagedUris.length !== 0) {
                 await this.git.unstage(repository, uris);
             }
@@ -319,7 +319,7 @@ export class GitScmProvider implements ScmProvider {
     }
     async discard(uriArg: string | string[]): Promise<void> {
         const { repository } = this;
-        const uris = Array.isArray(uriArg) ? uriArg : [ uriArg ];
+        const uris = Array.isArray(uriArg) ? uriArg : [uriArg];
 
         const status = this.getStatus();
         if (!status) {
@@ -352,15 +352,15 @@ export class GitScmProvider implements ScmProvider {
         await Promise.all(
             pairs.map(pair => {
                 const discardSingle = async () => {
-                if (pair.isInIndex) {
-                    try {
-                        await this.git.unstage(repository, pair.uri, { treeish: 'HEAD', reset: 'working-tree' });
-                    } catch (error) {
-                        this.gitErrorHandler.handleError(error);
+                    if (pair.isInIndex) {
+                        try {
+                            await this.git.unstage(repository, pair.uri, { treeish: 'HEAD', reset: 'working-tree' });
+                        } catch (error) {
+                            this.gitErrorHandler.handleError(error);
+                        }
+                    } else {
+                        await this.commands.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(pair.uri));
                     }
-                } else {
-                    await this.commands.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(pair.uri));
-                }
                 };
                 return discardSingle();
             })
@@ -370,7 +370,7 @@ export class GitScmProvider implements ScmProvider {
     protected confirm(paths: string[]): Promise<boolean | undefined> {
         let fileText: string;
         if (paths.length <= 3) {
-            fileText = paths.map(path => new URI(path).displayName).join(', ');
+            fileText = paths.map(path => this.labelProvider.getName(new URI(path))).join(', ');
         } else {
             fileText = `${paths.length} files`;
         }
@@ -389,7 +389,7 @@ export class GitScmProvider implements ScmProvider {
 
     protected async delete(uri: URI): Promise<void> {
         try {
-            await this.fileSystem.delete(uri.toString());
+            await this.fileService.delete(uri, { recursive: true });
         } catch (e) {
             console.error(e);
         }

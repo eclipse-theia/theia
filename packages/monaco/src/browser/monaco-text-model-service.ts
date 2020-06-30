@@ -19,7 +19,7 @@ import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-lan
 import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider } from '@theia/core';
 import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
-import { MonacoEditorModel } from './monaco-editor-model';
+import { MonacoEditorModel, MonacoEditorModelOptions } from './monaco-editor-model';
 import IReference = monaco.editor.IReference;
 export { IReference };
 
@@ -30,7 +30,7 @@ export interface MonacoEditorModelFactory {
 
     createModel(
         resource: Resource,
-        options?: { encoding?: string | undefined }
+        options?: MonacoEditorModelOptions
     ): MaybePromise<MonacoEditorModel>;
 
 }
@@ -86,7 +86,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     }
 
     protected createModel(resource: Resource): MaybePromise<MonacoEditorModel> {
-        const options = { encoding: this.editorPreferences.get('files.encoding') };
+        const options = {};
         const factory = this.factories.getContributions().find(({ scheme }) => resource.uri.scheme === scheme);
         return factory ? factory.createModel(resource, options) : new MonacoEditorModel(resource, this.m2p, this.p2m, options);
     }

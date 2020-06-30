@@ -16,7 +16,6 @@
 
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { injectable, inject } from 'inversify';
-import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import { Resource, ResourceResolver, ResourceVersion } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { Schemes } from '../../../common/uri-components';
@@ -33,7 +32,7 @@ export class UntitledResourceResolver implements ResourceResolver {
     protected readonly resources = new Map<string, UntitledResource>();
 
     async resolve(uri: URI): Promise<UntitledResource> {
-        if (uri.scheme !== Schemes.UNTITLED) {
+        if (uri.scheme !== Schemes.untitled) {
             throw new Error('The given uri is not untitled file uri: ' + uri);
         } else {
             const untitledResource = this.resources.get(uri.toString());
@@ -45,7 +44,7 @@ export class UntitledResourceResolver implements ResourceResolver {
         }
     }
 
-    async  createUntitledResource(fileResourceResolver: FileResourceResolver, content?: string, language?: string, uri?: URI): Promise<UntitledResource> {
+    async createUntitledResource(fileResourceResolver: FileResourceResolver, content?: string, language?: string, uri?: URI): Promise<UntitledResource> {
         let extension;
         if (language) {
             for (const lang of monaco.languages.getLanguages()) {
@@ -57,7 +56,7 @@ export class UntitledResourceResolver implements ResourceResolver {
                 }
             }
         }
-        return new UntitledResource(this.resources, uri ? uri : new URI().withScheme(Schemes.UNTITLED).withPath(`/Untitled-${index++}${extension ? extension : ''}`),
+        return new UntitledResource(this.resources, uri ? uri : new URI().withScheme(Schemes.untitled).withPath(`/Untitled-${index++}${extension ? extension : ''}`),
             fileResourceResolver, content);
     }
 }
@@ -91,7 +90,7 @@ export class UntitledResource implements Resource {
         }
     }
 
-    async saveContents(content: string, options?: { encoding?: string, overwriteEncoding?: string }): Promise<void> {
+    async saveContents(content: string, options?: { encoding?: string, overwriteEncoding?: boolean }): Promise<void> {
         if (!this.fileResource) {
             this.fileResource = await this.fileResourceResolver.resolve(new URI(this.uri.path.toString()));
             if (this.fileResource.onDidChangeContents) {
@@ -99,13 +98,6 @@ export class UntitledResource implements Resource {
             }
         }
         await this.fileResource.saveContents(content, options);
-    }
-
-    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: { encoding?: string, overwriteEncoding?: string }): Promise<void> {
-        if (!this.fileResource) {
-            throw new Error('FileResource is not available for: ' + this.uri.path.toString());
-        }
-        await this.fileResource.saveContentChanges(changes, options);
     }
 
     async guessEncoding(): Promise<string | undefined> {
@@ -124,6 +116,13 @@ export class UntitledResource implements Resource {
         }
         return undefined;
     }
+
+    get encoding(): string | undefined {
+        if (this.fileResource) {
+            return this.fileResource.encoding;
+        }
+        return undefined;
+    }
 }
 
 export function createUntitledURI(language?: string): URI {
@@ -138,5 +137,5 @@ export function createUntitledURI(language?: string): URI {
             }
         }
     }
-    return new URI().withScheme(Schemes.UNTITLED).withPath(`/Untitled-${index++}${extension ? extension : ''}`);
+    return new URI().withScheme(Schemes.untitled).withPath(`/Untitled-${index++}${extension ? extension : ''}`);
 }

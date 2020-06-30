@@ -22,8 +22,8 @@ import { Languages, Language } from '@theia/languages/lib/browser';
 import { EditorManager } from './editor-manager';
 import { EncodingMode } from './editor';
 import { EditorPreferences } from './editor-preferences';
-import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { ResourceProvider, MessageService } from '@theia/core';
+import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
 
 export namespace EditorCommands {
 
@@ -248,7 +248,7 @@ export class EditorCommandContribution implements CommandContribution {
         }
         const isReopenWithEncoding = (action === reopenWithEncodingPick.value);
 
-        const configuredEncoding = this.editorPreferences.get('files.encoding');
+        const configuredEncoding = this.preferencesService.get<string>('files.encoding', 'utf8', editor.uri.toString());
 
         const resource = await this.resourceProvider(editor.uri);
         const guessedEncoding = resource.guessEncoding ? await resource.guessEncoding() : undefined;

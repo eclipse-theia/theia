@@ -22,15 +22,15 @@ import { Position } from '@theia/editor/lib/browser';
 import { AbstractCmdClickTerminalContribution } from './terminal-linkmatcher';
 import { TerminalWidgetImpl } from './terminal-widget-impl';
 import { Path } from '@theia/core';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import URI from '@theia/core/lib/common/uri';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
 export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContribution {
 
     @inject(ApplicationServer) protected appServer: ApplicationServer;
     @inject(OpenerService) protected openerService: OpenerService;
-    @inject(FileSystem) protected fileSystem: FileSystem;
+    @inject(FileService) protected fileService: FileService;
 
     protected backendOs: Promise<OS.Type>;
 
@@ -51,9 +51,10 @@ export class TerminalLinkmatcherFiles extends AbstractCmdClickTerminalContributi
                 const toOpen = await this.toURI(match, await terminalWidget.cwd);
                 if (toOpen) {
                     // TODO: would be better to ask the opener service, but it returns positively even for unknown files.
-                    const f = await this.fileSystem.getFileStat(toOpen.toString());
-                    // eslint-disable-next-line no-null/no-null
-                    return f !== undefined && f !== null && !f.isDirectory;
+                    try {
+                        const stat = await this.fileService.resolve(toOpen);
+                        return !stat.isDirectory;
+                    } catch { }
                 }
             } catch (err) {
                 console.trace('Error validating ' + match);

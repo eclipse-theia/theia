@@ -31,11 +31,11 @@ import {
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { ConfigurationTarget } from '../../plugin/types-impl';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileStat } from '@theia/filesystem/lib/common/filesystem';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export function getPreferences(preferenceProviderProvider: PreferenceProviderProvider, rootFolders: FileStat[]): PreferenceData {
-    const folders = rootFolders.map(root => root.uri.toString());
+    const folders = rootFolders.map(root => root.resource.toString());
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return PreferenceScope.getScopes().reduce((result: { [key: number]: any }, scope: PreferenceScope) => {
         result[scope] = {};

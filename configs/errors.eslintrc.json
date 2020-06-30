@@ -1,6 +1,5 @@
 {
   "rules": {
-    "@typescript-eslint/class-name-casing": "error",
     "@typescript-eslint/consistent-type-definitions": "error",
     "@typescript-eslint/indent": "off",
     "@typescript-eslint/no-explicit-any": "error",
@@ -35,7 +34,6 @@
     "guard-for-in": "error",
     "id-blacklist": "off",
     "id-match": "off",
-    "import/no-deprecated": "error",
     "import/no-extraneous-dependencies": "off",
     "max-len": [
       "error",

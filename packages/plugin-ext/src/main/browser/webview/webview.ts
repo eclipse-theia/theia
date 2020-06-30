@@ -82,10 +82,10 @@ export const WebviewWidgetExternalEndpoint = Symbol('WebviewWidgetExternalEndpoi
 export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     private static readonly standardSupportedLinkSchemes = new Set([
-        Schemes.HTTP,
-        Schemes.HTTPS,
-        Schemes.MAILTO,
-        Schemes.VSCODE
+        Schemes.http,
+        Schemes.https,
+        Schemes.mailto,
+        Schemes.vscode
     ]);
 
     static FACTORY_ID = 'plugin-webview';
@@ -412,7 +412,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             }
             return link;
         }
-        if (!!this.contentOptions.enableCommandUris && link.scheme === Schemes.COMMAND) {
+        if (!!this.contentOptions.enableCommandUris && link.scheme === Schemes.command) {
             return link;
         }
         return undefined;

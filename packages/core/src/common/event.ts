@@ -152,7 +152,7 @@ export class Emitter<T = any> {
     private static _noop = function (): void { };
 
     private _event: Event<T>;
-    private _callbacks: CallbackList | undefined;
+    protected _callbacks: CallbackList | undefined;
     private _disposed = false;
 
     private _leakingStacks: Map<string, number> | undefined;
@@ -199,8 +199,8 @@ export class Emitter<T = any> {
 
                 return result;
             }, {
-                    maxListeners: Emitter.LEAK_WARNING_THRESHHOLD
-                }
+                maxListeners: Emitter.LEAK_WARNING_THRESHHOLD
+            }
             );
         }
         return this._event;
@@ -295,6 +295,8 @@ export class Emitter<T = any> {
     }
 }
 
+import { CancellationToken } from './cancellation';
+
 export interface WaitUntilEvent {
     /* eslint-disable @typescript-eslint/no-explicit-any */
     /**
@@ -308,6 +310,9 @@ export interface WaitUntilEvent {
     /* eslint-enable @typescript-eslint/no-explicit-any */
 }
 export namespace WaitUntilEvent {
+    /**
+     * Fire all listeners in the same tick.
+     */
     export async function fire<T extends WaitUntilEvent>(
         emitter: Emitter<T>,
         event: Pick<T, Exclude<keyof T, 'waitUntil'>>,
@@ -338,5 +343,66 @@ export namespace WaitUntilEvent {
         } else {
             await Promise.all(waitables);
         }
+    }
+    /**
+     * Fire listeners async one after another.
+     */
+    export function fireAsync<T extends WaitUntilEvent>(
+        emitter: Emitter<T>,
+        event: Pick<T, Exclude<keyof T, 'waitUntil'>>,
+        token: CancellationToken = CancellationToken.None,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        promiseJoin?: (p: Promise<any>, listener: Function) => Promise<any>
+    ): MaybePromise<void> {
+        const callbacks = emitter['_callbacks'];
+        if (!callbacks) {
+            return;
+        }
+        const listeners = [...callbacks];
+        const deliver = async () => {
+            for (const listener of listeners) {
+                if (token.isCancellationRequested) {
+                    return;
+                }
+                const waitables: Promise<void>[] = [];
+                const asyncEvent = Object.assign(event, {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    waitUntil: (thenable: Promise<any>) => {
+                        if (Object.isFrozen(waitables)) {
+                            throw new Error('waitUntil cannot be called asynchronously.');
+                        }
+                        if (promiseJoin) {
+                            thenable = promiseJoin(thenable, listener);
+                        }
+                        waitables.push(thenable);
+                    }
+                }) as T;
+                try {
+                    listener(event);
+                    // Asynchronous calls to `waitUntil` should fail.
+                    Object.freeze(waitables);
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    delete asyncEvent['waitUntil'];
+                }
+                if (!waitables.length) {
+                    return;
+                }
+                try {
+                    await Promise.all(waitables);
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        };
+        interface AsyncEmitter<T> extends Emitter<T> {
+            deliveryQueue?: Promise<void>
+        }
+        const asyncEmitter: AsyncEmitter<T> = emitter;
+        if (asyncEmitter.deliveryQueue) {
+            return asyncEmitter.deliveryQueue = asyncEmitter.deliveryQueue.then(deliver);
+        }
+        return asyncEmitter.deliveryQueue = deliver();
     }
 }

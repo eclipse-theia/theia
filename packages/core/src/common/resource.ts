@@ -32,8 +32,8 @@ export interface ResourceReadOptions {
 }
 
 export interface ResourceSaveOptions {
-    encoding?: string,
-    overwriteEncoding?: string,
+    encoding?: string
+    overwriteEncoding?: boolean
     version?: ResourceVersion
 }
 
@@ -47,9 +47,17 @@ export interface Resource extends Disposable {
      */
     readonly version?: ResourceVersion | undefined;
     /**
+     * Latest read encoding of this resource.
+     *
+     * Optional if a resource does not support encoding, check with `in` operator`.
+     * Undefined if a resource did not read content yet.
+     */
+    readonly encoding?: string | undefined;
+    /**
      * Reads latest content of this resource.
      *
      * If a resource supports versioning it updates version to latest.
+     * If a resource supports encoding it updates encoding to latest.
      *
      * @throws `ResourceError.NotFound` if a resource not found
      */
@@ -60,7 +68,8 @@ export interface Resource extends Disposable {
      *
      * If a resource supports versioning clients can pass some version
      * to check against it, if it is not provided latest version is used.
-     * It updates version to latest.
+     *
+     * It updates version and encoding to latest.
      *
      * @throws `ResourceError.OutOfSync` if latest resource version is out of sync with the given
      */
@@ -74,6 +83,8 @@ export interface Resource extends Disposable {
      *
      * @throws `ResourceError.NotFound` if a resource not found or was not read yet
      * @throws `ResourceError.OutOfSync` if latest resource version is out of sync with the given
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `saveContents` instead
      */
     saveContentChanges?(changes: TextDocumentContentChangeEvent[], options?: ResourceSaveOptions): Promise<void>;
     readonly onDidChangeContents?: Event<void>;

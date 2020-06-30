@@ -22,7 +22,6 @@ import URI from '@theia/core/lib/common/uri';
 import { QuickOpenHandler, QuickOpenService, QuickOpenOptions, QuickOpenBaseAction, LabelProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import {
     QuickOpenModel, QuickOpenItem, QuickOpenActionProvider, QuickOpenMode, QuickOpenGroupItem, QuickOpenGroupItemOptions, QuickOpenAction
 } from '@theia/core/lib/common/quick-open-model';
@@ -98,9 +97,6 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
     @inject(TaskSourceResolver)
     protected readonly taskSourceResolver: TaskSourceResolver;
-
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
 
     @inject(TaskConfigurationManager)
     protected readonly taskConfigurationManager: TaskConfigurationManager;
@@ -262,7 +258,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
             isFirstGroup = false;
         }
 
-        const rootUris = (await this.workspaceService.roots).map(rootStat => rootStat.uri);
+        const rootUris = (await this.workspaceService.roots).map(rootStat => rootStat.resource.toString());
         for (const rootFolder of rootUris) {
             const folderName = new URI(rootFolder).displayName;
             if (groupedTasks.has(rootFolder)) {
