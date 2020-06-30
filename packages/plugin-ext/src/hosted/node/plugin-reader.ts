@@ -92,7 +92,6 @@ export class HostedPluginReader implements BackendApplicationContribution {
         if (!pluginPath) {
             return undefined;
         }
-        pluginPath = path.normalize(pluginPath + '/');
         const manifest = await loadManifest(pluginPath);
         if (!manifest) {
             return undefined;
