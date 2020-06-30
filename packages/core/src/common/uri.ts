@@ -199,8 +199,17 @@ export default class URI {
         return this.codeUri.toString(skipEncoding);
     }
 
-    isEqualOrParent(uri: URI): boolean {
-        return this.authority === uri.authority && this.scheme === uri.scheme && this.path.isEqualOrParent(uri.path);
+    isEqualOrParent(uri: URI, caseSensitive: boolean = true): boolean {
+        if (this.authority !== uri.authority || this.scheme !== uri.scheme) {
+            return false;
+        }
+        let left = this.path;
+        let right = uri.path;
+        if (!caseSensitive) {
+            left = new Path(left.toString().toLowerCase());
+            right = new Path(right.toString().toLowerCase());
+        }
+        return left.isEqualOrParent(right);
     }
 
     static getDistinctParents(uris: URI[]): URI[] {

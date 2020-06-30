@@ -25,13 +25,13 @@ import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmHistoryProvider } from '.';
 import { SCM_HISTORY_ID, SCM_HISTORY_MAX_COUNT, SCM_HISTORY_LABEL } from './scm-history-contribution';
 import { ScmHistoryCommit, ScmFileChange } from '../scm-file-change-node';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { ScmAvatarService } from '@theia/scm/lib/browser/scm-avatar-service';
 import { ScmItemComponent } from '../scm-navigable-list-widget';
 import { ScmFileChangeNode } from '../scm-file-change-node';
 import { ScmNavigableListWidget } from '../scm-navigable-list-widget';
 import * as React from 'react';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export const ScmHistorySupport = Symbol('scm-history-support');
 export interface ScmHistorySupport {
@@ -92,7 +92,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
         @inject(ScmService) protected readonly scmService: ScmService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(FileService) protected readonly fileService: FileService,
         @inject(ScmAvatarService) protected readonly avatarService: ScmAvatarService,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
     ) {
@@ -187,8 +187,12 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
     async setContent(options?: HistoryWidgetOptions): Promise<void> {
         this.resetState(options);
         if (options && options.uri) {
-            const fileStat = await this.fileSystem.getFileStat(options.uri);
-            this.singleFileMode = !!fileStat && !fileStat.isDirectory;
+            try {
+                const fileStat = await this.fileService.resolve(new URI(options.uri));
+                this.singleFileMode = !fileStat.isDirectory;
+            } catch {
+                this.singleFileMode = true;
+            }
         }
         await this.addCommits(options);
         this.onDataReady();
@@ -328,7 +332,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                     const relPath = relPathEncoded ? `${decodeURIComponent(relPathEncoded)}` : '';
 
                     const repo = this.scmService.findRepository(new URI(this.options.uri));
-                    const repoName = repo ? `${new URI(repo.provider.rootUri).displayName}` : '';
+                    const repoName = repo ? `${this.labelProvider.getName(new URI(repo.provider.rootUri))}` : '';
 
                     const relPathAndRepo = [relPath, repoName].filter(Boolean).join(' in ');
                     path = ` for ${relPathAndRepo}`;
@@ -442,24 +446,24 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
             <div className='headContent'><div className='image-container'>
                 <img className='gravatar' src={commit.authorAvatar}></img>
             </div>
-            <div className={`headLabelContainer${this.singleFileMode ? ' singleFileMode' : ''}`}>
-                <div className='headLabel noWrapInfo noselect'>
-                    {commit.commitDetails.summary}
-                </div>
-                <div className='commitTime noWrapInfo noselect'>
-                    {commit.commitDetails.authorDateRelative + ' by ' + commit.commitDetails.authorName}
-                </div>
-            </div>
-            <div className='fa fa-eye detailButton' onClick={() => this.openDetailWidget(commit)}></div>
-            {
-                !this.singleFileMode ? <div className='expansionToggle noselect'>
-                    <div className='toggle'>
-                        <div className='number'>{commit.commitDetails.fileChanges.length.toString()}</div>
-                        <div className={'icon fa fa-' + expansionToggleIcon}></div>
+                <div className={`headLabelContainer${this.singleFileMode ? ' singleFileMode' : ''}`}>
+                    <div className='headLabel noWrapInfo noselect'>
+                        {commit.commitDetails.summary}
+                    </div>
+                    <div className='commitTime noWrapInfo noselect'>
+                        {commit.commitDetails.authorDateRelative + ' by ' + commit.commitDetails.authorName}
                     </div>
                 </div>
-                    : ''
-            }
+                <div className='fa fa-eye detailButton' onClick={() => this.openDetailWidget(commit)}></div>
+                {
+                    !this.singleFileMode ? <div className='expansionToggle noselect'>
+                        <div className='toggle'>
+                            <div className='number'>{commit.commitDetails.fileChanges.length.toString()}</div>
+                            <div className={'icon fa fa-' + expansionToggleIcon}></div>
+                        </div>
+                    </div>
+                        : ''
+                }
             </div>
         </div >;
     }

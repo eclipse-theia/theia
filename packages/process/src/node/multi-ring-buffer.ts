@@ -44,7 +44,7 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
         this.deq(size);
     }
 
-    _destroy(err: Error | undefined, callback: (err?: Error) => void): void {
+    _destroy(err: Error | null, callback: (err: Error | null) => void): void {
         this.ringBuffer.closeStream(this);
         this.ringBuffer.closeReader(this.reader);
         this.disposed = true;

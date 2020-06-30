@@ -18,7 +18,6 @@ import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-import { FileSystem } from '../../common/filesystem';
 import { FileDownloadData } from '../../common/download/file-download-data';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { addClipboardListener } from '@theia/core/lib/browser/widgets';
@@ -31,9 +30,6 @@ export class FileDownloadService {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
-
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
 
     @inject(MessageService)
     protected readonly messageService: MessageService;

@@ -20,12 +20,12 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { CommandRegistry, isOSX, environment } from '@theia/core/lib/common';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileStat, FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { FileSystemUtils } from '@theia/filesystem/lib/common/filesystem-utils';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
 import { CommonCommands, LabelProvider } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 /**
  * Default implementation of the `GettingStartedWidget`.
@@ -59,7 +59,6 @@ export class GettingStartedWidget extends ReactWidget {
      */
     protected applicationName = FrontendApplicationConfigProvider.get().applicationName;
 
-    protected stat: FileStat | undefined;
     protected home: string | undefined;
 
     /**
@@ -85,8 +84,8 @@ export class GettingStartedWidget extends ReactWidget {
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(EnvVariablesServer)
+    protected readonly environments: EnvVariablesServer;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
@@ -103,8 +102,7 @@ export class GettingStartedWidget extends ReactWidget {
 
         this.applicationInfo = await this.appServer.getApplicationInfo();
         this.recentWorkspaces = await this.workspaceService.recentWorkspaces();
-        this.stat = await this.fileSystem.getCurrentUserHome();
-        this.home = this.stat ? new URI(this.stat.uri).path.toString() : undefined;
+        this.home = new URI(await this.environments.getHomeDirUri()).path.toString();
         this.update();
     }
 

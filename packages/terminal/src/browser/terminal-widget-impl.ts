@@ -394,7 +394,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         let rootURI = this.options.cwd;
         if (!rootURI) {
             const root = (await this.workspaceService.roots)[0];
-            rootURI = root && root.uri;
+            rootURI = root?.resource?.toString();
         }
         const { cols, rows } = this.term;
 

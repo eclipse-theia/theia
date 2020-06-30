@@ -422,7 +422,7 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, LinkProviderAdapter, adapter => adapter.resolveLink(link, token), undefined);
     }
 
-    registerLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider, pluginInfo: PluginInfo): theia.Disposable {
+    registerDocumentLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider, pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new LinkProviderAdapter(provider, this.documents));
         this.proxy.$registerDocumentLinkProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);

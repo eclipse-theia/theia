@@ -30,7 +30,6 @@ describe('Keybindings', function () {
     const { Deferred } = require('@theia/core/lib/common/promise-util');
     const { Key } = require('@theia/core/lib/browser/keys');
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
-    const Uri = require('@theia/core/lib/common/uri');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
 
     /** @type {import('inversify').Container} */
@@ -74,7 +73,7 @@ describe('Keybindings', function () {
             when: 'false'
         }));
 
-        const editor = await editorManager.open(new Uri.default(workspaceService.tryGetRoots()[0].uri).resolve('package.json'), {
+        const editor = await editorManager.open(workspaceService.tryGetRoots()[0].resource.resolve('package.json'), {
             mode: 'activate',
             selection: {
                 start: {

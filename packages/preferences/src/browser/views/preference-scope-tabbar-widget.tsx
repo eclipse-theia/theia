@@ -19,7 +19,7 @@ import { TabBar, Widget, Title } from '@phosphor/widgets';
 import { PreferenceScope, Message, ContextMenuRenderer, LabelProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
-import { FileStat } from '@theia/filesystem/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import { PreferencesEventService } from '../util/preference-event-service';
 import { PreferenceScopeCommandManager, FOLDER_SCOPE_MENU_PATH } from '../util/preference-scope-command-manager';
 import { Preference } from '../util/preference-types';
@@ -143,10 +143,10 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
     }
 
     protected getWorkspaceDataset(): Preference.SelectedScopeDetails {
-        const { uri, isDirectory } = this.workspaceService.workspace!;
+        const { resource, isDirectory } = this.workspaceService.workspace!;
         const scope = WORKSPACE_TAB_INDEX;
         const activeScopeIsFolder = isDirectory.toString();
-        return { uri, activeScopeIsFolder, scope };
+        return { uri: resource.toString(), activeScopeIsFolder, scope };
     }
 
     protected addOrUpdateFolderTab(): void {
@@ -187,9 +187,9 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
             this.folderTitle.dataset = { ...this.currentSelection, folderTitle: 'true' };
             this.folderTitle.className = multipleFolderRootsAreAvailable ? SELECTED_FOLDER_DROPDOWN_CLASSNAME : SINGLE_FOLDER_TAB_CLASSNAME;
         } else {
-            const singleFolderRoot = this.currentWorkspaceRoots[0].uri;
-            const singleFolderLabel = this.labelProvider.getName(new URI(singleFolderRoot));
-            const defaultURI = multipleFolderRootsAreAvailable ? '' : singleFolderRoot;
+            const singleFolderRoot = this.currentWorkspaceRoots[0].resource;
+            const singleFolderLabel = this.labelProvider.getName(singleFolderRoot);
+            const defaultURI = multipleFolderRootsAreAvailable ? '' : singleFolderRoot.toString();
             this.folderTitle.label = multipleFolderRootsAreAvailable ? FOLDER_TAB_LABEL : singleFolderLabel;
             this.folderTitle.className = multipleFolderRootsAreAvailable ? UNSELECTED_FOLDER_DROPDOWN_CLASSNAME : SINGLE_FOLDER_TAB_CLASSNAME;
             this.folderTitle.dataset = { folderTitle: 'true', scope: FOLDER_TAB_INDEX, uri: defaultURI };
@@ -227,7 +227,7 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
         const folderWasRemoved = newRoots.length < this.currentWorkspaceRoots.length;
         this.currentWorkspaceRoots = newRoots;
         if (folderWasRemoved) {
-            const removedFolderWasSelectedScope = !this.currentWorkspaceRoots.some(root => root.uri === this.currentSelection.uri);
+            const removedFolderWasSelectedScope = !this.currentWorkspaceRoots.some(root => root.resource.toString() === this.currentSelection.uri);
             if (removedFolderWasSelectedScope) {
                 this.setNewScopeSelection(Preference.DEFAULT_SCOPE);
             }

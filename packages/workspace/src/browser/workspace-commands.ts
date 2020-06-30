@@ -20,7 +20,6 @@ import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { SingleTextInputDialog, ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenerService, OpenHandler, open, FrontendApplication, LabelProvider } from '@theia/core/lib/browser';
@@ -36,6 +35,8 @@ import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/fil
 import { FileSystemCommands } from '@theia/filesystem/lib/browser/filesystem-frontend-contribution';
 import { WorkspaceInputDialog } from './workspace-input-dialog';
 import { Emitter, Event } from '@theia/core/lib/common';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -179,7 +180,7 @@ export interface DidCreateNewResourceEvent {
 export class WorkspaceCommandContribution implements CommandContribution {
 
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(FileService) protected readonly fileService: FileService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(OpenerService) protected readonly openerService: OpenerService;
@@ -224,7 +225,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
         registry.registerCommand(WorkspaceCommands.NEW_FILE, this.newWorkspaceRootUriAwareCommandHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
                 if (parent) {
-                    const parentUri = new URI(parent.uri);
+                    const parentUri = parent.resource;
                     const { fileName, fileExtension } = this.getDefaultFileConfig();
                     const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, fileName, fileExtension);
 
@@ -238,7 +239,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     dialog.open().then(async name => {
                         if (name) {
                             const fileUri = parentUri.resolve(name);
-                            await this.fileSystem.createFile(fileUri.toString());
+                            await this.fileService.create(fileUri);
                             this.fireCreateNewFile({ parent: parentUri, uri: fileUri });
                             open(this.openerService, fileUri);
                         }
@@ -249,7 +250,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
         registry.registerCommand(WorkspaceCommands.NEW_FOLDER, this.newWorkspaceRootUriAwareCommandHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
                 if (parent) {
-                    const parentUri = new URI(parent.uri);
+                    const parentUri = parent.resource;
                     const vacantChildUri = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, 'Untitled');
                     const dialog = new WorkspaceInputDialog({
                         title: 'New Folder',
@@ -260,7 +261,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     dialog.open().then(async name => {
                         if (name) {
                             const folderUri = parentUri.resolve(name);
-                            await this.fileSystem.createFolder(folderUri.toString());
+                            await this.fileService.createFolder(folderUri);
                             this.fireCreateNewFile({ parent: parentUri, uri: folderUri });
                         }
                     });
@@ -275,10 +276,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     const parent = await this.getParent(uri);
                     if (parent) {
                         const initialValue = uri.path.base;
-                        const stat = await this.fileSystem.getFileStat(uri.toString());
-                        if (stat === undefined) {
-                            throw new Error(`Unexpected error occurred when renaming. File does not exist. URI: ${uri.toString(true)}.`);
-                        }
+                        const stat = await this.fileService.resolve(uri);
                         const fileType = stat.isDirectory ? 'Directory' : 'File';
                         const titleStr = `Rename ${fileType}`;
                         const dialog = new SingleTextInputDialog({
@@ -299,7 +297,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         if (fileName) {
                             const oldUri = uri;
                             const newUri = uri.parent.resolve(fileName);
-                            this.fileSystem.move(oldUri.toString(), newUri.toString());
+                            this.fileService.move(oldUri, newUri);
                         }
                     }
                 });
@@ -380,8 +378,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
         if (name.split(/[\\/]/).some(file => !file || !validFilename(file) || /^\s+$/.test(file))) {
             return `The name "${this.trimFileName(name)}" is not a valid file or folder name.`;
         }
-        const childUri = new URI(parent.uri).resolve(name).toString();
-        const exists = await this.fileSystem.exists(childUri);
+        const childUri = parent.resource.resolve(name);
+        const exists = await this.fileService.exists(childUri);
         if (exists) {
             return `A file or folder "${this.trimFileName(name)}" already exists at this location.`;
         }
@@ -396,23 +394,32 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     protected async getDirectory(candidate: URI): Promise<FileStat | undefined> {
-        const stat = await this.fileSystem.getFileStat(candidate.toString());
+        let stat: FileStat | undefined;
+        try {
+            stat = await this.fileService.resolve(candidate);
+        } catch { }
         if (stat && stat.isDirectory) {
             return stat;
         }
         return this.getParent(candidate);
     }
 
-    protected getParent(candidate: URI): Promise<FileStat | undefined> {
-        return this.fileSystem.getFileStat(candidate.parent.toString());
+    protected async getParent(candidate: URI): Promise<FileStat | undefined> {
+        try {
+            return await this.fileService.resolve(candidate.parent);
+        } catch {
+            return undefined;
+        }
     }
 
     protected async addFolderToWorkspace(uri: URI | undefined): Promise<void> {
         if (uri) {
-            const stat = await this.fileSystem.getFileStat(uri.toString());
-            if (stat && stat.isDirectory) {
-                await this.workspaceService.addRoot(uri);
-            }
+            try {
+                const stat = await this.fileService.resolve(uri);
+                if (stat.isDirectory) {
+                    await this.workspaceService.addRoot(uri);
+                }
+            } catch { }
         }
     }
 
@@ -421,7 +428,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     protected isWorkspaceRoot(uri: URI): boolean {
-        const rootUris = new Set(this.workspaceService.tryGetRoots().map(root => root.uri));
+        const rootUris = new Set(this.workspaceService.tryGetRoots().map(root => root.resource.toString()));
         return rootUris.has(uri.toString());
     }
 
@@ -437,7 +444,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
      * @param uris the list of folder uris to remove.
      */
     protected async removeFolderFromWorkspace(uris: URI[]): Promise<void> {
-        const roots = new Set(this.workspaceService.tryGetRoots().map(root => root.uri));
+        const roots = new Set(this.workspaceService.tryGetRoots().map(root => root.resource.toString()));
         const toRemove = uris.filter(uri => roots.has(uri.toString()));
         if (toRemove.length > 0) {
             const messageContainer = document.createElement('div');
@@ -454,7 +461,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 listItem.title = this.labelProvider.getLongName(uri);
                 const listContent = document.createElement('span');
                 listContent.classList.add('theia-dialog-node-segment');
-                listContent.appendChild(document.createTextNode(uri.displayName));
+                listContent.appendChild(document.createTextNode(this.labelProvider.getName(uri)));
                 listItem.appendChild(listContent);
                 list.appendChild(listItem);
             });
@@ -512,7 +519,7 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
         }
         // Return the first root if available.
         if (!!this.workspaceService.tryGetRoots().length) {
-            return new URI(this.workspaceService.tryGetRoots()[0].uri);
+            return this.workspaceService.tryGetRoots()[0].resource;
         }
     }
 

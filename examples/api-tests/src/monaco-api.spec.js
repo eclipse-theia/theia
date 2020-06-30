@@ -21,7 +21,6 @@ describe('Monaco API', async function () {
     const { assert } = chai;
 
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
-    const Uri = require('@theia/core/lib/common/uri');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
     const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
     const { MonacoResolvedKeybinding } = require('@theia/monaco/lib/browser/monaco-resolved-keybinding');
@@ -39,7 +38,7 @@ describe('Monaco API', async function () {
 
     before(async () => {
         const root = workspaceService.tryGetRoots()[0];
-        const editor = await editorManager.open(new Uri.default(root.uri).resolve('package.json'), {
+        const editor = await editorManager.open(root.resource.resolve('package.json'), {
             mode: 'reveal'
         });
         monacoEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editor));
@@ -67,11 +66,11 @@ describe('Monaco API', async function () {
 
             const platform = window.navigator.platform;
             let expected;
-            if (platform.includes("Mac")){
+            if (platform.includes('Mac')) {
                 // Mac os
                 expected = {
                     label: '⌃⇧⌥⌘K',
-                    ariaLabel: "⌃⇧⌥⌘K",
+                    ariaLabel: '⌃⇧⌥⌘K',
                     electronAccelerator: 'Ctrl+Shift+Alt+Cmd+K',
                     userSettingsLabel: 'ctrl+shift+alt+cmd+K',
                     WYSIWYG: true,
@@ -87,7 +86,7 @@ describe('Monaco API', async function () {
                     dispatchParts: [
                         'ctrl+shift+alt+meta+K'
                     ]
-                }
+                };
             } else {
                 expected = {
                     label: 'Ctrl+Shift+Alt+K',
@@ -107,7 +106,7 @@ describe('Monaco API', async function () {
                     dispatchParts: [
                         'ctrl+shift+alt+K'
                     ]
-                }
+                };
             }
 
             assert.deepStrictEqual({

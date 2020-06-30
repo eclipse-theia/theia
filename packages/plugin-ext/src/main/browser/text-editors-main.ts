@@ -117,11 +117,14 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
         return Promise.resolve(this.editorsAndDocuments.getEditor(id)!.applyEdits(modelVersionId, edits, opts));
     }
 
-    $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
+    async $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
         const edits = toMonacoWorkspaceEdit(dto);
-        return new Promise(resolve => {
-            this.bulkEditService.apply(edits).then(() => resolve(true), err => resolve(false));
-        });
+        try {
+            const { success } = await this.bulkEditService.apply(edits);
+            return success;
+        } catch {
+            return false;
+        }
     }
 
     $tryInsertSnippet(id: string, template: string, ranges: Range[], opts: UndoStopOptions): Promise<boolean> {

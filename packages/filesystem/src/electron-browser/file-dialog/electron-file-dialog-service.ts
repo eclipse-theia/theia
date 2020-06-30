@@ -20,7 +20,7 @@ import URI from '@theia/core/lib/common/uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { MaybeArray } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { FileStat } from '../../common';
+import { FileStat } from '../../common/files';
 import { FileAccess } from '../../common/filesystem';
 import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog';
 
@@ -69,7 +69,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
             }
 
             const uri = FileUri.create(filePath);
-            const exists = await this.fileSystem.exists(uri.toString());
+            const exists = await this.fileService.exists(uri);
             if (!exists) {
                 return uri;
             }
@@ -82,7 +82,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
 
     protected async canReadWrite(uris: MaybeArray<URI>): Promise<boolean> {
         for (const uri of Array.isArray(uris) ? uris : [uris]) {
-            if (!(await this.fileSystem.access(uri.toString(), FileAccess.Constants.R_OK | FileAccess.Constants.W_OK))) {
+            if (!(await this.fileService.access(uri, FileAccess.Constants.R_OK | FileAccess.Constants.W_OK))) {
                 this.messageService.error(`Cannot access resource at ${uri.path}.`);
                 return false;
             }

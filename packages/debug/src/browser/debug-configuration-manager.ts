@@ -35,8 +35,8 @@ import { DebugService } from '../common/debug-service';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DebugConfiguration } from '../common/debug-common';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
-import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export interface WillProvideDebugConfiguration extends WaitUntilEvent {
 }
@@ -56,8 +56,8 @@ export class DebugConfigurationManager {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    @inject(FileSystem)
-    protected readonly filesystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(PreferenceService)
     protected readonly preferences: PreferenceService;
@@ -93,7 +93,7 @@ export class DebugConfigurationManager {
         const roots = await this.workspaceService.roots;
         const toDelete = new Set(this.models.keys());
         for (const rootStat of roots) {
-            const key = rootStat.uri;
+            const key = rootStat.resource.toString();
             toDelete.delete(key);
             if (!this.models.has(key)) {
                 const model = new DebugConfigurationModel(key, this.preferences);
@@ -273,17 +273,7 @@ export class DebugConfigurationManager {
         const debugType = await this.selectDebugType();
         const configurations = debugType ? await this.provideDebugConfigurations(debugType, model.workspaceFolderUri) : [];
         const content = this.getInitialConfigurationContent(configurations);
-        const fileStat = await this.filesystem.getFileStat(uri.toString());
-        if (!fileStat) {
-            throw new Error(`file not found: ${uri.toString()}`);
-        }
-        try {
-            await this.filesystem.setContent(fileStat, content);
-        } catch (e) {
-            if (!FileSystemError.FileExists.is(e)) {
-                throw e;
-            }
-        }
+        await this.fileService.write(uri, content);
         return uri;
     }
 

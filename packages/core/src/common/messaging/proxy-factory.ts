@@ -41,11 +41,12 @@ export type JsonRpcProxy<T> = T & JsonRpcConnectionEventEmitter;
 export class JsonRpcConnectionHandler<T extends object> implements ConnectionHandler {
     constructor(
         readonly path: string,
-        readonly targetFactory: (proxy: JsonRpcProxy<T>) => any
+        readonly targetFactory: (proxy: JsonRpcProxy<T>) => any,
+        readonly factoryConstructor: new () => JsonRpcProxyFactory<T> = JsonRpcProxyFactory
     ) { }
 
     onConnection(connection: MessageConnection): void {
-        const factory = new JsonRpcProxyFactory<T>(this.path);
+        const factory = new this.factoryConstructor();
         const proxy = factory.createProxy();
         factory.target = this.targetFactory(proxy);
         factory.listen(connection);

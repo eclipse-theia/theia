@@ -1582,6 +1582,171 @@ declare module '@theia/plugin' {
         waitUntil(thenable: PromiseLike<any>): void;
     }
 
+	/**
+	 * An event that is fired when files are going to be created.
+	 *
+	 * To make modifications to the workspace before the files are created,
+	 * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
+	 * thenable that resolves to a [workspace edit](#WorkspaceEdit).
+	 */
+    export interface FileWillCreateEvent {
+
+		/**
+		 * The files that are going to be created.
+		 */
+        readonly files: ReadonlyArray<Uri>;
+
+		/**
+		 * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
+		 *
+		 * *Note:* This function can only be called during event dispatch and not
+		 * in an asynchronous manner:
+		 *
+		 * ```ts
+		 * workspace.onWillCreateFiles(event => {
+		 * 	// async, will *throw* an error
+		 * 	setTimeout(() => event.waitUntil(promise));
+		 *
+		 * 	// sync, OK
+		 * 	event.waitUntil(promise);
+		 * })
+		 * ```
+		 *
+		 * @param thenable A thenable that delays saving.
+		 */
+        waitUntil(thenable: Thenable<WorkspaceEdit>): void;
+
+		/**
+		 * Allows to pause the event until the provided thenable resolves.
+		 *
+		 * *Note:* This function can only be called during event dispatch.
+		 *
+		 * @param thenable A thenable that delays saving.
+		 */
+        waitUntil(thenable: Thenable<any>): void;
+    }
+
+	/**
+	 * An event that is fired after files are created.
+	 */
+    export interface FileCreateEvent {
+
+		/**
+		 * The files that got created.
+		 */
+        readonly files: ReadonlyArray<Uri>;
+    }
+
+	/**
+	 * An event that is fired when files are going to be deleted.
+	 *
+	 * To make modifications to the workspace before the files are deleted,
+	 * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
+	 * thenable that resolves to a [workspace edit](#WorkspaceEdit).
+	 */
+    export interface FileWillDeleteEvent {
+
+		/**
+		 * The files that are going to be deleted.
+		 */
+        readonly files: ReadonlyArray<Uri>;
+
+		/**
+		 * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
+		 *
+		 * *Note:* This function can only be called during event dispatch and not
+		 * in an asynchronous manner:
+		 *
+		 * ```ts
+		 * workspace.onWillCreateFiles(event => {
+		 * 	// async, will *throw* an error
+		 * 	setTimeout(() => event.waitUntil(promise));
+		 *
+		 * 	// sync, OK
+		 * 	event.waitUntil(promise);
+		 * })
+		 * ```
+		 *
+		 * @param thenable A thenable that delays saving.
+		 */
+        waitUntil(thenable: Thenable<WorkspaceEdit>): void;
+
+		/**
+		 * Allows to pause the event until the provided thenable resolves.
+		 *
+		 * *Note:* This function can only be called during event dispatch.
+		 *
+		 * @param thenable A thenable that delays saving.
+		 */
+        waitUntil(thenable: Thenable<any>): void;
+    }
+
+	/**
+	 * An event that is fired after files are deleted.
+	 */
+    export interface FileDeleteEvent {
+
+		/**
+		 * The files that got deleted.
+		 */
+        readonly files: ReadonlyArray<Uri>;
+    }
+
+	/**
+	 * An event that is fired when files are going to be renamed.
+	 *
+	 * To make modifications to the workspace before the files are renamed,
+	 * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
+	 * thenable that resolves to a [workspace edit](#WorkspaceEdit).
+	 */
+    export interface FileWillRenameEvent {
+
+		/**
+		 * The files that are going to be renamed.
+		 */
+        readonly files: ReadonlyArray<{ oldUri: Uri, newUri: Uri }>;
+
+		/**
+		 * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
+		 *
+		 * *Note:* This function can only be called during event dispatch and not
+		 * in an asynchronous manner:
+		 *
+		 * ```ts
+		 * workspace.onWillCreateFiles(event => {
+		 * 	// async, will *throw* an error
+		 * 	setTimeout(() => event.waitUntil(promise));
+		 *
+		 * 	// sync, OK
+		 * 	event.waitUntil(promise);
+		 * })
+		 * ```
+		 *
+		 * @param thenable A thenable that delays saving.
+		 */
+        waitUntil(thenable: Thenable<WorkspaceEdit>): void;
+
+		/**
+		 * Allows to pause the event until the provided thenable resolves.
+		 *
+		 * *Note:* This function can only be called during event dispatch.
+		 *
+		 * @param thenable A thenable that delays saving.
+		 */
+        waitUntil(thenable: Thenable<any>): void;
+    }
+
+	/**
+	 * An event that is fired after files are renamed.
+	 */
+    export interface FileRenameEvent {
+
+		/**
+		 * The files that got renamed.
+		 */
+        readonly files: ReadonlyArray<{ oldUri: Uri, newUri: Uri }>;
+    }
+
     export interface TextDocumentChangeEvent {
         document: TextDocument;
 
@@ -4355,512 +4520,380 @@ declare module '@theia/plugin' {
         readonly index: number;
     }
 
-    /**
-     * Enumeration of file types. The types `File` and `Directory` can also be
-     * a symbolic links, in that use `FileType.File | FileType.SymbolicLink` and
-     * `FileType.Directory | FileType.SymbolicLink`.
-     */
+	/**
+	 * Enumeration of file types. The types `File` and `Directory` can also be
+	 * a symbolic link, in that case use `FileType.File | FileType.SymbolicLink` and
+	 * `FileType.Directory | FileType.SymbolicLink`.
+	 */
     export enum FileType {
-        /**
-         * The file type is unknown.
-         */
+		/**
+		 * The file type is unknown.
+		 */
         Unknown = 0,
-        /**
-         * A regular file.
-         */
+		/**
+		 * A regular file.
+		 */
         File = 1,
-        /**
-         * A directory.
-         */
+		/**
+		 * A directory.
+		 */
         Directory = 2,
-        /**
-         * A symbolic link to a file.
-         */
+		/**
+		 * A symbolic link to a file.
+		 */
         SymbolicLink = 64
     }
 
-    /**
-     * The `FileStat`-type represents metadata about a file
-     */
+	/**
+	 * The `FileStat`-type represents metadata about a file
+	 */
     export interface FileStat {
-        /**
-         * The type of the file, e.g. is a regular file, a directory, or symbolic link
-         * to a file.
-         */
+		/**
+		 * The type of the file, e.g. is a regular file, a directory, or symbolic link
+		 * to a file.
+		 *
+		 * *Note:* This value might be a bitmask, e.g. `FileType.File | FileType.SymbolicLink`.
+		 */
         type: FileType;
-        /**
-         * The creation timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
-         */
+		/**
+		 * The creation timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
+		 */
         ctime: number;
-        /**
-         * The modification timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
-         */
+		/**
+		 * The modification timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
+		 *
+		 * *Note:* If the file changed, it is important to provide an updated `mtime` that advanced
+		 * from the previous value. Otherwise there may be optimizations in place that will not show
+		 * the updated file contents in an editor for example.
+		 */
         mtime: number;
-        /**
-         * The size in bytes.
-         */
+		/**
+		 * The size in bytes.
+		 *
+		 * *Note:* If the file changed, it is important to provide an updated `size`. Otherwise there
+		 * may be optimizations in place that will not show the updated file contents in an editor for
+		 * example.
+		 */
         size: number;
     }
 
-    /**
-     * A type that filesystem providers should use to signal errors.
-     *
-     * This class has factory methods for common error-cases, like `EntryNotFound` when
-     * a file or folder doesn't exist, use them like so: `throw vscode.FileSystemError.EntryNotFound(someUri);`
-     */
+	/**
+	 * A type that filesystem providers should use to signal errors.
+	 *
+	 * This class has factory methods for common error-cases, like `FileNotFound` when
+	 * a file or folder doesn't exist, use them like so: `throw vscode.FileSystemError.FileNotFound(someUri);`
+	 */
     export class FileSystemError extends Error {
 
-        /**
-         * Create an error to signal that a file or folder wasn't found.
-         * @param messageOrUri Message or uri.
-         */
+		/**
+		 * Create an error to signal that a file or folder wasn't found.
+		 * @param messageOrUri Message or uri.
+		 */
         static FileNotFound(messageOrUri?: string | Uri): FileSystemError;
 
-        /**
-         * Create an error to signal that a file or folder already exists, e.g. when
-         * creating but not overwriting a file.
-         * @param messageOrUri Message or uri.
-         */
+		/**
+		 * Create an error to signal that a file or folder already exists, e.g. when
+		 * creating but not overwriting a file.
+		 * @param messageOrUri Message or uri.
+		 */
         static FileExists(messageOrUri?: string | Uri): FileSystemError;
 
-        /**
-         * Create an error to signal that a file is not a folder.
-         * @param messageOrUri Message or uri.
-         */
+		/**
+		 * Create an error to signal that a file is not a folder.
+		 * @param messageOrUri Message or uri.
+		 */
         static FileNotADirectory(messageOrUri?: string | Uri): FileSystemError;
 
-        /**
-         * Create an error to signal that a file is a folder.
-         * @param messageOrUri Message or uri.
-         */
+		/**
+		 * Create an error to signal that a file is a folder.
+		 * @param messageOrUri Message or uri.
+		 */
         static FileIsADirectory(messageOrUri?: string | Uri): FileSystemError;
 
-        /**
-         * Create an error to signal that an operation lacks required permissions.
-         * @param messageOrUri Message or uri.
-         */
+		/**
+		 * Create an error to signal that an operation lacks required permissions.
+		 * @param messageOrUri Message or uri.
+		 */
         static NoPermissions(messageOrUri?: string | Uri): FileSystemError;
 
-        /**
-         * Create an error to signal that the file system is unavailable or too busy to
-         * complete a request.
-         * @param messageOrUri Message or uri.
-         */
+		/**
+		 * Create an error to signal that the file system is unavailable or too busy to
+		 * complete a request.
+		 * @param messageOrUri Message or uri.
+		 */
         static Unavailable(messageOrUri?: string | Uri): FileSystemError;
 
-        /**
-         * Creates a new filesystem error.
-         *
-         * @param messageOrUri Message or uri.
-         */
+		/**
+		 * Creates a new filesystem error.
+		 *
+		 * @param messageOrUri Message or uri.
+		 */
         constructor(messageOrUri?: string | Uri);
+
+		/**
+		 * A code that identifies this error.
+		 *
+		 * Possible values are names of errors, like [`FileNotFound`](#FileSystemError.FileNotFound),
+		 * or `Unknown` for unspecified errors.
+		 */
+        readonly code: string;
     }
 
-    /**
-     * Enumeration of file change types.
-     */
+	/**
+	 * Enumeration of file change types.
+	 */
     export enum FileChangeType {
 
-        /**
-         * The contents or metadata of a file have changed.
-         */
+		/**
+		 * The contents or metadata of a file have changed.
+		 */
         Changed = 1,
 
-        /**
-         * A file has been created.
-         */
+		/**
+		 * A file has been created.
+		 */
         Created = 2,
 
-        /**
-         * A file has been deleted.
-         */
+		/**
+		 * A file has been deleted.
+		 */
         Deleted = 3,
     }
 
-    /**
-     * The event filesystem providers must use to signal a file change.
-     */
+	/**
+	 * The event filesystem providers must use to signal a file change.
+	 */
     export interface FileChangeEvent {
 
-        /**
-         * The type of change.
-         */
-        type: FileChangeType;
+		/**
+		 * The type of change.
+		 */
+        readonly type: FileChangeType;
 
-        /**
-         * The uri of the file that has changed.
-         */
-        uri: Uri;
+		/**
+		 * The uri of the file that has changed.
+		 */
+        readonly uri: Uri;
     }
 
-    /**
-     * The filesystem provider defines what the editor needs to read, write, discover,
-     * and to manage files and folders. It allows extensions to serve files from remote places,
-     * like ftp-servers, and to seamlessly integrate those into the editor.
-     *
-     * * *Note 1:* The filesystem provider API works with [uris](#Uri) and assumes hierarchical
-     * paths, e.g. `foo:/my/path` is a child of `foo:/my/` and a parent of `foo:/my/path/deeper`.
-     * * *Note 2:* There is an activation event `onFileSystem:<scheme>` that fires when a file
-     * or folder is being accessed.
-     * * *Note 3:* The word 'file' is often used to denote all [kinds](#FileType) of files, e.g.
-     * folders, symbolic links, and regular files.
-     */
+	/**
+	 * The filesystem provider defines what the editor needs to read, write, discover,
+	 * and to manage files and folders. It allows extensions to serve files from remote places,
+	 * like ftp-servers, and to seamlessly integrate those into the editor.
+	 *
+	 * * *Note 1:* The filesystem provider API works with [uris](#Uri) and assumes hierarchical
+	 * paths, e.g. `foo:/my/path` is a child of `foo:/my/` and a parent of `foo:/my/path/deeper`.
+	 * * *Note 2:* There is an activation event `onFileSystem:<scheme>` that fires when a file
+	 * or folder is being accessed.
+	 * * *Note 3:* The word 'file' is often used to denote all [kinds](#FileType) of files, e.g.
+	 * folders, symbolic links, and regular files.
+	 */
     export interface FileSystemProvider {
 
-        /**
-         * An event to signal that a resource has been created, changed, or deleted. This
-         * event should fire for resources that are being [watched](#FileSystemProvider.watch)
-         * by clients of this provider.
-         */
+		/**
+		 * An event to signal that a resource has been created, changed, or deleted. This
+		 * event should fire for resources that are being [watched](#FileSystemProvider.watch)
+		 * by clients of this provider.
+		 *
+		 * *Note:* It is important that the metadata of the file that changed provides an
+		 * updated `mtime` that advanced from the previous value in the [stat](#FileStat) and a
+		 * correct `size` value. Otherwise there may be optimizations in place that will not show
+		 * the change in an editor for example.
+		 */
         readonly onDidChangeFile: Event<FileChangeEvent[]>;
 
-        /**
-         * Subscribe to events in the file or folder denoted by `uri`.
-         *
-         * The editor will call this function for files and folders. In the latter case, the
-         * options differ from defaults, e.g. what files/folders to exclude from watching
-         * and if subfolders, sub-subfolder, etc. should be watched (`recursive`).
-         *
-         * @param uri The uri of the file to be watched.
-         * @param options Configures the watch.
-         * @returns A disposable that tells the provider to stop watching the `uri`.
-         */
+		/**
+		 * Subscribe to events in the file or folder denoted by `uri`.
+		 *
+		 * The editor will call this function for files and folders. In the latter case, the
+		 * options differ from defaults, e.g. what files/folders to exclude from watching
+		 * and if subfolders, sub-subfolder, etc. should be watched (`recursive`).
+		 *
+		 * @param uri The uri of the file to be watched.
+		 * @param options Configures the watch.
+		 * @returns A disposable that tells the provider to stop watching the `uri`.
+		 */
         watch(uri: Uri, options: { recursive: boolean; excludes: string[] }): Disposable;
 
-        /**
-         * Retrieve metadata about a file.
-         *
-         * Note that the metadata for symbolic links should be the metadata of the file they refer to.
-         * Still, the [SymbolicLink](#FileType.SymbolicLink)-type must be used in addition to the actual type, e.g.
-         * `FileType.SymbolicLink | FileType.Directory`.
-         *
-         * @param uri The uri of the file to retrieve metadata about.
-         * @return The file metadata about the file.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-         */
-        stat(uri: Uri): FileStat | PromiseLike<FileStat>;
+		/**
+		 * Retrieve metadata about a file.
+		 *
+		 * Note that the metadata for symbolic links should be the metadata of the file they refer to.
+		 * Still, the [SymbolicLink](#FileType.SymbolicLink)-type must be used in addition to the actual type, e.g.
+		 * `FileType.SymbolicLink | FileType.Directory`.
+		 *
+		 * @param uri The uri of the file to retrieve metadata about.
+		 * @return The file metadata about the file.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+		 */
+        stat(uri: Uri): FileStat | Promise<FileStat>;
 
-        /**
-         * Retrieve all entries of a [directory](#FileType.Directory).
-         *
-         * @param uri The uri of the folder.
-         * @return An array of name/type-tuples or a thenable that resolves to such.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-         */
-        readDirectory(uri: Uri): [string, FileType][] | PromiseLike<[string, FileType][]>;
+		/**
+		 * Retrieve all entries of a [directory](#FileType.Directory).
+		 *
+		 * @param uri The uri of the folder.
+		 * @return An array of name/type-tuples or a thenable that resolves to such.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+		 */
+        readDirectory(uri: Uri): [string, FileType][] | Promise<[string, FileType][]>;
 
-        /**
-         * Create a new directory (Note, that new files are created via `write`-calls).
-         *
-         * @param uri The uri of the new folder.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist, e.g. no mkdirp-logic required.
-         * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists.
-         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-         */
-        createDirectory(uri: Uri): void | PromiseLike<void>;
+		/**
+		 * Create a new directory (Note, that new files are created via `write`-calls).
+		 *
+		 * @param uri The uri of the new folder.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist, e.g. no mkdirp-logic required.
+		 * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists.
+		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+		 */
+        createDirectory(uri: Uri): void | Promise<void>;
 
-        /**
-         * Read the entire contents of a file.
-         *
-         * @param uri The uri of the file.
-         * @return An array of bytes or a thenable that resolves to such.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-         */
-        readFile(uri: Uri): Uint8Array | PromiseLike<Uint8Array>;
+		/**
+		 * Read the entire contents of a file.
+		 *
+		 * @param uri The uri of the file.
+		 * @return An array of bytes or a thenable that resolves to such.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+		 */
+        readFile(uri: Uri): Uint8Array | Promise<Uint8Array>;
 
-        /**
-         * Write data to a file, replacing its entire contents.
-         *
-         * @param uri The uri of the file.
-         * @param content The new content of the file.
-         * @param options Defines if missing files should or must be created.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist and `create` is not set.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist and `create` is set, e.g. no mkdirp-logic required.
-         * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists, `create` is set but `overwrite` is not set.
-         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-         */
-        writeFile(uri: Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void | PromiseLike<void>;
+		/**
+		 * Write data to a file, replacing its entire contents.
+		 *
+		 * @param uri The uri of the file.
+		 * @param content The new content of the file.
+		 * @param options Defines if missing files should or must be created.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist and `create` is not set.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist and `create` is set, e.g. no mkdirp-logic required.
+		 * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists, `create` is set but `overwrite` is not set.
+		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+		 */
+        writeFile(uri: Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void | Promise<void>;
 
-        /**
-         * Delete a file.
-         *
-         * @param uri The resource that is to be deleted.
-         * @param options Defines if deletion of folders is recursive.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-         */
-        delete(uri: Uri, options: { recursive: boolean }): void | PromiseLike<void>;
+		/**
+		 * Delete a file.
+		 *
+		 * @param uri The resource that is to be deleted.
+		 * @param options Defines if deletion of folders is recursive.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+		 */
+        delete(uri: Uri, options: { recursive: boolean }): void | Promise<void>;
 
-        /**
-         * Rename a file or folder.
-         *
-         * @param oldUri The existing file.
-         * @param newUri The new location.
-         * @param options Defines if existing files should be overwritten.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `oldUri` doesn't exist.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `newUri` doesn't exist, e.g. no mkdirp-logic required.
-         * @throws [`FileExists`](#FileSystemError.FileExists) when `newUri` exists and when the `overwrite` option is not `true`.
-         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-         */
-        rename(oldUri: Uri, newUri: Uri, options: { overwrite: boolean }): void | PromiseLike<void>;
+		/**
+		 * Rename a file or folder.
+		 *
+		 * @param oldUri The existing file.
+		 * @param newUri The new location.
+		 * @param options Defines if existing files should be overwritten.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `oldUri` doesn't exist.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `newUri` doesn't exist, e.g. no mkdirp-logic required.
+		 * @throws [`FileExists`](#FileSystemError.FileExists) when `newUri` exists and when the `overwrite` option is not `true`.
+		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+		 */
+        rename(oldUri: Uri, newUri: Uri, options: { overwrite: boolean }): void | Promise<void>;
 
-        /**
-         * Copy files or folders. Implementing this function is optional but it will speedup
-         * the copy operation.
-         *
-         * @param source The existing file.
-         * @param destination The destination location.
-         * @param options Defines if existing files should be overwriten.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `source` doesn't exist.
-         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `destination` doesn't exist, e.g. no mkdirp-logic required.
-         * @throws [`FileExists`](#FileSystemError.FileExists) when `destination` exists and when the `overwrite` option is not `true`.
-         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-         */
-        copy?(source: Uri, destination: Uri, options: { overwrite: boolean }): void | PromiseLike<void>;
+		/**
+		 * Copy files or folders. Implementing this function is optional but it will speedup
+		 * the copy operation.
+		 *
+		 * @param source The existing file.
+		 * @param destination The destination location.
+		 * @param options Defines if existing files should be overwritten.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `source` doesn't exist.
+		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `destination` doesn't exist, e.g. no mkdirp-logic required.
+		 * @throws [`FileExists`](#FileSystemError.FileExists) when `destination` exists and when the `overwrite` option is not `true`.
+		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+		 */
+        copy?(source: Uri, destination: Uri, options: { overwrite: boolean }): void | Promise<void>;
     }
 
-    /**
-     * The file system interface exposes the editor's built-in and contributed
-     * [file system providers](#FileSystemProvider). It allows extensions to work
-     * with files from the local disk as well as files from remote places, like the
-     * remote extension host or ftp-servers.
-     *
-     * *Note* that an instance of this interface is avaiable as [`workspace.fs`](#workspace.fs).
-     */
+	/**
+	 * The file system interface exposes the editor's built-in and contributed
+	 * [file system providers](#FileSystemProvider). It allows extensions to work
+	 * with files from the local disk as well as files from remote places, like the
+	 * remote extension host or ftp-servers.
+	 *
+	 * *Note* that an instance of this interface is available as [`workspace.fs`](#workspace.fs).
+	 */
+
+
+	/**
+	 * The file system interface exposes the editor's built-in and contributed
+	 * [file system providers](#FileSystemProvider). It allows extensions to work
+	 * with files from the local disk as well as files from remote places, like the
+	 * remote extension host or ftp-servers.
+	 *
+	 * *Note* that an instance of this interface is available as [`workspace.fs`](#workspace.fs).
+	 */
     export interface FileSystem {
 
-        /**
-         * Retrieve metadata about a file.
-         *
-         * @param uri The uri of the file to retrieve metadata about.
-         * @return The file metadata about the file.
-         */
-        stat(uri: Uri): PromiseLike<FileStat>;
+		/**
+		 * Retrieve metadata about a file.
+		 *
+		 * @param uri The uri of the file to retrieve metadata about.
+		 * @return The file metadata about the file.
+		 */
+        stat(uri: Uri): Thenable<FileStat>;
 
-        /**
-         * Retrieve all entries of a [directory](#FileType.Directory).
-         *
-         * @param uri The uri of the folder.
-         * @return An array of name/type-tuples or a PromiseLike that resolves to such.
-         */
-        readDirectory(uri: Uri): PromiseLike<[string, FileType][]>;
+		/**
+		 * Retrieve all entries of a [directory](#FileType.Directory).
+		 *
+		 * @param uri The uri of the folder.
+		 * @return An array of name/type-tuples or a thenable that resolves to such.
+		 */
+        readDirectory(uri: Uri): Thenable<[string, FileType][]>;
 
-        /**
-         * Create a new directory (Note, that new files are created via `write`-calls).
-         *
-         * *Note* that missing directories are created automatically, e.g this call has
-         * `mkdirp` semantics.
-         *
-         * @param uri The uri of the new folder.
-         */
-        createDirectory(uri: Uri): PromiseLike<void>;
+		/**
+		 * Create a new directory (Note, that new files are created via `write`-calls).
+		 *
+		 * *Note* that missing directories are created automatically, e.g this call has
+		 * `mkdirp` semantics.
+		 *
+		 * @param uri The uri of the new folder.
+		 */
+        createDirectory(uri: Uri): Thenable<void>;
 
-        /**
-         * Read the entire contents of a file.
-         *
-         * @param uri The uri of the file.
-         * @return An array of bytes or a PromiseLike that resolves to such.
-         */
-        readFile(uri: Uri): PromiseLike<Uint8Array>;
+		/**
+		 * Read the entire contents of a file.
+		 *
+		 * @param uri The uri of the file.
+		 * @return An array of bytes or a thenable that resolves to such.
+		 */
+        readFile(uri: Uri): Thenable<Uint8Array>;
 
-        /**
-         * Write data to a file, replacing its entire contents.
-         *
-         * @param uri The uri of the file.
-         * @param content The new content of the file.
-         */
-        writeFile(uri: Uri, content: Uint8Array): PromiseLike<void>;
+		/**
+		 * Write data to a file, replacing its entire contents.
+		 *
+		 * @param uri The uri of the file.
+		 * @param content The new content of the file.
+		 */
+        writeFile(uri: Uri, content: Uint8Array): Thenable<void>;
 
-        /**
-         * Delete a file.
-         *
-         * @param uri The resource that is to be deleted.
-         * @param options Defines if trash can should be used and if deletion of folders is recursive
-         */
-        delete(uri: Uri, options?: { recursive?: boolean, useTrash?: boolean }): PromiseLike<void>;
+		/**
+		 * Delete a file.
+		 *
+		 * @param uri The resource that is to be deleted.
+		 * @param options Defines if trash can should be used and if deletion of folders is recursive
+		 */
+        delete(uri: Uri, options?: { recursive?: boolean, useTrash?: boolean }): Thenable<void>;
 
-        /**
-         * Rename a file or folder.
-         *
-         * @param source The existing file.
-         * @param target The new location.
-         * @param options Defines if existing files should be overwritten.
-         */
-        rename(source: Uri, target: Uri, options?: { overwrite?: boolean }): PromiseLike<void>;
+		/**
+		 * Rename a file or folder.
+		 *
+		 * @param oldUri The existing file.
+		 * @param newUri The new location.
+		 * @param options Defines if existing files should be overwritten.
+		 */
+        rename(source: Uri, target: Uri, options?: { overwrite?: boolean }): Thenable<void>;
 
-        /**
-         * Copy files or folders.
-         *
-         * @param source The existing file.
-         * @param target The destination location.
-         * @param options Defines if existing files should be overwritten.
-         */
-        copy(source: Uri, target: Uri, options?: { overwrite?: boolean }): PromiseLike<void>;
-    }
-
-    /**
-     * An event that is fired when files are going to be created.
-     *
-     * To make modifications to the workspace before the files are created,
-     * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
-     * thenable that resolves to a [workspace edit](#WorkspaceEdit).
-     */
-    export interface FileWillCreateEvent {
-
-        /**
-         * The files that are going to be created.
-         */
-        readonly files: ReadonlyArray<Uri>;
-
-        /**
-         * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
-         *
-         * *Note:* This function can only be called during event dispatch and not
-         * in an asynchronous manner:
-         *
-         * ```ts
-         * workspace.onWillCreateFiles(event => {
-         *     // async, will *throw* an error
-         *     setTimeout(() => event.waitUntil(promise));
-         *
-         *     // sync, OK
-         *     event.waitUntil(promise);
-         * })
-         * ```
-         *
-         * @param thenable A thenable that delays saving.
-         */
-        waitUntil(thenable: Thenable<WorkspaceEdit>): void;
-
-        /**
-         * Allows to pause the event until the provided thenable resolves.
-         *
-         * *Note:* This function can only be called during event dispatch.
-         *
-         * @param thenable A thenable that delays saving.
-         */
-        waitUntil(thenable: Thenable<any>): void;
-    }
-
-    /**
-     * An event that is fired after files are created.
-     */
-    export interface FileCreateEvent {
-
-        /**
-         * The files that got created.
-         */
-        readonly files: ReadonlyArray<Uri>;
-    }
-
-    /**
-     * An event that is fired when files are going to be deleted.
-     *
-     * To make modifications to the workspace before the files are deleted,
-     * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
-     * thenable that resolves to a [workspace edit](#WorkspaceEdit).
-     */
-    export interface FileWillDeleteEvent {
-
-        /**
-         * The files that are going to be deleted.
-         */
-        readonly files: ReadonlyArray<Uri>;
-
-        /**
-         * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
-         *
-         * *Note:* This function can only be called during event dispatch and not
-         * in an asynchronous manner:
-         *
-         * ```ts
-         * workspace.onWillCreateFiles(event => {
-         *     // async, will *throw* an error
-         *     setTimeout(() => event.waitUntil(promise));
-         *
-         *     // sync, OK
-         *     event.waitUntil(promise);
-         * })
-         * ```
-         *
-         * @param thenable A thenable that delays saving.
-         */
-        waitUntil(thenable: Thenable<WorkspaceEdit>): void;
-
-        /**
-         * Allows to pause the event until the provided thenable resolves.
-         *
-         * *Note:* This function can only be called during event dispatch.
-         *
-         * @param thenable A thenable that delays saving.
-         */
-        waitUntil(thenable: Thenable<any>): void;
-    }
-
-    /**
-     * An event that is fired after files are deleted.
-     */
-    export interface FileDeleteEvent {
-
-        /**
-         * The files that got deleted.
-         */
-        readonly files: ReadonlyArray<Uri>;
-    }
-
-    /**
-     * An event that is fired when files are going to be renamed.
-     *
-     * To make modifications to the workspace before the files are renamed,
-     * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
-     * thenable that resolves to a [workspace edit](#WorkspaceEdit).
-     */
-    export interface FileWillRenameEvent {
-
-        /**
-         * The files that are going to be renamed.
-         */
-        readonly files: ReadonlyArray<{ oldUri: Uri, newUri: Uri }>;
-
-        /**
-         * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
-         *
-         * *Note:* This function can only be called during event dispatch and not
-         * in an asynchronous manner:
-         *
-         * ```ts
-         * workspace.onWillCreateFiles(event => {
-         *     // async, will *throw* an error
-         *     setTimeout(() => event.waitUntil(promise));
-         *
-         *     // sync, OK
-         *     event.waitUntil(promise);
-         * })
-         * ```
-         *
-         * @param thenable A thenable that delays saving.
-         */
-        waitUntil(thenable: Thenable<WorkspaceEdit>): void;
-
-        /**
-         * Allows to pause the event until the provided thenable resolves.
-         *
-         * *Note:* This function can only be called during event dispatch.
-         *
-         * @param thenable A thenable that delays saving.
-         */
-        waitUntil(thenable: Thenable<any>): void;
-    }
-
-    /**
-     * An event that is fired after files are renamed.
-     */
-    export interface FileRenameEvent {
-
-        /**
-         * The files that got renamed.
-         */
-        readonly files: ReadonlyArray<{ oldUri: Uri, newUri: Uri }>;
+		/**
+		 * Copy files or folders.
+		 *
+		 * @param source The existing file.
+		 * @param destination The destination location.
+		 * @param options Defines if existing files should be overwritten.
+		 */
+        copy(source: Uri, target: Uri, options?: { overwrite?: boolean }): Thenable<void>;
     }
 
     /**
@@ -5183,18 +5216,18 @@ declare module '@theia/plugin' {
          */
         export function applyEdit(edit: WorkspaceEdit): PromiseLike<boolean>;
 
-        /**
-         * Register a filesystem provider for a given scheme, e.g. `ftp`.
-         *
-         * There can only be one provider per scheme and an error is being thrown when a scheme
-         * has been claimed by another provider or when it is reserved.
-         *
-         * @param scheme The uri-[scheme](#Uri.scheme) the provider registers for.
-         * @param provider The filesystem provider.
-         * @param options Immutable metadata about the provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-         */
-        export function registerFileSystemProvider(scheme: string, provider: FileSystemProvider, options?: { isCaseSensitive?: boolean, isReadonly?: boolean }): Disposable;
+		/**
+		 * Register a filesystem provider for a given scheme, e.g. `ftp`.
+		 *
+		 * There can only be one provider per scheme and an error is being thrown when a scheme
+		 * has been claimed by another provider or when it is reserved.
+		 *
+		 * @param scheme The uri-[scheme](#Uri.scheme) the provider registers for.
+		 * @param provider The filesystem provider.
+		 * @param options Immutable metadata about the provider.
+		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+		 */
+        export function registerFileSystemProvider(scheme: string, provider: FileSystemProvider, options?: { readonly isCaseSensitive?: boolean, readonly isReadonly?: boolean }): Disposable;
 
         /**
          * Returns the [workspace folder](#WorkspaceFolder) that contains a given uri.
@@ -7244,27 +7277,36 @@ declare module '@theia/plugin' {
     }
 
     /**
-     * A document link is a range in a text document that links to an internal or external resource, like another
-     * text document or a web site.
-     */
+	 * A document link is a range in a text document that links to an internal or external resource, like another
+	 * text document or a web site.
+	 */
     export class DocumentLink {
 
-        /**
-         * The range this link applies to.
-         */
+		/**
+		 * The range this link applies to.
+		 */
         range: Range;
 
-        /**
-         * The uri this link points to.
-         */
+		/**
+		 * The uri this link points to.
+		 */
         target?: Uri;
 
-        /**
-         * Creates a new document link.
-         *
-         * @param range The range the document link applies to. Must not be empty.
-         * @param target The uri the document link points to.
-         */
+		/**
+		 * The tooltip text when you hover over this link.
+		 *
+		 * If a tooltip is provided, is will be displayed in a string that includes instructions on how to
+		 * trigger the link, such as `{0} (ctrl + click)`. The specific instructions vary depending on OS,
+		 * user settings, and localization.
+		 */
+        tooltip?: string;
+
+		/**
+		 * Creates a new document link.
+		 *
+		 * @param range The range the document link applies to. Must not be empty.
+		 * @param target The uri the document link points to.
+		 */
         constructor(range: Range, target?: Uri);
     }
 
