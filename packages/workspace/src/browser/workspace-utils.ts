@@ -15,6 +15,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+// TODO get rid of util files, replace with methods in a responsible class
+
 import URI from '@theia/core/lib/common/uri';
 import { inject, injectable } from 'inversify';
 import { WorkspaceService } from './workspace-service';
@@ -36,7 +38,7 @@ export class WorkspaceUtils {
      */
     containsRootDirectory(uris: URI[]): boolean {
         // obtain all roots URIs for a given workspace
-        const rootUris = this.workspaceService.tryGetRoots().map(root => new URI(root.uri));
+        const rootUris = this.workspaceService.tryGetRoots().map(root => root.resource);
         // return true if at least a single URI is a root directory
         return rootUris.some(rootUri => uris.some(uri => uri.isEqualOrParent(rootUri)));
     }

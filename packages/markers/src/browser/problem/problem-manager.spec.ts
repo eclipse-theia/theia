@@ -26,7 +26,7 @@ import { LocalStorageService, StorageService } from '@theia/core/lib/browser/sto
 import { Event } from '@theia/core/lib/common/event';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 disableJSDOM();
 
@@ -39,10 +39,9 @@ before(() => {
     testContainer.bind(ILogger).to(MockLogger);
     testContainer.bind(StorageService).to(LocalStorageService).inSingletonScope();
     testContainer.bind(LocalStorageService).toSelf().inSingletonScope();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    testContainer.bind(FileSystemWatcher).toConstantValue({
-        onFilesChanged: Event.None
-    } as FileSystemWatcher);
+    testContainer.bind(FileService).toConstantValue(<FileService>{
+        onDidFilesChange: Event.None
+    });
     testContainer.bind(ProblemManager).toSelf();
 
     manager = testContainer.get(ProblemManager);

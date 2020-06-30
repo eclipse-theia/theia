@@ -25,7 +25,6 @@ import URI from '@theia/core/lib/common/uri';
 import { isEmpty } from '@theia/core/lib/common/objects';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { FileSystem } from '../../common/filesystem';
 import { DirectoryArchiver } from './directory-archiver';
 import { FileDownloadData } from '../../common/download/file-download-data';
 import { FileDownloadCache, DownloadStorageItem } from './file-download-cache';
@@ -42,9 +41,6 @@ export abstract class FileDownloadHandler {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
-
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
 
     @inject(DirectoryArchiver)
     protected readonly directoryArchiver: DirectoryArchiver;
@@ -215,16 +211,19 @@ export class SingleFileDownloadHandler extends FileDownloadHandler {
             return;
         }
         const uri = new URI(query.uri).toString(true);
-        const stat = await this.fileSystem.getFileStat(uri);
-        if (stat === undefined) {
+        const filePath = FileUri.fsPath(uri);
+
+        let stat: fs.Stats;
+        try {
+            stat = await fs.stat(filePath);
+        } catch {
             this.handleError(response, `The file does not exist. URI: ${uri}.`, NOT_FOUND);
             return;
         }
         try {
             const downloadId = v4();
-            const filePath = FileUri.fsPath(uri);
             const options: PrepareDownloadOptions = { filePath, downloadId, remove: false };
-            if (!stat.isDirectory) {
+            if (!stat.isDirectory()) {
                 await this.prepareDownload(request, response, options);
             } else {
                 const outputRootPath = await this.createTempDir(downloadId);
@@ -264,8 +263,9 @@ export class MultiFileDownloadHandler extends FileDownloadHandler {
             return;
         }
         for (const uri of body.uris) {
-            const stat = await this.fileSystem.getFileStat(uri);
-            if (stat === undefined) {
+            try {
+                await fs.access(FileUri.fsPath(uri));
+            } catch {
                 this.handleError(response, `The file does not exist. URI: ${uri}.`, NOT_FOUND);
                 return;
             }

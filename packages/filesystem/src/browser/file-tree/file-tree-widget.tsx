@@ -16,14 +16,16 @@
 
 import * as React from 'react';
 import { injectable, inject } from 'inversify';
-import { DisposableCollection, Disposable } from '@theia/core/lib/common';
+import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
+import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
 import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget, CompositeTreeNode } from '@theia/core/lib/browser';
 import { FileUploadService } from '../file-upload-service';
-import { DirNode, FileStatNode } from './file-tree';
+import { DirNode, FileStatNode, FileStatNodeData } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
+import { FileStat, FileType } from '../../common/files';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
@@ -241,6 +243,52 @@ export class FileTreeWidget extends TreeWidget {
             return false;
         }
         return super.needsExpansionTogglePadding(node);
+    }
+
+    protected deflateForStorage(node: TreeNode): object {
+        const deflated = super.deflateForStorage(node);
+        if (FileStatNode.is(node) && FileStatNodeData.is(deflated)) {
+            deflated.uri = node.uri.toString();
+            delete deflated['fileStat'];
+            deflated.stat = FileStat.toStat(node.fileStat);
+        }
+        return deflated;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected inflateFromStorage(node: any, parent?: TreeNode): TreeNode {
+        if (FileStatNodeData.is(node)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const fileStatNode: FileStatNode = node as any;
+            const resource = new URI(node.uri);
+            fileStatNode.uri = resource;
+            let stat: typeof node['stat'];
+            // in order to support deprecated FileStat
+            if (node.fileStat) {
+                stat = {
+                    type: node.fileStat.isDirectory ? FileType.Directory : FileType.File,
+                    mtime: node.fileStat.lastModification,
+                    size: node.fileStat.size
+                };
+                delete node['fileStat'];
+            } else if (node.stat) {
+                stat = node.stat;
+                delete node['stat'];
+            }
+            if (stat) {
+                fileStatNode.fileStat = FileStat.fromStat(resource, stat);
+            }
+        }
+        const inflated = super.inflateFromStorage(node, parent);
+        if (DirNode.is(inflated)) {
+            inflated.fileStat.children = [];
+            for (const child of inflated.children) {
+                if (FileStatNode.is(child)) {
+                    inflated.fileStat.children.push(child.fileStat);
+                }
+            }
+        }
+        return inflated;
     }
 
 }

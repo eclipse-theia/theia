@@ -16,17 +16,16 @@
 
 import debounce = require('lodash.debounce');
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
-import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { Git, Repository } from '../common';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitScmProvider } from './git-scm-provider';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export interface GitRefreshOptions {
     readonly maxCount: number
@@ -45,17 +44,15 @@ export class GitRepositoryProvider {
     @inject(GitCommitMessageValidator)
     protected readonly commitMessageValidator: GitCommitMessageValidator;
 
-    constructor(
-        @inject(Git) protected readonly git: Git,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(ScmService) protected readonly scmService: ScmService,
-        @inject(StorageService) protected readonly storageService: StorageService
-    ) {
-        this.initialize();
-    }
+    @inject(Git) protected readonly git: Git;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(ScmService) protected readonly scmService: ScmService;
+    @inject(StorageService) protected readonly storageService: StorageService;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    @postConstruct()
     protected async initialize(): Promise<void> {
         const [selectedRepository, allRepositories] = await Promise.all([
             this.storageService.getData<Repository | undefined>(this.selectedRepoStorageKey),
@@ -71,7 +68,7 @@ export class GitRepositoryProvider {
         this.selectedRepository = selectedRepository;
 
         await this.refresh();
-        this.watcher.onFilesChanged(_changedFiles => this.lazyRefresh());
+        this.fileService.onDidFilesChange(_ => this.lazyRefresh());
     }
 
     protected lazyRefresh: () => Promise<void> = debounce(() => this.refresh(), 1000);
@@ -131,7 +128,7 @@ export class GitRepositoryProvider {
         const repositories: Repository[] = [];
         const refreshing: Promise<void>[] = [];
         for (const root of await this.workspaceService.roots) {
-            refreshing.push(this.git.repositories(root.uri, { ...options }).then(
+            refreshing.push(this.git.repositories(root.resource.toString(), { ...options }).then(
                 result => { repositories.push(...result); },
                 () => { /* no-op*/ }
             ));

@@ -81,7 +81,7 @@ export interface PreferenceItem {
 export interface PreferenceSchemaProperty extends PreferenceItem {
     description?: string;
     markdownDescription?: string;
-    scope?: 'application' | 'window' | 'resource' | PreferenceScope;
+    scope?: 'application' | 'machine' | 'window' | 'resource' | 'language-overridable' | 'machine-overridable' | PreferenceScope;
 }
 
 export interface PreferenceDataProperty extends PreferenceItem {

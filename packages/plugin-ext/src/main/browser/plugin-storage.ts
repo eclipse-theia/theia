@@ -47,8 +47,8 @@ export class StorageMainImpl implements StorageMain {
             return undefined;
         }
         return {
-            workspace: this.workspaceService.workspace,
-            roots: this.workspaceService.tryGetRoots()
+            workspace: this.workspaceService.workspace?.resource.toString(),
+            roots: this.workspaceService.tryGetRoots().map(root => root.resource.toString())
         };
     }
 

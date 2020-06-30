@@ -14,14 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable max-len */
+
 import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
-import { JsonRpcServer, ApplicationError } from '@theia/core/lib/common';
-import { injectable } from 'inversify';
-export const fileSystemPath = '/services/filesystem';
+import { ApplicationError } from '@theia/core/lib/common';
 
+/**
+ * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService` instead
+ */
 export const FileSystem = Symbol('FileSystem');
-
-export interface FileSystem extends JsonRpcServer<FileSystemClient> {
+export interface FileSystem {
 
     /**
      * Returns the file stat for the given URI.
@@ -29,21 +31,29 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * If the uri points to a folder it will contain one level of unresolved children.
      *
      * `undefined` if a file for the given URI does not exist.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.resolve` instead
      */
     getFileStat(uri: string): Promise<FileStat | undefined>;
 
     /**
      * Finds out if a file identified by the resource exists.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.exists` instead
      */
     exists(uri: string): Promise<boolean>;
 
     /**
      * Resolve the contents of a file identified by the resource.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.read` instead
      */
     resolveContent(uri: string, options?: { encoding?: string }): Promise<{ stat: FileStat, content: string }>;
 
     /**
      * Updates the content replacing its previous value.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.write` instead
      */
     setContent(file: FileStat, content: string, options?: { encoding?: string }): Promise<FileStat>;
 
@@ -58,6 +68,8 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * | 2 | undefined |        ✓         | read file in default encoding; write file in `overwriteEncoding` |
      * | 3 |     ✓    |     undefined     | read & write file in `encoding` |
      * | 4 |     ✓    |        ✓         | read file in `encoding`; write file in `overwriteEncoding` |
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.write` instead
      */
     updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string, overwriteEncoding?: string }): Promise<FileStat>;
 
@@ -73,6 +85,7 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * | empty dir |    ✓    |   x  |     x     | overwrite |
      * | dir       |    ✓    |   x  | overwrite | overwrite |
      *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.move` instead
      */
     move(sourceUri: string, targetUri: string, options?: FileMoveOptions): Promise<FileStat>;
 
@@ -80,6 +93,8 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * Copies the file to a path identified by the resource.
      *
      * The optional parameter overwrite can be set to replace an existing file at the location.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.copy` instead
      */
     copy(sourceUri: string, targetUri: string, options?: { overwrite?: boolean, recursive?: boolean }): Promise<FileStat>;
 
@@ -88,12 +103,16 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * will have the stat model object as a result.
      *
      * The optional parameter content can be used as value to fill into the new file.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.create` instead
      */
     createFile(uri: string, options?: { content?: string, encoding?: string }): Promise<FileStat>;
 
     /**
      * Creates a new folder with the given path. The returned promise
      * will have the stat model object as a result.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.createFolder` instead
      */
     createFolder(uri: string): Promise<FileStat>;
 
@@ -106,16 +125,22 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
     /**
      * Deletes the provided file. The optional moveToTrash parameter allows to
      * move the file to trash.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.delete` instead
      */
     delete(uri: string, options?: FileDeleteOptions): Promise<void>;
 
     /**
      * Returns the encoding of the given file resource.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908) use `FileService.read` without `autoGuessEncoding` option instead
      */
     getEncoding(uri: string): Promise<string>;
 
     /**
      * Guess encoding of a given file based on its content.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.read` with `autoGuessEncoding` option instead
      */
     guessEncoding(uri: string): Promise<string | undefined>;
 
@@ -126,11 +151,15 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
 
     /**
      * Returns a promise that resolves to a file stat representing the current user's home directory.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `EnvVariablesServer.getHomeDirUri` instead
      */
     getCurrentUserHome(): Promise<FileStat | undefined>;
 
     /**
      * Resolves to an array of URIs pointing to the available drives on the filesystem.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `EnvVariablesServer.getDrives` instead
      */
     getDrives(): Promise<string[]>;
 
@@ -140,6 +169,8 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * Check `FileAccess.Constants` for possible values of mode.
      * It is possible to create a mask consisting of the bitwise `OR` of two or more values (e.g. FileAccess.Constants.W_OK | FileAccess.Constants.R_OK).
      * If `mode` is not defined, `FileAccess.Constants.F_OK` will be used instead.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.access` instead
      */
     access(uri: string, mode?: number): Promise<boolean>
 
@@ -150,10 +181,15 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * USE WITH CAUTION: You should always prefer URIs to paths if possible, as they are
      * portable and platform independent. Paths should only be used in cases you directly
      * interact with the OS, e.g. when running a command on the shell.
+     *
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.fsPath` instead
      */
     getFsPath(uri: string): Promise<string | undefined>
 }
 
+/**
+ * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.access` instead
+ */
 export namespace FileAccess {
 
     export namespace Constants {
@@ -193,78 +229,9 @@ export interface FileDeleteOptions {
 }
 
 /**
- * A callback type, called when we try to save a file but realize it has been
- * modified by somebody else since we have opened it.  `originalStat` is the
- * stat at the moment we opened the file, `currentStat` is the stat at the
- * moment we try to save it (after the external modification).  The callback
- * should return true if we still want to save the file, false otherwise.
- */
-export const FileShouldOverwrite = Symbol('FileShouldOverwrite');
-export interface FileShouldOverwrite {
-    (originalStat: FileStat, currentStat: FileStat): Promise<boolean>;
-}
-
-export interface FileSystemClient {
-
-    /**
-     * Tests whether the given file can be overwritten
-     * in the case if it is out of sync with the given file stat.
-     */
-    shouldOverwrite: FileShouldOverwrite;
-
-    willCreate(uri: string): Promise<void>;
-
-    didCreate(uri: string, failed: boolean): Promise<void>;
-
-    willDelete(uri: string): Promise<void>;
-
-    didDelete(uri: string, failed: boolean): Promise<void>;
-
-    willMove(sourceUri: string, targetUri: string): Promise<void>;
-
-    didMove(sourceUri: string, targetUri: string, failed: boolean): Promise<void>;
-
-}
-
-@injectable()
-export class DispatchingFileSystemClient implements FileSystemClient {
-
-    readonly clients = new Set<FileSystemClient>();
-
-    shouldOverwrite(originalStat: FileStat, currentStat: FileStat): Promise<boolean> {
-        return Promise.race(Array.from(this.clients, client =>
-            client.shouldOverwrite(originalStat, currentStat))
-        );
-    }
-
-    async willCreate(uri: string): Promise<void> {
-        await Promise.all(Array.from(this.clients, client => client.willCreate(uri)));
-    }
-
-    async didCreate(uri: string, failed: boolean): Promise<void> {
-        await Promise.all(Array.from(this.clients, client => client.didCreate(uri, failed)));
-    }
-
-    async willDelete(uri: string): Promise<void> {
-        await Promise.all(Array.from(this.clients, client => client.willDelete(uri)));
-    }
-
-    async didDelete(uri: string, failed: boolean): Promise<void> {
-        await Promise.all(Array.from(this.clients, client => client.didDelete(uri, failed)));
-    }
-
-    async willMove(sourceUri: string, targetUri: string): Promise<void> {
-        await Promise.all(Array.from(this.clients, client => client.willMove(sourceUri, targetUri)));
-    }
-
-    async didMove(sourceUri: string, targetUri: string, failed: boolean): Promise<void> {
-        await Promise.all(Array.from(this.clients, client => client.didMove(sourceUri, targetUri, failed)));
-    }
-
-}
-
-/**
  * A file resource with meta information.
+ *
+ * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileStat` from `@theia/filesystem/lib/common/files` instead
  */
 export interface FileStat {
 
@@ -311,6 +278,9 @@ export namespace FileStat {
     }
 }
 
+/**
+ * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileOperationError` instead
+ */
 export namespace FileSystemError {
     export const FileNotFound = ApplicationError.declare(-33000, (uri: string, prefix?: string) => ({
         message: `${prefix ? prefix + ' ' : ''}'${uri}' has not been found.`,

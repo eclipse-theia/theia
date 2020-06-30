@@ -14,8 +14,5 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './user-storage-service';
-export * from './user-storage-resource';
 export * from './user-storage-uri';
-export * from './user-storage-service-filesystem';
 export * from './user-storage-frontend-module';

@@ -17,8 +17,9 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import { Event, Emitter } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystemWatcher, FileChangeEvent, FileChangeType } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { Marker } from '../common/marker';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';
 
 /*
  * argument to the `findMarkers` method.
@@ -115,22 +116,22 @@ export abstract class MarkerManager<D extends object> {
     protected readonly uri2MarkerCollection = new Map<string, MarkerCollection<D>>();
     protected readonly onDidChangeMarkersEmitter = new Emitter<URI>();
 
-    @inject(FileSystemWatcher) protected fileWatcher: FileSystemWatcher;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @postConstruct()
     protected init(): void {
-        this.fileWatcher.onFilesChanged(event => {
-            const relevantEvent = event.filter(({ type }) => type === FileChangeType.DELETED);
-            if (relevantEvent.length) {
-                this.cleanMarkers(relevantEvent);
+        this.fileService.onDidFilesChange(event => {
+            if (event.gotDeleted()) {
+                this.cleanMarkers(event);
             }
         });
     }
 
-    protected cleanMarkers(event: FileChangeEvent): void {
+    protected cleanMarkers(event: FileChangesEvent): void {
         for (const uriString of this.uri2MarkerCollection.keys()) {
             const uri = new URI(uriString);
-            if (FileChangeEvent.isDeleted(event, uri)) {
+            if (event.contains(uri, FileChangeType.DELETED)) {
                 this.cleanAllMarkers(uri);
             }
         }

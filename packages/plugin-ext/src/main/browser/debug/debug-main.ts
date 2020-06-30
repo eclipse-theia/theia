@@ -47,9 +47,9 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { PluginDebugSessionFactory } from './plugin-debug-session-factory';
 import { PluginWebSocketChannel } from '../../../common/connection';
 import { PluginDebugAdapterContributionRegistrator, PluginDebugService } from './plugin-debug-service';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { DebugFunctionBreakpoint } from '@theia/debug/lib/browser/model/debug-function-breakpoint';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
@@ -66,7 +66,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugPreferences: DebugPreferences;
     private readonly sessionContributionRegistrator: PluginDebugSessionContributionRegistrator;
     private readonly adapterContributionRegistrator: PluginDebugAdapterContributionRegistrator;
-    private readonly fileSystem: FileSystem;
+    private readonly fileService: FileService;
     private readonly pluginService: HostedPluginSupport;
 
     private readonly debuggerContributions = new Map<string, DisposableCollection>();
@@ -86,7 +86,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.debugPreferences = container.get(DebugPreferences);
         this.adapterContributionRegistrator = container.get(PluginDebugService);
         this.sessionContributionRegistrator = container.get(PluginDebugSessionContributionRegistry);
-        this.fileSystem = container.get(FileSystem);
+        this.fileService = container.get(FileService);
         this.pluginService = container.get(HostedPluginSupport);
 
         const fireDidChangeBreakpoints = ({ added, removed, changed }: BreakpointsChangeEvent<SourceBreakpoint | FunctionBreakpoint>) => {
@@ -140,7 +140,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
                 const connection = await this.connectionMain.ensureConnection(sessionId);
                 return new PluginWebSocketChannel(connection);
             },
-            this.fileSystem,
+            this.fileService,
             terminalOptionsExt
         );
 

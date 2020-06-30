@@ -16,12 +16,13 @@
 
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { SelectionService, UriSelection } from '@theia/core/lib/common';
 import { OpenerService, open } from '@theia/core/lib/browser/opener-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Command } from '@theia/core/lib/common/command';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 
 export namespace NavigatorDiffCommands {
     const COMPARE_CATEGORY = 'Compare';
@@ -39,8 +40,8 @@ export namespace NavigatorDiffCommands {
 
 @injectable()
 export class NavigatorDiff {
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(OpenerService)
     protected openerService: OpenerService;
@@ -71,11 +72,12 @@ export class NavigatorDiff {
 
     protected async isDirectory(uri: URI): Promise<boolean> {
         try {
-            const stat = await this.fileSystem.getFileStat(uri.path.toString());
-            if (!stat || stat.isDirectory) {
+            const stat = await this.fileService.resolve(uri);
+            return stat.isDirectory;
+        } catch (e) {
+            if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
                 return true;
             }
-        } catch (e) {
         }
 
         return false;

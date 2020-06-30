@@ -13,6 +13,10 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 
 import URI from '@theia/core/lib/common/uri';
 
@@ -26,23 +30,61 @@ export interface UriComponents {
 }
 
 // some well known URI schemas
+// based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/base/common/network.ts#L9-L79
+// TODO move to network.ts file
 export namespace Schemes {
-    export const FILE = 'file';
-    export const UNTITLED = 'untitled';
-    export const HTTP: string = 'http';
-    export const HTTPS: string = 'https';
-    export const MAILTO: string = 'mailto';
-    export const DATA: string = 'data';
-    /**
-     * A schema is used for models that exist in memory
-     * only and that have no correspondence on a server or such.
-     */
-    export const IN_MEMORY: string = 'inmemory';
-    /** A schema is used for settings files. */
-    export const VSCODE: string = 'vscode';
-    /** A schema is used for internal private files. */
-    export const INTERNAL: string = 'private';
-    export const COMMAND: string = 'command';
+
+	/**
+	 * A schema that is used for models that exist in memory
+	 * only and that have no correspondence on a server or such.
+	 */
+    export const inMemory = 'inmemory';
+
+	/**
+	 * A schema that is used for setting files
+	 */
+    export const vscode = 'vscode';
+
+	/**
+	 * A schema that is used for internal private files
+	 */
+    export const internal = 'private';
+
+	/**
+	 * A walk-through document.
+	 */
+    export const walkThrough = 'walkThrough';
+
+	/**
+	 * An embedded code snippet.
+	 */
+    export const walkThroughSnippet = 'walkThroughSnippet';
+
+    export const http = 'http';
+
+    export const https = 'https';
+
+    export const file = 'file';
+
+    export const mailto = 'mailto';
+
+    export const untitled = 'untitled';
+
+    export const data = 'data';
+
+    export const command = 'command';
+
+    export const vscodeRemote = 'vscode-remote';
+
+    export const vscodeRemoteResource = 'vscode-remote-resource';
+
+    export const userData = 'vscode-userdata';
+
+    export const vscodeCustomEditor = 'vscode-custom-editor';
+
+    export const vscodeSettings = 'vscode-settings';
+
+    export const webviewPanel = 'webview-panel';
 }
 
 export function theiaUritoUriComponents(uri: URI): UriComponents {

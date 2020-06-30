@@ -26,9 +26,9 @@ import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-opti
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
 import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalOptionsExt } from '../../../common/plugin-api-rpc';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export class PluginDebugSession extends DebugSession {
     constructor(
@@ -40,9 +40,9 @@ export class PluginDebugSession extends DebugSession {
         protected readonly breakpoints: BreakpointManager,
         protected readonly labelProvider: LabelProvider,
         protected readonly messages: MessageClient,
-        protected readonly fileSystem: FileSystem,
+        protected readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined) {
-        super(id, options, connection, terminalServer, editorManager, breakpoints, labelProvider, messages, fileSystem);
+        super(id, options, connection, terminalServer, editorManager, breakpoints, labelProvider, messages, fileService);
     }
 
     protected async doCreateTerminal(terminalWidgetOptions: TerminalWidgetOptions): Promise<TerminalWidget> {
@@ -65,7 +65,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected readonly outputChannelManager: OutputChannelManager,
         protected readonly debugPreferences: DebugPreferences,
         protected readonly connectionFactory: (sessionId: string) => Promise<IWebSocket>,
-        protected readonly fileSystem: FileSystem,
+        protected readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined
     ) {
         super();
@@ -86,7 +86,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
             this.breakpoints,
             this.labelProvider,
             this.messages,
-            this.fileSystem,
+            this.fileService,
             this.terminalOptionsExt);
     }
 }

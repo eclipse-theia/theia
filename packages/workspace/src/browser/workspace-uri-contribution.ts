@@ -17,7 +17,7 @@
 import { DefaultUriLabelProviderContribution, URIIconReference } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from 'inversify';
-import { FileStat } from '@theia/filesystem/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 
 @injectable()
@@ -57,14 +57,14 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
 
     protected asURIIconReference(element: URI | URIIconReference | FileStat): URI | URIIconReference {
         if (FileStat.is(element)) {
-            return URIIconReference.create(element.isDirectory ? 'folder' : 'file', new URI(element.uri));
+            return URIIconReference.create(element.isDirectory ? 'folder' : 'file', element.resource);
         }
         return element;
     }
 
     protected getUri(element: URI | URIIconReference | FileStat): URI | undefined {
         if (FileStat.is(element)) {
-            return new URI(element.uri);
+            return element.resource;
         }
         return super.getUri(element);
     }

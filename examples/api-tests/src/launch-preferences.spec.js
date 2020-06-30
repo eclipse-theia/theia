@@ -31,9 +31,9 @@ describe('Launch Preferences', function () {
     const { assert } = chai;
 
     const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
-    const Uri = require('@theia/core/lib/common/uri');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
-    const { FileSystem } = require('@theia/filesystem/lib/common/filesystem');
+    const { FileService } = require('@theia/filesystem/lib/browser/file-service');
+    const { FileResourceResolver } = require('@theia/filesystem/lib/browser/file-resource');
     const { MonacoTextModelService } = require('@theia/monaco/lib/browser/monaco-text-model-service');
     const { MonacoWorkspace } = require('@theia/monaco/lib/browser/monaco-workspace');
 
@@ -41,10 +41,10 @@ describe('Launch Preferences', function () {
     /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
     const preferences = container.get(PreferenceService);
     const workspaceService = container.get(WorkspaceService);
-    /** @type {import('@theia/filesystem/lib/common/filesystem').FileSystem} */
-    const fileSystem = container.get(FileSystem);
+    const fileService = container.get(FileService);
     const textModelService = container.get(MonacoTextModelService);
     const workspace = container.get(MonacoWorkspace);
+    const fileResourceResolver = container.get(FileResourceResolver);
 
     const defaultLaunch = {
         'configurations': [],
@@ -388,7 +388,7 @@ describe('Launch Preferences', function () {
 
     }
 
-    const rootUri = new Uri.default(workspaceService.tryGetRoots()[0].uri);
+    const rootUri = workspaceService.tryGetRoots()[0].resource;
 
     function deleteWorkspacePreferences() {
         const promises = [];
@@ -418,22 +418,21 @@ describe('Launch Preferences', function () {
         }
         return Promise.all([
             ...promises,
-            fileSystem.delete(rootUri.resolve('.theia').toString(), { moveToTrash: false }).catch(() => { }),
-            fileSystem.delete(rootUri.resolve('.vscode').toString(), { moveToTrash: false }).catch(() => { })
+            fileService.delete(rootUri.resolve('.theia'), { fromUserGesture: false, recursive: true }).catch(() => { }),
+            fileService.delete(rootUri.resolve('.vscode'), { fromUserGesture: false, recursive: true }).catch(() => { })
         ]);
     }
 
-    const client = /** @type {import('@theia/filesystem/lib/common/filesystem').FileSystemClient} */ (fileSystem.getClient());
-    const originalShouldOverwrite = client.shouldOverwrite;
+    const originalShouldOverwrite = fileResourceResolver['shouldOverwrite'];
 
     before(async () => {
         // fail tests if out of async happens
-        client.shouldOverwrite = async () => (assert.fail('should be in sync'), false);
+        fileResourceResolver['shouldOverwrite'] = async () => (assert.fail('should be in sync'), false);
         await deleteWorkspacePreferences();
     });
 
     after(() => {
-        client.shouldOverwrite = originalShouldOverwrite;
+        fileResourceResolver['shouldOverwrite'] = originalShouldOverwrite;
     });
 
     /**

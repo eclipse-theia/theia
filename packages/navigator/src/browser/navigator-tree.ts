@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { FileTree, DirNode } from '@theia/filesystem/lib/browser';
-import { FileStat } from '@theia/filesystem/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 import URI from '@theia/core/lib/common/uri';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
 import { FileNavigatorFilter } from './navigator-filter';

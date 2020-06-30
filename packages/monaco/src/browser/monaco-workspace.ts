@@ -20,19 +20,21 @@ import { URI as Uri } from 'vscode-uri';
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter } from '@theia/core/lib/common/event';
-import { FileSystem } from '@theia/filesystem/lib/common';
+import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
 
 // Note: `newUri` and `oldUri` are both optional although it is mandatory in `monaco.languages.ResourceFileEdit`.
 // See: https://github.com/microsoft/monaco-editor/issues/1396
 export interface ResourceEdit {
-    readonly newUri?: string;
-    readonly oldUri?: string;
+    readonly newUri?: URI;
+    readonly oldUri?: URI;
     readonly options?: {
         readonly overwrite?: boolean;
         readonly ignoreIfNotExists?: boolean;
@@ -42,37 +44,33 @@ export interface ResourceEdit {
 }
 
 export interface CreateResourceEdit extends ResourceEdit {
-    readonly newUri: string;
+    readonly newUri: URI;
 }
 export namespace CreateResourceEdit {
     export function is(arg: Edit): arg is CreateResourceEdit {
-        return 'newUri' in arg
-            && typeof (arg as any).newUri === 'string' // eslint-disable-line @typescript-eslint/no-explicit-any
-            && (!('oldUri' in arg) || typeof (arg as any).oldUri === 'undefined'); // eslint-disable-line @typescript-eslint/no-explicit-any
+        return ('newUri' in arg && (arg as any).newUri instanceof URI) && // eslint-disable-line @typescript-eslint/no-explicit-any
+            !('oldUri' in arg && (arg as any).oldUri instanceof URI); // eslint-disable-line @typescript-eslint/no-explicit-any
     }
 }
 
 export interface DeleteResourceEdit extends ResourceEdit {
-    readonly oldUri: string;
+    readonly oldUri: URI;
 }
 export namespace DeleteResourceEdit {
     export function is(arg: Edit): arg is DeleteResourceEdit {
-        return 'oldUri' in arg
-            && typeof (arg as any).oldUri === 'string' // eslint-disable-line @typescript-eslint/no-explicit-any
-            && (!('newUri' in arg) || typeof (arg as any).newUri === 'undefined'); // eslint-disable-line @typescript-eslint/no-explicit-any
+        return !('newUri' in arg && (arg as any).newUri instanceof URI) && // eslint-disable-line @typescript-eslint/no-explicit-any
+            ('oldUri' in arg && (arg as any).oldUri instanceof URI); // eslint-disable-line @typescript-eslint/no-explicit-any
     }
 }
 
 export interface RenameResourceEdit extends ResourceEdit {
-    readonly newUri: string;
-    readonly oldUri: string;
+    readonly newUri: URI;
+    readonly oldUri: URI;
 }
 export namespace RenameResourceEdit {
     export function is(arg: Edit): arg is RenameResourceEdit {
-        return 'oldUri' in arg
-            && typeof (arg as any).oldUri === 'string' // eslint-disable-line @typescript-eslint/no-explicit-any
-            && 'newUri' in arg
-            && typeof (arg as any).newUri === 'string'; // eslint-disable-line @typescript-eslint/no-explicit-any
+        return ('newUri' in arg && (arg as any).newUri instanceof URI) && // eslint-disable-line @typescript-eslint/no-explicit-any
+            ('oldUri' in arg && (arg as any).oldUri instanceof URI); // eslint-disable-line @typescript-eslint/no-explicit-any
     }
 }
 
@@ -138,8 +136,11 @@ export class MonacoWorkspace {
     protected readonly onDidSaveTextDocumentEmitter = new Emitter<MonacoEditorModel>();
     readonly onDidSaveTextDocument = this.onDidSaveTextDocumentEmitter.event;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    @inject(FileSystemPreferences)
+    protected readonly filePreferences: FileSystemPreferences;
 
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
@@ -253,7 +254,7 @@ export class MonacoWorkspace {
         });
     }
 
-    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit, options?: EditorOpenerOptions): Promise<monaco.editor.IBulkEditResult> {
+    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit, options?: EditorOpenerOptions): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
         try {
             const unresolvedEdits = this.groupEdits(workspaceEdit);
             const edits = await this.openEditors(unresolvedEdits, options);
@@ -285,11 +286,13 @@ export class MonacoWorkspace {
                 }
             }
             const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
-            return { ariaSummary };
+            return { ariaSummary, success: true };
         } catch (e) {
-            const ariaSummary = `Error applying workspace edits: ${e.toString()}`;
-            console.error(ariaSummary);
-            return { ariaSummary };
+            console.error('Failed to apply workspace edits:', e);
+            return {
+                ariaSummary: `Error applying workspace edits: ${e.toString()}`,
+                success: false
+            };
         }
     }
 
@@ -365,8 +368,8 @@ export class MonacoWorkspace {
                 editorEdit.textEdits.push(...resourceTextEdit.edits);
             } else {
                 const { options } = edit;
-                const oldUri = !!edit.oldUri ? edit.oldUri.toString() : undefined;
-                const newUri = !!edit.newUri ? edit.newUri.toString() : undefined;
+                const oldUri = !!edit.oldUri ? new URI(edit.oldUri.toString()) : undefined;
+                const newUri = !!edit.newUri ? new URI(edit.newUri.toString()) : undefined;
                 result.push({
                     oldUri,
                     newUri,
@@ -381,33 +384,27 @@ export class MonacoWorkspace {
         const options = edit.options || {};
         if (RenameResourceEdit.is(edit)) {
             // rename
-            if (options.overwrite === undefined && options.ignoreIfExists && await this.fileSystem.exists(edit.newUri)) {
+            if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(edit.newUri)) {
                 return; // not overwriting, but ignoring, and the target file exists
             }
-            await this.fileSystem.move(edit.oldUri, edit.newUri, { overwrite: options.overwrite });
+            await this.fileService.move(edit.oldUri, edit.newUri, { overwrite: options.overwrite });
         } else if (DeleteResourceEdit.is(edit)) {
             // delete file
-            if (!options.ignoreIfNotExists || await this.fileSystem.exists(edit.oldUri)) {
-                if (options.recursive === false) {
-                    console.warn("Ignored 'recursive': 'false' option. Deleting recursively.");
+            if (await this.fileService.exists(edit.oldUri)) {
+                let useTrash = this.filePreferences['files.enableTrash'];
+                if (useTrash && !(this.fileService.hasCapability(edit.oldUri, FileSystemProviderCapabilities.Trash))) {
+                    useTrash = false; // not supported by provider
                 }
-                await this.fileSystem.delete(edit.oldUri);
+                await this.fileService.delete(edit.oldUri, { useTrash, recursive: options.recursive });
+            } else if (!options.ignoreIfNotExists) {
+                throw new Error(`${edit.oldUri} does not exist and can not be deleted`);
             }
         } else if (CreateResourceEdit.is(edit)) {
-            const exists = await this.fileSystem.exists(edit.newUri);
             // create file
-            if (options.overwrite === undefined && options.ignoreIfExists && exists) {
+            if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(edit.newUri)) {
                 return; // not overwriting, but ignoring, and the target file exists
             }
-            if (exists && options.overwrite) {
-                const stat = await this.fileSystem.getFileStat(edit.newUri);
-                if (!stat) {
-                    throw new Error(`Cannot get file stat for the resource: ${edit.newUri}.`);
-                }
-                await this.fileSystem.setContent(stat, '');
-            } else {
-                await this.fileSystem.createFile(edit.newUri);
-            }
+            await this.fileService.create(edit.newUri, undefined, { overwrite: options.overwrite });
         }
     }
 

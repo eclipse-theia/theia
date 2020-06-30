@@ -99,7 +99,7 @@ export class Askpass implements Disposable {
         }
     }
 
-    protected onRequest(req: http.ServerRequest, res: http.ServerResponse): void {
+    protected onRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
         const chunks: string[] = [];
         req.setEncoding('utf8');
         req.on('data', (d: string) => chunks.push(d));

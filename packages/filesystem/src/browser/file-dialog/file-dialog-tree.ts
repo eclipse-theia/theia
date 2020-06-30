@@ -17,7 +17,7 @@
 import { injectable } from 'inversify';
 import { DirNode, FileTree } from '../file-tree';
 import { TreeNode, CompositeTreeNode } from '@theia/core/lib/browser/tree/tree';
-import { FileStat } from '../../common';
+import { FileStat } from '../../common/files';
 
 @injectable()
 export class FileDialogTree extends FileTree {
@@ -65,7 +65,7 @@ export class FileDialogTree extends FileTree {
             return true;
         }
 
-        return !this.fileExtensions.every(value => !fileStat.uri.endsWith('.' + value));
+        return !this.fileExtensions.every(value => fileStat.resource.path.ext !== '.' + value);
     }
 
 }

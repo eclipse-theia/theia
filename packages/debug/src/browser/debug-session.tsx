@@ -36,9 +36,9 @@ import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugSessionOptions, InternalDebugSessionOptions } from './debug-session-options';
 import { DebugConfiguration } from '../common/debug-common';
 import { SourceBreakpoint, ExceptionBreakpoint } from './breakpoint/breakpoint-marker';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export enum DebugState {
     Inactive,
@@ -73,7 +73,7 @@ export class DebugSession implements CompositeTreeElement {
         protected readonly breakpoints: BreakpointManager,
         protected readonly labelProvider: LabelProvider,
         protected readonly messages: MessageClient,
-        protected readonly fileSystem: FileSystem) {
+        protected readonly fileService: FileService) {
         this.connection.onRequest('runInTerminal', (request: DebugProtocol.RunInTerminalRequest) => this.runInTerminal(request));
         this.toDispose.pushAll([
             this.onDidChangeEmitter,
@@ -153,9 +153,12 @@ export class DebugSession implements CompositeTreeElement {
             };
         }
         const name = uri.displayName;
-        let path: string | undefined = uri.toString();
-        if (uri.scheme === 'file') {
-            path = await this.fileSystem.getFsPath(path);
+        let path;
+        const underlying = await this.fileService.toUnderlyingResource(uri);
+        if (underlying.scheme === 'file') {
+            path = await this.fileService.fsPath(underlying);
+        } else {
+            path = uri.toString();
         }
         return { name, path };
     }

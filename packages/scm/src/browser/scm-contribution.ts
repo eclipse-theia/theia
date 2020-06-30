@@ -25,7 +25,8 @@ import {
     StatusBarEntry,
     KeybindingRegistry,
     ViewContainerTitleOptions,
-    ViewContainer} from '@theia/core/lib/browser';
+    ViewContainer
+} from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService } from '@theia/core/lib/common';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';

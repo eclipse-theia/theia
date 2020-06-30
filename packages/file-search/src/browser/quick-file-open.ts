@@ -20,7 +20,6 @@ import {
     OpenerService, KeybindingRegistry, QuickOpenGroupItem, QuickOpenGroupItemOptions, QuickOpenItemOptions,
     QuickOpenHandler, QuickOpenOptions
 } from '@theia/core/lib/browser';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService } from '../common/file-search-service';
@@ -42,8 +41,6 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
 
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
     @inject(OpenerService)
@@ -197,7 +194,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
             };
 
             this.fileSearchService.find(lookFor, {
-                rootUris: roots.map(r => r.uri),
+                rootUris: roots.map(r => r.resource.toString()),
                 fuzzyMatch: true,
                 limit: 200,
                 useGitIgnore: this.hideIgnoredFiles,
