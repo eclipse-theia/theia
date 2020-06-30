@@ -80,6 +80,7 @@ export interface ElectronMainContribution {
 
 // Extracted the functionality from `yargs@15.4.0-beta.0`.
 // Based on https://github.com/yargs/yargs/blob/522b019c9a50924605986a1e6e0cb716d47bcbca/lib/process-argv.ts
+// Modified.
 @injectable()
 export class ProcessArgv {
 
@@ -107,12 +108,12 @@ export class ProcessArgv {
         return !!(process as ProcessArgv.ElectronProcess).versions.electron;
     }
 
-    get processArgvWithoutBin(): Array<string> {
-        return process.argv.slice(this.processArgvBinIndex + 1);
+    getProcessArgvWithoutBin(argv = process.argv): Array<string> {
+        return argv.slice(this.processArgvBinIndex + 1);
     }
 
-    get ProcessArgvBin(): string {
-        return process.argv[this.processArgvBinIndex];
+    getProcessArgvBin(argv = process.argv): string {
+        return argv[this.processArgvBinIndex];
     }
 
 }
@@ -156,14 +157,15 @@ export class ElectronApplication {
         await this.startContributions();
         await this.launch({
             secondInstance: false,
-            argv: this.processArgv.processArgvWithoutBin,
+            argv: this.processArgv.getProcessArgvWithoutBin(process.argv),
             cwd: process.cwd()
         });
     }
 
     async launch(params: ExecutionParams): Promise<void> {
+        console.log('LAUNCHED!', JSON.stringify(params));
         createYargs(params.argv, params.cwd)
-            .command('$0 [<file>]', false,
+            .command('$0 [file]', false,
                 cmd => cmd
                     .positional('file', { type: 'string' }),
                 args => this.handleMainCommand(params, { file: args.file }),
@@ -175,7 +177,10 @@ export class ElectronApplication {
      *
      * @param options
      */
-    async createWindow(options: BrowserWindowConstructorOptions): Promise<BrowserWindow> {
+    async createWindow(options?: BrowserWindowConstructorOptions): Promise<BrowserWindow> {
+        if (typeof options === 'undefined') {
+            options = await this.getDefaultBrowserWindowOptions();
+        }
         const electronWindow = new BrowserWindow(options);
         this.attachReadyToShow(electronWindow);
         this.attachSaveWindowState(electronWindow);
@@ -184,18 +189,31 @@ export class ElectronApplication {
         return electronWindow;
     }
 
+    async getDefaultBrowserWindowOptions(): Promise<BrowserWindowConstructorOptions> {
+        let windowState: BrowserWindowConstructorOptions | undefined = this.electronStore.get('windowstate', undefined);
+        if (typeof windowState === 'undefined') {
+            windowState = this.getDefaultWindowState();
+        }
+        return {
+            ...windowState,
+            show: false,
+            title: this.config.applicationName,
+            minWidth: 200,
+            minHeight: 120,
+        };
+    }
+
     async openDefaultWindow(): Promise<BrowserWindow> {
-        const [uri, electronWindow] = await Promise.all([
-            this.createWindowUri(),
-            this.createWindow(this.getBrowserWindowOptions())
-        ]);
-        electronWindow.loadURL(uri.toString(true));
+        const uriPromise = this.createWindowUri();
+        const electronWindow = await this.createWindow();
+        electronWindow.loadURL((await uriPromise).toString(true));
         return electronWindow;
     }
 
-    async openWindowWithWorkspace(url: string): Promise<BrowserWindow> {
-        const electronWindow = await this.createWindow(this.getBrowserWindowOptions());
-        electronWindow.loadURL(url);
+    async openWindowWithWorkspace(workspacePath: string): Promise<BrowserWindow> {
+        const uriPromise = this.createWindowUri();
+        const electronWindow = await this.createWindow();
+        electronWindow.loadURL((await uriPromise).withFragment(workspacePath).toString(true));
         return electronWindow;
     }
 
@@ -219,8 +237,7 @@ export class ElectronApplication {
             if (workspacePath === undefined) {
                 await this.openDefaultWindow();
             } else {
-                const uri = (await this.createWindowUri()).withFragment(workspacePath);
-                await this.openWindowWithWorkspace(uri.toString(true));
+                await this.openWindowWithWorkspace(workspacePath);
             }
         }
     }
@@ -228,20 +245,6 @@ export class ElectronApplication {
     protected async createWindowUri(): Promise<URI> {
         const port = await this.backendPort.promise;
         return FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH).withQuery(`port=${port}`);
-    }
-
-    protected getBrowserWindowOptions(): BrowserWindowConstructorOptions {
-        let windowState: BrowserWindowConstructorOptions | undefined = this.electronStore.get('windowstate', undefined);
-        if (typeof windowState === 'undefined') {
-            windowState = this.getDefaultWindowState();
-        }
-        return {
-            ...windowState,
-            show: false,
-            title: this.config.applicationName,
-            minWidth: 200,
-            minHeight: 120,
-        };
     }
 
     protected getDefaultWindowState(): BrowserWindowConstructorOptions {
@@ -347,9 +350,6 @@ export class ElectronApplication {
     protected async startBackend(): Promise<number> {
         // Check if we should run everything as one process.
         const noBackendFork = process.argv.indexOf('--no-cluster') !== -1;
-        // Any flag/argument passed after `--` will be forwarded to the backend process.
-        const backendArgvMarkerIndex = process.argv.indexOf('--');
-        const backendArgv = backendArgvMarkerIndex === -1 ? [] : process.argv.slice(backendArgvMarkerIndex + 1);
         // We cannot use the `process.cwd()` as the application project path (the location of the `package.json` in other words)
         // in a bundled electron application because it depends on the way we start it. For instance, on OS X, these are a differences:
         // https://github.com/eclipse-theia/theia/issues/3297#issuecomment-439172274
@@ -363,7 +363,11 @@ export class ElectronApplication {
             const address: AddressInfo = await require(this.globals.THEIA_BACKEND_MAIN_PATH);
             return address.port;
         } else {
-            const backendProcess = fork(this.globals.THEIA_BACKEND_MAIN_PATH, backendArgv, await this.getForkOptions());
+            const backendProcess = fork(
+                this.globals.THEIA_BACKEND_MAIN_PATH,
+                this.processArgv.getProcessArgvWithoutBin(),
+                await this.getForkOptions(),
+            );
             return new Promise((resolve, reject) => {
                 // The backend server main file is also supposed to send the resolved http(s) server port via IPC.
                 backendProcess.on('message', (address: AddressInfo) => {
@@ -412,7 +416,7 @@ export class ElectronApplication {
     }
 
     protected async onSecondInstance(event: ElectronEvent, argv: string[], cwd: string): Promise<void> {
-        await this.launch({ argv, cwd, secondInstance: true });
+        await this.launch({ argv: this.processArgv.getProcessArgvWithoutBin(argv), cwd, secondInstance: true });
     }
 
     protected onWindowAllClosed(event: ElectronEvent): void {

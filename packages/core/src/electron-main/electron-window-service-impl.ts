@@ -27,10 +27,12 @@ export class ElectronWindowServiceImpl implements ElectronWindowService {
     protected readonly app: ElectronApplication;
 
     openNewWindow(url: string, { external }: NewWindowOptions): undefined {
-        if (!!external) {
+        if (external) {
             shell.openExternal(url);
         } else {
-            this.app.openWindowWithWorkspace(url);
+            this.app.createWindow().then(electronWindow => {
+                electronWindow.loadURL(url);
+            });
         }
         return undefined;
     }

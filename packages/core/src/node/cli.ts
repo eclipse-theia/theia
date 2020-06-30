@@ -25,47 +25,32 @@ export const CliContribution = Symbol('CliContribution');
  * Call back for extension to contribute options to the cli.
  */
 export interface CliContribution {
-    /**
-     * Configure the `yargs.Argv` parser with your options.
-     */
-    configure(conf: yargs.Argv): MaybePromise<void>;
-    /**
-     * Fetch the parsed options.
-     */
+    configure(conf: yargs.Argv): void;
     setArguments(args: yargs.Arguments): MaybePromise<void>;
 }
 
 @injectable()
 export class CliManager {
 
-    protected readonly parser: yargs.Argv;
-
-    constructor(
-        @inject(ContributionProvider) @named(CliContribution)
-        protected readonly contributionsProvider: ContributionProvider<CliContribution>,
-    ) {
-        const pack = require('../../package.json');
-        this.parser = yargs
-            .version(pack.version)
-            .exitProcess(this.isExit())
-            .detectLocale(false)
-            .showHelpOnFail(false, 'Specify --help for available options')
-            .help('help');
-    }
-
-    async parse(argv: string[]): Promise<yargs.Arguments> {
-        return this.parser.parse(argv);
-    }
+    constructor(@inject(ContributionProvider) @named(CliContribution)
+    protected readonly contributionsProvider: ContributionProvider<CliContribution>) { }
 
     async initializeCli(argv: string[]): Promise<void> {
-        const contributions = Array.from(this.contributionsProvider.getContributions());
-        await Promise.all(contributions.map(
-            contrib => contrib.configure(this.parser),
-        ));
-        const args = await this.parse(argv);
-        await Promise.all(contributions.map(
-            contrib => contrib.setArguments(args),
-        ));
+        const pack = require('../../package.json');
+        const version = pack.version;
+        const command = yargs.version(version);
+        command.exitProcess(this.isExit());
+        for (const contrib of this.contributionsProvider.getContributions()) {
+            contrib.configure(command);
+        }
+        const args = command
+            .detectLocale(false)
+            .showHelpOnFail(false, 'Specify --help for available options')
+            .help('help')
+            .parse(argv);
+        for (const contrib of this.contributionsProvider.getContributions()) {
+            await contrib.setArguments(args);
+        }
     }
 
     protected isExit(): boolean {
