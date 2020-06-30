@@ -65,7 +65,7 @@ export class UserStorageResolver implements ResourceResolver {
     ) { }
 
     resolve(uri: URI): MaybePromise<UserStorageResource> {
-        if (uri.scheme !== UserStorageUri.SCHEME) {
+        if (uri.scheme !== UserStorageUri.SCHEME || !uri.path.isAbsolute) {
             throw new Error('The given uri is not a user storage uri: ' + uri);
         }
         return new UserStorageResource(uri, this.service);

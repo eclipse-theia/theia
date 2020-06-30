@@ -46,7 +46,7 @@ export class KeymapsService {
      */
     @postConstruct()
     protected async init(): Promise<void> {
-        this.resource = await this.resourceProvider(new URI().withScheme(UserStorageUri.SCHEME).withPath('keymaps.json'));
+        this.resource = await this.resourceProvider(new URI().withScheme(UserStorageUri.SCHEME).withPath('/keymaps.json'));
         this.reconcile();
         if (this.resource.onDidChangeContents) {
             this.resource.onDidChangeContents(() => this.reconcile());

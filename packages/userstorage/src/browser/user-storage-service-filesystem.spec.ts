@@ -128,20 +128,20 @@ describe('User Storage Service (Filesystem implementation)', () => {
 
     it('Should return a user storage uri from a filesystem uri', () => {
 
-        const test = UserStorageServiceFilesystemImpl.toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile));
+        const test = UserStorageServiceFilesystemImpl.toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile))!;
         expect(test.scheme).eq(UserStorageUri.SCHEME);
-        expect(test.toString()).eq(UserStorageUri.SCHEME + ':' + testFile);
+        expect(test.toString()).eq(UserStorageUri.SCHEME + ':/' + testFile);
 
         const testFragment = UserStorageServiceFilesystemImpl.
-            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile).withFragment('test'));
+            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile).withFragment('test'))!;
         expect(testFragment.fragment).eq('test');
 
         const testQuery = UserStorageServiceFilesystemImpl.
-            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile).withQuery('test=1'));
+            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile).withQuery('test=1'))!;
         expect(testQuery.query).eq('test=1');
 
         const testQueryAndFragment = UserStorageServiceFilesystemImpl.
-            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile).withQuery('test=1').withFragment('test'));
+            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile).withQuery('test=1').withFragment('test'))!;
         expect(testQueryAndFragment.fragment).eq('test');
         expect(testQueryAndFragment.query).eq('test=1');
     });
@@ -157,7 +157,7 @@ describe('User Storage Service (Filesystem implementation)', () => {
         userStorageService.onUserStorageChanged(event => {
             const userStorageUri = event.uris[0];
             expect(userStorageUri.scheme).eq(UserStorageUri.SCHEME);
-            expect(userStorageUri.path.toString()).eq(testFile);
+            expect(userStorageUri.path.toString()).eq('/' + testFile);
             done();
         });
 
@@ -173,7 +173,7 @@ describe('User Storage Service (Filesystem implementation)', () => {
     it('Should save the contents correctly using a user storage uri to a filesystem uri', async () => {
 
         const userStorageUri = UserStorageServiceFilesystemImpl.
-            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile));
+            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile))!;
 
         await userStorageService.saveContents(userStorageUri, 'test content');
 
@@ -196,7 +196,7 @@ describe('User Storage Resource (Filesystem implementation)', () => {
         testFile = 'test.json';
         userStorageService = testContainer.get<UserStorageServiceFilesystemImpl>(UserStorageService);
         const userStorageUriTest = UserStorageServiceFilesystemImpl.
-            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile));
+            toUserStorageUri(userStorageFolder, userStorageFolder.resolve(testFile))!;
         userStorageResource = new UserStorageResource(userStorageUriTest, userStorageService);
     });
 

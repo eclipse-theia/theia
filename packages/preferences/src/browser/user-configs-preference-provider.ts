@@ -52,7 +52,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProvider {
 
     protected createProviders(): void {
         for (const configName of [...this.configurations.getSectionNames(), this.configurations.getConfigName()]) {
-            const sectionUri = USER_PREFERENCE_FOLDER.withPath(configName + '.json');
+            const sectionUri = USER_PREFERENCE_FOLDER.withPath('/' + configName + '.json');
             const sectionKey = sectionUri.toString();
             if (!this.providers.has(sectionKey)) {
                 const provider = this.createProvider(sectionUri, configName);
