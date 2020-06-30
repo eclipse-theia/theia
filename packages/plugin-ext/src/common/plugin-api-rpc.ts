@@ -30,7 +30,7 @@ import {
     QuickInputButton
 } from '../plugin/types-impl';
 import { UriComponents } from './uri-components';
-import { ConfigurationTarget, FileType, FileStat } from '../plugin/types-impl';
+import { ConfigurationTarget } from '../plugin/types-impl';
 import {
     SerializedDocumentFilter,
     CompletionContext,
@@ -50,8 +50,6 @@ import {
     TextEdit,
     DocumentSymbol,
     ReferenceContext,
-    FileWatcherSubscriberOptions,
-    FileChangeEvent,
     TextDocumentShowOptions,
     WorkspaceRootsChangeEvent,
     Location,
@@ -66,9 +64,6 @@ import {
     SelectionRange,
     CallHierarchyDefinition,
     CallHierarchyReference,
-    CreateFilesEventDTO,
-    RenameFilesEventDTO,
-    DeleteFilesEventDTO,
     SearchInWorkspaceResult
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
@@ -80,6 +75,8 @@ import { SymbolInformation } from 'vscode-languageserver-types';
 import { ArgumentProcessor } from '../plugin/command-registry';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { QuickTitleButton } from '@theia/core/lib/common/quick-open-model';
+import * as files from '@theia/filesystem/lib/common/files';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -532,22 +529,12 @@ export interface WorkspaceMain {
     $registerTextDocumentContentProvider(scheme: string): Promise<void>;
     $unregisterTextDocumentContentProvider(scheme: string): void;
     $onTextDocumentContentChange(uri: string, content: string): void;
-    $registerFileSystemWatcher(options: FileWatcherSubscriberOptions): Promise<string>;
-    $unregisterFileSystemWatcher(watcherId: string): Promise<void>;
     $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void>;
 }
 
 export interface WorkspaceExt {
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void;
     $provideTextDocumentContent(uri: string): Promise<string | undefined>;
-    $fileChanged(event: FileChangeEvent): void;
-
-    $onWillCreateFiles(event: CreateFilesEventDTO): Promise<any[]>;
-    $onDidCreateFiles(event: CreateFilesEventDTO): void;
-    $onWillRenameFiles(event: RenameFilesEventDTO): Promise<any[]>;
-    $onDidRenameFiles(event: RenameFilesEventDTO): void;
-    $onWillDeleteFiles(event: DeleteFilesEventDTO): Promise<any[]>;
-    $onDidDeleteFiles(event: DeleteFilesEventDTO): void;
     $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void;
 }
 
@@ -1383,27 +1370,52 @@ export interface DebugMain {
 }
 
 export interface FileSystemExt {
-    $stat(handle: number, resource: UriComponents): Promise<FileStat>;
-    $readDirectory(handle: number, resource: UriComponents): Promise<[string, FileType][]>;
-    $createDirectory(handle: number, uri: UriComponents): Promise<void>;
-    $readFile(handle: number, resource: UriComponents, options?: { encoding?: string }): Promise<string>;
-    $writeFile(handle: number, resource: UriComponents, content: string, options?: { encoding?: string }): Promise<void>;
-    $delete(handle: number, resource: UriComponents, options: { recursive: boolean }): Promise<void>;
-    $rename(handle: number, source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void>;
-    $copy(handle: number, source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void>;
+    $stat(handle: number, resource: UriComponents): Promise<files.Stat>;
+    $readdir(handle: number, resource: UriComponents): Promise<[string, files.FileType][]>;
+    $readFile(handle: number, resource: UriComponents): Promise<BinaryBuffer>;
+    $writeFile(handle: number, resource: UriComponents, content: BinaryBuffer, opts: files.FileWriteOptions): Promise<void>;
+    $rename(handle: number, resource: UriComponents, target: UriComponents, opts: files.FileOverwriteOptions): Promise<void>;
+    $copy(handle: number, resource: UriComponents, target: UriComponents, opts: files.FileOverwriteOptions): Promise<void>;
+    $mkdir(handle: number, resource: UriComponents): Promise<void>;
+    $delete(handle: number, resource: UriComponents, opts: files.FileDeleteOptions): Promise<void>;
+    $watch(handle: number, session: number, resource: UriComponents, opts: files.WatchOptions): void;
+    $unwatch(handle: number, session: number): void;
+    $open(handle: number, resource: UriComponents, opts: files.FileOpenOptions): Promise<number>;
+    $close(handle: number, fd: number): Promise<void>;
+    $read(handle: number, fd: number, pos: number, length: number): Promise<BinaryBuffer>;
+    $write(handle: number, fd: number, pos: number, data: BinaryBuffer): Promise<number>;
+}
+
+export interface IFileChangeDto {
+    resource: UriComponents;
+    type: files.FileChangeType;
 }
 
 export interface FileSystemMain {
-    $stat(uri: UriComponents): Promise<FileStat>
-    $readDirectory(uri: UriComponents): Promise<[string, FileType][]>;
-    $createDirectory(uri: UriComponents): Promise<void>
-    $readFile(uri: UriComponents): Promise<string>;
-    $writeFile(uri: UriComponents, content: string): Promise<void>;
-    $delete(uri: UriComponents, options: { recursive: boolean }): Promise<void>;
-    $rename(source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void>;
-    $copy(source: UriComponents, target: UriComponents, options: { overwrite: boolean }): Promise<void>;
-    $registerFileSystemProvider(handle: number, scheme: string): void;
+    $registerFileSystemProvider(handle: number, scheme: string, capabilities: files.FileSystemProviderCapabilities): void;
     $unregisterProvider(handle: number): void;
+    $onFileSystemChange(handle: number, resource: IFileChangeDto[]): void;
+
+    $stat(uri: UriComponents): Promise<files.Stat>;
+    $readdir(resource: UriComponents): Promise<[string, files.FileType][]>;
+    $readFile(resource: UriComponents): Promise<BinaryBuffer>;
+    $writeFile(resource: UriComponents, content: BinaryBuffer): Promise<void>;
+    $rename(resource: UriComponents, target: UriComponents, opts: files.FileOverwriteOptions): Promise<void>;
+    $copy(resource: UriComponents, target: UriComponents, opts: files.FileOverwriteOptions): Promise<void>;
+    $mkdir(resource: UriComponents): Promise<void>;
+    $delete(resource: UriComponents, opts: files.FileDeleteOptions): Promise<void>;
+}
+
+export interface FileSystemEvents {
+    created: UriComponents[];
+    changed: UriComponents[];
+    deleted: UriComponents[];
+}
+
+export interface ExtHostFileSystemEventServiceShape {
+    $onFileEvent(events: FileSystemEvents): void;
+    $onWillRunFileOperation(operation: files.FileOperation, target: UriComponents, source: UriComponents | undefined, timeout: number, token: CancellationToken): Promise<any>;
+    $onDidRunFileOperation(operation: files.FileOperation, target: UriComponents, source: UriComponents | undefined): void;
 }
 
 export interface ClipboardMain {
@@ -1462,6 +1474,7 @@ export const MAIN_RPC_CONTEXT = {
     LANGUAGES_CONTRIBUTION_EXT: createProxyIdentifier<LanguagesContributionExt>('LanguagesContributionExt'),
     DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt'),
     FILE_SYSTEM_EXT: createProxyIdentifier<FileSystemExt>('FileSystemExt'),
+    ExtHostFileSystemEventService: createProxyIdentifier<ExtHostFileSystemEventServiceShape>('ExtHostFileSystemEventService'),
     SCM_EXT: createProxyIdentifier<ScmExt>('ScmExt'),
     DECORATIONS_EXT: createProxyIdentifier<DecorationsExt>('DecorationsExt')
 };

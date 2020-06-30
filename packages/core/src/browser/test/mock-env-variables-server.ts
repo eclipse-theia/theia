@@ -21,6 +21,13 @@ export class MockEnvVariablesServerImpl implements EnvVariablesServer {
 
     constructor(protected readonly configDirUri: URI) { }
 
+    getHomeDirUri(): Promise<string> {
+        throw new Error('Method not implemented.');
+    }
+    getDrives(): Promise<string[]> {
+        throw new Error('Method not implemented.');
+    }
+
     async getConfigDirUri(): Promise<string> {
         return this.configDirUri.toString();
     }

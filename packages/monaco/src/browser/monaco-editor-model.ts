@@ -17,7 +17,7 @@
 import { Position } from 'vscode-languageserver-types';
 import { TextDocumentSaveReason, TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
-import { TextEditorDocument } from '@theia/editor/lib/browser';
+import { TextEditorDocument, EncodingMode } from '@theia/editor/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
@@ -68,16 +68,18 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected readonly onDidChangeValidEmitter = new Emitter<void>();
     readonly onDidChangeValid = this.onDidChangeValidEmitter.event;
 
-    private preferredEncoding: string | undefined = undefined;
-    private readonly defaultEncoding: string | undefined;
+    protected readonly onDidChangeEncodingEmitter = new Emitter<string>();
+    readonly onDidChangeEncoding = this.onDidChangeEncodingEmitter.event;
+
+    private preferredEncoding: string | undefined;
+    private contentEncoding: string | undefined;
 
     protected resourceVersion: ResourceVersion | undefined;
 
     constructor(
         protected readonly resource: Resource,
         protected readonly m2p: MonacoToProtocolConverter,
-        protected readonly p2m: ProtocolToMonacoConverter,
-        options?: { encoding?: string | undefined }
+        protected readonly p2m: ProtocolToMonacoConverter
     ) {
         this.toDispose.push(resource);
         this.toDispose.push(this.toDisposeOnAutoSave);
@@ -88,10 +90,9 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.toDispose.push(this.onDidChangeValidEmitter);
         this.toDispose.push(Disposable.create(() => this.cancelSave()));
         this.toDispose.push(Disposable.create(() => this.cancelSync()));
-        this.defaultEncoding = options && options.encoding ? options.encoding : undefined;
         this.resolveModel = this.readContents().then(
             content => this.initialize(content || ''),
-            e => console.error(`Failed to initialize for '${this.uri}':`, e)
+            e => console.error(`Failed to initialize for '${this.resource.uri.toString()}':`, e)
         );
     }
 
@@ -99,24 +100,41 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.toDispose.dispose();
     }
 
-    async reopenWithEncoding(encoding: string): Promise<void> {
-        if (encoding === this.preferredEncoding || (!this.preferredEncoding && encoding === this.defaultEncoding)) {
-            return;
+    setEncoding(encoding: string, mode: EncodingMode): Promise<void> {
+        if (mode === EncodingMode.Decode && this.dirty) {
+            return Promise.resolve();
         }
-        if (this.dirty) {
-            return;
+        if (!this.setPreferredEncoding(encoding)) {
+            return Promise.resolve();
         }
-        this.preferredEncoding = encoding;
-        return this.sync();
-    }
-
-    async saveWithEncoding(encoding: string): Promise<void> {
-        return this.scheduleSave(TextDocumentSaveReason.Manual, this.cancelSave(), encoding)
-            .then(() => { this.preferredEncoding = encoding; });
+        if (mode === EncodingMode.Decode) {
+            return this.sync();
+        }
+        return this.scheduleSave(TextDocumentSaveReason.Manual, this.cancelSave(), true);
     }
 
     getEncoding(): string | undefined {
-        return this.preferredEncoding || this.defaultEncoding;
+        return this.preferredEncoding || this.contentEncoding;
+    }
+
+    protected setPreferredEncoding(encoding: string): boolean {
+        if (encoding === this.preferredEncoding || (!this.preferredEncoding && encoding === this.contentEncoding)) {
+            return false;
+        }
+        this.preferredEncoding = encoding;
+        this.onDidChangeEncodingEmitter.fire(encoding);
+        return true;
+    }
+
+    protected updateContentEncoding(): void {
+        const contentEncoding = this.resource.encoding;
+        if (!contentEncoding || this.contentEncoding === contentEncoding) {
+            return;
+        }
+        this.contentEncoding = contentEncoding;
+        if (!this.preferredEncoding) {
+            this.onDidChangeEncodingEmitter.fire(contentEncoding);
+        }
     }
 
     /**
@@ -181,7 +199,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     get uri(): string {
-        return this.model.uri.toString();
+        return this.resource.uri.toString();
     }
 
     protected _languageId: string | undefined;
@@ -305,6 +323,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected async readContents(): Promise<string | undefined> {
         try {
             const content = await this.resource.readContents({ encoding: this.getEncoding() });
+            this.updateContentEncoding();
             this.setValid(true);
             return content;
         } catch (e) {
@@ -346,7 +365,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.saveCancellationTokenSource.token;
     }
 
-    protected scheduleSave(reason: TextDocumentSaveReason, token: CancellationToken = this.cancelSave(), overwriteEncoding?: string): Promise<void> {
+    protected scheduleSave(reason: TextDocumentSaveReason, token: CancellationToken = this.cancelSave(), overwriteEncoding?: boolean): Promise<void> {
         return this.run(() => this.doSave(reason, token, overwriteEncoding));
     }
 
@@ -400,7 +419,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
     }
 
-    protected async doSave(reason: TextDocumentSaveReason, token: CancellationToken, overwriteEncoding?: string): Promise<void> {
+    protected async doSave(reason: TextDocumentSaveReason, token: CancellationToken, overwriteEncoding?: boolean): Promise<void> {
         if (token.isCancellationRequested || !this.resource.saveContents) {
             return;
         }
@@ -411,7 +430,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
 
         const changes = [...this.contentChanges];
-        if (changes.length === 0 && overwriteEncoding === undefined) {
+        if (changes.length === 0 && !overwriteEncoding && reason !== TextDocumentSaveReason.Manual) {
             return;
         }
 
@@ -422,6 +441,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             await Resource.save(this.resource, { changes, content, options: { encoding, overwriteEncoding, version } }, token);
             this.contentChanges.splice(0, changes.length);
             this.resourceVersion = this.resource.version;
+            this.updateContentEncoding();
             this.setValid(true);
 
             if (token.isCancellationRequested) {

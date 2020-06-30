@@ -19,15 +19,18 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { OpenDialogOptionsMain, SaveDialogOptionsMain, DialogsMain, UploadDialogOptionsMain } from '../../common/plugin-api-rpc';
 import { DirNode, OpenFileDialogProps, SaveFileDialogProps, OpenFileDialogFactory, SaveFileDialogFactory, SaveFileDialog } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import URI from '@theia/core/lib/common/uri';
 import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-service';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileStat } from '@theia/filesystem/lib/common/files';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 export class DialogsMainImpl implements DialogsMain {
 
     private workspaceService: WorkspaceService;
-    private fileSystem: FileSystem;
+    private fileService: FileService;
+    private environments: EnvVariablesServer;
 
     private openFileDialogFactory: OpenFileDialogFactory;
     private saveFileDialogFactory: SaveFileDialogFactory;
@@ -35,7 +38,8 @@ export class DialogsMainImpl implements DialogsMain {
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.workspaceService = container.get(WorkspaceService);
-        this.fileSystem = container.get(FileSystem);
+        this.fileService = container.get(FileService);
+        this.environments = container.get(EnvVariablesServer);
 
         this.openFileDialogFactory = container.get(OpenFileDialogFactory);
         this.saveFileDialogFactory = container.get(SaveFileDialogFactory);
@@ -43,16 +47,24 @@ export class DialogsMainImpl implements DialogsMain {
     }
 
     protected async getRootUri(defaultUri: string | undefined): Promise<FileStat | undefined> {
-        let rootStat;
+        let rootStat: FileStat | undefined;
 
         // Try to use default URI as root
         if (defaultUri) {
-            rootStat = await this.fileSystem.getFileStat(defaultUri);
+            try {
+                rootStat = await this.fileService.resolve(new URI(defaultUri));
+            } catch {
+                rootStat = undefined;
+            }
         }
 
         // Try to use as root the parent folder of existing file URI/non existing URI
         if (rootStat && !rootStat.isDirectory || !rootStat) {
-            rootStat = await this.fileSystem.getFileStat(new URI(defaultUri).parent.toString());
+            try {
+                rootStat = await this.fileService.resolve(new URI(defaultUri).parent);
+            } catch {
+                rootStat = undefined;
+            }
         }
 
         // Try to use workspace service root if there is no preconfigured URI
@@ -62,7 +74,10 @@ export class DialogsMainImpl implements DialogsMain {
 
         // Try to use current user home if root folder is still not taken
         if (!rootStat) {
-            rootStat = await this.fileSystem.getCurrentUserHome();
+            const homeDirUri = await this.environments.getHomeDirUri();
+            try {
+                rootStat = await this.fileService.resolve(new URI(homeDirUri));
+            } catch { }
         }
 
         return rootStat;
@@ -137,7 +152,10 @@ export class DialogsMainImpl implements DialogsMain {
         // File name field should be empty unless the URI is a file
         let fileNameValue = '';
         if (options.defaultUri) {
-            const defaultURIStat = await this.fileSystem.getFileStat(options.defaultUri);
+            let defaultURIStat: FileStat | undefined;
+            try {
+                defaultURIStat = await this.fileService.resolve(new URI(options.defaultUri));
+            } catch { }
             if (defaultURIStat && !defaultURIStat.isDirectory || !defaultURIStat) {
                 fileNameValue = new URI(options.defaultUri).path.base;
             }
@@ -178,7 +196,7 @@ export class DialogsMainImpl implements DialogsMain {
             throw new Error('Failed to resolve base directory where files should be uploaded');
         }
 
-        const uploadResult = await this.uploadService.upload(rootStat.uri);
+        const uploadResult = await this.uploadService.upload(rootStat.resource.toString());
 
         if (uploadResult) {
             return uploadResult.uploaded;

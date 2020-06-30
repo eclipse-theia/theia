@@ -132,10 +132,10 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         if (pluginUri.scheme === 'file') {
             processOptions = { ...PROCESS_OPTIONS };
             // get filesystem path that work cross operating systems
-            processOptions.env.HOSTED_PLUGIN = FileUri.fsPath(pluginUri.toString());
+            processOptions.env!.HOSTED_PLUGIN = FileUri.fsPath(pluginUri.toString());
 
             // Disable all the other plugins on this instance
-            processOptions.env.THEIA_PLUGINS = '';
+            processOptions.env!.THEIA_PLUGINS = '';
             command = await this.getStartCommand(port, debugConfig);
         } else {
             throw new Error('Not supported plugin location: ' + pluginUri.toString());
@@ -234,7 +234,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         if (fs.existsSync(pckPath)) {
             const pck = require(pckPath);
             try {
-               return !!this.metadata.getScanner(pck);
+                return !!this.metadata.getScanner(pck);
             } catch (e) {
                 console.error(e);
                 return false;

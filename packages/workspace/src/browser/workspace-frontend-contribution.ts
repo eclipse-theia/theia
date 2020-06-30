@@ -14,15 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, SelectionService } from '@theia/core/lib/common';
 import { isOSX, environment, OS } from '@theia/core';
 import {
     open, OpenerService, CommonMenus, StorageService, LabelProvider,
-    ConfirmDialog, KeybindingRegistry, KeybindingContribution, CommonCommands
+    ConfirmDialog, KeybindingRegistry, KeybindingContribution, CommonCommands, FrontendApplicationContribution
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { WorkspaceService } from './workspace-service';
 import { THEIA_EXT, VSCODE_EXT } from '../common';
@@ -31,6 +30,11 @@ import { QuickOpenWorkspace } from './quick-open-workspace';
 import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
+import { UTF8 } from '@theia/core/lib/common/encodings';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 
 export enum WorkspaceStates {
     /**
@@ -49,9 +53,9 @@ export enum WorkspaceStates {
 export type WorkspaceState = keyof typeof WorkspaceStates;
 
 @injectable()
-export class WorkspaceFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution {
+export class WorkspaceFrontendContribution implements CommandContribution, KeybindingContribution, MenuContribution, FrontendApplicationContribution {
 
-    @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(FileService) protected readonly fileService: FileService;
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(StorageService) protected readonly workspaceStorage: StorageService;
@@ -65,12 +69,17 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    @postConstruct()
-    protected init(): void {
-        this.initWorkspaceContextKeys();
-    }
+    @inject(EncodingRegistry)
+    protected readonly encodingRegistry: EncodingRegistry;
 
-    protected initWorkspaceContextKeys(): void {
+    @inject(PreferenceConfigurations)
+    protected readonly preferenceConfigurations: PreferenceConfigurations;
+
+    configure(): void {
+        this.encodingRegistry.registerOverride({ encoding: UTF8, extension: THEIA_EXT });
+        this.encodingRegistry.registerOverride({ encoding: UTF8, extension: VSCODE_EXT });
+        this.updateEncodingOverrides();
+
         const workspaceFolderCountKey = this.contextKeyService.createKey<number>('workspaceFolderCount', 0);
         const updateWorkspaceFolderCountKey = () => workspaceFolderCountKey.set(this.workspaceService.tryGetRoots().length);
         updateWorkspaceFolderCountKey();
@@ -81,10 +90,22 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
 
         this.updateStyles();
         this.workspaceService.onWorkspaceChanged(() => {
+            this.updateEncodingOverrides();
             updateWorkspaceFolderCountKey();
             updateWorkspaceStateKey();
             this.updateStyles();
         });
+    }
+
+    protected readonly toDisposeOnUpdateEncodingOverrides = new DisposableCollection();
+    protected updateEncodingOverrides(): void {
+        this.toDisposeOnUpdateEncodingOverrides.dispose();
+        for (const root of this.workspaceService.tryGetRoots()) {
+            for (const configPath of this.preferenceConfigurations.getPaths()) {
+                const parent = root.resource.resolve(configPath);
+                this.toDisposeOnUpdateEncodingOverrides.push(this.encodingRegistry.registerOverride({ encoding: UTF8, parent }));
+            }
+        }
     }
 
     protected updateStyles(): void {
@@ -218,16 +239,14 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             canSelectFolders: true,
             canSelectFiles: true
         }, rootStat);
-        if (destinationUri && this.getCurrentWorkspaceUri().toString() !== destinationUri.toString()) {
-            const destination = await this.fileSystem.getFileStat(destinationUri.toString());
-            if (destination) {
-                if (destination.isDirectory) {
-                    this.workspaceService.open(destinationUri);
-                } else {
-                    await open(this.openerService, destinationUri);
-                }
-                return destinationUri;
+        if (destinationUri && this.getCurrentWorkspaceUri()?.toString() !== destinationUri.toString()) {
+            const destination = await this.fileService.resolve(destinationUri);
+            if (destination.isDirectory) {
+                this.workspaceService.open(destinationUri);
+            } else {
+                await open(this.openerService, destinationUri);
             }
+            return destinationUri;
         }
         return undefined;
     }
@@ -249,8 +268,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const [rootStat] = await this.workspaceService.roots;
         const destinationFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
         if (destinationFileUri) {
-            const destinationFile = await this.fileSystem.getFileStat(destinationFileUri.toString());
-            if (destinationFile && !destinationFile.isDirectory) {
+            const destinationFile = await this.fileService.resolve(destinationFileUri);
+            if (!destinationFile.isDirectory) {
                 await open(this.openerService, destinationFileUri);
                 return destinationFileUri;
             }
@@ -275,9 +294,9 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const [rootStat] = await this.workspaceService.roots;
         const destinationFolderUri = await this.fileDialogService.showOpenDialog(props, rootStat);
         if (destinationFolderUri &&
-            this.getCurrentWorkspaceUri().toString() !== destinationFolderUri.toString()) {
-            const destinationFolder = await this.fileSystem.getFileStat(destinationFolderUri.toString());
-            if (destinationFolder && destinationFolder.isDirectory) {
+            this.getCurrentWorkspaceUri()?.toString() !== destinationFolderUri.toString()) {
+            const destinationFolder = await this.fileService.resolve(destinationFolderUri);
+            if (destinationFolder.isDirectory) {
                 this.workspaceService.open(destinationFolderUri);
                 return destinationFolderUri;
             }
@@ -315,8 +334,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const [rootStat] = await this.workspaceService.roots;
         const workspaceFolderOrWorkspaceFileUri = await this.fileDialogService.showOpenDialog(props, rootStat);
         if (workspaceFolderOrWorkspaceFileUri &&
-            this.getCurrentWorkspaceUri().toString() !== workspaceFolderOrWorkspaceFileUri.toString()) {
-            const destinationFolder = await this.fileSystem.getFileStat(workspaceFolderOrWorkspaceFileUri.toString());
+            this.getCurrentWorkspaceUri()?.toString() !== workspaceFolderOrWorkspaceFileUri.toString()) {
+            const destinationFolder = await this.fileService.exists(workspaceFolderOrWorkspaceFileUri);
             if (destinationFolder) {
                 this.workspaceService.open(workspaceFolderOrWorkspaceFileUri);
                 return workspaceFolderOrWorkspaceFileUri;
@@ -361,7 +380,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 if (!displayName.endsWith(`.${THEIA_EXT}`) && !displayName.endsWith(`.${VSCODE_EXT}`)) {
                     selected = selected.parent.resolve(`${displayName}.${THEIA_EXT}`);
                 }
-                exist = await this.fileSystem.exists(selected.toString());
+                exist = await this.fileService.exists(selected);
                 if (exist) {
                     overwrite = await this.confirmOverwrite(selected);
                 }
@@ -382,7 +401,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         let exist: boolean = false;
         let overwrite: boolean = false;
         let selected: URI | undefined;
-        const stat = await this.fileSystem.getFileStat(uri.toString());
+        const stat = await this.fileService.resolve(uri);
         do {
             selected = await this.fileDialogService.showSaveDialog(
                 {
@@ -391,7 +410,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                     inputValue: uri.path.base
                 }, stat);
             if (selected) {
-                exist = await this.fileSystem.exists(selected.toString());
+                exist = await this.fileService.exists(selected);
                 if (exist) {
                     overwrite = await this.confirmOverwrite(selected);
                 }
@@ -400,7 +419,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         if (selected) {
             try {
                 await this.commandRegistry.executeCommand(CommonCommands.SAVE.id);
-                await this.fileSystem.copy(uri.toString(), selected.toString(), { overwrite });
+                await this.fileService.copy(uri, selected, { overwrite });
             } catch (e) {
                 console.warn(e);
             }
@@ -436,8 +455,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
      *
      * @returns the current workspace URI.
      */
-    private getCurrentWorkspaceUri(): URI {
-        return new URI(this.workspaceService.workspace && this.workspaceService.workspace.uri);
+    private getCurrentWorkspaceUri(): URI | undefined {
+        return this.workspaceService.workspace?.resource;
     }
 
 }

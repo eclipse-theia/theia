@@ -18,15 +18,15 @@ import URI from '@theia/core/lib/common/uri';
 import { injectable, inject } from 'inversify';
 import { WorkspaceUtils } from './workspace-utils';
 import { WorkspaceService } from './workspace-service';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileSystemUtils } from '@theia/filesystem/lib/common/filesystem-utils';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
 export class WorkspaceDuplicateHandler implements UriCommandHandler<URI[]> {
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(WorkspaceUtils)
     protected readonly workspaceUtils: WorkspaceUtils;
@@ -61,17 +61,15 @@ export class WorkspaceDuplicateHandler implements UriCommandHandler<URI[]> {
      */
     async execute(uris: URI[]): Promise<void> {
         await Promise.all(uris.map(async uri => {
-            const parent = await this.fileSystem.getFileStat(uri.parent.toString());
-            if (parent) {
-                const parentUri = new URI(parent.uri);
+            try {
+                const parent = await this.fileService.resolve(uri.parent);
+                const parentUri = parent.resource;
                 const name = uri.path.name + '_copy';
                 const ext = uri.path.ext;
                 const target = FileSystemUtils.generateUniqueResourceURI(parentUri, parent, name, ext);
-                try {
-                    this.fileSystem.copy(uri.toString(), target.toString());
-                } catch (e) {
-                    console.error(e);
-                }
+                await this.fileService.copy(uri, target);
+            } catch (e) {
+                console.error(e);
             }
         }));
     }

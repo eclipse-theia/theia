@@ -23,7 +23,6 @@ import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-sch
 import { RecursivePartial } from '@theia/core/lib/common/types';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
-import { FileStat } from '@theia/filesystem/lib/common';
 import { ColorDefinition } from '@theia/core/lib/browser/color-registry';
 
 export const hostedServicePath = '/services/hostedPlugin';
@@ -751,8 +750,8 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 }
 
 export interface WorkspaceStorageKind {
-    workspace?: FileStat | undefined;
-    roots: FileStat[];
+    workspace?: string | undefined;
+    roots: string[];
 }
 export type GlobalStorageKind = undefined;
 export type PluginStorageKind = GlobalStorageKind | WorkspaceStorageKind;

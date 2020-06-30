@@ -14,17 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable } from 'inversify';
 import * as fs from 'fs-extra';
 import { pack } from 'tar-fs';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem } from '../../common/filesystem';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 
 @injectable()
 export class DirectoryArchiver {
-
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
 
     async archive(inputPath: string, outputPath: string, entries?: string[]): Promise<void> {
         return new Promise<void>(async (resolve, reject) => {
@@ -98,11 +95,12 @@ export class DirectoryArchiver {
     }
 
     protected async isDir(uri: URI): Promise<boolean> {
-        const stat = await this.fileSystem.getFileStat(uri.toString());
-        if (!stat) {
-            throw new Error(`File does not exist under: ${uri}.`);
+        try {
+            const stat = await fs.stat(FileUri.fsPath(uri));
+            return stat.isDirectory();
+        } catch {
+            return false;
         }
-        return stat.isDirectory;
     }
 
     protected equal(left: URI | URI[], right: URI | URI[]): boolean {

@@ -23,8 +23,8 @@
 /* eslint-disable no-null/no-null */
 'use strict';
 import { isWindows } from '@theia/core/lib/common/os';
-import { startsWithIgnoreCase } from './strings';
-import { CharCode } from './char-code';
+import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
+import { CharCode } from '@theia/core/lib/common/char-code';
 
 /**
  * The forward slash path separator.

@@ -18,11 +18,12 @@ import { injectable, inject } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, LabelProvider } from '@theia/core/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from './workspace-service';
-import { getTemporaryWorkspaceFileUri } from '../common';
 import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem, FileSystemUtils } from '@theia/filesystem/lib/common';
 import * as moment from 'moment';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileStat } from '@theia/filesystem/lib/common/files';
+import { FileSystemUtils } from '@theia/filesystem/lib/common';
 
 @injectable()
 export class QuickOpenWorkspace implements QuickOpenModel {
@@ -32,7 +33,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
 
     @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(FileService) protected readonly fileService: FileService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspacePreferences) protected preferences: WorkspacePreferences;
     @inject(EnvVariablesServer) protected readonly envServer: EnvVariablesServer;
@@ -40,10 +41,10 @@ export class QuickOpenWorkspace implements QuickOpenModel {
     async open(workspaces: string[]): Promise<void> {
         this.items = [];
         const [homeDirUri, tempWorkspaceFile] = await Promise.all([
-            this.fileSystem.getCurrentUserHome(),
-            getTemporaryWorkspaceFileUri(this.envServer)
+            this.envServer.getHomeDirUri(),
+            this.workspaceService.getUntitledWorkspace()
         ]);
-        const home = homeDirUri ? await this.fileSystem.getFsPath(homeDirUri.uri) : undefined;
+        const home = new URI(homeDirUri).path.toString();
         await this.preferences.ready;
         if (!workspaces.length) {
             this.items.push(new QuickOpenGroupItem({
@@ -53,7 +54,10 @@ export class QuickOpenWorkspace implements QuickOpenModel {
         }
         for (const workspace of workspaces) {
             const uri = new URI(workspace);
-            const stat = await this.fileSystem.getFileStat(workspace);
+            let stat: FileStat | undefined;
+            try {
+                stat = await this.fileService.resolve(uri);
+            } catch { }
             if (!stat ||
                 !this.preferences['workspace.supportMultiRootWorkspace'] && !stat.isDirectory) {
                 continue; // skip the workspace files if multi root is not supported
@@ -65,8 +69,8 @@ export class QuickOpenWorkspace implements QuickOpenModel {
             const iconClass = icon === '' ? undefined : icon + ' file-icon';
             this.items.push(new QuickOpenGroupItem({
                 label: uri.path.base,
-                description: (home) ? FileSystemUtils.tildifyPath(uri.path.toString(), home) : uri.path.toString(),
-                groupLabel: `last modified ${moment(stat.lastModification).fromNow()}`,
+                description: FileSystemUtils.tildifyPath(uri.path.toString(), home),
+                groupLabel: `last modified ${moment(stat.mtime).fromNow()}`,
                 iconClass,
                 run: (mode: QuickOpenMode): boolean => {
                     if (mode !== QuickOpenMode.OPEN) {
@@ -74,7 +78,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
                     }
                     const current = this.workspaceService.workspace;
                     const uriToOpen = new URI(workspace);
-                    if ((current && current.uri !== workspace) || !current) {
+                    if ((current && current.resource.toString() !== workspace) || !current) {
                         this.workspaceService.open(uriToOpen);
                     }
                     return true;

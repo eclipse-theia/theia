@@ -21,12 +21,13 @@ import { MessageService, Command, Emitter, Event, UriSelection } from '@theia/co
 import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { OpenFileDialogFactory, DirNode } from '@theia/filesystem/lib/browser';
 import { HostedPluginServer } from '../common/plugin-dev-protocol';
 import { DebugConfiguration as HostedDebugConfig } from '../common';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 /**
  * Commands to control Hosted plugin instances.
@@ -109,8 +110,10 @@ export class HostedPluginManagerClient {
     protected readonly labelProvider: LabelProvider;
     @inject(WindowService)
     protected readonly windowService: WindowService;
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
+    @inject(EnvVariablesServer)
+    protected readonly environments: EnvVariablesServer;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
     @inject(DebugSessionManager)
@@ -179,7 +182,7 @@ export class HostedPluginManagerClient {
     async startDebugSessionManager(): Promise<void> {
         let outFiles: string[] | undefined = undefined;
         if (this.pluginLocation) {
-            const fsPath = await this.fileSystem.getFsPath(this.pluginLocation.toString());
+            const fsPath = await this.fileService.fsPath(this.pluginLocation);
             if (fsPath) {
                 outFiles = [new Path(fsPath).join('**', '*.js').toString()];
             }
@@ -257,7 +260,7 @@ export class HostedPluginManagerClient {
      * Creates directory choose dialog and set selected folder into pluginLocation field.
      */
     async selectPluginPath(): Promise<void> {
-        const workspaceFolder = (await this.workspaceService.roots)[0] || await this.fileSystem.getCurrentUserHome();
+        const workspaceFolder = (await this.workspaceService.roots)[0] || await this.fileService.resolve(new URI(await this.environments.getHomeDirUri()));
         if (!workspaceFolder) {
             throw new Error('Unable to find the root');
         }

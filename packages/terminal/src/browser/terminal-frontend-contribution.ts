@@ -39,7 +39,6 @@ import { TerminalKeybindingContexts } from './terminal-keybinding-contexts';
 import { TerminalService } from './base/terminal-service';
 import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { MAIN_MENU_BAR } from '@theia/core';
@@ -48,6 +47,8 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { terminalAnsiColorMap } from './terminal-theme-service';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 export namespace TerminalMenus {
     export const TERMINAL = [...MAIN_MENU_BAR, '7_terminal'];
@@ -135,13 +136,11 @@ export namespace TerminalCommands {
 @injectable()
 export class TerminalFrontendContribution implements TerminalService, CommandContribution, MenuContribution, KeybindingContribution, TabBarToolbarContribution, ColorContribution {
 
-    constructor(
-        @inject(ApplicationShell) protected readonly shell: ApplicationShell,
-        @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy,
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(SelectionService) protected readonly selectionService: SelectionService
-    ) { }
+    @inject(ApplicationShell) protected readonly shell: ApplicationShell;
+    @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
+    @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
+    @inject(FileService) protected readonly fileService: FileService;
+    @inject(SelectionService) protected readonly selectionService: SelectionService;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
@@ -356,8 +355,10 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     async openInTerminal(uri: URI): Promise<void> {
         // Determine folder path of URI
-        const stat = await this.fileSystem.getFileStat(uri.toString());
-        if (!stat) {
+        let stat: FileStat;
+        try {
+            stat = await this.fileService.resolve(uri);
+        } catch {
             return;
         }
 
@@ -566,7 +567,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
     protected async selectTerminalCwd(): Promise<string | undefined> {
         const roots = this.workspaceService.tryGetRoots();
         return this.quickPick.show(roots.map(
-            ({ uri }) => ({ label: this.labelProvider.getName(new URI(uri)), description: this.labelProvider.getLongName(new URI(uri)), value: uri })
+            ({ resource }) => ({ label: this.labelProvider.getName(resource), description: this.labelProvider.getLongName(resource), value: resource.toString() })
         ), { placeholder: 'Select current working directory for new terminal' });
     }
 

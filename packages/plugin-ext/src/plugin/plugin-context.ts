@@ -131,7 +131,7 @@ import { PreferenceRegistryExtImpl } from './preference-registry';
 import { OutputChannelRegistryExtImpl } from './output-channel-registry';
 import { TerminalServiceExtImpl, TerminalExtImpl } from './terminal-ext';
 import { LanguagesExtImpl } from './languages';
-import { fromDocumentSelector, pluginToPluginInfo } from './type-converters';
+import { fromDocumentSelector, pluginToPluginInfo, fromGlobPattern } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
 import { NotificationExtImpl } from './notification';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
@@ -142,7 +142,7 @@ import { LanguagesContributionExtImpl } from './languages-contribution-ext';
 import { ConnectionExtImpl } from './connection-ext';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
-import { FileSystemExtImpl } from './file-system';
+import { FileSystemExtImpl } from './file-system-ext-impl';
 import { QuickPick, QuickPickItem } from '@theia/plugin';
 import { ScmExtImpl } from './scm';
 import { DecorationProvider, LineChange } from '@theia/plugin';
@@ -150,6 +150,7 @@ import { DecorationsExtImpl } from './decorations';
 import { TextEditorExt } from './text-editor';
 import { ClipboardExt } from './clipboard-ext';
 import { WebviewsExtImpl } from './webviews';
+import { ExtHostFileSystemEventService } from './file-system-event-service-ext-impl';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -179,7 +180,8 @@ export function createAPIFactory(
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
     const languagesContributionExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_CONTRIBUTION_EXT, new LanguagesContributionExtImpl(rpc, connectionExt));
-    const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
+    const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc, languagesExt));
+    const extHostFileSystemEvent = rpc.set(MAIN_RPC_CONTEXT.ExtHostFileSystemEventService, new ExtHostFileSystemEventService(rpc, editorsAndDocumentsExt));
     const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry));
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
@@ -391,7 +393,7 @@ export function createAPIFactory(
         const workspace: typeof theia.workspace = {
 
             get fs(): theia.FileSystem {
-                return fileSystemExt.fs;
+                return fileSystemExt.fileSystem;
             },
 
             get rootPath(): string | undefined {
@@ -424,24 +426,15 @@ export function createAPIFactory(
             onDidSaveTextDocument(listener, thisArg?, disposables?) {
                 return documents.onDidSaveTextDocument(listener, thisArg, disposables);
             },
-            onWillCreateFiles(listener, thisArg?, disposables?) {
-                return workspaceExt.onWillCreateFiles(listener, thisArg, disposables);
-            },
-            onDidCreateFiles(listener, thisArg?, disposables?) {
-                return workspaceExt.onDidCreateFiles(listener, thisArg, disposables);
-            },
-            onWillRenameFiles(listener, thisArg?, disposables?) {
-                return workspaceExt.onWillRenameFiles(listener, thisArg, disposables);
-            },
-            onDidRenameFiles(listener, thisArg?, disposables?) {
-                return workspaceExt.onDidRenameFiles(listener, thisArg, disposables);
-            },
-            onWillDeleteFiles(listener, thisArg?, disposables?) {
-                return workspaceExt.onWillDeleteFiles(listener, thisArg, disposables);
-            },
-            onDidDeleteFiles(listener, thisArg?, disposables?) {
-                return workspaceExt.onDidDeleteFiles(listener, thisArg, disposables);
-            },
+            onDidCreateFiles: (listener, thisArg, disposables) => extHostFileSystemEvent.onDidCreateFile(listener, thisArg, disposables),
+            onDidDeleteFiles: (listener, thisArg, disposables) => extHostFileSystemEvent.onDidDeleteFile(listener, thisArg, disposables),
+            onDidRenameFiles: (listener, thisArg, disposables) => extHostFileSystemEvent.onDidRenameFile(listener, thisArg, disposables),
+            onWillCreateFiles: (listener: (e: theia.FileWillCreateEvent) => any, thisArg?: any, disposables?: theia.Disposable[]) =>
+                extHostFileSystemEvent.getOnWillCreateFileEvent(plugin)(listener, thisArg, disposables),
+            onWillDeleteFiles: (listener: (e: theia.FileWillDeleteEvent) => any, thisArg?: any, disposables?: theia.Disposable[]) =>
+                extHostFileSystemEvent.getOnWillDeleteFileEvent(plugin)(listener, thisArg, disposables),
+            onWillRenameFiles: (listener: (e: theia.FileWillRenameEvent) => any, thisArg?: any, disposables?: theia.Disposable[]) =>
+                extHostFileSystemEvent.getOnWillRenameFileEvent(plugin)(listener, thisArg, disposables),
             getConfiguration(section?, resource?): theia.WorkspaceConfiguration {
                 return preferenceRegistryExt.getConfiguration(section, resource);
             },
@@ -468,12 +461,8 @@ export function createAPIFactory(
                 const data = await documents.openDocument(uri);
                 return data && data.document;
             },
-            createFileSystemWatcher(globPattern: theia.GlobPattern,
-                ignoreCreateEvents?: boolean,
-                ignoreChangeEvents?: boolean,
-                ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
-                return workspaceExt.createFileSystemWatcher(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents);
-            },
+            createFileSystemWatcher: (pattern, ignoreCreate, ignoreChange, ignoreDelete): theia.FileSystemWatcher =>
+                extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern), ignoreCreate, ignoreChange, ignoreDelete),
             findFiles(include: theia.GlobPattern, exclude?: theia.GlobPattern | null, maxResults?: number, token?: CancellationToken): PromiseLike<Uri[]> {
                 return workspaceExt.findFiles(include, exclude, maxResults, token);
             },
@@ -626,7 +615,7 @@ export function createAPIFactory(
                 return languagesExt.registerOnTypeFormattingEditProvider(selector, provider, [firstTriggerCharacter].concat(moreTriggerCharacters), pluginToPluginInfo(plugin));
             },
             registerDocumentLinkProvider(selector: theia.DocumentSelector, provider: theia.DocumentLinkProvider): theia.Disposable {
-                return languagesExt.registerLinkProvider(selector, provider, pluginToPluginInfo(plugin));
+                return languagesExt.registerDocumentLinkProvider(selector, provider, pluginToPluginInfo(plugin));
             },
             registerCodeActionsProvider(selector: theia.DocumentSelector, provider: theia.CodeActionProvider, metadata?: theia.CodeActionProviderMetadata): theia.Disposable {
                 return languagesExt.registerCodeActionsProvider(selector, provider, plugin.model, pluginToPluginInfo(plugin), metadata);

@@ -422,11 +422,27 @@ export function fromDefinitionLink(definitionLink: theia.DefinitionLink): model.
     };
 }
 
-export function fromDocumentLink(definitionLink: theia.DocumentLink): model.DocumentLink {
-    return <model.DocumentLink>{
-        range: fromRange(definitionLink.range),
-        url: definitionLink.target && definitionLink.target.toString()
-    };
+export namespace DocumentLink {
+
+    export function from(link: theia.DocumentLink): model.DocumentLink {
+        return {
+            range: fromRange(link.range),
+            url: link.target,
+            tooltip: link.tooltip
+        };
+    }
+
+    export function to(link: model.DocumentLink): theia.DocumentLink {
+        let target: URI | undefined = undefined;
+        if (link.url) {
+            try {
+                target = typeof link.url === 'string' ? URI.parse(link.url, true) : URI.revive(link.url);
+            } catch (err) {
+                // ignore
+            }
+        }
+        return new types.DocumentLink(toRange(link.range), target);
+    }
 }
 
 export function fromDocumentHighlightKind(kind?: theia.DocumentHighlightKind): model.DocumentHighlightKind | undefined {

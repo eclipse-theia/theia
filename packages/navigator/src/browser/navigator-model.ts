@@ -149,7 +149,7 @@ export class FileNavigatorModel extends FileTreeModel {
     protected createMultipleRootNode(): WorkspaceNode {
         const workspace = this.workspaceService.workspace;
         let name = workspace
-            ? new URI(workspace.uri).path.name
+            ? workspace.resource.path.name
             : 'untitled';
         name += ' (Workspace)';
         return WorkspaceNode.createRoot(name);
@@ -158,12 +158,12 @@ export class FileNavigatorModel extends FileTreeModel {
     /**
      * Move the given source file or directory to the given target directory.
      */
-    async move(source: TreeNode, target: TreeNode): Promise<void> {
+    async move(source: TreeNode, target: TreeNode): Promise<URI | undefined> {
         if (source.parent && WorkspaceRootNode.is(source)) {
             // do not support moving a root folder
-            return;
+            return undefined;
         }
-        await super.move(source, target);
+        return super.move(source, target);
     }
 
     /**

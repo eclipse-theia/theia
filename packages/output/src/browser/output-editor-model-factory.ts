@@ -33,10 +33,9 @@ export class OutputEditorModelFactory implements MonacoEditorModelFactory {
     readonly scheme = OutputUri.SCHEME;
 
     createModel(
-        resource: Resource,
-        options?: { encoding?: string | undefined }
+        resource: Resource
     ): MonacoEditorModel {
-        return new OutputEditorModel(resource, this.m2p, this.p2m, options);
+        return new OutputEditorModel(resource, this.m2p, this.p2m);
     }
 
 }

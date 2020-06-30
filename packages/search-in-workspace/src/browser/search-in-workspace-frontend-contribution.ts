@@ -23,11 +23,11 @@ import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-con
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { Range } from 'vscode-languageserver-types';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export namespace SearchInWorkspaceCommands {
     const SEARCH_CATEGORY = 'Search';
@@ -77,7 +77,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
     @inject(SelectionService) protected readonly selectionService: SelectionService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
-    @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(FileService) protected readonly fileService: FileService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
 
     @inject(SearchInWorkspaceContextKeyService)
@@ -120,20 +120,16 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         commands.registerCommand(SearchInWorkspaceCommands.FIND_IN_FOLDER, this.newMultiUriAwareCommandHandler({
             execute: async uris => {
                 const resources: string[] = [];
-                await Promise.all(uris.map(uri =>
-                    this.fileSystem.getFileStat(uri.toString())
-                )).then(stats => {
-                    for (const stat of stats) {
-                        if (stat) {
-                            const uri = new URI(stat.uri);
-                            let uriStr = this.labelProvider.getLongName(uri);
-                            if (stat && !stat.isDirectory) {
-                                uriStr = this.labelProvider.getLongName(uri.parent);
-                            }
-                            resources.push(uriStr);
+                for (const { stat } of await this.fileService.resolveAll(uris.map(resource => ({ resource })))) {
+                    if (stat) {
+                        const uri = stat.resource;
+                        let uriStr = this.labelProvider.getLongName(uri);
+                        if (stat && !stat.isDirectory) {
+                            uriStr = this.labelProvider.getLongName(uri.parent);
                         }
+                        resources.push(uriStr);
                     }
-                });
+                }
                 const widget = await this.openView({ activate: true });
                 widget.findInFolder(resources);
             }

@@ -29,8 +29,7 @@ export interface MonacoEditorModelFactory {
     readonly scheme: string;
 
     createModel(
-        resource: Resource,
-        options?: { encoding?: string | undefined }
+        resource: Resource
     ): MaybePromise<MonacoEditorModel>;
 
 }
@@ -86,9 +85,8 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     }
 
     protected createModel(resource: Resource): MaybePromise<MonacoEditorModel> {
-        const options = { encoding: this.editorPreferences.get('files.encoding') };
         const factory = this.factories.getContributions().find(({ scheme }) => resource.uri.scheme === scheme);
-        return factory ? factory.createModel(resource, options) : new MonacoEditorModel(resource, this.m2p, this.p2m, options);
+        return factory ? factory.createModel(resource) : new MonacoEditorModel(resource, this.m2p, this.p2m);
     }
 
     protected readonly modelOptions: { [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined) } = {

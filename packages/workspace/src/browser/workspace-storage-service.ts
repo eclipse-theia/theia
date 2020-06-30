@@ -18,7 +18,7 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { LocalStorageService } from '@theia/core/lib/browser/storage-service';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { WorkspaceService } from './workspace-service';
-import { FileStat } from '@theia/filesystem/lib/common';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 /*
  * Prefixes any stored data with the current workspace path.
@@ -59,7 +59,7 @@ export class WorkspaceStorageService implements StorageService {
     }
 
     protected getPrefix(workspaceStat: FileStat | undefined): string {
-        return workspaceStat ? workspaceStat.uri : '_global_';
+        return workspaceStat ? workspaceStat.resource.toString() : '_global_';
     }
 
     private updatePrefix(): void {

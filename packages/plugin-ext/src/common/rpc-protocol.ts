@@ -29,6 +29,7 @@ import { URI as VSCodeURI } from 'vscode-uri';
 import URI from '@theia/core/lib/common/uri';
 import { CancellationToken, CancellationTokenSource } from 'vscode-languageserver-protocol';
 import { Range, Position } from '../plugin/types-impl';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 export interface MessageConnection {
     send(msg: {}): void;
@@ -432,6 +433,12 @@ namespace ObjectsTransferrer {
                 $type: SerializedObjectType.VSCODE_URI,
                 data: uri.toString()
             } as SerializedObject;
+        } else if (value instanceof BinaryBuffer) {
+            const bytes = [...value.buffer.values()];
+            return {
+                $type: SerializedObjectType.TEXT_BUFFER,
+                data: JSON.stringify({ bytes })
+            };
         }
 
         return value;
@@ -451,6 +458,9 @@ namespace ObjectsTransferrer {
                     const start = new Position(obj.start.line, obj.start.character);
                     const end = new Position(obj.end.line, obj.end.character);
                     return new Range(start, end);
+                case SerializedObjectType.TEXT_BUFFER:
+                    const data: { bytes: number[] } = JSON.parse(value.data);
+                    return BinaryBuffer.wrap(Uint8Array.from(data.bytes));
             }
         }
 
@@ -467,7 +477,8 @@ interface SerializedObject {
 enum SerializedObjectType {
     THEIA_URI,
     VSCODE_URI,
-    THEIA_RANGE
+    THEIA_RANGE,
+    TEXT_BUFFER
 }
 
 function isSerializedObject(obj: any): obj is SerializedObject {

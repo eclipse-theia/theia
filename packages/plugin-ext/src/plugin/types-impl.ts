@@ -20,6 +20,7 @@
 *--------------------------------------------------------------------------------------------*/
 
 /* eslint-disable no-null/no-null */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { UUID } from '@phosphor/coreutils/lib/uuid';
 import { illegalArgument } from '../common/errors';
@@ -27,9 +28,10 @@ import * as theia from '@theia/plugin';
 import * as crypto from 'crypto';
 import { URI } from 'vscode-uri';
 import { relative } from '../common/paths-util';
-import { startsWithIgnoreCase } from '@theia/languages/lib/common/language-selector/strings';
+import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
 import { MarkdownString, isMarkdownString } from './markdown-string';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
+import { FileSystemProviderErrorCode, markAsFileSystemProviderError } from '@theia/filesystem/lib/common/files';
 
 export class Disposable {
     private disposable: undefined | (() => void);
@@ -921,11 +923,15 @@ export class DocumentHighlight {
 export type Definition = Location | Location[];
 
 export class DocumentLink {
-    range: Range;
-    target: URI;
 
-    constructor(range: Range, target: URI) {
-        if (target && !(target instanceof URI)) {
+    range: Range;
+
+    target?: URI;
+
+    tooltip?: string;
+
+    constructor(range: Range, target: URI | undefined) {
+        if (target && !(URI.isUri(target))) {
             throw illegalArgument('target');
         }
         if (!Range.isRange(range) || range.isEmpty) {
@@ -1256,12 +1262,6 @@ export class DocumentSymbol {
     }
 }
 
-export enum FileChangeType {
-    Changed = 1,
-    Created = 2,
-    Deleted = 3,
-}
-
 export enum CommentThreadCollapsibleState {
     Collapsed = 0,
     Expanded = 1
@@ -1286,40 +1286,60 @@ export enum CommentMode {
     Preview = 1
 }
 
+// #region file api
+
+export enum FileChangeType {
+    Changed = 1,
+    Created = 2,
+    Deleted = 3,
+}
+
 export class FileSystemError extends Error {
 
     static FileExists(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'EntryExists', FileSystemError.FileExists);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.FileExists, FileSystemError.FileExists);
     }
     static FileNotFound(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'EntryNotFound', FileSystemError.FileNotFound);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.FileNotFound, FileSystemError.FileNotFound);
     }
     static FileNotADirectory(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'EntryNotADirectory', FileSystemError.FileNotADirectory);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.FileNotADirectory, FileSystemError.FileNotADirectory);
     }
     static FileIsADirectory(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'EntryIsADirectory', FileSystemError.FileIsADirectory);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.FileIsADirectory, FileSystemError.FileIsADirectory);
     }
     static NoPermissions(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'NoPermissions', FileSystemError.NoPermissions);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.NoPermissions, FileSystemError.NoPermissions);
     }
     static Unavailable(messageOrUri?: string | URI): FileSystemError {
-        return new FileSystemError(messageOrUri, 'Unavailable', FileSystemError.Unavailable);
+        return new FileSystemError(messageOrUri, FileSystemProviderErrorCode.Unavailable, FileSystemError.Unavailable);
     }
 
-    constructor(uriOrMessage?: string | URI, code?: string, terminator?: Function) {
-        super(URI.isUri(uriOrMessage) ? uriOrMessage.toString(true) : uriOrMessage);
-        this.name = code ? `${code} (FileSystemError)` : 'FileSystemError';
+    readonly code: string;
 
-        if (typeof Object.setPrototypeOf === 'function') {
-            Object.setPrototypeOf(this, FileSystemError.prototype);
+    constructor(uriOrMessage?: string | URI, code: FileSystemProviderErrorCode = FileSystemProviderErrorCode.Unknown, terminator?: Function) {
+        super(URI.isUri(uriOrMessage) ? uriOrMessage.toString(true) : uriOrMessage);
+
+        this.code = terminator?.name ?? 'Unknown';
+
+        // mark the error as file system provider error so that
+        // we can extract the error code on the receiving side
+        markAsFileSystemProviderError(this, code);
+
+        // workaround when extending builtin objects and when compiling to ES5, see:
+        // https://github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+        if (typeof (<any>Object).setPrototypeOf === 'function') {
+            (<any>Object).setPrototypeOf(this, FileSystemError.prototype);
         }
 
         if (typeof Error.captureStackTrace === 'function' && typeof terminator === 'function') {
+            // nice stack traces
             Error.captureStackTrace(this, terminator);
         }
     }
 }
+
+// #endregion
 
 export enum FileType {
     Unknown = 0,

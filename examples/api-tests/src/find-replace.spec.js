@@ -19,7 +19,6 @@ describe('Find and Replace', function () {
 
     const { assert } = chai;
 
-    const Uri = require('@theia/core/lib/common/uri');
     const { animationFrame } = require('@theia/core/lib/browser/browser');
     const { DisposableCollection } = require('@theia/core/lib/common/disposable');
     const { CommonCommands } = require('@theia/core/lib/browser/common-frontend-contribution');
@@ -40,7 +39,7 @@ describe('Find and Replace', function () {
     const navigatorContribution = container.get(FileNavigatorContribution);
     const shell = container.get(ApplicationShell);
 
-    const rootUri = new Uri.default(workspaceService.tryGetRoots()[0].uri);
+    const rootUri = workspaceService.tryGetRoots()[0].resource;
     const fileUri = rootUri.resolve('webpack.config.js');
 
     const toTearDown = new DisposableCollection();

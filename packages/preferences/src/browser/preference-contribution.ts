@@ -30,7 +30,6 @@ import {
 import { isFirefox } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common/os';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { PreferencesWidget } from './views/preference-widget';
@@ -39,12 +38,13 @@ import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { USER_PREFERENCE_URI } from './user-preference-provider';
 import { Preference, PreferencesCommands, PreferenceMenus } from './util/preference-types';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
 export class PreferencesContribution extends AbstractViewContribution<PreferencesWidget> {
 
     @inject(PreferencesEventService) protected readonly preferencesEventService: PreferencesEventService;
-    @inject(FileSystem) protected readonly filesystem: FileSystem;
+    @inject(FileService) protected readonly fileService: FileService;
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace) protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(PreferenceService) protected readonly preferenceValueRetrievalService: PreferenceService;
@@ -188,13 +188,12 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             if (activeScopeIsFolder === 'true') {
                 return this.getOrCreateSettingsFile(uri);
             } else {
-                const wsURI = this.workspacePreferenceProvider.getConfigUri();
-                if (wsURI) {
-                    const wsURIString = wsURI.toString();
-                    if (!await this.filesystem.exists(wsURIString)) {
-                        await this.filesystem.createFile(wsURIString);
+                const configUri = this.workspacePreferenceProvider.getConfigUri();
+                if (configUri) {
+                    if (!await this.fileService.exists(configUri)) {
+                        await this.fileService.create(configUri);
                     }
-                    return new URI(wsURIString);
+                    return configUri;
                 }
             }
 
@@ -205,11 +204,11 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     }
 
     protected async getOrCreateSettingsFile(folderURI: string): Promise<URI> {
-        const folderSettingsURI = `${folderURI}/.theia/settings.json`;
-        if (folderSettingsURI && !await this.filesystem.exists(folderSettingsURI)) {
-            await this.filesystem.createFile(folderSettingsURI);
+        const folderSettingsURI = new URI(folderURI).resolve('.theia/settings.json');
+        if (!await this.fileService.exists(folderSettingsURI)) {
+            await this.fileService.create(folderSettingsURI);
         }
-        return new URI(folderSettingsURI);
+        return folderSettingsURI;
     }
 
     /**

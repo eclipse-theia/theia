@@ -19,16 +19,16 @@ import { QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/br
 import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/quick-open-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { ScmService } from './scm-service';
 import { ScmRepository } from './scm-repository';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 
 @injectable()
 export class ScmQuickOpenService {
 
     @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService;
     @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(ScmService) protected readonly scmService: ScmService;
 
     async changeRepository(): Promise<void> {
@@ -39,9 +39,8 @@ export class ScmQuickOpenService {
                 const execute = () => {
                     this.scmService.selectedRepository = repository;
                 };
-                const toLabel = () => uri.path.base;
-                const fsPath = await this.fileSystem.getFsPath(uri.toString());
-                const toDescription = () => fsPath;
+                const toLabel = () => this.labelProvider.getName(uri);
+                const toDescription = () => this.labelProvider.getLongName(uri);
                 return new ScmQuickOpenItem<ScmRepository>(repository, execute, toLabel, toDescription);
             }));
             this.open(items, 'Select repository to work with:');
