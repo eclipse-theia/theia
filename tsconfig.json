@@ -66,9 +66,6 @@
       "@theia/git/lib/*": [
         "packages/git/src/*"
       ],
-      "@theia/json/lib/*": [
-        "packages/json/src/*"
-      ],
       "@theia/keymaps/lib/*": [
         "packages/keymaps/src/*"
       ],

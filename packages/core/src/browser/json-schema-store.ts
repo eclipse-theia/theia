@@ -14,65 +14,110 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import debounce = require('lodash.debounce');
-
-import { injectable, inject } from 'inversify';
-import { InMemoryResources } from '../common/resource';
-import { Disposable, DisposableCollection } from '../common/disposable';
-import { Emitter } from '../common/event';
-import URI from '../common/uri';
+import { injectable, inject, named } from 'inversify';
+import { ContributionProvider } from '../common/contribution-provider';
+import { FrontendApplicationContribution } from './frontend-application';
+import { MaybePromise } from '../common';
+import { Endpoint } from './endpoint';
+import { timeout, Deferred } from '../common/promise-util';
 
 export interface JsonSchemaConfiguration {
-    url: string
-    fileMatch: string[]
+    fileMatch: string | string[];
+    url: string;
+}
+
+export interface JsonSchemaRegisterContext {
+    registerSchema(config: JsonSchemaConfiguration): void;
+}
+
+export const JsonSchemaContribution = Symbol('JsonSchemaContribution');
+export interface JsonSchemaContribution {
+    registerSchemas(store: JsonSchemaRegisterContext): MaybePromise<void>
 }
 
 @injectable()
-export class JsonSchemaStore {
+export class JsonSchemaStore implements FrontendApplicationContribution {
 
-    @inject(InMemoryResources)
-    protected readonly inMemoryResources: InMemoryResources;
+    @inject(ContributionProvider) @named(JsonSchemaContribution)
+    protected readonly contributions: ContributionProvider<JsonSchemaContribution>;
 
-    private readonly schemas: JsonSchemaConfiguration[] = [];
+    protected readonly _schemas = new Deferred<JsonSchemaConfiguration[]>();
+    get schemas(): Promise<JsonSchemaConfiguration[]> {
+        return this._schemas.promise;
+    }
 
-    protected readonly onSchemasChangedEmitter = new Emitter<void>();
-    readonly onSchemasChanged = this.onSchemasChangedEmitter.event;
-
-    protected readonly onDidChangeSchemaEmitter = new Emitter<URI>();
-    readonly onDidChangeSchema = this.onDidChangeSchemaEmitter.event;
-
-    protected notifyChanged = debounce(() => {
-        this.onSchemasChangedEmitter.fire(undefined);
-    }, 500);
-
-    registerSchema(config: JsonSchemaConfiguration): Disposable {
-        const toDispose = new DisposableCollection();
-        const uri = new URI(config.url);
-        if (uri.scheme === 'vscode') {
-            const resource = this.inMemoryResources.resolve(new URI(config.url));
-            if (resource && resource.onDidChangeContents) {
-                toDispose.push(resource.onDidChangeContents(() => {
-                    this.onDidChangeSchemaEmitter.fire(uri);
-                    this.notifyChanged();
+    onStart(): void {
+        const pendingRegistrations = [];
+        const schemas: JsonSchemaConfiguration[] = [];
+        const freeze = () => {
+            Object.freeze(schemas);
+            this._schemas.resolve(schemas);
+        };
+        const registerTimeout = this.getRegisterTimeout();
+        const frozenErrorCode = 'JsonSchemaRegisterContext.frozen';
+        const context: JsonSchemaRegisterContext = {
+            registerSchema: schema => {
+                if (Object.isFrozen(schemas)) {
+                    throw new Error(frozenErrorCode);
+                }
+                schemas.push(schema);
+            }
+        };
+        for (const contribution of this.contributions.getContributions()) {
+            const result = contribution.registerSchemas(context);
+            if (result) {
+                pendingRegistrations.push(result.then(() => { }, e => {
+                    if (e instanceof Error && e.message === frozenErrorCode) {
+                        console.error(`${contribution.constructor.name}.registerSchemas is taking more than ${registerTimeout.toFixed(1)} ms, new schemas are ignored.`);
+                    } else {
+                        console.error(e);
+                    }
                 }));
             }
         }
-        this.schemas.push(config);
-        toDispose.push(Disposable.create(() => {
-            const idx = this.schemas.indexOf(config);
-            if (idx > -1) {
-                this.schemas.splice(idx, 1);
-                this.onDidChangeSchemaEmitter.fire(uri);
-                this.notifyChanged();
+        if (pendingRegistrations.length) {
+            let pending = Promise.all(pendingRegistrations).then(() => { });
+            if (registerTimeout) {
+                pending = Promise.race([pending, timeout(registerTimeout)]);
             }
-        }));
-        this.onDidChangeSchemaEmitter.fire(uri);
-        this.notifyChanged();
-        return toDispose;
+            pending.then(freeze);
+        } else {
+            freeze();
+        }
     }
 
-    getJsonSchemaConfigurations(): JsonSchemaConfiguration[] {
-        return [...this.schemas];
+    protected getRegisterTimeout(): number {
+        return 500;
     }
 
 }
+
+@injectable()
+export class DefaultJsonSchemaContribution implements JsonSchemaContribution {
+
+    async registerSchemas(context: JsonSchemaRegisterContext): Promise<void> {
+        const url = `${new Endpoint().httpScheme}//schemastore.azurewebsites.net/api/json/catalog.json`;
+        const response = await fetch(url);
+        const schemas: DefaultJsonSchemaContribution.SchemaData[] = (await response.json()).schemas!;
+        for (const s of schemas) {
+            if (s.fileMatch) {
+                context.registerSchema({
+                    fileMatch: s.fileMatch,
+                    url: s.url
+                });
+            }
+        }
+    }
+
+}
+export namespace DefaultJsonSchemaContribution {
+    export interface SchemaData {
+        name: string;
+        description: string;
+        fileMatch?: string[];
+        url: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        schema: any;
+    }
+}
+

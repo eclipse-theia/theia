@@ -25,7 +25,6 @@
     "@theia/filesystem": "^1.3.0",
     "@theia/getting-started": "^1.3.0",
     "@theia/git": "^1.3.0",
-    "@theia/json": "^1.3.0",
     "@theia/keymaps": "^1.3.0",
     "@theia/languages": "^1.3.0",
     "@theia/markers": "^1.3.0",

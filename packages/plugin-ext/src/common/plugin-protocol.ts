@@ -77,13 +77,14 @@ export interface PluginPackageContribution {
     menus?: { [location: string]: PluginPackageMenu[] };
     keybindings?: PluginPackageKeybinding | PluginPackageKeybinding[];
     debuggers?: PluginPackageDebuggersContribution[];
-    snippets: PluginPackageSnippetsContribution[];
+    snippets?: PluginPackageSnippetsContribution[];
     themes?: PluginThemeContribution[];
     iconThemes?: PluginIconThemeContribution[];
     colors?: PluginColorContribution[];
     taskDefinitions?: PluginTaskDefinitionContribution[];
     problemMatchers?: PluginProblemMatcherContribution[];
     problemPatterns?: PluginProblemPatternContribution[];
+    jsonValidation?: PluginJsonValidationContribution[]
 }
 
 export interface PluginPackageViewContainer {
@@ -232,6 +233,11 @@ export interface PluginProblemMatcherContribution extends ProblemMatcherContribu
 
 export interface PluginProblemPatternContribution extends ProblemPatternContribution {
     name: string;
+}
+
+export interface PluginJsonValidationContribution {
+    fileMatch: string | string[];
+    url: string;
 }
 
 export const PluginScanner = Symbol('PluginScanner');

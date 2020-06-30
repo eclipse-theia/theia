@@ -61,6 +61,7 @@ import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { environment } from '@theia/application-package/lib/environment';
+import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -146,6 +147,9 @@ export class HostedPluginSupport {
 
     @inject(EnvVariablesServer)
     protected readonly envServer: EnvVariablesServer;
+
+    @inject(JsonSchemaStore)
+    protected readonly jsonSchemaStore: JsonSchemaStore;
 
     private theiaReadyPromise: Promise<any>;
 
@@ -432,7 +436,7 @@ export class HostedPluginSupport {
             this.managers.set(host, manager);
             toDisconnect.push(Disposable.create(() => this.managers.delete(host)));
 
-            const [extApi, globalState, workspaceState, webviewResourceRoot, webviewCspSource, defaultShell] = await Promise.all([
+            const [extApi, globalState, workspaceState, webviewResourceRoot, webviewCspSource, defaultShell, jsonValidation] = await Promise.all([
                 this.server.getExtPluginAPI(),
                 this.pluginServer.getAllStorageValues(undefined),
                 this.pluginServer.getAllStorageValues({
@@ -441,7 +445,8 @@ export class HostedPluginSupport {
                 }),
                 this.webviewEnvironment.resourceRoot(),
                 this.webviewEnvironment.cspSource(),
-                this.terminalService.getDefaultShell()
+                this.terminalService.getDefaultShell(),
+                this.jsonSchemaStore.schemas
             ]);
             if (toDisconnect.disposed) {
                 return undefined;
@@ -462,7 +467,8 @@ export class HostedPluginSupport {
                 webview: {
                     webviewResourceRoot,
                     webviewCspSource
-                }
+                },
+                jsonValidation
             });
             if (toDisconnect.disposed) {
                 return undefined;

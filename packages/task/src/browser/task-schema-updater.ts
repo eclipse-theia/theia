@@ -22,8 +22,8 @@
 
 import * as Ajv from 'ajv';
 import debounce = require('p-debounce');
-import { injectable, inject, postConstruct } from 'inversify';
-import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
+import { injectable, inject } from 'inversify';
+import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources, deepClone, Emitter } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
@@ -36,9 +36,7 @@ import { USER_TASKS_URI } from './task-configurations';
 export const taskSchemaId = 'vscode://schemas/tasks';
 
 @injectable()
-export class TaskSchemaUpdater {
-    @inject(JsonSchemaStore)
-    protected readonly jsonSchemaStore: JsonSchemaStore;
+export class TaskSchemaUpdater implements JsonSchemaContribution {
 
     @inject(InMemoryResources)
     protected readonly inmemoryResources: InMemoryResources;
@@ -55,13 +53,17 @@ export class TaskSchemaUpdater {
     protected readonly onDidChangeTaskSchemaEmitter = new Emitter<void>();
     readonly onDidChangeTaskSchema = this.onDidChangeTaskSchemaEmitter.event;
 
-    @postConstruct()
-    protected init(): void {
+    registerSchemas(context: JsonSchemaRegisterContext): void {
         const taskSchemaUri = new URI(taskSchemaId);
-        this.jsonSchemaStore.onDidChangeSchema(uri => {
-            if (uri.toString() === taskSchemaUri.toString()) {
+        const resource = this.inmemoryResources.add(taskSchemaUri, '');
+        if (resource.onDidChangeContents) {
+            resource.onDidChangeContents(() => {
                 this.onDidChangeTaskSchemaEmitter.fire(undefined);
-            }
+            });
+        }
+        context.registerSchema({
+            fileMatch: ['tasks.json', USER_TASKS_URI.toString()],
+            url: taskSchemaUri.toString()
         });
 
         this.updateProblemMatcherNames();
@@ -82,15 +84,7 @@ export class TaskSchemaUpdater {
         const schema = this.getTaskSchema();
         this.doValidate = new Ajv().compile(schema);
         const schemaContent = JSON.stringify(schema);
-        try {
-            this.inmemoryResources.update(taskSchemaUri, schemaContent);
-        } catch (e) {
-            this.inmemoryResources.add(taskSchemaUri, schemaContent);
-            this.jsonSchemaStore.registerSchema({
-                fileMatch: ['tasks.json', USER_TASKS_URI.toString()],
-                url: taskSchemaUri.toString()
-            });
-        }
+        this.inmemoryResources.update(taskSchemaUri, schemaContent);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

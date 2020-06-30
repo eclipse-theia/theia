@@ -40,6 +40,7 @@ import { TaskNameResolver } from './task-name-resolver';
 import { TaskSourceResolver } from './task-source-resolver';
 import { TaskTemplateSelector } from './task-templates';
 import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
+import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
@@ -75,6 +76,7 @@ export default new ContainerModule(bind => {
     bind(TaskResolverRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, TaskContribution);
     bind(TaskSchemaUpdater).toSelf().inSingletonScope();
+    bind(JsonSchemaContribution).toService(TaskSchemaUpdater);
     bind(TaskNameResolver).toSelf().inSingletonScope();
     bind(TaskSourceResolver).toSelf().inSingletonScope();
     bind(TaskTemplateSelector).toSelf().inSingletonScope();
