@@ -42,7 +42,7 @@ export interface TaskConfigurationClient {
     taskConfigurationChanged: (event: string[]) => void;
 }
 
-export const USER_TASKS_URI = USER_PREFERENCE_FOLDER.withPath('tasks.json');
+export const USER_TASKS_URI = USER_PREFERENCE_FOLDER.withPath('/tasks.json');
 
 /**
  * Watches a tasks.json configuration file and provides a parsed version of the contained task configurations

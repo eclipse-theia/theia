@@ -9,6 +9,8 @@ Breaking Changes:
 - <a name="1_4_0_replace_json">[json]</a> replaced `@theia/json` Theia extension with `vscode.json-language-features` VS Code extension [#7972](https://github.com/eclipse-theia/theia/pull/7972)
   - You can register JSON validations at application startup by implementing `JsonSchemaContribution` Theia contribution point.
   - Alternatively you can provide JSON validations using VS Code [contributes.jsonValidation](https://code.visualstudio.com/api/references/contribution-points#contributes.jsonValidation) contribution point.
+- <a name="1_4_0_absolute_user_storage_uri">[user-storage]</a> settings URI must be an absolute to satisfy expectations of `vscode.json-language-features` [#7972](https://github.com/eclipse-theia/theia/pull/7972)
+  - If you imlpement a custom user storage make sure to check old relaitve locations, otherwise it can cause user data loss.
 
 ## v1.3.0
 
