@@ -93,6 +93,8 @@ import { ProgressBar } from './progress-bar';
 import { ProgressBarFactory, ProgressBarOptions } from './progress-bar-factory';
 import { CommandOpenHandler } from './command-open-handler';
 import { LanguageService } from './language-service';
+import { EncodingRegistry } from './encoding-registry';
+import { EncodingService } from '../common/encoding-service';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -211,6 +213,9 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     });
 
     bind(LanguageService).toSelf().inSingletonScope();
+
+    bind(EncodingService).toSelf().inSingletonScope();
+    bind(EncodingRegistry).toSelf().inSingletonScope();
 
     bind(ResourceContextKey).toSelf().inSingletonScope();
     bind(CommonFrontendContribution).toSelf().inSingletonScope();

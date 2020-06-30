@@ -22,13 +22,13 @@ import { expect } from 'chai';
 import { Container } from 'inversify';
 import { Diagnostic, Range, DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Event } from '@theia/core/lib/common/event';
-import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { Marker } from '../../common/marker';
 import { MarkerManager } from '../marker-manager';
 import { MarkerNode, MarkerOptions } from '../marker-tree';
 import { PROBLEM_OPTIONS } from './problem-container';
 import { ProblemManager } from './problem-manager';
 import { ProblemTree } from './problem-tree-model';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 disableJSDOM();
 
@@ -41,9 +41,9 @@ before(() => {
     testContainer.bind(MarkerManager).toSelf().inSingletonScope();
     testContainer.bind(ProblemManager).toSelf();
     testContainer.bind(MarkerOptions).toConstantValue(PROBLEM_OPTIONS);
-    testContainer.bind(FileSystemWatcher).toConstantValue({
-        onFilesChanged: Event.None
-    } as FileSystemWatcher);
+    testContainer.bind(FileService).toConstantValue(<FileService>{
+        onDidFilesChange: Event.None
+    });
 
     testContainer.bind(ProblemTree).toSelf().inSingletonScope();
     problemTree = testContainer.get<ProblemTree>(ProblemTree);

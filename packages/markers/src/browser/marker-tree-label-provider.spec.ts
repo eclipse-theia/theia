@@ -22,7 +22,6 @@ import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
 import { Container } from 'inversify';
 import { ContributionProvider, Event } from '@theia/core/lib/common';
-import { FileStat, FileSystem } from '@theia/filesystem/lib/common';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution, ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
 import { MarkerInfoNode } from './marker-tree';
 import { MarkerTreeLabelProvider } from './marker-tree-label-provider';
@@ -31,7 +30,8 @@ import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provi
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { WorkspaceUriLabelProviderContribution } from '@theia/workspace/lib/browser/workspace-uri-contribution';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
-import { MockFilesystem } from '@theia/filesystem/lib/common/test/mock-filesystem';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 disableJSDOM();
 
@@ -54,7 +54,7 @@ before(() => {
         onDidCreateWidget: Event.None
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
-    testContainer.bind(FileSystem).to(MockFilesystem).inSingletonScope();
+    testContainer.bind(FileService).toConstantValue(<FileService>{});
 
     testContainer.bind(DefaultUriLabelProviderContribution).toSelf().inSingletonScope();
     testContainer.bind(WorkspaceUriLabelProviderContribution).toSelf().inSingletonScope();
@@ -95,11 +95,7 @@ describe('Marker Tree Label Provider', () => {
     describe('getLongName', () => {
         describe('single-root workspace', () => {
             beforeEach(() => {
-                const root = <FileStat>{
-                    uri: 'file:///home/a',
-                    lastModification: 0,
-                    isDirectory: true
-                };
+                const root = FileStat.dir('file:///home/a');
                 workspaceService['_workspace'] = root;
                 workspaceService['_roots'] = [root];
             });
@@ -131,21 +127,9 @@ describe('Marker Tree Label Provider', () => {
         describe('multi-root workspace', () => {
             beforeEach(() => {
                 const uri: string = 'file:///file';
-                const file = <FileStat>{
-                    uri: uri,
-                    lastModification: 0,
-                    isDirectory: false
-                };
-                const root1 = <FileStat>{
-                    uri: 'file:///root1',
-                    lastModification: 0,
-                    isDirectory: true
-                };
-                const root2 = <FileStat>{
-                    uri: 'file:///root2',
-                    lastModification: 0,
-                    isDirectory: true
-                };
+                const file = FileStat.file(uri);
+                const root1 = FileStat.dir('file:///root1');
+                const root2 = FileStat.dir('file:///root2');
                 workspaceService['_workspace'] = file;
                 workspaceService['_roots'] = [root1, root2];
             });
@@ -199,11 +183,7 @@ describe('Marker Tree Label Provider', () => {
 
     describe('#getDescription', () => {
         beforeEach(() => {
-            const root = <FileStat>{
-                uri: 'file:///home/a',
-                lastModification: 0,
-                isDirectory: true
-            };
+            const root = FileStat.dir('file:///home/a');
             workspaceService['_workspace'] = root;
             workspaceService['_roots'] = [root];
         });

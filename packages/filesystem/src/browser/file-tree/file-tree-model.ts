@@ -17,24 +17,33 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { CompositeTreeNode, TreeModelImpl, TreeNode, ConfirmDialog } from '@theia/core/lib/browser';
-import { FileSystem } from '../../common';
-import { FileSystemWatcher, FileChangeType, FileChange, FileMoveEvent } from '../filesystem-watcher';
 import { FileStatNode, DirNode, FileNode } from './file-tree';
 import { LocationService } from '../location';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { FileService } from '../file-service';
+import { FileOperationError, FileOperationResult, FileChangesEvent, FileChangeType, FileChange, FileOperation, FileOperationEvent } from '../../common/files';
+import { MessageService } from '@theia/core/lib/common/message-service';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 @injectable()
 export class FileTreeModel extends TreeModelImpl implements LocationService {
 
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-    @inject(FileSystem) protected readonly fileSystem: FileSystem;
-    @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    @inject(EnvVariablesServer)
+    protected readonly environments: EnvVariablesServer;
 
     @postConstruct()
     protected init(): void {
         super.init();
-        this.toDispose.push(this.watcher.onFilesChanged(changes => this.onFilesChanged(changes)));
-        this.toDispose.push(this.watcher.onDidMove(move => this.onDidMove(move)));
+        this.toDispose.push(this.fileService.onDidFilesChange(changes => this.onFilesChanged(changes)));
+        this.toDispose.push(this.fileService.onDidRunOperation(event => this.onDidMove(event)));
     }
 
     get location(): URI | undefined {
@@ -47,7 +56,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
 
     set location(uri: URI | undefined) {
         if (uri) {
-            this.fileSystem.getFileStat(uri.toString()).then(async fileStat => {
+            this.fileService.resolve(uri).then(fileStat => {
                 if (fileStat) {
                     const node = DirNode.createRoot(fileStat);
                     this.navigateTo(node);
@@ -60,7 +69,7 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
 
     async drives(): Promise<URI[]> {
         try {
-            const drives = await this.fileSystem.getDrives();
+            const drives = await this.environments.getDrives();
             return drives.map(uri => new URI(uri));
         } catch (e) {
             this.logger.error('Error when loading drives.', e);
@@ -82,38 +91,40 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     /**
      * to workaround https://github.com/Axosoft/nsfw/issues/42
      */
-    protected onDidMove(move: FileMoveEvent): void {
-        if (FileMoveEvent.isRename(move)) {
+    protected onDidMove(event: FileOperationEvent): void {
+        if (!event.isOperation(FileOperation.MOVE)) {
+            return;
+        }
+        if (event.resource.parent.toString() === event.target.resource.parent.toString()) {
+            // file rename
             return;
         }
         this.refreshAffectedNodes([
-            move.sourceUri,
-            move.targetUri
+            event.resource,
+            event.target.resource
         ]);
     }
 
-    protected onFilesChanged(changes: FileChange[]): void {
+    protected onFilesChanged(changes: FileChangesEvent): void {
         if (!this.refreshAffectedNodes(this.getAffectedUris(changes)) && this.isRootAffected(changes)) {
             this.refresh();
         }
     }
 
-    protected isRootAffected(changes: FileChange[]): boolean {
+    protected isRootAffected(changes: FileChangesEvent): boolean {
         const root = this.root;
         if (FileStatNode.is(root)) {
-            return changes.some(change =>
-                change.type < FileChangeType.DELETED && change.uri.toString() === root.uri.toString()
-            );
+            return changes.contains(root.uri, FileChangeType.ADDED) || changes.contains(root.uri, FileChangeType.UPDATED);
         }
         return false;
     }
 
-    protected getAffectedUris(changes: FileChange[]): URI[] {
-        return changes.filter(change => !this.isFileContentChanged(change)).map(change => change.uri);
+    protected getAffectedUris(changes: FileChangesEvent): URI[] {
+        return changes.changes.filter(change => !this.isFileContentChanged(change)).map(change => change.resource);
     }
 
     protected isFileContentChanged(change: FileChange): boolean {
-        return change.type === FileChangeType.UPDATED && FileNode.is(this.getNodesByUri(change.uri).next().value);
+        return change.type === FileChangeType.UPDATED && FileNode.is(this.getNodesByUri(change.resource).next().value);
     }
 
     protected refreshAffectedNodes(uris: URI[]): boolean {
@@ -136,44 +147,43 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         return nodes;
     }
 
-    copy(uri: URI): boolean {
-        if (uri.scheme !== 'file') {
-            return false;
+    async copy(source: URI, target: Readonly<FileStatNode>): Promise<URI> {
+        const targetUri = target.uri.resolve(source.path.base);
+        try {
+            await this.fileService.copy(source, targetUri);
+        } catch (e) {
+            this.messageService.error(e.message);
         }
-        const node = this.selectedFileStatNodes[0];
-        if (!node) {
-            return false;
-        }
-        const targetUri = node.uri.resolve(uri.path.base);
-        /* Check if the folder is copied on itself */
-        const sourcePath = uri.path.toString();
-        const targetPath = node.uri.path.toString();
-        if (sourcePath === targetPath) {
-            return false;
-        }
-
-        this.fileSystem.copy(uri.toString(), targetUri.toString());
-        return true;
+        return targetUri;
     }
 
     /**
      * Move the given source file or directory to the given target directory.
      */
-    async move(source: TreeNode, target: TreeNode): Promise<void> {
+    async move(source: TreeNode, target: TreeNode): Promise<URI | undefined> {
         if (DirNode.is(target) && FileStatNode.is(source)) {
-            const sourceUri = source.uri.toString();
-            if (target.uri.toString() === sourceUri) { /*  Folder on itself */
-                return;
-            }
-            const name = source.uri.displayName;
-            const targetUri = target.uri.resolve(name).toString();
-            if (sourceUri !== targetUri) { /*  File not on itself */
-                const fileExistsInTarget = await this.fileSystem.exists(targetUri);
-                if (!fileExistsInTarget || await this.shouldReplace(name)) {
-                    await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
+            const name = source.fileStat.name;
+            const targetUri = target.uri.resolve(name);
+            try {
+                await this.fileService.move(source.uri, targetUri);
+                return targetUri;
+            } catch (e) {
+                if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_MOVE_CONFLICT) {
+                    const fileName = this.labelProvider.getName(source);
+                    if (await this.shouldReplace(fileName)) {
+                        try {
+                            await this.fileService.move(source.uri, targetUri, { overwrite: true });
+                            return targetUri;
+                        } catch (e2) {
+                            this.messageService.error(e2.message);
+                        }
+                    }
+                } else {
+                    this.messageService.error(e.message);
                 }
             }
         }
+        return undefined;
     }
 
     protected async shouldReplace(fileName: string): Promise<boolean> {

@@ -47,7 +47,6 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { WaitUntilEvent } from '@theia/core/lib/common/event';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import { Emitter, isCancelled } from '@theia/core';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -62,6 +61,7 @@ import URI from '@theia/core/lib/common/uri';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { environment } from '@theia/application-package/lib/environment';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
+import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -115,8 +115,8 @@ export class HostedPluginSupport {
     @inject(DebugConfigurationManager)
     protected readonly debugConfigurationManager: DebugConfigurationManager;
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(FileSearchService)
     protected readonly fileSearchService: FileSearchService;
@@ -196,6 +196,7 @@ export class HostedPluginSupport {
         this.viewRegistry.onDidExpandView(id => this.activateByView(id));
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
+        this.fileService.onWillActivateFileSystemProvider(event => this.ensureFileSystemActivation(event));
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
             if (factoryId === WebviewWidget.FACTORY_ID && widget instanceof WebviewWidget) {
                 const storeState = widget.storeState.bind(widget);
@@ -440,8 +441,8 @@ export class HostedPluginSupport {
                 this.server.getExtPluginAPI(),
                 this.pluginServer.getAllStorageValues(undefined),
                 this.pluginServer.getAllStorageValues({
-                    workspace: this.workspaceService.workspace,
-                    roots: this.workspaceService.tryGetRoots()
+                    workspace: this.workspaceService.workspace?.resource.toString(),
+                    roots: this.workspaceService.tryGetRoots().map(root => root.resource.toString())
                 }),
                 this.webviewEnvironment.resourceRoot(),
                 this.webviewEnvironment.cspSource(),
@@ -505,18 +506,18 @@ export class HostedPluginSupport {
 
     protected async getStoragePath(): Promise<string | undefined> {
         const roots = await this.workspaceService.roots;
-        return this.pluginPathsService.getHostStoragePath(this.workspaceService.workspace, roots);
+        return this.pluginPathsService.getHostStoragePath(this.workspaceService.workspace?.resource.toString(), roots.map(root => root.resource.toString()));
     }
 
     protected async getHostGlobalStoragePath(): Promise<string> {
         const configDirUri = await this.envServer.getConfigDirUri();
-        const globalStorageFolderUri = new URI(configDirUri).resolve('globalStorage').toString();
+        const globalStorageFolderUri = new URI(configDirUri).resolve('globalStorage');
 
         // Make sure that folder by the path exists
-        if (!await this.fileSystem.exists(globalStorageFolderUri)) {
-            await this.fileSystem.createFolder(globalStorageFolderUri);
+        if (!await this.fileService.exists(globalStorageFolderUri)) {
+            await this.fileService.createFolder(globalStorageFolderUri);
         }
-        const globalStorageFolderFsPath = await this.fileSystem.getFsPath(globalStorageFolderUri);
+        const globalStorageFolderFsPath = await this.fileService.fsPath(globalStorageFolderUri);
         if (!globalStorageFolderFsPath) {
             throw new Error(`Could not resolve the FS path for URI: ${globalStorageFolderUri}`);
         }
@@ -549,6 +550,14 @@ export class HostedPluginSupport {
 
     async activateByCommand(commandId: string): Promise<void> {
         await this.activateByEvent(`onCommand:${commandId}`);
+    }
+
+    activateByFileSystem(event: FileSystemProviderActivationEvent): Promise<void> {
+        return this.activateByEvent(`onFileSystem:${event.scheme}`);
+    }
+
+    protected ensureFileSystemActivation(event: FileSystemProviderActivationEvent): void {
+        event.waitUntil(this.activateByFileSystem(event));
     }
 
     protected ensureCommandHandlerRegistration(event: WillExecuteCommandEvent): void {
@@ -625,7 +634,7 @@ export class HostedPluginSupport {
             promises.push((async () => {
                 try {
                     const result = await this.fileSearchService.find('', {
-                        rootUris: this.workspaceService.tryGetRoots().map(r => r.uri),
+                        rootUris: this.workspaceService.tryGetRoots().map(r => r.resource.toString()),
                         includePatterns,
                         limit: 1
                     }, tokenSource.token);

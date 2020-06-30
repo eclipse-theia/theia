@@ -25,8 +25,8 @@ import { EditorCommands } from './editor-command';
 import { EditorQuickOpenService } from './editor-quick-open-service';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { KeybindingRegistry, KeybindingContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
-import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
+import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, QuickOpenContribution {

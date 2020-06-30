@@ -102,7 +102,7 @@ export class TaskTerminalWidgetManager {
             const terminal = TaskTerminalWidget.is(widget) && widget;
             if (terminal) {
                 const didConnectListener = terminal.onDidOpen(async () => {
-                    const context = this.workspaceService.workspace && this.workspaceService.workspace.uri;
+                    const context = this.workspaceService?.workspace?.resource.toString();
                     const tasksInfo = await this.taskServer.getTasks(context);
                     const taskInfo = tasksInfo.find(info => info.terminalId === widget.terminalId);
                     if (taskInfo) {

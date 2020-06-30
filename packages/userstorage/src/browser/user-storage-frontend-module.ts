@@ -14,17 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, interfaces, } from 'inversify';
-import { ResourceResolver } from '@theia/core/lib/common';
-import { UserStorageResolver } from './user-storage-resource';
-import { UserStorageServiceFilesystemImpl } from './user-storage-service-filesystem';
-import { UserStorageService } from './user-storage-service';
-
-export function bindUserStorage(bind: interfaces.Bind): void {
-    bind(ResourceResolver).to(UserStorageResolver).inSingletonScope();
-    bind(UserStorageService).to(UserStorageServiceFilesystemImpl).inSingletonScope();
-}
+import { ContainerModule, } from 'inversify';
+import { FileServiceContribution } from '@theia/filesystem/lib/browser/file-service';
+import { UserStorageContribution } from './user-storage-contribution';
 
 export default new ContainerModule(bind => {
-    bindUserStorage(bind);
+    bind(UserStorageContribution).toSelf().inSingletonScope();
+    bind(FileServiceContribution).toService(UserStorageContribution);
 });

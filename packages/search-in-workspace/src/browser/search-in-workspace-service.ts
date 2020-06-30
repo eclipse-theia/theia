@@ -114,7 +114,7 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
         }
 
         const roots = await this.workspaceService.roots;
-        return this.doSearch(what, roots.map(r => r.uri), callbacks, opts);
+        return this.doSearch(what, roots.map(r => r.resource.toString()), callbacks, opts);
     }
 
     protected async doSearch(what: string, rootsUris: string[], callbacks: SearchInWorkspaceCallbacks, opts?: SearchInWorkspaceOptions): Promise<number> {

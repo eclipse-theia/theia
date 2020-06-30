@@ -16,7 +16,7 @@
 
 import { injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { UserStorageUri } from '@theia/userstorage/lib/browser';
+import { UserStorageUri } from '@theia/userstorage/lib/browser/user-storage-uri';
 import { PreferenceScope } from '@theia/core/lib/browser';
 import { SectionPreferenceProvider } from './section-preference-provider';
 

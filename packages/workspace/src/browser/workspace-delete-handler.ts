@@ -17,16 +17,18 @@
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ConfirmDialog, ApplicationShell, SaveableWidget, NavigatableWidget } from '@theia/core/lib/browser';
-import { FileSystem } from '@theia/filesystem/lib/common';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceUtils } from './workspace-utils';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
+import { FileDeleteOptions, FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
 
 @injectable()
 export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
@@ -36,6 +38,9 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(FileSystemPreferences)
+    protected readonly fsPreferences: FileSystemPreferences;
 
     /**
      * Determine if the command is visible.
@@ -64,8 +69,12 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      */
     async execute(uris: URI[]): Promise<void> {
         const distinctUris = URI.getDistinctParents(uris);
-        if (await this.confirm(distinctUris)) {
-            await Promise.all(distinctUris.map(uri => this.delete(uri)));
+        const resolved: FileDeleteOptions = {
+            recursive: true,
+            useTrash: this.fsPreferences['files.enableTrash'] && distinctUris[0] && this.fileService.hasCapability(distinctUris[0], FileSystemProviderCapabilities.Trash)
+        };
+        if (await this.confirm(distinctUris, resolved)) {
+            await Promise.all(distinctUris.map(uri => this.delete(uri, resolved)));
         }
     }
 
@@ -74,9 +83,15 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      *
      * @param uris URIs of selected resources.
      */
-    protected confirm(uris: URI[]): Promise<boolean | undefined> {
+    protected confirm(uris: URI[], options: FileDeleteOptions): Promise<boolean | undefined> {
+        let title = `File${uris.length === 1 ? '' : 's'}`;
+        if (options.useTrash) {
+            title = 'Move ' + title + ' to Trash';
+        } else {
+            title = 'Delete ' + title;
+        }
         return new ConfirmDialog({
-            title: `Delete File${uris.length === 1 ? '' : 's'}`,
+            title,
             msg: this.getConfirmMessage(uris)
         }).open();
     }
@@ -133,11 +148,11 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      *
      * @param uri URI of selected resource.
      */
-    protected async delete(uri: URI): Promise<void> {
+    protected async delete(uri: URI, options: FileDeleteOptions): Promise<void> {
         try {
             await Promise.all([
                 this.closeWithoutSaving(uri),
-                this.fileSystem.delete(uri.toString())
+                this.fileService.delete(uri, options)
             ]);
         } catch (e) {
             console.error(e);

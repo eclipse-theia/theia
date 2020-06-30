@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2020 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,22 +14,25 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
-import { FileSystemWatcherServer, FileSystemWatcherClient, WatchOptions } from '../filesystem-watcher-protocol';
+import { inject, injectable } from 'inversify';
+import { FileServiceContribution, FileService } from './file-service';
+import { RemoteFileSystemProvider } from '../common/remote-file-system-provider';
 
 @injectable()
-export class MockFilesystemWatcherServer implements FileSystemWatcherServer {
+export class RemoteFileServiceContribution implements FileServiceContribution {
 
-    dispose(): void { }
+    @inject(RemoteFileSystemProvider)
+    protected readonly provider: RemoteFileSystemProvider;
 
-    watchFileChanges(uri: string, options?: WatchOptions): Promise<number> {
-        return Promise.resolve(0);
+    registerFileSystemProviders(service: FileService): void {
+        const registering = this.provider.ready.then(() =>
+            service.registerProvider('file', this.provider)
+        );
+        service.onWillActivateFileSystemProvider(event => {
+            if (event.scheme === 'file') {
+                event.waitUntil(registering);
+            }
+        });
     }
-
-    unwatchFileChanges(watcher: number): Promise<void> {
-        return Promise.resolve();
-    }
-
-    setClient(client: FileSystemWatcherClient): void { }
 
 }

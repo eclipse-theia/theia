@@ -22,9 +22,9 @@ import * as plistparser from 'fast-plist';
 import { ThemeService, BuiltinThemeProvider } from '@theia/core/lib/browser/theming';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { MonacoThemeRegistry } from './textmate/monaco-theme-registry';
 import { getThemes, putTheme, MonacoThemeState } from './monaco-indexed-db';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export interface MonacoTheme {
     id?: string;
@@ -58,10 +58,9 @@ export interface MonacoThemeJson {
 @injectable()
 export class MonacoThemingService {
 
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     register(theme: MonacoTheme, pending: { [uri: string]: Promise<any> } = {}): Disposable {
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
         this.doRegister(theme, pending, toDispose);
@@ -92,8 +91,8 @@ export class MonacoThemingService {
         pending: { [uri: string]: Promise<any> },
         toDispose: DisposableCollection
     ): Promise<any> {
-        /* eslint-enable @typescript-eslint/no-explicit-any */
-        const { content } = await this.fileSystem.resolveContent(uri);
+        const result = await this.fileService.read(new URI(uri));
+        const content = result.value;
         if (toDispose.disposed) {
             return;
         }
@@ -122,7 +121,6 @@ export class MonacoThemingService {
         return json;
     }
 
-    /* eslint-disable @typescript-eslint/no-explicit-any */
     protected doLoadTheme(
         themeUri: URI,
         referencedPath: string,
@@ -136,7 +134,6 @@ export class MonacoThemingService {
         }
         return pending[referencedUri];
     }
-    /* eslint-enable @typescript-eslint/no-explicit-any */
 
     static init(): void {
         this.updateBodyUiTheme();

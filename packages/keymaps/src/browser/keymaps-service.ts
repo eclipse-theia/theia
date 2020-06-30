@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ResourceProvider, Resource } from '@theia/core/lib/common/resource';
+import { ResourceProvider, Resource, ResourceError } from '@theia/core/lib/common/resource';
 import { OpenerService, open, WidgetOpenerOptions, Widget } from '@theia/core/lib/browser';
 import { KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser/keybinding';
 import { Keybinding } from '@theia/core/lib/common/keybinding';
@@ -67,7 +67,7 @@ export class KeymapsService {
      * Parsed the read keybindings.
      */
     protected async parseKeybindings(): Promise<Keybinding[]> {
-        const content = await this.resource.readContents();
+        const content = await this.readContents();
         const keybindings: Keybinding[] = [];
         const json = jsoncparser.parse(content, undefined, { disallowComments: false });
         if (Array.isArray(json)) {
@@ -78,6 +78,17 @@ export class KeymapsService {
             }
         }
         return keybindings;
+    }
+
+    protected async readContents(): Promise<string> {
+        try {
+            return await this.resource.readContents();
+        } catch (e) {
+            if (ResourceError.NotFound.is(e)) {
+                return '';
+            }
+            throw e;
+        }
     }
 
     /**

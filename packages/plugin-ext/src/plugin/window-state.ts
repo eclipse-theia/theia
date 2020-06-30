@@ -57,7 +57,7 @@ export class WindowStateExtImpl implements WindowStateExt {
         if (!target.scheme.trim().length) {
             throw new Error('Invalid scheme - cannot be empty');
         }
-        if (Schemes.HTTP !== target.scheme && Schemes.HTTPS !== target.scheme) {
+        if (Schemes.http !== target.scheme && Schemes.https !== target.scheme) {
             throw new Error(`Invalid scheme '${target.scheme}'`);
         }
 

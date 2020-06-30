@@ -44,7 +44,7 @@ export class LinkProviderAdapter {
             }
             const result: DocumentLink[] = [];
             for (const link of links) {
-                const data = Converter.fromDocumentLink(link);
+                const data = Converter.DocumentLink.from(link);
                 const id = this.cacheId++;
                 ObjectIdentifier.mixin(data, id);
                 this.cache.set(id, link);
@@ -65,7 +65,7 @@ export class LinkProviderAdapter {
         }
         return Promise.resolve(this.provider.resolveDocumentLink(item, token)).then(value => {
             if (value) {
-                return Converter.fromDocumentLink(value);
+                return Converter.DocumentLink.from(value);
             }
             return undefined;
         });

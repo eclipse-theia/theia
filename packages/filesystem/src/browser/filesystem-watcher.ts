@@ -18,9 +18,8 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, WaitUntilEvent } from '@theia/core/lib/common/event';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem, FileShouldOverwrite } from '../common/filesystem';
-import { DidFilesChangedParams, FileChangeType, FileSystemWatcherServer, WatchOptions } from '../common/filesystem-watcher-protocol';
-import { FileSystemPreferences } from './filesystem-preferences';
+import { FileChangeType, FileOperation } from '../common/files';
+import { FileService } from './file-service';
 
 export {
     FileChangeType
@@ -48,6 +47,9 @@ export namespace FileChange {
     }
 }
 
+/**
+ * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileChangesEvent` instead
+ */
 export type FileChangeEvent = FileChange[];
 export namespace FileChangeEvent {
     export function isUpdated(event: FileChangeEvent, uri: URI): boolean {
@@ -67,6 +69,9 @@ export namespace FileChangeEvent {
     }
 }
 
+/**
+ * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `UserFileOperationEvent` instead
+ */
 export interface FileMoveEvent extends WaitUntilEvent {
     sourceUri: URI
     targetUri: URI
@@ -77,6 +82,9 @@ export namespace FileMoveEvent {
     }
 }
 
+/**
+ * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `UserFileOperationEvent` instead
+ */
 export interface FileEvent extends WaitUntilEvent {
     uri: URI
 }
@@ -120,6 +128,8 @@ export class FileOperationEmitter<E extends WaitUntilEvent> implements Disposabl
  *
  * `on(will|did)(create|rename|delete)` events solely come from application
  * usage, not from actual filesystem.
+ *
+ * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.watch` instead
  */
 @injectable()
 export class FileSystemWatcher implements Disposable {
@@ -128,36 +138,61 @@ export class FileSystemWatcher implements Disposable {
     protected readonly toRestartAll = new DisposableCollection();
 
     protected readonly onFileChangedEmitter = new Emitter<FileChangeEvent>();
+    /**
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFilesChange` instead
+     */
     readonly onFilesChanged = this.onFileChangedEmitter.event;
 
     protected readonly fileCreateEmitter = new FileOperationEmitter<FileEvent>();
+    /**
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onWillRunUserOperation` instead
+     */
     readonly onWillCreate = this.fileCreateEmitter.onWill;
+    /**
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFailUserOperation` instead
+     */
     readonly onDidFailCreate = this.fileCreateEmitter.onDidFail;
+    /**
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908),
+     * insead use `FileService.onDidRunUserOperation` for events triggered by user gestures
+     * or `FileService.onDidRunOperation` triggered by user gestures and programmatically
+     */
     readonly onDidCreate = this.fileCreateEmitter.onDid;
 
     protected readonly fileDeleteEmitter = new FileOperationEmitter<FileEvent>();
+    /**
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onWillRunUserOperation` instead
+     */
     readonly onWillDelete = this.fileDeleteEmitter.onWill;
+    /**
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFailUserOperation` instead
+     */
     readonly onDidFailDelete = this.fileDeleteEmitter.onDidFail;
+    /**
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908),
+     * insead use `FileService.onDidRunUserOperation` for events triggered by user gestures
+     * or `FileService.onDidRunOperation` triggered by user gestures and programmatically
+     */
     readonly onDidDelete = this.fileDeleteEmitter.onDid;
 
     protected readonly fileMoveEmitter = new FileOperationEmitter<FileMoveEvent>();
+    /**
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onWillRunUserOperation` instead
+     */
     readonly onWillMove = this.fileMoveEmitter.onWill;
+    /**
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFailUserOperation` instead
+     */
     readonly onDidFailMove = this.fileMoveEmitter.onDidFail;
+    /**
+     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908),
+     * insead use `FileService.onDidRunUserOperation` for events triggered by user gestures
+     * or `FileService.onDidRunOperation` triggered by user gestures and programmatically
+     */
     readonly onDidMove = this.fileMoveEmitter.onDid;
 
-    @inject(FileSystemWatcherServer)
-    protected readonly server: FileSystemWatcherServer;
-
-    @inject(FileSystemPreferences)
-    protected readonly preferences: FileSystemPreferences;
-
-    @inject(FileSystem)
-    protected readonly filesystem: FileSystem;
-
-    // This is injected so we can avoid including UI stuff and make this class
-    // unit-testable.
-    @inject(FileShouldOverwrite)
-    protected readonly shouldOverwrite: FileShouldOverwrite;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @postConstruct()
     protected init(): void {
@@ -165,28 +200,33 @@ export class FileSystemWatcher implements Disposable {
         this.toDispose.push(this.fileDeleteEmitter);
         this.toDispose.push(this.fileMoveEmitter);
 
-        this.toDispose.push(this.server);
-        this.server.setClient({
-            onDidFilesChanged: e => this.onDidFilesChanged(e)
-        });
-
-        this.toDispose.push(this.preferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'files.watcherExclude') {
-                this.toRestartAll.dispose();
+        this.toDispose.push(this.fileService.onWillRunUserOperation(event => {
+            if (event.operation === FileOperation.CREATE) {
+                this.fileCreateEmitter.fireWill({ uri: event.target });
+            } else if (event.operation === FileOperation.DELETE) {
+                this.fileDeleteEmitter.fireWill({ uri: event.target });
+            } else if (event.operation === FileOperation.MOVE && event.source) {
+                this.fileMoveEmitter.fireWill({ sourceUri: event.source, targetUri: event.target });
             }
         }));
-
-        this.filesystem.setClient({
-            /* eslint-disable no-void */
-            shouldOverwrite: this.shouldOverwrite.bind(this),
-            willCreate: async uri => void await this.fileCreateEmitter.fireWill({ uri: new URI(uri) }),
-            didCreate: async (uri, failed) => void await this.fileCreateEmitter.fireDid(failed, { uri: new URI(uri) }),
-            willDelete: async uri => void await this.fileDeleteEmitter.fireWill({ uri: new URI(uri) }),
-            didDelete: async (uri, failed) => void await this.fileDeleteEmitter.fireDid(failed, { uri: new URI(uri) }),
-            willMove: async (sourceUri, targetUri) => void await this.fileMoveEmitter.fireWill({ sourceUri: new URI(sourceUri), targetUri: new URI(targetUri) }),
-            didMove: async (sourceUri, targetUri, failed) => void await this.fileMoveEmitter.fireDid(failed, { sourceUri: new URI(sourceUri), targetUri: new URI(targetUri) }),
-            /* eslint-enable no-void */
-        });
+        this.toDispose.push(this.fileService.onDidFailUserOperation(event => {
+            if (event.operation === FileOperation.CREATE) {
+                this.fileCreateEmitter.fireDid(true, { uri: event.target });
+            } else if (event.operation === FileOperation.DELETE) {
+                this.fileDeleteEmitter.fireDid(true, { uri: event.target });
+            } else if (event.operation === FileOperation.MOVE && event.source) {
+                this.fileMoveEmitter.fireDid(true, { sourceUri: event.source, targetUri: event.target });
+            }
+        }));
+        this.toDispose.push(this.fileService.onDidRunUserOperation(event => {
+            if (event.operation === FileOperation.CREATE) {
+                this.fileCreateEmitter.fireDid(false, { uri: event.target });
+            } else if (event.operation === FileOperation.DELETE) {
+                this.fileDeleteEmitter.fireDid(false, { uri: event.target });
+            } else if (event.operation === FileOperation.MOVE && event.source) {
+                this.fileMoveEmitter.fireDid(false, { sourceUri: event.source, targetUri: event.target });
+            }
+        }));
     }
 
     /**
@@ -196,52 +236,14 @@ export class FileSystemWatcher implements Disposable {
         this.toDispose.dispose();
     }
 
-    protected onDidFilesChanged(event: DidFilesChangedParams): void {
-        const changes = event.changes.map(change => <FileChange>{
-            uri: new URI(change.uri),
-            type: change.type
-        });
-        this.onFileChangedEmitter.fire(changes);
-    }
-
     /**
      * Start file watching under the given uri.
      *
      * Resolve when watching is started.
      * Return a disposable to stop file watching under the given uri.
      */
-    watchFileChanges(uri: URI): Promise<Disposable> {
-        return this.createWatchOptions(uri.toString())
-            .then(options =>
-                this.server.watchFileChanges(uri.toString(), options)
-            )
-            .then(watcher => {
-                const toDispose = new DisposableCollection();
-                const toStop = Disposable.create(() =>
-                    this.server.unwatchFileChanges(watcher)
-                );
-                const toRestart = toDispose.push(toStop);
-                this.toRestartAll.push(Disposable.create(() => {
-                    toRestart.dispose();
-                    toStop.dispose();
-                    this.watchFileChanges(uri).then(disposable =>
-                        toDispose.push(disposable)
-                    );
-                }));
-                return toDispose;
-            });
-    }
-
-    protected createWatchOptions(uri: string): Promise<WatchOptions> {
-        return this.getIgnored(uri).then(ignored => ({
-            // always ignore temporary upload files
-            ignored: ignored.concat('**/theia_upload_*')
-        }));
-    }
-
-    protected async getIgnored(uri: string): Promise<string[]> {
-        const patterns = this.preferences.get('files.watcherExclude', undefined, uri);
-        return Object.keys(patterns).filter(pattern => patterns[pattern]);
+    async watchFileChanges(uri: URI): Promise<Disposable> {
+        return this.fileService.watch(uri);
     }
 
 }

@@ -80,7 +80,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
             return this.folderPreferenceProvider;
         }
         return this.workspaceFileProviderFactory({
-            workspaceUri: new URI(workspace.uri)
+            workspaceUri: workspace.resource
         });
     }
 
@@ -109,7 +109,7 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
 
     protected ensureResourceUri(): string | undefined {
         if (this.workspaceService.workspace && !this.workspaceService.isMultiRootWorkspaceOpened) {
-            return this.workspaceService.workspace.uri;
+            return this.workspaceService.workspace.resource.toString();
         }
         return undefined;
     }
