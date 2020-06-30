@@ -4,6 +4,12 @@
 
 - [core] fixed handling of environment variables on Windows [#7973](https://github.com/eclipse-theia/theia/pull/7973)
 
+Breaking Changes:
+
+- <a name="1_4_0_replace_json">[json]</a> replaced `@theia/json` Theia extension with `vscode.json-language-features` VS Code extension [#7972](https://github.com/eclipse-theia/theia/pull/7972)
+  - You can register JSON validations at application startup by implementing `JsonSchemaContribution` Theia contribution point.
+  - Alternatively you can provide JSON validations using VS Code [contributes.jsonValidation](https://code.visualstudio.com/api/references/contribution-points#contributes.jsonValidation) contribution point.
+
 ## v1.3.0
 
 - [cli] updated the download script to warn about mandatory `theiaPlugins` field [#8058](https://github.com/eclipse-theia/theia/pull/8058)

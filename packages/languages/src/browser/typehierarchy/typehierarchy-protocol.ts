@@ -16,7 +16,7 @@
 
 import { RequestType } from '../language-client-services';
 import { SymbolKind, Range } from 'vscode-languageserver-types';
-import { TextDocumentPositionParams, TextDocumentRegistrationOptions, StaticRegistrationOptions } from 'vscode-languageserver';
+import { TextDocumentPositionParams, TextDocumentRegistrationOptions, StaticRegistrationOptions } from 'vscode-languageserver-protocol';
 
 // NOTE: This module can be removed, once the type hierarchy will become the part of the LSP.
 // https://github.com/Microsoft/language-server-protocol/issues/582

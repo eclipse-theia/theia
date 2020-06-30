@@ -18,7 +18,7 @@
 
 import { createProxyIdentifier, ProxyIdentifier, RPCProtocol } from './rpc-protocol';
 import * as theia from '@theia/plugin';
-import { PluginLifecycle, PluginModel, PluginMetadata, PluginPackage, IconUrl } from './plugin-protocol';
+import { PluginLifecycle, PluginModel, PluginMetadata, PluginPackage, IconUrl, PluginJsonValidationContribution } from './plugin-protocol';
 import { QueryParameters } from './env';
 import { TextEditorCursorStyle } from './editor-options';
 import {
@@ -182,6 +182,7 @@ export interface PluginManagerInitializeParams {
     env: EnvInit
     extApi?: ExtPluginApi[]
     webview: WebviewInitData
+    jsonValidation: PluginJsonValidationContribution[]
 }
 
 export interface PluginManagerStartParams {

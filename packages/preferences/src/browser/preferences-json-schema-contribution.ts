@@ -14,25 +14,27 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { FrontendApplicationContribution, PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { InMemoryResources } from '@theia/core';
-import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
+import { JsonSchemaRegisterContext, JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { USER_PREFERENCE_URI } from './user-preference-provider';
+import { PreferenceSchemaProvider } from '@theia/core/lib/browser/preferences/preference-contribution';
 
 @injectable()
-export class PreferencesFrontendApplicationContribution implements FrontendApplicationContribution {
+export class PreferencesJsonSchemaContribution implements JsonSchemaContribution {
 
-    @inject(JsonSchemaStore) jsonSchemaStore: JsonSchemaStore;
-    @inject(PreferenceSchemaProvider) schemaProvider: PreferenceSchemaProvider;
-    @inject(InMemoryResources) inmemoryResources: InMemoryResources;
+    @inject(PreferenceSchemaProvider)
+    protected readonly schemaProvider: PreferenceSchemaProvider;
 
-    onStart(): void {
+    @inject(InMemoryResources)
+    protected readonly inmemoryResources: InMemoryResources;
+
+    registerSchemas(context: JsonSchemaRegisterContext): void {
         const serializeSchema = () => JSON.stringify(this.schemaProvider.getCombinedSchema());
         const uri = new URI('vscode://schemas/settings/user');
         this.inmemoryResources.add(uri, serializeSchema());
-        this.jsonSchemaStore.registerSchema({
+        context.registerSchema({
             fileMatch: ['settings.json', USER_PREFERENCE_URI.toString()],
             url: uri.toString()
         });
@@ -40,4 +42,5 @@ export class PreferencesFrontendApplicationContribution implements FrontendAppli
             this.inmemoryResources.update(uri, serializeSchema())
         );
     }
+
 }

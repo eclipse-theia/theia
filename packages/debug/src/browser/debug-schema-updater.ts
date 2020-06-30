@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
+import { JsonSchemaRegisterContext, JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources, deepClone } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
@@ -24,11 +24,20 @@ import { debugPreferencesSchema } from './debug-preferences';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 
 @injectable()
-export class DebugSchemaUpdater {
+export class DebugSchemaUpdater implements JsonSchemaContribution {
 
-    @inject(JsonSchemaStore) protected readonly jsonSchemaStore: JsonSchemaStore;
+    protected readonly uri = new URI(launchSchemaId);
+
     @inject(InMemoryResources) protected readonly inmemoryResources: InMemoryResources;
     @inject(DebugService) protected readonly debug: DebugService;
+
+    registerSchemas(context: JsonSchemaRegisterContext): void {
+        this.inmemoryResources.add(this.uri, '');
+        context.registerSchema({
+            fileMatch: ['launch.json'],
+            url: this.uri.toString()
+        });
+    }
 
     async update(): Promise<void> {
         const types = await this.debug.debugTypes();
@@ -48,17 +57,8 @@ export class DebugSchemaUpdater {
         }
         items.defaultSnippets!.push(...await this.debug.getConfigurationSnippets());
 
-        const uri = new URI(launchSchemaId);
         const contents = JSON.stringify(schema);
-        try {
-            this.inmemoryResources.update(uri, contents);
-        } catch (e) {
-            this.inmemoryResources.add(uri, contents);
-            this.jsonSchemaStore.registerSchema({
-                fileMatch: ['launch.json'],
-                url: uri.toString()
-            });
-        }
+        this.inmemoryResources.update(this.uri, contents);
     }
 }
 

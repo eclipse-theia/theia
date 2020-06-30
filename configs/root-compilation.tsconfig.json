@@ -47,9 +47,6 @@
       "path": "../packages/git/compile.tsconfig.json"
     },
     {
-      "path": "../packages/json/compile.tsconfig.json"
-    },
-    {
       "path": "../packages/keymaps/compile.tsconfig.json"
     },
     {

@@ -27,7 +27,7 @@ import {
     PluginManagerInitializeParams,
     PluginManagerStartParams
 } from '../common/plugin-api-rpc';
-import { PluginMetadata } from '../common/plugin-protocol';
+import { PluginMetadata, PluginJsonValidationContribution } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 import { join } from 'path';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -99,6 +99,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     protected fireOnDidChange(): void {
         this.onDidChangeEmitter.fire(undefined);
     }
+
+    protected jsonValidation: PluginJsonValidationContribution[] = [];
 
     constructor(
         private readonly host: PluginHost,
@@ -196,6 +198,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         }
 
         this.webview.init(params.webview);
+        this.jsonValidation = params.jsonValidation;
     }
 
     async $start(params: PluginManagerStartParams): Promise<void> {
@@ -225,6 +228,14 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     protected registerPlugin(plugin: Plugin): void {
+        if (plugin.model.id === 'vscode.json-language-features' && this.jsonValidation.length) {
+            // VS Code contribute all built-in validations via vscode.json-language-features
+            // we enrich them with Theia validations registered on the startup
+            // dynamic validations can be provided only via VS Code extensions
+            // content is fetched by the extension later via vscode.workspace.openTextDocument
+            const contributes = plugin.rawModel.contributes = (plugin.rawModel.contributes || {});
+            contributes.jsonValidation = (contributes.jsonValidation || []).concat(this.jsonValidation);
+        }
         this.registry.set(plugin.model.id, plugin);
         if (plugin.pluginPath && Array.isArray(plugin.rawModel.activationEvents)) {
             const activation = () => this.$activatePlugin(plugin.model.id);

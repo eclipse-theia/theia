@@ -194,7 +194,7 @@ export class MutableResource implements Resource {
 @injectable()
 export class InMemoryResources implements ResourceResolver {
 
-    private resources = new Map<string, MutableResource>();
+    private readonly resources = new Map<string, MutableResource>();
 
     add(uri: URI, contents: string): Resource {
         const resourceUri = uri.toString();

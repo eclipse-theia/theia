@@ -28,7 +28,6 @@ cache:
     - packages/filesystem/node_modules
     - packages/getting-started/node_modules
     - packages/git/node_modules
-    - packages/json/node_modules
     - packages/keymaps/node_modules
     - packages/languages/node_modules
     - packages/markers/node_modules
