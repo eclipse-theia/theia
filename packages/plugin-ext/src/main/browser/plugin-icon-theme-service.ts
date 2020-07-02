@@ -337,16 +337,11 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     }
 
     protected escapeCSS(value: string): string {
-        try {
-            return CSS.escape(value);
-        } catch {
-            // Edge and Safari on iOS does not support `CSS.escape` yet, remove it when they do
-            value = value.replace(/[^\-a-zA-Z0-9]/g, '-');
-            if (value.charAt(0).match(/[0-9\-]/)) {
-                value = '-' + value;
-            }
-            return value;
+        value = value.replace(/[^\-a-zA-Z0-9]/g, '-');
+        if (value.charAt(0).match(/[0-9\-]/)) {
+            value = '-' + value;
         }
+        return value;
     }
 
     protected readonly fileIcon = 'theia-plugin-file-icon';
