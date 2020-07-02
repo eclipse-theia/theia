@@ -34,6 +34,8 @@ export namespace WidgetDecoration {
         export const BOTTOM_RIGHT_SIDEBAR_CLASS = 'theia-bottom-right-sidebar';
         export const BOTTOM_LEFT_CLASS = 'theia-bottom-left';
         export const TOP_LEFT_CLASS = 'theia-top-left';
+        export const BADGE_DECORATOR_SIDEBAR_CLASS = 'theia-badge-decorator-sidebar';
+        export const BADGE_DECORATOR_BOTTOM_PANEL_CLASS = 'theia-badge-decorator-bottom-panel';
     }
     /**
      * For the sake of simplicity, we have merged the `font-style`, `font-weight`, and the `text-decoration` together.

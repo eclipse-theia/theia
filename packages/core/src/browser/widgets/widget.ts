@@ -49,6 +49,8 @@ export class BaseWidget extends Widget {
     protected readonly onDidDisposeEmitter = new Emitter<void>();
     readonly onDidDispose = this.onDidDisposeEmitter.event;
 
+    badge: number;
+
     protected readonly toDispose = new DisposableCollection(
         this.onDidDisposeEmitter,
         Disposable.create(() => this.onDidDisposeEmitter.fire()),
@@ -100,8 +102,8 @@ export class BaseWidget extends Widget {
                 container.style.overflow = 'hidden';
                 this.scrollBar = new PerfectScrollbar(container, this.scrollOptions);
                 this.disableScrollBarFocus(container);
-                this.toDisposeOnDetach.push(addEventListener(container, <any>'ps-y-reach-end', () => { this.onScrollYReachEndEmitter.fire(undefined); }));
-                this.toDisposeOnDetach.push(addEventListener(container, <any>'ps-scroll-up', () => { this.onScrollUpEmitter.fire(undefined); }));
+                this.toDisposeOnDetach.push(addEventListener(container, <any> 'ps-y-reach-end', () => { this.onScrollYReachEndEmitter.fire(undefined); }));
+                this.toDisposeOnDetach.push(addEventListener(container, <any> 'ps-scroll-up', () => { this.onScrollUpEmitter.fire(undefined); }));
                 this.toDisposeOnDetach.push(Disposable.create(() => {
                     if (this.scrollBar) {
                         this.scrollBar.destroy();

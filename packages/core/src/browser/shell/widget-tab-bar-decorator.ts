@@ -58,6 +58,15 @@ export class WidgetTabBarDecoratorService implements Disposable {
      * @returns an array of its decoration data.
      */
     getDecorations(title: Title<Widget>): WidgetDecoration.Data[] {
-        return [{ badge: 7 }];
+        console.log('widget label: ' + title.label);
+
+        if (title.label === 'Source Control: Git' || title.label === 'Problems') {
+            const decorators = this.contributions.getContributions();
+            // for (const decorator of decorators) {
+            // console.log('decorator id: ' + decorator.id);
+            return [{ badge: 99 }];
+        }
+
+        return [];
     }
 }
