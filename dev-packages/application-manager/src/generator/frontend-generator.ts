@@ -140,13 +140,6 @@ const { resolve } = require('path');
 const { app } = require('electron');
 
 const config = ${this.prettyStringify(this.pck.props.frontend.config)};
-const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
-
-if (isSingleInstance && !app.requestSingleInstanceLock()) {
-    // There is another instance running, exit now. The other instance will request focus.
-    app.quit();
-    return;
-}
 
 const container = new Container();
 container.load(electronMainApplicationModule);

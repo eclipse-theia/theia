@@ -174,6 +174,7 @@ export class ElectronMainApplication {
 
     async start(config: FrontendApplicationConfig): Promise<void> {
         this._config = config;
+        await this.checkSingleInstance();
         this.hookApplicationEvents();
         const port = await this.startBackend();
         this.backendPort.resolve(port);
@@ -185,6 +186,15 @@ export class ElectronMainApplication {
             argv: this.processArgv.getProcessArgvWithoutBin(process.argv),
             cwd: process.cwd()
         });
+    }
+
+    protected async checkSingleInstance(): Promise<void> {
+        const gotLock = app.requestSingleInstanceLock();
+
+        if (!gotLock) {
+            // There is another instance running, exit now. The other instance will open a new window.
+            app.quit();
+        }
     }
 
     protected async launch(params: ElectronMainExecutionParams): Promise<void> {
