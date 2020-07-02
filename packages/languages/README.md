@@ -1,3 +1,5 @@
+> Deprecated since 1.4.0 - use VS Code extensions to contribute language smartness: https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+
 <div align='center'>
 
 <br />

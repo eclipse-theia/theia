@@ -31,6 +31,10 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { InitializeParams } from 'monaco-languageclient';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
+/**
+ * @deprecated since 1.4.0 - use VS Code extensions to contribute language smartness:
+ * https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+ */
 export const LanguageClientContribution = Symbol('LanguageClientContribution');
 export interface LanguageClientContribution extends LanguageContribution {
     readonly running: boolean;
@@ -41,6 +45,10 @@ export interface LanguageClientContribution extends LanguageContribution {
     restart(): void;
 }
 
+/**
+ * @deprecated since 1.4.0 - use VS Code extensions to contribute language smartness:
+ * https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+ */
 @injectable()
 export abstract class BaseLanguageClientContribution implements LanguageClientContribution {
 
