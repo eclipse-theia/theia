@@ -3,6 +3,7 @@
 ## v1.4.0
 
 - [core] fixed handling of environment variables on Windows [#7973](https://github.com/eclipse-theia/theia/pull/7973)
+- [plugin-ext] fix file-icon incorrectly displays name icon with a dot in name [#7680](https://github.com/eclipse-theia/theia/pull/7680)
 
 ## v1.3.0
 
