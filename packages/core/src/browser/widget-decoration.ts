@@ -34,6 +34,7 @@ export namespace WidgetDecoration {
         export const BOTTOM_RIGHT_SIDEBAR_CLASS = 'theia-bottom-right-sidebar';
         export const BOTTOM_LEFT_CLASS = 'theia-bottom-left';
         export const TOP_LEFT_CLASS = 'theia-top-left';
+        export const BADGE_DECORATOR_SIDEBAR_CLASS = 'theia-badge-decorator-sidebar';
     }
     /**
      * For the sake of simplicity, we have merged the `font-style`, `font-weight`, and the `text-decoration` together.
@@ -330,6 +331,10 @@ export namespace WidgetDecoration {
          * An array of ranges to highlight the caption.
          */
         readonly highlight?: CaptionHighlight;
+        /**
+         * A notification badge for widgets.
+         */
+        readonly badge?: number;
     }
     export namespace Data {
         /**
