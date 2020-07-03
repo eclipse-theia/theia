@@ -44,6 +44,11 @@ export const debugPreferencesSchema: PreferenceSchema = {
             type: 'boolean',
             default: false,
             description: 'Show variable values inline in editor while debugging.'
+        },
+        'debug.showInStatusBar': {
+            enum: ['never', 'always', 'onFirstSessionStart'],
+            description: 'Controls when the debug status bar should be visible.',
+            default: 'onFirstSessionStart'
         }
     }
 };
@@ -54,6 +59,7 @@ export class DebugConfiguration {
     'debug.openDebug': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart' | 'openOnDebugBreak';
     'debug.internalConsoleOptions': 'neverOpen' | 'openOnSessionStart' | 'openOnFirstSessionStart';
     'debug.inlineValues': boolean;
+    'debug.showInStatusBar': 'never' | 'always' | 'onFirstSessionStart';
 }
 
 export const DebugPreferences = Symbol('DebugPreferences');
