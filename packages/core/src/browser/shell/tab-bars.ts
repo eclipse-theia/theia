@@ -232,7 +232,11 @@ export class TabBarRenderer extends TabBar.Renderer {
     renderBadge(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
         const badge = this.getDecorationData(data.title, 'badge');
         if (badge && badge.length > 0) {
-            return h.div({ className: 'theia-badge-decorator-sidebar' }, `${badge}`);
+            if (isInSidePanel) {
+                return h.div({ className: 'theia-badge-decorator-sidebar' }, `${badge}`);
+            } else if (data.title.label === 'Problems') {
+                return h.div({ className: 'theia-badge-decorator-bottom-panel' }, `${badge}`);
+            }
         }
         return h.div({});
     }

@@ -14,12 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { WidgetTabBarDecorator } from '@theia/core/lib/browser/shell/widget-tab-bar-decorator';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 import { Title, Widget } from '@theia/core/lib/browser';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { SCM_VIEW_CONTAINER_ID } from '../scm-contribution';
+import { ScmService } from '../scm-service';
 
 @injectable()
 export class ScmTabBarDecorator implements WidgetTabBarDecorator {
@@ -27,10 +28,38 @@ export class ScmTabBarDecorator implements WidgetTabBarDecorator {
     readonly id = 'theia-scm-tabbar-decorator';
     protected readonly emitter = new Emitter<void>();
 
+    @inject(ScmService)
+    protected readonly scmService: ScmService;
+
+    @postConstruct()
+    protected init(): void {
+        const repository = this.scmService.selectedRepository;
+        this.scmService.onDidChangeSelectedRepository(() => this.fireDidChangeDecorations());
+        if (repository) {
+            repository.input.onDidChange(() => this.updateBadgeCount());
+        }
+    }
+
     decorate(title: Title<Widget>): WidgetDecoration.Data[] {
-        return title.owner.id === SCM_VIEW_CONTAINER_ID
-            ? [{ badge: 7 }]
-            : [];
+        if (title.owner.id === SCM_VIEW_CONTAINER_ID) {
+            const changes: number = this.updateBadgeCount();
+            return changes > 0 ? [{ badge: changes }] : [];
+        } else {
+            return [];
+        }
+    }
+
+    updateBadgeCount(): number {
+        const repository = this.scmService.selectedRepository;
+        let changes: number = 0;
+        if (repository) {
+            repository.provider.groups.map(group => {
+                if (group.id === 'index' || group.id === 'workingTree') {
+                    changes += group.resources.length;
+                }
+            });
+        }
+        return changes;
     }
 
     get onDidChangeDecorations(): Event<void> {
