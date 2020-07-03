@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import {
     QuickOpenContribution, QuickOpenHandler, QuickOpenModel,
@@ -27,6 +27,8 @@ import { DebugSessionOptions } from './debug-session-options';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
+import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
+import { DebugPreferences } from './debug-preferences';
 
 @injectable()
 export class DebugPrefixConfiguration implements CommandContribution, CommandHandler, QuickOpenContribution, QuickOpenHandler, QuickOpenModel {
@@ -36,6 +38,9 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
 
     @inject(DebugSessionManager)
     protected readonly debugSessionManager: DebugSessionManager;
+
+    @inject(DebugPreferences)
+    protected readonly preference: DebugPreferences;
 
     @inject(DebugConfigurationManager)
     protected readonly debugConfigurationManager: DebugConfigurationManager;
@@ -49,14 +54,33 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
+    @inject(StatusBar)
+    protected readonly statusBar: StatusBar;
+
     readonly prefix = 'debug ';
     readonly description = 'Debug Configuration';
+    readonly statusBarId = 'select-run-debug-statusbar-item';
 
     private readonly command: Command = {
         id: 'select.debug.configuration',
         category: 'Debug',
         label: 'Select and Start Debugging'
     };
+
+    @postConstruct()
+    protected initialize(): void {
+        this.handleDebugStatusBarVisibility();
+        this.preference.onPreferenceChanged(e => {
+            if (e.preferenceName === 'debug.showInStatusBar') {
+                this.handleDebugStatusBarVisibility();
+            }
+        });
+        const toDisposeOnStart = this.debugSessionManager.onDidStartDebugSession(() => {
+            toDisposeOnStart.dispose();
+            this.handleDebugStatusBarVisibility(true);
+            this.debugConfigurationManager.onDidChange(() => this.handleDebugStatusBarVisibility(true));
+        });
+    }
 
     execute(): void {
         this.prefixQuickOpenService.open(this.prefix);
@@ -118,5 +142,41 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     protected runConfiguration(configuration: DebugSessionOptions): void {
         this.debugConfigurationManager.current = { ...configuration };
         this.commandRegistry.executeCommand(DebugCommands.START.id);
+    }
+
+    /**
+     * Handle the visibility of the debug status bar.
+     * @param event the preference change event.
+     */
+    protected handleDebugStatusBarVisibility(started?: boolean): void {
+        const showInStatusBar = this.preference['debug.showInStatusBar'];
+        if (showInStatusBar === 'never') {
+            return this.removeDebugStatusBar();
+        } else if (showInStatusBar === 'always' || started) {
+            return this.updateStatusBar();
+        }
+    }
+
+    /**
+     * Update the debug status bar element based on the current configuration.
+     */
+    protected updateStatusBar(): void {
+        const text: string = this.debugConfigurationManager.current
+            ? this.debugConfigurationManager.current.configuration.name
+            : '';
+        const icon = '$(play)';
+        this.statusBar.setElement(this.statusBarId, {
+            alignment: StatusBarAlignment.LEFT,
+            text: text.length ? `${icon} ${text}` : icon,
+            tooltip: this.command.label,
+            command: this.command.id,
+        });
+    }
+
+    /**
+     * Remove the debug status bar element.
+     */
+    protected removeDebugStatusBar(): void {
+        this.statusBar.removeElement(this.statusBarId);
     }
 }
