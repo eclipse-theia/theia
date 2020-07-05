@@ -19,6 +19,10 @@
 * These API are NOT stable and subject to change. Use it on own risk.
 */
 declare module '@theia/plugin' {
+    /**
+     * @deprecated since 1.4.0 - in order to remove monaco-languageclient, use VS Code extensions to contribute language smartness:
+     * https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+     */
     export namespace languageServer {
         /**
          * Registers new language server.
@@ -36,8 +40,11 @@ declare module '@theia/plugin' {
     }
 
     /**
-    * The language contribution interface defines an information about language server which should be registered.
-    */
+     * The language contribution interface defines an information about language server which should be registered.
+     *
+     * @deprecated since 1.4.0 - in order to remove monaco-languageclient, use VS Code extensions to contribute language smartness:
+     * https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+     */
     export interface LanguageServerInfo {
         /**
          * Language server's id.

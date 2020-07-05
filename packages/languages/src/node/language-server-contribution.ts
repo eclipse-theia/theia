@@ -43,7 +43,7 @@ export interface LanguageServerStartOptions {
 }
 
 /**
- * @deprecated since 1.4.0 - use VS Code extensions to contribute language smartness:
+ * @deprecated since 1.4.0 - in order to remove monaco-languageclient, use VS Code extensions to contribute language smartness:
  * https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
  */
 export const LanguageServerContribution = Symbol('LanguageServerContribution');
@@ -52,7 +52,7 @@ export interface LanguageServerContribution extends LanguageContribution {
 }
 
 /**
- * @deprecated since 1.4.0 - use VS Code extensions to contribute language smartness:
+ * @deprecated since 1.4.0 - in order to remove monaco-languageclient, use VS Code extensions to contribute language smartness:
  * https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
  */
 @injectable()
