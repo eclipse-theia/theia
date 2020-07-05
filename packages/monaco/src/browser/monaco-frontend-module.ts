@@ -24,19 +24,16 @@ import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import {
     QuickOpenService, FrontendApplicationContribution, KeybindingContribution,
-    PreferenceService, PreferenceSchemaProvider, createPreferenceProxy
+    PreferenceService, PreferenceSchemaProvider, createPreferenceProxy, QuickOpenContribution, PreferenceChanges
 } from '@theia/core/lib/browser';
-import { Languages, Workspace } from '@theia/languages/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import { MonacoEditorProvider, MonacoEditorFactory } from './monaco-editor-provider';
 import { MonacoEditorMenuContribution } from './monaco-menu';
 import { MonacoEditorCommandHandlers } from './monaco-command';
 import { MonacoKeybindingContribution } from './monaco-keybinding';
 import { MonacoLanguages } from './monaco-languages';
 import { MonacoWorkspace } from './monaco-workspace';
-import { MonacoConfigurations } from './monaco-configurations';
 import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService, MonacoEditorModelFactory } from './monaco-text-model-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
@@ -49,8 +46,6 @@ import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { MonacoStrictEditorTextFocusContext } from './monaco-keybinding-contexts';
 import { MonacoFrontendApplicationContribution } from './monaco-frontend-application-contribution';
 import MonacoTextmateModuleBinder from './textmate/monaco-textmate-frontend-bindings';
-import { MonacoSemanticHighlightingService } from './monaco-semantic-highlighting-service';
-import { SemanticHighlightingService } from '@theia/editor/lib/browser/semantic-highlight/semantic-highlighting-service';
 import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 import { MonacoOutlineDecorator } from './monaco-outline-decorator';
 import { OutlineTreeDecorator } from '@theia/outline-view/lib/browser/outline-decorator-service';
@@ -64,9 +59,11 @@ import { MonacoColorRegistry } from './monaco-color-registry';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { MonacoThemingService } from './monaco-theming-service';
 import { bindContributionProvider } from '@theia/core';
+import { WorkspaceSymbolCommand } from './workspace-symbol-command';
+import { LanguageService } from '@theia/core/lib/browser/language-service';
+import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 
-decorate(injectable(), MonacoToProtocolConverter);
-decorate(injectable(), ProtocolToMonacoConverter);
 decorate(injectable(), monaco.contextKeyService.ContextKeyService);
 
 MonacoThemingService.init();
@@ -84,11 +81,13 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(ProtocolToMonacoConverter).toSelf().inSingletonScope();
 
     bind(MonacoLanguages).toSelf().inSingletonScope();
-    bind(Languages).toService(MonacoLanguages);
+    rebind(LanguageService).toService(MonacoLanguages);
+    bind(WorkspaceSymbolCommand).toSelf().inSingletonScope();
+    for (const identifier of [CommandContribution, KeybindingContribution, QuickOpenContribution]) {
+        bind(identifier).toService(WorkspaceSymbolCommand);
+    }
 
-    bind(MonacoConfigurations).toSelf().inSingletonScope();
     bind(MonacoWorkspace).toSelf().inSingletonScope();
-    bind(Workspace).toService(MonacoWorkspace);
 
     bind(MonacoConfigurationService).toDynamicValue(({ container }) =>
         createMonacoConfigurationService(container)
@@ -133,9 +132,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     MonacoTextmateModuleBinder(bind, unbind, isBound, rebind);
 
-    bind(MonacoSemanticHighlightingService).toSelf().inSingletonScope();
-    rebind(SemanticHighlightingService).to(MonacoSemanticHighlightingService).inSingletonScope();
-
     bind(MonacoOutlineDecorator).toSelf().inSingletonScope();
     bind(OutlineTreeDecorator).toService(MonacoOutlineDecorator);
 
@@ -148,7 +144,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');
 export function createMonacoConfigurationService(container: interfaces.Container): monaco.services.IConfigurationService {
-    const configurations = container.get(MonacoConfigurations);
     const preferences = container.get<PreferenceService>(PreferenceService);
     const preferenceSchemaProvider = container.get<PreferenceSchemaProvider>(PreferenceSchemaProvider);
     const service = monaco.services.StaticServices.configurationService.get();
@@ -177,10 +172,29 @@ export function createMonacoConfigurationService(container: interfaces.Container
             initFromConfiguration();
         }
     });
-    configurations.onDidChangeConfiguration(e => {
-        if (e.affectedSections) {
+    const parseSections = (changes?: PreferenceChanges) => {
+        if (!changes) {
+            return undefined;
+        }
+        const sections = [];
+        for (let key of Object.keys(changes)) {
+            const hasOverride = key.startsWith('[');
+            while (key) {
+                sections.push(key);
+                if (hasOverride && key.indexOf('.') !== -1) {
+                    sections.push(key.substr(key.indexOf('.')));
+                }
+                const index = key.lastIndexOf('.');
+                key = key.substring(0, index);
+            }
+        }
+        return sections;
+    };
+    preferences.onPreferencesChanged((changes?: PreferenceChanges) => {
+        const affectedSections = parseSections(changes);
+        if (affectedSections) {
             const event = new monaco.services.ConfigurationChangeEvent();
-            event.change(e.affectedSections);
+            event.change(affectedSections);
             service._onDidChangeConfiguration.fire(event);
         }
     });

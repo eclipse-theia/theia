@@ -14,9 +14,6 @@
     },
     {
       "path": "../editor/compile.tsconfig.json"
-    },
-    {
-      "path": "../languages/compile.tsconfig.json"
     }
   ]
 }

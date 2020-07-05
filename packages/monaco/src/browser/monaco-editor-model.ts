@@ -16,7 +16,6 @@
 
 import { Position } from 'vscode-languageserver-types';
 import { TextDocumentSaveReason, TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import { TextEditorDocument } from '@theia/editor/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
@@ -24,6 +23,8 @@ import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/comm
 import { Resource, ResourceError, ResourceVersion } from '@theia/core/lib/common/resource';
 import { Range } from 'vscode-languageserver-types';
 import { Saveable } from '@theia/core/lib/browser/saveable';
+import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 
 export {
     TextDocumentSaveReason
@@ -296,8 +297,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             return;
         }
 
-        const range = this.m2p.asRange(this.model.getFullModelRange());
-        this.applyEdits([this.p2m.asTextEdit({ range, newText }) as monaco.editor.IIdentifiedSingleEditOperation], {
+        const range = this.model.getFullModelRange();
+        this.applyEdits([{ range, text: newText }], {
             ignoreDirty: true,
             ignoreContentChanges: true
         });

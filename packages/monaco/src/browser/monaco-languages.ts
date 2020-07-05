@@ -14,40 +14,37 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, decorate } from 'inversify';
-import {
-    MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter,
-    MonacoToProtocolConverter,
-    DocumentSelector,
-    SignatureHelpProvider,
-    MonacoModelIdentifier,
-    CodeActionProvider,
-    CodeLensProvider
-} from 'monaco-languageclient';
-import { Languages, Diagnostic, DiagnosticCollection, Language, WorkspaceSymbolProvider } from '@theia/languages/lib/browser';
+import { Diagnostic } from 'vscode-languageserver-types';
+import { injectable, inject, postConstruct } from 'inversify';
 import { ProblemManager } from '@theia/markers/lib/browser/problem/problem-manager';
 import URI from '@theia/core/lib/common/uri';
 import { Mutable } from '@theia/core/lib/common/types';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { MonacoDiagnosticCollection } from 'monaco-languageclient/lib/monaco-diagnostic-collection';
+import { MaybePromise } from '@theia/core/lib/common/types';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { WorkspaceSymbolParams } from 'vscode-languageserver-protocol';
+import { SymbolInformation } from 'vscode-languageserver-types';
+import { Language, LanguageService } from '@theia/core/lib/browser/language-service';
+import { MonacoDiagnosticCollection } from './monaco-diagnostic-collection';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 
-decorate(injectable(), BaseMonacoLanguages);
-decorate(inject(ProtocolToMonacoConverter), BaseMonacoLanguages, 0);
-decorate(inject(MonacoToProtocolConverter), BaseMonacoLanguages, 1);
+export interface WorkspaceSymbolProvider {
+    provideWorkspaceSymbols(params: WorkspaceSymbolParams, token: CancellationToken): MaybePromise<SymbolInformation[] | undefined>;
+    resolveWorkspaceSymbol?(symbol: SymbolInformation, token: CancellationToken): Thenable<SymbolInformation | undefined>
+}
 
 @injectable()
-export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
+export class MonacoLanguages implements LanguageService {
 
     readonly workspaceSymbolProviders: WorkspaceSymbolProvider[] = [];
 
     protected readonly makers = new Map<string, MonacoDiagnosticCollection>();
 
-    constructor( // eslint-disable-next-line @typescript-eslint/indent
-        @inject(ProtocolToMonacoConverter) p2m: ProtocolToMonacoConverter,
-        @inject(MonacoToProtocolConverter) m2p: MonacoToProtocolConverter,
-        @inject(ProblemManager) protected readonly problemManager: ProblemManager
-    ) {
-        super(p2m, m2p);
+    @inject(ProblemManager) protected readonly problemManager: ProblemManager;
+    @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter;
+
+    @postConstruct()
+    protected init(): void {
         for (const uri of this.problemManager.getUris()) {
             this.updateMarkers(new URI(uri));
         }
@@ -75,22 +72,6 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
                 collection.set(uriString, []);
             }
         }
-    }
-
-    createDiagnosticCollection(name?: string): DiagnosticCollection {
-        const owner = name || 'default';
-        const uris: string[] = [];
-        return {
-            set: (uri, diagnostics) => {
-                this.problemManager.setMarkers(new URI(uri), owner, diagnostics);
-                uris.push(uri);
-            },
-            dispose: () => {
-                for (const uri of uris) {
-                    this.problemManager.setMarkers(new URI(uri), owner, []);
-                }
-            }
-        };
     }
 
     registerWorkspaceSymbolProvider(provider: WorkspaceSymbolProvider): Disposable {
@@ -141,70 +122,6 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
             }
         }
         return languages;
-    }
-
-    protected createSignatureHelpProvider(selector: DocumentSelector, provider: SignatureHelpProvider, ...triggerCharacters: string[]): monaco.languages.SignatureHelpProvider {
-        const signatureHelpTriggerCharacters = [...(provider.triggerCharacters || triggerCharacters || [])];
-        const signatureHelpRetriggerCharacters = [...(provider.retriggerCharacters || [])];
-        return {
-            signatureHelpTriggerCharacters,
-            signatureHelpRetriggerCharacters,
-            provideSignatureHelp: async (model, position, token) => {
-                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
-                    return undefined;
-                }
-                const params = this.m2p.asTextDocumentPositionParams(model, position);
-                const help = await provider.provideSignatureHelp(params, token, undefined! /* not used by LC */);
-                if (!help) {
-                    return undefined;
-                }
-                return this.p2m.asSignatureHelpResult(help);
-            }
-        };
-    }
-
-    protected createCodeActionProvider(selector: DocumentSelector, provider: CodeActionProvider): monaco.languages.CodeActionProvider {
-        return {
-            provideCodeActions: async (model, range, context, token) => {
-                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
-                    return undefined!;
-                }
-                const params = this.m2p.asCodeActionParams(model, range, context);
-                const actions = await provider.provideCodeActions(params, token);
-                if (!actions) {
-                    return undefined!;
-                }
-                return this.p2m.asCodeActionList(actions);
-            }
-        };
-    }
-
-    protected createCodeLensProvider(selector: DocumentSelector, provider: CodeLensProvider): monaco.languages.CodeLensProvider {
-        return {
-            provideCodeLenses: async (model, token) => {
-                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
-                    return undefined;
-                }
-                const params = this.m2p.asCodeLensParams(model);
-                const lenses = await provider.provideCodeLenses(params, token);
-                if (!lenses) {
-                    return undefined;
-                }
-                return this.p2m.asCodeLensList(lenses);
-            },
-            resolveCodeLens: provider.resolveCodeLens ? async (model, codeLens, token) => {
-                if (!this.matchModel(selector, MonacoModelIdentifier.fromModel(model))) {
-                    return codeLens;
-                }
-                const protocolCodeLens = this.m2p.asCodeLens(codeLens);
-                const result = await provider.resolveCodeLens!(protocolCodeLens, token);
-                if (result) {
-                    const resolvedCodeLens = this.p2m.asCodeLens(result);
-                    Object.assign(codeLens, resolvedCodeLens);
-                }
-                return codeLens;
-            } : ((_, codeLens, __) => codeLens)
-        };
     }
 
 }

@@ -135,10 +135,9 @@ import { fromDocumentSelector, pluginToPluginInfo } from './type-converters';
 import { DialogsExtImpl } from './dialogs';
 import { NotificationExtImpl } from './notification';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { score } from '@theia/languages/lib/common/language-selector';
+import { score } from '@theia/callhierarchy/lib/common/language-selector';
 import { MarkdownString } from './markdown-string';
 import { TreeViewsExtImpl } from './tree/tree-views';
-import { LanguagesContributionExtImpl } from './languages-contribution-ext';
 import { ConnectionExtImpl } from './connection-ext';
 import { TasksExtImpl } from './tasks/tasks';
 import { DebugExtImpl } from './node/debug/debug';
@@ -178,7 +177,6 @@ export function createAPIFactory(
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
     const tasksExt = rpc.set(MAIN_RPC_CONTEXT.TASKS_EXT, new TasksExtImpl(rpc));
     const connectionExt = rpc.set(MAIN_RPC_CONTEXT.CONNECTION_EXT, new ConnectionExtImpl(rpc));
-    const languagesContributionExt = rpc.set(MAIN_RPC_CONTEXT.LANGUAGES_CONTRIBUTION_EXT, new LanguagesContributionExtImpl(rpc, connectionExt));
     const fileSystemExt = rpc.set(MAIN_RPC_CONTEXT.FILE_SYSTEM_EXT, new FileSystemExtImpl(rpc));
     const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry));
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
@@ -540,15 +538,6 @@ export function createAPIFactory(
             get onDidChangeLogLevel(): theia.Event<theia.LogLevel> { return onDidChangeLogLevel.event; }
         });
 
-        const languageServer: typeof theia.languageServer = {
-            registerLanguageServerProvider(languageServerInfo: theia.LanguageServerInfo): Disposable {
-                return languagesContributionExt.registerLanguageServerProvider(languageServerInfo);
-            },
-            stop(id: string): void {
-                languagesContributionExt.stop(id);
-            }
-        };
-
         const languages: typeof theia.languages = {
             getLanguages(): PromiseLike<string[]> {
                 return languagesExt.getLanguages();
@@ -795,7 +784,6 @@ export function createAPIFactory(
             window,
             workspace,
             env,
-            languageServer,
             languages,
             plugins,
             debug,

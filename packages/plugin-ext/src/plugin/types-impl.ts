@@ -27,7 +27,7 @@ import * as theia from '@theia/plugin';
 import * as crypto from 'crypto';
 import { URI } from 'vscode-uri';
 import { relative } from '../common/paths-util';
-import { startsWithIgnoreCase } from '@theia/languages/lib/common/language-selector/strings';
+import { startsWithIgnoreCase } from '@theia/callhierarchy/lib/common/strings';
 import { MarkdownString, isMarkdownString } from './markdown-string';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
 

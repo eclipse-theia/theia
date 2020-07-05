@@ -25,9 +25,6 @@
       "path": "../filesystem/compile.tsconfig.json"
     },
     {
-      "path": "../languages/compile.tsconfig.json"
-    },
-    {
       "path": "../markers/compile.tsconfig.json"
     },
     {

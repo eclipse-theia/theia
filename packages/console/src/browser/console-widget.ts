@@ -22,7 +22,6 @@ import { BaseWidget, PanelLayout, Widget, Message, MessageLoop, StatefulWidget, 
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { ProtocolToMonacoConverter, MonacoToProtocolConverter } from 'monaco-languageclient/lib';
 import { ConsoleHistory } from './console-history';
 import { ConsoleContentWidget } from './console-content-widget';
 import { ConsoleSession } from './console-session';
@@ -61,12 +60,6 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     @inject(ConsoleOptions)
     protected readonly options: ConsoleOptions;
-
-    @inject(MonacoToProtocolConverter)
-    protected readonly m2p: MonacoToProtocolConverter;
-
-    @inject(ProtocolToMonacoConverter)
-    protected readonly p2m: ProtocolToMonacoConverter;
 
     @inject(ConsoleContentWidget)
     readonly content: ConsoleContentWidget;

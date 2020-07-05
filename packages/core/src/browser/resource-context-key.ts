@@ -18,9 +18,13 @@ import { injectable, inject, postConstruct } from 'inversify';
 import URI from '../common/uri';
 import { URI as Uri } from 'vscode-uri';
 import { ContextKeyService, ContextKey } from './context-key-service';
+import { LanguageService } from './language-service';
 
 @injectable()
 export class ResourceContextKey {
+
+    @inject(LanguageService)
+    protected readonly languages: LanguageService;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -53,8 +57,14 @@ export class ResourceContextKey {
         this.resourceLangId.set(resourceUri && this.getLanguageId(resourceUri));
     }
 
-    /** should be implemented by subclasses */
     protected getLanguageId(uri: URI | undefined): string | undefined {
+        if (uri) {
+            for (const language of this.languages.languages) {
+                if (language.extensions.has(uri.path.ext)) {
+                    return language.id;
+                }
+            }
+        }
         return undefined;
     }
 

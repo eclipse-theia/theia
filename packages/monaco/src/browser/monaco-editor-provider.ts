@@ -20,7 +20,7 @@ import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } 
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable, named } from 'inversify';
 import { DisposableCollection, deepClone, Disposable, } from '@theia/core/lib/common';
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter, TextDocumentSaveReason } from 'monaco-languageclient';
+import { TextDocumentSaveReason } from 'vscode-languageserver-protocol';
 import { MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoDiffEditor } from './monaco-diff-editor';
@@ -39,6 +39,8 @@ import { OS, ContributionProvider } from '@theia/core';
 import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
+import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {

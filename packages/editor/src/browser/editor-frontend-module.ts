@@ -33,7 +33,6 @@ import { NavigationLocationUpdater } from './navigation/navigation-location-upda
 import { NavigationLocationService } from './navigation/navigation-location-service';
 import { NavigationLocationSimilarity } from './navigation/navigation-location-similarity';
 import { EditorVariableContribution } from './editor-variable-contribution';
-import { SemanticHighlightingService } from './semantic-highlight/semantic-highlighting-service';
 import { EditorQuickOpenService } from './editor-quick-open-service';
 
 export default new ContainerModule(bind => {
@@ -68,8 +67,6 @@ export default new ContainerModule(bind => {
     bind(NavigationLocationSimilarity).toSelf().inSingletonScope();
 
     bind(VariableContribution).to(EditorVariableContribution).inSingletonScope();
-
-    bind(SemanticHighlightingService).toSelf().inSingletonScope();
 
     [CommandContribution, KeybindingContribution, QuickOpenContribution].forEach(serviceIdentifier => {
         bind(serviceIdentifier).toService(EditorContribution);

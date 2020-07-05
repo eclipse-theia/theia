@@ -8,7 +8,6 @@
     "@theia/core": "^1.4.0",
     "@theia/editor": "^1.4.0",
     "@theia/filesystem": "^1.4.0",
-    "@theia/languages": "^1.4.0",
     "@theia/markers": "^1.4.0",
     "@theia/monaco": "^1.4.0",
     "@theia/output": "^1.4.0",

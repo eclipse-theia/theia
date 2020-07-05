@@ -19,33 +19,27 @@ import { EditorManager, TextEditor, EditorDecoration, EditorDecorationOptions, R
 import { GitFileBlame, Commit } from '../../common';
 import { Disposable, DisposableCollection } from '@theia/core';
 import * as moment from 'moment';
-import { HoverProvider, TextDocumentPositionParams, Hover, CancellationToken, Languages } from '@theia/languages/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()
-export class BlameDecorator implements HoverProvider {
+export class BlameDecorator implements monaco.languages.HoverProvider {
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
-    @inject(Languages)
-    protected readonly languages: Languages;
-
-    constructor(
-    ) { }
-
     protected registerHoverProvider(uri: string): Disposable {
-        if (this.languages.registerHoverProvider) {
-            return this.languages.registerHoverProvider([{ pattern: new URI(uri).path.toString() }], this);
-        }
-        return Disposable.NULL;
+        return monaco.languages.registerHoverProvider([{ pattern: new URI(uri).path.toString() }], this);
     }
 
-    protected emptyHover: Hover = { contents: '' };
+    protected emptyHover: monaco.languages.Hover = {
+        contents: [{
+            value: ''
+        }]
+    };
 
-    async provideHover(params: TextDocumentPositionParams, token: CancellationToken): Promise<Hover> {
-        const { line } = params.position;
-        const uri = params.textDocument.uri;
+    async provideHover(model: monaco.editor.ITextModel, position: monaco.Position, token: monaco.CancellationToken): Promise<monaco.languages.Hover> {
+        const line = position.lineNumber - 1;
+        const uri = model.uri.toString();
         const applications = this.appliedDecorations.get(uri);
         if (!applications) {
             return this.emptyHover;
@@ -63,11 +57,11 @@ export class BlameDecorator implements HoverProvider {
         const date = new Date(commit.author.timestamp);
         let commitMessage = commit.summary + '\n' + (commit.body || '');
         commitMessage = commitMessage.replace(/[`\>\#\*\_\-\+]/g, '\\$&').replace(/\n/g, '  \n');
-        const message = `${commit.sha}\n \n ${commit.author.name}, ${date.toString()}\n \n> ${commitMessage}`;
+        const value = `${commit.sha}\n \n ${commit.author.name}, ${date.toString()}\n \n> ${commitMessage}`;
 
         const hover = {
-            contents: [message],
-            range: Range.create(Position.create(line, 0), Position.create(line, 10 ^ 10))
+            contents: [{ value }],
+            range: monaco.Range.fromPositions(new monaco.Position(position.lineNumber, 1), new monaco.Position(position.lineNumber, 10 ^ 10))
         };
         return hover;
     }

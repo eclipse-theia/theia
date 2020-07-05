@@ -14,19 +14,19 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import throttle = require('lodash.throttle');
 import { inject, injectable } from 'inversify';
 import { Resource, MaybePromise } from '@theia/core';
 import { Navigatable } from '@theia/core/lib/browser/navigatable';
 import { BaseWidget, Message, addEventListener } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Emitter } from '@theia/core/lib/common';
-import { Workspace, Location, Range } from '@theia/languages/lib/browser';
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { EditorPreferences } from '@theia/editor/lib/browser';
-
-import throttle = require('lodash.throttle');
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
+import { Range, Location } from 'vscode-languageserver-types';
 
 export const PREVIEW_WIDGET_CLASS = 'theia-preview-widget';
 
@@ -54,7 +54,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         @inject(PreviewWidgetOptions) protected readonly options: PreviewWidgetOptions,
         @inject(PreviewHandlerProvider) protected readonly previewHandlerProvider: PreviewHandlerProvider,
         @inject(ThemeService) protected readonly themeService: ThemeService,
-        @inject(Workspace) protected readonly workspace: Workspace,
+        @inject(MonacoWorkspace) protected readonly workspace: MonacoWorkspace,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
     ) {
         super();
@@ -97,7 +97,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
             }
         };
         this.toDispose.push(this.workspace.onDidOpenTextDocument(document => updateIfAffected(document.uri)));
-        this.toDispose.push(this.workspace.onDidChangeTextDocument(params => updateIfAffected(params.textDocument.uri)));
+        this.toDispose.push(this.workspace.onDidChangeTextDocument(params => updateIfAffected(params.model.uri)));
         this.toDispose.push(this.workspace.onDidCloseTextDocument(document => updateIfAffected(document.uri)));
         this.toDispose.push(this.themeService.onThemeChange(() => this.update()));
         this.firstUpdate = () => {

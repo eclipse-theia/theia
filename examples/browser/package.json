@@ -26,7 +26,6 @@
     "@theia/getting-started": "^1.4.0",
     "@theia/git": "^1.4.0",
     "@theia/keymaps": "^1.4.0",
-    "@theia/languages": "^1.4.0",
     "@theia/markers": "^1.4.0",
     "@theia/messages": "^1.4.0",
     "@theia/metrics": "^1.4.0",
