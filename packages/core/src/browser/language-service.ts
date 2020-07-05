@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2020 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,9 +14,30 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ILanguageClient } from './language-client-services';
+import { injectable } from 'inversify';
 
-export const LanguageClientProvider = Symbol('LanguageClientProvider');
-export interface LanguageClientProvider {
-    getLanguageClient(languageId: string): Promise<ILanguageClient | undefined>
+export interface Language {
+    readonly id: string;
+    readonly name: string;
+    readonly extensions: Set<string>;
+    readonly filenames: Set<string>;
+}
+
+@injectable()
+export class LanguageService {
+
+    /**
+     * It should be implemented by an extension, e.g. by the monaco extension.
+     */
+    get languages(): Language[] {
+        return [];
+    }
+
+    /**
+     * It should be implemented by an extension, e.g. by the monaco extension.
+     */
+    getLanguage(languageId: string): Language | undefined {
+        return undefined;
+    }
+
 }

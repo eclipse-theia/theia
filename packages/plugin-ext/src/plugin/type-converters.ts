@@ -23,7 +23,7 @@ import {
     ResourceTextEditDto, Selection, TaskDto, WorkspaceEditDto
 } from '../common/plugin-api-rpc';
 import * as model from '../common/plugin-api-rpc-model';
-import { LanguageFilter, LanguageSelector, RelativePattern } from '@theia/languages/lib/common/language-selector';
+import { LanguageFilter, LanguageSelector, RelativePattern } from '@theia/callhierarchy/lib/common/language-selector';
 import { isMarkdownString, MarkdownString } from './markdown-string';
 import { Item } from './quick-open';
 import * as types from './types-impl';

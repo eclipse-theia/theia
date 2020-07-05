@@ -17,15 +17,14 @@
 import { inject, injectable } from 'inversify';
 import { TreeNode } from '@theia/core/lib/browser/tree/tree';
 import { TreeModelImpl } from '@theia/core/lib/browser/tree/tree-model';
-import { TypeHierarchyDirection, TypeHierarchyParams } from '@theia/languages/lib/browser/typehierarchy/typehierarchy-protocol';
-import { TypeHierarchyServiceProvider } from '../typehierarchy-service';
+import { TypeHierarchyRegistry, TypeHierarchyDirection, TypeHierarchyParams } from '../typehierarchy-provider';
 import { TypeHierarchyTree } from './typehierarchy-tree';
 
 @injectable()
 export class TypeHierarchyTreeModel extends TreeModelImpl {
 
-    @inject(TypeHierarchyServiceProvider)
-    protected readonly typeHierarchyServiceProvider: TypeHierarchyServiceProvider;
+    @inject(TypeHierarchyRegistry)
+    protected readonly registry: TypeHierarchyRegistry;
 
     protected doOpenNode(node: TreeNode): void {
         // do nothing (in particular do not expand the node)
@@ -36,11 +35,11 @@ export class TypeHierarchyTreeModel extends TreeModelImpl {
      */
     async initialize(options: TypeHierarchyTree.InitOptions): Promise<void> {
         this.tree.root = undefined;
-        (this.tree as TypeHierarchyTree).service = undefined;
+        (this.tree as TypeHierarchyTree).provider = undefined;
         const { location, languageId, direction } = options;
         if (languageId && location) {
-            const service = await this.typeHierarchyServiceProvider.get(languageId);
-            if (service) {
+            const provider = await this.registry.get(languageId);
+            if (provider) {
                 const params: TypeHierarchyParams = {
                     textDocument: {
                         uri: location.uri
@@ -49,12 +48,12 @@ export class TypeHierarchyTreeModel extends TreeModelImpl {
                     direction,
                     resolve: 1
                 };
-                const symbol = await service.get(params);
+                const symbol = await provider.get(params);
                 if (symbol) {
                     const root = TypeHierarchyTree.RootNode.create(symbol, direction);
                     root.expanded = true;
                     this.tree.root = root;
-                    (this.tree as TypeHierarchyTree).service = service;
+                    (this.tree as TypeHierarchyTree).provider = provider;
                 }
             }
         }
@@ -65,7 +64,7 @@ export class TypeHierarchyTreeModel extends TreeModelImpl {
      */
     async flipDirection(): Promise<void> {
         const { root } = this.tree;
-        const service = (this.tree as TypeHierarchyTree).service;
+        const service = (this.tree as TypeHierarchyTree).provider;
         if (TypeHierarchyTree.RootNode.is(root) && !!service) {
             const { direction, item } = root;
             const { uri, selectionRange } = item;

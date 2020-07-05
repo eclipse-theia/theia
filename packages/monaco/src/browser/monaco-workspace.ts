@@ -18,29 +18,15 @@
 
 import { URI as Uri } from 'vscode-uri';
 import { injectable, inject, postConstruct } from 'inversify';
-import { ProtocolToMonacoConverter, MonacoToProtocolConverter, testGlob } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';
-import { DisposableCollection } from '@theia/core/lib/common';
-import { FileSystem, FileStat, } from '@theia/filesystem/lib/common';
-import { FileChangeType, FileSystemWatcher } from '@theia/filesystem/lib/browser';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { Emitter } from '@theia/core/lib/common/event';
+import { FileSystem } from '@theia/filesystem/lib/common';
 import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
-import * as lang from '@theia/languages/lib/browser';
-import { Emitter, TextDocumentWillSaveEvent, TextEdit } from '@theia/languages/lib/browser';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
-import { MonacoConfigurations } from './monaco-configurations';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
-
-export interface MonacoDidChangeTextDocumentParams extends lang.DidChangeTextDocumentParams {
-    readonly textDocument: MonacoEditorModel;
-}
-
-export interface MonacoTextDocumentWillSaveEvent extends TextDocumentWillSaveEvent {
-    readonly textDocument: MonacoEditorModel;
-}
 
 // Note: `newUri` and `oldUri` are both optional although it is mandatory in `monaco.languages.ResourceFileEdit`.
 // See: https://github.com/microsoft/monaco-editor/issues/1396
@@ -130,14 +116,7 @@ export interface WorkspaceFolder {
 }
 
 @injectable()
-export class MonacoWorkspace implements lang.Workspace {
-
-    readonly capabilities = {
-        applyEdit: true,
-        workspaceEdit: {
-            documentChanges: true
-        }
-    };
+export class MonacoWorkspace {
 
     protected resolveReady: () => void;
     readonly ready = new Promise<void>(resolve => {
@@ -150,99 +129,35 @@ export class MonacoWorkspace implements lang.Workspace {
     protected readonly onDidCloseTextDocumentEmitter = new Emitter<MonacoEditorModel>();
     readonly onDidCloseTextDocument = this.onDidCloseTextDocumentEmitter.event;
 
-    protected readonly onDidChangeTextDocumentEmitter = new Emitter<MonacoDidChangeTextDocumentParams>();
+    protected readonly onDidChangeTextDocumentEmitter = new Emitter<MonacoModelContentChangedEvent>();
     readonly onDidChangeTextDocument = this.onDidChangeTextDocumentEmitter.event;
 
-    protected readonly onWillSaveTextDocumentEmitter = new Emitter<MonacoTextDocumentWillSaveEvent>();
+    protected readonly onWillSaveTextDocumentEmitter = new Emitter<WillSaveMonacoModelEvent>();
     readonly onWillSaveTextDocument = this.onWillSaveTextDocumentEmitter.event;
 
     protected readonly onDidSaveTextDocumentEmitter = new Emitter<MonacoEditorModel>();
     readonly onDidSaveTextDocument = this.onDidSaveTextDocumentEmitter.event;
 
-    protected readonly onDidChangeWorkspaceFoldersEmitter = new Emitter<WorkspaceFoldersChangeEvent>();
-    readonly onDidChangeWorkspaceFolders = this.onDidChangeWorkspaceFoldersEmitter.event;
-
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
-
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
-
-    @inject(FileSystemWatcher)
-    protected readonly fileSystemWatcher: FileSystemWatcher;
 
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
 
-    @inject(MonacoToProtocolConverter)
-    protected readonly m2p: MonacoToProtocolConverter;
-
-    @inject(ProtocolToMonacoConverter)
-    protected readonly p2m: ProtocolToMonacoConverter;
-
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
-
-    @inject(MonacoConfigurations)
-    readonly configurations: MonacoConfigurations;
 
     @inject(ProblemManager)
     protected readonly problems: ProblemManager;
 
-    protected _workspaceFolders: WorkspaceFolder[] = [];
-    get workspaceFolders(): WorkspaceFolder[] {
-        return this._workspaceFolders;
-    }
-
     @postConstruct()
-    protected async init(): Promise<void> {
-        const roots = await this.workspaceService.roots;
-        this.updateWorkspaceFolders(roots);
+    protected init(): void {
         this.resolveReady();
-
-        this.workspaceService.onWorkspaceChanged(async newRootDirs => {
-            this.updateWorkspaceFolders(newRootDirs);
-        });
 
         for (const model of this.textModelService.models) {
             this.fireDidOpen(model);
         }
         this.textModelService.onDidCreate(model => this.fireDidOpen(model));
-    }
-
-    protected updateWorkspaceFolders(newRootDirs: FileStat[]): void {
-        const oldWorkspaceUris = this.workspaceFolders.map(folder => folder.uri.toString());
-        const newWorkspaceUris = newRootDirs.map(folder => folder.uri);
-        const added = newWorkspaceUris.filter(uri => oldWorkspaceUris.indexOf(uri) < 0).map((dir, index) => this.toWorkspaceFolder(dir, index));
-        const removed = oldWorkspaceUris.filter(uri => newWorkspaceUris.indexOf(uri) < 0).map((dir, index) => this.toWorkspaceFolder(dir, index));
-        this._workspaceFolders = newWorkspaceUris.map(this.toWorkspaceFolder);
-        this.onDidChangeWorkspaceFoldersEmitter.fire({ added, removed });
-    }
-
-    protected toWorkspaceFolder(uriString: string, index: number): WorkspaceFolder {
-        const uri = Uri.parse(uriString);
-        const path = uri.path;
-        return {
-            uri,
-            name: path.substring(path.lastIndexOf('/') + 1),
-            index
-        };
-    }
-
-    get rootUri(): string | null {
-        if (this._workspaceFolders.length > 0) {
-            return this._workspaceFolders[0].uri.toString();
-        } else {
-            return null;
-        }
-    }
-
-    get rootPath(): string | null {
-        if (this._workspaceFolders.length > 0) {
-            return new URI(this._workspaceFolders[0].uri).path.toString();
-        } else {
-            return null;
-        }
     }
 
     get textDocuments(): MonacoEditorModel[] {
@@ -281,48 +196,18 @@ export class MonacoWorkspace implements lang.Workspace {
     }
 
     protected fireDidChangeContent(event: MonacoModelContentChangedEvent): void {
-        const { model, contentChanges } = event;
-        this.onDidChangeTextDocumentEmitter.fire({
-            textDocument: model,
-            contentChanges
-        });
+        this.onDidChangeTextDocumentEmitter.fire(event);
     }
 
     protected fireWillSave(event: WillSaveMonacoModelEvent): void {
-        const { reason } = event;
-        const timeout = new Promise<TextEdit[]>(resolve =>
-            setTimeout(() => resolve([]), 1000)
-        );
-        const resolveEdits = new Promise<TextEdit[]>(async resolve => {
-            const thenables: Thenable<TextEdit[]>[] = [];
-            const allEdits: TextEdit[] = [];
-
-            this.onWillSaveTextDocumentEmitter.fire({
-                textDocument: event.model,
-                reason,
-                waitUntil: thenable => {
-                    thenables.push(thenable);
-                }
-            });
-
-            for (const listenerEdits of await Promise.all(thenables)) {
-                allEdits.push(...listenerEdits);
-            }
-
-            resolve(allEdits);
-        });
-        event.waitUntil(
-            Promise.race([resolveEdits, timeout]).then(edits =>
-                this.p2m.asTextEdits(edits).map(edit => edit as monaco.editor.IIdentifiedSingleEditOperation)
-            )
-        );
+        this.onWillSaveTextDocumentEmitter.fire(event);
     }
 
     protected fireDidSave(model: MonacoEditorModel): void {
         this.onDidSaveTextDocumentEmitter.fire(model);
     }
 
-    protected suppressedOpenIfDirty: MonacoEditorModel[] = [];
+    protected readonly suppressedOpenIfDirty: MonacoEditorModel[] = [];
 
     protected openEditorIfDirty(model: MonacoEditorModel): void {
         if (this.suppressedOpenIfDirty.indexOf(model) !== -1) {
@@ -351,49 +236,6 @@ export class MonacoWorkspace implements lang.Workspace {
         }
     }
 
-    createFileSystemWatcher(globPattern: string, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): lang.FileSystemWatcher {
-        const disposables = new DisposableCollection();
-        const onDidCreateEmitter = new lang.Emitter<Uri>();
-        disposables.push(onDidCreateEmitter);
-        const onDidChangeEmitter = new lang.Emitter<Uri>();
-        disposables.push(onDidChangeEmitter);
-        const onDidDeleteEmitter = new lang.Emitter<Uri>();
-        disposables.push(onDidDeleteEmitter);
-        disposables.push(this.fileSystemWatcher.onFilesChanged(changes => {
-            for (const change of changes) {
-                const fileChangeType = change.type;
-                if (ignoreCreateEvents === true && fileChangeType === FileChangeType.ADDED) {
-                    continue;
-                }
-                if (ignoreChangeEvents === true && fileChangeType === FileChangeType.UPDATED) {
-                    continue;
-                }
-                if (ignoreDeleteEvents === true && fileChangeType === FileChangeType.DELETED) {
-                    continue;
-                }
-                const uri = change.uri.toString();
-                const codeUri = change.uri['codeUri'];
-                if (testGlob(globPattern, uri)) {
-                    if (fileChangeType === FileChangeType.ADDED) {
-                        onDidCreateEmitter.fire(codeUri);
-                    } else if (fileChangeType === FileChangeType.UPDATED) {
-                        onDidChangeEmitter.fire(codeUri);
-                    } else if (fileChangeType === FileChangeType.DELETED) {
-                        onDidDeleteEmitter.fire(codeUri);
-                    } else {
-                        throw new Error(`Unexpected file change type: ${fileChangeType}.`);
-                    }
-                }
-            }
-        }));
-        return {
-            onDidCreate: onDidCreateEmitter.event,
-            onDidChange: onDidChangeEmitter.event,
-            onDidDelete: onDidDeleteEmitter.event,
-            dispose: () => disposables.dispose()
-        };
-    }
-
     /**
      * Applies given edits to the given model.
      * The model is saved if no editors is opened for it.
@@ -409,12 +251,6 @@ export class MonacoWorkspace implements lang.Workspace {
                 await model.save();
             }
         });
-    }
-
-    async applyEdit(changes: lang.WorkspaceEdit, options?: EditorOpenerOptions): Promise<boolean> {
-        const workspaceEdit = this.p2m.asWorkspaceEdit(changes);
-        await this.applyBulkEdit(workspaceEdit, options);
-        return true;
     }
 
     async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit, options?: EditorOpenerOptions): Promise<monaco.editor.IBulkEditResult> {

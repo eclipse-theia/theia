@@ -16,7 +16,7 @@
 import { ContainerModule } from 'inversify';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { TypeHierarchyServiceProvider } from './typehierarchy-service';
+import { TypeHierarchyRegistry } from './typehierarchy-provider';
 import { TypeHierarchyContribution } from './typehierarchy-contribution';
 import { TypeHierarchyTreeWidget } from './tree/typehierarchy-tree-widget';
 import { createHierarchyTreeWidget } from './tree/typehierarchy-tree-container';
@@ -24,7 +24,7 @@ import { createHierarchyTreeWidget } from './tree/typehierarchy-tree-container';
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
-    bind(TypeHierarchyServiceProvider).toSelf().inSingletonScope();
+    bind(TypeHierarchyRegistry).toSelf().inSingletonScope();
     bindViewContribution(bind, TypeHierarchyContribution);
     bind(WidgetFactory).toDynamicValue(context => ({
         id: TypeHierarchyTreeWidget.WIDGET_ID,

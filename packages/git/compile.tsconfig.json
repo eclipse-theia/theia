@@ -19,9 +19,6 @@
       "path": "../filesystem/compile.tsconfig.json"
     },
     {
-      "path": "../languages/compile.tsconfig.json"
-    },
-    {
       "path": "../navigator/compile.tsconfig.json"
     },
     {
@@ -32,6 +29,9 @@
     },
     {
       "path": "../workspace/compile.tsconfig.json"
+    },
+    {
+      "path": "../monaco/compile.tsconfig.json"
     }
   ]
 }

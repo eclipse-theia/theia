@@ -15,8 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { ProtocolToMonacoConverter } from 'monaco-languageclient/lib';
-import { Position, Location } from '@theia/languages/lib/browser';
+import { Position, Location } from 'vscode-languageserver-types';
 import { CommandContribution, CommandRegistry, CommandHandler } from '@theia/core/lib/common/command';
 import { CommonCommands } from '@theia/core/lib/browser';
 import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
@@ -26,6 +25,7 @@ import { MonacoEditor } from './monaco-editor';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
 import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 
 export namespace MonacoCommands {
 

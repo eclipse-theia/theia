@@ -5,7 +5,7 @@
   "dependencies": {
     "@theia/core": "^1.4.0",
     "@theia/editor": "^1.4.0",
-    "@theia/languages": "^1.4.0",
+    "@theia/monaco": "^1.4.0",
     "@theia/mini-browser": "^1.4.0",
     "@types/dompurify": "^2.0.2",
     "@types/highlight.js": "^9.12.2",

@@ -14,51 +14,35 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { RequestType } from '../language-client-services';
+import { injectable } from 'inversify';
+import { Disposable } from '@theia/core/lib/common/disposable';
 import { SymbolKind, Range } from 'vscode-languageserver-types';
-import { TextDocumentPositionParams, TextDocumentRegistrationOptions, StaticRegistrationOptions } from 'vscode-languageserver-protocol';
+import { TextDocumentPositionParams } from 'vscode-languageserver-protocol';
 
-// NOTE: This module can be removed, once the type hierarchy will become the part of the LSP.
-// https://github.com/Microsoft/language-server-protocol/issues/582
-// https://github.com/Microsoft/vscode-languageserver-node/pull/346#discussion_r221659062
+@injectable()
+export class TypeHierarchyRegistry {
 
-/**
- * Client capabilities specific to the type hierarchy feature.
- */
-export interface TypeHierarchyCapabilities {
+    protected readonly providers = new Map<string, TypeHierarchyProvider>();
 
-    /**
-     * The text document client capabilities.
-     */
-    textDocument?: {
+    async get(languageId: string | undefined): Promise<TypeHierarchyProvider | undefined> {
+        return languageId ? this.providers.get(languageId) : undefined;
+    }
 
-        /**
-         * Capabilities specific to the `textDocument/typeHierarchy`.
-         */
-        typeHierarchy?: {
-
-            /**
-             * Whether implementation supports dynamic registration. If this is set to `true`
-             * the client supports the new `(TextDocumentRegistrationOptions & StaticRegistrationOptions)`
-             * return value for the corresponding server capability as well.
-             */
-            dynamicRegistration?: boolean;
-
+    register(provider: TypeHierarchyProvider): Disposable {
+        const { languageId } = provider;
+        if (this.providers.has(languageId)) {
+            throw new Error(`type hierarchy provider for '${languageId}' language is already registered`);
         }
-
+        this.providers.set(languageId, provider);
+        return Disposable.create(() => this.providers.delete(languageId));
     }
 
 }
 
-/**
- * Type hierarchy language server capability.
- */
-export interface TypeHierarchyServerCapabilities {
-
-    /**
-     * Server capability for calculating super- and subtype hierarchies.
-     */
-    typeHierarchyProvider?: boolean | (TextDocumentRegistrationOptions & StaticRegistrationOptions);
+export interface TypeHierarchyProvider extends Disposable {
+    readonly languageId: string;
+    get(params: TypeHierarchyParams): Promise<TypeHierarchyItem | undefined>;
+    resolve(params: ResolveTypeHierarchyItemParams): Promise<TypeHierarchyItem | undefined>;
 
 }
 
@@ -80,33 +64,23 @@ export interface TypeHierarchyParams extends TextDocumentPositionParams {
 
 }
 
-export namespace TypeHierarchyDirection {
+export const enum TypeHierarchyDirection {
 
     /**
      * Flag for retrieving/resolving the subtypes.
      */
-    export const Children = 0;
+    Children,
 
     /**
      * Flag to use when retrieving/resolving the supertypes.
      */
-    export const Parents = 1;
+    Parents,
 
     /**
      * Flag for resolving both the super- and subtypes.
      */
-    export const Both = 2;
+    Both
 
-}
-export type TypeHierarchyDirection = 0 | 1 | 2;
-
-/**
- * The `textDocument/typeHierarchy` request is sent from the client to the server to retrieve the type hierarchy
- * items from a given position of a text document. Can resolve the parentage information on demand.
- * If no item can be retrieved for a given text document position, returns with `null`.
- */
-export namespace TypeHierarchyRequest {
-    export const type = new RequestType<TypeHierarchyParams, TypeHierarchyItem | null, void, void>('textDocument/typeHierarchy');
 }
 
 /**
@@ -128,14 +102,6 @@ export interface ResolveTypeHierarchyItemParams {
      * The direction of the hierarchy levels to resolve.
      */
     direction: TypeHierarchyDirection;
-}
-
-/**
- * The `typeHierarchy/resolve` request is sent from the client to the server to resolve a type hierarchy
- * item by resolving sub- and supertype information.
- */
-export namespace ResolveTypeHierarchyRequest {
-    export const type = new RequestType<ResolveTypeHierarchyItemParams, TypeHierarchyItem | null, void, void>('typeHierarchy/resolve');
 }
 
 export interface TypeHierarchyItem {
@@ -196,3 +162,4 @@ export interface TypeHierarchyItem {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data?: any;
 }
+

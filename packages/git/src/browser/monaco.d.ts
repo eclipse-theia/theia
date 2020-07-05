@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2020 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,20 +14,4 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export interface LanguageContribution {
-    readonly id: string;
-    readonly name: string;
-}
-
-export namespace LanguageContribution {
-    export const servicePath = '/services/languages';
-    export function getPath(contribution: LanguageContribution, sessionId: string = ':id'): string {
-        return servicePath + '/' + contribution.id + '/' + sessionId;
-    }
-    export const Service = Symbol('LanguageContributionService');
-    export interface Service {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        create(contributionId: string, parameters: any): Promise<string>;
-        destroy(sessionId: string): Promise<void>;
-    }
-}
+/// <reference types='@theia/monaco/src/typings/monaco'/>

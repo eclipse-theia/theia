@@ -48,9 +48,6 @@
       "path": "../../packages/keymaps/compile.tsconfig.json"
     },
     {
-      "path": "../../packages/languages/compile.tsconfig.json"
-    },
-    {
       "path": "../../packages/markers/compile.tsconfig.json"
     },
     {

@@ -17,10 +17,8 @@
 import { EditorManager } from './editor-manager';
 import { TextEditor } from './editor';
 import { injectable, inject } from 'inversify';
-import URI from '@theia/core/lib/common/uri';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import { FrontendApplicationContribution, DiffUris } from '@theia/core/lib/browser';
-import { Languages } from '@theia/languages/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DisposableCollection } from '@theia/core';
 import { EditorCommands } from './editor-command';
@@ -28,13 +26,14 @@ import { EditorQuickOpenService } from './editor-quick-open-service';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { KeybindingRegistry, KeybindingContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
 import { SUPPORTED_ENCODINGS } from './supported-encodings';
+import { LanguageService } from '@theia/core/lib/browser/language-service';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution, CommandContribution, KeybindingContribution, QuickOpenContribution {
 
     @inject(StatusBar) protected readonly statusBar: StatusBar;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
-    @inject(Languages) protected readonly languages: Languages;
+    @inject(LanguageService) protected readonly languages: LanguageService;
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -47,22 +46,6 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
 
         this.updateStatusBar();
         this.editorManager.onCurrentEditorChanged(() => this.updateStatusBar());
-    }
-
-    /** @deprecated since 0.5.0 - will be removed in farther releases */
-    protected initResourceContextKeys(): void {
-    }
-    /** @deprecated since 0.5.0 - will be removed in farther releases */
-    protected getLanguageId(uri: URI | undefined): string | undefined {
-        const { languages } = this.languages;
-        if (uri && languages) {
-            for (const language of languages) {
-                if (language.extensions.has(uri.path.ext)) {
-                    return language.id;
-                }
-            }
-        }
-        return undefined;
     }
 
     protected initEditorContextKeys(): void {
@@ -106,7 +89,7 @@ export class EditorContribution implements FrontendApplicationContribution, Comm
             this.statusBar.removeElement('editor-status-language');
             return;
         }
-        const language = this.languages.getLanguage && this.languages.getLanguage(editor.document.languageId);
+        const language = this.languages.getLanguage(editor.document.languageId);
         const languageName = language ? language.name : '';
         this.statusBar.setElement('editor-status-language', {
             text: languageName,

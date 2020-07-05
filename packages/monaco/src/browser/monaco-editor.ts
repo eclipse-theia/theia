@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { injectable, inject, unmanaged } from 'inversify';
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter, TextEdit } from 'monaco-languageclient';
 import { ElementExt } from '@phosphor/domutils';
 import URI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -38,6 +37,9 @@ import {
     EncodingMode
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
+import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import { TextEdit } from 'vscode-languageserver-types';
 
 import IStandaloneEditorConstructionOptions = monaco.editor.IStandaloneEditorConstructionOptions;
 import IModelDeltaDecoration = monaco.editor.IModelDeltaDecoration;

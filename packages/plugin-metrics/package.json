@@ -4,7 +4,6 @@
   "description": "Theia - Plugin Metrics",
   "dependencies": {
     "@theia/core": "^1.4.0",
-    "@theia/languages": "^1.4.0",
     "@theia/metrics": "^1.4.0",
     "@theia/plugin": "^1.4.0",
     "@theia/plugin-ext": "^1.4.0",

@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 import { injectable, inject, decorate } from 'inversify';
-import { MonacoToProtocolConverter } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';
 import { OpenerService, open, WidgetOpenMode, ApplicationShell, PreferenceService } from '@theia/core/lib/browser';
 import { EditorWidget, EditorOpenerOptions, EditorManager } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
+import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 
 import ICodeEditor = monaco.editor.ICodeEditor;
 import CommonCodeEditor = monaco.editor.CommonCodeEditor;
