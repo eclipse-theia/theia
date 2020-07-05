@@ -32,6 +32,12 @@ import { TypeHierarchyRequest } from './typehierarchy-protocol';
 
 /**
  * Text document feature for handling super- and subtype hierarchies through the LSP.
+ *
+ * @deprecated since 1.4.0 - in order to remove monaco-languageclient, use VS Code extensions to contribute language smartness:
+ * https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+ *
+ * VS Code extensions don't support yet type hierarchy providers, please follow https://github.com/microsoft/vscode/issues/15533
+ * and https://github.com/microsoft/vscode-languageserver-node/pull/426 for LSP
  */
 export class TypeHierarchyFeature extends TextDocumentFeature<{}, TextDocumentRegistrationOptions, {}> {
 

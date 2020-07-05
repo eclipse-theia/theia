@@ -32,7 +32,7 @@ import { InitializeParams } from 'monaco-languageclient';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 /**
- * @deprecated since 1.4.0 - use VS Code extensions to contribute language smartness:
+ * @deprecated since 1.4.0 - in order to remove monaco-languageclient, use VS Code extensions to contribute language smartness:
  * https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
  */
 export const LanguageClientContribution = Symbol('LanguageClientContribution');
@@ -46,7 +46,7 @@ export interface LanguageClientContribution extends LanguageContribution {
 }
 
 /**
- * @deprecated since 1.4.0 - use VS Code extensions to contribute language smartness:
+ * @deprecated since 1.4.0 - in order to remove monaco-languageclient, use VS Code extensions to contribute language smartness:
  * https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
  */
 @injectable()

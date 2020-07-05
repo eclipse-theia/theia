@@ -30,6 +30,10 @@ import { SemanticHighlight, SemanticHighlightingParams } from './semantic-highli
 // NOTE: This module can be removed, or at least can be simplified once the semantic highlighting will become the part of the LSP.
 // https://github.com/Microsoft/vscode-languageserver-node/issues/368
 
+/**
+ * @deprecated since 1.4.0 - in order to remove monaco-languageclient, use VS Code extensions to contribute language smartness:
+ * https://code.visualstudio.com/api/language-extensions/language-server-extension-guide
+ */
 export class SemanticHighlightFeature extends TextDocumentFeature<{}, TextDocumentRegistrationOptions, {}> {
 
     protected readonly languageId: string;
