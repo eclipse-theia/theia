@@ -21,7 +21,6 @@ import { ConsoleSession, ConsoleItem } from '@theia/console/lib/browser/console-
 import { AnsiConsoleItem } from '@theia/console/lib/browser/ansi-console-item';
 import { DebugSession } from '../debug-session';
 import { DebugSessionManager } from '../debug-session-manager';
-import { Languages, CompletionItem, CompletionItemKind, Position, Range, TextEdit, Workspace, TextDocument, CompletionParams } from '@theia/languages/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { ExpressionContainer, ExpressionItem } from './debug-console-items';
 import { Severity } from '@theia/core/lib/common/severity';
@@ -40,13 +39,7 @@ export class DebugConsoleSession extends ConsoleSession {
     @inject(DebugSessionManager)
     protected readonly manager: DebugSessionManager;
 
-    @inject(Languages)
-    protected readonly languages: Languages;
-
-    @inject(Workspace)
-    protected readonly workspace: Workspace;
-
-    protected readonly completionKinds = new Map<DebugProtocol.CompletionItemType | undefined, CompletionItemKind>();
+    protected readonly completionKinds = new Map<DebugProtocol.CompletionItemType | undefined, monaco.languages.CompletionItemKind>();
 
     @postConstruct()
     init(): void {
@@ -56,64 +49,61 @@ export class DebugConsoleSession extends ConsoleSession {
             }
             session.on('output', event => this.logOutput(session, event));
         }));
-        this.completionKinds.set('method', CompletionItemKind.Method);
-        this.completionKinds.set('function', CompletionItemKind.Function);
-        this.completionKinds.set('constructor', CompletionItemKind.Constructor);
-        this.completionKinds.set('field', CompletionItemKind.Field);
-        this.completionKinds.set('variable', CompletionItemKind.Variable);
-        this.completionKinds.set('class', CompletionItemKind.Class);
-        this.completionKinds.set('interface', CompletionItemKind.Interface);
-        this.completionKinds.set('module', CompletionItemKind.Module);
-        this.completionKinds.set('property', CompletionItemKind.Property);
-        this.completionKinds.set('unit', CompletionItemKind.Unit);
-        this.completionKinds.set('value', CompletionItemKind.Value);
-        this.completionKinds.set('enum', CompletionItemKind.Enum);
-        this.completionKinds.set('keyword', CompletionItemKind.Keyword);
-        this.completionKinds.set('snippet', CompletionItemKind.Snippet);
-        this.completionKinds.set('text', CompletionItemKind.Text);
-        this.completionKinds.set('color', CompletionItemKind.Color);
-        this.completionKinds.set('file', CompletionItemKind.File);
-        this.completionKinds.set('reference', CompletionItemKind.Reference);
-        this.completionKinds.set('customcolor', CompletionItemKind.Color);
-        if (this.languages.registerCompletionItemProvider) {
-            this.toDispose.push(this.languages.registerCompletionItemProvider([DebugConsoleSession.uri], {
-                provideCompletionItems: params => this.completions(params)
-            }, '.'));
-        }
+        this.completionKinds.set('method', monaco.languages.CompletionItemKind.Method);
+        this.completionKinds.set('function', monaco.languages.CompletionItemKind.Function);
+        this.completionKinds.set('constructor', monaco.languages.CompletionItemKind.Constructor);
+        this.completionKinds.set('field', monaco.languages.CompletionItemKind.Field);
+        this.completionKinds.set('variable', monaco.languages.CompletionItemKind.Variable);
+        this.completionKinds.set('class', monaco.languages.CompletionItemKind.Class);
+        this.completionKinds.set('interface', monaco.languages.CompletionItemKind.Interface);
+        this.completionKinds.set('module', monaco.languages.CompletionItemKind.Module);
+        this.completionKinds.set('property', monaco.languages.CompletionItemKind.Property);
+        this.completionKinds.set('unit', monaco.languages.CompletionItemKind.Unit);
+        this.completionKinds.set('value', monaco.languages.CompletionItemKind.Value);
+        this.completionKinds.set('enum', monaco.languages.CompletionItemKind.Enum);
+        this.completionKinds.set('keyword', monaco.languages.CompletionItemKind.Keyword);
+        this.completionKinds.set('snippet', monaco.languages.CompletionItemKind.Snippet);
+        this.completionKinds.set('text', monaco.languages.CompletionItemKind.Text);
+        this.completionKinds.set('color', monaco.languages.CompletionItemKind.Color);
+        this.completionKinds.set('file', monaco.languages.CompletionItemKind.File);
+        this.completionKinds.set('reference', monaco.languages.CompletionItemKind.Reference);
+        this.completionKinds.set('customcolor', monaco.languages.CompletionItemKind.Color);
+        monaco.languages.registerCompletionItemProvider({
+            scheme: DebugConsoleSession.uri.scheme,
+            hasAccessToAllModels: true
+        }, {
+            triggerCharacters: ['.'],
+            provideCompletionItems: (model, position) => this.completions(model, position),
+        });
     }
 
     getElements(): IterableIterator<ConsoleItem> {
         return this.items.filter(e => !this.severity || e.severity === this.severity)[Symbol.iterator]();
     }
 
-    protected async completions({ textDocument: { uri }, position }: CompletionParams): Promise<CompletionItem[]> {
+    protected async completions(model: monaco.editor.ITextModel, position: monaco.Position): Promise<monaco.languages.CompletionList | undefined> {
         const session = this.manager.currentSession;
         if (session && session.capabilities.supportsCompletionsRequest) {
-            const model = monaco.editor.getModel(monaco.Uri.parse(uri));
-            if (model) {
-                const column = position.character + 1;
-                const lineNumber = position.line + 1;
-                const word = model.getWordAtPosition({ column, lineNumber });
-                const prefixLength = word ? word.word.length : 0;
-                const text = model.getValue();
-                const document = TextDocument.create(uri, model.getModeId(), model.getVersionId(), text);
-                const items = await session.completions(text, column, lineNumber);
-                return items.map(item => this.asCompletionItem(document, position, prefixLength, item));
-            }
+            const column = position.column;
+            const lineNumber = position.lineNumber;
+            const word = model.getWordAtPosition({ column, lineNumber });
+            const overwriteBefore = word ? word.word.length : 0;
+            const text = model.getValue();
+            const items = await session.completions(text, column, lineNumber);
+            const suggestions = items.map(item => this.asCompletionItem(text, position, overwriteBefore, item));
+            return { suggestions };
         }
-        return [];
+        return undefined;
     }
 
-    protected asCompletionItem(document: TextDocument, position: Position, prefixLength: number, item: DebugProtocol.CompletionItem): CompletionItem {
-        const { label, text, type, length } = item;
-        const newText = text || label;
-        const start = document.positionAt(document.offsetAt(position) - (length || prefixLength));
-        const replaceRange = Range.create(start, position);
-        const textEdit = TextEdit.replace(replaceRange, newText);
+    protected asCompletionItem(text: string, position: monaco.Position, overwriteBefore: number, item: DebugProtocol.CompletionItem): monaco.languages.CompletionItem {
         return {
-            label,
-            textEdit,
-            kind: this.completionKinds.get(type)
+            label: item.label,
+            insertText: item.text || item.label,
+            kind: this.completionKinds.get(item.type) || monaco.languages.CompletionItemKind.Property,
+            filterText: (item.start && item.length) ? text.substr(item.start, item.length).concat(item.label) : undefined,
+            range: monaco.Range.fromPositions(position.delta(0, -(item.length || overwriteBefore)), position),
+            sortText: item.sortText
         };
     }
 

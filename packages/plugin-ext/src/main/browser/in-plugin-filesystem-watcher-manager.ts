@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { parse, ParsedPattern, IRelativePattern } from '@theia/languages/lib/common/language-selector';
+import { parse, ParsedPattern, IRelativePattern } from '@theia/callhierarchy/lib/common/glob';
 import { FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { WorkspaceExt } from '../../common/plugin-api-rpc';
 import { FileWatcherSubscriberOptions } from '../../common/plugin-api-rpc-model';

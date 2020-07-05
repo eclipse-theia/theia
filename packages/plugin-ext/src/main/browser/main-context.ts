@@ -33,7 +33,6 @@ import { ConnectionMainImpl } from './connection-main';
 import { WebviewsMainImpl } from './webviews-main';
 import { TasksMainImpl } from './tasks-main';
 import { StorageMainImpl } from './plugin-storage';
-import { LanguagesContributionMainImpl } from './languages-contribution-main';
 import { DebugMainImpl } from './debug/debug-main';
 import { FileSystemMainImpl } from './file-system-main';
 import { ScmMainImpl } from './scm-main';
@@ -122,9 +121,6 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const tasksMain = new TasksMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.TASKS_MAIN, tasksMain);
-
-    const languagesContribution = new LanguagesContributionMainImpl(rpc, container, connectionMain);
-    rpc.set(PLUGIN_RPC_CONTEXT.LANGUAGES_CONTRIBUTION_MAIN, languagesContribution);
 
     const debugMain = new DebugMainImpl(rpc, connectionMain, container);
     rpc.set(PLUGIN_RPC_CONTEXT.DEBUG_MAIN, debugMain);

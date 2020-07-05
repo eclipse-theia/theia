@@ -1163,15 +1163,6 @@ export interface WorkspaceEditDto {
     rejectReason?: string;
 }
 
-export interface LanguagesContributionExt {
-    $start(languageServerInfo: theia.LanguageServerInfo): void;
-}
-
-export interface LanguagesContributionMain {
-    $registerLanguageServerProvider(languageServerInfo: theia.LanguageServerInfo): void
-    $stop(id: string): void
-}
-
 export interface CommandProperties {
     command: string;
     args?: string[];
@@ -1433,7 +1424,6 @@ export const PLUGIN_RPC_CONTEXT = {
     WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
     STORAGE_MAIN: createProxyIdentifier<StorageMain>('StorageMain'),
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
-    LANGUAGES_CONTRIBUTION_MAIN: createProxyIdentifier<LanguagesContributionMain>('LanguagesContributionMain'),
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
     FILE_SYSTEM_MAIN: createProxyIdentifier<FileSystemMain>('FileSystemMain'),
     SCM_MAIN: createProxyIdentifier<ScmMain>('ScmMain'),
@@ -1461,7 +1451,6 @@ export const MAIN_RPC_CONTEXT = {
     WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
     STORAGE_EXT: createProxyIdentifier<StorageExt>('StorageExt'),
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
-    LANGUAGES_CONTRIBUTION_EXT: createProxyIdentifier<LanguagesContributionExt>('LanguagesContributionExt'),
     DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt'),
     FILE_SYSTEM_EXT: createProxyIdentifier<FileSystemExt>('FileSystemExt'),
     SCM_EXT: createProxyIdentifier<ScmExt>('ScmExt'),

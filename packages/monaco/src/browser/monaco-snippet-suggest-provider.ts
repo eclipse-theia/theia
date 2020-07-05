@@ -23,7 +23,6 @@ import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileSystem, FileSystemError } from '@theia/filesystem/lib/common';
-import { CompletionTriggerKind } from '@theia/languages/lib/browser';
 
 @injectable()
 export class MonacoSnippetSuggestProvider implements monaco.languages.CompletionItemProvider {
@@ -44,7 +43,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
             return undefined;
         }
 
-        if (context.triggerKind === CompletionTriggerKind.TriggerCharacter && context.triggerCharacter === ' ') {
+        if (context.triggerKind === monaco.languages.CompletionTriggerKind.TriggerCharacter && context.triggerCharacter === ' ') {
             // no snippets when suggestions have been triggered by space
             return undefined;
         }

@@ -24,7 +24,7 @@ import { EditorAccess } from '@theia/editor/lib/browser/editor-manager';
 import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser/shell/view-contribution';
 import { TypeHierarchyTree } from './tree/typehierarchy-tree';
 import { TypeHierarchyTreeWidget } from './tree/typehierarchy-tree-widget';
-import { TypeHierarchyDirection } from '@theia/languages/lib/browser/typehierarchy/typehierarchy-protocol';
+import { TypeHierarchyDirection } from './typehierarchy-provider';
 
 @injectable()
 export class TypeHierarchyContribution extends AbstractViewContribution<TypeHierarchyTreeWidget> {

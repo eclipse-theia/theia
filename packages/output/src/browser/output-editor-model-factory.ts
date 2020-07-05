@@ -15,11 +15,12 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import { Resource } from '@theia/core/lib/common/resource';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { OutputUri } from '../common/output-uri';
 import { MonacoEditorModelFactory } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { MonacoToProtocolConverter } from '@theia/monaco/lib/browser/monaco-to-protocol-converter';
+import { ProtocolToMonacoConverter } from '@theia/monaco/lib/browser/protocol-to-monaco-converter';
 
 @injectable()
 export class OutputEditorModelFactory implements MonacoEditorModelFactory {

@@ -16,9 +16,9 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { ReactWidget } from '@theia/core/lib/browser';
+import { Disposable } from '@theia/core/lib/common/disposable';
 import * as React from 'react';
 import { debounce } from 'lodash';
-import { Disposable } from '@theia/languages/lib/browser';
 import { PreferencesEventService } from '../util/preference-event-service';
 
 @injectable()

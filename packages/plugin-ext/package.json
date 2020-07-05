@@ -11,7 +11,6 @@
     "@theia/editor": "^1.4.0",
     "@theia/file-search": "^1.4.0",
     "@theia/filesystem": "^1.4.0",
-    "@theia/languages": "^1.4.0",
     "@theia/markers": "^1.4.0",
     "@theia/messages": "^1.4.0",
     "@theia/monaco": "^1.4.0",

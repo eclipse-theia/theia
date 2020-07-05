@@ -20,14 +20,12 @@ import URI from '@theia/core/lib/common/uri';
 import { Location } from '@theia/editor/lib/browser/editor';
 import { TreeDecoration, DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
 import { TreeImpl, TreeNode, CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode } from '@theia/core/lib/browser/tree';
-import { TypeHierarchyItem } from '@theia/languages/lib/browser/typehierarchy/typehierarchy-protocol';
-import { TypeHierarchyDirection, ResolveTypeHierarchyItemParams } from '@theia/languages/lib/browser/typehierarchy/typehierarchy-protocol';
-import { TypeHierarchyService } from '../typehierarchy-service';
+import { TypeHierarchyProvider, TypeHierarchyDirection, ResolveTypeHierarchyItemParams, TypeHierarchyItem } from '../typehierarchy-provider';
 
 @injectable()
 export class TypeHierarchyTree extends TreeImpl {
 
-    service: TypeHierarchyService | undefined;
+    provider: TypeHierarchyProvider | undefined;
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (TypeHierarchyTree.Node.is(parent)) {
@@ -57,15 +55,15 @@ export class TypeHierarchyTree extends TreeImpl {
      */
     protected async ensureResolved(node: TypeHierarchyTree.Node): Promise<void> {
         if (!node.resolved) {
-            const { service, direction } = this;
-            if (service && direction !== undefined) {
+            const { provider, direction } = this;
+            if (provider && direction !== undefined) {
                 const { item } = node;
                 const param: ResolveTypeHierarchyItemParams = {
                     item,
                     direction,
                     resolve: 1
                 };
-                const resolvedItem = await service.resolve(param);
+                const resolvedItem = await provider.resolve(param);
                 if (resolvedItem) {
                     node.resolved = true;
                     const items = TypeHierarchyDirection.Children === direction ? resolvedItem.children : resolvedItem.parents;

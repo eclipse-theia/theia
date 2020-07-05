@@ -20,11 +20,12 @@ import {
     PrefixQuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService,
     QuickOpenMode, KeybindingContribution, KeybindingRegistry, QuickOpenHandler, QuickOpenOptions, QuickOpenContribution, QuickOpenHandlerRegistry
 } from '@theia/core/lib/browser';
-import { Languages, WorkspaceSymbolParams, SymbolInformation, WorkspaceSymbolProvider, CancellationToken } from './language-client-services';
-import { CancellationTokenSource, CommandRegistry, CommandHandler, Command, SelectionService } from '@theia/core';
+import { CancellationTokenSource, CommandRegistry, CommandHandler, Command, SelectionService, CancellationToken } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { CommandContribution } from '@theia/core/lib/common';
-import { Range, Position } from 'vscode-languageserver-types';
+import { Range, Position, SymbolInformation } from 'vscode-languageserver-types';
+import { WorkspaceSymbolParams } from 'vscode-languageserver-protocol';
+import { MonacoLanguages, WorkspaceSymbolProvider } from './monaco-languages';
 
 @injectable()
 export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContribution, KeybindingContribution, CommandHandler, QuickOpenHandler, QuickOpenContribution {
@@ -37,10 +38,10 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         label: 'Go to Symbol in Workspace...'
     };
 
-    constructor(@inject(Languages) protected languages: Languages,
-        @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(PrefixQuickOpenService) protected quickOpenService: PrefixQuickOpenService,
-        @inject(SelectionService) protected selectionService: SelectionService) { }
+    @inject(MonacoLanguages) protected readonly languages: MonacoLanguages;
+    @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(PrefixQuickOpenService) protected quickOpenService: PrefixQuickOpenService;
+    @inject(SelectionService) protected selectionService: SelectionService;
 
     isEnabled(): boolean {
         return this.languages.workspaceSymbolProviders !== undefined;
