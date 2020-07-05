@@ -199,6 +199,15 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this.toDisposeOnDetach.push(Disposable.create(() => this.forceHide()));
     }
 
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.addEventListener(this.node, 'focus', () => {
+            if (this.element) {
+                this.doSend('focus');
+            }
+        });
+    }
+
     protected onBeforeShow(msg: Message): void {
         super.onBeforeShow(msg);
         this.doShow();
@@ -376,14 +385,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.focus();
-    }
-
-    focus(): void {
         this.node.focus();
-        if (this.element) {
-            this.doSend('focus');
-        }
     }
 
     reload(): void {
