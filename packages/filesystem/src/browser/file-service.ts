@@ -50,7 +50,7 @@ import {
     Stat, WatchOptions, WriteFileOptions,
     toFileOperationResult, toFileSystemProviderErrorCode,
     ResolveFileResult, ResolveFileResultWithMetadata,
-    MoveFileOptions, CopyFileOptions, BaseStatWithMetadata, FileDeleteOptions, FileOperationOptions, hasAccessCapability
+    MoveFileOptions, CopyFileOptions, BaseStatWithMetadata, FileDeleteOptions, FileOperationOptions, hasAccessCapability, hasUpdateCapability
 } from '../common/files';
 import { createReadStream } from '../common/io';
 import { TextBuffer, TextBufferReadable, TextBufferReadableStream } from '@theia/core/lib/common/buffer';
@@ -58,8 +58,11 @@ import { isReadableStream, ReadableStreamEvents, transform, consumeStreamWithLim
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { FileSystemPreferences } from './filesystem-preferences';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
-import { EncodingService, UTF8, ResourceEncoding, UTF8_BOM, UTF8_with_bom, UTF16le, UTF16be } from '@theia/core/lib/browser/encoding-service';
 import { DelegatingFileSystemProvider } from '../common/delegating-file-system-provider';
+import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
+import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
+import { EncodingService, ResourceEncoding } from '@theia/core/lib/common/encoding-service';
 
 export interface FileOperationParticipant {
 
@@ -121,6 +124,10 @@ export interface TextFileContent extends BaseStatWithMetadata {
 export interface CreateTextFileOptions extends WriteEncodingOptions, CreateFileOptions { }
 
 export interface WriteTextFileOptions extends WriteEncodingOptions, WriteFileOptions { }
+
+export interface UpdateTextFileOptions extends WriteEncodingOptions, WriteFileOptions {
+    readEncoding: string
+}
 
 export interface UserFileOperationEvent extends WaitUntilEvent {
 
@@ -194,6 +201,9 @@ export class FileService {
 
     @inject(ProgressService)
     protected readonly progressService: ProgressService;
+
+    @inject(EncodingRegistry)
+    protected readonly encodingRegistry: EncodingRegistry;
 
     @inject(EncodingService)
     protected readonly encodingService: EncodingService;
@@ -543,6 +553,26 @@ export class FileService {
         return { ...content, encoding, value };
     }
 
+    async update(resource: URI, changes: TextDocumentContentChangeEvent[], options: UpdateTextFileOptions): Promise<FileStatWithMetadata & { encoding: string }> {
+        const provider = this.throwIfFileSystemIsReadonly(await this.withWriteProvider(resource), resource);
+        try {
+            await this.validateWriteFile(provider, resource, options);
+            if (hasUpdateCapability(provider)) {
+                const encoding = await this.getEncodingForResource(resource, options ? options.encoding : undefined);;
+                const stat = await provider.updateFile(resource, changes, {
+                    readEncoding: options.readEncoding,
+                    writeEncoding: encoding,
+                    overwriteEncoding: options.overwriteEncoding || false
+                });
+                return Object.assign(FileStat.fromStat(resource, stat), { encoding: stat.encoding });
+            } else {
+                throw new Error('incremental file update is not supported');
+            }
+        } catch (error) {
+            this.rethrowAsFileOperationError('Unable to write file', resource, error, options);
+        }
+    }
+
     // #endregion
 
     // #region File Reading/Writing
@@ -638,7 +668,7 @@ export class FileService {
      * but to the same length. This is a compromise we take to avoid having to produce checksums of
      * the file content for comparison which would be much slower to compute.
      */
-    modifiedSince(stat: Stat | FileStat, options?: WriteFileOptions): boolean {
+    protected modifiedSince(stat: Stat, options?: WriteFileOptions): boolean {
         return !!options && typeof options.mtime === 'number' && typeof options.etag === 'string' && options.etag !== ETAG_DISABLED &&
             typeof stat.mtime === 'number' && typeof stat.size === 'number' &&
             options.mtime < stat.mtime && options.etag !== etag({ mtime: options.mtime /* not using stat.mtime for a reason, see above */, size: stat.size });
@@ -728,15 +758,18 @@ export class FileService {
     private transformFileReadStream(resource: URI, stream: ReadableStreamEvents<Uint8Array | TextBuffer>, options: ReadFileOptions): TextBufferReadableStream {
         return transform(stream, {
             data: data => data instanceof TextBuffer ? data : TextBuffer.wrap(data),
-            error: error => this.rethrowAsFileOperationError('Unable to read file', resource, error, options)
+            error: error => this.asFileOperationError('Unable to read file', resource, error, options)
         }, data => TextBuffer.concat(data));
     }
 
     protected rethrowAsFileOperationError(message: string, resource: URI, error: Error, options?: ReadFileOptions & WriteFileOptions & CreateFileOptions): never {
+        throw this.asFileOperationError(message, resource, error, options);
+    }
+    protected asFileOperationError(message: string, resource: URI, error: Error, options?: ReadFileOptions & WriteFileOptions & CreateFileOptions): FileOperationError {
         const fileOperationError = new FileOperationError(`${message} '${this.resourceForError(resource)}' (${ensureFileSystemProviderError(error).toString()})`,
             toFileOperationResult(error), options);
         fileOperationError.stack = `${fileOperationError.stack}\nCaused by: ${error.stack}`;
-        throw fileOperationError;
+        return fileOperationError;
     }
 
     private async readFileUnbuffered(provider: FileSystemProviderWithFileReadWriteCapability, resource: URI, options?: ReadFileOptions): Promise<TextBufferReadableStream> {
@@ -1430,38 +1463,15 @@ export class FileService {
 
     // #region encoding
 
-    async getWriteEncoding(resource: URI, options?: WriteEncodingOptions): Promise<ResourceEncoding> {
-        const { encoding, hasBOM } = await this.getPreferredWriteEncoding(resource, options ? options.encoding : undefined);
-
-        // Some encodings come with a BOM automatically
-        if (hasBOM) {
-            return { encoding, hasBOM: true };
-        }
-
-        // Ensure that we preserve an existing BOM if found for UTF8
-        // unless we are instructed to overwrite the encoding
-        const overwriteEncoding = options?.overwriteEncoding;
-        if (!overwriteEncoding && encoding === UTF8) {
-            try {
-                const buffer = (await this.readFile(resource, { length: UTF8_BOM.length })).value;
-                if (this.encodingService.detectEncodingByBOMFromBuffer(Buffer.from(buffer.buffer), buffer.byteLength) === UTF8_with_bom) {
-                    return { encoding, hasBOM: true };
-                }
-            } catch (error) {
-                // ignore - file might not exist
+    protected async getWriteEncoding(resource: URI, options?: WriteEncodingOptions): Promise<ResourceEncoding> {
+        const encoding = await this.getEncodingForResource(resource, options ? options.encoding : undefined);
+        return this.encodingService.toResourceEncoding(encoding, {
+            overwriteEncoding: options?.overwriteEncoding,
+            read: async length => {
+                const buffer = await TextBufferReadableStream.toBuffer((await this.readFileStream(resource, { length })).value);
+                return buffer.buffer;
             }
-        }
-
-        return { encoding, hasBOM: false };
-    }
-
-    protected async getPreferredWriteEncoding(resource: URI, preferredEncoding?: string): Promise<ResourceEncoding> {
-        const resourceEncoding = await this.getEncodingForResource(resource, preferredEncoding);
-
-        return {
-            encoding: resourceEncoding,
-            hasBOM: resourceEncoding === UTF16be || resourceEncoding === UTF16le || resourceEncoding === UTF8_with_bom // enforce BOM for certain encodings
-        };
+        });
     }
 
     protected getReadEncoding(resource: URI, options?: ReadEncodingOptions, detectedEncoding?: string): Promise<string> {
@@ -1487,7 +1497,7 @@ export class FileService {
             resource = provider.options.toResource(resource);
             provider = await this.withProvider(resource);
         }
-        return this.encodingService.getEncodingForResource(resource, preferredEncoding);
+        return this.encodingRegistry.getEncodingForResource(resource, preferredEncoding);
     }
 
     // #endregion

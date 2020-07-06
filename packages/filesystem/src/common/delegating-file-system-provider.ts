@@ -19,8 +19,9 @@ import { Event, Emitter } from '@theia/core/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
     FileSystemProvider, FileSystemProviderCapabilities, WatchOptions, FileDeleteOptions, FileOverwriteOptions, FileWriteOptions, FileOpenOptions, FileChange, Stat, FileType,
-    hasReadWriteCapability, hasFileFolderCopyCapability, hasOpenReadWriteCloseCapability, hasAccessCapability
+    hasReadWriteCapability, hasFileFolderCopyCapability, hasOpenReadWriteCloseCapability, hasAccessCapability, FileUpdateOptions, hasUpdateCapability, FileUpdateResult
 } from './files';
+import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 
 export interface DelegatingFileSystemProviderOptions {
     toResource(resource: URI): URI;
@@ -137,6 +138,13 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
 
     delete(resource: URI, opts: FileDeleteOptions): Promise<void> {
         return this.delegate.delete(this.options.toResource(resource), opts);
+    }
+
+    updateFile(resource: URI, changes: TextDocumentContentChangeEvent[], opts: FileUpdateOptions): Promise<FileUpdateResult> {
+        if (hasUpdateCapability(this.delegate)) {
+            return this.delegate.updateFile(resource, changes, opts);
+        }
+        throw new Error('not supported');
     }
 
     protected handleFileChanges(changes: readonly FileChange[]): void {

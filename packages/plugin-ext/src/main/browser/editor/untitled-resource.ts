@@ -16,10 +16,11 @@
 
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { injectable, inject } from 'inversify';
-import { Resource, ResourceResolver, ResourceVersion } from '@theia/core';
+import { Resource, ResourceResolver, ResourceVersion, ResourceSaveOptions } from '@theia/core/lib/common/resource';
 import URI from '@theia/core/lib/common/uri';
 import { Schemes } from '../../../common/uri-components';
 import { FileResource, FileResourceResolver } from '@theia/filesystem/lib/browser';
+import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 
 let index = 0;
 
@@ -98,6 +99,13 @@ export class UntitledResource implements Resource {
             }
         }
         await this.fileResource.saveContents(content, options);
+    }
+
+    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: ResourceSaveOptions): Promise<void> {
+        if (!this.fileResource || !this.fileResource.saveContentChanges) {
+            throw new Error('FileResource is not available for: ' + this.uri.path.toString());
+        }
+        await this.fileResource.saveContentChanges(changes, options);
     }
 
     async guessEncoding(): Promise<string | undefined> {

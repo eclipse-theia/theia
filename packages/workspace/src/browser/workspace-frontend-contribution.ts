@@ -31,7 +31,8 @@ import { WorkspacePreferences } from './workspace-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { EncodingService, UTF8 } from '@theia/core/lib/browser/encoding-service';
+import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
+import { UTF8 } from '@theia/core/lib/common/encodings';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 
@@ -68,15 +69,15 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    @inject(EncodingService)
-    protected readonly encodingService: EncodingService;
+    @inject(EncodingRegistry)
+    protected readonly encodingRegistry: EncodingRegistry;
 
     @inject(PreferenceConfigurations)
     protected readonly preferenceConfigurations: PreferenceConfigurations;
 
     configure(): void {
-        this.encodingService.registerOverride({ encoding: UTF8, extension: THEIA_EXT });
-        this.encodingService.registerOverride({ encoding: UTF8, extension: VSCODE_EXT });
+        this.encodingRegistry.registerOverride({ encoding: UTF8, extension: THEIA_EXT });
+        this.encodingRegistry.registerOverride({ encoding: UTF8, extension: VSCODE_EXT });
         this.updateEncodingOverrides();
 
         const workspaceFolderCountKey = this.contextKeyService.createKey<number>('workspaceFolderCount', 0);
@@ -102,7 +103,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         for (const root of this.workspaceService.tryGetRoots()) {
             for (const configPath of this.preferenceConfigurations.getPaths()) {
                 const parent = root.resource.resolve(configPath);
-                this.toDisposeOnUpdateEncodingOverrides.push(this.encodingService.registerOverride({ encoding: UTF8, parent }));
+                this.toDisposeOnUpdateEncodingOverrides.push(this.encodingRegistry.registerOverride({ encoding: UTF8, parent }));
             }
         }
     }

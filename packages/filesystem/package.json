@@ -15,7 +15,8 @@
     "rimraf": "^2.6.2",
     "tar-fs": "^1.16.2",
     "trash": "^6.1.1",
-    "uuid": "^8.0.0"
+    "uuid": "^8.0.0",
+    "vscode-languageserver-textdocument": "^1.0.1"
   },
   "publishConfig": {
     "access": "public"

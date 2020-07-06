@@ -53,10 +53,15 @@ import {
     FileOverwriteOptions,
     FileSystemProviderError,
     FileChange,
-    WatchOptions
+    WatchOptions,
+    FileUpdateOptions, FileUpdateResult
 } from '../common/files';
 import { FileSystemWatcherServer } from '../common/filesystem-watcher-protocol';
 import trash = require('trash');
+import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { EncodingService } from '@theia/core/lib/common/encoding-service';
+import { TextBuffer } from '@theia/core/lib/common/buffer';
 
 export namespace DiskFileSystemProvider {
     export interface StatAndLink {
@@ -92,6 +97,9 @@ export class DiskFileSystemProvider implements Disposable,
     @inject(FileSystemWatcherServer)
     protected readonly watcher: FileSystemWatcherServer;
 
+    @inject(EncodingService)
+    protected readonly encodingService: EncodingService;
+
     @postConstruct()
     protected init(): void {
         this.toDispose.push(this.watcher);
@@ -115,7 +123,8 @@ export class DiskFileSystemProvider implements Disposable,
                 FileSystemProviderCapabilities.FileOpenReadWriteClose |
                 FileSystemProviderCapabilities.FileFolderCopy |
                 FileSystemProviderCapabilities.Access |
-                FileSystemProviderCapabilities.Trash;
+                FileSystemProviderCapabilities.Trash |
+                FileSystemProviderCapabilities.Update;
 
             if (OS.type() === OS.Type.Linux) {
                 this._capabilities |= FileSystemProviderCapabilities.PathCaseSensitive;
@@ -789,6 +798,33 @@ export class DiskFileSystemProvider implements Disposable,
     }
 
     // #endregion
+
+    async updateFile(resource: URI, changes: TextDocumentContentChangeEvent[], opts: FileUpdateOptions): Promise<FileUpdateResult> {
+        try {
+            const content = await this.readFile(resource);
+            const decoded = this.encodingService.decode(TextBuffer.wrap(content), opts.readEncoding);
+            const newContent = TextDocument.update(TextDocument.create('', '', 1, decoded), changes, 2).getText();
+            const encoding = await this.encodingService.toResourceEncoding(opts.writeEncoding, {
+                overwriteEncoding: opts.overwriteEncoding,
+                read: async length => {
+                    const fd = await this.open(resource, { create: false });
+                    try {
+                        const data = new Uint8Array(length);
+                        await this.read(fd, 0, data, 0, length);
+                        return data;
+                    } finally {
+                        await this.close(fd);
+                    }
+                }
+            });
+            const encoded = this.encodingService.encode(newContent, encoding);
+            await this.writeFile(resource, encoded.buffer, { create: false, overwrite: true });
+            const stat = await this.stat(resource);
+            return Object.assign(stat, { encoding: encoding.encoding });
+        } catch (error) {
+            throw this.toFileSystemProviderError(error);
+        }
+    }
 
     // #region Helpers
 

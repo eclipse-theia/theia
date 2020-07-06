@@ -27,6 +27,7 @@ import {
     remoteFileSystemPath, RemoteFileSystemServer, RemoteFileSystemClient, FileSystemProviderServer, RemoteFileSystemProxyFactory
 } from '../common/remote-file-system-provider';
 import { FileSystemProvider } from '../common/files';
+import { EncodingService } from '@theia/core/lib/common/encoding-service';
 
 const SINGLE_THREADED = process.argv.indexOf('--no-cluster') !== -1;
 
@@ -50,6 +51,7 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind, { singleThrea
 }
 
 export default new ContainerModule(bind => {
+    bind(EncodingService).toSelf().inSingletonScope();
     bindFileSystemWatcherServer(bind);
     bind(DiskFileSystemProvider).toSelf();
     bind(FileSystemProvider).toService(DiskFileSystemProvider);

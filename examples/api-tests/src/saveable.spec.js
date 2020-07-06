@@ -95,6 +95,55 @@ describe('Saveable', function () {
         }
     });
 
+    it('reject save with incremental update', async function () {
+        let longContent = 'foobarbaz';
+        for (let i = 0; i < 5; i++) {
+            longContent += longContent + longContent;
+        }
+        editor.getControl().setValue(longContent);
+        await Saveable.save(widget);
+
+        editor.getControl().getModel().applyEdits([{
+            range: monaco.Range.fromPositions({ lineNumber: 1, column: 1 }, { lineNumber: 1, column: 4 }),
+            forceMoveMarkers: false,
+            text: ''
+        }]);
+        assert.isTrue(Saveable.isDirty(widget), 'should be dirty before save');
+
+        const resource = editor.document['resource'];
+        const version = resource.version;
+        await resource.saveContents('baz');
+        assert.notEqual(version, resource.version, 'latest version should be different after write');
+
+        let outOfSync = false;
+        let outOfSyncCount = 0;
+        toTearDown.push(setShouldOverwrite(async () => {
+            outOfSync = true;
+            outOfSyncCount++;
+            return false;
+        }));
+
+        let incrementalUpdate = false;
+        const saveContentChanges = resource.saveContentChanges;
+        resource.saveContentChanges = async (changes, options) => {
+            incrementalUpdate = true;
+            return saveContentChanges.bind(resource)(changes, options);
+        };
+        try {
+            await Saveable.save(widget);
+        } finally {
+            resource.saveContentChanges = saveContentChanges;
+        }
+
+        assert.isTrue(incrementalUpdate, 'should tried to update incrementaly');
+        assert.isTrue(outOfSync, 'file should be out of sync');
+        assert.equal(outOfSyncCount, 1, 'user should be prompted only once with out of sync dialog');
+        assert.isTrue(Saveable.isDirty(widget), 'should be dirty after rejected save');
+        assert.equal(editor.getControl().getValue().trimRight(), longContent.substring(3), 'model should be updated');
+        const state = await fileService.read(fileUri);
+        assert.equal(state.value, 'baz', 'fs should NOT be updated');
+    });
+
     it('accept rejected save', async function () {
         let outOfSync = false;
         toTearDown.push(setShouldOverwrite(async () => {

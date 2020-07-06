@@ -19,17 +19,19 @@ import { Resource, ResourceVersion, ResourceResolver, ResourceError, ResourceSav
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import URI from '@theia/core/lib/common/uri';
-import { FileOperation, FileOperationError, FileOperationResult, ETAG_DISABLED, WriteFileOptions } from '../common/files';
+import { FileOperation, FileOperationError, FileOperationResult, ETAG_DISABLED, FileSystemProviderCapabilities } from '../common/files';
 import { FileService } from './file-service';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 
-export interface FileResourceVersion extends ResourceVersion, WriteFileOptions {
-    readonly encoding?: string;
+export interface FileResourceVersion extends ResourceVersion {
+    readonly encoding: string;
+    readonly mtime: number;
+    readonly etag: string;
 }
 export namespace FileResourceVersion {
     export function is(version: ResourceVersion | undefined): version is FileResourceVersion {
-        return !!version && ('mtime' in version || 'etag' in version);
+        return !!version && 'encoding' in version && 'mtime' in version && 'etag' in version;
     }
 }
 
@@ -72,6 +74,12 @@ export class FileResource implements Resource {
         } catch (e) {
             console.error(e);
         }
+        this.updateSavingContentChanges();
+        this.toDispose.push(this.fileService.onDidChangeFileSystemProviderCapabilities(e => {
+            if (e.scheme === this.uri.scheme) {
+                this.updateSavingContentChanges();
+            }
+        }));
     }
 
     dispose(): void {
@@ -131,6 +139,47 @@ export class FileResource implements Resource {
         }
     }
 
+    saveContentChanges?: Resource['saveContentChanges'];
+    protected updateSavingContentChanges(): void {
+        if (this.fileService.hasCapability(this.uri, FileSystemProviderCapabilities.Update)) {
+            this.saveContentChanges = this.doSaveContentChanges;
+        } else {
+            delete this.saveContentChanges;
+        }
+    }
+    protected doSaveContentChanges: Resource['saveContentChanges'] = async (changes, options) => {
+        const version = options?.version || this._version;
+        const current = FileResourceVersion.is(version) ? version : undefined;
+        if (!current) {
+            throw ResourceError.NotFound({ message: 'has not been read yet', data: { uri: this.uri } });
+        }
+        const etag = current?.etag;
+        try {
+            const stat = await this.fileService.update(this.uri, changes, {
+                readEncoding: current.encoding,
+                encoding: options?.encoding,
+                overwriteEncoding: options?.overwriteEncoding,
+                etag,
+                mtime: current?.mtime
+            });
+            this._version = {
+                etag: stat.etag,
+                mtime: stat.mtime,
+                encoding: stat.encoding
+            };
+        } catch (e) {
+            if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
+                const { message, stack } = e;
+                throw ResourceError.NotFound({ message, stack, data: { uri: this.uri } });
+            }
+            if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_MODIFIED_SINCE) {
+                const { message, stack } = e;
+                throw ResourceError.OutOfSync({ message, stack, data: { uri: this.uri } });
+            }
+            throw e;
+        }
+    };
+
     async guessEncoding(): Promise<string> {
         const content = await this.fileService.read(this.uri, { autoGuessEncoding: true });
         return content.encoding;
@@ -144,8 +193,8 @@ export class FileResource implements Resource {
     }
     protected async isInSync(): Promise<boolean> {
         try {
-            const stat = await this.fileService.resolve(this.uri);
-            return !!this.version && !this.fileService.modifiedSince(stat, this.version);
+            const stat = await this.fileService.resolve(this.uri, { resolveMetadata: true });
+            return !!this.version && this.version.mtime >= stat.mtime;
         } catch {
             return !this.version;
         }

@@ -48,7 +48,8 @@ import { CorePreferences } from './core-preferences';
 import { ThemeService } from './theming';
 import { PreferenceService, PreferenceScope } from './preferences';
 import { ClipboardService } from './clipboard-service';
-import { EncodingService, UTF8 } from './encoding-service';
+import { EncodingRegistry } from './encoding-registry';
+import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 
 export namespace CommonMenus {
@@ -319,8 +320,8 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(ClipboardService)
     protected readonly clipboardService: ClipboardService;
 
-    @inject(EncodingService)
-    protected readonly encodingService: EncodingService;
+    @inject(EncodingRegistry)
+    protected readonly encodingRegistry: EncodingRegistry;
 
     @inject(EnvVariablesServer)
     protected readonly environments: EnvVariablesServer;
@@ -328,7 +329,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     async configure(): Promise<void> {
         const configDirUri = await this.environments.getConfigDirUri();
         // Global settings
-        this.encodingService.registerOverride({
+        this.encodingRegistry.registerOverride({
             encoding: UTF8,
             parent: new URI(configDirUri)
         });

@@ -18,25 +18,13 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-// based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/workbench/services/textfile/browser/textFileService.ts#L491
-// and https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/workbench/services/textfile/common/encoding.ts
+// based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/workbench/services/textfile/common/encoding.ts
 
 import * as iconv from 'iconv-lite';
 import { Buffer } from 'safer-buffer';
-import { injectable, inject } from 'inversify';
-import URI from '../common/uri';
-import { TextBuffer } from '../common/buffer';
-import { Disposable } from 'vscode-ws-jsonrpc';
-import { CorePreferences } from './core-preferences';
-
-export const UTF8 = 'utf8';
-export const UTF8_with_bom = 'utf8bom';
-export const UTF16be = 'utf16be';
-export const UTF16le = 'utf16le';
-
-export const UTF16be_BOM = [0xFE, 0xFF];
-export const UTF16le_BOM = [0xFF, 0xFE];
-export const UTF8_BOM = [0xEF, 0xBB, 0xBF];
+import { injectable } from 'inversify';
+import { TextBuffer } from './buffer';
+import { UTF8, UTF8_with_bom, UTF16be, UTF16le, UTF16be_BOM, UTF16le_BOM, UTF8_BOM } from './encodings';
 
 const ZERO_BYTE_DETECTION_BUFFER_MAX_LEN = 512; 	// number of bytes to look at to decide about a file being binary or not
 const AUTO_ENCODING_GUESS_MAX_BYTES = 512 * 128; 	// set an upper limit for the number of bytes we pass on to jschardet
@@ -53,13 +41,6 @@ export interface ResourceEncoding {
     hasBOM: boolean
 }
 
-export interface EncodingOverride {
-    parent?: URI;
-    extension?: string;
-    scheme?: string;
-    encoding: string;
-}
-
 export interface DetectedEncoding {
     encoding?: string
     seemsBinary?: boolean
@@ -67,21 +48,6 @@ export interface DetectedEncoding {
 
 @injectable()
 export class EncodingService {
-
-    protected readonly encodingOverrides: EncodingOverride[] = [];
-
-    @inject(CorePreferences)
-    protected readonly preferences: CorePreferences;
-
-    registerOverride(override: EncodingOverride): Disposable {
-        this.encodingOverrides.push(override);
-        return Disposable.create(() => {
-            const index = this.encodingOverrides.indexOf(override);
-            if (index !== -1) {
-                this.encodingOverrides.splice(index, 1);
-            }
-        });
-    }
 
     encode(value: string, options?: ResourceEncoding): TextBuffer {
         let encoding = options?.encoding;
@@ -100,55 +66,43 @@ export class EncodingService {
         return iconv.decode(buffer, encoding);
     }
 
-    getEncodingForResource(resource: URI, preferredEncoding?: string): string {
-        let fileEncoding: string;
-
-        const override = this.getEncodingOverride(resource);
-        if (override) {
-            fileEncoding = override; // encoding override always wins
-        } else if (preferredEncoding) {
-            fileEncoding = preferredEncoding; // preferred encoding comes second
-        } else {
-            fileEncoding = this.preferences.get('files.encoding', undefined, resource.toString());
-        }
-
-        if (!fileEncoding || !this.exists(fileEncoding)) {
-            return UTF8; // the default is UTF 8
-        }
-
-        return this.toIconvEncoding(fileEncoding);
-    }
-
-    protected getEncodingOverride(resource: URI): string | undefined {
-        if (this.encodingOverrides && this.encodingOverrides.length) {
-            for (const override of this.encodingOverrides) {
-                if (override.parent && resource.isEqualOrParent(override.parent)) {
-                    return override.encoding;
-                }
-
-                if (override.extension && resource.path.ext === `.${override.extension}`) {
-                    return override.encoding;
-                }
-
-                if (override.scheme && override.scheme === resource.scheme) {
-                    return override.encoding;
-                }
-            }
-        }
-
-        return undefined;
-    }
-
-    protected exists(encoding: string): boolean {
+    exists(encoding: string): boolean {
         encoding = this.toIconvEncoding(encoding);
         return iconv.encodingExists(encoding);
     }
 
-    protected toIconvEncoding(encoding?: string): string {
+    toIconvEncoding(encoding?: string): string {
         if (encoding === UTF8_with_bom || !encoding) {
             return UTF8; // iconv does not distinguish UTF 8 with or without BOM, so we need to help it
         }
         return encoding;
+    }
+
+    async toResourceEncoding(encoding: string, options: {
+        overwriteEncoding?: boolean,
+        read: (length: number) => Promise<Uint8Array>
+    }): Promise<ResourceEncoding> {
+        // Some encodings come with a BOM automatically
+        if (encoding === UTF16be || encoding === UTF16le || encoding === UTF8_with_bom) {
+            return { encoding, hasBOM: true };
+        }
+
+        // Ensure that we preserve an existing BOM if found for UTF8
+        // unless we are instructed to overwrite the encoding
+        const overwriteEncoding = options?.overwriteEncoding;
+        if (!overwriteEncoding && encoding === UTF8) {
+            try {
+                // stream here to avoid fetching the whole content on write
+                const buffer = await options.read(UTF8_BOM.length);
+                if (this.detectEncodingByBOMFromBuffer(Buffer.from(buffer), buffer.byteLength) === UTF8_with_bom) {
+                    return { encoding, hasBOM: true };
+                }
+            } catch (error) {
+                // ignore - file might not exist
+            }
+        }
+
+        return { encoding, hasBOM: false };
     }
 
     async detectEncoding(data: TextBuffer, autoGuessEncoding?: boolean): Promise<DetectedEncoding> {
@@ -219,7 +173,7 @@ export class EncodingService {
         return { seemsBinary, encoding };
     }
 
-    detectEncodingByBOMFromBuffer(buffer: Buffer, bytesRead: number): typeof UTF8_with_bom | typeof UTF16le | typeof UTF16be | undefined {
+    protected detectEncodingByBOMFromBuffer(buffer: Buffer, bytesRead: number): typeof UTF8_with_bom | typeof UTF16le | typeof UTF16be | undefined {
         if (!buffer || bytesRead < UTF16be_BOM.length) {
             return undefined;
         }

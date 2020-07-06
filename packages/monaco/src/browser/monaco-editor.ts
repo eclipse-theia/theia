@@ -38,7 +38,7 @@ import {
     EncodingMode
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
-import { UTF8 } from '@theia/core/lib/browser/encoding-service';
+import { UTF8 } from '@theia/core/lib/common/encodings';
 
 import IStandaloneEditorConstructionOptions = monaco.editor.IStandaloneEditorConstructionOptions;
 import IModelDeltaDecoration = monaco.editor.IModelDeltaDecoration;

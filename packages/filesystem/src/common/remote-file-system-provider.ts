@@ -23,11 +23,12 @@ import {
     FileWriteOptions, FileOpenOptions, FileChangeType,
     FileSystemProviderCapabilities, FileChange, Stat, FileOverwriteOptions, WatchOptions, FileType, FileSystemProvider, FileDeleteOptions,
     hasOpenReadWriteCloseCapability, hasFileFolderCopyCapability, hasReadWriteCapability, hasAccessCapability,
-    FileSystemProviderError, FileSystemProviderErrorCode
+    FileSystemProviderError, FileSystemProviderErrorCode, FileUpdateOptions, hasUpdateCapability, FileUpdateResult
 } from './files';
 import { JsonRpcServer, JsonRpcProxy, JsonRpcProxyFactory } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ApplicationError } from '@theia/core/lib/common/application-error';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 
 export const remoteFileSystemPath = '/services/remote-filesystem';
 
@@ -50,6 +51,7 @@ export interface RemoteFileSystemServer extends JsonRpcServer<RemoteFileSystemCl
     copy(source: string, target: string, opts: FileOverwriteOptions): Promise<void>;
     watch(watcher: number, resource: string, opts: WatchOptions): Promise<void>;
     unwatch(watcher: number): Promise<void>;
+    updateFile(resource: string, changes: TextDocumentContentChangeEvent[], opts: FileUpdateOptions): Promise<FileUpdateResult>;
 }
 
 export interface RemoteFileChange {
@@ -217,6 +219,10 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
         return this.server.copy(resource.toString(), target.toString(), opts);
     }
 
+    updateFile(resource: URI, changes: TextDocumentContentChangeEvent[], opts: FileUpdateOptions): Promise<FileUpdateResult> {
+        return this.server.updateFile(resource.toString(), changes, opts);
+    }
+
     watch(resource: URI, options: WatchOptions): Disposable {
         const watcher = this.watcherSequence++;
         const uri = resource.toString();
@@ -363,6 +369,13 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
     copy(source: string, target: string, opts: FileOverwriteOptions): Promise<void> {
         if (hasFileFolderCopyCapability(this.provider)) {
             return this.provider.copy(new URI(source), new URI(target), opts);
+        }
+        throw new Error('not supported');
+    }
+
+    updateFile(resource: string, changes: TextDocumentContentChangeEvent[], opts: FileUpdateOptions): Promise<FileUpdateResult> {
+        if (hasUpdateCapability(this.provider)) {
+            return this.provider.updateFile(new URI(resource), changes, opts);
         }
         throw new Error('not supported');
     }
