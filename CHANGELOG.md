@@ -7,6 +7,7 @@
 
 Breaking Changes:
 
+- [plugin] moved `VSCODE_DEFAULT_API_VERSION` constant into `common` [#8147](https://github.com/eclipse-theia/theia/pull/8147)
 <a name="1_4_0_replace_json"></a>
 - [[json]](#1_4_0_replace_json) replaced `@theia/json` Theia extension with `vscode.json-language-features` VS Code extension [#8112](https://github.com/eclipse-theia/theia/pull/8112)
   - You can register JSON validations at application startup by implementing `JsonSchemaContribution` Theia contribution point.
