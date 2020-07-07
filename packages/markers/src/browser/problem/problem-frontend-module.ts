@@ -31,6 +31,7 @@ import { ProblemLayoutVersion3Migration } from './problem-layout-migrations';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { bindProblemPreferences } from './problem-preferences';
 import { MarkerTreeLabelProvider } from '../marker-tree-label-provider';
+import { ProblemsWidgetTabBarDecorator } from './problems-view-decorator';
 
 export default new ContainerModule(bind => {
     bindProblemPreferences(bind);
@@ -57,4 +58,7 @@ export default new ContainerModule(bind => {
 
     bind(MarkerTreeLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(MarkerTreeLabelProvider);
+
+    bind(ProblemsWidgetTabBarDecorator).toSelf().inSingletonScope();
+    bind(TabBarDecorator).toService(ProblemsWidgetTabBarDecorator);
 });
