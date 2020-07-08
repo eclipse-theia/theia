@@ -535,6 +535,10 @@ export class HostedPluginSupport {
         await Promise.all(activation);
     }
 
+    async activateByViewContainer(viewContainerId: string): Promise<void> {
+        await Promise.all(this.viewRegistry.getContainerViews(viewContainerId).map(viewId => this.activateByView(viewId)));
+    }
+
     async activateByView(viewId: string): Promise<void> {
         await this.activateByEvent(`onView:${viewId}`);
     }

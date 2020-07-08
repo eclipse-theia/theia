@@ -16,6 +16,7 @@
 
 // @ts-check
 describe('Menus', function () {
+    this.timeout(7500);
 
     const { assert } = chai;
 
@@ -51,8 +52,7 @@ describe('Menus', function () {
 
     before(async function () {
         await pluginService.didStart;
-        // register views for the explorer view container
-        await pluginService.activatePlugin('vscode.npm');
+        await pluginService.activateByViewContainer('explorer');
     });
 
     const toTearDown = new DisposableCollection();

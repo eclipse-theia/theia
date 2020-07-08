@@ -246,6 +246,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return toDispose;
     }
 
+    getContainerViews(viewContainerId: string): string[] {
+        return this.containerViews.get(viewContainerId) || [];
+    }
+
     registerView(viewContainerId: string, view: View): Disposable {
         if (this.views.has(view.id)) {
             console.warn('view with such id already registered: ', JSON.stringify(view));
@@ -256,7 +260,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         this.views.set(view.id, [viewContainerId, view]);
         toDispose.push(Disposable.create(() => this.views.delete(view.id)));
 
-        const containerViews = this.containerViews.get(viewContainerId) || [];
+        const containerViews = this.getContainerViews(viewContainerId);
         containerViews.push(view.id);
         this.containerViews.set(viewContainerId, containerViews);
         toDispose.push(Disposable.create(() => {
@@ -374,7 +378,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             const [, options] = data;
             containerWidget.setTitleOptions(options);
         }
-        for (const viewId of this.containerViews.get(viewContainerId) || []) {
+        for (const viewId of this.getContainerViews(viewContainerId)) {
             const identifier = this.toPluginViewWidgetIdentifier(viewId);
             const widget = await this.widgetManager.getOrCreateWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, identifier);
             if (containerWidget.getTrackableWidgets().indexOf(widget) === -1) {
