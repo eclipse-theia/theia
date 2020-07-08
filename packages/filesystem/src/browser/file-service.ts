@@ -106,7 +106,13 @@ export interface WriteEncodingOptions {
     overwriteEncoding?: boolean;
 }
 
-export interface ReadTextFileOptions extends ReadEncodingOptions, ReadFileOptions { }
+export interface ReadTextFileOptions extends ReadEncodingOptions, ReadFileOptions {
+	/**
+	 * The optional acceptTextOnly parameter allows to fail this request early if the file
+	 * contents are not textual.
+	 */
+    acceptTextOnly?: boolean;
+}
 
 export interface TextFileContent extends BaseStatWithMetadata {
 
@@ -186,6 +192,23 @@ export interface FileSystemProviderCapabilitiesChangeEvent {
 
 export interface FileSystemProviderActivationEvent extends WaitUntilEvent {
     scheme: string;
+}
+
+export const enum TextFileOperationResult {
+    FILE_IS_BINARY
+}
+
+export class TextFileOperationError extends FileOperationError {
+
+    constructor(
+        message: string,
+        public textFileOperationResult: TextFileOperationResult,
+        public options?: ReadTextFileOptions & WriteTextFileOptions
+    ) {
+        super(message, FileOperationResult.FILE_OTHER_ERROR);
+        Object.setPrototypeOf(this, TextFileOperationError.prototype);
+    }
+
 }
 
 @injectable()
@@ -547,7 +570,11 @@ export class FileService {
             autoGuessEncoding: typeof options?.autoGuessEncoding === 'boolean' ? options.autoGuessEncoding : this.preferences['files.autoGuessEncoding']
         };
         const content = await this.readFile(resource, options);
+        // TODO stream
         const detected = await this.encodingService.detectEncoding(content.value, options.autoGuessEncoding);
+        if (options?.acceptTextOnly && detected.seemsBinary) {
+            throw new TextFileOperationError('File seems to be binary and cannot be opened as text', TextFileOperationResult.FILE_IS_BINARY, options);
+        }
         const encoding = await this.getReadEncoding(resource, options, detected.encoding);
         const value = this.encodingService.decode(content.value, encoding);
         return { ...content, encoding, value };
