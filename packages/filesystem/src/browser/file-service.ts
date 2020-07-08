@@ -63,6 +63,7 @@ import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-proto
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding } from '@theia/core/lib/common/encoding-service';
+import { Mutable } from '@theia/core/lib/common/types';
 
 export interface FileOperationParticipant {
 
@@ -565,10 +566,7 @@ export class FileService {
     }
 
     async read(resource: URI, options?: ReadTextFileOptions): Promise<TextFileContent> {
-        options = {
-            ...options,
-            autoGuessEncoding: typeof options?.autoGuessEncoding === 'boolean' ? options.autoGuessEncoding : this.preferences['files.autoGuessEncoding']
-        };
+        options = this.resolveReadOptions(options);
         const content = await this.readFile(resource, options);
         // TODO stream
         const detected = await this.encodingService.detectEncoding(content.value, options.autoGuessEncoding);
@@ -578,6 +576,18 @@ export class FileService {
         const encoding = await this.getReadEncoding(resource, options, detected.encoding);
         const value = this.encodingService.decode(content.value, encoding);
         return { ...content, encoding, value };
+    }
+
+    protected resolveReadOptions(options?: ReadTextFileOptions): ReadTextFileOptions {
+        options = {
+            ...options,
+            autoGuessEncoding: typeof options?.autoGuessEncoding === 'boolean' ? options.autoGuessEncoding : this.preferences['files.autoGuessEncoding']
+        };
+        const limits: Mutable<ReadTextFileOptions['limits']> = options.limits = options.limits || {};
+        if (typeof limits.size !== 'number') {
+            limits.size = this.preferences['files.maxFileSizeMB'] * 1024 * 1024;
+        }
+        return options;
     }
 
     async update(resource: URI, changes: TextDocumentContentChangeEvent[], options: UpdateTextFileOptions): Promise<FileStatWithMetadata & { encoding: string }> {
@@ -828,7 +838,28 @@ export class FileService {
             throw new FileOperationError('File not modified since', FileOperationResult.FILE_NOT_MODIFIED_SINCE, options);
         }
 
+        // Throw if file is too large to load
+        this.validateReadFileLimits(resource, stat.size, options);
+
         return stat;
+    }
+
+    private validateReadFileLimits(resource: URI, size: number, options?: ReadFileOptions): void {
+        if (options?.limits) {
+            let tooLargeErrorResult: FileOperationResult | undefined = undefined;
+
+            if (typeof options.limits.memory === 'number' && size > options.limits.memory) {
+                tooLargeErrorResult = FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT;
+            }
+
+            if (typeof options.limits.size === 'number' && size > options.limits.size) {
+                tooLargeErrorResult = FileOperationResult.FILE_TOO_LARGE;
+            }
+
+            if (typeof tooLargeErrorResult === 'number') {
+                throw new FileOperationError(`Unable to read file '${this.resourceForError(resource)}' that is too large to open`, tooLargeErrorResult);
+            }
+        }
     }
 
     // #endregion
