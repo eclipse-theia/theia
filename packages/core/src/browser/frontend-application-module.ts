@@ -81,6 +81,7 @@ import { ProgressService } from '../common/progress-service';
 import { DispatchingProgressClient } from './progress-client';
 import { ProgressStatusBarItem } from './progress-status-bar-item';
 import { TabBarDecoratorService, TabBarDecorator } from './shell/tab-bar-decorator';
+import { WidgetTabBarDecoratorService, WidgetTabBarDecorator } from './shell/widget-tab-bar-decorator-service';
 import { ContextMenuContext } from './menu/context-menu-context';
 import { bindResourceProvider, bindMessageService, bindPreferenceService } from './frontend-application-bindings';
 import { ColorRegistry } from './color-registry';
@@ -148,11 +149,15 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         const contextMenuRenderer = context.container.get<ContextMenuRenderer>(ContextMenuRenderer);
         const decoratorService = context.container.get<TabBarDecoratorService>(TabBarDecoratorService);
         const iconThemeService = context.container.get<IconThemeService>(IconThemeService);
-        return new TabBarRenderer(contextMenuRenderer, decoratorService, iconThemeService);
+        const widgetDecoratorService = context.container.get<WidgetTabBarDecoratorService>(WidgetTabBarDecoratorService);
+        return new TabBarRenderer(contextMenuRenderer, decoratorService, iconThemeService, widgetDecoratorService);
     });
 
     bindContributionProvider(bind, TabBarDecorator);
     bind(TabBarDecoratorService).toSelf().inSingletonScope();
+
+    bindContributionProvider(bind, WidgetTabBarDecorator);
+    bind(WidgetTabBarDecoratorService).toSelf().inSingletonScope();
 
     bindContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();

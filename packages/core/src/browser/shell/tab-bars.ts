@@ -28,6 +28,7 @@ import { TheiaDockPanel, MAIN_AREA_ID, BOTTOM_AREA_ID } from './theia-dock-panel
 import { WidgetDecoration } from '../widget-decoration';
 import { TabBarDecoratorService } from './tab-bar-decorator';
 import { IconThemeService } from '../icon-theme-service';
+import { WidgetTabBarDecoratorService } from './widget-tab-bar-decorator-service';
 
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
@@ -77,7 +78,8 @@ export class TabBarRenderer extends TabBar.Renderer {
     constructor(
         protected readonly contextMenuRenderer?: ContextMenuRenderer,
         protected readonly decoratorService?: TabBarDecoratorService,
-        protected readonly iconThemeService?: IconThemeService
+        protected readonly iconThemeService?: IconThemeService,
+        protected readonly widgetDecoratorService?: WidgetTabBarDecoratorService,
     ) {
         super();
         if (this.decoratorService) {
@@ -151,7 +153,8 @@ export class TabBarRenderer extends TabBar.Renderer {
             h.div(
                 { className: 'theia-tab-icon-label' },
                 this.renderIcon(data, isInSidePanel),
-                this.renderLabel(data, isInSidePanel)
+                this.renderLabel(data, isInSidePanel),
+                this.renderBadge(data, isInSidePanel)
             ),
             this.renderCloseIcon(data)
         );
@@ -226,6 +229,18 @@ export class TabBarRenderer extends TabBar.Renderer {
         return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
     }
 
+    renderBadge(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
+        const badge = this.getDecorationData(data.title, 'badge');
+        if (badge && badge.length > 0) {
+            if (isInSidePanel) {
+                return h.div({ className: 'theia-badge-decorator-sidebar' }, `${badge}`);
+            } else {
+                return h.div({ className: 'theia-badge-decorator-horizontal' }, `${badge}`);
+            }
+        }
+        return h.div({});
+    }
+
     protected readonly decorations = new Map<Title<Widget>, WidgetDecoration.Data[]>();
 
     protected resetDecorations(title?: Title<Widget>): void {
@@ -253,7 +268,9 @@ export class TabBarRenderer extends TabBar.Renderer {
             }
 
             const decorations = this.decorations.get(title) || this.decoratorService.getDecorations(title);
-            this.decorations.set(title, decorations);
+            if (this.widgetDecoratorService) {
+                decorations.push(...this.widgetDecoratorService.getDecorations(title));
+            }
             return decorations;
         }
         return [];
