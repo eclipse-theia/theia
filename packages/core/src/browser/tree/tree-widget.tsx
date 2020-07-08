@@ -333,7 +333,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * Force deep resizing and rendering of rows.
      * https://github.com/bvaughn/react-virtualized/blob/master/docs/List.md#recomputerowheights-index-number
      */
-    protected forceUpdate({ resize }: TreeWidget.ForceUpdateOptions = { resize: true }): void {
+    protected forceUpdate({ resize }: TreeWidget.ForceUpdateOptions = { resize: false }): void {
         if (this.view && this.view.list) {
             if (resize && this.isVisible) {
                 this.view.cache.clearAll();
@@ -389,7 +389,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
-        this.forceUpdate();
+        this.forceUpdate({ resize: true });
     }
 
     protected render(): React.ReactNode {
