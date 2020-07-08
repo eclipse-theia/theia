@@ -404,6 +404,9 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
      * By default returns with all items where the command is enabled and `item.isVisible` is `true`.
      */
     visibleItems(widget: Widget): Array<TabBarToolbarItem | ReactTabBarToolbarItem> {
+        if (widget.isDisposed) {
+            return [];
+        }
         const result = [];
         for (const item of this.items.values()) {
             const visible = TabBarToolbarItem.is(item)

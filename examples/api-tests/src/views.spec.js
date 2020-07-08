@@ -16,6 +16,7 @@
 
 // @ts-check
 describe('Views', function () {
+    this.timeout(7500);
 
     const { assert } = chai;
 
@@ -24,6 +25,7 @@ describe('Views', function () {
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
     const { OutlineViewContribution } = require('@theia/outline-view/lib/browser/outline-view-contribution');
     const { ProblemContribution } = require('@theia/markers/lib/browser/problem/problem-contribution');
+    const { HostedPluginSupport } = require('@theia/plugin-ext/lib/hosted/browser/hosted-plugin');
 
     /** @type {import('inversify').Container} */
     const container = window['theia'].container;
@@ -32,13 +34,18 @@ describe('Views', function () {
     const scmContribution = container.get(ScmContribution);
     const outlineContribution = container.get(OutlineViewContribution);
     const problemContribution = container.get(ProblemContribution);
+    const pluginService = container.get(HostedPluginSupport);
 
-    before(() => {
-        shell.leftPanelHandler.collapse();
-    });
+    before(() => Promise.all([
+        shell.leftPanelHandler.collapse(),
+        (async function () {
+            await pluginService.didStart;
+            await pluginService.activateByViewContainer('explorer');
+        })()
+    ]));
 
     for (const contribution of [navigatorContribution, scmContribution, outlineContribution, problemContribution]) {
-        it(`should toggle ${contribution.viewLabel}`, async () => {
+        it(`should toggle ${contribution.viewLabel}`, async function () {
             let view = await contribution.closeView();
             if (view) {
                 assert.notEqual(shell.getAreaFor(view), contribution.defaultViewOptions.area);

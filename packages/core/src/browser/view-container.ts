@@ -330,7 +330,11 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
 
     get containerLayout(): ViewContainerLayout {
-        return this.panel.layout as ViewContainerLayout;
+        const layout = this.panel.layout;
+        if (layout instanceof ViewContainerLayout) {
+            return layout;
+        }
+        throw new Error('view container is disposed');
     }
 
     protected get orientation(): SplitLayout.Orientation {
@@ -1159,7 +1163,7 @@ export class ViewContainerLayout extends SplitLayout {
         }
 
         if (!enableAnimation || this.options.animationDuration <= 0) {
-            MessageLoop.postMessage(this.parent!, Widget.Msg.FitRequest);
+            MessageLoop.postMessage(this.parent, Widget.Msg.FitRequest);
             return;
         }
         let startTime: number | undefined = undefined;
@@ -1178,6 +1182,10 @@ export class ViewContainerLayout extends SplitLayout {
 
         // The update function is called on every animation frame until the predefined duration has elapsed.
         const updateFunc = (time: number) => {
+            if (!this.parent) {
+                part.animatedSize = undefined;
+                return;
+            }
             if (startTime === undefined) {
                 startTime = time;
             }
@@ -1199,11 +1207,13 @@ export class ViewContainerLayout extends SplitLayout {
                     // Request another frame to reset the part to variable size
                     requestAnimationFrame(() => {
                         part.animatedSize = undefined;
-                        MessageLoop.sendMessage(this.parent!, Widget.Msg.FitRequest);
+                        if (this.parent) {
+                            MessageLoop.sendMessage(this.parent, Widget.Msg.FitRequest);
+                        }
                     });
                 }
             }
-            MessageLoop.sendMessage(this.parent!, Widget.Msg.FitRequest);
+            MessageLoop.sendMessage(this.parent, Widget.Msg.FitRequest);
         };
         requestAnimationFrame(updateFunc);
     }
