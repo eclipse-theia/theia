@@ -19,10 +19,11 @@ import { Resource, ResourceVersion, ResourceResolver, ResourceError, ResourceSav
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import URI from '@theia/core/lib/common/uri';
-import { FileOperation, FileOperationError, FileOperationResult, ETAG_DISABLED, FileSystemProviderCapabilities } from '../common/files';
+import { FileOperation, FileOperationError, FileOperationResult, ETAG_DISABLED, FileSystemProviderCapabilities, FileReadStreamOptions, BinarySize } from '../common/files';
 import { FileService, TextFileOperationError, TextFileOperationResult } from './file-service';
 import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { GENERAL_MAX_FILE_SIZE_MB } from './filesystem-preferences';
 
 export interface FileResourceVersion extends ResourceVersion {
     readonly encoding: string;
@@ -43,6 +44,7 @@ export interface FileResourceOptions {
 export class FileResource implements Resource {
 
     protected acceptTextOnly = true;
+    protected limits: FileReadStreamOptions['limits'];
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
@@ -95,7 +97,8 @@ export class FileResource implements Resource {
             const stat = await this.fileService.read(this.uri, {
                 encoding,
                 etag: ETAG_DISABLED,
-                acceptTextOnly: this.acceptTextOnly
+                acceptTextOnly: this.acceptTextOnly,
+                limits: this.limits
             });
             this._version = {
                 encoding: stat.encoding,
@@ -105,14 +108,20 @@ export class FileResource implements Resource {
             return stat.value;
         } catch (e) {
             if (e instanceof TextFileOperationError && e.textFileOperationResult === TextFileOperationResult.FILE_IS_BINARY) {
-                if (await this.shouldOpenAsText(e.message)) {
+                if (await this.shouldOpenAsText('The file is either binary or uses an unsupported text encoding.')) {
                     this.acceptTextOnly = false;
                     return this.readContents(options);
-                } else {
-                    throw e;
                 }
-            }
-            if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
+            } else if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_TOO_LARGE) {
+                const stat = await this.fileService.resolve(this.uri, { resolveMetadata: true });
+                const maxFileSize = GENERAL_MAX_FILE_SIZE_MB * 1024 * 1024;
+                if (this.limits?.size !== maxFileSize && await this.shouldOpenAsText(`The file is too large (${BinarySize.formatSize(stat.size)}).`)) {
+                    this.limits = {
+                        size: maxFileSize
+                    };
+                    return this.readContents(options);
+                }
+            } else if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
                 this._version = undefined;
                 const { message, stack } = e;
                 throw ResourceError.NotFound({
@@ -266,7 +275,7 @@ export class FileResourceResolver implements ResourceResolver {
     protected async shouldOpenAsText(uri: URI, error: string): Promise<boolean> {
         const dialog = new ConfirmDialog({
             title: error,
-            msg: `Do you want to open '${this.labelProvider.getLongName(uri)}' anyway?`,
+            msg: `Opening it might take some time and might make the IDE unresponsive. Do you want to open '${this.labelProvider.getLongName(uri)}' anyway?`,
             ok: 'Yes',
             cancel: 'No'
         });

@@ -23,6 +23,13 @@ import {
     PreferenceContribution
 } from '@theia/core/lib/browser/preferences';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
+import { environment } from '@theia/application-package/lib/environment';
+
+// See https://github.com/Microsoft/vscode/issues/30180
+export const WIN32_MAX_FILE_SIZE_MB = 300; // 300 MB
+export const GENERAL_MAX_FILE_SIZE_MB = 16 * 1024; // 16 GB
+
+export const MAX_FILE_SIZE_MB = environment.electron.is() ? process.arch === 'ia32' ? WIN32_MAX_FILE_SIZE_MB : GENERAL_MAX_FILE_SIZE_MB : 32;
 
 export const filesystemPreferenceSchema: PreferenceSchema = {
     'type': 'object',
@@ -66,6 +73,11 @@ These have precedence over the default associations of the languages installed.'
             type: 'number',
             default: 5000,
             markdownDescription: 'Timeout in milliseconds after which file participants for create, rename, and delete are cancelled. Use `0` to disable participants.'
+        },
+        'files.maxFileSizeMB': {
+            type: 'number',
+            default: MAX_FILE_SIZE_MB,
+            markdownDescription: 'Controls the max file size in MB which is possible to open.'
         }
     }
 };
@@ -78,6 +90,7 @@ export interface FileSystemConfiguration {
     'files.encoding': string;
     'files.autoGuessEncoding': boolean;
     'files.participants.timeout': number;
+    'files.maxFileSizeMB': number;
 }
 
 export const FileSystemPreferences = Symbol('FileSystemPreferences');

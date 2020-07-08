@@ -443,6 +443,14 @@ export interface FileReadStreamOptions {
 	 * will be read.
 	 */
     readonly length?: number;
+
+	/**
+	 * If provided, the size of the file will be checked against the limits.
+	 */
+    limits?: {
+        readonly size?: number;
+        readonly memory?: number;
+    };
 }
 
 export interface FileUpdateOptions {
@@ -694,4 +702,29 @@ export function etag(stat: { mtime: number | undefined, size: number | undefined
     }
 
     return stat.mtime.toString(29) + stat.size.toString(31);
+}
+/**
+ * Helper to format a raw byte size into a human readable label.
+ */
+export class BinarySize {
+    static readonly KB = 1024;
+    static readonly MB = BinarySize.KB * BinarySize.KB;
+    static readonly GB = BinarySize.MB * BinarySize.KB;
+    static readonly TB = BinarySize.GB * BinarySize.KB;
+
+    static formatSize(size: number): string {
+        if (size < BinarySize.KB) {
+            return size + 'B';
+        }
+        if (size < BinarySize.MB) {
+            return (size / BinarySize.KB).toFixed(2) + 'KB';
+        }
+        if (size < BinarySize.GB) {
+            return (size / BinarySize.MB).toFixed(2) + 'MB';
+        }
+        if (size < BinarySize.TB) {
+            return (size / BinarySize.GB).toFixed(2) + 'GB';
+        }
+        return (size / BinarySize.TB).toFixed(2) + 'TB';
+    }
 }
