@@ -1,6 +1,5 @@
 {
   "rules": {
-    "@typescript-eslint/class-name-casing": "error",
     "@typescript-eslint/consistent-type-definitions": "error",
     "@typescript-eslint/indent": "off",
     "@typescript-eslint/no-explicit-any": "error",
