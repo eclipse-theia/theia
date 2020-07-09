@@ -50,11 +50,11 @@ import {
     Stat, WatchOptions, WriteFileOptions,
     toFileOperationResult, toFileSystemProviderErrorCode,
     ResolveFileResult, ResolveFileResultWithMetadata,
-    MoveFileOptions, CopyFileOptions, BaseStatWithMetadata, FileDeleteOptions, FileOperationOptions, hasAccessCapability, hasUpdateCapability
+    MoveFileOptions, CopyFileOptions, BaseStatWithMetadata, FileDeleteOptions, FileOperationOptions, hasAccessCapability, hasUpdateCapability,
+    hasFileReadStreamCapability, FileSystemProviderWithFileReadStreamCapability
 } from '../common/files';
-import { createReadStream } from '../common/io';
-import { BinaryBuffer, BinaryBufferReadable, BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
-import { isReadableStream, ReadableStreamEvents, transform, consumeStreamWithLimit, consumeReadableWithLimit } from '@theia/core/lib/common/stream';
+import { BinaryBuffer, BinaryBufferReadable, BinaryBufferReadableStream, BinaryBufferReadableBufferedStream, BinaryBufferWriteableStream } from '@theia/core/lib/common/buffer';
+import { ReadableStream, isReadableStream, isReadableBufferedStream, transform, consumeStream, peekStream, peekReadable, Readable } from '@theia/core/lib/common/stream';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { FileSystemPreferences } from './filesystem-preferences';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
@@ -62,8 +62,9 @@ import { DelegatingFileSystemProvider } from '../common/delegating-file-system-p
 import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
-import { EncodingService, ResourceEncoding } from '@theia/core/lib/common/encoding-service';
+import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/core/lib/common/encoding-service';
 import { Mutable } from '@theia/core/lib/common/types';
+import { readFileIntoStream } from '../common/io';
 
 export interface FileOperationParticipant {
 
@@ -115,17 +116,28 @@ export interface ReadTextFileOptions extends ReadEncodingOptions, ReadFileOption
     acceptTextOnly?: boolean;
 }
 
-export interface TextFileContent extends BaseStatWithMetadata {
+interface BaseTextFileContent extends BaseStatWithMetadata {
 
-    /**
-     * The encoding of the content if known.
-     */
+	/**
+	 * The encoding of the content if known.
+	 */
     encoding: string;
+}
+
+export interface TextFileContent extends BaseTextFileContent {
 
 	/**
 	 * The content of a text file.
 	 */
     value: string;
+}
+
+export interface TextFileStreamContent extends BaseTextFileContent {
+
+	/**
+	 * The line grouped content of a text file.
+	 */
+    value: ReadableStream<string>;
 }
 
 export interface CreateTextFileOptions extends WriteEncodingOptions, CreateFileOptions { }
@@ -531,7 +543,7 @@ export class FileService {
 
     // #region Text File Reading/Writing
 
-    async create(resource: URI, value?: string, options?: CreateTextFileOptions): Promise<FileStatWithMetadata> {
+    async create(resource: URI, value?: string | Readable<string>, options?: CreateTextFileOptions): Promise<FileStatWithMetadata> {
         if (options?.fromUserGesture === false) {
             return this.doCreate(resource, value, options);
         }
@@ -553,29 +565,72 @@ export class FileService {
         return stat;
     }
 
-    protected async doCreate(resource: URI, value?: string, options?: CreateTextFileOptions): Promise<FileStatWithMetadata> {
+    protected async doCreate(resource: URI, value?: string | Readable<string>, options?: CreateTextFileOptions): Promise<FileStatWithMetadata> {
         const encoding = await this.getWriteEncoding(resource, options);
-        const encoded = this.encodingService.encode(value || '', encoding);
+        const encoded = await this.encodingService.encodeStream(value, encoding);
         return this.createFile(resource, encoded, options);
     }
 
-    async write(resource: URI, value: string, options?: WriteTextFileOptions): Promise<FileStatWithMetadata & { encoding: string }> {
+    async write(resource: URI, value: string | Readable<string>, options?: WriteTextFileOptions): Promise<FileStatWithMetadata & { encoding: string }> {
         const encoding = await this.getWriteEncoding(resource, options);
-        const encoded = this.encodingService.encode(value, encoding);
+        const encoded = await this.encodingService.encodeStream(value, encoding);
         return Object.assign(await this.writeFile(resource, encoded, options), { encoding: encoding.encoding });
     }
 
     async read(resource: URI, options?: ReadTextFileOptions): Promise<TextFileContent> {
+        const [bufferStream, decoder] = await this.doRead(resource, {
+            ...options,
+            // optimization: since we know that the caller does not
+            // care about buffering, we indicate this to the reader.
+            // this reduces all the overhead the buffered reading
+            // has (open, read, close) if the provider supports
+            // unbuffered reading.
+            preferUnbuffered: true
+        });
+
+        return {
+            ...bufferStream,
+            encoding: decoder.detected.encoding || UTF8,
+            value: await consumeStream(decoder.stream, strings => strings.join(''))
+        };
+    }
+
+    async readStream(resource: URI, options?: ReadTextFileOptions): Promise<TextFileStreamContent> {
+        const [bufferStream, decoder] = await this.doRead(resource, options);
+
+        return {
+            ...bufferStream,
+            encoding: decoder.detected.encoding || UTF8,
+            value: decoder.stream
+        };
+    }
+
+    private async doRead(resource: URI, options?: ReadTextFileOptions & { preferUnbuffered?: boolean }): Promise<[FileStreamContent, DecodeStreamResult]> {
         options = this.resolveReadOptions(options);
-        const content = await this.readFile(resource, options);
-        // TODO stream
-        const detected = await this.encodingService.detectEncoding(content.value, options.autoGuessEncoding);
-        if (options?.acceptTextOnly && detected.seemsBinary) {
+
+        // read stream raw (either buffered or unbuffered)
+        let bufferStream: FileStreamContent;
+        if (options?.preferUnbuffered) {
+            const content = await this.readFile(resource, options);
+            bufferStream = {
+                ...content,
+                value: BinaryBufferReadableStream.fromBuffer(content.value)
+            };
+        } else {
+            bufferStream = await this.readFileStream(resource, options);
+        }
+
+        const decoder = await this.encodingService.decodeStream(bufferStream.value, {
+            guessEncoding: options.autoGuessEncoding,
+            overwriteEncoding: detectedEncoding => this.getReadEncoding(resource, options, detectedEncoding)
+        });
+
+        // validate binary
+        if (options?.acceptTextOnly && decoder.detected.seemsBinary) {
             throw new TextFileOperationError('File seems to be binary and cannot be opened as text', TextFileOperationResult.FILE_IS_BINARY, options);
         }
-        const encoding = await this.getReadEncoding(resource, options, detected.encoding);
-        const value = this.encodingService.decode(content.value, encoding);
-        return { ...content, encoding, value };
+
+        return [bufferStream, decoder];
     }
 
     protected resolveReadOptions(options?: ReadTextFileOptions): ReadTextFileOptions {
@@ -647,22 +702,30 @@ export class FileService {
             // to write is a Readable, we consume up to 3 chunks and try to write the data
             // unbuffered to reduce the overhead. If the Readable has more data to provide
             // we continue to write buffered.
+            let bufferOrReadableOrStreamOrBufferedStream: BinaryBuffer | BinaryBufferReadable | BinaryBufferReadableStream | BinaryBufferReadableBufferedStream;
             if (hasReadWriteCapability(provider) && !(bufferOrReadableOrStream instanceof BinaryBuffer)) {
                 if (isReadableStream(bufferOrReadableOrStream)) {
-                    bufferOrReadableOrStream = await consumeStreamWithLimit(bufferOrReadableOrStream, data => BinaryBuffer.concat(data), 3);
+                    const bufferedStream = await peekStream(bufferOrReadableOrStream, 3);
+                    if (bufferedStream.ended) {
+                        bufferOrReadableOrStreamOrBufferedStream = BinaryBuffer.concat(bufferedStream.buffer);
+                    } else {
+                        bufferOrReadableOrStreamOrBufferedStream = bufferedStream;
+                    }
                 } else {
-                    bufferOrReadableOrStream = consumeReadableWithLimit(bufferOrReadableOrStream, data => BinaryBuffer.concat(data), 3);
+                    bufferOrReadableOrStreamOrBufferedStream = peekReadable(bufferOrReadableOrStream, data => BinaryBuffer.concat(data), 3);
                 }
+            } else {
+                bufferOrReadableOrStreamOrBufferedStream = bufferOrReadableOrStream;
             }
 
             // write file: unbuffered (only if data to write is a buffer, or the provider has no buffered write capability)
-            if (!hasOpenReadWriteCloseCapability(provider) || (hasReadWriteCapability(provider) && bufferOrReadableOrStream instanceof BinaryBuffer)) {
-                await this.doWriteUnbuffered(provider, resource, bufferOrReadableOrStream);
+            if (!hasOpenReadWriteCloseCapability(provider) || (hasReadWriteCapability(provider) && bufferOrReadableOrStreamOrBufferedStream instanceof BinaryBuffer)) {
+                await this.doWriteUnbuffered(provider, resource, bufferOrReadableOrStreamOrBufferedStream);
             }
 
             // write file: buffered
             else {
-                await this.doWriteBuffered(provider, resource, bufferOrReadableOrStream instanceof BinaryBuffer ? BinaryBufferReadable.fromBuffer(bufferOrReadableOrStream) : bufferOrReadableOrStream);
+                await this.doWriteBuffered(provider, resource, bufferOrReadableOrStreamOrBufferedStream instanceof BinaryBuffer ? BinaryBufferReadable.fromBuffer(bufferOrReadableOrStreamOrBufferedStream) : bufferOrReadableOrStreamOrBufferedStream);
             }
         } catch (error) {
             this.rethrowAsFileOperationError('Unable to write file', resource, error, options);
@@ -764,9 +827,15 @@ export class FileService {
             let fileStreamPromise: Promise<BinaryBufferReadableStream>;
 
             // read unbuffered (only if either preferred, or the provider has no buffered read capability)
-            if (!hasOpenReadWriteCloseCapability(provider) || (hasReadWriteCapability(provider) && options?.preferUnbuffered)) {
+            if (!(hasOpenReadWriteCloseCapability(provider) || hasFileReadStreamCapability(provider)) || (hasReadWriteCapability(provider) && options?.preferUnbuffered)) {
                 fileStreamPromise = this.readFileUnbuffered(provider, resource, options);
             }
+
+            // read streamed (always prefer over primitive buffered read)
+            else if (hasFileReadStreamCapability(provider)) {
+                fileStreamPromise = Promise.resolve(this.readFileStreamed(provider, resource, cancellableSource.token, options));
+            }
+
             // read buffered
             else {
                 fileStreamPromise = Promise.resolve(this.readFileBuffered(provider, resource, cancellableSource.token, options));
@@ -783,20 +852,25 @@ export class FileService {
         }
     }
 
-    private readFileBuffered(provider: FileSystemProviderWithOpenReadWriteCloseCapability, resource: URI, token: CancellationToken, options: ReadFileOptions = Object.create(null)): BinaryBufferReadableStream {
-        const fileStream = createReadStream(provider, resource, {
-            ...options,
-            bufferSize: this.BUFFER_SIZE
-        }, token);
+    private readFileStreamed(provider: FileSystemProviderWithFileReadStreamCapability, resource: URI, token: CancellationToken, options: ReadFileOptions = Object.create(null)): BinaryBufferReadableStream {
+        const fileStream = provider.readFileStream(resource, options, token);
 
-        return this.transformFileReadStream(resource, fileStream, options);
-    }
-
-    private transformFileReadStream(resource: URI, stream: ReadableStreamEvents<Uint8Array | BinaryBuffer>, options: ReadFileOptions): BinaryBufferReadableStream {
-        return transform(stream, {
+        return transform(fileStream, {
             data: data => data instanceof BinaryBuffer ? data : BinaryBuffer.wrap(data),
             error: error => this.asFileOperationError('Unable to read file', resource, error, options)
         }, data => BinaryBuffer.concat(data));
+    }
+
+    private readFileBuffered(provider: FileSystemProviderWithOpenReadWriteCloseCapability, resource: URI, token: CancellationToken, options: ReadFileOptions = Object.create(null)): BinaryBufferReadableStream {
+        const stream = BinaryBufferWriteableStream.create();
+
+        readFileIntoStream(provider, resource, stream, data => data, {
+            ...options,
+            bufferSize: this.BUFFER_SIZE,
+            errorTransformer: error => this.asFileOperationError('Unable to read file', resource, error, options)
+        }, token);
+
+        return stream;
     }
 
     protected rethrowAsFileOperationError(message: string, resource: URI, error: Error, options?: ReadFileOptions & WriteFileOptions & CreateFileOptions): never {
@@ -821,6 +895,9 @@ export class FileService {
         if (options && typeof options.length === 'number') {
             buffer = buffer.slice(0, options.length);
         }
+
+        // Throw if file is too large to load
+        this.validateReadFileLimits(resource, buffer.byteLength, options);
 
         return BinaryBufferReadableStream.fromBuffer(BinaryBuffer.wrap(buffer));
     }
@@ -1277,7 +1354,7 @@ export class FileService {
         return isPathCaseSensitive ? resource.toString() : resource.toString().toLowerCase();
     }
 
-    private async doWriteBuffered(provider: FileSystemProviderWithOpenReadWriteCloseCapability, resource: URI, readableOrStream: BinaryBufferReadable | BinaryBufferReadableStream): Promise<void> {
+    private async doWriteBuffered(provider: FileSystemProviderWithOpenReadWriteCloseCapability, resource: URI, readableOrStreamOrBufferedStream: BinaryBufferReadable | BinaryBufferReadableStream | BinaryBufferReadableBufferedStream): Promise<void> {
         return this.ensureWriteQueue(provider, resource, async () => {
 
             // open handle
@@ -1285,10 +1362,10 @@ export class FileService {
 
             // write into handle until all bytes from buffer have been written
             try {
-                if (isReadableStream(readableOrStream)) {
-                    await this.doWriteStreamBufferedQueued(provider, handle, readableOrStream);
+                if (isReadableStream(readableOrStreamOrBufferedStream) || isReadableBufferedStream(readableOrStreamOrBufferedStream)) {
+                    await this.doWriteStreamBufferedQueued(provider, handle, readableOrStreamOrBufferedStream);
                 } else {
-                    await this.doWriteReadableBufferedQueued(provider, handle, readableOrStream);
+                    await this.doWriteReadableBufferedQueued(provider, handle, readableOrStreamOrBufferedStream);
                 }
             } catch (error) {
                 throw ensureFileSystemProviderError(error);
@@ -1300,9 +1377,34 @@ export class FileService {
         });
     }
 
-    private doWriteStreamBufferedQueued(provider: FileSystemProviderWithOpenReadWriteCloseCapability, handle: number, stream: BinaryBufferReadableStream): Promise<void> {
-        return new Promise((resolve, reject) => {
-            let posInFile = 0;
+    private async doWriteStreamBufferedQueued(provider: FileSystemProviderWithOpenReadWriteCloseCapability, handle: number, streamOrBufferedStream: BinaryBufferReadableStream | BinaryBufferReadableBufferedStream): Promise<void> {
+        let posInFile = 0;
+        let stream: BinaryBufferReadableStream;
+
+        // Buffered stream: consume the buffer first by writing
+        // it to the target before reading from the stream.
+        if (isReadableBufferedStream(streamOrBufferedStream)) {
+            if (streamOrBufferedStream.buffer.length > 0) {
+                const chunk = BinaryBuffer.concat(streamOrBufferedStream.buffer);
+                await this.doWriteBuffer(provider, handle, chunk, chunk.byteLength, posInFile, 0);
+
+                posInFile += chunk.byteLength;
+            }
+
+            // If the stream has been consumed, return early
+            if (streamOrBufferedStream.ended) {
+                return;
+            }
+
+            stream = streamOrBufferedStream.stream;
+        }
+
+        // Unbuffered stream - just take as is
+        else {
+            stream = streamOrBufferedStream;
+        }
+
+        return new Promise(async (resolve, reject) => {
 
             stream.on('data', async chunk => {
 
@@ -1348,18 +1450,20 @@ export class FileService {
         }
     }
 
-    private async doWriteUnbuffered(provider: FileSystemProviderWithFileReadWriteCapability, resource: URI, bufferOrReadableOrStream: BinaryBuffer | BinaryBufferReadable | BinaryBufferReadableStream): Promise<void> {
-        return this.ensureWriteQueue(provider, resource, () => this.doWriteUnbufferedQueued(provider, resource, bufferOrReadableOrStream));
+    private async doWriteUnbuffered(provider: FileSystemProviderWithFileReadWriteCapability, resource: URI, bufferOrReadableOrStreamOrBufferedStream: BinaryBuffer | BinaryBufferReadable | BinaryBufferReadableStream | BinaryBufferReadableBufferedStream): Promise<void> {
+        return this.ensureWriteQueue(provider, resource, () => this.doWriteUnbufferedQueued(provider, resource, bufferOrReadableOrStreamOrBufferedStream));
     }
 
-    private async doWriteUnbufferedQueued(provider: FileSystemProviderWithFileReadWriteCapability, resource: URI, bufferOrReadableOrStream: BinaryBuffer | BinaryBufferReadable | BinaryBufferReadableStream): Promise<void> {
+    private async doWriteUnbufferedQueued(provider: FileSystemProviderWithFileReadWriteCapability, resource: URI, bufferOrReadableOrStreamOrBufferedStream: BinaryBuffer | BinaryBufferReadable | BinaryBufferReadableStream | BinaryBufferReadableBufferedStream): Promise<void> {
         let buffer: BinaryBuffer;
-        if (bufferOrReadableOrStream instanceof BinaryBuffer) {
-            buffer = bufferOrReadableOrStream;
-        } else if (isReadableStream(bufferOrReadableOrStream)) {
-            buffer = await BinaryBufferReadableStream.toBuffer(bufferOrReadableOrStream);
+        if (bufferOrReadableOrStreamOrBufferedStream instanceof BinaryBuffer) {
+            buffer = bufferOrReadableOrStreamOrBufferedStream;
+        } else if (isReadableStream(bufferOrReadableOrStreamOrBufferedStream)) {
+            buffer = await BinaryBufferReadableStream.toBuffer(bufferOrReadableOrStreamOrBufferedStream);
+        } else if (isReadableBufferedStream(bufferOrReadableOrStreamOrBufferedStream)) {
+            buffer = await BinaryBufferReadableBufferedStream.toBuffer(bufferOrReadableOrStreamOrBufferedStream);
         } else {
-            buffer = BinaryBufferReadable.toBuffer(bufferOrReadableOrStream);
+            buffer = BinaryBufferReadable.toBuffer(bufferOrReadableOrStreamOrBufferedStream);
         }
 
         return provider.writeFile(resource, buffer.buffer, { create: true, overwrite: true });

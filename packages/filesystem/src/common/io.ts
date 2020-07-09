@@ -22,9 +22,10 @@
 /* eslint-disable max-len */
 
 import URI from '@theia/core/lib/common/uri';
-import { BinaryBuffer, BinaryBufferWriteableStream, BinaryBufferReadableStream } from '@theia/core/lib/common//buffer';
+import { BinaryBuffer } from '@theia/core/lib/common//buffer';
 import { CancellationToken, cancelled as canceled } from '@theia/core/lib/common/cancellation';
-import { FileSystemProviderWithOpenReadWriteCloseCapability, FileReadStreamOptions, ensureFileSystemProviderError } from './files';
+import { FileSystemProviderWithOpenReadWriteCloseCapability, FileReadStreamOptions, ensureFileSystemProviderError, createFileSystemProviderError, FileSystemProviderErrorCode } from './files';
+import { WriteableStream, ErrorTransformer, DataTransformer } from '@theia/core/lib/common/stream';
 
 export interface CreateReadStreamOptions extends FileReadStreamOptions {
 
@@ -32,20 +33,40 @@ export interface CreateReadStreamOptions extends FileReadStreamOptions {
 	 * The size of the buffer to use before sending to the stream.
 	 */
     bufferSize: number;
+
+	/**
+	 * Allows to massage any possibly error that happens during reading.
+	 */
+    errorTransformer?: ErrorTransformer;
 }
 
-export function createReadStream(provider: FileSystemProviderWithOpenReadWriteCloseCapability, resource: URI, options: CreateReadStreamOptions, token?: CancellationToken): BinaryBufferReadableStream {
-    const stream = BinaryBufferWriteableStream.create();
+/**
+ * A helper to read a file from a provider with open/read/close capability into a stream.
+ */
+export async function readFileIntoStream<T>(
+    provider: FileSystemProviderWithOpenReadWriteCloseCapability,
+    resource: URI,
+    target: WriteableStream<T>,
+    transformer: DataTransformer<BinaryBuffer, T>,
+    options: CreateReadStreamOptions,
+    token: CancellationToken
+): Promise<void> {
+    let error: Error | undefined = undefined;
 
-    // do not await reading but simply return the stream directly since it operates
-    // via events. finally end the stream and send through the possible error
+    try {
+        await doReadFileIntoStream(provider, resource, target, transformer, options, token);
+    } catch (err) {
+        error = err;
+    } finally {
+        if (error && options.errorTransformer) {
+            error = options.errorTransformer(error);
+        }
 
-    doReadFileIntoStream(provider, resource, stream, options, token).then(() => stream.end(), error => stream.end(error));
-
-    return stream;
+        target.end(error);
+    }
 }
 
-async function doReadFileIntoStream(provider: FileSystemProviderWithOpenReadWriteCloseCapability, resource: URI, stream: BinaryBufferWriteableStream, options: CreateReadStreamOptions, token?: CancellationToken): Promise<void> {
+async function doReadFileIntoStream<T>(provider: FileSystemProviderWithOpenReadWriteCloseCapability, resource: URI, target: WriteableStream<T>, transformer: DataTransformer<BinaryBuffer, T>, options: CreateReadStreamOptions, token: CancellationToken): Promise<void> {
 
     // Check for cancellation
     throwIfCancelled(token);
@@ -57,6 +78,7 @@ async function doReadFileIntoStream(provider: FileSystemProviderWithOpenReadWrit
     throwIfCancelled(token);
 
     try {
+        let totalBytesRead = 0;
         let bytesRead = 0;
         let allowedRemainingBytes = (options && typeof options.length === 'number') ? options.length : undefined;
 
@@ -71,6 +93,7 @@ async function doReadFileIntoStream(provider: FileSystemProviderWithOpenReadWrit
 
             posInFile += bytesRead;
             posInBuffer += bytesRead;
+            totalBytesRead += bytesRead;
 
             if (typeof allowedRemainingBytes === 'number') {
                 allowedRemainingBytes -= bytesRead;
@@ -78,13 +101,13 @@ async function doReadFileIntoStream(provider: FileSystemProviderWithOpenReadWrit
 
             // when buffer full, create a new one and emit it through stream
             if (posInBuffer === buffer.byteLength) {
-                stream.write(buffer);
+                await target.write(transformer(buffer));
 
                 buffer = BinaryBuffer.alloc(Math.min(options.bufferSize, typeof allowedRemainingBytes === 'number' ? allowedRemainingBytes : options.bufferSize));
 
                 posInBuffer = 0;
             }
-        } while (bytesRead > 0 && (typeof allowedRemainingBytes !== 'number' || allowedRemainingBytes > 0) && throwIfCancelled(token));
+        } while (bytesRead > 0 && (typeof allowedRemainingBytes !== 'number' || allowedRemainingBytes > 0) && throwIfCancelled(token) && throwIfTooLarge(totalBytesRead, options));
 
         // wrap up with last buffer (also respect maxBytes if provided)
         if (posInBuffer > 0) {
@@ -93,7 +116,7 @@ async function doReadFileIntoStream(provider: FileSystemProviderWithOpenReadWrit
                 lastChunkLength = Math.min(posInBuffer, allowedRemainingBytes);
             }
 
-            stream.write(buffer.slice(0, lastChunkLength));
+            target.write(transformer(buffer.slice(0, lastChunkLength)));
         }
     } catch (error) {
         throw ensureFileSystemProviderError(error);
@@ -102,9 +125,25 @@ async function doReadFileIntoStream(provider: FileSystemProviderWithOpenReadWrit
     }
 }
 
-function throwIfCancelled(token?: CancellationToken): boolean {
-    if (token && token.isCancellationRequested) {
+function throwIfCancelled(token: CancellationToken): boolean {
+    if (token.isCancellationRequested) {
         throw canceled();
+    }
+
+    return true;
+}
+
+function throwIfTooLarge(totalBytesRead: number, options: CreateReadStreamOptions): boolean {
+
+    // Return early if file is too large to load and we have configured limits
+    if (options?.limits) {
+        if (typeof options.limits.memory === 'number' && totalBytesRead > options.limits.memory) {
+            throw createFileSystemProviderError('To open a file of this size, you need to restart and allow it to use more memory', FileSystemProviderErrorCode.FileExceedsMemoryLimit);
+        }
+
+        if (typeof options.limits.size === 'number' && totalBytesRead > options.limits.size) {
+            throw createFileSystemProviderError('File is too large to open', FileSystemProviderErrorCode.FileTooLarge);
+        }
     }
 
     return true;

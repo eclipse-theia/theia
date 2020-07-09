@@ -19,6 +19,8 @@
  *--------------------------------------------------------------------------------------------*/
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/base/common/buffer.ts
 
+/* eslint-disable no-null/no-null */
+
 import { Buffer as SaferBuffer } from 'safer-buffer';
 import * as iconv from 'iconv-lite';
 import * as streams from './stream';
@@ -175,6 +177,19 @@ export namespace BinaryBufferReadable {
     export function fromBuffer(buffer: BinaryBuffer): BinaryBufferReadable {
         return streams.toReadable<BinaryBuffer>(buffer);
     }
+    export function fromReadable(readable: streams.Readable<string>): BinaryBufferReadable {
+        return {
+            read(): BinaryBuffer | null {
+                const value = readable.read();
+
+                if (typeof value === 'string') {
+                    return BinaryBuffer.fromString(value);
+                }
+
+                return null;
+            }
+        };
+    }
 }
 
 export interface BinaryBufferReadableStream extends streams.ReadableStream<BinaryBuffer> { }
@@ -187,9 +202,27 @@ export namespace BinaryBufferReadableStream {
     }
 }
 
+export interface BinaryBufferReadableBufferedStream extends streams.ReadableBufferedStream<BinaryBuffer> { }
+export namespace BinaryBufferReadableBufferedStream {
+    export async function toBuffer(bufferedStream: streams.ReadableBufferedStream<BinaryBuffer>): Promise<BinaryBuffer> {
+        if (bufferedStream.ended) {
+            return BinaryBuffer.concat(bufferedStream.buffer);
+        }
+
+        return BinaryBuffer.concat([
+
+            // Include already read chunks...
+            ...bufferedStream.buffer,
+
+            // ...and all additional chunks
+            await BinaryBufferReadableStream.toBuffer(bufferedStream.stream)
+        ]);
+    }
+}
+
 export interface BinaryBufferWriteableStream extends streams.WriteableStream<BinaryBuffer> { }
 export namespace BinaryBufferWriteableStream {
-    export function create(): BinaryBufferWriteableStream {
-        return streams.newWriteableStream<BinaryBuffer>(chunks => BinaryBuffer.concat(chunks));
+    export function create(options?: streams.WriteableStreamOptions): BinaryBufferWriteableStream {
+        return streams.newWriteableStream<BinaryBuffer>(chunks => BinaryBuffer.concat(chunks), options);
     }
 }

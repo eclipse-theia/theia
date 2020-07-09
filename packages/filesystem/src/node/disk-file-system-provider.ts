@@ -54,7 +54,7 @@ import {
     FileSystemProviderError,
     FileChange,
     WatchOptions,
-    FileUpdateOptions, FileUpdateResult
+    FileUpdateOptions, FileUpdateResult, FileReadStreamOptions
 } from '../common/files';
 import { FileSystemWatcherServer } from '../common/filesystem-watcher-protocol';
 import trash = require('trash');
@@ -62,6 +62,9 @@ import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { readFileIntoStream } from '../common/io';
 
 export namespace DiskFileSystemProvider {
     export interface StatAndLink {
@@ -86,6 +89,8 @@ export class DiskFileSystemProvider implements Disposable,
     FileSystemProviderWithFileReadWriteCapability,
     FileSystemProviderWithOpenReadWriteCloseCapability,
     FileSystemProviderWithFileFolderCopyCapability {
+
+    private readonly BUFFER_SIZE = 64 * 1024;
 
     private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
     readonly onDidChangeFile = this.onDidChangeFileEmitter.event;
@@ -121,6 +126,7 @@ export class DiskFileSystemProvider implements Disposable,
             this._capabilities =
                 FileSystemProviderCapabilities.FileReadWrite |
                 FileSystemProviderCapabilities.FileOpenReadWriteClose |
+                FileSystemProviderCapabilities.FileReadStream |
                 FileSystemProviderCapabilities.FileFolderCopy |
                 FileSystemProviderCapabilities.Access |
                 FileSystemProviderCapabilities.Trash |
@@ -253,6 +259,17 @@ export class DiskFileSystemProvider implements Disposable,
         } catch (error) {
             throw this.toFileSystemProviderError(error);
         }
+    }
+
+    readFileStream(resource: URI, opts: FileReadStreamOptions, token: CancellationToken): ReadableStreamEvents<Uint8Array> {
+        const stream = newWriteableStream<Uint8Array>(data => BinaryBuffer.concat(data.map(data => BinaryBuffer.wrap(data))).buffer);
+
+        readFileIntoStream(this, resource, stream, data => data.buffer, {
+            ...opts,
+            bufferSize: this.BUFFER_SIZE
+        }, token);
+
+        return stream;
     }
 
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
