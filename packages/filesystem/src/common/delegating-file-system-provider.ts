@@ -15,13 +15,16 @@
  ********************************************************************************/
 
 import URI from '@theia/core/lib/common/uri';
-import { Event, Emitter } from '@theia/core/lib/common';
+import { Event, Emitter, CancellationToken } from '@theia/core/lib/common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
     FileSystemProvider, FileSystemProviderCapabilities, WatchOptions, FileDeleteOptions, FileOverwriteOptions, FileWriteOptions, FileOpenOptions, FileChange, Stat, FileType,
-    hasReadWriteCapability, hasFileFolderCopyCapability, hasOpenReadWriteCloseCapability, hasAccessCapability, FileUpdateOptions, hasUpdateCapability, FileUpdateResult
+    hasReadWriteCapability, hasFileFolderCopyCapability, hasOpenReadWriteCloseCapability, hasAccessCapability, FileUpdateOptions, hasUpdateCapability, FileUpdateResult,
+    FileReadStreamOptions,
+    hasFileReadStreamCapability
 } from './files';
 import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
 
 export class DelegatingFileSystemProvider implements Required<FileSystemProvider>, Disposable {
 
@@ -88,6 +91,13 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
     readFile(resource: URI): Promise<Uint8Array> {
         if (hasReadWriteCapability(this.delegate)) {
             return this.delegate.readFile(this.options.uriConverter.to(resource));
+        }
+        throw new Error('not supported');
+    }
+
+    readFileStream(resource: URI, opts: FileReadStreamOptions, token: CancellationToken): ReadableStreamEvents<Uint8Array> {
+        if (hasFileReadStreamCapability(this.delegate)) {
+            return this.delegate.readFileStream(this.options.uriConverter.to(resource), opts, token);
         }
         throw new Error('not supported');
     }

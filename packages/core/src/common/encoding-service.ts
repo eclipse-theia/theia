@@ -17,16 +17,20 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/workbench/services/textfile/common/encoding.ts
+
+/* eslint-disable no-null/no-null */
 
 import * as iconv from 'iconv-lite';
 import { Buffer } from 'safer-buffer';
 import { injectable } from 'inversify';
-import { BinaryBuffer } from './buffer';
+import { BinaryBuffer, BinaryBufferReadableStream, BinaryBufferReadable } from './buffer';
 import { UTF8, UTF8_with_bom, UTF16be, UTF16le, UTF16be_BOM, UTF16le_BOM, UTF8_BOM } from './encodings';
+import { newWriteableStream, ReadableStream, Readable } from './stream';
 
 const ZERO_BYTE_DETECTION_BUFFER_MAX_LEN = 512; 	// number of bytes to look at to decide about a file being binary or not
+const NO_ENCODING_GUESS_MIN_BYTES = 512; 			// when not auto guessing the encoding, small number of bytes are enough
+const AUTO_ENCODING_GUESS_MIN_BYTES = 512 * 8; 		// with auto guessing we want a lot more content to be read for guessing
 const AUTO_ENCODING_GUESS_MAX_BYTES = 512 * 128; 	// set an upper limit for the number of bytes we pass on to jschardet
 
 // we explicitly ignore a specific set of encodings from auto guessing
@@ -44,6 +48,17 @@ export interface ResourceEncoding {
 export interface DetectedEncoding {
     encoding?: string
     seemsBinary?: boolean
+}
+
+export interface DecodeStreamOptions {
+    guessEncoding?: boolean;
+    minBytesRequiredForDetection?: number;
+
+    overwriteEncoding(detectedEncoding: string | undefined): Promise<string>;
+}
+export interface DecodeStreamResult {
+    stream: ReadableStream<string>;
+    detected: DetectedEncoding;
 }
 
 @injectable()
@@ -219,6 +234,147 @@ export class EncodingService {
         }
 
         return this.toIconvEncoding(guessed.encoding);
+    }
+
+    decodeStream(source: BinaryBufferReadableStream, options: DecodeStreamOptions): Promise<DecodeStreamResult> {
+        const minBytesRequiredForDetection = options.minBytesRequiredForDetection ?? options.guessEncoding ? AUTO_ENCODING_GUESS_MIN_BYTES : NO_ENCODING_GUESS_MIN_BYTES;
+
+        return new Promise<DecodeStreamResult>((resolve, reject) => {
+            const target = newWriteableStream<string>(strings => strings.join(''));
+
+            const bufferedChunks: BinaryBuffer[] = [];
+            let bytesBuffered = 0;
+
+            let decoder: iconv.DecoderStream | undefined = undefined;
+
+            const createDecoder = async () => {
+                try {
+
+                    // detect encoding from buffer
+                    const detected = await this.detectEncoding(BinaryBuffer.concat(bufferedChunks), options.guessEncoding);
+
+                    // ensure to respect overwrite of encoding
+                    detected.encoding = await options.overwriteEncoding(detected.encoding);
+
+                    // decode and write buffered content
+                    decoder = iconv.getDecoder(this.toIconvEncoding(detected.encoding));
+                    const decoded = decoder.write(Buffer.from(BinaryBuffer.concat(bufferedChunks).buffer));
+                    target.write(decoded);
+
+                    bufferedChunks.length = 0;
+                    bytesBuffered = 0;
+
+                    // signal to the outside our detected encoding and final decoder stream
+                    resolve({
+                        stream: target,
+                        detected
+                    });
+                } catch (error) {
+                    reject(error);
+                }
+            };
+
+            // Stream error: forward to target
+            source.on('error', error => target.error(error));
+
+            // Stream data
+            source.on('data', async chunk => {
+
+                // if the decoder is ready, we just write directly
+                if (decoder) {
+                    target.write(decoder.write(Buffer.from(chunk.buffer)));
+                } else {
+                    bufferedChunks.push(chunk);
+                    bytesBuffered += chunk.byteLength;
+
+                    // buffered enough data for encoding detection, create stream
+                    if (bytesBuffered >= minBytesRequiredForDetection) {
+
+                        // pause stream here until the decoder is ready
+                        source.pause();
+
+                        await createDecoder();
+
+                        // resume stream now that decoder is ready but
+                        // outside of this stack to reduce recursion
+                        setTimeout(() => source.resume());
+                    }
+                }
+            });
+
+            // Stream end
+            source.on('end', async () => {
+
+                // we were still waiting for data to do the encoding
+                // detection. thus, wrap up starting the stream even
+                // without all the data to get things going
+                if (!decoder) {
+                    await createDecoder();
+                }
+
+                // end the target with the remainders of the decoder
+                target.end(decoder?.end());
+            });
+        });
+    }
+
+    encodeStream(value: string | Readable<string>, options?: ResourceEncoding): Promise<BinaryBuffer | BinaryBufferReadable>
+    encodeStream(value?: string | Readable<string>, options?: ResourceEncoding): Promise<BinaryBuffer | BinaryBufferReadable | undefined>;
+    async encodeStream(value: string | Readable<string> | undefined, options?: ResourceEncoding): Promise<BinaryBuffer | BinaryBufferReadable | undefined> {
+        let encoding = options?.encoding;
+        const addBOM = options?.hasBOM;
+        encoding = this.toIconvEncoding(encoding);
+        if (encoding === UTF8 && !addBOM) {
+            return value === undefined ? undefined : typeof value === 'string' ?
+                BinaryBuffer.fromString(value) : BinaryBufferReadable.fromReadable(value);
+        }
+
+        value = value || '';
+        const readable = typeof value === 'string' ? Readable.fromString(value) : value;
+        const encoder = iconv.getEncoder(encoding, { addBOM });
+
+        let bytesWritten = false;
+        let done = false;
+
+        return {
+            read(): BinaryBuffer | null {
+                if (done) {
+                    return null;
+                }
+
+                const chunk = readable.read();
+                if (typeof chunk !== 'string') {
+                    done = true;
+
+                    // If we are instructed to add a BOM but we detect that no
+                    // bytes have been written, we must ensure to return the BOM
+                    // ourselves so that we comply with the contract.
+                    if (!bytesWritten && addBOM) {
+                        switch (encoding) {
+                            case UTF8:
+                            case UTF8_with_bom:
+                                return BinaryBuffer.wrap(Uint8Array.from(UTF8_BOM));
+                            case UTF16be:
+                                return BinaryBuffer.wrap(Uint8Array.from(UTF16be_BOM));
+                            case UTF16le:
+                                return BinaryBuffer.wrap(Uint8Array.from(UTF16le_BOM));
+                        }
+                    }
+
+                    const leftovers = encoder.end();
+                    if (leftovers && leftovers.length > 0) {
+                        bytesWritten = true;
+                        return BinaryBuffer.wrap(leftovers);
+                    }
+
+                    return null;
+                }
+
+                bytesWritten = true;
+
+                return BinaryBuffer.wrap(encoder.write(chunk));
+            }
+        };
     }
 
 }
