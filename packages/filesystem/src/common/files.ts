@@ -24,6 +24,8 @@ import { Event } from '@theia/core/lib/common/event';
 import { Disposable as IDisposable } from '@theia/core/lib/common/disposable';
 import { BinaryBuffer, BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
 
 export const enum FileOperation {
     CREATE,
@@ -507,6 +509,7 @@ export interface WatchOptions {
 export const enum FileSystemProviderCapabilities {
     FileReadWrite = 1 << 1,
     FileOpenReadWriteClose = 1 << 2,
+    FileReadStream = 1 << 4,
 
     FileFolderCopy = 1 << 3,
 
@@ -524,6 +527,8 @@ export enum FileSystemProviderErrorCode {
     FileNotFound = 'EntryNotFound',
     FileNotADirectory = 'EntryNotADirectory',
     FileIsADirectory = 'EntryIsADirectory',
+    FileExceedsMemoryLimit = 'EntryExceedsMemoryLimit',
+    FileTooLarge = 'EntryTooLarge',
     NoPermissions = 'NoPermissions',
     Unavailable = 'Unavailable',
     Unknown = 'Unknown'
@@ -571,6 +576,8 @@ export interface FileSystemProvider {
 
     readFile?(resource: URI): Promise<Uint8Array>;
     writeFile?(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void>;
+
+    readFileStream?(resource: URI, opts: FileReadStreamOptions, token: CancellationToken): ReadableStreamEvents<Uint8Array>;
 
     open?(resource: URI, opts: FileOpenOptions): Promise<number>;
     close?(fd: number): Promise<void>;
@@ -628,6 +635,14 @@ export function hasOpenReadWriteCloseCapability(provider: FileSystemProvider): p
     return !!(provider.capabilities & FileSystemProviderCapabilities.FileOpenReadWriteClose);
 }
 
+export interface FileSystemProviderWithFileReadStreamCapability extends FileSystemProvider {
+    readFileStream(resource: URI, opts: FileReadStreamOptions, token: CancellationToken): ReadableStreamEvents<Uint8Array>;
+}
+
+export function hasFileReadStreamCapability(provider: FileSystemProvider): provider is FileSystemProviderWithFileReadStreamCapability {
+    return !!(provider.capabilities & FileSystemProviderCapabilities.FileReadStream);
+}
+
 export function markAsFileSystemProviderError(error: Error, code: FileSystemProviderErrorCode): Error {
     error.name = code ? `${code} (FileSystemError)` : 'FileSystemError';
 
@@ -658,6 +673,8 @@ export function toFileSystemProviderErrorCode(error: Error | undefined | null): 
         case FileSystemProviderErrorCode.FileIsADirectory: return FileSystemProviderErrorCode.FileIsADirectory;
         case FileSystemProviderErrorCode.FileNotADirectory: return FileSystemProviderErrorCode.FileNotADirectory;
         case FileSystemProviderErrorCode.FileNotFound: return FileSystemProviderErrorCode.FileNotFound;
+        case FileSystemProviderErrorCode.FileExceedsMemoryLimit: return FileSystemProviderErrorCode.FileExceedsMemoryLimit;
+        case FileSystemProviderErrorCode.FileTooLarge: return FileSystemProviderErrorCode.FileTooLarge;
         case FileSystemProviderErrorCode.NoPermissions: return FileSystemProviderErrorCode.NoPermissions;
         case FileSystemProviderErrorCode.Unavailable: return FileSystemProviderErrorCode.Unavailable;
     }
@@ -684,6 +701,10 @@ export function toFileOperationResult(error: Error): FileOperationResult {
             return FileOperationResult.FILE_PERMISSION_DENIED;
         case FileSystemProviderErrorCode.FileExists:
             return FileOperationResult.FILE_MOVE_CONFLICT;
+        case FileSystemProviderErrorCode.FileExceedsMemoryLimit:
+            return FileOperationResult.FILE_EXCEEDS_MEMORY_LIMIT;
+        case FileSystemProviderErrorCode.FileTooLarge:
+            return FileOperationResult.FILE_TOO_LARGE;
         default:
             return FileOperationResult.FILE_OTHER_ERROR;
     }
