@@ -18,6 +18,7 @@ import { injectable, inject } from 'inversify';
 import { Resource, ResourceVersion, ResourceResolver, ResourceError, ResourceSaveOptions } from '@theia/core/lib/common/resource';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
+import { Readable, ReadableStream } from '@theia/core/lib/common/stream';
 import URI from '@theia/core/lib/common/uri';
 import { FileOperation, FileOperationError, FileOperationResult, ETAG_DISABLED, FileSystemProviderCapabilities, FileReadStreamOptions, BinarySize } from '../common/files';
 import { FileService, TextFileOperationError, TextFileOperationResult } from './file-service';
@@ -135,7 +136,59 @@ export class FileResource implements Resource {
         }
     }
 
-    async saveContents(content: string, options?: ResourceSaveOptions): Promise<void> {
+    async readStream(options?: { encoding?: string }): Promise<ReadableStream<string>> {
+        try {
+            const encoding = options?.encoding || this.version?.encoding;
+            const stat = await this.fileService.readStream(this.uri, {
+                encoding,
+                etag: ETAG_DISABLED,
+                acceptTextOnly: this.acceptTextOnly,
+                limits: this.limits
+            });
+            this._version = {
+                encoding: stat.encoding,
+                etag: stat.etag,
+                mtime: stat.mtime
+            };
+            return stat.value;
+        } catch (e) {
+            if (e instanceof TextFileOperationError && e.textFileOperationResult === TextFileOperationResult.FILE_IS_BINARY) {
+                if (await this.shouldOpenAsText('The file is either binary or uses an unsupported text encoding.')) {
+                    this.acceptTextOnly = false;
+                    return this.readStream(options);
+                }
+            } else if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_TOO_LARGE) {
+                const stat = await this.fileService.resolve(this.uri, { resolveMetadata: true });
+                const maxFileSize = GENERAL_MAX_FILE_SIZE_MB * 1024 * 1024;
+                if (this.limits?.size !== maxFileSize && await this.shouldOpenAsText(`The file is too large (${BinarySize.formatSize(stat.size)}).`)) {
+                    this.limits = {
+                        size: maxFileSize
+                    };
+                    return this.readStream(options);
+                }
+            } else if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_FOUND) {
+                this._version = undefined;
+                const { message, stack } = e;
+                throw ResourceError.NotFound({
+                    message, stack,
+                    data: {
+                        uri: this.uri
+                    }
+                });
+            }
+            throw e;
+        }
+    }
+
+    saveContents(content: string, options?: ResourceSaveOptions): Promise<void> {
+        return this.doWrite(content, options);
+    }
+
+    saveStream(content: Readable<string>, options?: ResourceSaveOptions): Promise<void> {
+        return this.doWrite(content, options);
+    }
+
+    protected async doWrite(content: string | Readable<string>, options?: ResourceSaveOptions): Promise<void> {
         const version = options?.version || this._version;
         const current = FileResourceVersion.is(version) ? version : undefined;
         const etag = current?.etag;
@@ -154,7 +207,7 @@ export class FileResource implements Resource {
         } catch (e) {
             if (e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_MODIFIED_SINCE) {
                 if (etag !== ETAG_DISABLED && await this.shouldOverwrite()) {
-                    return this.saveContents(content, { ...options, version: { stat: { ...current, etag: ETAG_DISABLED } } });
+                    return this.doWrite(content, { ...options, version: { stat: { ...current, etag: ETAG_DISABLED } } });
                 }
                 const { message, stack } = e;
                 throw ResourceError.OutOfSync({ message, stack, data: { uri: this.uri } });

@@ -140,8 +140,15 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget 
         }
     }
 
-    protected openNewPreview(uri: URI, options: PreviewEditorOpenerOptions): Promise<EditorPreviewWidget> {
-        return this.currentEditorPreview = super.open(uri, options) as Promise<EditorPreviewWidget>;
+    protected openNewPreview(uri: URI, options: PreviewEditorOpenerOptions): Promise<EditorPreviewWidget | EditorWidget> {
+        const result = super.open(uri, options);
+        this.currentEditorPreview = result.then(widget => {
+            if (widget instanceof EditorPreviewWidget) {
+                return widget;
+            }
+            return undefined;
+        }, () => undefined);
+        return result;
     }
 
     protected createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): EditorPreviewWidgetOptions {

@@ -92,8 +92,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.toDispose.push(Disposable.create(() => this.cancelSave()));
         this.toDispose.push(Disposable.create(() => this.cancelSync()));
         this.resolveModel = this.readContents().then(
-            content => this.initialize(content || ''),
-            e => console.error(`Failed to initialize for '${this.resource.uri.toString()}':`, e)
+            content => this.initialize(content || '')
         );
     }
 
@@ -143,9 +142,21 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
      * Only this method can create an instance of `monaco.editor.IModel`,
      * there should not be other calls to `monaco.editor.createModel`.
      */
-    protected initialize(content: string): void {
+    protected initialize(value: string | monaco.editor.ITextBufferFactory): void {
         if (!this.toDispose.disposed) {
-            this.model = monaco.editor.createModel(content, undefined, monaco.Uri.parse(this.resource.uri.toString()));
+            const uri = monaco.Uri.parse(this.resource.uri.toString());
+            let firstLine;
+            if (typeof value === 'string') {
+                firstLine = value;
+                const firstLF = value.indexOf('\n');
+                if (firstLF !== -1) {
+                    firstLine = value.substring(0, firstLF);
+                }
+            } else {
+                firstLine = value.getFirstLineText(1000);
+            }
+            const languageSelection = monaco.services.StaticServices.modeService.get().createByFilepathOrFirstLine(uri, firstLine);
+            this.model = monaco.services.StaticServices.modelService.get().createModel(value, languageSelection, uri);
             this.resourceVersion = this.resource.version;
             this.updateSavedVersionId();
             this.toDispose.push(this.model);
@@ -304,29 +315,30 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             return;
         }
 
-        const newText = await this.readContents();
-        if (newText === undefined || token.isCancellationRequested || this._dirty) {
+        const value = await this.readContents();
+        if (value === undefined || token.isCancellationRequested || this._dirty) {
             return;
         }
+
         this.resourceVersion = this.resource.version;
-
-        const value = this.model.getValue();
-        if (value === newText) {
-            return;
-        }
-
-        const range = this.model.getFullModelRange();
-        this.applyEdits([{ range, text: newText }], {
+        this.updateModel(() => monaco.services.StaticServices.modelService.get().updateModel(this.model, value), {
             ignoreDirty: true,
             ignoreContentChanges: true
         });
     }
-    protected async readContents(): Promise<string | undefined> {
+    protected async readContents(): Promise<string | monaco.editor.ITextBufferFactory | undefined> {
         try {
-            const content = await this.resource.readContents({ encoding: this.getEncoding() });
+            const options = { encoding: this.getEncoding() };
+            const content = await (this.resource.readStream ? this.resource.readStream(options) : this.resource.readContents(options));
+            let value;
+            if (typeof content === 'string') {
+                value = content;
+            } else {
+                value = monaco.textModel.createTextBufferFactoryFromStream(content);
+            }
             this.updateContentEncoding();
             this.setValid(true);
-            return content;
+            return value;
         } catch (e) {
             this.setValid(false);
             if (ResourceError.NotFound.is(e)) {
@@ -404,6 +416,10 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         operations: monaco.editor.IIdentifiedSingleEditOperation[],
         options?: Partial<MonacoEditorModel.ApplyEditsOptions>
     ): monaco.editor.IIdentifiedSingleEditOperation[] {
+        return this.updateModel(() => this.model.applyEdits(operations), options);
+    }
+
+    protected updateModel<T>(doUpdate: () => T, options?: Partial<MonacoEditorModel.ApplyEditsOptions>): T {
         const resolvedOptions: MonacoEditorModel.ApplyEditsOptions = {
             ignoreDirty: false,
             ignoreContentChanges: false,
@@ -413,7 +429,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.ignoreDirtyEdits = resolvedOptions.ignoreDirty;
         this.ignoreContentChanges = resolvedOptions.ignoreContentChanges;
         try {
-            return this.model.applyEdits(operations);
+            return doUpdate();
         } finally {
             this.ignoreDirtyEdits = ignoreDirtyEdits;
             this.ignoreContentChanges = ignoreContentChanges;
@@ -435,11 +451,12 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             return;
         }
 
-        const content = this.model.getValue();
+        const contentLength = this.model.getValueLength();
+        const content = this.model.createSnapshot() || this.model.getValue();
         try {
             const encoding = this.getEncoding();
             const version = this.resourceVersion;
-            await Resource.save(this.resource, { changes, content, options: { encoding, overwriteEncoding, version } }, token);
+            await Resource.save(this.resource, { changes, content, contentLength, options: { encoding, overwriteEncoding, version } }, token);
             this.contentChanges.splice(0, changes.length);
             this.resourceVersion = this.resource.version;
             this.updateContentEncoding();
