@@ -242,6 +242,38 @@ body.theia-editor-highlightModifiedTabs
   display: none !important;
 }
 
+.p-TabBar .theia-badge-decorator-sidebar {
+  background-color: var(--theia-activityBarBadge-background);
+  border-radius: 20px;
+  color: var(--theia-activityBarBadge-foreground);
+  font-size: calc(var(--theia-ui-font-size0) * 0.85);
+  font-weight: 600;
+  height: var(--theia-notification-count-height);
+  width: var(--theia-notification-count-width);
+  padding: calc(var(--theia-ui-padding)/6);
+  line-height: calc(var(--theia-content-line-height)*0.70);
+  position: absolute;
+  right: 8px;
+  text-align: center;
+  top: 24px;
+}
+
+.p-TabBar .theia-badge-decorator-horizontal {
+  background-color:var(--theia-badge-background);
+  border-radius: 20px;
+  box-sizing: border-box;
+  color: var(--theia-activityBarBadge-foreground);
+  display: inline-block;
+  font-size: calc(var(--theia-ui-font-size0) * 0.8);
+  font-weight: 400;
+  height: var(--theia-notification-count-height);
+  width: var(--theia-notification-count-width);
+  padding: calc(var(--theia-ui-padding)/6);
+  line-height: calc(var(--theia-content-line-height)*0.59);
+  margin-left: 6px;
+  text-align: center;
+}
+
 /*-----------------------------------------------------------------------------
 | Perfect scrollbar
 |----------------------------------------------------------------------------*/

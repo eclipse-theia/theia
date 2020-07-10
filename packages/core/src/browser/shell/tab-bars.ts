@@ -151,7 +151,8 @@ export class TabBarRenderer extends TabBar.Renderer {
             h.div(
                 { className: 'theia-tab-icon-label' },
                 this.renderIcon(data, isInSidePanel),
-                this.renderLabel(data, isInSidePanel)
+                this.renderLabel(data, isInSidePanel),
+                this.renderBadge(data, isInSidePanel)
             ),
             this.renderCloseIcon(data)
         );
@@ -224,6 +225,19 @@ export class TabBarRenderer extends TabBar.Renderer {
                 h.div({ className: 'p-TabBar-tabLabelDetails', style }, labelDetails));
         }
         return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
+    }
+
+    renderBadge(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
+        const badge = this.getDecorationData(data.title, 'badge');
+        if (badge && badge.length > 0) {
+            const limitedBadge = badge.length >= 100 ? '99+' : badge;
+            if (isInSidePanel) {
+                return h.div({ className: 'theia-badge-decorator-sidebar' }, `${limitedBadge}`);
+            } else {
+                return h.div({ className: 'theia-badge-decorator-horizontal' }, `${limitedBadge}`);
+            }
+        }
+        return h.div({});
     }
 
     protected readonly decorations = new Map<Title<Widget>, WidgetDecoration.Data[]>();
