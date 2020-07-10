@@ -23,6 +23,7 @@ import { Disposable } from './disposable';
 import { MaybePromise } from './types';
 import { CancellationToken } from './cancellation';
 import { ApplicationError } from './application-error';
+import { ReadableStream, Readable } from './stream';
 
 export interface ResourceVersion {
 }
@@ -63,6 +64,15 @@ export interface Resource extends Disposable {
      */
     readContents(options?: ResourceReadOptions): Promise<string>;
     /**
+     * Stream latest content of this resource.
+     *
+     * If a resource supports versioning it updates version to latest.
+     * If a resource supports encoding it updates encoding to latest.
+     *
+     * @throws `ResourceError.NotFound` if a resource not found
+     */
+    readStream?(options?: ResourceReadOptions): Promise<ReadableStream<string>>;
+    /**
      * Rewrites the complete content for this resource.
      * If a resource does not exist it will be created.
      *
@@ -74,6 +84,18 @@ export interface Resource extends Disposable {
      * @throws `ResourceError.OutOfSync` if latest resource version is out of sync with the given
      */
     saveContents?(content: string, options?: ResourceSaveOptions): Promise<void>;
+    /**
+     * Rewrites the complete content for this resource.
+     * If a resource does not exist it will be created.
+     *
+     * If a resource supports versioning clients can pass some version
+     * to check against it, if it is not provided latest version is used.
+     *
+     * It updates version and encoding to latest.
+     *
+     * @throws `ResourceError.OutOfSync` if latest resource version is out of sync with the given
+     */
+    saveStream?(content: Readable<string>, options?: ResourceSaveOptions): Promise<void>;
     /**
      * Applies incremental content changes to this resource.
      *
@@ -90,7 +112,8 @@ export interface Resource extends Disposable {
 }
 export namespace Resource {
     export interface SaveContext {
-        content: string
+        contentLength: number
+        content: string | Readable<string>
         changes?: TextDocumentContentChangeEvent[]
         options?: ResourceSaveOptions
     }
@@ -104,10 +127,15 @@ export namespace Resource {
         if (token && token.isCancellationRequested) {
             return;
         }
-        await resource.saveContents(context.content, context.options);
+        if (typeof context.content !== 'string' && resource.saveStream) {
+            await resource.saveStream(context.content, context.options);
+        } else {
+            const content = typeof context.content === 'string' ? context.content : Readable.toString(context.content);
+            await resource.saveContents(content, context.options);
+        }
     }
     export async function trySaveContentChanges(resource: Resource, context: SaveContext): Promise<boolean> {
-        if (!context.changes || !resource.saveContentChanges || shouldSaveContent(context)) {
+        if (!context.changes || !resource.saveContentChanges || shouldSaveContent(resource, context)) {
             return false;
         }
         try {
@@ -120,12 +148,11 @@ export namespace Resource {
             return false;
         }
     }
-    export function shouldSaveContent({ content, changes }: SaveContext): boolean {
-        if (!changes) {
+    export function shouldSaveContent(resource: Resource, { contentLength, changes }: SaveContext): boolean {
+        if (!changes || (resource.saveStream && contentLength > 32 * 1024 * 1024)) {
             return true;
         }
         let contentChangesLength = 0;
-        const contentLength = content.length;
         for (const change of changes) {
             contentChangesLength += JSON.stringify(change).length;
             if (contentChangesLength > contentLength) {
