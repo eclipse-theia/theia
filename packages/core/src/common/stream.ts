@@ -103,6 +103,14 @@ export namespace Readable {
             }
         };
     }
+    export function toString(readable: Readable<string>): string {
+        let result = '';
+        let chunk: string | null;
+        while ((chunk = readable.read()) != null) {
+            result += chunk;
+        }
+        return result;
+    }
 }
 
 /**
