@@ -14,19 +14,32 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { ProblemManager } from './problem-manager';
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemTreeModel } from './problem-tree-model';
 import { MarkerInfoNode, MarkerNode, MarkerRootNode } from '../marker-tree';
-import { TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel } from '@theia/core/lib/browser';
+import {
+    TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel,
+    ApplicationShell, Navigatable, ExpandableTreeNode, SelectableTreeNode
+} from '@theia/core/lib/browser';
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import * as React from 'react';
+import { ProblemPreferences } from './problem-preferences';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export const PROBLEMS_WIDGET_ID = 'problems';
 
 @injectable()
 export class ProblemWidget extends TreeWidget {
+
+    protected readonly toDisposeOnCurrentWidgetChanged = new DisposableCollection();
+
+    @inject(ProblemPreferences)
+    protected readonly preferences: ProblemPreferences;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
 
     constructor(
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,
@@ -44,6 +57,42 @@ export class ProblemWidget extends TreeWidget {
         this.addClass('theia-marker-container');
 
         this.addClipboardListener(this.node, 'copy', e => this.handleCopy(e));
+    }
+
+    @postConstruct()
+    protected init(): void {
+        super.init();
+        this.updateFollowActiveEditor();
+        this.toDispose.push(this.preferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'problems.autoReveal') {
+                this.updateFollowActiveEditor();
+            }
+        }));
+    }
+
+    protected updateFollowActiveEditor(): void {
+        this.toDisposeOnCurrentWidgetChanged.dispose();
+        this.toDispose.push(this.toDisposeOnCurrentWidgetChanged);
+        if (this.preferences.get('problems.autoReveal')) {
+            this.followActiveEditor();
+        }
+    }
+
+    protected followActiveEditor(): void {
+        this.autoRevealFromActiveEditor();
+        this.toDisposeOnCurrentWidgetChanged.push(this.shell.onDidChangeCurrentWidget(() => this.autoRevealFromActiveEditor()));
+    }
+
+    protected autoRevealFromActiveEditor(): void {
+        const widget = this.shell.currentWidget;
+        if (widget && Navigatable.is(widget)) {
+            const uri = widget.getResourceUri();
+            const node = uri && this.model.getNode(uri.toString());
+            if (ExpandableTreeNode.is(node) && SelectableTreeNode.is(node)) {
+                this.model.expandNode(node);
+                this.model.selectNode(node);
+            }
+        }
     }
 
     storeState(): object {
