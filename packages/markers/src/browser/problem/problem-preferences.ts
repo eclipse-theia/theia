@@ -29,13 +29,19 @@ export const ProblemConfigSchema: PreferenceSchema = {
             'type': 'boolean',
             'description': 'Show problem decorators (diagnostic markers) in the tab bars.',
             'default': true
+        },
+        'problems.autoReveal': {
+            'type': 'boolean',
+            'description': 'Controls whether Problems view should reveal markers when file is opened.',
+            'default': true
         }
     }
 };
 
 export interface ProblemConfiguration {
     'problems.decorations.enabled': boolean,
-    'problems.decorations.tabbar.enabled': boolean
+    'problems.decorations.tabbar.enabled': boolean,
+    'problems.autoReveal': boolean
 }
 
 export const ProblemPreferences = Symbol('ProblemPreferences');
