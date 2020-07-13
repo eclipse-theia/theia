@@ -35,7 +35,7 @@ const platform = {
     isLinux: OS.type() === OS.Type.Linux
 };
 
-// should be in sync with https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/config/editorOptions.ts#L2974
+// should be in sync with https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/config/editorOptions.ts#L3042
 export const EDITOR_FONT_DEFAULTS = {
     fontFamily: (
         isOSX ? DEFAULT_MAC_FONT_FAMILY : (isWindows ? DEFAULT_WINDOWS_FONT_FAMILY : DEFAULT_LINUX_FONT_FAMILY)
@@ -48,7 +48,7 @@ export const EDITOR_FONT_DEFAULTS = {
     letterSpacing: 0,
 };
 
-// should be in sync with https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/config/editorOptions.ts#L2989
+// should be in sync with https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/config/editorOptions.ts#L3057
 export const EDITOR_MODEL_DEFAULTS = {
     tabSize: 4,
     indentSize: 4,
@@ -62,11 +62,11 @@ export const EDITOR_MODEL_DEFAULTS = {
 
 /* eslint-disable max-len */
 // should be in sync with:
-//        1. https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/config/commonEditorConfig.ts#L442
-//        2. https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/config/commonEditorConfig.ts#L526
+//        1. https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/config/commonEditorConfig.ts#L441
+//        2. https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/config/commonEditorConfig.ts#L530
 
-// 1. Copy from https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/config/commonEditorConfig.ts#L526
-// 2. Align first items with https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/config/commonEditorConfig.ts#L442
+// 1. Copy from https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/config/commonEditorConfig.ts#L530
+// 2. Align first items with https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/config/commonEditorConfig.ts#L441
 // 3. Find -> Use Regular Expressions to clean up data and replace " by ', for example -> nls\.localize\(.*, "(.*)"\) -> "$1"
 // 4. Apply `quotemark` quick fixes
 // 5. Fix the rest manually
@@ -101,6 +101,11 @@ const codeEditorPreferenceProperties = {
         'type': 'boolean',
         'default': true,
         'description': 'Controls whether completions should be computed based on words in the document.'
+    },
+    'editor.semanticHighlighting.enabled': {
+        'type': 'boolean',
+        'default': false,
+        'description': 'Controls whether the semanticHighlighting is shown for the languages that support it.'
     },
     'editor.stablePeek': {
         'type': 'boolean',
@@ -269,6 +274,11 @@ const codeEditorPreferenceProperties = {
         'type': 'boolean',
         'default': true
     },
+    'editor.comments.insertSpace': {
+        'type': 'boolean',
+        'default': true,
+        'description': 'Controls whether a space character is inserted when commenting.'
+    },
     'editor.copyWithSyntaxHighlighting': {
         'description': 'Controls whether syntax highlighting should be copied into the clipboard.',
         'type': 'boolean',
@@ -390,6 +400,11 @@ const codeEditorPreferenceProperties = {
             'indentation'
         ],
         'default': 'auto'
+    },
+    'editor.foldingHighlight': {
+        'description': 'Controls whether the editor should highlight folded ranges.',
+        'type': 'boolean',
+        'default': true
     },
     'editor.fontFamily': {
         'description': 'Controls the font family.',
@@ -730,6 +745,19 @@ const codeEditorPreferenceProperties = {
         'default': false,
         'description': 'Controls whether the parameter hints menu cycles or closes when reaching the end of the list.'
     },
+    'editor.peekWidgetDefaultFocus': {
+        'enumDescriptions': [
+            'Focus the tree when opening peek',
+            'Focus the editor when opening peek'
+        ],
+        'description': 'Controls whether to focus the inline editor or the tree in the peek widget.',
+        'type': 'string',
+        'enum': [
+            'tree',
+            'editor'
+        ],
+        'default': 'tree'
+    },
     'editor.quickSuggestions': {
         'anyOf': [
             {
@@ -927,7 +955,7 @@ const codeEditorPreferenceProperties = {
     'editor.suggest.snippetsPreventQuickSuggestions': {
         'type': 'boolean',
         'default': true,
-        'description': 'Control whether an active snippet prevents quick suggestions.'
+        'description': 'Controls whether an active snippet prevents quick suggestions.'
     },
     'editor.suggest.showIcons': {
         'type': 'boolean',
@@ -1076,6 +1104,11 @@ const codeEditorPreferenceProperties = {
         'default': true,
         'markdownDescription': 'When enabled IntelliSense shows `snippet`-suggestions.'
     },
+    'editor.suggest.hideStatusBar': {
+        'type': 'boolean',
+        'default': true,
+        'markdownDescription': 'Controls the visibility of the status bar at the bottom of the suggest widget.'
+    },
     'editor.suggestFontSize': {
         'markdownDescription': 'Font size for the suggest widget. When set to `0`, the value of `#editor.fontSize#` is used.',
         'type': 'integer',
@@ -1175,6 +1208,19 @@ const codeEditorPreferenceProperties = {
             'deepIndent'
         ],
         'default': 'same'
+    },
+    'editor.wrappingStrategy': {
+        'enumDescriptions': [
+            'Assumes that all characters are of the same width. This is a fast algorithm that works correctly for monospace fonts and certain scripts (like Latin characters) where glyphs are of equal width.',
+            'Delegates wrapping points computation to the browser. This is a slow algorithm, that might cause freezes for large files, but it works correctly in all cases.'
+        ],
+        'description': 'Controls the algorithm that computes wrapping points.',
+        'type': 'string',
+        'enum': [
+            'simple',
+            'advanced'
+        ],
+        'default': 'simple'
     }
 };
 /* eslint-enable max-len */
