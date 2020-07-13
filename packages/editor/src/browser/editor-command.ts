@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider, QuickPickValue } from '@theia/core/lib/browser';
+import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider, QuickPickValue, ApplicationShell } from '@theia/core/lib/browser';
 import { Languages, Language } from '@theia/languages/lib/browser';
 import { EditorManager } from './editor-manager';
 import { EncodingMode } from './editor';
@@ -140,6 +140,9 @@ export class EditorCommandContribution implements CommandContribution {
 
     public static readonly AUTOSAVE_PREFERENCE: string = 'editor.autoSave';
 
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
     @inject(PreferenceService)
     protected readonly preferencesService: PreferenceService;
 
@@ -162,6 +165,15 @@ export class EditorCommandContribution implements CommandContribution {
 
     @inject(ResourceProvider)
     protected readonly resourceProvider: ResourceProvider;
+
+    @postConstruct()
+    protected init(): void {
+        this.editorPreferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'editor.autoSave' && e.newValue === 'on') {
+                this.shell.saveAll();
+            }
+        });
+    }
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(EditorCommands.SHOW_REFERENCES);
