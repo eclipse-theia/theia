@@ -48,6 +48,7 @@
     "puppeteer": "^2.0.0",
     "puppeteer-to-istanbul": "^1.2.2",
     "tar": "^4.0.0",
+    "temp": "^0.9.1",
     "unzip-stream": "^0.3.0",
     "yargs": "^11.1.0"
   },
