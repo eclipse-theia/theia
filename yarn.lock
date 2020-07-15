@@ -12502,6 +12502,13 @@ temp@^0.8.1, temp@^0.8.3:
   dependencies:
     rimraf "~2.6.2"
 
+temp@^0.9.1:
+  version "0.9.1"
+  resolved "https://registry.yarnpkg.com/temp/-/temp-0.9.1.tgz#2d666114fafa26966cd4065996d7ceedd4dd4697"
+  integrity sha512-WMuOgiua1xb5R56lE0eH6ivpVmg/lq2OHm4+LtT/xtEtPQ+sz6N3bBM6WZ5FvO1lO4IKIOb43qnhoc4qxP5OeA==
+  dependencies:
+    rimraf "~2.6.2"
+
 tempfile@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/tempfile/-/tempfile-1.1.1.tgz#5bcc4eaecc4ab2c707d8bc11d99ccc9a2cb287f2"

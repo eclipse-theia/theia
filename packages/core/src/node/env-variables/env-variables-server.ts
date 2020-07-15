@@ -25,9 +25,11 @@ import { FileUri } from '../file-uri';
 export class EnvVariablesServerImpl implements EnvVariablesServer {
 
     protected readonly envs: { [key: string]: EnvVariable } = {};
-    protected readonly configDirUri = FileUri.create(join(homedir(), '.theia')).toString();
+    protected readonly configDirUri: Promise<string>;
 
     constructor() {
+        this.configDirUri = this.createConfigDirUri();
+        this.configDirUri.then(configDirUri => console.log(`Configuration directory URI: '${configDirUri}'`));
         const prEnv = process.env;
         Object.keys(prEnv).forEach((key: string) => {
             let keyName = key;
@@ -36,6 +38,10 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
             }
             this.envs[keyName] = { 'name': keyName, 'value': prEnv[key] };
         });
+    }
+
+    protected async createConfigDirUri(): Promise<string> {
+        return FileUri.create(process.env.THEIA_CONFIG_DIR || join(homedir(), '.theia')).toString();
     }
 
     async getExecPath(): Promise<string> {
@@ -53,7 +59,7 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         return this.envs[key];
     }
 
-    async getConfigDirUri(): Promise<string> {
+    getConfigDirUri(): Promise<string> {
         return this.configDirUri;
     }
 
