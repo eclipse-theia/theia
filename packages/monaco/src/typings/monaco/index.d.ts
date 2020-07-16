@@ -1196,9 +1196,6 @@ declare module monaco.quickOpen {
         run(mode: Mode, context: IEntryRunContext): boolean;
     }
 
-    // todo https://github.com/eclipse-theia/theia/issues/7899
-    export function compareEntries(elementA: QuickOpenEntry, elementB: QuickOpenEntry, lookFor: string): number;
-
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/base/parts/quickopen/browser/quickOpenModel.ts#L197
     export class QuickOpenEntryGroup extends QuickOpenEntry {
         constructor(entry?: QuickOpenEntry, groupLabel?: string, withBorder?: boolean);
@@ -1505,6 +1502,22 @@ declare module monaco.path {
 declare module monaco.wordHelper {
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/model/wordHelper.ts#L30
     export const DEFAULT_WORD_REGEXP: RegExp;
+}
+
+declare module monaco.strings {
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/common/strings.ts#L150
+    export function startsWith(haystack: string, needle: string): boolean;
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/common/strings.ts#L171
+    export function endsWith(haystack: string, needle: string): boolean;
+}
+
+declare module monaco.async {
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/common/async.ts#L721
+    export class IdleValue<T> {
+        constructor(executor: () => T) { }
+        getValue(): T;
+    }
 }
 
 /**
