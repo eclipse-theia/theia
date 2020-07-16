@@ -447,7 +447,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             if (internalConsoleOptions === 'openOnSessionStart' ||
                 (internalConsoleOptions === 'openOnFirstSessionStart' && this.firstSessionStart)) {
                 this.console.openView({
-                    reveal: true
+                    reveal: true,
+                    activate: false,
                 });
             }
             if (!noDebug && (openDebug === 'openOnSessionStart' || (openDebug === 'openOnFirstSessionStart' && this.firstSessionStart))) {
