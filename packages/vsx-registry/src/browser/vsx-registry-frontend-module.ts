@@ -32,6 +32,8 @@ import { VSXExtensionEditorManager } from './vsx-extension-editor-manager';
 import { VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
+import { VSXApiVersionProviderImpl } from './vsx-api-version-provider-frontend-impl';
+import { VSXApiVersionProvider } from '../common/vsx-api-version-provider';
 
 export default new ContainerModule(bind => {
     bind(VSXEnvironment).toSelf().inRequestScope();
@@ -90,4 +92,8 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).toService(VSXExtensionsContribution);
     bind(ColorContribution).toService(VSXExtensionsContribution);
     bind(TabBarToolbarContribution).toService(VSXExtensionsContribution);
+
+    bind(VSXApiVersionProviderImpl).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(VSXApiVersionProviderImpl);
+    bind(VSXApiVersionProvider).toService(VSXApiVersionProviderImpl);
 });

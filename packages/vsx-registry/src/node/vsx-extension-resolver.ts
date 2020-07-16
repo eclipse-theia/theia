@@ -49,7 +49,10 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
             return;
         }
         console.log(`[${id}]: trying to resolve latest version...`);
-        const extension = await this.api.getExtension(id);
+        const extension = await this.api.getLatestCompatibleExtensionVersion(id);
+        if (!extension) {
+            return;
+        }
         if (extension.error) {
             throw new Error(extension.error);
         }

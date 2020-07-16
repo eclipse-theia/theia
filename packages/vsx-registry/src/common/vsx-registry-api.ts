@@ -15,9 +15,11 @@
  ********************************************************************************/
 
 import * as bent from 'bent';
+import * as semver from 'semver';
 import { injectable, inject } from 'inversify';
-import { VSXExtensionRaw, VSXSearchParam, VSXSearchResult } from './vsx-registry-types';
+import { VSXExtensionRaw, VSXSearchParam, VSXSearchResult, VSXAllVersions } from './vsx-registry-types';
 import { VSXEnvironment } from './vsx-environment';
+import { VSXApiVersionProvider } from './vsx-api-version-provider';
 
 const fetchText = bent('GET', 'string', 200);
 const fetchJson = bent('GET', {
@@ -39,8 +41,16 @@ export namespace VSXResponseError {
     }
 }
 
+/**
+ * Namespace reserved for vscode builtin extensions.
+ */
+const VSCODE_NAMESPACE = 'vscode';
+
 @injectable()
 export class VSXRegistryAPI {
+
+    @inject(VSXApiVersionProvider)
+    protected readonly apiVersionProvider: VSXApiVersionProvider;
 
     @inject(VSXEnvironment)
     protected readonly environment: VSXEnvironment;
@@ -95,6 +105,23 @@ export class VSXRegistryAPI {
         throw new Error(`Extension with id ${id} not found at ${apiUri}`);
     }
 
+    /**
+     * Get all versions of the given extension.
+     * @param id the requested extension id.
+     */
+    async getAllVersions(id: string): Promise<VSXExtensionRaw[]> {
+        const apiUri = await this.environment.getRegistryApiUri();
+        const param: QueryParam = {
+            extensionId: id,
+            includeAllVersions: true,
+        };
+        const result = await this.postJson<QueryParam, QueryResult>(apiUri.resolve('-/query').toString(), param);
+        if (result.extensions && result.extensions.length > 0) {
+            return result.extensions;
+        }
+        throw new Error(`Extension with id ${id} not found at ${apiUri}`);
+    }
+
     protected fetchJson<R>(url: string): Promise<R> {
         return fetchJson(url) as Promise<R>;
     }
@@ -105,6 +132,60 @@ export class VSXRegistryAPI {
 
     fetchText(url: string): Promise<string> {
         return fetchText(url);
+    }
+
+    /**
+     * Get the latest compatible extension version.
+     * - an extension satisfies compatibility if its `engines.vscode` version is supported.
+     * @param id the extension id.
+     *
+     * @returns the data for the latest compatible extension version if available, else `undefined`.
+     */
+    async getLatestCompatibleExtensionVersion(id: string): Promise<VSXExtensionRaw | undefined> {
+        const extensions = await this.getAllVersions(id);
+        for (let i = 0; i < extensions.length; i++) {
+            const extension: VSXExtensionRaw = extensions[i];
+            // Skip vscode builtin extensions.
+            if (extension.namespace === VSCODE_NAMESPACE) {
+                return extension;
+            } else if (extension.engines && this.isEngineSupported(extension.engines.vscode)) {
+                return extension;
+            }
+        }
+    }
+
+    /**
+     * Get the latest compatible version of an extension.
+     * @param versions the `allVersions` property.
+     *
+     * @returns the latest compatible version of an extension if it exists, else `undefined`.
+     */
+    getLatestCompatibleVersion(versions: VSXAllVersions[]): VSXAllVersions | undefined {
+        for (const version of versions) {
+            if (this.isEngineSupported(version.engines?.vscode)) {
+                return version;
+            }
+        }
+    }
+
+    /**
+     * Determine if the engine is supported by the application.
+     * @param engine the engine.
+     *
+     * @returns `true` if the engine satisfies the API version.
+     */
+    protected isEngineSupported(engine?: string): boolean {
+        if (!engine) {
+            return false;
+        }
+
+        // Determine engine compatibility.
+        if (engine === '*') {
+            return true;
+        } else {
+            const apiVersion = this.apiVersionProvider.getApiVersion();
+            return semver.satisfies(apiVersion, engine);
+        }
     }
 
 }
