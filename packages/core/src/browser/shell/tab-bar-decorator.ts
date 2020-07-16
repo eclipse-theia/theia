@@ -17,7 +17,7 @@
 import debounce = require('lodash.debounce');
 import { Title, Widget } from '@phosphor/widgets';
 import { inject, injectable, named, postConstruct } from 'inversify';
-import { Event, Emitter, Disposable, DisposableCollection, ContributionProvider } from '../../common';
+import { Event, Emitter, ContributionProvider } from '../../common';
 import { WidgetDecoration } from '../widget-decoration';
 
 export const TabBarDecorator = Symbol('TabBarDecorator');
@@ -43,27 +43,18 @@ export interface TabBarDecorator {
 }
 
 @injectable()
-export class TabBarDecoratorService implements Disposable {
+export class TabBarDecoratorService {
 
     protected readonly onDidChangeDecorationsEmitter = new Emitter<void>();
 
     readonly onDidChangeDecorations = this.onDidChangeDecorationsEmitter.event;
-
-    protected readonly toDispose = new DisposableCollection();
 
     @inject(ContributionProvider) @named(TabBarDecorator)
     protected readonly contributions: ContributionProvider<TabBarDecorator>;
 
     @postConstruct()
     protected init(): void {
-        const decorators = this.contributions.getContributions();
-        this.toDispose.pushAll(decorators.map(decorator =>
-            decorator.onDidChangeDecorations(this.fireDidChangeDecorations)
-        ));
-    }
-
-    dispose(): void {
-        this.toDispose.dispose();
+        this.contributions.getContributions().map(decorator => decorator.onDidChangeDecorations(this.fireDidChangeDecorations));
     }
 
     protected fireDidChangeDecorations = debounce(() => this.onDidChangeDecorationsEmitter.fire(undefined), 150);

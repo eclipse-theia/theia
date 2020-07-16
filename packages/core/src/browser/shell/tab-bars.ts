@@ -82,7 +82,6 @@ export class TabBarRenderer extends TabBar.Renderer {
         super();
         if (this.decoratorService) {
             this.toDispose.push(Disposable.create(() => this.resetDecorations()));
-            this.toDispose.push(this.decoratorService);
             this.toDispose.push(this.decoratorService.onDidChangeDecorations(() => this.resetDecorations()));
         }
         if (this.iconThemeService) {
@@ -151,7 +150,8 @@ export class TabBarRenderer extends TabBar.Renderer {
             h.div(
                 { className: 'theia-tab-icon-label' },
                 this.renderIcon(data, isInSidePanel),
-                this.renderLabel(data, isInSidePanel)
+                this.renderLabel(data, isInSidePanel),
+                this.renderBadge(data, isInSidePanel)
             ),
             this.renderCloseIcon(data)
         );
@@ -224,6 +224,17 @@ export class TabBarRenderer extends TabBar.Renderer {
                 h.div({ className: 'p-TabBar-tabLabelDetails', style }, labelDetails));
         }
         return h.div({ className: 'p-TabBar-tabLabel', style }, data.title.label);
+    }
+
+    renderBadge(data: SideBarRenderData, isInSidePanel?: boolean): VirtualElement {
+        const badge: number | undefined = this.getDecorationData(data.title, 'badge')[0];
+        if (!badge) {
+            return h.div({});
+        }
+        const limitedBadge = badge >= 100 ? '99+' : badge;
+        return isInSidePanel
+            ? h.div({ className: 'theia-badge-decorator-sidebar' }, `${limitedBadge}`)
+            : h.div({ className: 'theia-badge-decorator-horizontal' }, `${limitedBadge}`);
     }
 
     protected readonly decorations = new Map<Title<Widget>, WidgetDecoration.Data[]>();

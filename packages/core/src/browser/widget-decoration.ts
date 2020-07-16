@@ -330,6 +330,10 @@ export namespace WidgetDecoration {
          * An array of ranges to highlight the caption.
          */
         readonly highlight?: CaptionHighlight;
+        /**
+         * A count badge for widgets.
+         */
+        readonly badge?: number;
     }
     export namespace Data {
         /**
