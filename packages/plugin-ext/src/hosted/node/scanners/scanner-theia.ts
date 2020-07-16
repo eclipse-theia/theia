@@ -134,9 +134,7 @@ export class TheiaPluginScanner implements PluginScanner {
         return {
             startMethod: 'start',
             stopMethod: 'stop',
-            frontendModuleName: buildFrontendModuleName(plugin),
-
-            backendInitPath: path.join(__dirname, 'backend-init-theia')
+            frontendModuleName: buildFrontendModuleName(plugin)
         };
     }
 

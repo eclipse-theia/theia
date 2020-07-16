@@ -25,10 +25,9 @@ import debounce = require('@theia/core/shared/lodash.debounce');
 import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { injectable, inject, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
 import { PluginWorker } from './plugin-worker';
-import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin, PluginServer } from '../../common/plugin-protocol';
+import { PluginMetadata, HostedPluginServer, DeployedPlugin, PluginServer } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
-import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage, UIKind } from '../../common/plugin-api-rpc';
-import { setUpPluginApi } from '../../main/browser/main-context';
+import { MAIN_RPC_CONTEXT, PluginManagerExt, ConfigStorage } from '../../common/plugin-api-rpc';
 import { RPCProtocol, RPCProtocolImpl } from '../../common/rpc-protocol';
 import {
     Disposable, DisposableCollection, Emitter, isCancelled,
@@ -38,10 +37,8 @@ import {
 import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
-import { getQueryParameters } from '../../main/browser/env-main';
-import { MainPluginApiProvider } from '../../common/plugin-ext-api-contribution';
+import { MainPluginApiProvider, ExtPluginApi } from '../../common/plugin-ext-api-contribution';
 import { PluginPathsService } from '../../main/common/plugin-paths-protocol';
-import { getPreferences } from '../../main/browser/preference-registry-main';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
@@ -56,7 +53,6 @@ import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
@@ -453,48 +449,45 @@ export class HostedPluginSupport {
     protected async obtainManager(host: string, hostContributions: PluginContributions[], toDisconnect: DisposableCollection): Promise<PluginManagerExt | undefined> {
         let manager = this.managers.get(host);
         if (!manager) {
-            const pluginId = getPluginId(hostContributions[0].plugin.metadata.model);
-            const rpc = this.initRpc(host, pluginId);
+            const rpc = this.initRpc(host);
             toDisconnect.push(rpc);
 
             manager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
             this.managers.set(host, manager);
             toDisconnect.push(Disposable.create(() => this.managers.delete(host)));
 
-            const [extApi, globalState, workspaceState, webviewResourceRoot, webviewCspSource, defaultShell, jsonValidation] = await Promise.all([
-                this.server.getExtPluginAPI(),
-                this.pluginServer.getAllStorageValues(undefined),
-                this.pluginServer.getAllStorageValues({
-                    workspace: this.workspaceService.workspace?.resource.toString(),
-                    roots: this.workspaceService.tryGetRoots().map(root => root.resource.toString())
-                }),
-                this.webviewEnvironment.resourceRoot(),
-                this.webviewEnvironment.cspSource(),
-                this.terminalService.getDefaultShell(),
-                this.jsonSchemaStore.schemas
-            ]);
+            const [extApi, jsonValidation] = await Promise.all([this.server.getExtPluginAPI(), this.jsonSchemaStore.schemas]);
             if (toDisconnect.disposed) {
                 return undefined;
             }
 
+            const mainApiProviders = new Map<string, MainPluginApiProvider>();
+            this.mainPluginApiProviders.getContributions().forEach(provider => {
+                mainApiProviders.set(provider.id, provider);
+            });
+
+            const apiInitParams: {
+                pluginApi: ExtPluginApi,
+                initParameters: any
+            }[] = [];
+
+            for (const api of extApi) {
+                const result = {
+                    pluginApi: api,
+                    initParameters: undefined
+                };
+                const mainProvider = mainApiProviders.get(api.id);
+                if (mainProvider && mainProvider.computeInitParameters) {
+                    result.initParameters = await mainProvider.computeInitParameters(rpc, this.container);
+                }
+                apiInitParams.push(result);
+            };
+
             await manager.$init({
-                preferences: getPreferences(this.preferenceProviderProvider, this.workspaceService.tryGetRoots()),
-                globalState,
-                workspaceState,
-                env: {
-                    queryParams: getQueryParameters(),
-                    language: navigator.language,
-                    shell: defaultShell,
-                    uiKind: environment.electron.is() ? UIKind.Desktop : UIKind.Web,
-                    appName: FrontendApplicationConfigProvider.get().applicationName
-                },
-                extApi,
-                webview: {
-                    webviewResourceRoot,
-                    webviewCspSource
-                },
+                extApi: apiInitParams,
                 jsonValidation
             });
+            this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
             if (toDisconnect.disposed) {
                 return undefined;
             }
@@ -502,10 +495,8 @@ export class HostedPluginSupport {
         return manager;
     }
 
-    protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
+    protected initRpc(host: PluginHost): RPCProtocol {
         const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
-        setUpPluginApi(rpc, this.container);
-        this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;
     }
 

@@ -17,29 +17,23 @@
 import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocolImpl } from '../../../common/rpc-protocol';
 import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
-import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin, TerminalServiceExt } from '../../../common/plugin-api-rpc';
-import { createAPIFactory } from '../../../plugin/plugin-context';
+import { MAIN_RPC_CONTEXT, Plugin, TerminalServiceExt } from '../../../common/plugin-api-rpc';
 import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
-import * as theia from '@theia/plugin';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
-import { createDebugExtStub } from './debug-stub';
 import { EditorsAndDocumentsExtImpl } from '../../../plugin/editors-and-documents';
 import { WorkspaceExtImpl } from '../../../plugin/workspace';
 import { MessageRegistryExt } from '../../../plugin/message-registry';
-import { WorkerEnvExtImpl } from './worker-env-ext';
-import { ClipboardExt } from '../../../plugin/clipboard-ext';
-import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 import { WebviewsExtImpl } from '../../../plugin/webviews';
 import { loadManifest } from './plugin-manifest-loader';
 import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
 import { reviver } from '../../../plugin/types-impl';
 import { SecretsExtImpl } from '../../../plugin/secrets-ext';
+import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
 
-const pluginsApiImpl = new Map<string, typeof theia>();
 const pluginsModulesNames = new Map<string, Plugin>();
 
 const emitter = new Emitter<string>();
@@ -49,25 +43,20 @@ const rpc = new RPCProtocolImpl({
         ctx.postMessage(m);
     },
 },
-{
-    reviver: reviver
-});
+    {
+        reviver: reviver
+    });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 addEventListener('message', (message: any) => {
     emitter.fire(message.data);
 });
-function initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
-    ctx.importScripts('/context/' + contextPath);
-}
-const envExt = new WorkerEnvExtImpl(rpc);
+
 const storageProxy = new KeyValueStorageProxy(rpc);
 const editorsAndDocuments = new EditorsAndDocumentsExtImpl(rpc);
 const messageRegistryExt = new MessageRegistryExt(rpc);
 const workspaceExt = new WorkspaceExtImpl(rpc, editorsAndDocuments, messageRegistryExt);
 const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc, workspaceExt);
-const debugExt = createDebugExtStub(rpc);
-const clipboardExt = new ClipboardExt(rpc);
 const webviewExt = new WebviewsExtImpl(rpc, workspaceExt);
 const secretsExt = new SecretsExtImpl(rpc);
 const terminalService: TerminalServiceExt = new TerminalServiceExtImpl(rpc);
@@ -103,12 +92,6 @@ const pluginManager = new PluginManagerExtImpl({
             const pluginModel = plg.model;
             const pluginLifecycle = plg.lifecycle;
             if (pluginModel.entryPoint!.frontend) {
-                let frontendInitPath = pluginLifecycle.frontendInitPath;
-                if (frontendInitPath) {
-                    initialize(frontendInitPath, plg);
-                } else {
-                    frontendInitPath = '';
-                }
                 const rawModel = await loadManifest(pluginModel);
                 const plugin: Plugin = {
                     pluginPath: pluginModel.entryPoint.frontend!,
@@ -118,8 +101,7 @@ const pluginManager = new PluginManagerExtImpl({
                     lifecycle: pluginLifecycle,
                     rawModel
                 };
-                const apiImpl = apiFactory(plugin);
-                pluginsApiImpl.set(plugin.model.id, apiImpl);
+                result.push(plugin);
                 pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
                 return { target: result, plugin };
             } else {
@@ -144,12 +126,13 @@ const pluginManager = new PluginManagerExtImpl({
         }
         return [result, foreign];
     },
-    initExtApi(extApi: ExtPluginApi[]): void {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    initExtApi(extApi: { pluginApi: ExtPluginApi, initParameters?: any }[]): void {
         for (const api of extApi) {
             try {
-                if (api.frontendExtApi) {
-                    ctx.importScripts(api.frontendExtApi.initPath);
-                    ctx[api.frontendExtApi.initVariable][api.frontendExtApi.initFunction](rpc, pluginsModulesNames);
+                if (api.pluginApi.frontendExtApi) {
+                    ctx.importScripts(api.pluginApi.frontendExtApi.initPath);
+                    ctx[api.pluginApi.frontendExtApi.initVariable][api.pluginApi.frontendExtApi.initFunction](rpc, pluginsModulesNames, api.initParameters);
                 }
 
             } catch (e) {
@@ -157,39 +140,7 @@ const pluginManager = new PluginManagerExtImpl({
             }
         }
     }
-}, envExt, terminalService, storageProxy, secretsExt, preferenceRegistryExt, webviewExt, rpc);
-
-const apiFactory = createAPIFactory(
-    rpc,
-    pluginManager,
-    envExt,
-    debugExt,
-    preferenceRegistryExt,
-    editorsAndDocuments,
-    workspaceExt,
-    messageRegistryExt,
-    clipboardExt,
-    webviewExt
-);
-let defaultApi: typeof theia;
-
-const handler = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    get: (target: any, name: string) => {
-        const plugin = pluginsModulesNames.get(name);
-        if (plugin) {
-            const apiImpl = pluginsApiImpl.get(plugin.model.id);
-            return apiImpl;
-        }
-
-        if (!defaultApi) {
-            defaultApi = apiFactory(emptyPlugin);
-        }
-
-        return defaultApi;
-    }
-};
-ctx['theia'] = new Proxy(Object.create(null), handler);
+}, terminalService, storageProxy, secretsExt, rpc);
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
 rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocuments);

@@ -76,8 +76,12 @@ import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
 import { CustomEditorService } from './custom-editors/custom-editor-service';
 import { UndoRedoService } from './custom-editors/undo-redo-service';
 import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-security-warnings';
+import { TheiaMainPluginAPIProvider } from './theia-main-plugin-api-provider';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
+
+    bind(TheiaMainPluginAPIProvider).toSelf().inSingletonScope();
+    bind(MainPluginApiProvider).toService(TheiaMainPluginAPIProvider);
 
     bind(LanguagesMainImpl).toSelf().inTransientScope();
     bind(LanguagesMainFactory).toFactory(context => (rpc: RPCProtocol) => {

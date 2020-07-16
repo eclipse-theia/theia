@@ -15,9 +15,7 @@
  ********************************************************************************/
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { PluginApiContribution } from './plugin-service';
 import { BackendApplicationContribution, CliContribution } from '@theia/core/lib/node';
-import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { PluginsKeyValueStorage } from './plugins-key-value-storage';
 import { PluginDeployerContribution } from './plugin-deployer-contribution';
 import {
@@ -38,12 +36,19 @@ import { PluginServerHandler } from './plugin-server-handler';
 import { PluginCliContribution } from './plugin-cli-contribution';
 import { PluginTheiaEnvironment } from '../common/plugin-theia-environment';
 import { PluginTheiaDeployerParticipant } from './plugin-theia-deployer-participant';
+import { PluginApiContribution } from './theia-api-script-loader-contribution';
+import { TheiaPluginApiProvider } from './theia-plugin-api-provider';
+import { ExtPluginApiProvider } from '../../common/plugin-ext-api-contribution';
+import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { WebviewBackendSecurityWarnings } from './webview-backend-security-warnings';
 
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(PluginApiContribution);
     bind(WsRequestValidatorContribution).toService(PluginApiContribution);
+
+    bind(TheiaPluginApiProvider).toSelf().inSingletonScope();
+    bind(Symbol.for(ExtPluginApiProvider)).toService(TheiaPluginApiProvider);
 
     bindContributionProvider(bind, PluginDeployerParticipant);
     bind(PluginDeployer).to(PluginDeployerImpl).inSingletonScope();

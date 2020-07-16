@@ -79,4 +79,5 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
             .replace('{{uuid}}', '.+')
             .replace('{{hostname}}', '.+')}$`;
     }
+
 }

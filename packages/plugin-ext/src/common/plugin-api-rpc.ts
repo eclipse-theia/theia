@@ -194,12 +194,7 @@ export const emptyPlugin: Plugin = {
 };
 
 export interface PluginManagerInitializeParams {
-    preferences: PreferenceData
-    globalState: KeysToKeysToAnyValue
-    workspaceState: KeysToKeysToAnyValue
-    env: EnvInit
-    extApi?: ExtPluginApi[]
-    webview: WebviewInitData
+    extApi?: { pluginApi: ExtPluginApi, initParameters?: any }[],
     jsonValidation: PluginJsonValidationContribution[]
 }
 

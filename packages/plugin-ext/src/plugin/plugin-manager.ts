@@ -31,13 +31,10 @@ import {
 import { PluginMetadata, PluginJsonValidationContribution } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 import { join } from './path';
-import { EnvExtImpl } from './env';
-import { PreferenceRegistryExtImpl } from './preference-registry';
 import { Memento, KeyValueStorageProxy, GlobalState } from './plugin-storage';
 import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
-import { WebviewsExtImpl } from './webviews';
 import { URI as Uri } from './types-impl';
 import { SecretsExtImpl, SecretStorageExt } from '../plugin/secrets-ext';
 
@@ -48,7 +45,8 @@ export interface PluginHost {
 
     init(data: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> | [Plugin[], Plugin[]];
 
-    initExtApi(extApi: ExtPluginApi[]): void;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    initExtApi(extApi: { pluginApi: ExtPluginApi, initParameters?: any }[]): void;
 
     loadTests?(): Promise<void>;
 }
@@ -112,12 +110,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
 
     constructor(
         private readonly host: PluginHost,
-        private readonly envExt: EnvExtImpl,
         private readonly terminalService: TerminalServiceExt,
         private readonly storageProxy: KeyValueStorageProxy,
         private readonly secrets: SecretsExtImpl,
-        private readonly preferencesManager: PreferenceRegistryExtImpl,
-        private readonly webview: WebviewsExtImpl,
         private readonly rpc: RPCProtocol
     ) {
         this.messageRegistryProxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN);
@@ -191,21 +186,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     async $init(params: PluginManagerInitializeParams): Promise<void> {
-        this.storageProxy.init(params.globalState, params.workspaceState);
-
-        this.envExt.setQueryParameters(params.env.queryParams);
-        this.envExt.setLanguage(params.env.language);
-        this.envExt.setShell(params.env.shell);
-        this.envExt.setUIKind(params.env.uiKind);
-        this.envExt.setApplicationName(params.env.appName);
-
-        this.preferencesManager.init(params.preferences);
-
         if (params.extApi) {
             this.host.initExtApi(params.extApi);
         }
-
-        this.webview.init(params.webview);
         this.jsonValidation = params.jsonValidation;
     }
 
@@ -386,8 +369,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             extensionMode: 1 // @todo: implement proper `extensionMode`.
         };
         this.pluginContextsMap.set(plugin.model.id, pluginContext);
-
-        let stopFn = undefined;
+        let stopFn: StopFn | undefined;
         if (typeof pluginMain[plugin.lifecycle.stopMethod] === 'function') {
             stopFn = pluginMain[plugin.lifecycle.stopMethod];
         }
