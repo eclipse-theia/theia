@@ -26,6 +26,7 @@ import { MonacoContextKeyService } from './monaco-context-key-service';
 import { QuickOpenHideReason } from '@theia/core/lib/common/quick-open-service';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { BrowserMenuBarContribution } from '@theia/core/lib/browser/menu/browser-menu-plugin';
+import { compareEntries, setFileNameComparer } from './monaco-comparers';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     valueSelection?: Readonly<[number, number]>;
@@ -74,6 +75,15 @@ export class MonacoQuickOpenService extends QuickOpenService {
     @postConstruct()
     protected init(): void {
         this.inQuickOpenKey = this.contextKeyService.createKey<boolean>('inQuickOpen', false);
+
+        setFileNameComparer(new monaco.async.IdleValue(() => {
+            const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+            const isNumeric = collator.resolvedOptions().numeric;
+            return {
+                collator: collator,
+                collatorIsNumeric: isNumeric
+            };
+        }));
     }
 
     open(model: QuickOpenModel, options?: QuickOpenOptions): void {
@@ -355,7 +365,7 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
             }
         }
         if (this.options.fuzzySort) {
-            entries.sort((a, b) => monaco.quickOpen.compareEntries(a, b, lookFor));
+            entries.sort((a, b) => compareEntries(a, b, lookFor));
         }
         return new monaco.quickOpen.QuickOpenModel(entries, actionProvider ? new MonacoQuickOpenActionProvider(actionProvider) : undefined);
     }
