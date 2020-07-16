@@ -128,7 +128,7 @@ export class VSXExtensionsModel {
         this.searchCancellationTokenSource.cancel();
         this.searchCancellationTokenSource = new CancellationTokenSource();
         const query = this.search.query;
-        return this.doUpdateSearchResult({ query }, this.searchCancellationTokenSource.token);
+        return this.doUpdateSearchResult({ query, includeAllVersions: true }, this.searchCancellationTokenSource.token);
     }, 150);
     protected doUpdateSearchResult(param: VSXSearchParam, token: CancellationToken): Promise<void> {
         return this.doChange(async () => {
@@ -139,12 +139,17 @@ export class VSXExtensionsModel {
             const searchResult = new Set<string>();
             for (const data of result.extensions) {
                 const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
+                const extension = this.api.getLatestCompatibleVersion(data.allVersions);
+                if (!extension) {
+                    continue;
+                }
                 this.setExtension(id).update(Object.assign(data, {
                     publisher: data.namespace,
                     downloadUrl: data.files.download,
                     iconUrl: data.files.icon,
                     readmeUrl: data.files.readme,
                     licenseUrl: data.files.license,
+                    version: extension.version
                 }));
                 searchResult.add(id);
             }
@@ -212,7 +217,10 @@ export class VSXExtensionsModel {
 
     protected async refresh(id: string): Promise<VSXExtension | undefined> {
         try {
-            const data = await this.api.getExtension(id);
+            const data = await this.api.getLatestCompatibleExtensionVersion(id);
+            if (!data) {
+                return;
+            }
             if (data.error) {
                 return this.onDidFailRefresh(id, data.error);
             }
@@ -223,6 +231,7 @@ export class VSXExtensionsModel {
                 iconUrl: data.files.icon,
                 readmeUrl: data.files.readme,
                 licenseUrl: data.files.license,
+                version: data.version
             }));
             return extension;
         } catch (e) {

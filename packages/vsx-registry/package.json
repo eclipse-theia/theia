@@ -13,6 +13,7 @@
     "p-debounce": "^2.1.0",
     "requestretry": "^3.1.0",
     "sanitize-html": "^1.14.1",
+    "semver": "^5.4.1",
     "showdown": "^1.9.1",
     "uuid": "^8.0.0"
   },
