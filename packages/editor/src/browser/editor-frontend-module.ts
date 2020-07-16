@@ -55,7 +55,8 @@ export default new ContainerModule(bind => {
     bind(KeybindingContext).toService(StrictEditorTextFocusContext);
     bind(KeybindingContext).to(EditorTextFocusContext).inSingletonScope();
     bind(KeybindingContext).to(DiffEditorTextFocusContext).inSingletonScope();
-    bind(KeybindingContribution).to(EditorKeybindingContribution).inSingletonScope();
+    bind(EditorKeybindingContribution).toSelf().inSingletonScope();
+    bind(KeybindingContribution).toService(EditorKeybindingContribution);
 
     bind(EditorContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(EditorContribution);

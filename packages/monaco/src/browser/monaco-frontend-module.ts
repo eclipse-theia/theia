@@ -122,8 +122,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoCommandRegistry).toSelf().inSingletonScope();
     bind(CommandContribution).to(MonacoEditorCommandHandlers).inSingletonScope();
-    bind(MenuContribution).to(MonacoEditorMenuContribution).inSingletonScope();
-    bind(KeybindingContribution).to(MonacoKeybindingContribution).inSingletonScope();
+    bind(MonacoEditorMenuContribution).toSelf().inSingletonScope();
+    bind(MenuContribution).toService(MonacoEditorMenuContribution);
+    bind(MonacoKeybindingContribution).toSelf().inSingletonScope();
+    bind(KeybindingContribution).toService(MonacoKeybindingContribution);
     rebind(StrictEditorTextFocusContext).to(MonacoStrictEditorTextFocusContext).inSingletonScope();
 
     bind(MonacoQuickOpenService).toSelf().inSingletonScope();

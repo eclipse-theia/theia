@@ -72,8 +72,10 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
 
     bind(WorkspaceCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(WorkspaceCommandContribution);
-    bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
-    bind(MenuContribution).to(EditMenuContribution).inSingletonScope();
+    bind(FileMenuContribution).toSelf().inSingletonScope();
+    bind(MenuContribution).toService(FileMenuContribution);
+    bind(EditMenuContribution).toSelf().inSingletonScope();
+    bind(MenuContribution).toService(EditMenuContribution);
     bind(WorkspaceDeleteHandler).toSelf().inSingletonScope();
     bind(WorkspaceDuplicateHandler).toSelf().inSingletonScope();
     bind(WorkspaceCompareHandler).toSelf().inSingletonScope();
