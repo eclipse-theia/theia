@@ -20,6 +20,7 @@ import { bindSampleUnclosableView } from './view/sample-unclosable-view-contribu
 import { bindSampleOutputChannelWithSeverity } from './output/sample-output-channel-with-severity';
 import { bindSampleMenu } from './menu/sample-menu-contribution';
 import { bindSampleFileWatching } from './file-watching/sample-file-watching-contribution';
+import { bindVSXCommand } from './vsx/sample-vsx-command-contribution';
 
 import '../../src/browser/style/branding.css';
 
@@ -29,4 +30,5 @@ export default new ContainerModule(bind => {
     bindSampleOutputChannelWithSeverity(bind);
     bindSampleMenu(bind);
     bindSampleFileWatching(bind);
+    bindVSXCommand(bind);
 });
