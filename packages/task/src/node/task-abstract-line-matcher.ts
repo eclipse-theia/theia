@@ -26,7 +26,7 @@ import {
     ProblemMatch, ProblemMatchData, ProblemLocationKind
 } from '../common/problem-matcher-protocol';
 import URI from '@theia/core/lib/common/uri';
-// TODO use onyl URI from '@theia/core'
+// TODO use only URI from '@theia/core'
 import { URI as vscodeURI } from 'vscode-uri';
 import { Severity } from '@theia/core/lib/common/severity';
 

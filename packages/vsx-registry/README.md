@@ -16,7 +16,7 @@ The `@theia/vsx-registry` extension provides integration with the Open VSX Regis
 
 ### Configuration
 
-The extension connects to the plubic Open VSX Registry hosted on `http://open-vsx.org/`.
+The extension connects to the public Open VSX Registry hosted on `http://open-vsx.org/`.
 One can host own instance of a [registry](https://github.com/eclipse/openvsx#eclipse-open-vsx)
 and configure `VSX_REGISTRY_URL` environment variable to use it.
 

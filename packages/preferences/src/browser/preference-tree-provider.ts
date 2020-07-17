@@ -132,7 +132,7 @@ export class PreferencesTreeProvider {
                 && (
                     !this._isFiltered // search too short.
                     || fuzzy.test(this.lastSearchedFuzzy, tree.id || '') // search matches preference name.
-                    // search matches description. Fuzzy isn't ideal here because the score dependens on the order of discovery.
+                    // search matches description. Fuzzy isn't ideal here because the score depends on the order of discovery.
                     || (this.baseSchema.properties[tree.id].description || '').includes(this.lastSearchedLiteral)
                 );
         }

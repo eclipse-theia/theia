@@ -517,7 +517,7 @@ export class KeybindingRegistry {
 
         this.keyboardLayoutService.validateKeyCode(keyCode);
         this.keySequence.push(keyCode);
-        const match = this.matchKeybiding(this.keySequence, event);
+        const match = this.matchKeybinding(this.keySequence, event);
 
         if (match && match.kind === 'partial') {
             /* Accumulate the keysequence */
@@ -540,14 +540,14 @@ export class KeybindingRegistry {
 
     /**
      * Match first binding in the current context.
-     * Keybinidngs ordered by a scope and by a registration order within the scope.
+     * Keybindings ordered by a scope and by a registration order within the scope.
      *
      * FIXME:
-     * This method should run very fast since it happens on each keystoke. We should reconsider how keybindings are stored.
-     * It should be possible to look up full and partial keybinding for given key sequnce for constant time using some kind of tree.
+     * This method should run very fast since it happens on each keystroke. We should reconsider how keybindings are stored.
+     * It should be possible to look up full and partial keybinding for given key sequence for constant time using some kind of tree.
      * Such tree should not contain disabled keybindings and be invalidated whenever the registry is changed.
      */
-    matchKeybiding(keySequence: KeySequence, event?: KeyboardEvent): KeybindingRegistry.Match {
+    matchKeybinding(keySequence: KeySequence, event?: KeyboardEvent): KeybindingRegistry.Match {
         let disabled: Set<string> | undefined;
         const isEnabled = (binding: ScopedKeybinding) => {
             if (event && !this.isEnabled(binding, event)) {

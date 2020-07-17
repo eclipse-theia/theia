@@ -543,7 +543,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         }
     }
 
-    rezise(cols: number, rows: number): void {
+    resize(cols: number, rows: number): void {
         this.term.resize(cols, rows);
     }
 

@@ -24,7 +24,7 @@ export const SectionPreferenceProviderUri = Symbol('SectionPreferenceProviderUri
 export const SectionPreferenceProviderSection = Symbol('SectionPreferenceProviderSection');
 
 /**
- * This class encapsulates the logic of using separate files for some workpace configuration like 'launch.json' or 'tasks.json'.
+ * This class encapsulates the logic of using separate files for some workspace configuration like 'launch.json' or 'tasks.json'.
  * Anything that is not a contributed section will be in the main config file.
  */
 @injectable()

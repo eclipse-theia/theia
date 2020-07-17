@@ -76,7 +76,7 @@ Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUT
 - [7.](#checklist-copyright) Each new file has proper copyright with the current year and the name of contributing entity (individual or company).
 <a name="checklist-sign-off"></a>
 - [8.](#checklist-sign-off) Commits are signed-off: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work.
-<a name="checklist-meaningful-commity"></a>
+<a name="checklist-meaningful-commits"></a>
 - [9.](#checklist-meaningful-commit) Each commit has meaningful title and a body that explains what it does. One can take inspiration from the `What it does` section from the PR.
 <a name="checklist-commit-history"></a>
 - [10.](#checklist-commit-history) Commit history is rebased on master and contains only meaningful commits and changes (less are usually better).
@@ -85,9 +85,9 @@ Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUT
 ## Reviewing
 
 <a name="reviewing-template"></a>
-- [1.](#eviewing-template) Reviewers should check that a PR has a [proper description](#pr-template).
+- [1.](#reviewing-template) Reviewers should check that a PR has a [proper description](#pr-template).
 <a name="reviewing-fn"></a>
-- [2.](#eviewing-fn) Reviewers should build and verify changes according to the `How to test` section of a PR description.
+- [2.](#reviewing-fn) Reviewers should build and verify changes according to the `How to test` section of a PR description.
 <a name="reviewing-checklist"></a>
 - [3.](#reviewing-checklist) Reviewers should ensure that all checks from [the review checklist](#review-checklist) are successful.
 <a name="reviewing-share"></a>
@@ -109,8 +109,8 @@ Contributors guide: https://github.com/eclipse-theia/theia/blob/master/CONTRIBUT
 
 ### Approving
 
-<a name="justifiying-approve"></a>
-- [1.](#justifiying-approve) Each approval should have supporting comments following these guidelines.
+<a name="justifying-approve"></a>
+- [1.](#justifying-approve) Each approval should have supporting comments following these guidelines.
 <a name="dismissing-approve"></a>
 - [2.](#dismissing-approve) An approval without a comment should be dismissed.
 

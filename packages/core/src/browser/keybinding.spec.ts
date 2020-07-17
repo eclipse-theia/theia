@@ -226,13 +226,13 @@ describe('keybindings', () => {
 
         keybindingRegistry.setKeymap(KeybindingScope.WORKSPACE, keybindingsSpecific);
 
-        let match = keybindingRegistry.matchKeybiding([KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.CtrlCmd] })]);
+        let match = keybindingRegistry.matchKeybinding([KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.CtrlCmd] })]);
         expect(match && match.kind).to.be.equal('full');
 
-        match = keybindingRegistry.matchKeybiding([KeyCode.createKeyCode({ first: Key.KEY_B, modifiers: [KeyModifier.CtrlCmd] })]);
+        match = keybindingRegistry.matchKeybinding([KeyCode.createKeyCode({ first: Key.KEY_B, modifiers: [KeyModifier.CtrlCmd] })]);
         expect(match && match.kind).to.be.equal('full');
 
-        match = keybindingRegistry.matchKeybiding([KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [KeyModifier.CtrlCmd] })]);
+        match = keybindingRegistry.matchKeybinding([KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [KeyModifier.CtrlCmd] })]);
         const keyCode = match && KeyCode.parse(match.binding.keybinding);
         expect(keyCode?.key).to.be.equal(validKeyCode.key);
     });
@@ -249,17 +249,17 @@ describe('keybindings', () => {
         validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [KeyModifier.CtrlCmd] }));
         validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_T }));
 
-        const match = keybindingRegistry.matchKeybiding(KeySequence.parse('ctrlcmd+x'));
+        const match = keybindingRegistry.matchKeybinding(KeySequence.parse('ctrlcmd+x'));
         expect(match && match.kind).to.be.equal('partial');
     });
 
     it('should possible to override keybinding', () => {
-        const overridenKeybinding = 'ctrlcmd+b a';
+        const overriddenKeybinding = 'ctrlcmd+b a';
         const command = TEST_COMMAND_SHADOW.id;
         const keybindingShadowing: Keybinding[] = [
             {
                 command,
-                keybinding: overridenKeybinding
+                keybinding: overriddenKeybinding
             },
             {
                 command,
@@ -272,15 +272,15 @@ describe('keybindings', () => {
         const bindings = keybindingRegistry.getKeybindingsForCommand(command);
         expect(bindings.length).to.be.equal(2);
         expect(bindings[0].keybinding).to.be.equal('ctrlcmd+b');
-        expect(bindings[1].keybinding).to.be.equal(overridenKeybinding);
+        expect(bindings[1].keybinding).to.be.equal(overriddenKeybinding);
     });
 
-    it('overriden bindings should be returned last', () => {
+    it('overridden bindings should be returned last', () => {
         const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift] });
 
-        const overridenDefaultBinding: Keybinding = {
+        const overriddenDefaultBinding: Keybinding = {
             keybinding: keyCode.toString(),
-            command: 'test.overriden-default-command'
+            command: 'test.overridden-default-command'
         };
 
         const defaultBinding: Keybinding = {
@@ -298,33 +298,33 @@ describe('keybindings', () => {
             command: 'test.workspace-command'
         };
 
-        keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [overridenDefaultBinding, defaultBinding]);
+        keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [overriddenDefaultBinding, defaultBinding]);
         keybindingRegistry.setKeymap(KeybindingScope.USER, [userBinding]);
         keybindingRegistry.setKeymap(KeybindingScope.WORKSPACE, [workspaceBinding]);
         // now WORKSPACE bindings are overriding the other scopes
 
-        let match = keybindingRegistry.matchKeybiding([keyCode]);
+        let match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(workspaceBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.WORKSPACE);
         // now it should find USER bindings
 
-        match = keybindingRegistry.matchKeybiding([keyCode]);
+        match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(userBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.USER);
         // and finally it should fallback to DEFAULT bindings.
 
-        match = keybindingRegistry.matchKeybiding([keyCode]);
+        match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(defaultBinding.command);
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.DEFAULT);
         // now the registry should be empty
 
-        match = keybindingRegistry.matchKeybiding([keyCode]);
+        match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match).to.be.undefined;
 
     });
@@ -342,16 +342,16 @@ describe('keybindings', () => {
         };
 
         keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [defaultBinding]);
-        let match = keybindingRegistry.matchKeybiding([keyCode]);
+        let match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(defaultBinding.command);
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, [disableDefaultBinding]);
-        match = keybindingRegistry.matchKeybiding([keyCode]);
+        match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match).to.be.undefined;
 
         keybindingRegistry.resetKeybindingsForScope(KeybindingScope.USER);
-        match = keybindingRegistry.matchKeybiding([keyCode]);
+        match = keybindingRegistry.matchKeybinding([keyCode]);
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(defaultBinding.command);
     });

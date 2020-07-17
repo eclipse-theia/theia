@@ -106,7 +106,7 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract write(data: string): void;
 
-    abstract rezise(cols: number, rows: number): void;
+    abstract resize(cols: number, rows: number): void;
 
     /**
      * Return Terminal search box widget.

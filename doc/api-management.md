@@ -10,7 +10,7 @@
 - [**Deprecation**](#deprecation)
 
 Theia is a framework embracing openness, extensibility, and customizability as much as possible:
-- API defaults to public visibilty for clients.
+- API defaults to public visibility for clients.
 - API defaults to protected for extenders.
 - Language constructions prohibiting runtime access to internals are never used.
 

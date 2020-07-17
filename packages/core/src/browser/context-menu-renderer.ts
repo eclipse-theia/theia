@@ -75,8 +75,8 @@ export abstract class ContextMenuRenderer {
     /** @deprecated since 0.7.2 pass `RenderContextMenuOptions` instead */
     render(menuPath: MenuPath, anchor: Anchor, onHide?: () => void): ContextMenuAccess;
     render(menuPathOrOptions: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): ContextMenuAccess {
-        const resovledOptions = RenderContextMenuOptions.resolve(menuPathOrOptions, anchor, onHide);
-        const access = this.doRender(resovledOptions);
+        const resolvedOptions = RenderContextMenuOptions.resolve(menuPathOrOptions, anchor, onHide);
+        const access = this.doRender(resolvedOptions);
         this.setCurrent(access);
         return access;
     }

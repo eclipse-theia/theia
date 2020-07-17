@@ -95,7 +95,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
         if (!terminal) {
             return;
         }
-        terminal.rezise(cols, rows);
+        terminal.resize(cols, rows);
     }
 
     async $createTerminal(id: string, options: TerminalOptions, isPseudoTerminal?: boolean): Promise<string> {
