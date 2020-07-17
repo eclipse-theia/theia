@@ -259,7 +259,7 @@ class EditorAndDocumentStateComputer implements Disposable {
         const editors = new Map<string, EditorSnapshot>();
         for (const widget of this.editorService.all) {
             const editor = MonacoEditor.get(widget);
-            // VS Code tracks only visibles widgets
+            // VS Code tracks only visible widgets
             if (!editor || !widget.isVisible) {
                 continue;
             }
