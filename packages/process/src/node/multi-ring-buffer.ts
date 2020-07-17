@@ -115,8 +115,8 @@ export class MultiRingBuffer implements Disposable {
         this.streams = new Map();
     }
 
-    enq(astring: string, encoding = 'utf8'): void {
-        let buffer: Buffer = Buffer.from(astring, encoding);
+    enq(str: string, encoding = 'utf8'): void {
+        let buffer: Buffer = Buffer.from(str, encoding);
 
         // Take the last elements of string if it's too big, drop the rest
         if (buffer.length > this.maxSize) {
@@ -162,13 +162,13 @@ export class MultiRingBuffer implements Disposable {
 
     getStream(encoding?: string): MultiRingBufferReadableStream {
         const reader = this.getReader();
-        const astream = new MultiRingBufferReadableStream(this, reader, encoding);
-        this.streams.set(astream, reader);
-        return astream;
+        const readableStream = new MultiRingBufferReadableStream(this, reader, encoding);
+        this.streams.set(readableStream, reader);
+        return readableStream;
     }
 
-    closeStream(astream: MultiRingBufferReadableStream): void {
-        this.streams.delete(<MultiRingBufferReadableStream>astream);
+    closeStream(readableStream: MultiRingBufferReadableStream): void {
+        this.streams.delete(<MultiRingBufferReadableStream>readableStream);
     }
 
     protected onData(start: number): void {
@@ -180,8 +180,8 @@ export class MultiRingBuffer implements Disposable {
             }
         }
         /* Notify the streams there's new data. */
-        for (const [astream] of this.streams) {
-            astream.onData();
+        for (const [readableStream] of this.streams) {
+            readableStream.onData();
         }
     }
 
@@ -285,8 +285,8 @@ export class MultiRingBuffer implements Disposable {
      * Dispose all the attached readers/streams.
      */
     dispose(): void {
-        for (const astream of this.streams.keys()) {
-            astream.dispose();
+        for (const readableStream of this.streams.keys()) {
+            readableStream.dispose();
         }
     }
 

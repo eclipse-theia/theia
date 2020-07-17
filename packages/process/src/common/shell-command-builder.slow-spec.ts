@@ -178,7 +178,7 @@ for (const shellConfig of shellConfigs) {
             }
         } catch (error) {
             console.error(error);
-            skipMessage = 'error occured';
+            skipMessage = 'error occurred';
         }
     }
 

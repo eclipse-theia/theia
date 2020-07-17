@@ -43,7 +43,7 @@ Example:
     bind(Symbol.for(ExtPluginApiProvider)).toService(FooPluginApiProvider);
 ```
 
-## Next you need to implement `ExtPluginApiBackendInitializationFn`, which should hanlde `@bar/foo` module loading and instantiate `@foo/bar` API object, `path/to/backend/foo/implementation.js` example :
+## Next you need to implement `ExtPluginApiBackendInitializationFn`, which should handle `@bar/foo` module loading and instantiate `@foo/bar` API object, `path/to/backend/foo/implementation.js` example :
 
 ```typescript
 export const provideApi: ExtPluginApiBackendInitializationFn = (rpc: RPCProtocol, pluginManager: PluginManager) => {

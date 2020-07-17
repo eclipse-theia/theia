@@ -270,7 +270,7 @@ You should be able to see message of `[${server-name}: ${server-PID}]: IPC start
 ### Debug the plugin host
 
   - Pass `--hosted-plugin-inspect=9339` arg to the backend server from the command line.
-    - Instead you can run `Launch Browser Backend` launch configuration which is already preconfigured.
+    - Instead you can run `Launch Browser Backend` launch configuration which is already pre-configured.
   - Open the debug view and run the `Attach to Plugin Host` launch configuration.
     - It connects to the plugin host if at least one extension is detected, otherwise it timeouts after 60s.
     - If you want to debug the activation then enable `stopOnEntry` flag.

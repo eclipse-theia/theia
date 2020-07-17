@@ -139,7 +139,7 @@ export abstract class PreferenceProvider implements Disposable {
      * Resolves only if all changes were delivered.
      * If changes were made then implementation must either
      * await on `this.emitPreferencesChangedEvent(...)` or
-     * `this.pendingChanges` if chnages are fired indirectly.
+     * `this.pendingChanges` if changes are fired indirectly.
      */
     abstract setPreference(key: string, value: any, resourceUri?: string): Promise<boolean>;
 

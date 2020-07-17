@@ -35,7 +35,7 @@ export interface TasksChange {
     type: FileChangeType;
 }
 /**
- * This class connnects the the "tasks" preferences sections to task system: it collects tasks preference values and
+ * This class connects the the "tasks" preferences sections to task system: it collects tasks preference values and
  * provides them to the task system as raw, parsed JSON.
  */
 @injectable()
