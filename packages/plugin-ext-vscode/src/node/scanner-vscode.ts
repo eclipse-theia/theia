@@ -29,13 +29,15 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
     }
 
     getModel(plugin: PluginPackage): PluginModel {
+        // publisher can be empty on vscode extension development
+        const publisher = plugin.publisher || '';
         const result: PluginModel = {
             packagePath: plugin.packagePath,
             packageUri: FileUri.create(plugin.packagePath).toString(),
             // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
-            id: `${plugin.publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
+            id: `${publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
             name: plugin.name,
-            publisher: plugin.publisher,
+            publisher: publisher,
             version: plugin.version,
             displayName: plugin.displayName,
             description: plugin.description,
