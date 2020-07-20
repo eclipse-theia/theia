@@ -25,3 +25,9 @@
   /* fix random 1px white border on terminal in Firefox. See https://github.com/eclipse-theia/theia/issues/4665 */
   border: 1px solid var(--theia-terminal-background);
 }
+
+
+.terminal-container .xterm .xterm-helper-textarea {
+  /* fix secondary cursor-like issue. See https://github.com/eclipse-theia/theia/issues/8158 */
+  opacity: 0 !important;
+}
