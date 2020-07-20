@@ -284,3 +284,7 @@
 .theia-scm-panel {
     overflow: visible;
 }
+
+.scm-search-box {
+    margin-top: 38px;
+}

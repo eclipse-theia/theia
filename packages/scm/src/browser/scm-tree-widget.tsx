@@ -113,6 +113,8 @@ export class ScmTreeWidget extends TreeWidget {
 
         const attributes = this.createNodeAttributes(node, props);
 
+        this.searchBox.node.setAttribute('class', 'p-Widget theia-search-box scm-search-box');
+
         if (ScmFileChangeGroupNode.is(node)) {
             const content = <ScmResourceGroupElement
                 key={`${node.groupId}`}
