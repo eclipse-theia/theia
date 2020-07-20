@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
-    StatefulWidget, CommonMenus, BaseWidget
+    StatefulWidget, CommonMenus, BaseWidget, StorageService
 } from '@theia/core/lib/browser';
 import { ViewContainer, View } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
@@ -82,6 +82,9 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
     @inject(ViewContextKeyService)
     protected readonly viewContextKeys: ViewContextKeyService;
+
+    @inject(StorageService)
+    protected readonly storageService: StorageService;
 
     protected readonly onDidExpandViewEmitter = new Emitter<string>();
     readonly onDidExpandView = this.onDidExpandViewEmitter.event;
@@ -153,6 +156,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             if (this.isViewVisible(viewId)) {
                 await this.openView(viewId);
             }
+            return;
+        }
+        // Suppress updating the visibility of the view if it is hidden explicitly and the layout is not undefined.
+        const layout = await this.storageService.getData<string>('layout');
+        if (layout !== undefined && (!this.isViewVisible(viewId) || widget.isHidden)) {
             return;
         }
         const viewInfo = this.views.get(viewId);
