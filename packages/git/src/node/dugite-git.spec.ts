@@ -719,7 +719,8 @@ describe('git', async function (): Promise<void> {
 
     describe('branch', () => {
 
-        it('should list the branch in chronological order', async function (): Promise<void> {
+        // Skip the test case as it is dependent on the git version.
+        it.skip('should list the branch in chronological order', async function (): Promise<void> {
             if (isWindows) {
                 this.skip(); // https://github.com/eclipse-theia/theia/issues/8023
                 return;
