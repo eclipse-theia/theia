@@ -116,6 +116,7 @@ jobs:
     - stage: test
       os: linux
     - os: osx
+      node_js: 12
       osx_image: xcode11.4
       env: CXX=c++
       before_script: skip
