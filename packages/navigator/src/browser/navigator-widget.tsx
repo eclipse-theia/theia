@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CommonCommands, CorePreferences, ViewContainerTitleOptions, Key } from '@theia/core/lib/browser';
+import { CorePreferences, ViewContainerTitleOptions, Key } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeModel, TreeNode
@@ -32,6 +32,7 @@ import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { isOSX, environment } from '@theia/core';
 import * as React from 'react';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
+import { FileNavigatorCommands } from './navigator-contribution';
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const EXPLORER_VIEW_CONTAINER_ID = 'explorer-view-container';
@@ -110,7 +111,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         const mainPanelNode = this.shell.mainPanel.node;
         this.addEventListener(mainPanelNode, 'drop', async ({ dataTransfer }) => {
             const treeNodes = dataTransfer && this.getSelectedTreeNodesFromData(dataTransfer) || [];
-            treeNodes.filter(FileNode.is).forEach(treeNode => this.commandService.executeCommand(CommonCommands.OPEN.id, treeNode.uri));
+            treeNodes.filter(FileNode.is).forEach(treeNode => this.commandService.executeCommand(FileNavigatorCommands.OPEN.id, treeNode.uri));
         });
         const handler = (e: DragEvent) => {
             if (e.dataTransfer) {
