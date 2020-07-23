@@ -88,8 +88,6 @@ export namespace CommonCommands {
 
     export const OPEN: Command = {
         id: 'core.open',
-        category: FILE_CATEGORY,
-        label: 'Open',
     };
 
     export const CUT: Command = {
