@@ -361,10 +361,13 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected readonly search = (e: React.KeyboardEvent) => this.doSearch(e);
     protected doSearch(e: React.KeyboardEvent): void {
         if (e.target) {
+            const searchValue = (e.target as HTMLInputElement).value;
             if (Key.ARROW_DOWN.keyCode === e.keyCode) {
                 this.resultTreeWidget.focusFirstResult();
+            } else if (this.searchTerm === searchValue && Key.ENTER.keyCode !== e.keyCode) {
+                return;
             } else {
-                this.searchTerm = (e.target as HTMLInputElement).value;
+                this.searchTerm = searchValue;
                 this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
             }
         }
