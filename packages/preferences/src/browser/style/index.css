@@ -295,8 +295,36 @@
     border: 1px solid var(--theia-dropdown-border);
 }
 
-.theia-settings-container .theia-input[type="checkbox"]:focus {
+.theia-settings-container .theia-input[type="checkbox"]:focus, 
+.theia-settings-container .theia-input[type="number"]:focus {
     outline-width: 2px;
+}
+
+/* Remove the spinners from input[type = number] on Firefox. */
+.theia-settings-container .theia-input[type="number"] {
+    -webkit-appearance: textfield;
+    border: 1px solid var(--theia-dropdown-border);
+}
+
+/* Remove the webkit spinners from input[type = number] on all browsers except Firefox. */
+.theia-settings-container input::-webkit-outer-spin-button,
+.theia-settings-container input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.theia-settings-container .pref-content-container .pref-input .pref-input-container .pref-error-notification {
+    border-style: solid;
+    border-color: var(--theia-inputValidation-errorBorder);
+    background-color: var(--theia-inputValidation-errorBackground);
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--theia-ui-padding);
+}
+
+.theia-settings-container .pref-content-container .pref-input .pref-input-container {
+    display: flex;
+    flex-direction: column;
 }
 
 .theia-settings-container .pref-content-container a.theia-json-input {
