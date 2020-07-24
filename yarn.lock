@@ -1940,6 +1940,11 @@ add-stream@^1.0.0:
   resolved "https://registry.yarnpkg.com/add-stream/-/add-stream-1.0.0.tgz#6a7990437ca736d5e1288db92bd3266d5f5cb2aa"
   integrity sha1-anmQQ3ynNtXhKI25K9MmbV9csqo=
 
+agent-base@5:
+  version "5.1.1"
+  resolved "https://registry.yarnpkg.com/agent-base/-/agent-base-5.1.1.tgz#e8fb3f242959db44d63be665db7a8e739537a32c"
+  integrity sha512-TMeqbNl2fMW0nMjTEPOwe3J/PRFP4vqeoNuQMG0HlMrtm5QxKqdvAkZ1pRBQ/ulIyDD5Yq0nJ7YbdD8ey0TO3g==
+
 agent-base@6:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/agent-base/-/agent-base-6.0.0.tgz#5d0101f19bbfaed39980b22ae866de153b93f09a"
@@ -7069,6 +7074,14 @@ https-proxy-agent@^3.0.0:
   dependencies:
     agent-base "^4.3.0"
     debug "^3.1.0"
+
+https-proxy-agent@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/https-proxy-agent/-/https-proxy-agent-4.0.0.tgz#702b71fb5520a132a66de1f67541d9e62154d82b"
+  integrity sha512-zoDhWrkR3of1l9QAL8/scJZyLu8j/gBkcwcaQOZh7Gyh/+uJQzGVETdgT30akuwkpL8HTRfssqI3BZuV18teDg==
+  dependencies:
+    agent-base "5"
+    debug "4"
 
 https-proxy-agent@^5.0.0:
   version "5.0.0"
@@ -13339,9 +13352,12 @@ vscode-languageserver-types@^3.15.0-next, vscode-languageserver-types@^3.15.0-ne
   integrity sha512-s9Psd+0sQVkH4o1U7hwTNJRuXQQgFvGVZIim7Wb44tcq54rZou3kJKCtdFEm0aHUuYxIrMPYrzuh1jlqCbRegw==
 
 vscode-ripgrep@^1.2.4:
-  version "1.5.7"
-  resolved "https://registry.yarnpkg.com/vscode-ripgrep/-/vscode-ripgrep-1.5.7.tgz#acb6b548af488a4bca5d0f1bb5faf761343289ce"
-  integrity sha512-/Vsz/+k8kTvui0q3O74pif9FK0nKopgFTiGNVvxicZANxtSA8J8gUE9GQ/4dpi7D/2yI/YVORszwVskFbz46hQ==
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/vscode-ripgrep/-/vscode-ripgrep-1.8.0.tgz#dfe7c2ae2a2032df8a8108765c2feef73474888a"
+  integrity sha512-/Q5XtePkTLLi8yplr5ai24pVEymRF62xH9xXrtj35GTaDCJg3zq1s1/L1UqhVbfNDv4OcMBYjyIAt/quEi3d5w==
+  dependencies:
+    https-proxy-agent "^4.0.0"
+    proxy-from-env "^1.1.0"
 
 vscode-textmate@^4.0.1:
   version "4.4.0"
