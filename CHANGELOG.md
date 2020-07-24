@@ -5,6 +5,8 @@
 <a name="breaking_changes_1.5.0">[Breaking Changes:](#breaking_changes_1.5.0)</a>
 
 - [output] `OutputWidget#setInput` has been removed. The _Output_ view automatically shows the channel when calling `OutputChannel#show`. Moved the `OutputCommands` namespace from the `output-contribution` to its dedicated `output-commands` module to overcome a DI cycle. [#8243](https://github.com/eclipse-theia/theia/pull/8243)
+- [example app] updated yarn.lock so that the latest version of `vscode-ripgrep` is used (`v1.8.0`). This way we can benefit from the recently added support for it using proxy settings when fetching the platform-specific `ripgrep` executable, after npm package install. This should make it a lot easier to build our example application in corporate settings, behind a firewall. [#8280](https://github.com/eclipse-theia/theia/pull/8280)
+  - Note to downstream IDE designers: this change will not have an effect beyond this repo's example application. If it's desirable for your product to have the latest `vscode-ripgrep`, you should do similarly in your own `yarn.lock`. 
 
 
 ## v1.4.0
