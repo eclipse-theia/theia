@@ -101,7 +101,7 @@ export class HostedPluginSupport {
     private readonly preferenceServiceImpl: PreferenceServiceImpl;
 
     @inject(PluginPathsService)
-    private readonly pluginPathsService: PluginPathsService;
+    private readonly pluginPathsService: JsonRpcProxy<PluginPathsService>;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -236,54 +236,56 @@ export class HostedPluginSupport {
         this.load();
         this.watcher.onDidDeploy(() => this.load());
         this.server.onDidOpenConnection(() => this.load());
+        this.pluginPathsService.onDidOpenConnection(() => this.load());
     }
 
     protected loadQueue: Promise<void> = Promise.resolve(undefined);
     load = debounce(() => this.loadQueue = this.loadQueue.then(async () => {
-        try {
-            await this.progressService.withProgress('', PluginProgressLocation, () => this.doLoad());
-        } catch (e) {
-            console.error('Failed to load plugins:', e);
-        }
+        await this.progressService.withProgress('', PluginProgressLocation, () => this.doLoad());
     }), 50, { leading: true });
 
     protected async doLoad(): Promise<void> {
         const toDisconnect = new DisposableCollection(Disposable.create(() => { /* mark as connected */ }));
-        toDisconnect.push(Disposable.create(() => this.preserveWebviews()));
-        this.server.onDidCloseConnection(() => toDisconnect.dispose());
+        try {
+            toDisconnect.push(Disposable.create(() => this.preserveWebviews()));
+            this.server.onDidCloseConnection(() => toDisconnect.dispose());
 
-        // process empty plugins as well in order to properly remove stale plugin widgets
-        await this.syncPlugins();
+            // process empty plugins as well in order to properly remove stale plugin widgets
+            await this.syncPlugins();
 
-        // it has to be resolved before awaiting layout is initialized
-        // otherwise clients can hang forever in the initialization phase
-        this.deferredWillStart.resolve();
+            // it has to be resolved before awaiting layout is initialized
+            // otherwise clients can hang forever in the initialization phase
+            this.deferredWillStart.resolve();
 
-        // make sure that the previous state, including plugin widgets, is restored
-        // and core layout is initialized, i.e. explorer, scm, debug views are already added to the shell
-        // but shell is not yet revealed
-        await this.appState.reachedState('initialized_layout');
+            // make sure that the previous state, including plugin widgets, is restored
+            // and core layout is initialized, i.e. explorer, scm, debug views are already added to the shell
+            // but shell is not yet revealed
+            await this.appState.reachedState('initialized_layout');
 
-        if (toDisconnect.disposed) {
-            // if disconnected then don't try to load plugin contributions
-            return;
+            if (toDisconnect.disposed) {
+                // if disconnected then don't try to load plugin contributions
+                return;
+            }
+            const contributionsByHost = this.loadContributions(toDisconnect);
+
+            await this.viewRegistry.initWidgets();
+            // remove restored plugin widgets which were not registered by contributions
+            this.viewRegistry.removeStaleWidgets();
+            await this.theiaReadyPromise;
+
+            if (toDisconnect.disposed) {
+                // if disconnected then don't try to init plugin code and dynamic contributions
+                return;
+            }
+            await this.startPlugins(contributionsByHost, toDisconnect);
+
+            this.deferredDidStart.resolve();
+
+            this.restoreWebviews();
+        } catch (e) {
+            toDisconnect.dispose();
+            console.error('Failed to load plugins:', e);
         }
-        const contributionsByHost = this.loadContributions(toDisconnect);
-
-        await this.viewRegistry.initWidgets();
-        // remove restored plugin widgets which were not registered by contributions
-        this.viewRegistry.removeStaleWidgets();
-        await this.theiaReadyPromise;
-
-        if (toDisconnect.disposed) {
-            // if disconnected then don't try to init plugin code and dynamic contributions
-            return;
-        }
-        await this.startPlugins(contributionsByHost, toDisconnect);
-
-        this.deferredDidStart.resolve();
-
-        this.restoreWebviews();
     }
 
     /**
