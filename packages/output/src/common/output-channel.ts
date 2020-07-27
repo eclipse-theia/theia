@@ -20,22 +20,19 @@ import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Resource, ResourceResolver } from '@theia/core/lib/common/resource';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common/command';
-import { OpenerService, open, QuickPickService } from '@theia/core/lib/browser';
+import { QuickPickService } from '@theia/core/lib/browser';
 import { Emitter, Event, Disposable, DisposableCollection } from '@theia/core';
 import { QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoTextModelService, IReference } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { OutputUri } from './output-uri';
-import { OutputCommands } from '../browser/output-contribution';
 import { OutputResource } from '../browser/output-resource';
 import { OutputPreferences } from './output-preferences';
 import { OutputConfigSchema } from './output-preferences';
+import { OutputCommands } from '../browser/output-commands';
 
 @injectable()
 export class OutputChannelManager implements CommandContribution, Disposable, ResourceResolver {
-
-    @inject(OpenerService)
-    protected readonly openerService: OpenerService;
 
     @inject(QuickPickService)
     protected readonly quickPickService: QuickPickService;
@@ -52,7 +49,7 @@ export class OutputChannelManager implements CommandContribution, Disposable, Re
 
     protected readonly channelAddedEmitter = new Emitter<{ name: string }>();
     protected readonly channelDeletedEmitter = new Emitter<{ name: string }>();
-    protected readonly channelWasShownEmitter = new Emitter<{ name: string }>();
+    protected readonly channelWasShownEmitter = new Emitter<{ name: string, preserveFocus?: boolean }>();
     protected readonly channelWasHiddenEmitter = new Emitter<{ name: string }>();
     protected readonly selectedChannelChangedEmitter = new Emitter<{ name: string } | undefined>();
 
@@ -97,12 +94,8 @@ export class OutputChannelManager implements CommandContribution, Disposable, Re
         registry.registerCommand(OutputCommands.SHOW, {
             execute: ({ name, options }: { name: string, options?: { preserveFocus?: boolean } }) => {
                 if (name) {
-                    // Not just show on the UI but make sure the visible flag was flipped.
-                    this.getChannel(name).show();
-                    const preserveFocus = options && !!options.preserveFocus;
-                    const activate = !preserveFocus;
-                    const reveal = preserveFocus;
-                    open(this.openerService, OutputUri.create(name), { activate, reveal });
+                    const preserveFocus = options && options.preserveFocus || false;
+                    this.getChannel(name).show({ preserveFocus });
                 }
             }
         });
@@ -135,7 +128,7 @@ export class OutputChannelManager implements CommandContribution, Disposable, Re
                 });
                 if (channel) {
                     const { name } = channel;
-                    registry.executeCommand(OutputCommands.SHOW.id, { name, options: { preserveFocus: true } });
+                    registry.executeCommand(OutputCommands.SHOW.id, { name, options: { preserveFocus: false } });
                 }
             },
             isEnabled: () => !!this.getChannels().length,
@@ -217,10 +210,10 @@ export class OutputChannelManager implements CommandContribution, Disposable, Re
         const { name } = channel;
         return new DisposableCollection(
             channel,
-            channel.onVisibilityChange(({ isVisible }) => {
+            channel.onVisibilityChange(({ isVisible, preserveFocus }) => {
                 if (isVisible) {
                     this.selectedChannel = channel;
-                    this.channelWasShownEmitter.fire({ name });
+                    this.channelWasShownEmitter.fire({ name, preserveFocus });
                 } else {
                     if (channel === this.selectedChannel) {
                         this.selectedChannel = this.getVisibleChannels()[0];
@@ -324,7 +317,7 @@ export enum OutputChannelSeverity {
 export class OutputChannel implements Disposable {
 
     private readonly contentChangeEmitter = new Emitter<void>();
-    private readonly visibilityChangeEmitter = new Emitter<{ isVisible: boolean }>();
+    private readonly visibilityChangeEmitter = new Emitter<{ isVisible: boolean, preserveFocus?: boolean }>();
     private readonly disposedEmitter = new Emitter<void>();
     private readonly toDispose = new DisposableCollection(
         this.contentChangeEmitter,
@@ -338,7 +331,7 @@ export class OutputChannel implements Disposable {
     private decorationIds = new Set<string>();
     private textModifyQueue = new PQueue({ autoStart: true, concurrency: 1 });
 
-    readonly onVisibilityChange: Event<{ isVisible: boolean }> = this.visibilityChangeEmitter.event;
+    readonly onVisibilityChange: Event<{ isVisible: boolean, preserveFocus?: boolean }> = this.visibilityChangeEmitter.event;
     readonly onContentChange: Event<void> = this.contentChangeEmitter.event;
     readonly onDisposed: Event<void> = this.disposedEmitter.event;
 
@@ -365,22 +358,29 @@ export class OutputChannel implements Disposable {
     }
 
     hide(): void {
-        this.setVisibility(false);
+        this.visible = false;
+        this.visibilityChangeEmitter.fire({ isVisible: this.isVisible });
     }
 
-    show(): void {
-        this.setVisibility(true);
+    /**
+     * If `preserveFocus` is `true`, the channel will not take focus. It is `false` by default.
+     *  - Calling `show` without args or with `preserveFocus: false` will reveal **and** activate the `Output` widget.
+     *  - Calling `show` with `preserveFocus: true` will reveal the `Output` widget but **won't** activate it.
+     */
+    show({ preserveFocus }: { preserveFocus: boolean } = { preserveFocus: false }): void {
+        this.visible = true;
+        this.visibilityChangeEmitter.fire({ isVisible: this.isVisible, preserveFocus });
     }
 
     /**
      * @deprecated use `show` and `hide` instead.
-     *
-     * TODO: decide on deprecation. I would be OK with a `setVisible(boolean)` signature, but not "visibility". So it would be a breaking anyway.
-     * Also, `hide`/`show` is in sync with VS Code API. Thoughts?
      */
-    setVisibility(visible: boolean): void {
-        this.visible = visible;
-        this.visibilityChangeEmitter.fire({ isVisible: this.isVisible });
+    setVisibility(visible: boolean, options: { preserveFocus: boolean } = { preserveFocus: false }): void {
+        if (visible) {
+            this.show(options);
+        } else {
+            this.hide();
+        }
     }
 
     /**

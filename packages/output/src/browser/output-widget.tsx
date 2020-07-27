@@ -64,7 +64,8 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
     @postConstruct()
     protected init(): void {
         this.toDispose.pushAll([
-            this.outputChannelManager.onSelectedChannelChanged(this.refreshEditorWidget.bind(this)),
+            this.outputChannelManager.onChannelWasHidden(() => this.refreshEditorWidget()),
+            this.outputChannelManager.onChannelWasShown(({ preserveFocus }) => this.refreshEditorWidget({ preserveFocus: !!preserveFocus })),
             this.toDisposeOnSelectedChannelChanged,
             this.onStateChangedEmitter,
             this.onStateChanged(() => this.update())
@@ -93,13 +94,16 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         this.onStateChangedEmitter.fire(this._state);
     }
 
-    protected async refreshEditorWidget(): Promise<void> {
+    protected async refreshEditorWidget({ preserveFocus }: { preserveFocus: boolean } = { preserveFocus: false }): Promise<void> {
         const { selectedChannel } = this;
-        const editor = this.editor;
-        if (selectedChannel && editor) {
+        const editorWidget = this.editorWidget;
+        if (selectedChannel && editorWidget) {
             // If the input is the current one, do nothing.
-            const model = editor.getControl().getModel();
+            const model = (editorWidget.editor as MonacoEditor).getControl().getModel();
             if (model && model.uri.toString() === selectedChannel.uri.toString()) {
+                if (!preserveFocus) {
+                    this.activate();
+                }
                 return;
             }
         }
@@ -112,7 +116,9 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
                     Disposable.create(() => widget.close()),
                     selectedChannel.onContentChange(() => this.revealLastLine())
                 ]);
-                MessageLoop.sendMessage(widget, Widget.Msg.ActivateRequest);
+                if (!preserveFocus) {
+                    this.activate();
+                }
                 this.revealLastLine();
             }
         }
@@ -126,10 +132,8 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
 
     protected onActivateRequest(message: Message): void {
         super.onActivateRequest(message);
-        if (this.selectedChannel) {
-            for (const widget of toArray(this.editorContainer.widgets())) {
-                MessageLoop.sendMessage(widget, Widget.Msg.ActivateRequest);
-            }
+        if (this.editor) {
+            this.editor.focus();
         } else {
             this.node.focus();
         }
@@ -177,10 +181,6 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         return !!this.state.locked;
     }
 
-    setInput(channelName: string): void {
-        this.outputChannelManager.getChannel(channelName).setVisibility(true);
-    }
-
     protected revealLastLine(): void {
         if (this.isLocked) {
             return;
@@ -209,26 +209,27 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         return new EditorWidget(editor, this.selectionService);
     }
 
-    private get editor(): MonacoEditor | undefined {
+    private get editorWidget(): EditorWidget | undefined {
         for (const widget of toArray(this.editorContainer.children())) {
             if (widget instanceof EditorWidget) {
-                if (widget.editor instanceof MonacoEditor) {
-                    return widget.editor;
-                }
+                return widget;
+            }
+        }
+        return undefined;
+    }
+
+    private get editor(): MonacoEditor | undefined {
+        const widget = this.editorWidget;
+        if (widget instanceof EditorWidget) {
+            if (widget.editor instanceof MonacoEditor) {
+                return widget.editor;
             }
         }
         return undefined;
     }
 
     getText(): string | undefined {
-        const editor = this.editor;
-        if (editor) {
-            const model = editor.getControl().getModel();
-            if (model) {
-                return model.getValue();
-            }
-        }
-        return undefined;
+        return this.editor?.getControl().getModel()?.getValue();
     }
 
 }
