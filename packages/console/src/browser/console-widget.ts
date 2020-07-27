@@ -78,6 +78,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     protected readonly editorProvider: MonacoEditorProvider;
 
     protected _input: MonacoEditor;
+    protected _inputPromise: Promise<MonacoEditor>;
 
     constructor() {
         super();
@@ -106,22 +107,23 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         inputWidget.node.classList.add(ConsoleWidget.styles.input);
         layout.addWidget(inputWidget);
 
-        const input = this._input = await this.createInput(inputWidget.node);
-        this.toDispose.push(input);
-        this.toDispose.push(input.getControl().onDidLayoutChange(() => this.resizeContent()));
+        this._inputPromise = this.createInput(inputWidget.node);
+        this._input = await this._inputPromise;
+        this.toDispose.push(this._input);
+        this.toDispose.push(this._input.getControl().onDidLayoutChange(() => this.resizeContent()));
 
         // todo update font if fontInfo was changed only
         // it's impossible at the moment, but will be fixed for next upgrade of monaco version
         // see https://github.com/microsoft/vscode/commit/5084e8ca1935698c98c163e339ca664818786c6d
-        this.toDispose.push(input.getControl().onDidChangeConfiguration(() => this.updateFont()));
+        this.toDispose.push(this._input.getControl().onDidChangeConfiguration(() => this.updateFont()));
 
         this.updateFont();
         if (inputFocusContextKey) {
-            this.toDispose.push(input.onFocusChanged(() => inputFocusContextKey.set(this.hasInputFocus())));
+            this.toDispose.push(this._input.onFocusChanged(() => inputFocusContextKey.set(this.hasInputFocus())));
         }
     }
 
-    protected createInput(node: HTMLElement): Promise<MonacoEditor> {
+    protected async createInput(node: HTMLElement): Promise<MonacoEditor> {
         return this.editorProvider.createInline(this.options.input.uri, node, this.options.input.options);
     }
 
@@ -248,15 +250,18 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     }
 
     restoreState(oldState: object): void {
-        if ('history' in oldState) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.history.restore((<any>oldState)['history']);
-        }
-        this.input.getControl().setValue(this.history.current || '');
-        if ('input' in oldState) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            this.input.restoreViewState((<any>oldState)['input']);
-        }
+        // Restore the console input once it has been created.
+        this._inputPromise.then(() => {
+            if ('history' in oldState) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                this.history.restore((<any>oldState)['history']);
+            }
+            this._input.getControl().setValue(this.history.current || '');
+            if ('input' in oldState) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                this.input.restoreViewState((<any>oldState)['input']);
+            }
+        });
     }
 
     hasInputFocus(): boolean {
