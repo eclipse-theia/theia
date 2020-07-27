@@ -14,103 +14,34 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Widget } from '@theia/core/lib/browser/widgets/widget';
 import { MaybePromise } from '@theia/core/lib/common/types';
-import { CommonCommands, quickCommand, OpenHandler, OpenerOptions } from '@theia/core/lib/browser';
-import { Command, CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
+import { CommonCommands, quickCommand, OpenHandler, open, OpenerOptions, OpenerService } from '@theia/core/lib/browser';
+import { CommandRegistry, MenuModelRegistry, CommandService } from '@theia/core/lib/common';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { OutputWidget } from './output-widget';
 import { OutputContextMenu } from './output-context-menu';
 import { OutputUri } from '../common/output-uri';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
-
-export namespace OutputCommands {
-
-    const OUTPUT_CATEGORY = 'Output';
-
-    /* #region VS Code `OutputChannel` API */
-    // Based on: https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/vscode.d.ts#L4692-L4745
-
-    export const APPEND: Command = {
-        id: 'output:append'
-    };
-
-    export const APPEND_LINE: Command = {
-        id: 'output:appendLine'
-    };
-
-    export const CLEAR: Command = {
-        id: 'output:clear'
-    };
-
-    export const SHOW: Command = {
-        id: 'output:show'
-    };
-
-    export const HIDE: Command = {
-        id: 'output:hide'
-    };
-
-    export const DISPOSE: Command = {
-        id: 'output:dispose'
-    };
-
-    /* #endregion VS Code `OutputChannel` API */
-
-    export const CLEAR__WIDGET: Command = {
-        id: 'output:widget:clear',
-        category: OUTPUT_CATEGORY,
-        iconClass: 'clear-all'
-    };
-
-    export const LOCK__WIDGET: Command = {
-        id: 'output:widget:lock',
-        category: OUTPUT_CATEGORY,
-        iconClass: 'fa fa-unlock'
-    };
-
-    export const UNLOCK__WIDGET: Command = {
-        id: 'output:widget:unlock',
-        category: OUTPUT_CATEGORY,
-        iconClass: 'fa fa-lock'
-    };
-
-    export const CLEAR__QUICK_PICK: Command = {
-        id: 'output:pick-clear',
-        label: 'Clear Output Channel...',
-        category: OUTPUT_CATEGORY
-    };
-
-    export const SHOW__QUICK_PICK: Command = {
-        id: 'output:pick-show',
-        label: 'Show Output Channel...',
-        category: OUTPUT_CATEGORY
-    };
-
-    export const HIDE__QUICK_PICK: Command = {
-        id: 'output:pick-hide',
-        label: 'Hide Output Channel...',
-        category: OUTPUT_CATEGORY
-    };
-
-    export const DISPOSE__QUICK_PICK: Command = {
-        id: 'output:pick-dispose',
-        label: 'Close Output Channel...',
-        category: OUTPUT_CATEGORY
-    };
-
-    export const COPY_ALL: Command = {
-        id: 'output:copy-all',
-    };
-}
+import { OutputChannelManager } from '../common/output-channel';
+import { OutputCommands } from './output-commands';
 
 @injectable()
 export class OutputContribution extends AbstractViewContribution<OutputWidget> implements OpenHandler {
 
     @inject(ClipboardService)
     protected readonly clipboardService: ClipboardService;
+
+    @inject(CommandService)
+    protected readonly commandService: CommandService;
+
+    @inject(OutputChannelManager)
+    protected readonly outputChannelManager: OutputChannelManager;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     readonly id: string = `${OutputWidget.ID}-opener`;
 
@@ -124,6 +55,12 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
             toggleCommandId: 'output:toggle',
             toggleKeybinding: 'CtrlCmd+Shift+U'
         });
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.outputChannelManager.onChannelWasShown(({ name, preserveFocus }) =>
+            open(this.openerService, OutputUri.create(name), { activate: !preserveFocus, reveal: true }));
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -204,7 +141,6 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
             throw new Error(`Expected '${OutputUri.SCHEME}' URI scheme. Got: ${uri} instead.`);
         }
         const widget = await this.openView(options);
-        widget.setInput(OutputUri.channelName(uri));
         return widget;
     }
 
