@@ -1,5 +1,12 @@
 # Change Log
 
+## v1.5.0
+
+<a name="breaking_changes_1.5.0">[Breaking Changes:](#breaking_changes_1.5.0)</a>
+
+- [output] `OutputWidget#setInput` has been removed. The _Output_ view automatically shows the channel when calling `OutputChannel#show`. Moved the `OutputCommands` namespace from the `output-contribution` to its dedicated `output-commands` module to overcome a DI cycle. [#8243](https://github.com/eclipse-theia/theia/pull/8243)
+
+
 ## v1.4.0
 
 - [core] added support for Node.js `12.x` [#7968](https://github.com/eclipse-theia/theia/pull/7968)

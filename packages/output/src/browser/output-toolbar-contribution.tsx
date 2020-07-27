@@ -19,7 +19,8 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { OutputWidget } from './output-widget';
-import { OutputCommands, OutputContribution } from './output-contribution';
+import { OutputCommands } from './output-commands';
+import { OutputContribution } from './output-contribution';
 import { OutputChannelManager } from '../common/output-channel';
 
 @injectable()
@@ -103,7 +104,7 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
     protected changeChannel = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const channelName = event.target.value;
         if (channelName !== this.NONE) {
-            this.outputChannelManager.selectedChannel = this.outputChannelManager.getChannel(channelName);
+            this.outputChannelManager.getChannel(channelName).show();
         }
     };
 }
