@@ -24,7 +24,7 @@ import { bindPreferenceProviders } from './preference-bindings';
 import { bindPreferencesWidgets } from './views/preference-widget-bindings';
 import { PreferencesEventService } from './util/preference-event-service';
 import { PreferencesTreeProvider } from './preference-tree-provider';
-import { PreferencesContribution } from './preference-contribution';
+import { PreferencesContribution } from './preferences-contribution';
 import { PreferenceScopeCommandManager } from './util/preference-scope-command-manager';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { PreferencesJsonSchemaContribution } from './preferences-json-schema-contribution';
