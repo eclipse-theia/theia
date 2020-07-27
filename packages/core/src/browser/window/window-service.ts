@@ -16,6 +16,7 @@
 
 export interface NewWindowOptions {
     readonly external?: boolean;
+    readonly windowName?: string;
 }
 
 /**
