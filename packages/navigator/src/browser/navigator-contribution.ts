@@ -442,16 +442,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
         registry.registerKeybinding({
             command: WorkspaceCommands.FILE_DELETE.id,
-            keybinding: 'del',
+            keybinding: isOSX ? 'cmd+backspace' : 'del',
             context: NavigatorKeybindingContexts.navigatorActive
         });
-        if (isOSX) {
-            registry.registerKeybinding({
-                command: WorkspaceCommands.FILE_DELETE.id,
-                keybinding: 'cmd+backspace',
-                context: NavigatorKeybindingContexts.navigatorActive
-            });
-        }
 
         registry.registerKeybinding({
             command: WorkspaceCommands.FILE_RENAME.id,
