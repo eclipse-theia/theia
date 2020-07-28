@@ -361,8 +361,8 @@ export interface StatusBarMessageRegistryMain {
         alignment: theia.StatusBarAlignment,
         color: string | undefined,
         tooltip: string | undefined,
-        command: string | undefined): PromiseLike<void>;
-    $update(id: string, message: string): void;
+        command: string | undefined,
+        args: any[] | undefined): PromiseLike<void>;
     $dispose(id: string): void;
 }
 

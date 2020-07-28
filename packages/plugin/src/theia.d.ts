@@ -2366,7 +2366,7 @@ declare module '@theia/plugin' {
         /**
          * The identifier of a command to run on click.
          */
-        command: string | undefined;
+        command: string | Command | undefined;
 
         /**
          * Shows the entry in the status bar.
