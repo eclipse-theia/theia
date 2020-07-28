@@ -76,7 +76,7 @@ export class SinglePreferenceWrapper extends React.Component<SinglePreferenceWra
         const { preferenceDisplayNode } = this.props;
         const { preference: { data, values } } = preferenceDisplayNode;
 
-        this.value = this.getValueInCurrentScope(values, this.props.currentScope);
+        this.value = Preference.getValueInScope(values, this.props.currentScope) ?? data.defaultValue;
 
         const currentValueIsDefaultValue = this.value === data.defaultValue;
 
@@ -124,14 +124,6 @@ export class SinglePreferenceWrapper extends React.Component<SinglePreferenceWra
         this.props.openJSON(this.props.preferenceDisplayNode);
     };
 
-    protected getValueInCurrentScope(preferenceValuesInAllScopes: Preference.ValuesInAllScopes | undefined, currentScope: number): PreferenceItem | undefined {
-        if (preferenceValuesInAllScopes) {
-            const key = Preference.LookupKeys[currentScope] as keyof Preference.ValuesInAllScopes;
-            return preferenceValuesInAllScopes[key] === undefined ? preferenceValuesInAllScopes.defaultValue : preferenceValuesInAllScopes[key] as PreferenceItem;
-        }
-        return undefined;
-    }
-
     protected renderOtherModifiedScopes(
         id: string,
         preferenceValuesInAllScopes: Preference.ValuesInAllScopes | undefined,
@@ -139,22 +131,21 @@ export class SinglePreferenceWrapper extends React.Component<SinglePreferenceWra
         service: PreferenceService): React.ReactNode[] | undefined {
         if (preferenceValuesInAllScopes) {
             return ['User', 'Workspace'].map((scope: 'User' | 'Workspace') => {
-                const matchingScope = PreferenceScope[scope];
-                if (currentScope !== matchingScope) {
+                const otherScope = PreferenceScope[scope];
+                if (currentScope !== otherScope) {
                     const info = service.inspect<PreferenceItem>(id);
                     if (!info) {
                         return;
                     }
 
                     const defaultValue = info.defaultValue;
-                    const currentValue = this.getValueByScope(info, currentScope);
-                    const matchingValue = this.getValueByScope(info, matchingScope);
-
-                    if (matchingValue !== undefined) {
+                    const currentValue = Preference.getValueInScope(info, currentScope);
+                    const otherValue = Preference.getValueInScope(info, otherScope);
+                    if (otherValue !== undefined && otherValue !== defaultValue) {
 
                         const bothOverridden = (
                             (currentValue !== defaultValue && currentValue !== undefined) &&
-                            (matchingValue !== defaultValue && matchingValue !== undefined)
+                            (otherValue !== defaultValue && otherValue !== undefined)
                         );
 
                         const message = bothOverridden ? 'Also modified in:' : 'Modified in:';
@@ -164,21 +155,6 @@ export class SinglePreferenceWrapper extends React.Component<SinglePreferenceWra
                 }
             });
         }
-    }
-
-    protected getValueByScope(info: {
-        preferenceName: string;
-        defaultValue: PreferenceItem | undefined;
-        globalValue: PreferenceItem | undefined;
-        workspaceValue: PreferenceItem | undefined;
-        workspaceFolderValue: PreferenceItem | undefined;
-    }, scope: number): PreferenceItem | undefined {
-        if (scope === PreferenceScope.User) {
-            return info.globalValue;
-        } else if (scope === PreferenceScope.Workspace) {
-            return info.workspaceValue;
-        }
-        return undefined;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

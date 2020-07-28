@@ -13,8 +13,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { interfaces } from 'inversify';
-import { WidgetFactory, createTreeContainer, TreeWidget, TreeProps, defaultTreeProps, TreeDecoratorService } from '@theia/core/lib/browser';
+import { interfaces, Container } from 'inversify';
+import { WidgetFactory, createTreeContainer, TreeWidget, TreeProps, defaultTreeProps, TreeDecoratorService, TreeModel } from '@theia/core/lib/browser';
 import { SinglePreferenceDisplayFactory } from './components/single-preference-display-factory';
 import { SinglePreferenceWrapper } from './components/single-preference-wrapper';
 import { PreferencesWidget } from './preference-widget';
@@ -24,58 +24,35 @@ import { PreferencesSearchbarWidget } from './preference-searchbar-widget';
 import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
 import { PreferencesDecorator } from '../preferences-decorator';
 import { PreferencesDecoratorService } from '../preferences-decorator-service';
+import { PreferenceTreeModel } from '../preference-tree-model';
 
 export function bindPreferencesWidgets(bind: interfaces.Bind): void {
-    bind(PreferencesWidget).toSelf().inSingletonScope();
+    bind(PreferencesWidget)
+        .toDynamicValue(({ container }) => createPreferencesWidgetContainer(container).get(PreferencesWidget))
+        .inSingletonScope();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: PreferencesWidget.ID,
         createWidget: () => container.get(PreferencesWidget)
     })).inSingletonScope();
-
-    bind(SinglePreferenceWrapper).toSelf();
-
-    bind(PreferencesTreeWidget).toDynamicValue(ctx =>
-        createPreferencesTree(ctx.container)
-    ).inSingletonScope();
-    bind(WidgetFactory).toDynamicValue(context => ({
-        id: PreferencesTreeWidget.ID,
-        createWidget: (): PreferencesTreeWidget => context.container.get(PreferencesTreeWidget),
-    })).inSingletonScope();
-
-    bind(PreferencesEditorWidget).toSelf().inSingletonScope();
-    bind(WidgetFactory).toDynamicValue(context => ({
-        id: PreferencesEditorWidget.ID,
-        createWidget: (): PreferencesEditorWidget => context.container.get<PreferencesEditorWidget>(PreferencesEditorWidget),
-    })).inSingletonScope();
-
-    bind(PreferencesSearchbarWidget).toSelf().inSingletonScope();
-    bind(WidgetFactory).toDynamicValue(context => ({
-        id: PreferencesSearchbarWidget.ID,
-        createWidget: (): PreferencesSearchbarWidget => context.container.get<PreferencesSearchbarWidget>(PreferencesSearchbarWidget),
-    })).inSingletonScope();
-
-    bind(PreferencesScopeTabBar).toSelf().inSingletonScope();
-    bind(WidgetFactory).toDynamicValue(context => ({
-        id: PreferencesScopeTabBar.ID,
-        createWidget: (): PreferencesScopeTabBar => context.container.get<PreferencesScopeTabBar>(PreferencesScopeTabBar),
-    })).inSingletonScope();
-
-    bind(SinglePreferenceDisplayFactory).toSelf().inSingletonScope();
 }
 
-function createPreferencesTree(parent: interfaces.Container): PreferencesTreeWidget {
+function createPreferencesWidgetContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent);
+    child.bind(PreferenceTreeModel).toSelf();
+    child.rebind(TreeModel).toService(PreferenceTreeModel);
     child.unbind(TreeWidget);
     child.bind(PreferencesTreeWidget).toSelf();
     child.rebind(TreeProps).toConstantValue({ ...defaultTreeProps, search: false });
+    child.bind(PreferencesEditorWidget).toSelf();
+    child.bind(PreferencesDecorator).toSelf();
+    child.bind(PreferencesDecoratorService).toSelf();
+    child.rebind(TreeDecoratorService).toService(PreferencesDecoratorService);
 
-    bindPreferencesDecorator(child);
+    child.bind(SinglePreferenceWrapper).toSelf();
+    child.bind(PreferencesSearchbarWidget).toSelf();
+    child.bind(PreferencesScopeTabBar).toSelf();
+    child.bind(SinglePreferenceDisplayFactory).toSelf();
+    child.bind(PreferencesWidget).toSelf();
 
-    return child.get(PreferencesTreeWidget);
-}
-
-function bindPreferencesDecorator(parent: interfaces.Container): void {
-    parent.bind(PreferencesDecorator).toSelf().inSingletonScope();
-    parent.bind(PreferencesDecoratorService).toSelf().inSingletonScope();
-    parent.rebind(TreeDecoratorService).toService(PreferencesDecoratorService);
+    return child;
 }

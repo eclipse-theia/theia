@@ -20,9 +20,9 @@ import { PreferenceScope, Message, ContextMenuRenderer, LabelProvider } from '@t
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { PreferencesEventService } from '../util/preference-event-service';
 import { PreferenceScopeCommandManager, FOLDER_SCOPE_MENU_PATH } from '../util/preference-scope-command-manager';
 import { Preference } from '../util/preference-types';
+import { Emitter } from '@theia/core';
 
 const USER_TAB_LABEL = 'User';
 const USER_TAB_INDEX = PreferenceScope[USER_TAB_LABEL].toString();
@@ -37,7 +37,6 @@ const LABELED_FOLDER_TAB_CLASSNAME = 'preferences-folder-tab';
 const FOLDER_DROPDOWN_CLASSNAME = 'preferences-folder-dropdown';
 const FOLDER_DROPDOWN_ICON_CLASSNAME = 'preferences-folder-dropdown-icon';
 const TABBAR_UNDERLINE_CLASSNAME = 'tabbar-underline';
-const SHADOW_CLASSNAME = 'with-shadow';
 const SINGLE_FOLDER_TAB_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${LABELED_FOLDER_TAB_CLASSNAME}`;
 const UNSELECTED_FOLDER_DROPDOWN_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${FOLDER_DROPDOWN_CLASSNAME}`;
 const SELECTED_FOLDER_DROPDOWN_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERAL_FOLDER_TAB_CLASSNAME} ${LABELED_FOLDER_TAB_CLASSNAME} ${FOLDER_DROPDOWN_CLASSNAME}`;
@@ -46,16 +45,23 @@ const SELECTED_FOLDER_DROPDOWN_CLASSNAME = `${PREFERENCE_TAB_CLASSNAME} ${GENERA
 export class PreferencesScopeTabBar extends TabBar<Widget> {
 
     static ID = 'preferences-scope-tab-bar';
-    @inject(PreferencesEventService) protected readonly preferencesEventService: PreferencesEventService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(PreferenceScopeCommandManager) protected readonly preferencesMenuFactory: PreferenceScopeCommandManager;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
+    protected readonly onScopeChangedEmitter = new Emitter<Preference.SelectedScopeDetails>();
+    readonly onScopeChanged = this.onScopeChangedEmitter.event;
+
     protected folderTitle: Title<Widget>;
     protected currentWorkspaceRoots: FileStat[] = [];
     protected currentSelection: Preference.SelectedScopeDetails = Preference.DEFAULT_SCOPE;
     protected editorScrollAtTop = true;
+
+    get currentScope(): Preference.SelectedScopeDetails {
+        return this.currentSelection;
+    }
+
     protected setNewScopeSelection(newSelection: Preference.SelectedScopeDetails): void {
 
         const newIndex = this.titles.findIndex(title => title.dataset.scope === newSelection.scope);
@@ -82,16 +88,6 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
             this.doUpdateDisplay(newRoots);
         });
         this.workspaceService.onWorkspaceLocationChanged(() => this.updateWorkspaceTab());
-        this.preferencesEventService.onEditorScroll.event((e: Preference.MouseScrollDetails) => {
-            if (e.isTop !== this.editorScrollAtTop) {
-                this.editorScrollAtTop = e.isTop;
-                if (this.editorScrollAtTop) {
-                    this.removeClass(SHADOW_CLASSNAME);
-                } else {
-                    this.addClass(SHADOW_CLASSNAME);
-                }
-            }
-        });
         const tabUnderline = document.createElement('div');
         tabUnderline.className = TABBAR_UNDERLINE_CLASSNAME;
         this.node.append(tabUnderline);
@@ -99,7 +95,9 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
 
     protected setupInitialDisplay(): void {
         this.addUserTab();
-        this.addWorkspaceTab();
+        if (this.workspaceService.workspace) {
+            this.addWorkspaceTab(this.workspaceService.workspace);
+        }
         this.addOrUpdateFolderTab();
     }
 
@@ -131,19 +129,19 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
         }));
     }
 
-    protected addWorkspaceTab(): void {
-        if (!!this.workspaceService.workspace) {
-            this.addTab(new Title({
-                dataset: this.getWorkspaceDataset(),
-                label: WORKSPACE_TAB_LABEL,
-                owner: this,
-                className: PREFERENCE_TAB_CLASSNAME,
-            }));
-        }
+    protected addWorkspaceTab(currentWorkspace: FileStat): Title<Widget> {
+        const workspaceTabTitle = new Title({
+            dataset: this.getWorkspaceDataset(currentWorkspace),
+            label: WORKSPACE_TAB_LABEL,
+            owner: this,
+            className: PREFERENCE_TAB_CLASSNAME,
+        });
+        this.addTab(workspaceTabTitle);
+        return workspaceTabTitle;
     }
 
-    protected getWorkspaceDataset(): Preference.SelectedScopeDetails {
-        const { resource, isDirectory } = this.workspaceService.workspace!;
+    protected getWorkspaceDataset(currentWorkspace: FileStat): Preference.SelectedScopeDetails {
+        const { resource, isDirectory } = currentWorkspace;
         const scope = WORKSPACE_TAB_INDEX;
         const activeScopeIsFolder = isDirectory.toString();
         return { uri: resource.toString(), activeScopeIsFolder, scope };
@@ -237,15 +235,17 @@ export class PreferencesScopeTabBar extends TabBar<Widget> {
     }
 
     protected updateWorkspaceTab(): void {
-        // Will always be present - otherwise workspace cannot change.
-        const workspaceTitle = this.titles.find(title => title.label === WORKSPACE_TAB_LABEL)!;
-        workspaceTitle.dataset = this.getWorkspaceDataset();
-        if (this.currentSelection.scope === PreferenceScope.Workspace.toString()) {
-            this.setNewScopeSelection(workspaceTitle.dataset as Preference.SelectedScopeDetails);
+        const currentWorkspace = this.workspaceService.workspace;
+        if (currentWorkspace) {
+            const workspaceTitle = this.titles.find(title => title.label === WORKSPACE_TAB_LABEL) ?? this.addWorkspaceTab(currentWorkspace);
+            workspaceTitle.dataset = this.getWorkspaceDataset(currentWorkspace);
+            if (this.currentSelection.scope === PreferenceScope.Workspace.toString()) {
+                this.setNewScopeSelection(workspaceTitle.dataset as Preference.SelectedScopeDetails);
+            }
         }
     }
 
     protected emitNewScope(): void {
-        this.preferencesEventService.onTabScopeSelected.fire(this.currentSelection);
+        this.onScopeChangedEmitter.fire(this.currentSelection);
     }
 }

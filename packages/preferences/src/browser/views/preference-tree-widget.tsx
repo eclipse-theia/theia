@@ -15,26 +15,18 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Message } from '@phosphor/messaging';
 import {
     ContextMenuRenderer,
     ExpandableTreeNode,
     PreferenceService,
-    TreeModel,
     TreeNode,
     TreeProps,
     TreeWidget,
-    SelectableTreeNode,
     TREE_NODE_CONTENT_CLASS,
-    NodeProps,
-    CompositeTreeNode,
 } from '@theia/core/lib/browser';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import React = require('react');
-import { PreferencesEventService } from '../util/preference-event-service';
-import { PreferencesDecorator } from '../preferences-decorator';
-import { PreferencesTreeProvider } from '../preference-tree-provider';
-import { Preference } from '../util/preference-types';
+import { PreferenceTreeModel, PreferenceTreeNodeRow, PreferenceTreeNodeProps } from '../preference-tree-model';
 
 @injectable()
 export class PreferencesTreeWidget extends TreeWidget {
@@ -44,120 +36,44 @@ export class PreferencesTreeWidget extends TreeWidget {
     protected firstVisibleLeafNodeID: string;
 
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(PreferencesDecorator) protected readonly decorator: PreferencesDecorator;
     @inject(PreferenceConfigurations) protected readonly preferenceConfigs: PreferenceConfigurations;
-    @inject(PreferencesTreeProvider) protected readonly preferenceTreeProvider: PreferencesTreeProvider;
-    @inject(TreeModel) readonly model: TreeModel;
+    @inject(PreferenceTreeModel) readonly model: PreferenceTreeModel;
     @inject(TreeProps) protected readonly treeProps: TreeProps;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
-    @inject(PreferencesEventService) protected readonly preferencesEventService: PreferencesEventService;
 
     @postConstruct()
     init(): void {
         super.init();
-        this.preferencesEventService.onDisplayChanged.event(didChangeTree => {
-            if (didChangeTree) {
-                this.updateDisplay();
-            }
-        });
-        this.preferencesEventService.onEditorScroll.event(e => {
-            this.handleEditorScroll(e.firstVisibleChildId);
-        });
         this.id = PreferencesTreeWidget.ID;
+        this.toDispose.pushAll([
+            this.model.onFilterChanged(() => {
+                this.updateRows();
+            }),
+        ]);
     }
 
-    protected handleEditorScroll(firstVisibleChildId: string): void {
-        this.shouldFireSelectionEvents = false;
-        if (firstVisibleChildId !== this.firstVisibleLeafNodeID) {
-            const { selectionAncestor, expansionAncestor } = this.getAncestorsForVisibleNode(firstVisibleChildId);
-
-            this.firstVisibleLeafNodeID = firstVisibleChildId;
-            this.model.expandNode(expansionAncestor);
-            this.collapseAllExcept(expansionAncestor);
-            if (selectionAncestor) {
-                this.model.selectNode(selectionAncestor);
+    doUpdateRows(): void {
+        this.rows = new Map();
+        for (const [id, nodeRow] of this.model.currentRows.entries()) {
+            if (nodeRow.visibleChildren > 0 && (ExpandableTreeNode.is(nodeRow.node) || ExpandableTreeNode.isExpanded(nodeRow.node.parent))) {
+                this.rows.set(id, nodeRow);
             }
         }
-        this.shouldFireSelectionEvents = true;
+        this.updateScrollToRow();
     }
 
-    protected collapseAllExcept(openNode: Preference.TreeExtension | undefined): void {
-        const children = (this.model.root as CompositeTreeNode).children as ExpandableTreeNode[];
-        children.forEach(child => {
-            if (child !== openNode && child.expanded) {
-                this.model.collapseNode(child);
-            }
-        });
+    protected doRenderNodeRow({ depth, visibleChildren, node, isExpansible }: PreferenceTreeNodeRow): React.ReactNode {
+        return this.renderNode(node, { depth, visibleChildren, isExpansible });
     }
 
-    protected getAncestorsForVisibleNode(visibleNodeID: string): { selectionAncestor: SelectableTreeNode | undefined, expansionAncestor: ExpandableTreeNode | undefined; } {
-        const isNonLeafNode = visibleNodeID.endsWith('-id');
-        const isSubgroupNode = isNonLeafNode && visibleNodeID.includes('.');
-        let expansionAncestor: ExpandableTreeNode;
-        let selectionAncestor: SelectableTreeNode;
-
-        if (isSubgroupNode) {
-            selectionAncestor = this.model.getNode(visibleNodeID) as SelectableTreeNode;
-            expansionAncestor = selectionAncestor?.parent as ExpandableTreeNode;
-        } else if (isNonLeafNode) {
-            selectionAncestor = this.model.getNode(visibleNodeID) as SelectableTreeNode;
-            expansionAncestor = selectionAncestor as Preference.TreeExtension as ExpandableTreeNode;
-        } else {
-            const labels = visibleNodeID.split('.');
-            const hasSubgroupAncestor = labels.length > 2;
-            const expansionAncestorID = `${labels[0]}-id`;
-            expansionAncestor = this.model.getNode(expansionAncestorID) as ExpandableTreeNode;
-            if (hasSubgroupAncestor) {
-                const subgroupID = labels.slice(0, 2).join('.') + '-id';
-                selectionAncestor = this.model.getNode(subgroupID) as SelectableTreeNode;
-            } else {
-                // The last selectable child that precedes the visible item alphabetically
-                selectionAncestor = [...(expansionAncestor?.children || [])]
-                    .reverse().find(child => child.visible && child.id < visibleNodeID) as SelectableTreeNode || expansionAncestor;
-            }
-        }
-        return { selectionAncestor, expansionAncestor };
-    }
-
-    protected onAfterAttach(msg: Message): void {
-        this.updateDisplay();
-        this.model.onSelectionChanged(previousAndCurrentSelectedNodes => this.fireEditorScrollForNewSelection(previousAndCurrentSelectedNodes));
-        super.onAfterAttach(msg);
-    }
-
-    protected updateDisplay(): void {
-        if (this.preferenceTreeProvider) {
-            this.model.root = this.preferenceTreeProvider.currentTree;
-            const nodes = Object.keys(this.preferenceTreeProvider.propertyList)
-                .map(propertyName => ({ [propertyName]: this.preferenceTreeProvider.propertyList[propertyName] }));
-            this.decorator.fireDidChangeDecorations(nodes);
-            // If the tree has changed but we know the visible node, scroll to it.
-            if (this.firstVisibleLeafNodeID) {
-                const { selectionAncestor } = this.getAncestorsForVisibleNode(this.firstVisibleLeafNodeID);
-                if (selectionAncestor?.visible) {
-                    this.preferencesEventService.onNavTreeSelection.fire({ nodeID: this.firstVisibleLeafNodeID });
-                }
-            }
-            this.update();
-        }
-    }
-
-    protected fireEditorScrollForNewSelection(previousAndCurrentSelectedNodes: readonly SelectableTreeNode[]): void {
-        if (this.shouldFireSelectionEvents) {
-            const [currentSelectedNode] = previousAndCurrentSelectedNodes;
-            this.firstVisibleLeafNodeID = currentSelectedNode.id;
-            this.preferencesEventService.onNavTreeSelection.fire({ nodeID: currentSelectedNode.id });
-        }
-    }
-
-    protected renderNode(node: TreeNode, props: NodeProps): React.ReactNode {
+    protected renderNode(node: TreeNode, props: PreferenceTreeNodeProps): React.ReactNode {
         if (!TreeNode.isVisible(node)) {
             return undefined;
         }
 
         const attributes = this.createNodeAttributes(node, props);
-        const printedNameWithVisibleChildren = node.name && this.preferenceTreeProvider.isFiltered
-            ? `${node.name} (${this.calculateVisibleLeaves(node)})`
+        const printedNameWithVisibleChildren = node.name && this.model.isFiltered
+            ? `${node.name} (${props.visibleChildren})`
             : node.name;
 
         const content = <div className={TREE_NODE_CONTENT_CLASS}>
@@ -167,26 +83,8 @@ export class PreferencesTreeWidget extends TreeWidget {
         return React.createElement('div', attributes, content);
     }
 
-    protected calculateVisibleLeaves(node: Preference.TreeExtension): number {
-        let visibleLeaves = 0;
-        // The check for node.name prevents recursion at the level of `root`.
-        if (node.children) {
-            node.children.forEach(child => {
-                visibleLeaves += this.calculateVisibleLeaves(child);
-            });
-        }
-        if (node.leaves) {
-            node.leaves.forEach(leaf => {
-                if (leaf.visible) {
-                    visibleLeaves++;
-                };
-            });
-        }
-        return visibleLeaves;
-    }
-
-    protected renderExpansionToggle(node: Preference.TreeExtension, props: NodeProps): React.ReactNode {
-        if (node.children && node.children.every(child => !child.visible)) {
+    protected renderExpansionToggle(node: TreeNode, props: PreferenceTreeNodeProps): React.ReactNode {
+        if (ExpandableTreeNode.is(node) && !props.isExpansible) {
             return <div className='preferences-tree-spacer' />;
         }
         return super.renderExpansionToggle(node, props);

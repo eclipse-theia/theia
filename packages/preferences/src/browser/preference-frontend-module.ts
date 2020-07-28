@@ -22,8 +22,6 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { PreferenceTreeGenerator } from './util/preference-tree-generator';
 import { bindPreferenceProviders } from './preference-bindings';
 import { bindPreferencesWidgets } from './views/preference-widget-bindings';
-import { PreferencesEventService } from './util/preference-event-service';
-import { PreferencesTreeProvider } from './preference-tree-provider';
 import { PreferencesContribution } from './preferences-contribution';
 import { PreferenceScopeCommandManager } from './util/preference-scope-command-manager';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
@@ -33,8 +31,6 @@ export function bindPreferences(bind: interfaces.Bind, unbind: interfaces.Unbind
     bindPreferenceProviders(bind, unbind);
     bindPreferencesWidgets(bind);
 
-    bind(PreferencesEventService).toSelf().inSingletonScope();
-    bind(PreferencesTreeProvider).toSelf().inSingletonScope();
     bind(PreferenceTreeGenerator).toSelf().inSingletonScope();
 
     bindViewContribution(bind, PreferencesContribution);

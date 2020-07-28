@@ -14,21 +14,21 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, postConstruct } from 'inversify';
 import { ReactWidget } from '@theia/core/lib/browser';
-import { Disposable } from '@theia/core/lib/common/disposable';
 import * as React from 'react';
 import { debounce } from 'lodash';
-import { PreferencesEventService } from '../util/preference-event-service';
+import { Disposable, Emitter } from '@theia/core';
 
 @injectable()
 export class PreferencesSearchbarWidget extends ReactWidget {
     static readonly ID = 'settings.header';
     static readonly LABEL = 'Settings Header';
 
-    protected searchbarRef: React.RefObject<HTMLInputElement> = React.createRef<HTMLInputElement>();
+    protected readonly onFilterStringChangedEmitter = new Emitter<string>();
+    readonly onFilterChanged = this.onFilterStringChangedEmitter.event;
 
-    @inject(PreferencesEventService) protected readonly preferencesEventService: PreferencesEventService;
+    protected searchbarRef: React.RefObject<HTMLInputElement> = React.createRef<HTMLInputElement>();
 
     @postConstruct()
     protected init(): void {
@@ -43,7 +43,7 @@ export class PreferencesSearchbarWidget extends ReactWidget {
     };
 
     protected search = debounce((value: string) => {
-        this.preferencesEventService.onSearch.fire({ query: value });
+        this.onFilterStringChangedEmitter.fire(value);
         this.update();
     }, 200);
 
@@ -59,6 +59,7 @@ export class PreferencesSearchbarWidget extends ReactWidget {
                 <div className="settings-search-container">
                     <input
                         type="text"
+                        spellCheck={false}
                         placeholder="Search Settings"
                         className="settings-search-input theia-input"
                         onChange={this.handleSearch}

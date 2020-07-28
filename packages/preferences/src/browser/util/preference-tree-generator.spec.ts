@@ -28,9 +28,8 @@ FrontendApplicationConfigProvider.set({
 import { expect } from 'chai';
 import { Container } from 'inversify';
 import { PreferenceTreeGenerator } from './preference-tree-generator';
-import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
+import { CompositeTreeNode, PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
-import { Preference } from './preference-types';
 
 disableJSDOM();
 
@@ -40,7 +39,7 @@ describe('preference-tree-generator', () => {
 
     beforeEach(() => {
         const container = new Container();
-        container.bind<any>(PreferenceSchemaProvider).toConstantValue(undefined);
+        container.bind<any>(PreferenceSchemaProvider).toConstantValue({ onDidPreferenceSchemaChanged: () => { } });
         container.bind<any>(PreferenceConfigurations).toConstantValue(undefined);
         preferenceTreeGenerator = container.resolve(PreferenceTreeGenerator);
     });
@@ -71,7 +70,7 @@ describe('preference-tree-generator', () => {
         });
 
         function testLeafName(property: string, expectedName: string): void {
-            const preferencesGroups: Preference.Branch[] = [];
+            const preferencesGroups: CompositeTreeNode[] = [];
             const root = preferenceTreeGenerator['createRootNode'](preferencesGroups);
             const preferencesGroup = preferenceTreeGenerator['createPreferencesGroup']('group', root);
 

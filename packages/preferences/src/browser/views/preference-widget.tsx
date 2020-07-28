@@ -15,12 +15,14 @@
  ********************************************************************************/
 
 import { postConstruct, injectable, inject } from 'inversify';
-import { WidgetManager, Panel, Widget, Message, } from '@theia/core/lib/browser';
-import { Preference } from '../util/preference-types';
+import { Panel, Widget, Message, } from '@theia/core/lib/browser';
 import { PreferencesEditorWidget } from './preference-editor-widget';
 import { PreferencesTreeWidget } from './preference-tree-widget';
 import { PreferencesSearchbarWidget } from './preference-searchbar-widget';
 import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
+import { Preference } from '../util/preference-types';
+
+const SHADOW_CLASSNAME = 'with-shadow';
 
 @injectable()
 export class PreferencesWidget extends Panel {
@@ -33,21 +35,13 @@ export class PreferencesWidget extends Panel {
      */
     static readonly LABEL = 'Preferences';
 
-    protected _preferenceScope: Preference.SelectedScopeDetails = Preference.DEFAULT_SCOPE;
+    @inject(PreferencesEditorWidget) protected readonly editorWidget: PreferencesEditorWidget;
+    @inject(PreferencesTreeWidget) protected readonly treeWidget: PreferencesTreeWidget;
+    @inject(PreferencesSearchbarWidget) protected readonly searchbarWidget: PreferencesSearchbarWidget;
+    @inject(PreferencesScopeTabBar) protected readonly tabBarWidget: PreferencesScopeTabBar;
 
-    @inject(PreferencesEditorWidget) protected editorWidget: PreferencesEditorWidget;
-    @inject(PreferencesTreeWidget) protected treeWidget: PreferencesTreeWidget;
-    @inject(PreferencesSearchbarWidget) protected searchbarWidget: PreferencesSearchbarWidget;
-    @inject(PreferencesScopeTabBar) protected tabBarWidget: PreferencesScopeTabBar;
-    @inject(WidgetManager) protected readonly manager: WidgetManager;
-
-    get preferenceScope(): Preference.SelectedScopeDetails {
-        return this._preferenceScope;
-    }
-
-    set preferenceScope(preferenceScopeDetails: Preference.SelectedScopeDetails) {
-        this._preferenceScope = preferenceScopeDetails;
-        this.editorWidget.preferenceScope = this._preferenceScope;
+    get currentScope(): Preference.SelectedScopeDetails {
+        return this.tabBarWidget.currentScope;
     }
 
     protected onResize(msg: Widget.ResizeMessage): void {
@@ -67,28 +61,31 @@ export class PreferencesWidget extends Panel {
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.id = PreferencesWidget.ID;
         this.title.label = PreferencesWidget.LABEL;
         this.title.closable = true;
         this.addClass('theia-settings-container');
         this.title.iconClass = 'fa fa-sliders';
 
-        this.searchbarWidget = await this.manager.getOrCreateWidget<PreferencesSearchbarWidget>(PreferencesSearchbarWidget.ID);
         this.searchbarWidget.addClass('preferences-searchbar-widget');
         this.addWidget(this.searchbarWidget);
 
-        this.tabBarWidget = await this.manager.getOrCreateWidget<PreferencesScopeTabBar>(PreferencesScopeTabBar.ID);
         this.tabBarWidget.addClass('preferences-tabbar-widget');
         this.addWidget(this.tabBarWidget);
 
-        this.treeWidget = await this.manager.getOrCreateWidget<PreferencesTreeWidget>(PreferencesTreeWidget.ID);
         this.treeWidget.addClass('preferences-tree-widget');
         this.addWidget(this.treeWidget);
 
-        this.editorWidget = await this.manager.getOrCreateWidget<PreferencesEditorWidget>(PreferencesEditorWidget.ID);
         this.editorWidget.addClass('preferences-editor-widget');
         this.addWidget(this.editorWidget);
+        this.editorWidget.onEditorDidScroll(editorIsAtTop => {
+            if (editorIsAtTop) {
+                this.tabBarWidget.removeClass(SHADOW_CLASSNAME);
+            } else {
+                this.tabBarWidget.addClass(SHADOW_CLASSNAME);
+            }
+        });
 
         this.update();
     }

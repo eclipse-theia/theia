@@ -14,22 +14,31 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { CompositeTreeNode, PreferenceSchemaProvider, SelectableTreeNode } from '@theia/core/lib/browser';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
-import { Preference } from './preference-types';
+import { Emitter } from '@theia/core';
+import { debounce } from 'lodash';
 
 @injectable()
 export class PreferenceTreeGenerator {
 
-    @inject(PreferenceSchemaProvider) schemaProvider: PreferenceSchemaProvider;
-    @inject(PreferenceConfigurations) preferenceConfigs: PreferenceConfigurations;
+    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceConfigurations) protected readonly preferenceConfigs: PreferenceConfigurations;
 
-    generateTree(): CompositeTreeNode {
+    protected readonly onSchemaChangedEmitter = new Emitter<CompositeTreeNode>();
+    readonly onSchemaChanged = this.onSchemaChangedEmitter.event;
+
+    @postConstruct()
+    protected init(): void {
+        this.schemaProvider.onDidPreferenceSchemaChanged(() => this.handleChangedSchema());
+    }
+
+    generateTree = (): CompositeTreeNode => {
         const preferencesSchema = this.schemaProvider.getCombinedSchema();
         const propertyNames = Object.keys(preferencesSchema.properties).sort((a, b) => a.localeCompare(b));
-        const preferencesGroups: Preference.Branch[] = [];
-        const groups = new Map<string, Preference.Branch>();
+        const preferencesGroups: CompositeTreeNode[] = [];
+        const groups = new Map<string, CompositeTreeNode>();
         const propertyPattern = Object.keys(preferencesSchema.patternProperties)[0]; // TODO: there may be a better way to get this data.
         const overridePropertyIdentifier = new RegExp(propertyPattern, 'i');
 
@@ -46,21 +55,27 @@ export class PreferenceTreeGenerator {
                     preferencesGroups.push(parentPreferencesGroup);
                 }
                 if (subgroup && !groups.has(subgroup)) {
-                    const remoteParent = groups.get(group) as Preference.Branch;
+                    const remoteParent = groups.get(group) as CompositeTreeNode;
                     const newBranch = this.createPreferencesGroup(subgroup, remoteParent);
                     groups.set(subgroup, newBranch);
                     CompositeTreeNode.addChild(remoteParent, newBranch);
                 }
-                const parent = groups.get(subgroup || group) as Preference.Branch;
+                const parent = groups.get(subgroup || group) as CompositeTreeNode;
                 const leafNode = this.createLeafNode(propertyName, parent);
-                parent.leaves.push(leafNode);
+                CompositeTreeNode.addChild(parent, leafNode);
             }
         }
 
         return root;
     };
 
-    protected createRootNode = (preferencesGroups: Preference.Branch[]): CompositeTreeNode => ({
+    doHandleChangedSchema(): void {
+        this.onSchemaChangedEmitter.fire(this.generateTree());
+    }
+
+    handleChangedSchema = debounce(this.doHandleChangedSchema, 200);
+
+    protected createRootNode = (preferencesGroups: CompositeTreeNode[]): CompositeTreeNode => ({
         id: 'root-node-id',
         name: '',
         parent: undefined,
@@ -68,7 +83,7 @@ export class PreferenceTreeGenerator {
         children: preferencesGroups
     });
 
-    protected createLeafNode = (property: string, preferencesGroup: Preference.Branch): SelectableTreeNode => {
+    protected createLeafNode = (property: string, preferencesGroup: CompositeTreeNode): SelectableTreeNode => {
         const rawLeaf = property.split('.').pop();
         const name = this.formatString(rawLeaf!);
         return {
@@ -80,20 +95,22 @@ export class PreferenceTreeGenerator {
         };
     };
 
-    protected createPreferencesGroup = (group: string, root: CompositeTreeNode): Preference.Branch => {
+    protected createPreferencesGroup = (group: string, root: CompositeTreeNode): CompositeTreeNode => {
         const isSubgroup = 'expanded' in root;
         const [groupname, subgroupname] = group.split('.');
         const label = isSubgroup ? subgroupname : groupname;
         const newNode = {
-            id: `${group}-id`,
+            id: group,
             name: this.toTitleCase(label),
             visible: true,
             parent: root,
             children: [],
-            leaves: [],
             expanded: false,
             selected: false,
         };
+        if (isSubgroup) {
+            delete newNode.expanded;
+        }
         return newNode;
     };
 

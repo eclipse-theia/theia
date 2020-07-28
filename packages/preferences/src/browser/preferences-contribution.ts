@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct, named } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { MenuModelRegistry, CommandRegistry } from '@theia/core';
 import {
     CommonMenus,
@@ -25,7 +25,6 @@ import {
     PreferenceScope,
     PreferenceProvider,
     PreferenceService,
-    PreferenceItem
 } from '@theia/core/lib/browser';
 import { isFirefox } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common/os';
@@ -33,7 +32,6 @@ import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-too
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { PreferencesWidget } from './views/preference-widget';
-import { PreferencesEventService } from './util/preference-event-service';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { Preference, PreferencesCommands, PreferenceMenus } from './util/preference-types';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
@@ -42,14 +40,12 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 @injectable()
 export class PreferencesContribution extends AbstractViewContribution<PreferencesWidget> {
 
-    @inject(PreferencesEventService) protected readonly preferencesEventService: PreferencesEventService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace) protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
-
-    protected preferencesScope = Preference.DEFAULT_SCOPE;
+    @inject(PreferencesWidget) protected readonly scopeTracker: PreferencesWidget;
 
     constructor() {
         super({
@@ -58,15 +54,6 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             defaultWidgetOptions: {
                 area: 'main',
             },
-        });
-    }
-
-    @postConstruct()
-    init(): void {
-        this.preferencesEventService.onTabScopeSelected.event(async e => {
-            const widget: PreferencesWidget = await this.widget;
-            this.preferencesScope = e;
-            widget.preferenceScope = this.preferencesScope;
         });
     }
 
@@ -91,7 +78,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         commands.registerCommand(PreferencesCommands.COPY_JSON_VALUE, {
             isEnabled: Preference.EditorCommandArgs.is,
             isVisible: Preference.EditorCommandArgs.is,
-            execute: ({ id, value }: { id: string, value: string }) => {
+            execute: ({ id, value }: { id: string, value: string; }) => {
                 const jsonString = `"${id}": ${JSON.stringify(value)}`;
                 this.clipboardService.writeText(jsonString);
             }
@@ -99,8 +86,8 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         commands.registerCommand(PreferencesCommands.RESET_PREFERENCE, {
             isEnabled: Preference.EditorCommandArgs.is,
             isVisible: Preference.EditorCommandArgs.is,
-            execute: ({ id, value }: Preference.EditorCommandArgs) => {
-                this.preferenceService.set(id, undefined, Number(this.preferencesScope.scope), this.preferencesScope.uri);
+            execute: ({ id }: Preference.EditorCommandArgs) => {
+                this.preferenceService.set(id, undefined, Number(this.scopeTracker.currentScope.scope), this.scopeTracker.currentScope.uri);
             }
         });
     }
@@ -151,18 +138,18 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
 
     protected async openPreferencesJSON(preferenceNode: Preference.NodeWithValueInAllScopes): Promise<void> {
         const wasOpenedFromEditor = preferenceNode.constructor !== PreferencesWidget;
-        const { scope, activeScopeIsFolder, uri } = this.preferencesScope;
+        const { scope, activeScopeIsFolder, uri } = this.scopeTracker.currentScope;
+        const scopeID = Number(scope);
         const preferenceId = wasOpenedFromEditor ? preferenceNode.id : '';
         // when opening from toolbar, widget is passed as arg by default (we don't need this info)
-        if (wasOpenedFromEditor) {
-            const currentPreferenceValue = preferenceNode.preference.values!;
-            const key = Preference.LookupKeys[Number(scope)] as keyof Preference.ValuesInAllScopes;
-            const valueInCurrentScope = currentPreferenceValue[key] === undefined ? currentPreferenceValue.defaultValue : currentPreferenceValue[key] as PreferenceItem;
-            this.preferenceService.set(preferenceId, valueInCurrentScope, Number(scope), uri);
+        if (wasOpenedFromEditor && preferenceNode.preference.values) {
+            const currentPreferenceValue = preferenceNode.preference.values;
+            const valueInCurrentScope = Preference.getValueInScope(currentPreferenceValue, scopeID) ?? currentPreferenceValue.defaultValue;
+            this.preferenceService.set(preferenceId, valueInCurrentScope, scopeID, uri);
         }
 
         let jsonEditorWidget: EditorWidget;
-        const jsonUriToOpen = await this.obtainConfigUri(scope, activeScopeIsFolder, uri);
+        const jsonUriToOpen = await this.obtainConfigUri(scopeID, activeScopeIsFolder, uri);
         if (jsonUriToOpen) {
             jsonEditorWidget = await this.editorManager.open(jsonUriToOpen);
 
@@ -177,8 +164,8 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         }
     }
 
-    private async obtainConfigUri(serializedScope: string, activeScopeIsFolder: string, resource: string): Promise<URI | undefined> {
-        let scope: PreferenceScope = Number(serializedScope);
+    private async obtainConfigUri(serializedScope: number, activeScopeIsFolder: string, resource: string): Promise<URI | undefined> {
+        let scope: PreferenceScope = serializedScope;
         if (activeScopeIsFolder === 'true') {
             scope = PreferenceScope.Folder;
         }
