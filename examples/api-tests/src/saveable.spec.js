@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 // @ts-check
-describe('Saveable', function () {
+describe.only('Saveable', function () {
     this.timeout(5000);
 
     const { assert } = chai;
@@ -43,6 +43,8 @@ describe('Saveable', function () {
     let widget;
     /** @type {MonacoEditor} */
     let editor;
+    /** @type {import('@theia/filesystem/lib/common/files').FileSystemProvider} */
+    let diskProvider;
 
     const rootUri = workspaceService.tryGetRoots()[0].resource;
     const fileUri = rootUri.resolve('.test/foo.txt');
@@ -71,6 +73,7 @@ describe('Saveable', function () {
         widget =  /** @type {EditorWidget & SaveableWidget} */
             (await editorManager.open(fileUri, { mode: 'reveal' }));
         editor = MonacoEditor.get(widget);
+        diskProvider = await fileService.activateProvider('file');
     });
 
     afterEach(async () => {
@@ -78,6 +81,7 @@ describe('Saveable', function () {
         preferences.set('editor.autoSave', autoSave, undefined, rootUri.toString());
         editor = undefined;
         widget = undefined;
+        diskProvider = undefined;
         await editorManager.closeAll({ save: false });
         await fileService.delete(fileUri.parent, { fromUserGesture: false, useTrash: false, recursive: true });
     });
@@ -267,12 +271,12 @@ describe('Saveable', function () {
         assert.equal(state.value.trimRight(), 'bar', 'fs should be updated');
     });
 
-    it('delete file for saved', async () => {
+    it('delete file for saved (external)', async () => {
         assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty before delete');
         const waitForDisposed = new Deferred();
         const listener = editor.onDispose(() => waitForDisposed.resolve());
         try {
-            await fileService.delete(fileUri);
+            await diskProvider.delete(fileUri, { recursive: false, useTrash: false });
             await waitForDisposed.promise;
             assert.isTrue(widget.isDisposed, 'model should be disposed after delete');
         } finally {
@@ -280,7 +284,33 @@ describe('Saveable', function () {
         }
     });
 
-    it('delete and add again file for dirty', async () => {
+    it('delete file for saved (api)', async () => {
+        assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty before delete');
+        const waitForDisposed = new Deferred();
+        const listener = editor.onDispose(() => waitForDisposed.resolve());
+        try {
+            await fileService.delete(fileUri, { fromUserGesture: false });
+            await waitForDisposed.promise;
+            assert.isTrue(widget.isDisposed, 'model should be disposed after delete');
+        } finally {
+            listener.dispose();
+        }
+    });
+
+    it('delete file for saved (user)', async () => {
+        assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty before delete');
+        const waitForDisposed = new Deferred();
+        const listener = editor.onDispose(() => waitForDisposed.resolve());
+        try {
+            await fileService.delete(fileUri, { fromUserGesture: true });
+            await waitForDisposed.promise;
+            assert.isTrue(widget.isDisposed, 'model should be disposed after delete');
+        } finally {
+            listener.dispose();
+        }
+    });
+
+    it('delete and add again file for dirty (external)', async () => {
         editor.getControl().setValue('bar');
         assert.isTrue(Saveable.isDirty(widget), 'should be dirty before delete');
         assert.isTrue(editor.document.valid, 'should be valid before delete');
@@ -288,7 +318,7 @@ describe('Saveable', function () {
         const listener = () => waitForDidChangeTitle.resolve();
         widget.title.changed.connect(listener);
         try {
-            await fileService.delete(fileUri);
+            await diskProvider.delete(fileUri, { recursive: false, useTrash: false });
             await waitForDidChangeTitle.promise;
             assert.isTrue(widget.title.label.endsWith('(deleted from disk)'), 'should be marked as deleted');
             assert.isTrue(Saveable.isDirty(widget), 'should be dirty after delete');
@@ -307,6 +337,52 @@ describe('Saveable', function () {
             assert.isFalse(widget.isDisposed, 'model should NOT be disposed after added again');
         } finally {
             widget.title.changed.disconnect(listener);
+        }
+    });
+
+    it('delete and add again file for dirty (api)', async () => {
+        editor.getControl().setValue('bar');
+        assert.isTrue(Saveable.isDirty(widget), 'should be dirty before delete');
+        assert.isTrue(editor.document.valid, 'should be valid before delete');
+        let waitForDidChangeTitle = new Deferred();
+        const listener = () => waitForDidChangeTitle.resolve();
+        widget.title.changed.connect(listener);
+        try {
+            await fileService.delete(fileUri, { fromUserGesture: false });
+            await waitForDidChangeTitle.promise;
+            assert.isTrue(widget.title.label.endsWith('(deleted from disk)'), 'should be marked as deleted');
+            assert.isTrue(Saveable.isDirty(widget), 'should be dirty after delete');
+            assert.isFalse(widget.isDisposed, 'model should NOT be disposed after delete');
+        } finally {
+            widget.title.changed.disconnect(listener);
+        }
+
+        waitForDidChangeTitle = new Deferred();
+        widget.title.changed.connect(listener);
+        try {
+            await fileService.create(fileUri, 'foo');
+            await waitForDidChangeTitle.promise;
+            assert.isFalse(widget.title.label.endsWith('(deleted from disk)'), 'should NOT be marked as deleted');
+            assert.isTrue(Saveable.isDirty(widget), 'should be dirty after added again');
+            assert.isFalse(widget.isDisposed, 'model should NOT be disposed after added again');
+        } finally {
+            widget.title.changed.disconnect(listener);
+        }
+    });
+
+    it('delete for dirty (user)', async () => {
+        editor.getControl().setValue('bar');
+        assert.isTrue(Saveable.isDirty(widget), 'should be dirty before delete');
+        assert.isTrue(editor.document.valid, 'should be valid before delete');
+
+        const waitForDisposed = new Deferred();
+        const listener = editor.onDispose(() => waitForDisposed.resolve());
+        try {
+            await fileService.delete(fileUri, { fromUserGesture: true });
+            await waitForDisposed.promise;
+            assert.isTrue(widget.isDisposed, 'model should be disposed after delete');
+        } finally {
+            listener.dispose();
         }
     });
 

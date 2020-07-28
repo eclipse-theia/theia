@@ -18,11 +18,11 @@ import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ConfirmDialog, ApplicationShell, SaveableWidget, NavigatableWidget } from '@theia/core/lib/browser';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
-import { WorkspaceService } from './workspace-service';
 import { WorkspaceUtils } from './workspace-utils';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
 import { FileDeleteOptions, FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
+import { MessageService } from '@theia/core/lib/common/message-service';
 
 @injectable()
 export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
@@ -36,11 +36,11 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
     @inject(WorkspaceUtils)
     protected readonly workspaceUtils: WorkspaceUtils;
 
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
-
     @inject(FileSystemPreferences)
     protected readonly fsPreferences: FileSystemPreferences;
+
+    @inject(MessageService)
+    protected readonly messagingService: MessageService;
 
     /**
      * Determine if the command is visible.
@@ -150,27 +150,10 @@ export class WorkspaceDeleteHandler implements UriCommandHandler<URI[]> {
      */
     protected async delete(uri: URI, options: FileDeleteOptions): Promise<void> {
         try {
-            await Promise.all([
-                this.closeWithoutSaving(uri),
-                this.fileService.delete(uri, options)
-            ]);
+            await this.fileService.delete(uri, options);
         } catch (e) {
-            console.error(e);
+            this.messagingService.error(e.message);
         }
-    }
-
-    /**
-     * Close widget without saving changes.
-     *
-     * @param uri URI of a selected resource.
-     */
-    protected async closeWithoutSaving(uri: URI): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const pending: Promise<any>[] = [];
-        for (const [, widget] of NavigatableWidget.getAffected(this.shell.widgets, uri)) {
-            pending.push(this.shell.closeWidget(widget.id, { save: false }));
-        }
-        await Promise.all(pending);
     }
 
 }

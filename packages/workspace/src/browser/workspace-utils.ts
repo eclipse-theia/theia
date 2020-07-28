@@ -24,6 +24,8 @@ import { WorkspaceService } from './workspace-service';
 /**
  * Collection of workspace utility functions
  * @class
+ *
+ * TODO: get rid of utility classes, move such methods into `WorkspaceService`
  */
 @injectable()
 export class WorkspaceUtils {
