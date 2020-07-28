@@ -28,7 +28,7 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
     private _text: string;
     private _tooltip: string;
     private _color: string | ThemeColor;
-    private _command: string;
+    private _command: string | theia.Command;
 
     private _isVisible: boolean;
     private _timeoutHandle: NodeJS.Timer | undefined;
@@ -63,7 +63,7 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
         return this._color;
     }
 
-    public get command(): string {
+    public get command(): string | theia.Command {
         return this._command;
     }
 
@@ -82,7 +82,7 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
         this.update();
     }
 
-    public set command(command: string) {
+    public set command(command: string | theia.Command) {
         this._command = command;
         this.update();
     }
@@ -111,13 +111,16 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
         this._timeoutHandle = setTimeout(() => {
             this._timeoutHandle = undefined;
 
+            const commandId = typeof this.command === 'object' ? this.command.command : this.command;
+            const args = typeof this.command === 'object' ? this.command.arguments : undefined;
             // Set to status bar
             this._proxy.$setMessage(this.id, this.text,
                 this.priority,
                 this.alignment,
                 typeof this.color === 'string' ? this.color : this.color && this.color.id,
                 this.tooltip,
-                this.command);
+                commandId,
+                args);
         }, 0);
     }
 
