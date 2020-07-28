@@ -44,14 +44,17 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         alignment: number,
         color: string | undefined,
         tooltip: string | undefined,
-        command: string | undefined): Promise<void> {
+        command: string | undefined,
+         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        args: any[] | undefined): Promise<void> {
         const entry = {
             text: text || '',
             priority,
             alignment: alignment === types.StatusBarAlignment.Left ? StatusBarAlignment.LEFT : StatusBarAlignment.RIGHT,
             color: color && (this.colorRegistry.getCurrentColor(color) || color),
             tooltip,
-            command
+            command,
+            args
         };
 
         this.entries.set(id, entry);
@@ -60,14 +63,6 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
             this.$dispose(id);
         } else {
             this.toDispose.push(Disposable.create(() => this.$dispose(id)));
-        }
-    }
-
-    $update(id: string, message: string): void {
-        const entry = this.entries.get(id);
-        if (entry) {
-            entry.text = message;
-            this.delegate.setElement(id, entry);
         }
     }
 
