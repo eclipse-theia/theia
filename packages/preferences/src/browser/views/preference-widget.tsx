@@ -33,8 +33,6 @@ export class PreferencesWidget extends Panel {
      */
     static readonly LABEL = 'Preferences';
 
-    static readonly COMMAND_LABEL = 'Open Preferences';
-
     protected _preferenceScope: Preference.SelectedScopeDetails = Preference.DEFAULT_SCOPE;
 
     @inject(PreferencesEditorWidget) protected editorWidget: PreferencesEditorWidget;
