@@ -130,16 +130,9 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
-        if (isOSX && !isFirefox) {
-            keybindings.registerKeybinding({
-                command: CommonCommands.OPEN_PREFERENCES.id,
-                keybinding: 'cmd+,'
-            });
-        }
-
         keybindings.registerKeybinding({
             command: CommonCommands.OPEN_PREFERENCES.id,
-            keybinding: 'ctrl+,',
+            keybinding: (isOSX && !isFirefox) ? 'cmd+,' : 'ctrl+,'
         });
     }
 
