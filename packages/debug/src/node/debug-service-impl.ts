@@ -60,6 +60,9 @@ export class DebugServiceImpl implements DebugService {
     async resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri?: string): Promise<DebugConfiguration> {
         return this.registry.resolveDebugConfiguration(config, workspaceFolderUri);
     }
+    async resolveDebugConfigurationWithSubstitutedVariables(config: DebugConfiguration, workspaceFolderUri?: string): Promise<DebugConfiguration> {
+        return this.registry.resolveDebugConfigurationWithSubstitutedVariables(config, workspaceFolderUri);
+    }
 
     protected readonly sessions = new Set<string>();
     async createDebugSession(config: DebugConfiguration): Promise<string> {

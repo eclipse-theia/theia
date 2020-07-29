@@ -163,9 +163,17 @@ export interface DebugAdapterContribution {
 
     /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
-     * or by adding/changing/removing attributes.
+     * or by adding/changing/removing attributes before variable substitution.
      * @param config The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
     resolveDebugConfiguration?(config: DebugConfiguration, workspaceFolderUri?: string): MaybePromise<DebugConfiguration | undefined>;
+
+    /**
+     * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
+     * or by adding/changing/removing attributes with substituted variables.
+     * @param config The [debug configuration](#DebugConfiguration) to resolve.
+     * @returns The resolved debug configuration.
+     */
+    resolveDebugConfigurationWithSubstitutedVariables?(config: DebugConfiguration, workspaceFolderUri?: string): MaybePromise<DebugConfiguration | undefined>;
 }

@@ -206,11 +206,12 @@ export class DebugSessionManager {
             return options;
         }
         const { workspaceFolderUri } = options;
-        const resolvedConfiguration = await this.resolveDebugConfiguration(options.configuration, workspaceFolderUri);
-        const configuration = await this.variableResolver.resolve(resolvedConfiguration, {
+        let configuration = await this.resolveDebugConfiguration(options.configuration, workspaceFolderUri);
+        configuration = await this.variableResolver.resolve(configuration, {
             context: options.workspaceFolderUri ? new URI(options.workspaceFolderUri) : undefined,
             configurationSection: 'launch'
         });
+        configuration = await this.resolveDebugConfigurationWithSubstitutedVariables(configuration, workspaceFolderUri);
         const key = configuration.name + workspaceFolderUri;
         const id = this.configurationIds.has(key) ? this.configurationIds.get(key)! + 1 : 0;
         this.configurationIds.set(key, id);
@@ -227,6 +228,10 @@ export class DebugSessionManager {
     }
     protected async fireWillResolveDebugConfiguration(debugType: string): Promise<void> {
         await WaitUntilEvent.fire(this.onWillResolveDebugConfigurationEmitter, { debugType });
+    }
+
+    protected async resolveDebugConfigurationWithSubstitutedVariables(configuration: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
+        return this.debug.resolveDebugConfigurationWithSubstitutedVariables(configuration, workspaceFolderUri);
     }
 
     protected async doStart(sessionId: string, options: DebugSessionOptions): Promise<DebugSession> {
