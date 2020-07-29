@@ -316,24 +316,6 @@ export function fromTextEdit(edit: theia.TextEdit): model.TextEdit {
     };
 }
 
-export function fromLanguageSelector(selector: undefined): undefined;
-export function fromLanguageSelector(selector: theia.DocumentSelector): LanguageSelector;
-export function fromLanguageSelector(selector: undefined | theia.DocumentSelector): undefined | LanguageSelector {
-    if (!selector) {
-        return undefined;
-    } else if (Array.isArray(selector)) {
-        return <LanguageSelector>selector.map(fromLanguageSelector);
-    } else if (typeof selector === 'string') {
-        return selector;
-    } else {
-        return <LanguageFilter>{
-            language: selector.language,
-            scheme: selector.scheme,
-            pattern: fromGlobPattern(selector.pattern!)
-        };
-    }
-}
-
 export function convertDiagnosticToMarkerData(diagnostic: theia.Diagnostic): model.MarkerData {
     return {
         code: convertCode(diagnostic.code),
