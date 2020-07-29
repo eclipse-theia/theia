@@ -43,8 +43,11 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
             return node.icon;
         }
         if (node.themeIconId) {
-            const uri = node.resourceUri && new URI(node.resourceUri) || undefined;
-            return this.labelProvider.getIcon(URIIconReference.create(node.themeIconId, uri));
+            if (node.themeIconId === 'file' || node.themeIconId === 'folder') {
+                const uri = node.resourceUri && new URI(node.resourceUri) || undefined;
+                return this.labelProvider.getIcon(URIIconReference.create(node.themeIconId, uri));
+            }
+            return monaco.theme.ThemeIcon.asClassName({ id: node.themeIconId });
         }
         if (node.resourceUri) {
             return this.labelProvider.getIcon(new URI(node.resourceUri));

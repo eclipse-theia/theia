@@ -56,7 +56,7 @@ export interface TreeViewNode extends SelectableTreeNode {
     contextValue?: string;
     command?: Command;
     resourceUri?: string;
-    themeIconId?: 'folder' | 'file';
+    themeIconId?: string | 'folder' | 'file';
     tooltip?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     description?: string | boolean | any;

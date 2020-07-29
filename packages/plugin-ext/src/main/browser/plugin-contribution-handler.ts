@@ -313,12 +313,15 @@ export class PluginContributionHandler {
             return Disposable.NULL;
         }
         const toDispose = new DisposableCollection();
-        for (const { iconUrl, command, category, title } of contribution.commands) {
+        for (const { iconUrl, themeIcon, command, category, title } of contribution.commands) {
             const reference = iconUrl && this.style.toIconClass(iconUrl);
+            const icon = themeIcon && monaco.theme.ThemeIcon.fromString(themeIcon);
             let iconClass;
             if (reference) {
                 toDispose.push(reference);
                 iconClass = reference.object.iconClass;
+            } else if (icon) {
+                iconClass = monaco.theme.ThemeIcon.asClassName(icon);
             }
             toDispose.push(this.registerCommand({ id: command, category, label: title, iconClass }));
         }
