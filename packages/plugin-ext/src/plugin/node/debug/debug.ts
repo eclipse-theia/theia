@@ -353,6 +353,32 @@ export class DebugExtImpl implements DebugExt {
         return current;
     }
 
+    async $resolveDebugConfigurationWithSubstitutedVariables(debugConfiguration: theia.DebugConfiguration, workspaceFolderUri: string | undefined):
+        Promise<theia.DebugConfiguration | undefined> {
+        let current = debugConfiguration;
+
+        for (const providers of [this.configurationProviders.get(debugConfiguration.type), this.configurationProviders.get('*')]) {
+            if (providers) {
+                for (const provider of providers) {
+                    if (provider.resolveDebugConfigurationWithSubstitutedVariables) {
+                        try {
+                            const next = await provider.resolveDebugConfigurationWithSubstitutedVariables(this.toWorkspaceFolder(workspaceFolderUri), current);
+                            if (next) {
+                                current = next;
+                            } else {
+                                return current;
+                            }
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                }
+            }
+        }
+
+        return current;
+    }
+
     protected async createDebugAdapterTracker(session: theia.DebugSession): Promise<theia.DebugAdapterTracker> {
         return PluginDebugAdapterTracker.create(session, this.trackerFactories);
     }

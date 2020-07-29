@@ -92,7 +92,7 @@ export class DebugAdapterContributionRegistry {
 
     /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
-     * or by adding/changing/removing attributes.
+     * or by adding/changing/removing attributes before variable substitution.
      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
@@ -102,6 +102,31 @@ export class DebugAdapterContributionRegistry {
             if (contribution.resolveDebugConfiguration) {
                 try {
                     const next = await contribution.resolveDebugConfiguration(config, workspaceFolderUri);
+                    if (next) {
+                        current = next;
+                    } else {
+                        return current;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+        return current;
+    }
+
+    /**
+     * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
+     * or by adding/changing/removing attributes with substituted variables.
+     * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
+     * @returns The resolved debug configuration.
+     */
+    async resolveDebugConfigurationWithSubstitutedVariables(config: DebugConfiguration, workspaceFolderUri?: string): Promise<DebugConfiguration> {
+        let current = config;
+        for (const contribution of this.getContributions(config.type)) {
+            if (contribution.resolveDebugConfigurationWithSubstitutedVariables) {
+                try {
+                    const next = await contribution.resolveDebugConfigurationWithSubstitutedVariables(config, workspaceFolderUri);
                     if (next) {
                         current = next;
                     } else {
