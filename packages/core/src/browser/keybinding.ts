@@ -17,7 +17,7 @@
 import { injectable, inject, named } from 'inversify';
 import { isOSX } from '../common/os';
 import { Emitter, Event } from '../common/event';
-import { CommandRegistry } from '../common/command';
+import { CommandRegistry, Command } from '../common/command';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { KeyCode, KeySequence, Key } from './keyboard/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
@@ -195,17 +195,25 @@ export class KeybindingRegistry {
      * @param key
      */
     unregisterKeybinding(key: string): void;
-    unregisterKeybinding(keyOrBinding: Keybinding | string): void {
-        const key = Keybinding.is(keyOrBinding) ? keyOrBinding.keybinding : keyOrBinding;
+    /**
+     * Unregister keybinding from the registry
+     *
+     * @param command
+     */
+    unregisterKeybinding(command: Command): void;
+    unregisterKeybinding(arg: Keybinding | string | Command): void {
+        const filter = Command.is(arg)
+            ? ({ command }: Keybinding) => command === arg.id
+            : ({ keybinding }: Keybinding) => Keybinding.is(arg)
+                ? keybinding === arg.keybinding
+                : keybinding === arg;
         const keymap = this.keymaps[KeybindingScope.DEFAULT];
-        const bindings = keymap.filter(el => el.keybinding === key);
-
-        bindings.forEach(binding => {
-            const idx = keymap.indexOf(binding);
-            if (idx >= 0) {
-                keymap.splice(idx, 1);
+        for (const keybinding of keymap.filter(filter)) {
+            const index = keymap.indexOf(keybinding);
+            if (index !== -1) {
+                keymap.splice(index, 1);
             }
-        });
+        }
     }
 
     protected doRegisterKeybindings(bindings: Keybinding[], scope: KeybindingScope = KeybindingScope.DEFAULT): Disposable {
