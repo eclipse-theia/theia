@@ -748,6 +748,10 @@ declare module monaco.theme {
     export interface ThemeIcon {
         readonly id: string;
     }
+    export namespace ThemeIcon {
+        export function fromString(value: string): ThemeIcon | undefined;
+        export function asClassName(icon: ThemeIcon): string | undefined;
+    }
 }
 
 declare module monaco.color {

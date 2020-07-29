@@ -616,6 +616,7 @@ export interface PluginCommand {
     title: string;
     category?: string;
     iconUrl?: IconUrl;
+    themeIcon?: string;
 }
 
 export type IconUrl = string | { light: string; dark: string; };
