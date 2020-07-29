@@ -171,7 +171,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
     protected convertQuickInputButton(quickInputButton: QuickInputButton, index: number, toDispose: DisposableCollection): QuickInputTitleButtonHandle {
         const currentIconPath = quickInputButton.iconPath;
         let newIcon = '';
-        let newIconClass = '';
+        let newIconClass: string | undefined;
         if ('id' in currentIconPath || currentIconPath instanceof ThemeIcon) {
             newIconClass = this.resolveIconClassFromThemeIcon(currentIconPath);
         } else if (currentIconPath instanceof URI) {
@@ -197,8 +197,8 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
         };
     }
 
-    private resolveIconClassFromThemeIcon(themeIconID: ThemeIcon): string {
-        switch (themeIconID.id) {
+    private resolveIconClassFromThemeIcon(themeIcon: ThemeIcon): string | undefined {
+        switch (themeIcon.id) {
             case 'folder': {
                 return this.labelProvider.folderIcon;
             }
@@ -209,7 +209,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposa
                 return 'fa fa-arrow-left';
             }
             default: {
-                return '';
+                return monaco.theme.ThemeIcon.asClassName(themeIcon);
             }
         }
     }

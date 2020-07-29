@@ -299,10 +299,15 @@ export class TheiaPluginScanner implements PluginScanner {
     }
 
     protected readCommand({ command, title, category, icon }: PluginPackageCommand, pck: PluginPackage): PluginCommand {
+        let themeIcon: string | undefined;
         let iconUrl: IconUrl | undefined;
         if (icon) {
             if (typeof icon === 'string') {
-                iconUrl = this.toPluginUrl(pck, icon);
+                if (icon.startsWith('$(')) {
+                    themeIcon = icon;
+                } else {
+                    iconUrl = this.toPluginUrl(pck, icon);
+                }
             } else {
                 iconUrl = {
                     light: this.toPluginUrl(pck, icon.light),
@@ -310,7 +315,7 @@ export class TheiaPluginScanner implements PluginScanner {
                 };
             }
         }
-        return { command, title, category, iconUrl };
+        return { command, title, category, iconUrl, themeIcon };
     }
 
     protected toPluginUrl(pck: PluginPackage, relativePath: string): string {
