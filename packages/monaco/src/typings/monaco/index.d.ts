@@ -1353,6 +1353,11 @@ declare module monaco.error {
     export function onUnexpectedError(e: any): undefined;
 }
 
+declare module monaco.path {
+    // https://github.com/microsoft/vscode/blob/320fbada86c113835aef4fb9d7c4bc5b74678166/src/vs/base/common/path.ts#L1494
+    export function normalize(path: string): string;
+}
+
 declare module monaco.wordHelper {
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/model/wordHelper.ts#L30
     export const DEFAULT_WORD_REGEXP: RegExp;
