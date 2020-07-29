@@ -72,11 +72,19 @@ export interface DebugService extends Disposable {
 
     /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
-     * or by adding/changing/removing attributes.
+     * or by adding/changing/removing attributes before variable substitution.
      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
     resolveDebugConfiguration(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration>;
+
+    /**
+     * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
+     * or by adding/changing/removing attributes with substituted variables.
+     * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
+     * @returns The resolved debug configuration.
+     */
+    resolveDebugConfigurationWithSubstitutedVariables(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration>;
 
     /**
      * Creates a new [debug adapter session](#DebugAdapterSession).

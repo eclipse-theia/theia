@@ -45,6 +45,10 @@ export class PluginDebugAdapterContribution {
         return this.debugExt.$resolveDebugConfigurations(config, workspaceFolderUri);
     }
 
+    async resolveDebugConfigurationWithSubstitutedVariables(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration | undefined> {
+        return this.debugExt.$resolveDebugConfigurationWithSubstitutedVariables(config, workspaceFolderUri);
+    }
+
     async createDebugSession(config: DebugConfiguration): Promise<string> {
         await this.pluginService.activateByDebug('onDebugAdapterProtocolTracker', config.type);
         return this.debugExt.$createDebugSession(config);

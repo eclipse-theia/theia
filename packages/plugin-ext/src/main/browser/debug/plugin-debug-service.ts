@@ -132,6 +132,28 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
         return this.delegated.resolveDebugConfiguration(resolved, workspaceFolderUri);
     }
 
+    async resolveDebugConfigurationWithSubstitutedVariables(config: DebugConfiguration, workspaceFolderUri: string | undefined): Promise<DebugConfiguration> {
+        let resolved = config;
+
+        // we should iterate over all to handle configuration providers for `*`
+        for (const contributor of this.contributors.values()) {
+            if (contributor) {
+                try {
+                    const next = await contributor.resolveDebugConfigurationWithSubstitutedVariables(resolved, workspaceFolderUri);
+                    if (next) {
+                        resolved = next;
+                    } else {
+                        return resolved;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        return this.delegated.resolveDebugConfigurationWithSubstitutedVariables(resolved, workspaceFolderUri);
+    }
+
     registerDebugger(contribution: DebuggerContribution): Disposable {
         this.debuggers.push(contribution);
         return Disposable.create(() => {
