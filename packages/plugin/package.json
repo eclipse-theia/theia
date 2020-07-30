@@ -1,6 +1,6 @@
 {
   "name": "@theia/plugin",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Theia - Plugin API",
   "types": "./src/theia.d.ts",
   "publishConfig": {
@@ -26,7 +26,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.3.0"
+    "@theia/ext-scripts": "^1.4.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

@@ -1,10 +1,10 @@
 {
   "name": "@theia/mini-browser",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Theia - Mini-Browser Extension",
   "dependencies": {
-    "@theia/core": "^1.3.0",
-    "@theia/filesystem": "^1.3.0",
+    "@theia/core": "^1.4.0",
+    "@theia/filesystem": "^1.4.0",
     "@types/mime-types": "^2.1.0",
     "mime-types": "^2.1.18",
     "pdfobject": "^2.0.201604172"
@@ -42,7 +42,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.3.0"
+    "@theia/ext-scripts": "^1.4.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
