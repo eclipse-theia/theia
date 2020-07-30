@@ -17,7 +17,7 @@
 import { injectable, inject, named } from 'inversify';
 import { isOSX } from '../common/os';
 import { Emitter, Event } from '../common/event';
-import { CommandRegistry } from '../common/command';
+import { CommandRegistry, Command } from '../common/command';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { KeyCode, KeySequence, Key } from './keyboard/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
@@ -184,28 +184,36 @@ export class KeybindingRegistry {
     }
 
     /**
-     * Unregister keybinding from the registry
+     * Unregister keybindings from the registry using the key of the given keybinging
      *
-     * @param binding
+     * @param binding a Keybinding specifying the key to be unregistered
      */
     unregisterKeybinding(binding: common.Keybinding): void;
     /**
-     * Unregister keybinding from the registry
+     * Unregister keybindings with the given key from the registry
      *
-     * @param key
+     * @param key a key to be unregistered
      */
     unregisterKeybinding(key: string): void;
-    unregisterKeybinding(keyOrBinding: common.Keybinding | string): void {
-        const key = common.Keybinding.is(keyOrBinding) ? keyOrBinding.keybinding : keyOrBinding;
-        const keymap = this.keymaps[KeybindingScope.DEFAULT];
-        const bindings = keymap.filter(el => el.keybinding === key);
+    /**
+     * Unregister all existing keybindings for the given command
+     * @param command the command to unregister keybindings for
+     */
+    unregisterKeybinding(command: Command): void;
 
-        bindings.forEach(binding => {
+    unregisterKeybinding(arg: common.Keybinding | string | Command): void {
+        const keymap = this.keymaps[KeybindingScope.DEFAULT];
+        const filter = Command.is(arg)
+            ? ({ command }: common.Keybinding) => command === arg.id
+            : ({ keybinding }: common.Keybinding) => Keybinding.is(arg)
+                ? keybinding === arg.keybinding
+                : keybinding === arg;
+        for (const binding of keymap.filter(filter)) {
             const idx = keymap.indexOf(binding);
-            if (idx >= 0) {
+            if (idx !== -1) {
                 keymap.splice(idx, 1);
             }
-        });
+        }
     }
 
     protected doRegisterKeybindings(bindings: common.Keybinding[], scope: KeybindingScope = KeybindingScope.DEFAULT): Disposable {

@@ -173,6 +173,108 @@ describe('keybindings', () => {
         }
     });
 
+    it('should register a keybinding', () => {
+        const keybinding: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: 'F5'
+        };
+        expect(isKeyBindingRegistered(keybinding)).to.be.false;
+
+        keybindingRegistry.registerKeybinding(keybinding);
+
+        expect(isKeyBindingRegistered(keybinding)).to.be.true;
+    }
+    );
+
+    it('should unregister all keybindings from a specific command', () => {
+        const otherKeybinding: Keybinding = {
+            command: TEST_COMMAND.id,
+            keybinding: 'F4'
+        };
+        keybindingRegistry.registerKeybinding(otherKeybinding);
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+
+        const keybinding: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: 'F5'
+        };
+        const keybinding2: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: 'F6'
+        };
+
+        keybindingRegistry.registerKeybinding(keybinding);
+        keybindingRegistry.registerKeybinding(keybinding2);
+        expect(isKeyBindingRegistered(keybinding)).to.be.true;
+        expect(isKeyBindingRegistered(keybinding2)).to.be.true;
+
+        keybindingRegistry.unregisterKeybinding(TEST_COMMAND2);
+
+        expect(isKeyBindingRegistered(keybinding)).to.be.false;
+        expect(isKeyBindingRegistered(keybinding2)).to.be.false;
+        const bindingsAfterUnregister = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND2.id);
+        expect(bindingsAfterUnregister).not.to.be.undefined;
+        expect(bindingsAfterUnregister.length).to.be.equal(0);
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+    });
+
+    it('should unregister a specific keybinding', () => {
+        const otherKeybinding: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: 'F4'
+        };
+
+        keybindingRegistry.registerKeybinding(otherKeybinding);
+        const keybinding: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: 'F5'
+        };
+
+        keybindingRegistry.registerKeybinding(keybinding);
+
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+        expect(isKeyBindingRegistered(keybinding)).to.be.true;
+
+        keybindingRegistry.unregisterKeybinding(keybinding);
+
+        expect(isKeyBindingRegistered(keybinding)).to.be.false;
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+    }
+    );
+
+    it('should unregister a specific key', () => {
+        const otherKeybinding: Keybinding = {
+            command: TEST_COMMAND.id,
+            keybinding: 'F4'
+        };
+
+        keybindingRegistry.registerKeybinding(otherKeybinding);
+        const testKey = 'F5';
+        const keybinding: Keybinding = {
+            command: TEST_COMMAND2.id,
+            keybinding: testKey
+        };
+
+        const keybinding2: Keybinding = {
+            command: TEST_COMMAND.id,
+            keybinding: testKey
+        };
+
+        keybindingRegistry.registerKeybinding(keybinding);
+        keybindingRegistry.registerKeybinding(keybinding2);
+
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+        expect(isKeyBindingRegistered(keybinding)).to.be.true;
+        expect(isKeyBindingRegistered(keybinding2)).to.be.true;
+
+        keybindingRegistry.unregisterKeybinding(testKey);
+
+        expect(isKeyBindingRegistered(otherKeybinding)).to.be.true;
+        expect(isKeyBindingRegistered(keybinding)).to.be.false;
+        expect(isKeyBindingRegistered(keybinding2)).to.be.false;
+    }
+    );
+
     it('should register a correct keybinding, then default back to the original for a wrong one after', () => {
         let keybindings: Keybinding[] = [{
             command: TEST_COMMAND.id,
@@ -418,3 +520,18 @@ class TestContribution implements CommandContribution, KeybindingContribution {
     }
 
 }
+
+function isKeyBindingRegistered(keybinding: Keybinding): boolean {
+    const bindings = keybindingRegistry.getKeybindingsForCommand(keybinding.command);
+    expect(bindings).not.to.be.undefined;
+    let keyBindingFound = false;
+    bindings.forEach(
+        (value: Keybinding) => {
+            if (value.command === keybinding.command && value.keybinding === keybinding.keybinding) {
+                keyBindingFound = true;
+            }
+        }
+    );
+    return keyBindingFound;
+}
+
