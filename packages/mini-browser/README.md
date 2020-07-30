@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>THEIA - MINI-BROWSER EXTENSION</h2>
+<h2>ECLIPSE THEIA - MINI-BROWSER EXTENSION</h2>
 
 <hr />
 
