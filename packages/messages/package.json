@@ -1,9 +1,9 @@
 {
   "name": "@theia/messages",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Theia - Messages Extension",
   "dependencies": {
-    "@theia/core": "^1.3.0",
+    "@theia/core": "^1.4.0",
     "lodash.throttle": "^4.1.1",
     "markdown-it": "^8.4.0",
     "react-perfect-scrollbar": "^1.5.3",
@@ -41,7 +41,7 @@
     "test": "theiaext test"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.3.0"
+    "@theia/ext-scripts": "^1.4.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
