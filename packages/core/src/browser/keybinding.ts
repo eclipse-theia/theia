@@ -399,27 +399,6 @@ export class KeybindingRegistry {
         return result;
     }
 
-    /**
-     * Returns a list of keybindings for a command in a specific scope
-     * @param scope specific scope to look for
-     * @param commandId unique id of the command
-     */
-    getScopedKeybindingsForCommand(scope: KeybindingScope, commandId: string): Keybinding[] {
-        const result: Keybinding[] = [];
-
-        if (scope >= KeybindingScope.END) {
-            return [];
-        }
-
-        this.keymaps[scope].forEach(binding => {
-            const command = this.commandRegistry.getCommand(binding.command);
-            if (command && command.id === commandId) {
-                result.push(binding);
-            }
-        });
-        return result;
-    }
-
     protected isActive(binding: Keybinding): boolean {
         /* Pseudo commands like "passthrough" are always active (and not found
            in the command registry).  */
