@@ -1,4 +1,5 @@
 {
+  "keyboard.dispatch": "keyboard",
   "editor.formatOnSave": true,
   "editor.insertSpaces": true,
   "[typescript]": {
