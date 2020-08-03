@@ -157,20 +157,6 @@ export class ExtensionPackage {
         return '';
     }
 
-    async isOutdated(): Promise<boolean> {
-        const latestVersion = await this.getLatestVersion();
-        if (!latestVersion) {
-            return false;
-        }
-        const versionRange = await this.getVersionRange();
-        if (versionRange && semver.gtr(latestVersion, versionRange)) {
-            return true;
-        }
-        if (this.raw.installed) {
-            return semver.gt(latestVersion, this.raw.installed.version);
-        }
-        return false;
-    }
 }
 
 export interface RawExtensionPackage extends PublishedNodePackage {
