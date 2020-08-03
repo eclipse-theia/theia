@@ -52,10 +52,8 @@ For Windows instructions [click here](#building-on-windows).
 
 ## Prerequisites
 
- - Node.js `>= 10.11.0` **AND** `< 12.x`.
-   - Preferably, **use** version `10.15.3`, it has the [active LTS](https://github.com/nodejs/Release).
-   - Node.js `11.x` is untested.
-   - Node.js `12.x` is [unsupported](https://github.com/eclipse-theia/theia/issues/5117).
+ - Node.js `>= 12.14.1` **AND** `< 13`.
+   - Preferably, **use** Node version [`12.14.1`](https://nodejs.org/download/release/v12.14.1/),  as it is the the recommended minimum version according to the framework's supported `electron` version.
  - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.7.0
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 
@@ -327,7 +325,7 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 
  - Install [`scoop`](https://github.com/lukesampson/scoop#installation).
  - Install [`nvm`](https://github.com/coreybutler/nvm-windows) with scoop: `scoop install nvm`.
- - Install Node.js with `nvm`: `nvm install 10.15.3`, then use it: `nvm use 10.15.3`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
+ - Install Node.js with `nvm`: `nvm install 12.14.1`, then use it: `nvm use 12.14.1`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
  - Install `yarn`: `scoop install yarn`.
  - Install [`windows-build-tools`](https://github.com/felixrieseberg/windows-build-tools). Run `PowerShell` as _Administrator_ and copy paste the following: `npm --add-python-to-path install --global --production windows-build-tools`
 

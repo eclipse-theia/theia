@@ -49,6 +49,10 @@
   },
   ```
   - Consequently, `ThemeService` and `IconThemeService` don't allow to change the default color or icon theme anymore.
+<a name="1_5_0_drop_node_10_support"></a>
+- [[repo]](#1_5_0_drop_node_10_support) support for `Node 10` is dropped. [#8290](https://github.com/eclipse-theia/theia/pull/8290)
+  - From now on, Node.js `12.x` is required when building.\
+   The recommended minimum version is aligned with `electron` (Node.js `12.14.1`).
 
 ## v1.4.0 - 30/07/2020
 
