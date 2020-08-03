@@ -22,12 +22,12 @@ import {
     bindViewContribution, FrontendApplicationContribution,
     WidgetFactory, ViewContainer,
     WidgetManager, ApplicationShellLayoutMigration,
-    createTreeContainer, TreeWidget, TreeModel, TreeModelImpl
+    createTreeContainer, TreeWidget, TreeModel, TreeModelImpl, TreeProps, defaultTreeProps
 } from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID, SCM_VIEW_CONTAINER_TITLE_OPTIONS } from './scm-contribution';
 import { ScmWidget } from './scm-widget';
-import { ScmTreeWidget } from './scm-tree-widget';
+import { ScmTreeWidget, TREE_NODE_FIRST_INDENT_PADDING_SCM_CLASS, TREE_NODE_INDENT_PADDING_SCM_CLASS } from './scm-tree-widget';
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
@@ -141,6 +141,11 @@ export function createScmTreeContainer(parent: interfaces.Container): Container 
 
     child.bind(ScmTreeModelProps).toConstantValue({
         defaultExpansion: 'expanded',
+    });
+    child.rebind(TreeProps).toConstantValue({
+        ...defaultTreeProps,
+        expansionTogglePadding: 0,
+        nodeIndentWidthClassname: [TREE_NODE_FIRST_INDENT_PADDING_SCM_CLASS, TREE_NODE_INDENT_PADDING_SCM_CLASS]
     });
     return child;
 }

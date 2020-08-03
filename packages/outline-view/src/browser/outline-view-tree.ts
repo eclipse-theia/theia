@@ -17,6 +17,8 @@
 import { injectable, inject } from 'inversify';
 import { CompositeTreeNode, TreeModelImpl, TreeExpansionService, ExpandableTreeNode } from '@theia/core/lib/browser';
 
+export const TREE_NODE_INDENT_PADDING_OUTLINE_CLASS = 'theia-tree-node-indent-padding-outline';
+
 @injectable()
 export class OutlineViewTreeModel extends TreeModelImpl {
 

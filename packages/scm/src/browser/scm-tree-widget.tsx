@@ -22,7 +22,10 @@ import URI from '@theia/core/lib/common/uri';
 import { isOSX } from '@theia/core/lib/common/os';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Message } from '@phosphor/messaging';
-import { TreeWidget, TreeNode, SelectableTreeNode, TreeProps, NodeProps, TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
+import {
+    TreeWidget, TreeNode, SelectableTreeNode, TreeProps, NodeProps, TREE_NODE_SEGMENT_CLASS,
+    TREE_NODE_SEGMENT_GROW_CLASS, TREE_NODE_INDENT_CLASS
+} from '@theia/core/lib/browser/tree';
 import { ScmTreeModel } from './scm-tree-model';
 import { MenuModelRegistry, ActionMenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
 import { ScmResourceGroup, ScmResource, ScmResourceDecorations } from './scm-provider';
@@ -36,6 +39,10 @@ import { EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser'
 import { FileStat } from '@theia/filesystem/lib/common';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
+
+const scmHeaderLeftPadding = 0;
+export const TREE_NODE_INDENT_PADDING_SCM_CLASS = 'theia-tree-node-indent-padding-scm';
+export const TREE_NODE_FIRST_INDENT_PADDING_SCM_CLASS = 'theia-tree-node-first-indent-padding-scm';
 
 @injectable()
 export class ScmTreeWidget extends TreeWidget {
@@ -145,7 +152,8 @@ export class ScmTreeWidget extends TreeWidget {
                 menus={this.menus}
                 contextKeys={this.contextKeys}
                 labelProvider={this.labelProvider}
-                corePreferences={this.corePreferences} />;
+                corePreferences={this.corePreferences}
+                renderIndent={() => this.renderIndent(node, props)} />;
 
             return React.createElement('div', attributes, content);
         }
@@ -166,6 +174,7 @@ export class ScmTreeWidget extends TreeWidget {
                 contextKeys={this.contextKeys}
                 labelProvider={this.labelProvider}
                 corePreferences={this.corePreferences}
+                renderIndent={() => this.renderIndent(node, props)}
                 {...{
                     ...this.props,
                     name,
@@ -372,6 +381,16 @@ export class ScmTreeWidget extends TreeWidget {
     }
 
     protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
+        if (node.id === 'workingTree' || node.id === 'index') {
+            return scmHeaderLeftPadding;
+        }
+
+        if (this.viewMode === 'tree') {
+            if (props.depth > 0) {
+                return this.props.expansionTogglePadding;
+            }
+        }
+
         if (this.viewMode === 'list') {
             if (props.depth === 1) {
                 return this.props.expansionTogglePadding;
@@ -514,6 +533,7 @@ export namespace ScmElement {
     export interface Props extends ScmTreeWidget.Props {
         groupId: string
         renderExpansionToggle: () => React.ReactNode
+        renderIndent?: () => React.ReactNode
     }
     export interface State {
         hover: boolean
@@ -534,13 +554,14 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
         const relativePath = parentPath.relative(resourceUri.parent);
         const path = relativePath ? relativePath.toString() : labelProvider.getLongName(resourceUri.parent);
         return <div key={sourceUri}
-            className={`scmItem ${TREE_NODE_SEGMENT_CLASS} ${TREE_NODE_SEGMENT_GROW_CLASS}`}
+            className={`scmItem ${TREE_NODE_INDENT_CLASS} ${TREE_NODE_SEGMENT_CLASS} ${TREE_NODE_SEGMENT_GROW_CLASS}`}
             onContextMenu={this.renderContextMenu}
             onMouseEnter={this.showHover}
             onMouseLeave={this.hideHover}
             ref={this.detectHover}
             onClick={this.handleClick}
             onDoubleClick={this.handleDoubleClick} >
+            {this.props.renderIndent ? this.props.renderIndent() : ''}
             <span className={icon + ' file-icon'} />
             {this.props.renderExpansionToggle()}
             <div className={`noWrapInfo ${TREE_NODE_SEGMENT_GROW_CLASS}`} >
@@ -688,12 +709,13 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
         const icon = labelProvider.getIcon(sourceFileStat);
 
         return <div key={sourceUri}
-            className={`scmItem  ${TREE_NODE_SEGMENT_CLASS} ${TREE_NODE_SEGMENT_GROW_CLASS} ${ScmTreeWidget.Styles.NO_SELECT}`}
+            className={`scmItem ${TREE_NODE_SEGMENT_CLASS} ${TREE_NODE_SEGMENT_GROW_CLASS} ${ScmTreeWidget.Styles.NO_SELECT}`}
             onContextMenu={this.renderContextMenu}
             onMouseEnter={this.showHover}
             onMouseLeave={this.hideHover}
             ref={this.detectHover}
         >
+            {this.props.renderIndent ? this.props.renderIndent() : ''}
             {this.props.renderExpansionToggle()}
             <span className={icon + ' file-icon'} />
             <div className={`noWrapInfo ${TREE_NODE_SEGMENT_GROW_CLASS}`} >

@@ -17,9 +17,13 @@
 import * as React from 'react';
 import { injectable, postConstruct, interfaces, Container } from 'inversify';
 import { DisposableCollection } from '../../common/disposable';
-import { TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeImpl, Tree, TreeModel } from '../tree';
+import {
+    TreeWidget, TreeNode, createTreeContainer, TreeProps, TreeImpl, Tree, TreeModel, defaultTreeProps
+} from '../tree';
 import { TreeSource, TreeElement } from './tree-source';
 import { SourceTree, TreeElementNode, TreeSourceNode } from './source-tree';
+
+const TREE_NODE_INDENT_WIDTH_SOURCE_CLASS = 'theia-tree-node-indent-width-source';
 
 @injectable()
 export class SourceTreeWidget extends TreeWidget {
@@ -33,6 +37,12 @@ export class SourceTreeWidget extends TreeWidget {
 
         child.unbind(TreeWidget);
         child.bind(SourceTreeWidget).toSelf();
+
+        child.rebind(TreeProps).toConstantValue({
+            ...defaultTreeProps,
+            expansionTogglePadding: 10,
+            nodeIndentWidthClassname: TREE_NODE_INDENT_WIDTH_SOURCE_CLASS
+        });
 
         return child;
     }

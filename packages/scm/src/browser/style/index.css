@@ -284,3 +284,14 @@
 .theia-scm-panel {
     overflow: visible;
 }
+
+.theia-tree-node-indent-padding-scm {
+    width: calc(var(--theia-ui-padding)*0);
+    padding-right: calc(var(--theia-ui-padding)/6*10);
+}
+
+.theia-tree-node-first-indent-padding-scm {
+    width: calc(var(--theia-ui-padding)*0);
+    padding-right: calc(var(--theia-ui-padding)/6*7);
+}
+

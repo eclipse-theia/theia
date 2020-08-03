@@ -31,6 +31,7 @@ import * as React from 'react';
 export const HIERARCHY_TREE_CLASS = 'theia-CallHierarchyTree';
 export const DEFINITION_NODE_CLASS = 'theia-CallHierarchyTreeNode';
 export const DEFINITION_ICON_CLASS = 'theia-CallHierarchyTreeNodeIcon';
+export const TREE_NODE_INDENT_WIDTH_CALL_HIERARCHY_CLASS = 'theia-tree-node-indent-width-call-hierarchy';
 
 @injectable()
 export class CallHierarchyTreeWidget extends TreeWidget {

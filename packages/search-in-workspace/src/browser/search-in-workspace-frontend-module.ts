@@ -20,11 +20,12 @@ import { ContainerModule, interfaces } from 'inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-in-workspace-service';
 import { SearchInWorkspaceServer, SIW_WS_PATH } from '../common/search-in-workspace-interface';
 import {
-    WebSocketConnectionProvider, WidgetFactory, createTreeContainer, TreeWidget, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution
+    WebSocketConnectionProvider, WidgetFactory, createTreeContainer, TreeWidget, bindViewContribution, FrontendApplicationContribution, LabelProviderContribution,
+    TreeProps, defaultTreeProps
 } from '@theia/core/lib/browser';
 import { ResourceResolver } from '@theia/core';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
-import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
+import { SearchInWorkspaceResultTreeWidget, TREE_NODE_INDENT_WIDTH_SIW_CLASS } from './search-in-workspace-result-tree-widget';
 import { SearchInWorkspaceFrontendContribution } from './search-in-workspace-frontend-contribution';
 import { InMemoryTextResourceResolver } from './in-memory-text-resource';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
@@ -71,6 +72,11 @@ export function createSearchTreeWidget(parent: interfaces.Container): SearchInWo
 
     child.unbind(TreeWidget);
     child.bind(SearchInWorkspaceResultTreeWidget).toSelf();
+
+    child.rebind(TreeProps).toConstantValue({
+        ...defaultTreeProps,
+        nodeIndentWidthClassname: TREE_NODE_INDENT_WIDTH_SIW_CLASS
+    });
 
     return child.get(SearchInWorkspaceResultTreeWidget);
 }

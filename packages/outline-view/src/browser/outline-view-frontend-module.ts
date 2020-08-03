@@ -34,7 +34,7 @@ import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widg
 import '../../src/browser/styles/index.css';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { OutlineDecoratorService, OutlineTreeDecorator } from './outline-decorator-service';
-import { OutlineViewTreeModel } from './outline-view-tree';
+import { OutlineViewTreeModel, TREE_NODE_INDENT_PADDING_OUTLINE_CLASS } from './outline-view-tree';
 
 export default new ContainerModule(bind => {
     bind(OutlineViewWidgetFactory).toFactory(ctx =>
@@ -73,6 +73,12 @@ function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidge
     child.bind(OutlineDecoratorService).toSelf().inSingletonScope();
     child.rebind(TreeDecoratorService).toDynamicValue(ctx => ctx.container.get(OutlineDecoratorService)).inSingletonScope();
     bindContributionProvider(child, OutlineTreeDecorator);
+
+    child.rebind(TreeProps).toConstantValue({
+        ...defaultTreeProps,
+        expansionTogglePadding: 0,
+        nodeIndentWidthClassname: TREE_NODE_INDENT_PADDING_OUTLINE_CLASS
+    });
 
     return child.get(OutlineViewWidget);
 }

@@ -21,6 +21,8 @@ import URI from '@theia/core/lib/common/uri';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode } from '@theia/core/lib/browser';
 import { FileNavigatorFilter } from './navigator-filter';
 
+export const TREE_NODE_INDENT_PADDING_NAVIGATOR_CLASS = 'theia-tree-node-indent-padding-navigator';
+
 @injectable()
 export class FileNavigatorTree extends FileTree {
 

@@ -45,6 +45,8 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 
 const ROOT_ID = 'ResultTree';
 
+export const TREE_NODE_INDENT_WIDTH_SIW_CLASS = 'theia-tree-node-indent-width-siw';
+
 export interface SearchInWorkspaceRoot extends CompositeTreeNode {
     children: SearchInWorkspaceRootFolderNode[];
 }

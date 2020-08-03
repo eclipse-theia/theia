@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import { interfaces, Container } from 'inversify';
-import { createTreeContainer, Tree, TreeImpl, TreeModel, TreeModelImpl, TreeWidget } from '@theia/core/lib/browser';
+import { createTreeContainer, Tree, TreeImpl, TreeModel, TreeModelImpl, TreeWidget, TreeProps, defaultTreeProps } from '@theia/core/lib/browser';
 import { CallHierarchyTree } from './callhierarchy-tree';
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
-import { CallHierarchyTreeWidget } from './callhierarchy-tree-widget';
+import { CallHierarchyTreeWidget, TREE_NODE_INDENT_WIDTH_CALL_HIERARCHY_CLASS } from './callhierarchy-tree-widget';
 
 function createHierarchyTreeContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent);
@@ -33,6 +33,11 @@ function createHierarchyTreeContainer(parent: interfaces.Container): Container {
 
     child.bind(CallHierarchyTreeWidget).toSelf();
     child.rebind(TreeWidget).toService(CallHierarchyTreeWidget);
+
+    child.rebind(TreeProps).toConstantValue({
+        ...defaultTreeProps,
+        nodeIndentWidthClassname: TREE_NODE_INDENT_WIDTH_CALL_HIERARCHY_CLASS
+    });
 
     return child;
 }

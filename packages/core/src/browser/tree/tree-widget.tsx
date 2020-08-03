@@ -38,6 +38,7 @@ import { ElementExt } from '@phosphor/domutils';
 import { TreeWidgetSelection } from './tree-widget-selection';
 import { MaybePromise } from '../../common/types';
 import { LabelProvider } from '../label-provider';
+import { CorePreferences } from '../core-preferences';
 
 const debounce = require('lodash.debounce');
 
@@ -52,6 +53,13 @@ export const TREE_NODE_SEGMENT_GROW_CLASS = 'theia-TreeNodeSegmentGrow';
 export const EXPANDABLE_TREE_NODE_CLASS = 'theia-ExpandableTreeNode';
 export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
+export const TREE_NODE_INDENT_CLASS = 'theia-tree-node-indent';
+export const TREE_NODE_INDENT_BLOCK_CLASS = 'theia-tree-node-indent-block';
+export const TREE_NODE_CHILD_RIGHT_MARGIN_CLASS = 'theia-tree-node-child-right-margin';
+export const TREE_NODE_CHILD_LEFT_MARGIN_CLASS = 'theia-tree-node-child-left-margin';
+export const TREE_NODE_ACTIVE = 'theia-tree-node-active';
+export const INDENT_GUIDE_ALWAYS = 'theia-indent-guide-always';
+export const INDENT_GUIDE_ONHOVER = 'theia-indent-guide-on-hover';
 
 export const TreeProps = Symbol('TreeProps');
 
@@ -72,6 +80,13 @@ export interface TreeProps {
     readonly leftPadding: number;
 
     readonly expansionTogglePadding: number;
+
+    readonly rootLevelIconPadding: number;
+
+    /**
+     * Custom css classname for subclass
+     */
+    readonly nodeIndentWidthClassname?: string | [string, string];
 
     /**
      * `true` if the tree widget support multi-selection. Otherwise, `false`. Defaults to `false`.
@@ -116,7 +131,8 @@ export interface NodeProps {
  */
 export const defaultTreeProps: TreeProps = {
     leftPadding: 8,
-    expansionTogglePadding: 18
+    expansionTogglePadding: 18,
+    rootLevelIconPadding: 3
 };
 
 export namespace TreeWidget {
@@ -161,6 +177,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
+
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
 
     protected shouldScrollToRow = true;
 
@@ -251,6 +270,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 })
             ]);
         }
+        this.toDispose.push(this.corePreferences.onPreferenceChanged(preference => {
+            if (preference.preferenceName === 'workbench.tree.renderIndentGuides') {
+                this.update();
+            }
+        }));
     }
 
     /**
@@ -777,6 +801,60 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     /**
+     * Returns the classname of the indent div based on the inputs
+     * @param needsNodeActiveGuideline "true" if active guideline is needed for either all siblings of a selected node or all child nodes of a selected parent node.
+     * @param needsLeafPadding "true" if we reach the right-most indent of a non-composite node.
+     * @param removeAdditionalPadding "true" if we reach the left-most indent of a non-composite node
+     */
+    protected renderIndentClass(needsNodeActiveGuideline: boolean, needsLeafPadding: boolean, removeAdditionalPadding: boolean): string {
+        const indentGuideOption = this.corePreferences['workbench.tree.renderIndentGuides'];
+        const customClassname = this.props.nodeIndentWidthClassname && removeAdditionalPadding;
+        const indentClassName = `${TREE_NODE_INDENT_BLOCK_CLASS}
+        ${needsLeafPadding ? TREE_NODE_CHILD_RIGHT_MARGIN_CLASS : ''}
+        ${removeAdditionalPadding ? TREE_NODE_CHILD_LEFT_MARGIN_CLASS : ''}
+        ${customClassname ? this.props.nodeIndentWidthClassname : ''}
+        ${indentGuideOption !== 'none' ? indentGuideOption === 'onHover' ? INDENT_GUIDE_ONHOVER : INDENT_GUIDE_ALWAYS : ''}  
+        ${indentGuideOption !== 'none' && needsNodeActiveGuideline ? TREE_NODE_ACTIVE : ''}`;
+        return indentClassName;
+    }
+
+    /**
+     * Render indent for the file tree based on the depth
+     * @param node the tree node.
+     * @param depth the depth of the tree node.
+     */
+    protected renderIndent(node: TreeNode, props: NodeProps): React.ReactNode {
+        const indentDivs: React.ReactNode[] = [];
+        let nodePtr = node;
+        for (let i = 0; i < props.depth; i++) {
+            if (nodePtr !== undefined && nodePtr.parent !== undefined) {
+                nodePtr = nodePtr.parent;
+            }
+
+            let needsNodeActiveGuideline = false;
+            if (SelectableTreeNode.isSelected(nodePtr) && this.isExpandable(nodePtr)) {
+                needsNodeActiveGuideline = true;
+            } else if (this.isExpandable(nodePtr) && nodePtr.expanded) {
+                for (const child of nodePtr.children) {
+                    if (!this.isExpandable(child) && SelectableTreeNode.isSelected(child)) {
+                        needsNodeActiveGuideline = true;
+                    } else if (SelectableTreeNode.isSelected(child) && this.isExpandable(child) && !child.expanded) {
+                        needsNodeActiveGuideline = true;
+                    }
+                }
+            }
+
+            const needsLeafPadding = (!this.isExpandable(node) && i === 0);
+            const isWidthClassnameForScm = this.props.nodeIndentWidthClassname && (typeof this.props.nodeIndentWidthClassname !== 'string');
+            const removeAdditionalPadding = !isWidthClassnameForScm && !this.isExpandable(node) && i === (props.depth - 1);
+            indentDivs.unshift(<div key={i} className={`${isWidthClassnameForScm ? i === (props.depth - 1) ?
+                this.props.nodeIndentWidthClassname![0] : this.props.nodeIndentWidthClassname![1] : ''}
+                ${this.renderIndentClass(needsNodeActiveGuideline, needsLeafPadding, removeAdditionalPadding)}`}> </div>);
+        }
+        return indentDivs;
+    }
+
+    /**
      * Render the node given the tree node and node properties.
      * @param node the tree node.
      * @param props the node properties.
@@ -787,6 +865,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         const attributes = this.createNodeAttributes(node, props);
         const content = <div className={TREE_NODE_CONTENT_CLASS}>
+            <div className={TREE_NODE_INDENT_CLASS}>
+                {this.renderIndent(node, props)}
+            </div>
             {this.renderExpansionToggle(node, props)}
             {this.decorateIcon(node, this.renderIcon(node, props))}
             {this.renderCaptionAffixes(node, props, 'captionPrefixes')}
@@ -850,16 +931,32 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return { paddingLeft };
     }
 
-    protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
-        return props.depth * this.props.leftPadding + (this.needsExpansionTogglePadding(node) ? this.props.expansionTogglePadding : 0);
+    /**
+     * Add right padding (3px) for icons located in the root level of the tree during rendering.
+     * @param node the tree node.
+     * @param props the node properties.
+     */
+    protected needsRootLevelIconPadding(node: TreeNode, props: NodeProps): boolean {
+        return (props.depth === 0 && !this.isExpandable(node));
     }
 
     /**
      * If the node is a composite, a toggle will be rendered.
      * Otherwise we need to add the width and the left, right padding => 18px
+     * @param node the tree node.
      */
     protected needsExpansionTogglePadding(node: TreeNode): boolean {
         return !this.isExpandable(node);
+    }
+
+    /**
+     * Return the left padding for a tree node.
+     * @param node the tree node.
+     * @param props the node properties.
+     */
+    protected getPaddingLeft(node: TreeNode, props: NodeProps): number {
+        return this.props.leftPadding + (this.needsExpansionTogglePadding(node) ? this.props.expansionTogglePadding : 0)
+            + (this.needsRootLevelIconPadding(node, props) ? this.props.rootLevelIconPadding : 0);
     }
 
     /**
