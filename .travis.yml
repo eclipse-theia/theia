@@ -116,16 +116,11 @@ jobs:
   fast_finish: true
   include:
     - stage: test
-      name: Ubuntu / Node 10 / Python 2
-      os: linux
-      dist: xenial
-      node_js: 10
-    - stage: test
-      name: Ubuntu / Node 12 / Python 2
+      name: Ubuntu / Python 2
       os: linux
       dist: xenial
     - stage: test
-      name: Ubuntu / Node 12 / Python 3 (No Tests!)
+      name: Ubuntu / Python 3 (No Tests)
       os: linux
       dist: xenial
       env:
@@ -133,17 +128,15 @@ jobs:
       before_script:
         - node --version
         - $PYTHON --version
-      # no tests, just build
       script: yarn
-    - name: macOS / Node 12 / Python 2
+    - name: macOS / Python 2
       os: osx
       osx_image: xcode11.4
       env: CXX=c++
       script:
         - travis_retry yarn test:theia
-    - name: Windows / Node 10 / Python 2
+    - name: Windows / Python 2
       os: windows
-      node_js: 10
       env:
         - CXX=c++
         - YARN_GPG=no
