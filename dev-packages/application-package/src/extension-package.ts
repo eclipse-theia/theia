@@ -115,20 +115,6 @@ export class ExtensionPackage {
         return '';
     }
 
-    protected async resolveVersionRange(): Promise<string | undefined> {
-        const version = this.raw.version;
-        const validVersion = semver.valid(version);
-        if (validVersion) {
-            return validVersion;
-        }
-        const validRange = semver.validRange(version);
-        if (validRange) {
-            return validRange;
-        }
-        const raw = await this.view();
-        return raw.tags ? raw.tags[version] : undefined;
-    }
-
     getAuthor(): string {
         if (this.raw.publisher) {
             return this.raw.publisher.username;
