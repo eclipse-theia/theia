@@ -466,14 +466,16 @@ export namespace WorkspaceFrontendContribution {
                     title,
                     canSelectFiles: true,
                     canSelectFolders: true,
-                    filters: DEFAULT_FILE_FILTER
+                    filters: DEFAULT_FILE_FILTER,
+                    disableAllFilesFilter: true
                 };
             } else {
                 // otherwise, it is always folders. No files at all.
                 return {
                     title,
                     canSelectFiles: false,
-                    canSelectFolders: true
+                    canSelectFolders: true,
+                    disableAllFilesFilter: true
                 };
             }
         }
@@ -485,7 +487,8 @@ export namespace WorkspaceFrontendContribution {
                 title,
                 canSelectFiles: true,
                 canSelectFolders: true,
-                filters: DEFAULT_FILE_FILTER
+                filters: DEFAULT_FILE_FILTER,
+                disableAllFilesFilter: true
             };
         }
 
@@ -495,7 +498,8 @@ export namespace WorkspaceFrontendContribution {
                 title,
                 canSelectFiles: true,
                 canSelectFolders: false,
-                filters: DEFAULT_FILE_FILTER
+                filters: DEFAULT_FILE_FILTER,
+                disableAllFilesFilter: true
             };
         }
 
@@ -503,7 +507,8 @@ export namespace WorkspaceFrontendContribution {
         return {
             title,
             canSelectFiles: false,
-            canSelectFolders: true
+            canSelectFolders: true,
+            disableAllFilesFilter: true
         };
     }
 
