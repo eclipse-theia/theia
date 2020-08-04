@@ -33,6 +33,8 @@ import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { NavigatorDiff } from './navigator-diff';
 import { NavigatorLayoutVersion3Migration } from './navigator-layout-migrations';
+import { NavigatorTabBarDecorator } from './navigator-tab-bar-decorator';
+import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 
 export default new ContainerModule(bind => {
     bindFileNavigatorPreferences(bind);
@@ -72,4 +74,7 @@ export default new ContainerModule(bind => {
     bind(ApplicationShellLayoutMigration).to(NavigatorLayoutVersion3Migration).inSingletonScope();
 
     bind(NavigatorDiff).toSelf().inSingletonScope();
+    bind(NavigatorTabBarDecorator).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(NavigatorTabBarDecorator);
+    bind(TabBarDecorator).toService(NavigatorTabBarDecorator);
 });
