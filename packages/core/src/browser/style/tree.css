@@ -139,3 +139,16 @@
 .theia-tree-element-node {
     width: 100%
 }
+
+.theia-tree-node-indent {
+    position: absolute;
+    height: var(--theia-content-line-height);
+    border-right: var(--theia-border-width) solid transparent;
+}
+.theia-tree-node-indent.always,
+.theia-TreeContainer:hover .theia-tree-node-indent.hover {
+    border-color: var(--theia-tree-inactiveIndentGuidesStroke);
+}
+.theia-tree-node-indent.active {
+    border-color: var(--theia-tree-indentGuidesStroke);
+}

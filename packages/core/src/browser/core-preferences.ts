@@ -72,6 +72,12 @@ export const corePreferenceSchema: PreferenceSchema = {
             'scope': 'language-overridable',
             'enumDescriptions': Object.keys(SUPPORTED_ENCODINGS).map(key => SUPPORTED_ENCODINGS[key].labelLong),
             'included': Object.keys(SUPPORTED_ENCODINGS).length > 1
+        },
+        'workbench.tree.renderIndentGuides': {
+            type: 'string',
+            enum: ['onHover', 'none', 'always'],
+            default: 'onHover',
+            description: 'Controls whether the tree should render indent guides.'
         }
     }
 };
@@ -85,6 +91,7 @@ export interface CoreConfiguration {
     'workbench.iconTheme'?: string | null;
     'workbench.silentNotifications': boolean;
     'files.encoding': string
+    'workbench.tree.renderIndentGuides': 'onHover' | 'none' | 'always';
 }
 
 export const CorePreferences = Symbol('CorePreferences');

@@ -38,6 +38,7 @@ import { ElementExt } from '@phosphor/domutils';
 import { TreeWidgetSelection } from './tree-widget-selection';
 import { MaybePromise } from '../../common/types';
 import { LabelProvider } from '../label-provider';
+import { CorePreferences } from '../core-preferences';
 
 const debounce = require('lodash.debounce');
 
@@ -52,6 +53,7 @@ export const TREE_NODE_SEGMENT_GROW_CLASS = 'theia-TreeNodeSegmentGrow';
 export const EXPANDABLE_TREE_NODE_CLASS = 'theia-ExpandableTreeNode';
 export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
+export const TREE_NODE_INDENT_GUIDE_CLASS = 'theia-tree-node-indent';
 
 export const TreeProps = Symbol('TreeProps');
 
@@ -162,6 +164,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
+
     protected shouldScrollToRow = true;
 
     constructor(
@@ -251,6 +256,11 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 })
             ]);
         }
+        this.toDispose.push(this.corePreferences.onPreferenceChanged(preference => {
+            if (preference.preferenceName === 'workbench.tree.renderIndentGuides') {
+                this.update();
+            }
+        }));
     }
 
     /**
@@ -478,7 +488,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * Actually render the node row.
      */
     protected doRenderNodeRow({ index, node, depth }: TreeWidget.NodeRow): React.ReactNode {
-        return this.renderNode(node, { depth });
+        return <React.Fragment>
+            {this.renderIndent(node, { depth })}
+            {this.renderNode(node, { depth })}
+        </React.Fragment>;
     }
 
     /**
@@ -774,6 +787,55 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     private getIconClass(iconName: string | string[], additionalClasses: string[] = []): string {
         const iconClass = (typeof iconName === 'string') ? ['a', 'fa', `fa-${iconName}`] : ['a'].concat(iconName);
         return iconClass.concat(additionalClasses).join(' ');
+    }
+
+    /**
+     * Render indent for the file tree based on the depth
+     * @param node the tree node.
+     * @param depth the depth of the tree node.
+     */
+    protected renderIndent(node: TreeNode, props: NodeProps): React.ReactNode {
+        const renderIndentGuides = this.corePreferences['workbench.tree.renderIndentGuides'];
+        if (renderIndentGuides === 'none') {
+            return undefined;
+        }
+
+        const indentDivs: React.ReactNode[] = [];
+        let current: TreeNode | undefined = node;
+        let depth = props.depth;
+        while (current && depth) {
+            const classNames: string[] = [TREE_NODE_INDENT_GUIDE_CLASS];
+            if (this.needsActiveIndentGuideline(current)) {
+                classNames.push('active');
+            } else {
+                classNames.push(renderIndentGuides === 'onHover' ? 'hover' : 'always');
+            }
+            const paddingLeft = this.props.leftPadding * depth;
+            indentDivs.unshift(<div key={depth} className={classNames.join(' ')} style={{
+                paddingLeft: `${paddingLeft}px`
+            }} />);
+            current = current.parent;
+            depth--;
+        }
+        return indentDivs;
+    }
+
+    protected needsActiveIndentGuideline(node: TreeNode): boolean {
+        const parent = node.parent;
+        if (!parent || !this.isExpandable(parent)) {
+            return false;
+        }
+        if (SelectableTreeNode.isSelected(parent)) {
+            return true;
+        }
+        if (parent.expanded) {
+            for (const sibling of parent.children) {
+                if (SelectableTreeNode.isSelected(sibling) && !(this.isExpandable(sibling) && sibling.expanded)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
