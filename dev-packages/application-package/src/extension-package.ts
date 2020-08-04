@@ -115,13 +115,6 @@ export class ExtensionPackage {
         return '';
     }
 
-    protected versionRange?: string;
-    async getVersionRange(): Promise<string | undefined> {
-        if (this.versionRange === undefined) {
-            this.versionRange = await this.resolveVersionRange();
-        }
-        return this.versionRange;
-    }
     protected async resolveVersionRange(): Promise<string | undefined> {
         const version = this.raw.version;
         const validVersion = semver.valid(version);
