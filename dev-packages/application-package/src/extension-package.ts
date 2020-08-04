@@ -115,11 +115,6 @@ export class ExtensionPackage {
         return '';
     }
 
-    async getLatestVersion(): Promise<string | undefined> {
-        const raw = await this.view();
-        return raw.latestVersion;
-    }
-
     protected versionRange?: string;
     async getVersionRange(): Promise<string | undefined> {
         if (this.versionRange === undefined) {
