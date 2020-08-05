@@ -35,7 +35,6 @@ import URI from '@theia/core/lib/common/uri';
 import { PreferencesWidget } from './views/preference-widget';
 import { PreferencesEventService } from './util/preference-event-service';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
-import { USER_PREFERENCE_URI } from './user-preference-provider';
 import { Preference, PreferencesCommands, PreferenceMenus } from './util/preference-types';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -47,7 +46,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     @inject(FileService) protected readonly fileService: FileService;
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace) protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
-    @inject(PreferenceService) protected readonly preferenceValueRetrievalService: PreferenceService;
+    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
 
     protected preferencesScope = Preference.DEFAULT_SCOPE;
@@ -101,7 +100,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             isEnabled: Preference.EditorCommandArgs.is,
             isVisible: Preference.EditorCommandArgs.is,
             execute: ({ id, value }: Preference.EditorCommandArgs) => {
-                this.preferenceValueRetrievalService.set(id, undefined, Number(this.preferencesScope.scope), this.preferencesScope.uri);
+                this.preferenceService.set(id, undefined, Number(this.preferencesScope.scope), this.preferencesScope.uri);
             }
         });
     }
@@ -154,11 +153,11 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             const currentPreferenceValue = preferenceNode.preference.values!;
             const key = Preference.LookupKeys[Number(scope)] as keyof Preference.ValuesInAllScopes;
             const valueInCurrentScope = currentPreferenceValue[key] === undefined ? currentPreferenceValue.defaultValue : currentPreferenceValue[key] as PreferenceItem;
-            this.preferenceValueRetrievalService.set(preferenceId, valueInCurrentScope, Number(scope), uri);
+            this.preferenceService.set(preferenceId, valueInCurrentScope, Number(scope), uri);
         }
 
         let jsonEditorWidget: EditorWidget;
-        const jsonUriToOpen = await this.getPreferencesJSONUri(scope, activeScopeIsFolder, uri);
+        const jsonUriToOpen = await this.obtainConfigUri(scope, activeScopeIsFolder, uri);
         if (jsonUriToOpen) {
             jsonEditorWidget = await this.editorManager.open(jsonUriToOpen);
 
@@ -173,35 +172,20 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
         }
     }
 
-    private async getPreferencesJSONUri(scope: string, activeScopeIsFolder: string, uri: string): Promise<URI | undefined> {
-        const scopeNumber = Number(scope);
-        if (PreferenceScope.User === scopeNumber) {
-            return USER_PREFERENCE_URI;
-        } else if (PreferenceScope.Workspace === scopeNumber) {
-            if (activeScopeIsFolder === 'true') {
-                return this.getOrCreateSettingsFile(uri);
-            } else {
-                const configUri = this.workspacePreferenceProvider.getConfigUri();
-                if (configUri) {
-                    if (!await this.fileService.exists(configUri)) {
-                        await this.fileService.create(configUri);
-                    }
-                    return configUri;
-                }
-            }
-
-        } else if (PreferenceScope.Folder === scopeNumber) {
-            return this.getOrCreateSettingsFile(uri);
+    private async obtainConfigUri(serializedScope: string, activeScopeIsFolder: string, resource: string): Promise<URI | undefined> {
+        let scope: PreferenceScope = Number(serializedScope);
+        if (activeScopeIsFolder === 'true') {
+            scope = PreferenceScope.Folder;
         }
-        return undefined;
-    }
-
-    protected async getOrCreateSettingsFile(folderURI: string): Promise<URI> {
-        const folderSettingsURI = new URI(folderURI).resolve('.theia/settings.json');
-        if (!await this.fileService.exists(folderSettingsURI)) {
-            await this.fileService.create(folderSettingsURI);
+        const resourceUri = !!resource ? resource : undefined;
+        const configUri = this.preferenceService.getConfigUri(scope, resourceUri);
+        if (!configUri) {
+            return undefined;
         }
-        return folderSettingsURI;
+        if (configUri && !await this.fileService.exists(configUri)) {
+            await this.fileService.create(configUri);
+        }
+        return configUri;
     }
 
     /**

@@ -16,11 +16,8 @@
 
 import { injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { UserStorageUri } from '@theia/userstorage/lib/browser/user-storage-uri';
 import { PreferenceScope } from '@theia/core/lib/browser';
 import { SectionPreferenceProvider } from './section-preference-provider';
-
-export const USER_PREFERENCE_URI = UserStorageUri.resolve('settings.json');
 
 export const UserPreferenceProviderFactory = Symbol('UserPreferenceProviderFactory');
 export interface UserPreferenceProviderFactory {

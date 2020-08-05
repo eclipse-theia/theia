@@ -88,6 +88,7 @@ export interface PreferenceService extends Disposable {
     overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined;
 
     resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T>;
+    getConfigUri(scope: PreferenceScope, resourceUri?: string): URI | undefined;
 }
 
 /**
@@ -358,4 +359,17 @@ export class PreferenceServiceImpl implements PreferenceService {
             value: result.value !== undefined ? deepFreeze(result.value) : defaultValue
         };
     }
+
+    getConfigUri(scope: PreferenceScope, resourceUri?: string): URI | undefined {
+        const provider = this.getProvider(scope);
+        if (!provider) {
+            return undefined;
+        }
+        const configUri = provider.getConfigUri(resourceUri);
+        if (configUri) {
+            return configUri;
+        }
+        return provider.getContainingConfigUri && provider.getContainingConfigUri(resourceUri);
+    }
+
 }

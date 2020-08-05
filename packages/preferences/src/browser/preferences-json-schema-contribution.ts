@@ -18,8 +18,9 @@ import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { InMemoryResources } from '@theia/core';
 import { JsonSchemaRegisterContext, JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
-import { USER_PREFERENCE_URI } from './user-preference-provider';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser/preferences/preference-contribution';
+import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { UserStorageUri } from '@theia/userstorage/lib/browser/user-storage-uri';
 
 @injectable()
 export class PreferencesJsonSchemaContribution implements JsonSchemaContribution {
@@ -30,12 +31,17 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
     @inject(InMemoryResources)
     protected readonly inmemoryResources: InMemoryResources;
 
+    @inject(PreferenceConfigurations)
+    protected readonly preferenceConfigurations: PreferenceConfigurations;
+
     registerSchemas(context: JsonSchemaRegisterContext): void {
         const serializeSchema = () => JSON.stringify(this.schemaProvider.getCombinedSchema());
         const uri = new URI('vscode://schemas/settings/user');
         this.inmemoryResources.add(uri, serializeSchema());
+        const baseName = this.preferenceConfigurations.getConfigName() + '.json';
+        const fileMatch = [baseName, UserStorageUri.resolve(baseName).toString()];
         context.registerSchema({
-            fileMatch: ['settings.json', USER_PREFERENCE_URI.toString()],
+            fileMatch,
             url: uri.toString()
         });
         this.schemaProvider.onDidPreferenceSchemaChanged(() =>
