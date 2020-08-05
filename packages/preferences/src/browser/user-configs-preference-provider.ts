@@ -23,8 +23,6 @@ import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/pr
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { UserPreferenceProvider, UserPreferenceProviderFactory } from './user-preference-provider';
 
-export const USER_PREFERENCE_FOLDER = new URI().withScheme(UserStorageUri.SCHEME);
-
 /**
  * Binds together preference section prefs providers for user-level preferences.
  */
@@ -52,7 +50,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProvider {
 
     protected createProviders(): void {
         for (const configName of [...this.configurations.getSectionNames(), this.configurations.getConfigName()]) {
-            const sectionUri = USER_PREFERENCE_FOLDER.withPath('/' + configName + '.json');
+            const sectionUri = UserStorageUri.resolve(configName + '.json');
             const sectionKey = sectionUri.toString();
             if (!this.providers.has(sectionKey)) {
                 const provider = this.createProvider(sectionUri, configName);

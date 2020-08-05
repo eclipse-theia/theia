@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, Resource, ResourceError } from '@theia/core/lib/common/resource';
 import { OpenerService, open, WidgetOpenerOptions, Widget } from '@theia/core/lib/browser';
 import { KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser/keybinding';
@@ -46,7 +45,7 @@ export class KeymapsService {
      */
     @postConstruct()
     protected async init(): Promise<void> {
-        this.resource = await this.resourceProvider(new URI().withScheme(UserStorageUri.SCHEME).withPath('/keymaps.json'));
+        this.resource = await this.resourceProvider(UserStorageUri.resolve('keymaps.json'));
         this.reconcile();
         if (this.resource.onDidChangeContents) {
             this.resource.onDidChangeContents(() => this.reconcile());

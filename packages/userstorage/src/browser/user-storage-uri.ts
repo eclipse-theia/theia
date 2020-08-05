@@ -14,7 +14,6 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export namespace UserStorageUri {
+import URI from '@theia/core/lib/common/uri';
 
-    export const SCHEME = 'user_storage';
-}
+export const UserStorageUri = new URI('user_storage:/user');

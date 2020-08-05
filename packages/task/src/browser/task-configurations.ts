@@ -32,7 +32,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { OpenerService } from '@theia/core/lib/browser';
-import { USER_PREFERENCE_FOLDER } from '@theia/preferences/lib/browser/user-configs-preference-provider';
+import { UserStorageUri } from '@theia/userstorage/lib/browser/user-storage-uri';
 
 export interface TaskConfigurationClient {
     /**
@@ -42,7 +42,7 @@ export interface TaskConfigurationClient {
     taskConfigurationChanged: (event: string[]) => void;
 }
 
-export const USER_TASKS_URI = USER_PREFERENCE_FOLDER.withPath('/tasks.json');
+export const USER_TASKS_URI = UserStorageUri.resolve('tasks.json');
 
 /**
  * Watches a tasks.json configuration file and provides a parsed version of the contained task configurations
