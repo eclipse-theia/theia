@@ -19,13 +19,13 @@
 import fetch, { Response, RequestInit } from 'node-fetch';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { getProxyForUrl } from 'proxy-from-env';
-import * as fs from 'fs';
+import { promises as fs, createWriteStream } from 'fs';
 import * as mkdirp from 'mkdirp';
 import * as path from 'path';
 import * as process from 'process';
 import * as stream from 'stream';
-import * as tar from 'tar';
-import * as zlib from 'zlib';
+import * as decompress from 'decompress';
+import * as temp from 'temp';
 
 import { green, red } from 'colors/safe';
 
@@ -33,7 +33,7 @@ import { promisify } from 'util';
 const mkdirpAsPromised = promisify<string, mkdirp.Made>(mkdirp);
 const pipelineAsPromised = promisify(stream.pipeline);
 
-const unzip = require('unzip-stream');
+temp.track();
 
 /**
  * Available options when downloading.
@@ -69,92 +69,93 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
         console.log(red('error: missing mandatory \'theiaPlugins\' property.'));
         return;
     }
+    try {
+        await Promise.all(Object.keys(pck.theiaPlugins).map(
+            plugin => downloadPluginAsync(failures, plugin, pck.theiaPlugins[plugin], pluginsDir, packed)
+        ));
+    } finally {
+        temp.cleanupSync();
+    }
+    failures.forEach(console.error);
+}
 
-    await Promise.all(Object.keys(pck.theiaPlugins).map(async plugin => {
-        if (!plugin) {
-            return;
+/**
+ * Downloads a plugin, will make multiple attempts before actually failing.
+ *
+ * @param failures reference to an array storing all failures
+ * @param plugin plugin short name
+ * @param pluginUrl url to download the plugin at
+ * @param pluginsDir where to download the plugin in
+ * @param packed whether to decompress or not
+ */
+async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl: string, pluginsDir: string, packed: boolean): Promise<void> {
+    if (!plugin) {
+        return;
+    }
+    let fileExt: string;
+    if (pluginUrl.endsWith('tar.gz')) {
+        fileExt = '.tar.gz';
+    } else if (pluginUrl.endsWith('vsix')) {
+        fileExt = '.vsix';
+    } else {
+        console.error(red(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`));
+        return;
+    }
+    const targetPath = path.join(process.cwd(), pluginsDir, `${plugin}${packed === true ? fileExt : ''}`);
+    // Skip plugins which have previously been downloaded.
+    if (await isDownloaded(targetPath)) {
+        console.warn('- ' + plugin + ': already downloaded - skipping');
+        return;
+    }
+
+    const maxAttempts = 5;
+    const retryDelay = 2000;
+
+    let attempts: number;
+    let lastError: Error | undefined;
+    let response: Response | undefined;
+
+    for (attempts = 0; attempts < maxAttempts; attempts++) {
+        if (attempts > 0) {
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
         }
-        const pluginUrl = pck.theiaPlugins[plugin];
-
-        let fileExt: string;
-        if (pluginUrl.endsWith('tar.gz')) {
-            fileExt = '.tar.gz';
-        } else if (pluginUrl.endsWith('vsix')) {
-            fileExt = '.vsix';
-        } else {
-            console.error(red(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`));
-            return;
+        lastError = undefined;
+        try {
+            response = await xfetch(pluginUrl);
+        } catch (error) {
+            lastError = error;
+            continue;
         }
-
-        const targetPath = path.join(process.cwd(), pluginsDir, `${plugin}${packed === true ? fileExt : ''}`);
-
-        // Skip plugins which have previously been downloaded.
-        if (isDownloaded(targetPath)) {
-            console.warn('- ' + plugin + ': already downloaded - skipping');
-            return;
+        const retry = response.status === 439 || response.status >= 500;
+        if (!retry) {
+            break;
         }
+    }
+    if (lastError) {
+        failures.push(red(`x ${plugin}: failed to download, last error:\n ${lastError}`));
+        return;
+    }
+    if (typeof response === 'undefined') {
+        failures.push(red(`x ${plugin}: failed to download (unknown reason)`));
+        return;
+    }
+    if (response.status !== 200) {
+        failures.push(red(`x ${plugin}: failed to download with: ${response.status} ${response.statusText}`));
+        return;
+    }
 
-        const maxAttempts = 5;
-        const retryDelay = 2000;
+    if (fileExt === '.vsix' && packed === true) {
+        // Download .vsix without decompressing.
+        const file = createWriteStream(targetPath);
+        await pipelineAsPromised(response.body, file);
+    } else {
+        await mkdirpAsPromised(targetPath);
+        const tempFile = temp.createWriteStream('theia-plugin-download');
+        await pipelineAsPromised(response.body, tempFile);
+        await decompress(tempFile.path, targetPath);
+    }
 
-        let attempts: number;
-        let lastError: Error | undefined;
-        let response: Response | undefined;
-
-        for (attempts = 0; attempts < maxAttempts; attempts++) {
-            if (attempts > 0) {
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
-            }
-            lastError = undefined;
-            try {
-                response = await xfetch(pluginUrl);
-            } catch (error) {
-                lastError = error;
-                continue;
-            }
-            const retry = response.status === 439 || response.status >= 500;
-            if (!retry) {
-                break;
-            }
-        }
-        if (lastError) {
-            failures.push(red(`x ${plugin}: failed to download, last error:\n ${lastError}`));
-            return;
-        }
-        if (typeof response === 'undefined') {
-            failures.push(red(`x ${plugin}: failed to download (unknown reason)`));
-            return;
-        }
-        if (response.status !== 200) {
-            failures.push(red(`x ${plugin}: failed to download with: ${response.status} ${response.statusText}`));
-            return;
-        }
-
-        if (fileExt === '.tar.gz') {
-            // Decompress .tar.gz files.
-            await mkdirpAsPromised(targetPath);
-            const gunzip = zlib.createGunzip({
-                finishFlush: zlib.Z_SYNC_FLUSH,
-                flush: zlib.Z_SYNC_FLUSH
-            });
-            const untar = tar.x({ cwd: targetPath });
-            await pipelineAsPromised(response.body, gunzip, untar);
-        } else {
-            if (packed === true) {
-                // Download .vsix without decompressing.
-                const file = fs.createWriteStream(targetPath);
-                await pipelineAsPromised(response.body, file);
-            } else {
-                // Decompress .vsix.
-                await pipelineAsPromised(response.body, unzip.Extract({ path: targetPath }));
-            }
-        }
-
-        console.warn(green(`+ ${plugin}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
-    }));
-    failures.forEach(failure => {
-        console.log(failure);
-    });
+    console.warn(green(`+ ${plugin}: downloaded successfully ${attempts > 1 ? `(after ${attempts} attempts)` : ''}`));
 }
 
 /**
@@ -163,8 +164,8 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
  *
  * @returns `true` if the resource is already downloaded, else `false`.
  */
-function isDownloaded(filePath: string): boolean {
-    return fs.existsSync(filePath);
+async function isDownloaded(filePath: string): Promise<boolean> {
+    return fs.stat(filePath).then(() => true, () => false);
 }
 
 /**
