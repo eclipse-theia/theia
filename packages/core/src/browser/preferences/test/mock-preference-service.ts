@@ -20,6 +20,7 @@ import { Emitter, Event } from '../../../common';
 import { OverridePreferenceName } from '../preference-contribution';
 import URI from '../../../common/uri';
 import { PreferenceChanges } from '../preference-service';
+import { PreferenceScope } from '../preference-scope';
 
 @injectable()
 export class MockPreferenceService implements PreferenceService {
@@ -60,4 +61,5 @@ export class MockPreferenceService implements PreferenceService {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     validate(name: string, value: any): boolean { return true; }
+    getConfigUri(scope: PreferenceScope, resourceUri?: string): URI | undefined { return undefined; }
 }

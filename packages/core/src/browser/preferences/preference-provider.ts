@@ -159,11 +159,16 @@ export abstract class PreferenceProvider implements Disposable {
     }
 
     /**
-     * undefined if cannot be provided for the given resource uri
+     * Returns undefined if there is no valid config URI for the given resource URI.
      */
     getConfigUri(resourceUri?: string): URI | undefined {
         return undefined;
     }
+
+    /**
+     * Returns undefined if there is config URI at all for the given resource URI.
+     */
+    getContainingConfigUri?(resourceUri?: string): URI | undefined;
 
     static merge(source: JSONValue | undefined, target: JSONValue): JSONValue {
         if (source === undefined || !JSONExt.isObject(source)) {
