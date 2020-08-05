@@ -615,6 +615,10 @@ export class KeybindingRegistry {
             this.keymaps[i] = [];
         }
     }
+
+    getKeybindingsByScope(scope: KeybindingScope): ScopedKeybinding[] {
+        return this.keymaps[scope];
+    }
 }
 
 export namespace KeybindingRegistry {
