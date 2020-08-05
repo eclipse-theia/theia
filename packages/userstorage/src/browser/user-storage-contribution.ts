@@ -31,10 +31,10 @@ export class UserStorageContribution implements FileServiceContribution {
 
     registerFileSystemProviders(service: FileService): void {
         service.onWillActivateFileSystemProvider(event => {
-            if (event.scheme === UserStorageUri.SCHEME) {
+            if (event.scheme === UserStorageUri.scheme) {
                 event.waitUntil((async () => {
                     const provider = await this.createProvider(service);
-                    service.registerProvider(UserStorageUri.SCHEME, provider);
+                    service.registerProvider(UserStorageUri.scheme, provider);
                 })());
             }
         });
@@ -45,11 +45,17 @@ export class UserStorageContribution implements FileServiceContribution {
         const configDirUri = new URI(await this.environments.getConfigDirUri());
         return new DelegatingFileSystemProvider(delegate, {
             uriConverter: {
-                to: resource => configDirUri.resolve(resource.path).normalizePath(),
+                to: resource => {
+                    const relativePath = UserStorageUri.relative(resource);
+                    if (relativePath) {
+                        return configDirUri.resolve(relativePath).normalizePath();
+                    }
+                    return undefined;
+                },
                 from: resource => {
                     const relativePath = configDirUri.relative(resource);
                     if (relativePath) {
-                        return resource.withScheme(UserStorageUri.SCHEME).withPath('/' + relativePath);
+                        return UserStorageUri.resolve(relativePath);
                     }
                     return undefined;
                 }

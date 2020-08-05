@@ -11,13 +11,16 @@
 - [output] `OutputWidget#setInput` has been removed. The _Output_ view automatically shows the channel when calling `OutputChannel#show`. Moved the `OutputCommands` namespace from the `output-contribution` to its dedicated `output-commands` module to overcome a DI cycle. [#8243](https://github.com/eclipse-theia/theia/pull/8243)
 - [example app] updated yarn.lock so that the latest version of `vscode-ripgrep` is used (`v1.8.0`). This way we can benefit from the recently added support for it using proxy settings when fetching the platform-specific `ripgrep` executable, after npm package install. This should make it a lot easier to build our example application in corporate settings, behind a firewall. [#8280](https://github.com/eclipse-theia/theia/pull/8280)
   - Note to downstream IDE designers: this change will not have an effect beyond this repo's example application. If it's desirable for your product to have the latest `vscode-ripgrep`, you should do similarly in your own `yarn.lock`. 
-<a name="1_4_0_deprecate_file_sytem"></a>
-- [[filesystem]](#1_4_0_deprecate_file_sytem) `FileSystem` and `FileSystemWatcher` services are deprecated [#7908](https://github.com/eclipse-theia/theia/pull/7908)
+<a name="1.5.0_deprecate_file_sytem"></a>
+- [[filesystem]](#1.5.0_deprecate_file_sytem) `FileSystem` and `FileSystemWatcher` services are deprecated [#7908](https://github.com/eclipse-theia/theia/pull/7908)
   - On the backend there is no anymore `FileSystem` implementation. One has to use Node.js APIs instead.
   - On the frontend `FileService` should be used instead. It was ported from VS Code for compatibility with VS Code extensions.
   - On the frontend `EnvVariableServer` should be used instead to access the current user home and available drives.
-<a name="1_4_0_usestorage_as_fs_provider"></a>
-- [[userstorage]](#1_4_0_usestorage_as_fs_provider) `UserStorageService` was replaced by the user data fs provider [#7908](https://github.com/eclipse-theia/theia/pull/7908)
+<a name="1.5.0_usestorage_as_fs_provider"></a>
+- [[userstorage]](#1.5.0_usestorage_as_fs_provider) `UserStorageService` was replaced by the user data fs provider [#7908](https://github.com/eclipse-theia/theia/pull/7908)
+<a name="1.5.0_root_user_storage_uri"></a>
+- [[user-storage]](#1.5.0_root_user_storage_uri) settings URI must start with `/user` root to satisfy expectations of `FileService` []()
+  - If you implement a custom user storage make sure to check old relative locations, otherwise it can cause user data loss.
 
 ## v1.4.0
 

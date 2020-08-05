@@ -37,6 +37,7 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
         protected readonly toDispose = new DisposableCollection()
     ) {
         this.toDispose.push(this.onDidChangeFileEmitter);
+        this.toDispose.push(delegate.onDidChangeFile(changes => this.handleFileChanges(changes)));
     }
 
     dispose(): void {
@@ -52,70 +53,70 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
     }
 
     watch(resource: URI, opts: WatchOptions): Disposable {
-        return this.delegate.watch(this.options.uriConverter.to(resource), opts);
+        return this.delegate.watch(this.toUnderlyingResource(resource), opts);
     }
 
     stat(resource: URI): Promise<Stat> {
-        return this.delegate.stat(this.options.uriConverter.to(resource));
+        return this.delegate.stat(this.toUnderlyingResource(resource));
     }
 
     access(resource: URI, mode?: number): Promise<void> {
         if (hasAccessCapability(this.delegate)) {
-            return this.delegate.access(this.options.uriConverter.to(resource), mode);
+            return this.delegate.access(this.toUnderlyingResource(resource), mode);
         }
         throw new Error('not supported');
     }
 
     fsPath(resource: URI): Promise<string> {
         if (hasAccessCapability(this.delegate)) {
-            return this.delegate.fsPath(this.options.uriConverter.to(resource));
+            return this.delegate.fsPath(this.toUnderlyingResource(resource));
         }
         throw new Error('not supported');
     }
 
     mkdir(resource: URI): Promise<void> {
-        return this.delegate.mkdir(this.options.uriConverter.to(resource));
+        return this.delegate.mkdir(this.toUnderlyingResource(resource));
     }
 
     rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
-        return this.delegate.rename(this.options.uriConverter.to(from), this.options.uriConverter.to(to), opts);
+        return this.delegate.rename(this.toUnderlyingResource(from), this.toUnderlyingResource(to), opts);
     }
 
     copy(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
         if (hasFileFolderCopyCapability(this.delegate)) {
-            return this.delegate.copy(this.options.uriConverter.to(from), this.options.uriConverter.to(to), opts);
+            return this.delegate.copy(this.toUnderlyingResource(from), this.toUnderlyingResource(to), opts);
         }
         throw new Error('not supported');
     }
 
     readFile(resource: URI): Promise<Uint8Array> {
         if (hasReadWriteCapability(this.delegate)) {
-            return this.delegate.readFile(this.options.uriConverter.to(resource));
+            return this.delegate.readFile(this.toUnderlyingResource(resource));
         }
         throw new Error('not supported');
     }
 
     readFileStream(resource: URI, opts: FileReadStreamOptions, token: CancellationToken): ReadableStreamEvents<Uint8Array> {
         if (hasFileReadStreamCapability(this.delegate)) {
-            return this.delegate.readFileStream(this.options.uriConverter.to(resource), opts, token);
+            return this.delegate.readFileStream(this.toUnderlyingResource(resource), opts, token);
         }
         throw new Error('not supported');
     }
 
     readdir(resource: URI): Promise<[string, FileType][]> {
-        return this.delegate.readdir(this.options.uriConverter.to(resource));
+        return this.delegate.readdir(this.toUnderlyingResource(resource));
     }
 
     writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
         if (hasReadWriteCapability(this.delegate)) {
-            return this.delegate.writeFile(this.options.uriConverter.to(resource), content, opts);
+            return this.delegate.writeFile(this.toUnderlyingResource(resource), content, opts);
         }
         throw new Error('not supported');
     }
 
     open(resource: URI, opts: FileOpenOptions): Promise<number> {
         if (hasOpenReadWriteCloseCapability(this.delegate)) {
-            return this.delegate.open(this.options.uriConverter.to(resource), opts);
+            return this.delegate.open(this.toUnderlyingResource(resource), opts);
         }
         throw new Error('not supported');
     }
@@ -142,7 +143,7 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
     }
 
     delete(resource: URI, opts: FileDeleteOptions): Promise<void> {
-        return this.delegate.delete(this.options.uriConverter.to(resource), opts);
+        return this.delegate.delete(this.toUnderlyingResource(resource), opts);
     }
 
     updateFile(resource: URI, changes: TextDocumentContentChangeEvent[], opts: FileUpdateOptions): Promise<FileUpdateResult> {
@@ -155,7 +156,7 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
     protected handleFileChanges(changes: readonly FileChange[]): void {
         const delegatingChanges: FileChange[] = [];
         for (const change of changes) {
-            const delegatingResource = this.options.uriConverter.from(change.resource);
+            const delegatingResource = this.fromUnderlyingResource(change.resource);
             if (delegatingResource) {
                 delegatingChanges.push({
                     resource: delegatingResource,
@@ -172,21 +173,25 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
      * Converts to an underlying fs provider resource format.
      *
      * For example converting `user-storage` resources to `file` resources under a user home:
-     * user-storage:/settings.json => file://home/.theia/settings.json
+     * user-storage:/user/settings.json => file://home/.theia/settings.json
      */
     toUnderlyingResource(resource: URI): URI {
-        return this.options.uriConverter.to(resource);
+        const underlying = this.options.uriConverter.to(resource);
+        if (!underlying) {
+            throw new Error('invalid resource: ' + resource.toString());
+        }
+        return underlying;
     }
 
     /**
      * Converts from an underlying fs provider resource format.
      *
      * For example converting `file` resources unser a user home to `user-storage` resource:
-     * - file://home/.theia/settings.json => user-storage:/settings.json
+     * - file://home/.theia/settings.json => user-storage:/user/settings.json
      * - file://documents/some-document.txt => undefined
      */
-    fromUnderlyingResource(resource: URI): URI {
-        return this.options.uriConverter.to(resource);
+    fromUnderlyingResource(resource: URI): URI | undefined {
+        return this.options.uriConverter.from(resource);
     }
 
 }
@@ -197,11 +202,13 @@ export namespace DelegatingFileSystemProvider {
     export interface URIConverter {
         /**
          * Converts to an underlying fs provider resource format.
+         * Returns undefined if the given resource is not valid resource.
          *
          * For example converting `user-storage` resources to `file` resources under a user home:
-         * user-storage:/settings.json => file://home/.theia/settings.json
+         * user-storage:/user/settings.json => file://home/.theia/settings.json
+         * user-storage:/settings.json => undefined
          */
-        to(resource: URI): URI;
+        to(resource: URI): URI | undefined;
         /**
          * Converts from an underlying fs provider resource format.
          *

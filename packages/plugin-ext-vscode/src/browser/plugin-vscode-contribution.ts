@@ -25,7 +25,7 @@ export class PluginVSCodeContribution implements FileServiceContribution {
 
     registerFileSystemProviders(service: FileService): void {
         this.mapSchemas(service, Schemes.vscodeRemote, 'file');
-        this.mapSchemas(service, Schemes.userData, UserStorageUri.SCHEME);
+        this.mapSchemas(service, Schemes.userData, UserStorageUri.scheme);
     }
 
     protected mapSchemas(service: FileService, from: string, to: string): void {

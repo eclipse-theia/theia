@@ -1662,7 +1662,7 @@ export class FileService {
      * Converts to an underlying fs provider resource format.
      *
      * For example converting `user-storage` resources to `file` resources under a user home:
-     * user-storage:/settings.json => file://home/.theia/settings.json
+     * user-storage:/user/settings.json => file://home/.theia/settings.json
      */
     async toUnderlyingResource(resource: URI): Promise<URI> {
         let provider = await this.withProvider(resource);
