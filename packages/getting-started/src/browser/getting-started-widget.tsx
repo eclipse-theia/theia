@@ -18,9 +18,8 @@ import * as React from 'react';
 import URI from '@theia/core/lib/common/uri';
 import { injectable, inject, postConstruct } from 'inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
-import { CommandRegistry, isOSX, environment } from '@theia/core/lib/common';
+import { CommandRegistry, isOSX, environment, Path } from '@theia/core/lib/common';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileSystemUtils } from '@theia/filesystem/lib/common/filesystem-utils';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
 import { CommonCommands, LabelProvider } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
@@ -258,7 +257,7 @@ export class GettingStartedWidget extends ReactWidget {
         workspaces.forEach(workspace => {
             const uri = new URI(workspace);
             const pathLabel = this.labelProvider.getLongName(uri);
-            const path = this.home ? FileSystemUtils.tildifyPath(pathLabel, this.home) : pathLabel;
+            const path = this.home ? Path.tildify(pathLabel, this.home) : pathLabel;
             paths.push(path);
         });
         return paths;

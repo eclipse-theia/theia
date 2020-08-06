@@ -373,4 +373,25 @@ declare module '@theia/plugin' {
 
     //#endregion
 
+
+    export interface ResourceLabelFormatter {
+        scheme: string;
+        authority?: string;
+        formatting: ResourceLabelFormatting;
+    }
+
+    export interface ResourceLabelFormatting {
+        label: string; // myLabel:/${path}
+        // TODO@isi
+        // eslint-disable-next-line vscode-dts-literal-or-types
+        separator: '/' | '\\' | '';
+        tildify?: boolean;
+        normalizeDriveLetter?: boolean;
+        workspaceSuffix?: string;
+        authorityPrefix?: string;
+    }
+
+    export namespace workspace {
+        export function registerResourceLabelFormatter(formatter: ResourceLabelFormatter): Disposable;
+    }
 }

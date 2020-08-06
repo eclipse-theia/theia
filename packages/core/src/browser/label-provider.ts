@@ -14,13 +14,15 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable, named, postConstruct } from 'inversify';
 import * as fileIcons from 'file-icons-js';
 import URI from '../common/uri';
 import { ContributionProvider } from '../common/contribution-provider';
 import { Prioritizeable } from '../common/types';
-import { Event, Emitter } from '../common';
+import { Event, Emitter, Disposable, Path } from '../common';
 import { FrontendApplicationContribution } from './frontend-application';
+import { EnvVariablesServer } from '../common/env-variables/env-variables-protocol';
+import { ResourceLabelFormatter, ResourceLabelFormatting } from '../common/label-protocol';
 
 /**
  * @internal don't export it, use `LabelProvider.folderIcon` instead.
@@ -106,6 +108,19 @@ export namespace URIIconReference {
 @injectable()
 export class DefaultUriLabelProviderContribution implements LabelProviderContribution {
 
+    protected formatters: ResourceLabelFormatter[] = [];
+    protected readonly onDidChangeEmitter = new Emitter<DidChangeLabelEvent>();
+    protected homePath: string | undefined;
+    @inject(EnvVariablesServer) protected readonly envVariablesServer: EnvVariablesServer;
+
+    @postConstruct()
+    init(): void {
+        this.envVariablesServer.getHomeDirUri().then(result => {
+            this.homePath = result;
+            this.fireOnDidChange();
+        });
+    }
+
     canHandle(element: object): number {
         if (element instanceof URI || URIIconReference.is(element)) {
             return 1;
@@ -148,11 +163,96 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
 
     getLongName(element: URI | URIIconReference): string | undefined {
         const uri = this.getUri(element);
+        if (uri) {
+            const formatting = this.findFormatting(uri);
+            if (formatting) {
+                return this.formatUri(uri, formatting);
+            }
+        }
         return uri && uri.path.toString();
     }
 
     protected getUri(element: URI | URIIconReference): URI | undefined {
         return URIIconReference.is(element) ? element.uri : element;
+    }
+
+    registerFormatter(formatter: ResourceLabelFormatter): Disposable {
+        this.formatters.push(formatter);
+        this.fireOnDidChange();
+        return Disposable.create(() => {
+            this.formatters = this.formatters.filter(f => f !== formatter);
+            this.fireOnDidChange();
+        });
+    }
+
+    get onDidChange(): Event<DidChangeLabelEvent> {
+        return this.onDidChangeEmitter.event;
+    }
+
+    private fireOnDidChange(): void {
+        this.onDidChangeEmitter.fire({
+            affects: (element: URI) => this.canHandle(element) > 0
+        });
+    }
+
+    // copied and modified from https://github.com/microsoft/vscode/blob/1.44.2/src/vs/workbench/services/label/common/labelService.ts
+    /*---------------------------------------------------------------------------------------------
+    *  Copyright (c) Microsoft Corporation. All rights reserved.
+    *  Licensed under the MIT License. See License.txt in the project root for license information.
+    *--------------------------------------------------------------------------------------------*/
+    private readonly labelMatchingRegexp = /\${(scheme|authority|path|query)}/g;
+    protected formatUri(resource: URI, formatting: ResourceLabelFormatting): string {
+        let label = formatting.label.replace(this.labelMatchingRegexp, (match, token) => {
+            switch (token) {
+                case 'scheme': return resource.scheme;
+                case 'authority': return resource.authority;
+                case 'path': return resource.path.toString();
+                case 'query': return resource.query;
+                default: return '';
+            }
+        });
+
+        // convert \c:\something => C:\something
+        if (formatting.normalizeDriveLetter && this.hasDriveLetter(label)) {
+            label = label.charAt(1).toUpperCase() + label.substr(2);
+        }
+
+        if (formatting.tildify) {
+            label = Path.tildify(label, this.homePath ? this.homePath : '');
+        }
+        if (formatting.authorityPrefix && resource.authority) {
+            label = formatting.authorityPrefix + label;
+        }
+
+        return label.replace(/\//g, formatting.separator);
+    }
+
+    private hasDriveLetter(path: string): boolean {
+        return !!(path && path[2] === ':');
+    }
+
+    protected findFormatting(resource: URI): ResourceLabelFormatting | undefined {
+        let bestResult: ResourceLabelFormatter | undefined;
+
+        this.formatters.forEach(formatter => {
+            if (formatter.scheme === resource.scheme) {
+                if (!bestResult && !formatter.authority) {
+                    bestResult = formatter;
+                    return;
+                }
+                if (!formatter.authority) {
+                    return;
+                }
+
+                if ((formatter.authority.toLowerCase() === resource.authority.toLowerCase()) &&
+                    (!bestResult || !bestResult.authority || formatter.authority.length > bestResult.authority.length ||
+                        ((formatter.authority.length === bestResult.authority.length) && formatter.priority))) {
+                    bestResult = formatter;
+                }
+            }
+        });
+
+        return bestResult ? bestResult.formatting : undefined;
     }
 }
 

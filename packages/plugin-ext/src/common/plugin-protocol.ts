@@ -24,6 +24,7 @@ import { RecursivePartial } from '@theia/core/lib/common/types';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { ColorDefinition } from '@theia/core/lib/browser/color-registry';
+import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -83,7 +84,8 @@ export interface PluginPackageContribution {
     taskDefinitions?: PluginTaskDefinitionContribution[];
     problemMatchers?: PluginProblemMatcherContribution[];
     problemPatterns?: PluginProblemPatternContribution[];
-    jsonValidation?: PluginJsonValidationContribution[]
+    jsonValidation?: PluginJsonValidationContribution[];
+    resourceLabelFormatters?: ResourceLabelFormatter[];
 }
 
 export interface PluginPackageViewContainer {
@@ -485,6 +487,7 @@ export interface PluginContribution {
     taskDefinitions?: TaskDefinition[];
     problemMatchers?: ProblemMatcherContribution[];
     problemPatterns?: ProblemPatternContribution[];
+    resourceLabelFormatters?: ResourceLabelFormatter[];
 }
 
 export interface SnippetContribution {

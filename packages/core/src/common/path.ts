@@ -59,6 +59,24 @@ export class Path {
         return path;
     }
 
+    /**
+     * Tildify path, replacing `home` with `~` if user's `home` is present at the beginning of the path.
+     * This is a non-operation for Windows.
+     *
+     * @param resourcePath
+     * @param home
+     */
+    static tildify(resourcePath: string, home: string): string {
+        const path = new Path(resourcePath);
+        const isWindows = path.root && Path.isDrive(path.root.base);
+
+        if (!isWindows && home && resourcePath.indexOf(`${home}/`) === 0) {
+            return resourcePath.replace(`${home}/`, '~/');
+        }
+
+        return resourcePath;
+    }
+
     readonly isAbsolute: boolean;
     readonly isRoot: boolean;
     readonly root: Path | undefined;
