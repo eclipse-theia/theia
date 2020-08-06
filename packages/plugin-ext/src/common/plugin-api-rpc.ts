@@ -77,6 +77,7 @@ import { MaybePromise } from '@theia/core/lib/common/types';
 import { QuickTitleButton } from '@theia/core/lib/common/quick-open-model';
 import * as files from '@theia/filesystem/lib/common/files';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -1441,7 +1442,8 @@ export const PLUGIN_RPC_CONTEXT = {
     SCM_MAIN: createProxyIdentifier<ScmMain>('ScmMain'),
     DECORATIONS_MAIN: createProxyIdentifier<DecorationsMain>('DecorationsMain'),
     WINDOW_MAIN: createProxyIdentifier<WindowMain>('WindowMain'),
-    CLIPBOARD_MAIN: <ProxyIdentifier<ClipboardMain>>createProxyIdentifier<ClipboardMain>('ClipboardMain')
+    CLIPBOARD_MAIN: <ProxyIdentifier<ClipboardMain>>createProxyIdentifier<ClipboardMain>('ClipboardMain'),
+    LABEL_SERVICE_MAIN: <ProxyIdentifier<LabelServiceMain>>createProxyIdentifier<LabelServiceMain>('LabelServiceMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -1467,7 +1469,8 @@ export const MAIN_RPC_CONTEXT = {
     FILE_SYSTEM_EXT: createProxyIdentifier<FileSystemExt>('FileSystemExt'),
     ExtHostFileSystemEventService: createProxyIdentifier<ExtHostFileSystemEventServiceShape>('ExtHostFileSystemEventService'),
     SCM_EXT: createProxyIdentifier<ScmExt>('ScmExt'),
-    DECORATIONS_EXT: createProxyIdentifier<DecorationsExt>('DecorationsExt')
+    DECORATIONS_EXT: createProxyIdentifier<DecorationsExt>('DecorationsExt'),
+    LABEL_SERVICE_EXT: createProxyIdentifier<LabelServiceExt>('LabelServiceExt')
 };
 
 export interface TasksExt {
@@ -1491,4 +1494,13 @@ export interface TasksMain {
 export interface RawColorInfo {
     color: [number, number, number, number];
     range: Range;
+}
+
+export interface LabelServiceExt {
+    $registerResourceLabelFormatter(formatter: ResourceLabelFormatter): theia.Disposable;
+}
+
+export interface LabelServiceMain {
+    $registerResourceLabelFormatter(handle: number, formatter: ResourceLabelFormatter): void;
+    $unregisterResourceLabelFormatter(handle: number): void;
 }

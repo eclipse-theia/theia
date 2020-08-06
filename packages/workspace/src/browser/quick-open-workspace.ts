@@ -23,7 +23,7 @@ import URI from '@theia/core/lib/common/uri';
 import * as moment from 'moment';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { FileSystemUtils } from '@theia/filesystem/lib/common';
+import { Path } from '@theia/core/lib/common';
 
 @injectable()
 export class QuickOpenWorkspace implements QuickOpenModel {
@@ -69,7 +69,7 @@ export class QuickOpenWorkspace implements QuickOpenModel {
             const iconClass = icon === '' ? undefined : icon + ' file-icon';
             this.items.push(new QuickOpenGroupItem({
                 label: uri.path.base,
-                description: FileSystemUtils.tildifyPath(uri.path.toString(), home),
+                description: Path.tildify(uri.path.toString(), home),
                 groupLabel: `last modified ${moment(stat.mtime).fromNow()}`,
                 iconClass,
                 run: (mode: QuickOpenMode): boolean => {

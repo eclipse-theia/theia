@@ -60,6 +60,7 @@ import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/co
 import { RecursivePartial } from '@theia/core/lib/common/types';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common/task-protocol';
 import { ColorDefinition } from '@theia/core/lib/browser/color-registry';
+import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 
 namespace nls {
     export function localize(key: string, _default: string): string {
@@ -270,6 +271,14 @@ export class TheiaPluginScanner implements PluginScanner {
             }
         } catch (err) {
             console.error(`Could not read '${rawPlugin.name}' contribution 'problemPatterns'.`, rawPlugin.contributes!.problemPatterns, err);
+        }
+
+        try {
+            if (rawPlugin.contributes!.resourceLabelFormatters) {
+                contributions.resourceLabelFormatters = rawPlugin.contributes!.resourceLabelFormatters as ResourceLabelFormatter[];
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'resourceLabelFormatters'.`, rawPlugin.contributes!.resourceLabelFormatters, err);
         }
 
         try {

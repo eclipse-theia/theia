@@ -16,6 +16,7 @@
 
 import * as assert from 'assert';
 import { Path } from './path';
+import { expect } from 'chai';
 
 describe('Path', () => {
 
@@ -256,4 +257,52 @@ describe('Path', () => {
         });
     }
 
+    const linuxHome = '/home/test-user';
+    const windowsHome = '/C:/Users/test-user';
+
+    describe('Linux', () => {
+        it('should shorten path on Linux, path starting with home', async () => {
+            const path = `${linuxHome}/a/b/theia`;
+            const expected = '~/a/b/theia';
+            expect(Path.tildify(path, linuxHome)).eq(expected);
+        });
+
+        it('should shorten path on Linux, path starting with home with duplication', async () => {
+            const path = `${linuxHome}/${linuxHome}/a/b/theia`;
+            const expected = `~/${linuxHome}/a/b/theia`;
+            expect(Path.tildify(path, linuxHome)).eq(expected);
+        });
+
+        it('should not shorten path on Linux, path not starting with home', async () => {
+            const path = `/test/${linuxHome}/a/b/theia`;
+            const expected = `/test/${linuxHome}/a/b/theia`;
+            expect(Path.tildify(path, linuxHome)).eq(expected);
+        });
+
+        it('should not shorten path on Linux, path not starting with correct home', async () => {
+            const path = `/test/${linuxHome}123/a/b/theia`;
+            const expected = `/test/${linuxHome}123/a/b/theia`;
+            expect(Path.tildify(path, linuxHome)).eq(expected);
+        });
+
+        it('should not shorten path on Linux when home is empty', async () => {
+            const path = `${linuxHome}/a/b/theia`;
+            const expected = `${linuxHome}/a/b/theia`;
+            expect(Path.tildify(path, '')).eq(expected);
+        });
+    });
+
+    describe('Windows', () => {
+        it('should not shorten path on Windows', async () => {
+            const path = `${windowsHome}/a/b/theia`;
+            const expected = `${windowsHome}/a/b/theia`;
+            expect(Path.tildify(path, windowsHome)).eq(expected);
+        });
+
+        it('should not shorten path on Windows when home is empty', async () => {
+            const path = `${windowsHome}/a/b/theia`;
+            const expected = `${windowsHome}/a/b/theia`;
+            expect(Path.tildify(path, '')).eq(expected);
+        });
+    });
 });

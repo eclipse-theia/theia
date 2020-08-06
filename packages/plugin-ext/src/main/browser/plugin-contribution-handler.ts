@@ -14,13 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { ITokenTypeMap, IEmbeddedLanguagesMap, StandardTokenType } from 'vscode-textmate';
 import { TextmateRegistry, getEncodedLanguageId, MonacoTextmateService, GrammarDefinition } from '@theia/monaco/lib/browser/textmate';
 import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginViewRegistry } from './view/plugin-view-registry';
 import { PluginContribution, IndentationRules, FoldingRules, ScopeMap, DeployedPlugin, GrammarsContribution } from '../../common';
-import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
+import {
+    DefaultUriLabelProviderContribution,
+    LabelProviderContribution,
+    PreferenceSchemaProvider
+} from '@theia/core/lib/browser';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser/preferences';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
 import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
@@ -34,6 +38,7 @@ import { DebugSchemaUpdater } from '@theia/debug/lib/browser/debug-schema-update
 import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-service';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { PluginIconThemeService } from './plugin-icon-theme-service';
+import { ContributionProvider } from '@theia/core/lib/common';
 
 @injectable()
 export class PluginContributionHandler {
@@ -90,6 +95,9 @@ export class PluginContributionHandler {
 
     @inject(PluginIconThemeService)
     protected readonly iconThemeService: PluginIconThemeService;
+
+    @inject(ContributionProvider) @named(LabelProviderContribution)
+    protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>;
 
     protected readonly commandHandlers = new Map<string, CommandHandler['execute'] | undefined>();
 
@@ -303,6 +311,18 @@ export class PluginContributionHandler {
                 );
             }
             this.debugSchema.update();
+        }
+
+        if (contributions.resourceLabelFormatters) {
+            for (const formatter of contributions.resourceLabelFormatters) {
+                for (const contribution of this.contributionProvider.getContributions()) {
+                    if (contribution instanceof DefaultUriLabelProviderContribution) {
+                        pushContribution(`resourceLabelFormatters.${formatter.scheme}`,
+                            () => contribution.registerFormatter(formatter)
+                        );
+                    }
+                }
+            }
         }
 
         return toDispose;

@@ -30,6 +30,10 @@ import { WorkspaceVariableContribution } from './workspace-variable-contribution
 import { WorkspaceService } from './workspace-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { MockEnvVariablesServerImpl } from '@theia/core/lib/browser/test/mock-env-variables-server';
+import { FileUri } from '@theia/core/lib/node';
+import * as temp from 'temp';
 
 after(() => disableJSDOM());
 
@@ -55,6 +59,7 @@ beforeEach(() => {
     container.bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
     container.bind(WorkspaceUriLabelProviderContribution).toSelf().inSingletonScope();
     container.bind(FileService).toConstantValue({} as FileService);
+    container.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(FileUri.create(temp.track().mkdirSync())));
     labelProvider = container.get(WorkspaceUriLabelProviderContribution);
 });
 

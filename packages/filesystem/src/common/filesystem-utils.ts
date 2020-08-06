@@ -16,27 +16,8 @@
 
 import { FileStat } from '../common/files';
 import URI from '@theia/core/lib/common/uri';
-import { Path } from '@theia/core/lib/common';
 
 export namespace FileSystemUtils {
-
-    /**
-     * Tildify path, replacing `home` with `~` if user's `home` is present at the beginning of the path.
-     * This is a non-operation for Windows.
-     *
-     * @param resourcePath
-     * @param home
-     */
-    export function tildifyPath(resourcePath: string, home: string): string {
-        const path = new Path(resourcePath);
-        const isWindows = path.root && Path.isDrive(path.root.base);
-
-        if (!isWindows && home && resourcePath.indexOf(`${home}/`) === 0) {
-            return resourcePath.replace(`${home}/`, '~/');
-        }
-
-        return resourcePath;
-    }
 
     /**
      * Generate unique URI for a given parent which does not collide
