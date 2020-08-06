@@ -81,7 +81,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'workspaceContains',
         'onView',
         'onUri',
-        'onWebviewPanel'
+        'onWebviewPanel',
+        'onFileSystem'
     ]);
 
     private configStorage: ConfigStorage | undefined;
