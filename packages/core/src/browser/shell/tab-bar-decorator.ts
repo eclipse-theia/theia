@@ -16,9 +16,10 @@
 
 import debounce = require('lodash.debounce');
 import { Title, Widget } from '@phosphor/widgets';
-import { inject, injectable, named, postConstruct } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { Event, Emitter, ContributionProvider } from '../../common';
 import { WidgetDecoration } from '../widget-decoration';
+import { FrontendApplicationContribution } from '../frontend-application';
 
 export const TabBarDecorator = Symbol('TabBarDecorator');
 
@@ -43,7 +44,7 @@ export interface TabBarDecorator {
 }
 
 @injectable()
-export class TabBarDecoratorService {
+export class TabBarDecoratorService implements FrontendApplicationContribution {
 
     protected readonly onDidChangeDecorationsEmitter = new Emitter<void>();
 
@@ -52,8 +53,7 @@ export class TabBarDecoratorService {
     @inject(ContributionProvider) @named(TabBarDecorator)
     protected readonly contributions: ContributionProvider<TabBarDecorator>;
 
-    @postConstruct()
-    protected init(): void {
+    initialize(): void {
         this.contributions.getContributions().map(decorator => decorator.onDidChangeDecorations(this.fireDidChangeDecorations));
     }
 

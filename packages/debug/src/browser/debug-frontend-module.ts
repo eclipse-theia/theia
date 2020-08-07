@@ -57,6 +57,8 @@ import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-ser
 import { DebugBreakpointWidget } from './editor/debug-breakpoint-widget';
 import { DebugInlineValueDecorator } from './editor/debug-inline-value-decorator';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
+import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
+import { DebugTabBarDecorator } from './debug-tab-bar-decorator';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
@@ -116,4 +118,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bindLaunchPreferences(bind);
 
     bind(DebugWatchManager).toSelf().inSingletonScope();
+
+    bind(DebugTabBarDecorator).toSelf().inSingletonScope();
+    bind(TabBarDecorator).toService(DebugTabBarDecorator);
 });
