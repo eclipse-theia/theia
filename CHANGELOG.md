@@ -27,6 +27,9 @@
   - If you implement a custom user storage make sure to check old relative locations, otherwise it can cause user data loss.
 <a name="1_5_0_electron_window_options_ipc">
 - [[electron]](#1_5_0_electron_window_options_ipc) Removed the `set-window-options` and `get-persisted-window-options-additions` Electron IPC handlers from the Electron Main process.
+<a name="1.5.0_non_blocking_bulk_edit"></a>
+- [[monaco]](#1.5.0_non_blocking_bulk_edit) `MonacoWorkspace.applyBulkEdit` does not open any editors anymore to avoid blocking [#8329](https://github.com/eclipse-theia/theia/pull/8329)
+  - Consequently, it does not accept editor opener options, and `MonacoWorkspace.openEditors` and `MonacoWorkspace.toTextEditWithEditor` are removed.
 
 ## v1.4.0
 

@@ -21,7 +21,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter } from '@theia/core/lib/common/event';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
-import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
+import { EditorManager } from '@theia/editor/lib/browser';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
@@ -254,31 +254,35 @@ export class MonacoWorkspace {
         });
     }
 
-    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit, options?: EditorOpenerOptions): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
+    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
         try {
-            const unresolvedEdits = this.groupEdits(workspaceEdit);
-            const edits = await this.openEditors(unresolvedEdits, options);
+            const edits = this.groupEdits(workspaceEdit);
             this.checkVersions(edits);
             let totalEdits = 0;
             let totalFiles = 0;
             for (const edit of edits) {
                 if (TextEdits.is(edit)) {
-                    const { editor } = (await this.toTextEditWithEditor(edit));
-                    const model = editor.document.textEditorModel;
-                    const currentSelections = editor.getControl().getSelections() || [];
-                    const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = edit.textEdits.map(e => ({
-                        identifier: undefined,
-                        forceMoveMarkers: false,
-                        range: new monaco.Range(e.range.startLineNumber, e.range.startColumn, e.range.endLineNumber, e.range.endColumn),
-                        text: e.text
-                    }));
-                    // start a fresh operation
-                    model.pushStackElement();
-                    model.pushEditOperations(currentSelections, editOperations, (_: monaco.editor.IIdentifiedSingleEditOperation[]) => currentSelections);
-                    // push again to make this change an undoable operation
-                    model.pushStackElement();
-                    totalFiles += 1;
-                    totalEdits += editOperations.length;
+                    const reference = await this.textModelService.createModelReference(new URI(edit.uri));
+                    try {
+                        const model = reference.object.textEditorModel;
+                        const editor = MonacoEditor.findByDocument(this.editorManager, reference.object)[0];
+                        const cursorState = editor?.getControl().getSelections() || [];
+                        const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = edit.textEdits.map(e => ({
+                            identifier: undefined,
+                            forceMoveMarkers: false,
+                            range: new monaco.Range(e.range.startLineNumber, e.range.startColumn, e.range.endLineNumber, e.range.endColumn),
+                            text: e.text
+                        }));
+                        // start a fresh operation
+                        model.pushStackElement();
+                        model.pushEditOperations(cursorState, editOperations, () => cursorState);
+                        // push again to make this change an undoable operation
+                        model.pushStackElement();
+                        totalFiles += 1;
+                        totalEdits += editOperations.length;
+                    } finally {
+                        reference.dispose();
+                    }
                 } else if (CreateResourceEdit.is(edit) || DeleteResourceEdit.is(edit) || RenameResourceEdit.is(edit)) {
                     await this.performResourceEdit(edit);
                 } else {
@@ -296,39 +300,13 @@ export class MonacoWorkspace {
         }
     }
 
-    protected async openEditors(edits: Edit[], options?: EditorOpenerOptions): Promise<Edit[]> {
-        const result = [];
-        for (const edit of edits) {
-            if (TextEdits.is(edit) && TextEdits.isVersioned(edit) && !EditsByEditor.is(edit)) {
-                result.push(await this.toTextEditWithEditor(edit, options));
-            } else {
-                result.push(edit);
-            }
-        }
-        return result;
-    }
-
-    protected async toTextEditWithEditor(textEdit: TextEdits, options?: EditorOpenerOptions): Promise<EditsByEditor> {
-        if (EditsByEditor.is(textEdit)) {
-            return textEdit;
-        }
-        const editorWidget = await this.editorManager.open(new URI(textEdit.uri), options);
-        const editor = MonacoEditor.get(editorWidget);
-        if (!editor) {
-            throw Error(`Could not open editor. URI: ${textEdit.uri}`);
-        }
-        const textEditWithEditor = { ...textEdit, editor };
-        return textEditWithEditor;
-    }
-
     protected checkVersions(edits: Edit[]): void {
         for (const textEdit of edits.filter(TextEdits.is).filter(TextEdits.isVersioned)) {
-            if (!EditsByEditor.is(textEdit)) {
-                throw Error(`Could not open editor for URI: ${textEdit.uri}.`);
-            }
-            const model = textEdit.editor.document.textEditorModel;
-            if (textEdit.version !== undefined && model.getVersionId() !== textEdit.version) {
-                throw Error(`Version conflict in editor. URI: ${textEdit.uri}`);
+            if (typeof textEdit.version === 'number') {
+                const model = this.textModelService.get(textEdit.uri);
+                if (model && model.textEditorModel.getVersionId() !== textEdit.version) {
+                    throw new Error(`${model.uri} has changed in the meantime`);
+                }
             }
         }
     }
