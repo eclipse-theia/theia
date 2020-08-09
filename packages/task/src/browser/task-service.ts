@@ -16,7 +16,7 @@
 
 import { ApplicationShell, FrontendApplication, WidgetManager, WidgetOpenMode } from '@theia/core/lib/browser';
 import { open, OpenerService } from '@theia/core/lib/browser/opener-service';
-import { ILogger, CommandService } from '@theia/core/lib/common';
+import { CommandService, ILogger } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { QuickPickItem, QuickPickService } from '@theia/core/lib/common/quick-pick-service';
@@ -32,24 +32,24 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
 import {
+    ApplyToKind,
+    BackgroundTaskEndedEvent,
+    DependsOrder,
     NamedProblemMatcher,
     ProblemMatchData,
     ProblemMatcher,
+    RevealKind,
     RunTaskOption,
     TaskConfiguration,
+    TaskConfigurationScope,
     TaskCustomization,
-    TaskExitedEvent,
-    TaskInfo,
-    TaskOutputProcessedEvent,
-    BackgroundTaskEndedEvent,
     TaskDefinition,
-    TaskServer,
+    TaskExitedEvent,
     TaskIdentifier,
-    DependsOrder,
-    RevealKind,
-    ApplyToKind,
+    TaskInfo,
     TaskOutputPresentation,
-    TaskConfigurationScope
+    TaskOutputProcessedEvent,
+    TaskServer
 } from '../common';
 import { TaskWatcher } from '../common/task-watcher';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
@@ -203,9 +203,6 @@ export class TaskService implements TaskConfigurationClient {
                 terminateSignal: new Deferred<string | undefined>(),
                 isBackgroundTaskEnded: new Deferred<boolean | undefined>()
             });
-            const taskConfig = event.config;
-            const taskIdentifier = taskConfig ? this.getTaskIdentifier(taskConfig) : event.taskId.toString();
-            this.messageService.info(`Task '${taskIdentifier}' has been started.`);
         });
 
         this.taskWatcher.onOutputProcessed(async (event: TaskOutputProcessedEvent) => {
@@ -300,10 +297,7 @@ export class TaskService implements TaskConfigurationClient {
             const taskConfig = event.config;
             const taskIdentifier = taskConfig ? this.getTaskIdentifier(taskConfig) : event.taskId.toString();
             if (event.code !== undefined) {
-                const message = `Task '${taskIdentifier}' has exited with code ${event.code}.`;
-                if (event.code === 0) {
-                    this.messageService.info(message);
-                } else {
+                if (event.code !== 0) {
                     const eventTaskConfig = event.config;
                     if (eventTaskConfig && eventTaskConfig.presentation && eventTaskConfig.presentation.reveal === RevealKind.Silent && event.terminalId) {
                         const terminal = this.terminalService.getByTerminalId(event.terminalId);
@@ -316,7 +310,7 @@ export class TaskService implements TaskConfigurationClient {
                             }
                         }
                     }
-                    this.messageService.error(message);
+                    this.messageService.error(`Task '${taskIdentifier}' has exited with code ${event.code}.`);
                 }
             } else if (event.signal !== undefined) {
                 this.messageService.info(`Task '${taskIdentifier}' was terminated by signal ${event.signal}.`);
