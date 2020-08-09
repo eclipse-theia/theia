@@ -262,20 +262,41 @@ export class MonacoWorkspace {
             let totalFiles = 0;
             for (const edit of edits) {
                 if (TextEdits.is(edit)) {
+                    let eol: monaco.editor.EndOfLineSequence | undefined;
+                    const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
+                    const minimalEdits = await monaco.services.StaticServices.editorWorkerService.get().computeMoreMinimalEdits(monaco.Uri.parse(edit.uri), edit.textEdits);
+                    if (minimalEdits) {
+                        for (const textEdit of minimalEdits) {
+                            if (typeof textEdit.eol === 'number') {
+                                eol = textEdit.eol;
+                            }
+                            if (monaco.Range.isEmpty(textEdit.range) && !textEdit.text) {
+                                // skip no-op
+                                continue;
+                            }
+                            editOperations.push({
+                                forceMoveMarkers: false,
+                                range: monaco.Range.lift(textEdit.range),
+                                text: textEdit.text
+                            });
+                        }
+                    }
+                    if (!editOperations.length && eol === undefined) {
+                        continue;
+                    }
                     const reference = await this.textModelService.createModelReference(new URI(edit.uri));
                     try {
                         const model = reference.object.textEditorModel;
                         const editor = MonacoEditor.findByDocument(this.editorManager, reference.object)[0];
                         const cursorState = editor?.getControl().getSelections() || [];
-                        const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = edit.textEdits.map(e => ({
-                            identifier: undefined,
-                            forceMoveMarkers: false,
-                            range: new monaco.Range(e.range.startLineNumber, e.range.startColumn, e.range.endLineNumber, e.range.endColumn),
-                            text: e.text
-                        }));
                         // start a fresh operation
                         model.pushStackElement();
-                        model.pushEditOperations(cursorState, editOperations, () => cursorState);
+                        if (editOperations.length) {
+                            model.pushEditOperations(cursorState, editOperations, () => cursorState);
+                        }
+                        if (eol !== undefined) {
+                            model.pushEOL(eol);
+                        }
                         // push again to make this change an undoable operation
                         model.pushStackElement();
                         totalFiles += 1;
