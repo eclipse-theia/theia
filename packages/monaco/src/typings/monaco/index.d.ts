@@ -748,6 +748,11 @@ declare module monaco.services {
         updateModel(model: monaco.editor.ITextModel, value: string | monaco.editor.ITextBufferFactory): void;
     }
 
+    // https://github.com/microsoft/vscode/blob/2277c8e2a3e1cc630a6397301ba54a1dccd8a60d/src/vs/editor/common/services/editorWorkerService.ts#L21
+    export interface IEditorWorkerService {
+        computeMoreMinimalEdits(resource: monaco.Uri, edits: monaco.languages.TextEdit[] | null | undefined): Promise<monaco.languages.TextEdit[] | undefined>;
+    }
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/standalone/browser/standaloneServices.ts#L56
     export module StaticServices {
         export function init(overrides: monaco.editor.IEditorOverrideServices): [ServiceCollection, monaco.instantiation.IInstantiationService];
@@ -759,6 +764,7 @@ declare module monaco.services {
         export const instantiationService: LazyStaticService<monaco.instantiation.IInstantiationService>;
         export const markerService: LazyStaticService<IMarkerService>;
         export const modelService: LazyStaticService<IModelService>;
+        export const editorWorkerService: LazyStaticService<IEditorWorkerService>;
     }
 }
 
