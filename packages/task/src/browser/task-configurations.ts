@@ -31,8 +31,6 @@ import { TaskSourceResolver } from './task-source-resolver';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { OpenerService } from '@theia/core/lib/browser';
-import { UserStorageUri } from '@theia/userstorage/lib/browser/user-storage-uri';
 
 export interface TaskConfigurationClient {
     /**
@@ -41,8 +39,6 @@ export interface TaskConfigurationClient {
      */
     taskConfigurationChanged: (event: string[]) => void;
 }
-
-export const USER_TASKS_URI = UserStorageUri.resolve('tasks.json');
 
 /**
  * Watches a tasks.json configuration file and provides a parsed version of the contained task configurations
@@ -70,9 +66,6 @@ export class TaskConfigurations implements Disposable {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
-
-    @inject(OpenerService)
-    protected readonly openerService: OpenerService;
 
     @inject(TaskDefinitionRegistry)
     protected readonly taskDefinitionRegistry: TaskDefinitionRegistry;
@@ -303,7 +296,7 @@ export class TaskConfigurations implements Disposable {
     }
 
     async openUserTasks(): Promise<void> {
-        await this.openerService.getOpener(USER_TASKS_URI).then(opener => opener.open(USER_TASKS_URI));
+        await this.taskConfigurationManager.openConfiguration(TaskScope.Global);
     }
 
     /** Adds given task to a config file and opens the file to provide ability to edit task configuration. */
