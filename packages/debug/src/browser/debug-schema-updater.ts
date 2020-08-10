@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { JsonSchemaRegisterContext, JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources, deepClone } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
@@ -31,8 +31,12 @@ export class DebugSchemaUpdater implements JsonSchemaContribution {
     @inject(InMemoryResources) protected readonly inmemoryResources: InMemoryResources;
     @inject(DebugService) protected readonly debug: DebugService;
 
-    registerSchemas(context: JsonSchemaRegisterContext): void {
+    @postConstruct()
+    protected init(): void {
         this.inmemoryResources.add(this.uri, '');
+    }
+
+    registerSchemas(context: JsonSchemaRegisterContext): void {
         context.registerSchema({
             fileMatch: ['launch.json'],
             url: this.uri.toString()

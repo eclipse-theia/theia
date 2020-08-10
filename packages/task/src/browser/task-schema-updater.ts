@@ -22,7 +22,7 @@
 
 import * as Ajv from 'ajv';
 import debounce = require('p-debounce');
-import { injectable, inject } from 'inversify';
+import { postConstruct, injectable, inject } from 'inversify';
 import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources, deepClone, Emitter } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
@@ -53,19 +53,16 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
     protected readonly onDidChangeTaskSchemaEmitter = new Emitter<void>();
     readonly onDidChangeTaskSchema = this.onDidChangeTaskSchemaEmitter.event;
 
-    registerSchemas(context: JsonSchemaRegisterContext): void {
-        const taskSchemaUri = new URI(taskSchemaId);
-        const resource = this.inmemoryResources.add(taskSchemaUri, '');
+    protected readonly uri = new URI(taskSchemaId);
+
+    @postConstruct()
+    protected init(): void {
+        const resource = this.inmemoryResources.add(this.uri, '');
         if (resource.onDidChangeContents) {
             resource.onDidChangeContents(() => {
                 this.onDidChangeTaskSchemaEmitter.fire(undefined);
             });
         }
-        context.registerSchema({
-            fileMatch: ['tasks.json', UserStorageUri.resolve('tasks.json').toString()],
-            url: taskSchemaUri.toString()
-        });
-
         this.updateProblemMatcherNames();
         this.updateSupportedTaskTypes();
         // update problem matcher names in the task schema every time a problem matcher is added or disposed
@@ -75,16 +72,21 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
         this.taskDefinitionRegistry.onDidUnregisterTaskDefinition(() => this.updateSupportedTaskTypes());
     }
 
+    registerSchemas(context: JsonSchemaRegisterContext): void {
+        context.registerSchema({
+            fileMatch: ['tasks.json', UserStorageUri.resolve('tasks.json').toString()],
+            url: this.uri.toString()
+        });
+    }
+
     readonly update = debounce(() => this.doUpdate(), 0);
     protected doUpdate(): void {
-        const taskSchemaUri = new URI(taskSchemaId);
-
         taskConfigurationSchema.anyOf = [processTaskConfigurationSchema, ...customizedDetectedTasks, ...customSchemas];
 
         const schema = this.getTaskSchema();
         this.doValidate = new Ajv().compile(schema);
         const schemaContent = JSON.stringify(schema);
-        this.inmemoryResources.update(taskSchemaUri, schemaContent);
+        this.inmemoryResources.update(this.uri, schemaContent);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
