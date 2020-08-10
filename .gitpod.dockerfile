@@ -12,11 +12,3 @@ RUN sudo apt-get update \
     # native-keymap
     && sudo apt-get install -y libx11-dev libxkbfile-dev \
     && sudo rm -rf /var/lib/apt/lists/*
-
-ENV NODE_VERSION="12.14.1"
-RUN bash -c ". .nvm/nvm.sh \
-    && nvm install $NODE_VERSION \
-    && nvm use $NODE_VERSION \
-    && nvm alias default $NODE_VERSION \
-    && npm install -g yarn"
-ENV PATH=$HOME/.nvm/versions/node/v${NODE_VERSION}/bin:$PATH
