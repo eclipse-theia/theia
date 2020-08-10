@@ -31,7 +31,7 @@ import URI from '@theia/core/lib/common/uri';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskServer } from '../common';
-import { USER_TASKS_URI } from './task-configurations';
+import { UserStorageUri } from '@theia/userstorage/lib/browser';
 
 export const taskSchemaId = 'vscode://schemas/tasks';
 
@@ -62,7 +62,7 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
             });
         }
         context.registerSchema({
-            fileMatch: ['tasks.json', USER_TASKS_URI.toString()],
+            fileMatch: ['tasks.json', UserStorageUri.resolve('tasks.json').toString()],
             url: taskSchemaUri.toString()
         });
 

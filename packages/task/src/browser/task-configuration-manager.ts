@@ -185,17 +185,14 @@ export class TaskConfigurationManager {
     protected async doCreate(model: TaskConfigurationModel): Promise<URI | undefined> {
         const content = await this.getInitialConfigurationContent();
         if (content) {
-            await this.folderPreferences.setPreference('tasks', {}, model.getWorkspaceFolder()); // create dummy tasks.json in the correct place
-            const { configUri } = this.folderPreferences.resolve('tasks', model.getWorkspaceFolder()); // get uri to write content to it
+            await model.preferences.setPreference('tasks', {}, model.getWorkspaceFolder()); // create dummy tasks.json in the correct place
+            const { configUri } = model.preferences.resolve('tasks', model.getWorkspaceFolder()); // get uri to write content to it
 
-            let uri: URI;
-            if (configUri && configUri.path.base === 'tasks.json') {
-                uri = configUri;
-            } else { // fallback
-                uri = new URI(model.getWorkspaceFolder()).resolve(`${this.preferenceConfigurations.getPaths()[0]}/tasks.json`);
+            if (!configUri || configUri.path.base !== 'tasks.json') {
+                return undefined;
             }
-            await this.fileService.write(uri, content);
-            return uri;
+            await this.fileService.write(configUri, content);
+            return configUri;
         }
     }
 

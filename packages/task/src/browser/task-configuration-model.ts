@@ -36,8 +36,8 @@ export class TaskConfigurationModel implements Disposable {
     );
 
     constructor(
-        public readonly scope: TaskConfigurationScope,
-        protected readonly preferences: PreferenceProvider
+        readonly scope: TaskConfigurationScope,
+        readonly preferences: PreferenceProvider
     ) {
         this.reconcile();
         this.toDispose.push(this.preferences.onDidPreferencesChanged((e: PreferenceProviderDataChanges) => {
