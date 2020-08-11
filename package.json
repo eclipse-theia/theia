@@ -8,7 +8,8 @@
   },
   "resolutions": {
     "**/@types/node": "~10.3.6",
-    "**/node-abi": "^2.18.0"
+    "**/node-abi": "^2.18.0",
+    "jschardet": "1.6.0"
   },
   "devDependencies": {
     "@types/chai-string": "^1.4.0",
