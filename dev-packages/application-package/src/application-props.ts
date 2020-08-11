@@ -111,7 +111,7 @@ export interface FrontendApplicationConfig extends ApplicationConfig {
     readonly defaultTheme?: string;
 
     /**
-     * The name of the application. `Theia` by default.
+     * The name of the application. `Eclipse Theia` by default.
      */
     readonly applicationName: string;
 
