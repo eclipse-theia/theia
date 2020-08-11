@@ -18,7 +18,7 @@ import { inject, injectable, named } from 'inversify';
 import { CorePreferences } from '../core-preferences';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
-import { WindowService } from './window-service';
+import { WindowService, NewWindowOptions } from './window-service';
 
 @injectable()
 export class DefaultWindowService implements WindowService, FrontendApplicationContribution {
@@ -41,8 +41,9 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
         });
     }
 
-    openNewWindow(url: string): undefined {
-        window.open(url, undefined, 'noopener');
+    openNewWindow(url: string, options?: NewWindowOptions): undefined {
+        const features = !!options?.opener ? '' : 'noopener';
+        window.open(url, options?.windowName, features);
         return undefined;
     }
 

@@ -298,7 +298,7 @@ export class HostedPluginManagerClient {
 
         if (this.pluginInstanceURL) {
             try {
-                this.windowService.openNewWindow(this.pluginInstanceURL);
+                this.windowService.openNewWindow(this.pluginInstanceURL, { windowName: 'hosted-theia', opener: true });
             } catch (err) {
                 // browser blocked opening of a new tab
                 this.openNewTabAskDialog.showOpenNewTabAskDialog(this.pluginInstanceURL);
