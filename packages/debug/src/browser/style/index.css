@@ -375,6 +375,7 @@
 /** Breakpoint Widget */
 .theia-debug-breakpoint-widget {
     display: flex;
+    height: calc(100% - 4px);
 }
 
 .theia-debug-breakpoint-select {
@@ -411,6 +412,7 @@
 	white-space: pre-wrap;
 	user-select: text;
     overflow: hidden;
+    height: auto;
 }
 
 .theia-debug-exception-widget .title {

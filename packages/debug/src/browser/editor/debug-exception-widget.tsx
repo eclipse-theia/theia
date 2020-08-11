@@ -43,6 +43,11 @@ export class DebugExceptionWidget implements Disposable {
         this.toDispose.push(this.zone = new MonacoEditorZoneWidget(this.editor.getControl()));
         this.zone.containerNode.classList.add('theia-debug-exception-widget');
         this.toDispose.push(Disposable.create(() => ReactDOM.unmountComponentAtNode(this.zone.containerNode)));
+        this.editor.getControl().onDidChangeConfiguration( () => {
+            const lineHeight = this.editor.getControl().getOption(monaco.editor.EditorOption.lineHeight);
+            const heightInLines = Math.ceil(this.zone.containerNode.offsetHeight / lineHeight);
+            this.zone.layout(heightInLines);
+        });
     }
 
     dispose(): void {
@@ -51,16 +56,13 @@ export class DebugExceptionWidget implements Disposable {
 
     show({ info, lineNumber, column }: ShowDebugExceptionParams): void {
         this.render(info);
-
         const fontInfo = this.editor.getControl().getOption(monaco.editor.EditorOption.fontInfo);
         this.zone.containerNode.style.fontSize = `${fontInfo.fontSize}px`;
         this.zone.containerNode.style.lineHeight = `${fontInfo.lineHeight}px`;
-
         if (lineNumber !== undefined && column !== undefined) {
             const afterLineNumber = lineNumber;
             const afterColumn = column;
-            const heightInLines = 0;
-            this.zone.show({ showFrame: true, afterLineNumber, afterColumn, heightInLines, frameWidth: 1 });
+            this.zone.show({ showFrame: true, afterLineNumber, afterColumn, heightInLines: 0, frameWidth: 1 });
         }
     }
 
@@ -70,15 +72,13 @@ export class DebugExceptionWidget implements Disposable {
 
     protected render(info: DebugExceptionInfo): void {
         const stackTrace = info.details && info.details.stackTrace;
-        ReactDOM.render(<React.Fragment>
-            <div className='title'>{info.id ? `Exception has occurred: ${info.id}` : 'Exception has occurred.'}</div>
-            {info.description && <div className='description'>{info.description}</div>}
-            {stackTrace && <div className='stack-trace'>{stackTrace}</div>}
-        </React.Fragment>, this.zone.containerNode, () => {
-            const lineHeight = this.editor.getControl().getOption(monaco.editor.EditorOption.lineHeight);
-            const heightInLines = Math.ceil(this.zone.containerNode.offsetHeight / lineHeight);
-            this.zone.layout(heightInLines);
-        });
+        ReactDOM.render(
+            <React.Fragment>
+                <div className='title'>{info.id ? `Exception has occurred: ${info.id}` : 'Exception has occurred.'}</div>
+                {info.description && <div className='description'>{info.description}</div>}
+                {stackTrace && <div className='stack-trace'>{stackTrace}</div>}
+            </React.Fragment>,
+            this.zone.containerNode
+        );
     }
-
 }

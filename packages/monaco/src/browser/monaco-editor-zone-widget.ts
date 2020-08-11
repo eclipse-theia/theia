@@ -41,9 +41,12 @@ export class MonacoEditorZoneWidget implements Disposable {
         this.toHide
     );
 
+    readonly editorLineHeight: number;
+
     constructor(
         readonly editor: monaco.editor.IStandaloneCodeEditor
     ) {
+        this.editorLineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
         this.zoneNode.classList.add('zone-widget');
         this.containerNode.classList.add('zone-widget-container');
         this.zoneNode.appendChild(this.containerNode);
@@ -66,7 +69,7 @@ export class MonacoEditorZoneWidget implements Disposable {
 
     show(options: MonacoEditorZoneWidget.Options): void {
         let { afterLineNumber, afterColumn, heightInLines } = this._options = { showFrame: true, ...options };
-        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
+        const lineHeight = this.editorLineHeight;
         const maxHeightInLines = (this.editor.getLayoutInfo().height / lineHeight) * .8;
         if (heightInLines >= maxHeightInLines) {
             heightInLines = maxHeightInLines;
@@ -130,17 +133,19 @@ export class MonacoEditorZoneWidget implements Disposable {
     }
     protected updateContainerHeight(zoneHeight: number): void {
         const { frameWidth, height } = this.computeContainerHeight(zoneHeight);
-        this.containerNode.style.height = height + 'px';
         this.containerNode.style.borderTopWidth = frameWidth + 'px';
         this.containerNode.style.borderBottomWidth = frameWidth + 'px';
         const width = this.computeWidth();
+        const lineHeight = this.editorLineHeight;
+        const heightInLines = Math.ceil(this.containerNode.offsetHeight / lineHeight);
+        this.layout(heightInLines);
         this.onDidLayoutChangeEmitter.fire({ height, width });
     }
     protected computeContainerHeight(zoneHeight: number): {
         height: number,
         frameWidth: number
     } {
-        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
+        const lineHeight = this.editorLineHeight;
         const frameWidth = this._options && this._options.frameWidth;
         const frameThickness = this._options && this._options.showFrame ? Math.round(lineHeight / 9) : 0;
         return {
