@@ -24,6 +24,7 @@ import { MaybePromise } from './types';
 import { CancellationToken } from './cancellation';
 import { ApplicationError } from './application-error';
 import { ReadableStream, Readable } from './stream';
+import { SyncReferenceCollection, Reference } from './reference';
 
 export interface ResourceVersion {
 }
@@ -205,11 +206,12 @@ export class DefaultResourceProvider {
 }
 
 export class MutableResource implements Resource {
-    private contents: string;
+    private contents: string = '';
 
-    constructor(readonly uri: URI, contents: string, readonly dispose: () => void) {
-        this.contents = contents;
+    constructor(readonly uri: URI) {
     }
+
+    dispose(): void { }
 
     async readContents(): Promise<string> {
         return this.contents;
@@ -221,25 +223,47 @@ export class MutableResource implements Resource {
     }
 
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
-    onDidChangeContents = this.onDidChangeContentsEmitter.event;
+    readonly onDidChangeContents = this.onDidChangeContentsEmitter.event;
     protected fireDidChangeContents(): void {
         this.onDidChangeContentsEmitter.fire(undefined);
+    }
+}
+export class ReferenceMutableResource implements Resource {
+    constructor(protected reference: Reference<MutableResource>) { }
+
+    get uri(): URI {
+        return this.reference.object.uri;
+    }
+
+    get onDidChangeContents(): Event<void> {
+        return this.reference.object.onDidChangeContents;
+    }
+
+    dispose(): void {
+        this.reference.dispose();
+    }
+
+    readContents(): Promise<string> {
+        return this.reference.object.readContents();
+    }
+
+    saveContents(contents: string): Promise<void> {
+        return this.reference.object.saveContents(contents);
     }
 }
 
 @injectable()
 export class InMemoryResources implements ResourceResolver {
 
-    private readonly resources = new Map<string, MutableResource>();
+    protected readonly resources = new SyncReferenceCollection<string, MutableResource>(uri => new MutableResource(new URI(uri)));
 
     add(uri: URI, contents: string): Resource {
         const resourceUri = uri.toString();
         if (this.resources.has(resourceUri)) {
             throw new Error(`Cannot add already existing in-memory resource '${resourceUri}'`);
         }
-
-        const resource = new MutableResource(uri, contents, () => this.resources.delete(resourceUri));
-        this.resources.set(resourceUri, resource);
+        const resource = this.acquire(resourceUri);
+        resource.saveContents(contents);
         return resource;
     }
 
@@ -258,6 +282,11 @@ export class InMemoryResources implements ResourceResolver {
         if (!this.resources.has(uriString)) {
             throw new Error(`In memory '${uriString}' resource does not exist.`);
         }
-        return this.resources.get(uriString)!;
+        return this.acquire(uriString);
+    }
+
+    protected acquire(uri: string): ReferenceMutableResource {
+        const reference = this.resources.acquire(uri);
+        return new ReferenceMutableResource(reference);
     }
 }
