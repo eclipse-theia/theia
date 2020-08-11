@@ -301,9 +301,9 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
                     if (this.pluginActivationPromises.has(plugin.model.id)) {
                         this.pluginActivationPromises.get(plugin.model.id)!.reject(err);
                     }
-                    const message = `Activating extension '${plugin.model.displayName || plugin.model.name}' failed: ${err.message}`;
-                    this.messageRegistryProxy.$showMessage(MainMessageType.Error, message, {}, []);
-                    console.error(message);
+                    const message = `Activating extension '${plugin.model.displayName || plugin.model.name}' failed:`;
+                    this.messageRegistryProxy.$showMessage(MainMessageType.Error, message + ' ' + err.message, {}, []);
+                    console.error(message, err);
                     return false;
                 } finally {
                     this.notificationMain.$stopProgress(progressId);
