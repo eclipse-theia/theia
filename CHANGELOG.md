@@ -24,6 +24,9 @@
   - On the frontend `EnvVariableServer` should be used instead to access the current user home and available drives.
 <a name="1.5.0_usestorage_as_fs_provider"></a>
 - [[userstorage]](#1.5.0_usestorage_as_fs_provider) `UserStorageService` was replaced by the user data fs provider [#7908](https://github.com/eclipse-theia/theia/pull/7908)
+<a name="1.5.0_webview_resource_streaming"></a>
+- [[webview]](#1.5.0_webview_resource_streaming) webview resources are streamed instead of loading one by one the entire content and blocking the web socket [#8359](https://github.com/eclipse-theia/theia/pull/8359)
+  - Consequently, `WebviewResourceLoader` is removed. One should change `DiskFileSystemProvider` to customize resource loading instead.
 <a name="1.5.0_root_user_storage_uri"></a>
 - [[user-storage]](#1.5.0_root_user_storage_uri) settings URI must start with `/user` root to satisfy expectations of `FileService` []()
   - If you implement a custom user storage make sure to check old relative locations, otherwise it can cause user data loss.
