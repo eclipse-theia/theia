@@ -1,5 +1,7 @@
 sudo: required
 language: node_js
+node_js:
+  - 12
 git:
   depth: 1
 cache:
@@ -122,12 +124,10 @@ jobs:
       name: Ubuntu / Node 12 / Python 2
       os: linux
       dist: xenial
-      node_js: 12
     - stage: test
       name: Ubuntu / Node 12 / Python 3 (No Tests!)
       os: linux
       dist: xenial
-      node_js: 12
       env:
         - PYTHON=/usr/bin/python3
       before_script:
@@ -138,7 +138,6 @@ jobs:
     - name: macOS / Node 12 / Python 2
       os: osx
       osx_image: xcode11.4
-      node_js: 12
       env: CXX=c++
       script:
         - travis_retry yarn test:theia
@@ -165,7 +164,6 @@ jobs:
             yarn run docs
           fi
       deploy:
-        - node_js: 12
         - provider: script
           script: yarn run publish:next
           on:
