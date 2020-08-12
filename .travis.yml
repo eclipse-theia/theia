@@ -87,7 +87,7 @@ before_install:
       Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
       echo "XVFB configured"
       if [[ "$PYTHON" == *python3 ]]; then
-        sudo apt-get -y install python3  
+        sudo apt-get -y install python3
       fi
     fi
   - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.13.0
@@ -165,6 +165,7 @@ jobs:
             yarn run docs
           fi
       deploy:
+        - node_js: 12
         - provider: script
           script: yarn run publish:next
           on:
