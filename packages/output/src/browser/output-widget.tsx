@@ -147,6 +147,11 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
+    protected onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
+        this.onResize(Widget.ResizeMessage.UnknownSize); // Triggers an editor widget resize. (#8361)
+    }
+
     get onStateChanged(): Event<OutputWidget.State> {
         return this.onStateChangedEmitter.event;
     }
