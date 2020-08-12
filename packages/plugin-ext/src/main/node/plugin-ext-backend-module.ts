@@ -34,19 +34,10 @@ import { PluginPathsService, pluginPathsServicePath } from '../common/plugin-pat
 import { PluginPathsServiceImpl } from './paths/plugin-paths-service';
 import { PluginServerHandler } from './plugin-server-handler';
 import { PluginCliContribution } from './plugin-cli-contribution';
-import { WebviewResourceLoaderImpl } from './webview-resource-loader-impl';
-import { WebviewResourceLoaderPath } from '../common/webview-protocol';
 import { PluginTheiaEnvironment } from '../common/plugin-theia-environment';
 import { PluginTheiaDeployerParticipant } from './plugin-theia-deployer-participant';
 
 export function bindMainBackend(bind: interfaces.Bind): void {
-    bind(WebviewResourceLoaderImpl).toSelf().inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(WebviewResourceLoaderPath, () =>
-            ctx.container.get(WebviewResourceLoaderImpl)
-        )
-    ).inSingletonScope();
-
     bind(PluginApiContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(PluginApiContribution);
 

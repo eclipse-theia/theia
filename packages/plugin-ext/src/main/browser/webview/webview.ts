@@ -42,9 +42,11 @@ import { WebviewThemeDataProvider } from './webview-theme-data-provider';
 import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
 import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
 import { WebviewPreferences } from './webview-preferences';
-import { WebviewResourceLoader } from '../../common/webview-protocol';
 import { WebviewResourceCache } from './webview-resource-cache';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
+import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
@@ -130,8 +132,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     @inject(WebviewPreferences)
     protected readonly preferences: WebviewPreferences;
 
-    @inject(WebviewResourceLoader)
-    protected readonly resourceLoader: WebviewResourceLoader;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     @inject(WebviewResourceCache)
     protected readonly resourceCache: WebviewResourceCache;
@@ -432,11 +434,15 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
                         continue;
                     }
                     let cached = await this.resourceCache.match(cacheUrl);
-                    const response = await this.resourceLoader.load({ uri: normalizedUri.toString(), eTag: cached && cached.eTag });
-                    if (response) {
-                        const { buffer, eTag } = response;
-                        cached = { body: () => new Uint8Array(buffer), eTag: eTag };
+                    try {
+                        const result = await this.fileService.readFileStream(normalizedUri, { etag: cached?.eTag });
+                        const { buffer } = await BinaryBufferReadableStream.toBuffer(result.value);
+                        cached = { body: () => buffer, eTag: result.etag };
                         this.resourceCache.put(cacheUrl, cached);
+                    } catch (e) {
+                        if (!(e instanceof FileOperationError && e.fileOperationResult === FileOperationResult.FILE_NOT_MODIFIED_SINCE)) {
+                            throw e;
+                        }
                     }
                     if (cached) {
                         const data = await cached.body();
