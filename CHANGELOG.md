@@ -30,7 +30,7 @@
 <a name="1.5.0_root_user_storage_uri"></a>
 - [[user-storage]](#1.5.0_root_user_storage_uri) settings URI must start with `/user` root to satisfy expectations of `FileService` []()
   - If you implement a custom user storage make sure to check old relative locations, otherwise it can cause user data loss.
-<a name="1_5_0_electron_window_options_ipc">
+<a name="1_5_0_electron_window_options_ipc"></a>
 - [[electron]](#1_5_0_electron_window_options_ipc) Removed the `set-window-options` and `get-persisted-window-options-additions` Electron IPC handlers from the Electron Main process.
 <a name="1.5.0_non_blocking_bulk_edit"></a>
 - [[monaco]](#1.5.0_non_blocking_bulk_edit) `MonacoWorkspace.applyBulkEdit` does not open any editors anymore to avoid blocking [#8329](https://github.com/eclipse-theia/theia/pull/8329)
