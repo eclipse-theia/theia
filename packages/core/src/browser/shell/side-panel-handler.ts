@@ -16,11 +16,12 @@
 
 import { injectable, inject } from 'inversify';
 import { find, map, toArray, some } from '@phosphor/algorithm';
-import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPanel } from '@phosphor/widgets';
+import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPanel, PanelLayout } from '@phosphor/widgets';
 import { MimeData } from '@phosphor/coreutils';
 import { Drag } from '@phosphor/dragdrop';
 import { AttachedProperty } from '@phosphor/properties';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
+import { SidebarBottomMenuWidget, SidebarBottomMenuWidgetFactory, SidebarBottomMenu } from './sidebar-bottom-menu-widget';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { animationFrame } from '../browser';
 import { FrontendApplicationStateService } from '../frontend-application-state';
@@ -65,6 +66,12 @@ export class SidePanelHandler {
      */
     tabBar: SideTabBar;
     /**
+     * The menu placed on the sidebar bottom.
+     * Displayed as icons.
+     * Open menus when on clicks.
+     */
+    bottomMenu: SidebarBottomMenuWidget;
+    /**
      * A tool bar, which displays a title and widget specific command buttons.
      */
     toolBar: SidePanelToolbar;
@@ -100,6 +107,7 @@ export class SidePanelHandler {
     @inject(TabBarToolbarRegistry) protected tabBarToolBarRegistry: TabBarToolbarRegistry;
     @inject(TabBarToolbarFactory) protected tabBarToolBarFactory: () => TabBarToolbar;
     @inject(TabBarRendererFactory) protected tabBarRendererFactory: () => TabBarRenderer;
+    @inject(SidebarBottomMenuWidgetFactory) protected sidebarBottomWidgetFactory: () => SidebarBottomMenuWidget;
     @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler;
     @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
 
@@ -113,6 +121,7 @@ export class SidePanelHandler {
         this.side = side;
         this.options = options;
         this.tabBar = this.createSideBar();
+        this.bottomMenu = this.createSidebarBottomMenu();
         this.toolBar = this.createToolbar();
         this.dockPanel = this.createSidePanel();
         this.container = this.createContainer();
@@ -178,6 +187,12 @@ export class SidePanelHandler {
         return toolbar;
     }
 
+    protected createSidebarBottomMenu(): SidebarBottomMenuWidget {
+        const bottomMenu = this.sidebarBottomWidgetFactory();
+        bottomMenu.addClass('theia-sidebar-bottom-menu');
+        return bottomMenu;
+    }
+
     protected showContextMenu(e: MouseEvent): void {
         const title = this.tabBar.currentTitle;
         if (!title) {
@@ -214,9 +229,15 @@ export class SidePanelHandler {
                 throw new Error('Illegal argument: ' + side);
         }
         const containerLayout = new BoxLayout({ direction, spacing: 0 });
-        BoxPanel.setStretch(this.tabBar, 0);
-        containerLayout.addWidget(this.tabBar);
+        const sidebarContainerLayout = new PanelLayout();
+        const sidebarContainer = new Panel({ layout: sidebarContainerLayout });
+        sidebarContainer.addClass('theia-app-sidebar-container');
+        sidebarContainerLayout.addWidget(this.tabBar);
+        sidebarContainerLayout.addWidget(this.bottomMenu);
+
+        BoxPanel.setStretch(sidebarContainer, 0);
         BoxPanel.setStretch(contentPanel, 1);
+        containerLayout.addWidget(sidebarContainer);
         containerLayout.addWidget(contentPanel);
         const boxPanel = new BoxPanel({ layout: containerLayout });
         boxPanel.id = 'theia-' + side + '-content-panel';
@@ -362,6 +383,15 @@ export class SidePanelHandler {
             SidePanelHandler.rankProperty.set(widget, options.rank);
         }
         this.dockPanel.addWidget(widget);
+    }
+
+    /**
+     * Add a menu to the sidebar bottom.
+     *
+     * If the menu is already added, it will be ignored.
+     */
+    addMenu(menu: SidebarBottomMenu): void {
+        this.bottomMenu.addMenu(menu);
     }
 
     // should be a property to preserve fn identity

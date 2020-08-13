@@ -111,6 +111,11 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
             label: CommonCommands.OPEN_PREFERENCES.label,
             order: 'a10',
         });
+        menus.registerMenuAction(CommonMenus.SETTINGS_OPEN, {
+            commandId: CommonCommands.OPEN_PREFERENCES.id,
+            label: CommonCommands.OPEN_PREFERENCES.label,
+            order: 'a10',
+        });
         menus.registerMenuAction(PreferenceMenus.PREFERENCE_EDITOR_CONTEXT_MENU, {
             commandId: PreferencesCommands.RESET_PREFERENCE.id,
             label: PreferencesCommands.RESET_PREFERENCE.label,
