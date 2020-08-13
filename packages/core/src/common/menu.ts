@@ -91,8 +91,8 @@ export class MenuModelRegistry {
         const index = menuPath.length - 1;
         const menuId = menuPath[index];
         const groupPath = index === 0 ? [] : menuPath.slice(0, index);
-        const parent = this.findGroup(groupPath);
-        let groupNode = this.findSubMenu(parent, menuId);
+        const parent = this.findGroup(groupPath, options);
+        let groupNode = this.findSubMenu(parent, menuId, options);
         if (!groupNode) {
             groupNode = new CompositeMenuNode(menuId, label, options);
             return parent.addNode(groupNode);
@@ -155,15 +155,15 @@ export class MenuModelRegistry {
         recurse(this.root);
     }
 
-    protected findGroup(menuPath: MenuPath): CompositeMenuNode {
+    protected findGroup(menuPath: MenuPath, options?: SubMenuOptions): CompositeMenuNode {
         let currentMenu = this.root;
         for (const segment of menuPath) {
-            currentMenu = this.findSubMenu(currentMenu, segment);
+            currentMenu = this.findSubMenu(currentMenu, segment, options);
         }
         return currentMenu;
     }
 
-    protected findSubMenu(current: CompositeMenuNode, menuId: string): CompositeMenuNode {
+    protected findSubMenu(current: CompositeMenuNode, menuId: string, options?: SubMenuOptions): CompositeMenuNode {
         const sub = current.children.find(e => e.id === menuId);
         if (sub instanceof CompositeMenuNode) {
             return sub;
@@ -171,7 +171,7 @@ export class MenuModelRegistry {
         if (sub) {
             throw new Error(`'${menuId}' is not a menu group.`);
         }
-        const newSub = new CompositeMenuNode(menuId);
+        const newSub = new CompositeMenuNode(menuId, undefined, options);
         current.addNode(newSub);
         return newSub;
     }
