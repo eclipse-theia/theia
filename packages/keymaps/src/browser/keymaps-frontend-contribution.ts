@@ -93,6 +93,10 @@ export class KeymapsFrontendContribution extends AbstractViewContribution<Keybin
             commandId: KeymapsCommands.OPEN_KEYMAPS.id,
             order: 'a20'
         });
+        menus.registerMenuAction(CommonMenus.SETTINGS_OPEN, {
+            commandId: KeymapsCommands.OPEN_KEYMAPS.id,
+            order: 'a20'
+        });
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {

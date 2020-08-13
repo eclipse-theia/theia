@@ -19,9 +19,9 @@
 import debounce = require('lodash.debounce');
 import { injectable, inject } from 'inversify';
 import { TabBar, Widget, Title } from '@phosphor/widgets';
-import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
+import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
-import { FrontendApplicationContribution } from './frontend-application';
+import { FrontendApplication, FrontendApplicationContribution } from './frontend-application';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
 import { UriAwareCommandHandler } from '../common/uri-command-handler';
 import { SelectionService } from '../common/selection-service';
@@ -75,6 +75,9 @@ export namespace CommonMenus {
     export const VIEW_VIEWS = [...VIEW, '1_views'];
     export const VIEW_LAYOUT = [...VIEW, '2_layout'];
     export const VIEW_TOGGLE = [...VIEW, '3_toggle'];
+
+    export const SETTINGS_OPEN = [...SETTINGS_MENU, '1_settings_open'];
+    export const SETTINGS__THEME = [...SETTINGS_MENU, '2_settings_theme'];
 
     // last menu item
     export const HELP = [...MAIN_MENU_BAR, '9_help'];
@@ -324,7 +327,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(EnvVariablesServer)
     protected readonly environments: EnvVariablesServer;
 
-    async configure(): Promise<void> {
+    async configure(app: FrontendApplication): Promise<void> {
         const configDirUri = await this.environments.getConfigDirUri();
         // Global settings
         this.encodingRegistry.registerOverride({
@@ -351,6 +354,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
         this.themeService.onThemeChange(() => this.updateThemePreference('workbench.colorTheme'));
         this.iconThemes.onDidChangeCurrent(() => this.updateThemePreference('workbench.iconTheme'));
+
+        app.shell.leftPanelHandler.addMenu({
+            id: 'settings-menu',
+            iconClass: 'codicon codicon-settings-gear',
+            title: 'Settings',
+            menuPath: SETTINGS_MENU,
+            order: 0,
+        });
     }
 
     protected updateStyles(): void {
@@ -513,6 +524,13 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.SELECT_COLOR_THEME.id
         });
         registry.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_THEME, {
+            commandId: CommonCommands.SELECT_ICON_THEME.id
+        });
+
+        registry.registerMenuAction(CommonMenus.SETTINGS__THEME, {
+            commandId: CommonCommands.SELECT_COLOR_THEME.id
+        });
+        registry.registerMenuAction(CommonMenus.SETTINGS__THEME, {
             commandId: CommonCommands.SELECT_ICON_THEME.id
         });
     }

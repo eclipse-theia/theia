@@ -49,6 +49,8 @@ export type MenuPath = string[];
 
 export const MAIN_MENU_BAR: MenuPath = ['menubar'];
 
+export const SETTINGS_MENU: MenuPath = ['settings_menu'];
+
 export const MenuContribution = Symbol('MenuContribution');
 
 /**

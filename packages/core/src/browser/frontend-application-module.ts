@@ -46,6 +46,7 @@ import {
     ApplicationShell, ApplicationShellOptions, DockPanelRenderer, TabBarRenderer,
     TabBarRendererFactory, ShellLayoutRestorer,
     SidePanelHandler, SidePanelHandlerFactory,
+    SidebarBottomMenuWidget, SidebarBottomMenuWidgetFactory,
     SplitPositionHandler, DockPanelRendererFactory, ApplicationShellLayoutMigration, ApplicationShellLayoutMigrationError
 } from './shell';
 import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
@@ -128,6 +129,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ApplicationShell).toSelf().inSingletonScope();
     bind(SidePanelHandlerFactory).toAutoFactory(SidePanelHandler);
     bind(SidePanelHandler).toSelf();
+    bind(SidebarBottomMenuWidgetFactory).toAutoFactory(SidebarBottomMenuWidget);
+    bind(SidebarBottomMenuWidget).toSelf();
     bind(SplitPositionHandler).toSelf().inSingletonScope();
 
     bindContributionProvider(bind, TabBarToolbarContribution);

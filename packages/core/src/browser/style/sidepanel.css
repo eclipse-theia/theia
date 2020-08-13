@@ -21,6 +21,8 @@
 :root {
   --theia-private-sidebar-tab-width: 50px;
   --theia-private-sidebar-tab-height: 32px;
+  --theia-private-sidebar-tab-padding-top-and-bottom: 11px;
+  --theia-private-sidebar-tab-padding-left-and-right: 10px;
   --theia-private-sidebar-scrollbar-rail-width: 7px;
   --theia-private-sidebar-scrollbar-width: 5px;
   --theia-private-sidebar-icon-size: 28px;
@@ -46,7 +48,7 @@
 
 .p-TabBar.theia-app-sides .p-TabBar-tab {
   position: relative;
-  padding: 11px 10px;
+  padding: var(--theia-private-sidebar-tab-padding-top-and-bottom) var(--theia-private-sidebar-tab-padding-left-and-right);
   background: var(--theia-activityBar-background);
   flex-direction: column;
   justify-content: center;
@@ -171,7 +173,42 @@
     color: var(--theia-sideBar-foreground);
 }
 
+.theia-app-sidebar-container {
+  min-width: var(--theia-private-sidebar-tab-width);
+  max-width: var(--theia-private-sidebar-tab-width);
+  background: var(--theia-activityBar-background);
+  display: flex;
+  flex-direction: column;
+}
 
+.theia-app-sidebar-container .theia-app-sides {
+  flex-grow: 1;
+}
+
+.theia-app-sidebar-container .theia-sidebar-bottom-menu {
+  flex-shrink: 0;
+}
+
+.p-Widget.theia-sidebar-bottom-menu {
+  background-color: var(--theia-activityBar-background);
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.p-Widget.theia-sidebar-bottom-menu i {
+  padding: var(--theia-private-sidebar-tab-padding-top-and-bottom) var(--theia-private-sidebar-tab-padding-left-and-right);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: var(--theia-activityBar-inactiveForeground);
+  background-color: var(--theia-activityBar-background);
+  font-size: var(--theia-private-sidebar-icon-size);
+}
+
+.theia-sidebar-bottom-menu i:hover {
+  color: var(--theia-activityBar-foreground);
+}
 
 /*-----------------------------------------------------------------------------
 | Perfect scrollbar
