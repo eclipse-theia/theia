@@ -21,6 +21,10 @@ const SampleCommand: Command = {
     id: 'sample-command',
     label: 'Sample Command'
 };
+const SampleCommand2: Command = {
+    id: 'sample-command2',
+    label: 'Sample Command2'
+};
 
 @injectable()
 export class SampleCommandContribution implements CommandContribution {
@@ -28,6 +32,11 @@ export class SampleCommandContribution implements CommandContribution {
         commands.registerCommand(SampleCommand, {
             execute: () => {
                 alert('This is a sample command!');
+            }
+        });
+        commands.registerCommand(SampleCommand2, {
+            execute: () => {
+                alert('This is sample command2!');
             }
         });
     }
@@ -42,7 +51,22 @@ export class SampleMenuContribution implements MenuContribution {
             order: '2' // that should put the menu right next to the File menu
         });
         menus.registerMenuAction(subMenuPath, {
-            commandId: SampleCommand.id
+            commandId: SampleCommand.id,
+            order: '0'
+        });
+        menus.registerMenuAction(subMenuPath, {
+            commandId: SampleCommand2.id,
+            order: '2'
+        });
+        const subSubMenuPath = [...subMenuPath, 'sample-sub-menu'];
+        menus.registerSubmenu(subSubMenuPath, 'Sample sub menu', { order: '1' });
+        menus.registerMenuAction(subSubMenuPath, {
+            commandId: SampleCommand.id,
+            order: '0'
+        });
+        menus.registerMenuAction(subSubMenuPath, {
+            commandId: SampleCommand2.id,
+            order: '2'
         });
     }
 }
