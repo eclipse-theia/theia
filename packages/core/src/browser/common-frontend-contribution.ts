@@ -361,7 +361,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected updateThemePreference(preferenceName: 'workbench.colorTheme' | 'workbench.iconTheme'): void {
-        const inspect = this.preferenceService.inspect<string>(preferenceName);
+        const inspect = this.preferenceService.inspect<string | null>(preferenceName);
         const workspaceValue = inspect && inspect.workspaceValue;
         const userValue = inspect && inspect.globalValue;
         const value = workspaceValue || userValue;
@@ -373,16 +373,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected updateThemeFromPreference(preferenceName: 'workbench.colorTheme' | 'workbench.iconTheme'): void {
-        const value = this.preferences[preferenceName];
+        const inspect = this.preferenceService.inspect<string | null>(preferenceName);
+        const workspaceValue = inspect && inspect.workspaceValue;
+        const userValue = inspect && inspect.globalValue;
+        const value = workspaceValue || userValue;
         if (value !== undefined) {
             if (preferenceName === 'workbench.colorTheme') {
-                if (!value) {
-                    this.themeService.reset();
-                } else {
-                    this.themeService.setCurrentTheme(value);
-                }
+                this.themeService.setCurrentTheme(value || this.themeService.defaultTheme.id);
             } else {
-                this.iconThemes.current = value || 'none';
+                this.iconThemes.current = value || this.iconThemes.default.id;
             }
         }
     }

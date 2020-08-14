@@ -17,6 +17,12 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { ApplicationProps } from '@theia/application-package/lib/application-props';
+FrontendApplicationConfigProvider.set({
+    ...ApplicationProps.DEFAULT.frontend.config
+});
+
 import { Container } from 'inversify';
 import { Git, Repository } from '../common';
 import { DugiteGit } from '../node/dugite-git';

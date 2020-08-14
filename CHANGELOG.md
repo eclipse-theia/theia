@@ -35,6 +35,20 @@
 <a name="1.5.0_non_blocking_bulk_edit"></a>
 - [[monaco]](#1.5.0_non_blocking_bulk_edit) `MonacoWorkspace.applyBulkEdit` does not open any editors anymore to avoid blocking [#8329](https://github.com/eclipse-theia/theia/pull/8329)
   - Consequently, it does not accept editor opener options, and `MonacoWorkspace.openEditors` and `MonacoWorkspace.toTextEditWithEditor` are removed.
+<a name="1.5.0_declarative_default_themes"></a>
+- [[theming]](#1.5.0_declarative_default_themes) Default color and icon themes should be declared in the application package.json. [#8381](https://github.com/eclipse-theia/theia/pull/8381)
+
+  ```json
+  "theia": {
+    "frontend": {
+      "config": {
+        "defaultTheme": "light",
+        "defaultIconTheme": "vs-seti"
+      }
+    }
+  },
+  ```
+  - Consequently, `ThemeService` and `IconThemeService` don't allow to change the default color or icon theme anymore.
 
 ## v1.4.0 - 30/07/2020
 

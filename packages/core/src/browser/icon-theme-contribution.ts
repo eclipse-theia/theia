@@ -53,7 +53,6 @@ export class DefaultFileIconThemeContribution implements IconTheme, IconThemeCon
 
     registerIconThemes(iconThemes: IconThemeService): MaybePromise<void> {
         iconThemes.register(this);
-        iconThemes.default = this.id;
     }
 
     /* rely on behaviour before for backward-compatibility */
