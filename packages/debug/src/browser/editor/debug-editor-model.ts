@@ -175,7 +175,7 @@ export class DebugEditorModel implements Disposable {
 
     protected async toggleExceptionWidget(): Promise<void> {
         const { currentFrame } = this.sessions;
-        if (!currentFrame) {
+        if (!currentFrame || !currentFrame.source || currentFrame.source.uri.toString() !== this.uri.toString()) {
             this.exceptionWidget.hide();
             return;
         }
