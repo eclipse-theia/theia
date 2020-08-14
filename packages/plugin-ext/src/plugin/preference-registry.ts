@@ -109,7 +109,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                         let clonedTarget: any = undefined;
                         const cloneTarget = () => {
                             clonedConfig = clonedConfig ? clonedConfig : cloneDeep(preferences);
-                            clonedTarget = clonedTarget ? cloneTarget : lookUp(clonedConfig, accessor);
+                            clonedTarget = clonedTarget ? clonedTarget : lookUp(clonedConfig, accessor);
                         };
 
                         if (!isObject(target)) {
