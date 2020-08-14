@@ -80,7 +80,9 @@ export namespace ApplicationProps {
         },
         frontend: {
             config: {
-                applicationName: 'Eclipse Theia'
+                applicationName: 'Eclipse Theia',
+                defaultTheme: 'dark',
+                defaultIconTheme: 'none'
             }
         },
         generator: {
@@ -106,9 +108,14 @@ export interface ApplicationConfig {
 export interface FrontendApplicationConfig extends ApplicationConfig {
 
     /**
-     * The default theme for the application. If not give, defaults to `dark`. If invalid theme is given, also defaults to `dark`.
+     * The default theme for the application. If not given, defaults to `dark`. If invalid theme is given, also defaults to `dark`.
      */
-    readonly defaultTheme?: string;
+    readonly defaultTheme: string;
+
+    /**
+     * The default icon theme for the application. If not given, defaults to `none`. If invalid theme is given, also defaults to `none`.
+     */
+    readonly defaultIconTheme: string;
 
     /**
      * The name of the application. `Eclipse Theia` by default.

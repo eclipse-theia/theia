@@ -17,6 +17,7 @@
 import { interfaces } from 'inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from './preferences';
 import { SUPPORTED_ENCODINGS } from './supported-encodings';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 
 export const corePreferenceSchema: PreferenceSchema = {
     'type': 'object',
@@ -53,10 +54,12 @@ export const corePreferenceSchema: PreferenceSchema = {
         },
         'workbench.colorTheme': {
             type: 'string',
+            default: FrontendApplicationConfigProvider.get().defaultTheme,
             description: 'Specifies the color theme used in the workbench.'
         },
         'workbench.iconTheme': {
             type: ['string', 'null'],
+            default: FrontendApplicationConfigProvider.get().defaultIconTheme,
             description: "Specifies the icon theme used in the workbench or 'null' to not show any file icons."
         },
         'workbench.silentNotifications': {
@@ -87,8 +90,8 @@ export interface CoreConfiguration {
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;
-    'workbench.colorTheme'?: string;
-    'workbench.iconTheme'?: string | null;
+    'workbench.colorTheme': string;
+    'workbench.iconTheme': string | null;
     'workbench.silentNotifications': boolean;
     'files.encoding': string
     'workbench.tree.renderIndentGuides': 'onHover' | 'none' | 'always';

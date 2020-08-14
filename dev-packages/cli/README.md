@@ -18,6 +18,7 @@
   - [**Build Target**](#build-target)
   - [**Application Properties**](#application-properties)
   - [**Default Preferences**](#default-preferences)
+  - [**Default Theme**](#default-theme)
   - [**Using Latest Builds**](#using-latest-builds)
 - [**Building**](#building)
   - [**Build**](#build)
@@ -89,6 +90,20 @@ For example, an application can update the preference value for `files.enableTra
         "preferences": {
           "files.enableTrash": false
         }
+      }
+    }
+  },
+```
+
+### Default Theme
+
+Default color and icon themes can be configured in `theia.frontend.config` section:
+```json
+"theia": {
+    "frontend": {
+      "config": {
+        "defaultTheme": "light",
+        "defaultIconTheme": "vs-seti"
       }
     }
   },

@@ -18,6 +18,12 @@ import { enableJSDOM } from '../browser/test/jsdom';
 
 let disableJSDOM = enableJSDOM();
 
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { ApplicationProps } from '@theia/application-package/lib/application-props';
+FrontendApplicationConfigProvider.set({
+    ...ApplicationProps.DEFAULT.frontend.config
+});
+
 import { expect } from 'chai';
 import { ConnectionStatus } from './connection-status-service';
 import { MockConnectionStatusService } from './test/mock-connection-status-service';

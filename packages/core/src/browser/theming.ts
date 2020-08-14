@@ -17,6 +17,7 @@
 import { Emitter, Event } from '../common/event';
 import { Disposable } from '../common/disposable';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
+import { ApplicationProps } from '@theia/application-package/lib/application-props';
 
 export const ThemeServiceSymbol = Symbol('ThemeService');
 
@@ -50,10 +51,7 @@ export class ThemeService {
         return global[ThemeServiceSymbol] || new ThemeService();
     }
 
-    protected constructor(
-        protected _defaultTheme: string | undefined = FrontendApplicationConfigProvider.get().defaultTheme,
-        protected fallbackTheme: string = 'dark'
-    ) {
+    protected constructor() {
         const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
         global[ThemeServiceSymbol] = this;
     }
@@ -134,7 +132,7 @@ export class ThemeService {
      * The default theme. If that is not applicable, returns with the fallback theme.
      */
     get defaultTheme(): Theme {
-        return this.themes[this._defaultTheme || this.fallbackTheme] || this.themes[this.fallbackTheme];
+        return this.themes[FrontendApplicationConfigProvider.get().defaultTheme] || this.themes[ApplicationProps.DEFAULT.frontend.config.defaultTheme];
     }
 
     /**

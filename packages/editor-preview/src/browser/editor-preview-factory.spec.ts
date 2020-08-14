@@ -21,6 +21,12 @@
 import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 const disableJsDom = enableJSDOM();
 
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { ApplicationProps } from '@theia/application-package/lib/application-props';
+FrontendApplicationConfigProvider.set({
+    ...ApplicationProps.DEFAULT.frontend.config
+});
+
 import { Container } from 'inversify';
 import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser';
 import { EditorWidget, EditorManager } from '@theia/editor/lib/browser';
