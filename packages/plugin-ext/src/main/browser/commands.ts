@@ -19,6 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Command, CommandService } from '@theia/core/lib/common/command';
 import { AbstractDialog } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import * as DOMPurify from 'dompurify';
 
 @injectable()
 export class OpenUriCommandHandler {
@@ -90,7 +91,7 @@ class OpenNewTabDialog extends AbstractDialog<string> {
     showOpenNewTabDialog(uri: string): void {
         this.value = uri;
 
-        this.linkNode.innerHTML = uri;
+        this.linkNode.innerHTML = DOMPurify.sanitize(uri);
         this.linkNode.href = uri;
         this.openButton.onclick = () => {
             this.windowService.openNewWindow(uri);
