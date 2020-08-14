@@ -20,6 +20,8 @@ import { PluginDeployerResolver, PluginDeployerResolverContext } from '../../../
 import { injectable } from 'inversify';
 import * as fs from 'fs';
 import * as path from 'path';
+import { FileUri } from '@theia/core/lib/node';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class LocalDirectoryPluginDeployerResolver implements PluginDeployerResolver {
@@ -30,23 +32,20 @@ export class LocalDirectoryPluginDeployerResolver implements PluginDeployerResol
      * Check all files/folder from the local-dir referenced and add them as plugins.
      */
     async resolve(pluginResolverContext: PluginDeployerResolverContext): Promise<void> {
-
         // get directory
-        const localDirSetting = pluginResolverContext.getOriginId();
-        if (!localDirSetting.startsWith(LocalDirectoryPluginDeployerResolver.LOCAL_DIR)) {
+        const localDirUri = new URI(pluginResolverContext.getOriginId());
+        if (localDirUri.scheme !== LocalDirectoryPluginDeployerResolver.LOCAL_DIR) {
             return;
         }
-        // remove prefix
-        let dirPath = localDirSetting.substring(LocalDirectoryPluginDeployerResolver.LOCAL_DIR.length + 1);
+        // get fs path
+        let dirPath = FileUri.fsPath(localDirUri);
         if (!path.isAbsolute(dirPath)) {
             dirPath = path.resolve(process.cwd(), dirPath);
         }
-
         // check directory exists
         if (!fs.existsSync(dirPath)) {
             console.warn(`The directory referenced by ${pluginResolverContext.getOriginId()} does not exist.`);
             return;
-
         }
         // list all stuff from this directory
         await new Promise((resolve: any, reject: any) => {
@@ -56,10 +55,7 @@ export class LocalDirectoryPluginDeployerResolver implements PluginDeployerResol
                 });
                 resolve(true);
             });
-
         });
-
-        return Promise.resolve();
     }
     accept(pluginId: string): boolean {
         return pluginId.startsWith(LocalDirectoryPluginDeployerResolver.LOCAL_DIR);
