@@ -43,13 +43,28 @@
     color: var(--theia-editorWidget-foreground);
 }
 
+.theia-search-button.codicon.codicon-filter {
+    line-height: var(--theia-private-horizontal-tab-height);
+    color: var(--theia-editorWidget-foreground);
+    align-self: flex-end;
+}
+
+.theia-search-button.codicon-filter:not(.filter-active):before {
+    content: "\eb85";
+}
+
+.theia-search-button.codicon-filter.filter-active:before {
+    content: "\eb83";
+}
+
 .theia-search-button-next:before {
     content: "\f107";
 }
 
 .theia-search-button-next:hover,
 .theia-search-button-previous:hover,
-.theia-search-button-close:hover {
+.theia-search-button-close:hover,
+.theia-search-button.codicon-filter:hover {
     cursor: pointer;
     background-color: var(--theia-editorHoverWidget-background);
 }

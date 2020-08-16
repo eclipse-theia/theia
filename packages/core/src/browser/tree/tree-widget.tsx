@@ -186,7 +186,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     @postConstruct()
     protected init(): void {
         if (this.props.search) {
-            this.searchBox = this.searchBoxFactory({ ...SearchBoxProps.DEFAULT, showButtons: true });
+            this.searchBox = this.searchBoxFactory({ ...SearchBoxProps.DEFAULT, showButtons: true, showFilter: true });
             this.toDispose.pushAll([
                 this.searchBox,
                 this.searchBox.onTextChange(async data => {
@@ -207,16 +207,19 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                         this.model.selectPrevNode();
                     }
                 }),
+                this.searchBox.onFilterToggled(e => {
+                    this.updateRows();
+                }),
                 this.treeSearch,
                 this.treeSearch.onFilteredNodesChanged(nodes => {
+                    if (this.searchBox.isFiltering) {
+                        this.updateRows();
+                    }
                     const node = nodes.find(SelectableTreeNode.is);
                     if (node) {
                         this.model.selectNode(node);
                     }
                 }),
-                this.model.onExpansionChanged(() => {
-                    this.searchBox.hide();
-                })
             ]);
         }
         this.toDispose.pushAll([
@@ -282,7 +285,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 pruneCollapsed: true,
                 pruneSiblings: true
             })) {
-                if (TreeNode.isVisible(node)) {
+                if (this.shouldDisplayNode(node)) {
                     const parentDepth = depths.get(node.parent);
                     const depth = parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
                     if (CompositeTreeNode.is(node)) {
@@ -298,6 +301,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         this.rows = new Map(rowsToUpdate);
         this.updateScrollToRow();
+    }
+
+    protected shouldDisplayNode(node: TreeNode): boolean {
+        return TreeNode.isVisible(node) && (!this.searchBox?.isFiltering || this.treeSearch.passesFilters(node));
     }
 
     /**

@@ -29,6 +29,11 @@ export interface SearchBoxProps extends SearchBoxDebounceOptions {
      */
     readonly showButtons?: boolean;
 
+    /**
+     * If `true`, `Filter` and `Close` buttons will be visible, and clicking the `Filter` button will triggers filter on the search term. Defaults to `false`.
+     */
+    readonly showFilter?: boolean;
+
 }
 
 export namespace SearchBoxProps {
@@ -54,7 +59,10 @@ export class SearchBox extends BaseWidget {
     protected readonly previousEmitter = new Emitter<void>();
     protected readonly closeEmitter = new Emitter<void>();
     protected readonly textChangeEmitter = new Emitter<string | undefined>();
+    protected readonly filterToggleEmitter = new Emitter<boolean>();
     protected readonly input: HTMLInputElement;
+    protected readonly filter: HTMLElement | undefined;
+    protected _isFiltering: boolean = false;
 
     constructor(protected readonly props: SearchBoxProps,
         protected readonly debounce: SearchBoxDebounce) {
@@ -65,13 +73,15 @@ export class SearchBox extends BaseWidget {
             this.previousEmitter,
             this.closeEmitter,
             this.textChangeEmitter,
+            this.filterToggleEmitter,
             this.debounce,
             this.debounce.onChanged(data => this.fireTextChange(data))
         ]);
         this.hide();
         this.update();
-        const { input } = this.createContent();
+        const { input, filter } = this.createContent();
         this.input = input;
+        this.filter = filter;
     }
 
     get onPrevious(): Event<void> {
@@ -88,6 +98,14 @@ export class SearchBox extends BaseWidget {
 
     get onTextChange(): Event<string | undefined> {
         return this.textChangeEmitter.event;
+    }
+
+    get onFilterToggled(): Event<boolean> {
+        return this.filterToggleEmitter.event;
+    }
+
+    get isFiltering(): boolean {
+        return this._isFiltering;
     }
 
     get keyCodePredicate(): KeyCode.Predicate {
@@ -108,6 +126,23 @@ export class SearchBox extends BaseWidget {
 
     protected fireTextChange(input: string | undefined): void {
         this.textChangeEmitter.fire(input);
+    }
+
+    protected fireFilterToggle(): void {
+        this.doFireFilterToggle();
+    }
+
+    protected doFireFilterToggle(toggleTo: boolean = !this._isFiltering): void {
+        if (this.filter) {
+            if (toggleTo) {
+                this.filter.classList.add(SearchBox.Styles.FILTER_ON);
+            } else {
+                this.filter.classList.remove(SearchBox.Styles.FILTER_ON);
+            }
+            this._isFiltering = toggleTo;
+            this.filterToggleEmitter.fire(toggleTo);
+            this.update();
+        }
     }
 
     handle(event: KeyboardEvent): void {
@@ -132,6 +167,7 @@ export class SearchBox extends BaseWidget {
     }
 
     onBeforeHide(): void {
+        this.doFireFilterToggle(false);
         this.debounce.append(undefined);
         this.fireClose();
     }
@@ -164,6 +200,7 @@ export class SearchBox extends BaseWidget {
     protected createContent(): {
         container: HTMLElement,
         input: HTMLInputElement,
+        filter: HTMLElement | undefined,
         previous: HTMLElement | undefined,
         next: HTMLElement | undefined,
         close: HTMLElement | undefined
@@ -180,6 +217,18 @@ export class SearchBox extends BaseWidget {
             SearchBox.Styles.SEARCH_INPUT
         );
         this.node.appendChild(input);
+
+        let filter: HTMLElement | undefined;
+        if (this.props.showFilter) {
+            filter = document.createElement('div');
+            filter.classList.add(
+                SearchBox.Styles.BUTTON,
+                ...SearchBox.Styles.FILTER,
+            );
+            filter.title = 'Enable Filter on Type';
+            this.node.appendChild(filter);
+            filter.onclick = this.fireFilterToggle.bind(this);
+        }
 
         let previous: HTMLElement | undefined;
         let next: HTMLElement | undefined;
@@ -203,7 +252,9 @@ export class SearchBox extends BaseWidget {
             next.title = 'Next (Down)';
             this.node.appendChild(next);
             next.onclick = () => this.fireNext.bind(this)();
+        }
 
+        if (this.props.showButtons || this.props.showFilter) {
             close = document.createElement('div');
             close.classList.add(
                 SearchBox.Styles.BUTTON,
@@ -217,6 +268,7 @@ export class SearchBox extends BaseWidget {
         return {
             container: this.node,
             input,
+            filter,
             previous,
             next,
             close
@@ -242,6 +294,8 @@ export namespace SearchBox {
         export const SEARCH_BOX = 'theia-search-box';
         export const SEARCH_INPUT = 'theia-search-input';
         export const BUTTON = 'theia-search-button';
+        export const FILTER = ['codicon', 'codicon-filter'];
+        export const FILTER_ON = 'filter-active';
         export const BUTTON_PREVIOUS = 'theia-search-button-previous';
         export const BUTTON_NEXT = 'theia-search-button-next';
         export const BUTTON_CLOSE = 'theia-search-button-close';
