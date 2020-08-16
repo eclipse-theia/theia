@@ -70,6 +70,9 @@ export class ScmTreeWidget extends TreeWidget {
     }
 
     set viewMode(id: 'tree' | 'list') {
+        // Close the search box because the structure of the tree will change dramatically
+        // and the search results will be out of date.
+        this.searchBox.hide();
         this.model.viewMode = id;
     }
     get viewMode(): 'tree' | 'list' {

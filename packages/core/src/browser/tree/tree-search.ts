@@ -40,6 +40,7 @@ export class TreeSearch implements Disposable {
 
     protected _filterResult: FuzzySearch.Match<TreeNode>[] = [];
     protected _filteredNodes: ReadonlyArray<Readonly<TreeNode>> = [];
+    protected _filteredNodesAndParents: Set<string> = new Set();
 
     @postConstruct()
     protected init(): void {
@@ -55,22 +56,34 @@ export class TreeSearch implements Disposable {
      */
     async filter(pattern: string | undefined): Promise<ReadonlyArray<Readonly<TreeNode>>> {
         const { root } = this.tree;
+        this._filteredNodesAndParents = new Set();
         if (!pattern || !root) {
             this._filterResult = [];
             this._filteredNodes = [];
             this.fireFilteredNodesChanged(this._filteredNodes);
             return [];
         }
-        const items = [...new TopDownTreeIterator(root, { pruneCollapsed: true })];
+        const items = [...new TopDownTreeIterator(root)];
         const transform = (node: TreeNode) => this.labelProvider.getName(node);
         this._filterResult = await this.fuzzySearch.filter({
             items,
             pattern,
             transform
         });
-        this._filteredNodes = this._filterResult.map(match => match.item);
+        this._filteredNodes = this._filterResult.map(({ item }) => {
+            this.addAllParentsToFilteredSet(item);
+            return item;
+        });
         this.fireFilteredNodesChanged(this._filteredNodes);
-        return this._filteredNodes!.slice();
+        return this._filteredNodes.slice();
+    }
+
+    protected addAllParentsToFilteredSet(node: TreeNode): void {
+        let toAdd: TreeNode | undefined = node;
+        while (toAdd && !this._filteredNodesAndParents.has(toAdd.id)) {
+            this._filteredNodesAndParents.add(toAdd.id);
+            toAdd = toAdd.parent;
+        };
     }
 
     /**
@@ -85,6 +98,10 @@ export class TreeSearch implements Disposable {
      */
     get onFilteredNodesChanged(): Event<ReadonlyArray<Readonly<TreeNode>>> {
         return this.filteredNodesEmitter.event;
+    }
+
+    passesFilters(node: TreeNode): boolean {
+        return this._filteredNodesAndParents.has(node.id);
     }
 
     dispose(): void {
@@ -108,5 +125,4 @@ export class TreeSearch implements Disposable {
             length
         };
     }
-
 }
