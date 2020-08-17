@@ -160,7 +160,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         const styleElement = document.createElement('style');
         styleElement.type = 'text/css';
         styleElement.className = 'theia-icon-theme';
-        styleElement.innerHTML = this.styleSheetContent;
+        styleElement.innerText = this.styleSheetContent;
         document.head.appendChild(styleElement);
         const toRemoveStyleElement = Disposable.create(() => styleElement.remove());
         this.toDisposeStyleElement.push(toRemoveStyleElement);
