@@ -16,7 +16,8 @@
     "tar-fs": "^1.16.2",
     "trash": "^6.1.1",
     "uuid": "^8.0.0",
-    "vscode-languageserver-textdocument": "^1.0.1"
+    "vscode-languageserver-textdocument": "^1.0.1",
+    "yargs": "^11.1.0"
   },
   "publishConfig": {
     "access": "public"
@@ -60,7 +61,8 @@
     "test:watch": "theiaext test:watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^1.4.0"
+    "@theia/ext-scripts": "^1.4.0",
+    "@types/yargs": "^11.1.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
