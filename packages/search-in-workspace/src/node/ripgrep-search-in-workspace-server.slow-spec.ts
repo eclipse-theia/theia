@@ -20,7 +20,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { RawProcessFactory, RawProcessOptions, RawProcess, ProcessManager } from '@theia/process/lib/node';
 import { RipgrepSearchInWorkspaceServer, RgPath } from './ripgrep-search-in-workspace-server';
-import { SearchInWorkspaceClient, SearchInWorkspaceResult } from '../common/search-in-workspace-interface';
+import { SearchInWorkspaceClient, SearchInWorkspaceResult, getExcludeGlobs } from '../common/search-in-workspace-interface';
 import * as path from 'path';
 import * as temp from 'temp';
 import * as fs from 'fs';
@@ -832,5 +832,83 @@ describe('ripgrep-search-in-workspace-server', function (): void {
         } else {
             expect(errorString).contains('could not execute the ripgrep (rg) binary');
         }
+    });
+
+    describe('exclude', function (): void {
+
+        it('should return 1 result when searching for "test" while ignoring all ".txt" files', done => {
+            const pattern = 'test';
+
+            const client = new ResultAccumulator(() => {
+                const expected: SearchInWorkspaceExpectation[] = [
+                    { root: rootDirAUri, fileUri: 'glob', line: 1, character: 1, length: pattern.length, lineText: '' },
+                ];
+                compareSearchResults(expected, client.results);
+                done();
+            });
+            ripgrepServer.setClient(client);
+            ripgrepServer.search(pattern, [rootDirAUri, rootDirBUri], { exclude: ['*.txt'] });
+        });
+
+        it('should return 0 results when searching for "test" while ignoring files "glob" and all ".txt" files', done => {
+            const pattern = 'test';
+
+            const client = new ResultAccumulator(() => {
+                const expected: SearchInWorkspaceExpectation[] = [];
+                compareSearchResults(expected, client.results);
+                done();
+            });
+            ripgrepServer.setClient(client);
+            ripgrepServer.search(pattern, [rootDirAUri, rootDirBUri], { exclude: ['*.txt', 'glob'] });
+        });
+
+        it('should be able to successfully override default `excludeGlobs` preferences', done => {
+            const pattern = 'test';
+            const defaultGlobs = { '**/*.ts': true }; // mimics `files.exclude`.
+            const overriddenGlobs = { '**/*.ts': false }; // mimics `search.exclude`.
+
+            let client = new ResultAccumulator(() => {
+                const expected: SearchInWorkspaceExpectation[] = [
+                    { root: rootDirAUri, fileUri: 'glob', line: 1, character: 1, length: pattern.length, lineText: '' },
+                ];
+                compareSearchResults(expected, client.results);
+                done();
+            });
+            ripgrepServer.setClient(client);
+            ripgrepServer.search(pattern, [rootDirAUri, rootDirBUri], { exclude: getExcludeGlobs(defaultGlobs) });
+
+            client = new ResultAccumulator(() => {
+                const expected: SearchInWorkspaceExpectation[] = [
+                    { root: rootDirAUri, fileUri: 'glob', line: 1, character: 1, length: pattern.length, lineText: '' },
+                    { root: rootDirAUri, fileUri: 'glob.txt', line: 1, character: 1, length: pattern.length, lineText: '' },
+                ];
+                compareSearchResults(expected, client.results);
+                done();
+            });
+            ripgrepServer.setClient(client);
+            ripgrepServer.search(pattern, [rootDirAUri, rootDirBUri], { exclude: getExcludeGlobs({ ...defaultGlobs, ...overriddenGlobs }) });
+        });
+
+    });
+});
+
+describe('#getExcludedGlobs', function (): void {
+    it('should filter out "falsy" globs', () => {
+        const globs = {
+            'a': true,
+            'b': true,
+            'c': false,
+        };
+        const result = getExcludeGlobs(globs);
+        expect(result).to.deep.equal(['a', 'b']);
+    });
+
+    it('should respect precedence', () => {
+        const globA = { 'a': true };
+        const globB = { 'a': false };
+        const resultA = getExcludeGlobs({ ...globA, ...globB });
+        const resultB = getExcludeGlobs({ ...globB, ...globA });
+        expect(resultA).to.deep.equal([]);
+        expect(resultB).to.deep.equal(['a']);
     });
 });

@@ -17,7 +17,7 @@
 import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from 'inversify';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
-import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
+import { SearchInWorkspaceOptions, getExcludeGlobs } from '../common/search-in-workspace-interface';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import { Event, Emitter, Disposable } from '@theia/core/lib/common';
@@ -25,6 +25,8 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 import { CancellationTokenSource } from '@theia/core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
+import { FileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
+import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
 
 export interface SearchFieldState {
     className: string;
@@ -85,6 +87,12 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     @inject(ProgressBarFactory)
     protected readonly progressBarFactory: ProgressBarFactory;
+
+    @inject(FileSystemPreferences)
+    protected readonly filesPreferences: FileSystemPreferences;
+
+    @inject(SearchInWorkspacePreferences)
+    protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
 
     @postConstruct()
     protected init(): void {
@@ -361,16 +369,28 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected readonly search = (e: React.KeyboardEvent) => this.doSearch(e);
     protected doSearch(e: React.KeyboardEvent): void {
         if (e.target) {
-            const searchValue = (e.target as HTMLInputElement).value;
+            const searchValue = (document.getElementById('search-input-field') as HTMLInputElement).value;
             if (Key.ARROW_DOWN.keyCode === e.keyCode) {
                 this.resultTreeWidget.focusFirstResult();
             } else if (this.searchTerm === searchValue && Key.ENTER.keyCode !== e.keyCode) {
                 return;
             } else {
                 this.searchTerm = searchValue;
-                this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
+                const options: SearchInWorkspaceOptions = {
+                    ...this.searchInWorkspaceOptions,
+                    exclude: this.getExcludeGlobs(this.searchInWorkspaceOptions.exclude || [])
+                };
+                this.resultTreeWidget.search(this.searchTerm, (options || {}));
             }
         }
+    }
+
+    protected getExcludeGlobs(excludeInputField: string[]): string[] {
+        const excludePreferences = {
+            ...this.filesPreferences['files.exclude'],
+            ...this.searchInWorkspacePreferences['search.exclude']
+        };
+        return [...new Set([...getExcludeGlobs(excludePreferences), ...excludeInputField])];
     }
 
     protected renderSearchField(): React.ReactNode {
@@ -519,7 +539,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 onKeyUp={e => {
                     if (e.target) {
                         if (Key.ENTER.keyCode === e.keyCode) {
-                            this.resultTreeWidget.search(this.searchTerm, this.searchInWorkspaceOptions);
+                            this.search(e);
                         } else {
                             this.searchInWorkspaceOptions[kind] = this.splitOnComma((e.target as HTMLInputElement).value);
                         }

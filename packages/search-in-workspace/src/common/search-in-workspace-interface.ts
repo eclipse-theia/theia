@@ -143,3 +143,7 @@ export interface SearchInWorkspaceServer extends JsonRpcServer<SearchInWorkspace
 
     dispose(): void;
 }
+
+export function getExcludeGlobs(globs: { [x: string]: boolean }): string[] {
+    return Object.keys(globs).filter(key => !!globs[key]);
+}

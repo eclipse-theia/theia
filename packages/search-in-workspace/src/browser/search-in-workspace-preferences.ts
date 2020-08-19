@@ -30,6 +30,12 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
             default: 'auto',
             type: 'string',
             enum: ['auto', 'alwaysCollapse', 'alwaysExpand'],
+        },
+        'search.exclude': {
+            description: 'Configure glob patterns for excluding files and folders in searches. Inherits all glob patterns from the files.exclude setting.',
+            default: { '**/node_modules': true, '**/bower_components': true, '**/*.code-search': true },
+            type: 'object'
+
         }
     }
 };
@@ -37,6 +43,7 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
 export class SearchInWorkspaceConfiguration {
     'search.lineNumbers': boolean;
     'search.collapseResults': string;
+    'search.exclude': { [key: string]: boolean };
 }
 
 export const SearchInWorkspacePreferences = Symbol('SearchInWorkspacePreferences');
