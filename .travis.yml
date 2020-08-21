@@ -88,9 +88,6 @@ before_install:
       export DISPLAY=:99.0
       Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
       echo "XVFB configured"
-      if [[ "$PYTHON" == *python3 ]]; then
-        sudo apt-get -y install python3
-      fi
     fi
   - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.13.0
   - export PATH=$HOME/.yarn/bin:$PATH
@@ -116,26 +113,19 @@ jobs:
   fast_finish: true
   include:
     - stage: test
-      name: Ubuntu / Python 2
+      name: Ubuntu
       os: linux
-      dist: xenial
-    - stage: test
-      name: Ubuntu / Python 3 (No Tests)
-      os: linux
-      dist: xenial
-      env:
-        - PYTHON=/usr/bin/python3
+      dist: bionic
       before_script:
-        - node --version
+        - PYTHON=/usr/bin/python3
         - $PYTHON --version
-      script: yarn
-    - name: macOS / Python 2
+    - name: macOS
       os: osx
       osx_image: xcode11.4
       env: CXX=c++
       script:
         - travis_retry yarn test:theia
-    - name: Windows / Python 2
+    - name: Windows
       os: windows
       env:
         - CXX=c++
