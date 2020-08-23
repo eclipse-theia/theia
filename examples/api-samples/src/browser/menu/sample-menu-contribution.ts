@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, CommandContribution, CommandRegistry, MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
+import { Command, CommandContribution, CommandRegistry, MAIN_MENU_BAR, MenuContribution, MenuModelRegistry, MenuNode, SubMenuOptions } from '@theia/core/lib/common';
 import { injectable, interfaces } from 'inversify';
 
 const SampleCommand: Command = {
@@ -59,16 +59,36 @@ export class SampleMenuContribution implements MenuContribution {
             order: '2'
         });
         const subSubMenuPath = [...subMenuPath, 'sample-sub-menu'];
-        menus.registerSubmenu(subSubMenuPath, 'Sample sub menu', { order: '1' });
+        menus.registerSubmenu(subSubMenuPath, 'Sample sub menu', { order: '2' });
         menus.registerMenuAction(subSubMenuPath, {
             commandId: SampleCommand.id,
-            order: '0'
+            order: '1'
         });
         menus.registerMenuAction(subSubMenuPath, {
             commandId: SampleCommand2.id,
-            order: '2'
+            order: '3'
         });
+        const placeholder = new PlaceholderMenuNode([...subSubMenuPath, 'placeholder'].join('-'), 'Placeholder', { order: '0' });
+        menus.registerMenuNode(subSubMenuPath, placeholder);
     }
+
+}
+
+/**
+ * Special menu node that is not backed by any commands and is always disabled.
+ */
+export class PlaceholderMenuNode implements MenuNode {
+
+    constructor(readonly id: string, public readonly label: string, protected options?: SubMenuOptions) { }
+
+    get icon(): string | undefined {
+        return this.options?.iconClass;
+    }
+
+    get sortString(): string {
+        return this.options?.order || this.label;
+    }
+
 }
 
 export const bindSampleMenu = (bind: interfaces.Bind) => {
