@@ -79,9 +79,13 @@ export class MenuModelRegistry {
     }
 
     registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
+        const menuNode = new ActionMenuNode(item, this.commands);
+        return this.registerMenuNode(menuPath, menuNode);
+    }
+
+    registerMenuNode(menuPath: MenuPath, menuNode: MenuNode): Disposable {
         const parent = this.findGroup(menuPath);
-        const actionNode = new ActionMenuNode(item, this.commands);
-        return parent.addNode(actionNode);
+        return parent.addNode(menuNode);
     }
 
     registerSubmenu(menuPath: MenuPath, label: string, options?: SubMenuOptions): Disposable {
@@ -143,7 +147,14 @@ export class MenuModelRegistry {
             return;
         }
 
-        // Recurse all menus, removing any menus matching the id
+        this.unregisterMenuNode(id);
+    }
+
+    /**
+     * Recurse all menus, removing any menus matching the `id`.
+     * @param id technical identifier of the `MenuNode`.
+     */
+    unregisterMenuNode(id: string): void {
         const recurse = (root: CompositeMenuNode) => {
             root.children.forEach(node => {
                 if (node instanceof CompositeMenuNode) {

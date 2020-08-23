@@ -19,7 +19,7 @@ import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
 import {
     CommandRegistry, ActionMenuNode, CompositeMenuNode,
-    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, DisposableCollection, Disposable
+    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, DisposableCollection, Disposable, MenuNode
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
@@ -34,7 +34,7 @@ export abstract class MenuBarWidget extends MenuBar {
 }
 
 @injectable()
-export class BrowserMainMenuFactory {
+export class BrowserMainMenuFactory implements MenuWidgetFactory {
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -68,7 +68,7 @@ export class BrowserMainMenuFactory {
         const menuCommandRegistry = this.createMenuCommandRegistry(menuModel);
         for (const menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
-                const menuWidget = new DynamicMenuWidget(menu, { commands: menuCommandRegistry }, this.services);
+                const menuWidget = this.createMenuWidget(menu, { commands: menuCommandRegistry });
                 menuBar.addMenu(menuWidget);
             }
         }
@@ -78,8 +78,12 @@ export class BrowserMainMenuFactory {
     createContextMenu(path: MenuPath, args?: any[]): MenuWidget {
         const menuModel = this.menuProvider.getMenu(path);
         const menuCommandRegistry = this.createMenuCommandRegistry(menuModel, args).snapshot();
-        const contextMenu = new DynamicMenuWidget(menuModel, { commands: menuCommandRegistry }, this.services);
+        const contextMenu = this.createMenuWidget(menuModel, { commands: menuCommandRegistry });
         return contextMenu;
+    }
+
+    createMenuWidget(menu: CompositeMenuNode, options: MenuWidget.IOptions & { commands: MenuCommandRegistry }): DynamicMenuWidget {
+        return new DynamicMenuWidget(menu, options, this.services);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -99,22 +103,30 @@ export class BrowserMainMenuFactory {
                 }
             } else if (child instanceof CompositeMenuNode) {
                 this.registerMenu(menuCommandRegistry, child, args);
+            } else {
+                this.handleDefault(menuCommandRegistry, child, args);
             }
         }
     }
 
-    private get services(): MenuServices {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected handleDefault(menuCommandRegistry: MenuCommandRegistry, menuNode: MenuNode, args: any[]): void {
+        // NOOP
+    }
+
+    protected get services(): MenuServices {
         return {
             context: this.context,
             contextKeyService: this.contextKeyService,
             commandRegistry: this.commandRegistry,
-            keybindingRegistry: this.keybindingRegistry
+            keybindingRegistry: this.keybindingRegistry,
+            menuWidgetFactory: this
         };
     }
 
 }
 
-class DynamicMenuBarWidget extends MenuBarWidget {
+export class DynamicMenuBarWidget extends MenuBarWidget {
 
     /**
      * We want to restore the focus after the menu closes.
@@ -183,17 +195,22 @@ class DynamicMenuBarWidget extends MenuBarWidget {
 
 }
 
-class MenuServices {
+export class MenuServices {
     readonly commandRegistry: CommandRegistry;
     readonly keybindingRegistry: KeybindingRegistry;
     readonly contextKeyService: ContextKeyService;
     readonly context: ContextMenuContext;
+    readonly menuWidgetFactory: MenuWidgetFactory;
+}
+
+export interface MenuWidgetFactory {
+    createMenuWidget(menu: CompositeMenuNode, options: MenuWidget.IOptions & { commands: MenuCommandRegistry }): MenuWidget;
 }
 
 /**
  * A menu widget that would recompute its items on update.
  */
-class DynamicMenuWidget extends MenuWidget {
+export class DynamicMenuWidget extends MenuWidget {
 
     /**
      * We want to restore the focus after the menu closes.
@@ -247,7 +264,7 @@ class DynamicMenuWidget extends MenuWidget {
             if (item instanceof CompositeMenuNode) {
                 if (item.children.length) { // do not render empty nodes
                     if (item.isSubmenu) { // submenu node
-                        const submenu = new DynamicMenuWidget(item, this.options, this.services);
+                        const submenu = this.services.menuWidgetFactory.createMenuWidget(item, this.options);
                         if (!submenu.items.length) {
                             continue;
                         }
@@ -279,9 +296,15 @@ class DynamicMenuWidget extends MenuWidget {
                     command: node.action.commandId,
                     type: 'command'
                 });
+            } else {
+                items.push(...this.handleDefault(item));
             }
         }
         return items;
+    }
+
+    protected handleDefault(menuNode: MenuNode): MenuWidget.IItemOptions[] {
+        return [];
     }
 
     protected preserveFocusedElement(previousFocusedElement: Element | null = document.activeElement): boolean {
@@ -351,7 +374,7 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
 /**
  * Stores Theia-specific action menu nodes instead of PhosphorJS commands with their handlers.
  */
-class MenuCommandRegistry extends PhosphorCommandRegistry {
+export class MenuCommandRegistry extends PhosphorCommandRegistry {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected actions = new Map<string, [ActionMenuNode, any[]]>();
