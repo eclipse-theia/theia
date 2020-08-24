@@ -51,7 +51,11 @@ export class Memento implements theia.Memento {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     update(key: string, value: any): Promise<void> {
-        this.cache[key] = value;
+        if (value === undefined) {
+            delete this.cache[key];
+        } else {
+            this.cache[key] = value;
+        }
         return this.storage.setPerPluginData(this.pluginId, this.cache, this.isPluginGlobalData).then(_ => undefined);
     }
 }
