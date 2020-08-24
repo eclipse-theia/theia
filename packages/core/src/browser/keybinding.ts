@@ -422,8 +422,10 @@ export class KeybindingRegistry {
         } else {
             const command = this.commandRegistry.getCommand(binding.command);
             if (command) {
-                this.commandRegistry.executeCommand(binding.command, binding.args)
-                    .catch(e => console.error('Failed to execute command:', e));
+                if (this.commandRegistry.isEnabled(binding.command, binding.args)) {
+                    this.commandRegistry.executeCommand(binding.command, binding.args)
+                        .catch(e => console.error('Failed to execute command:', e));
+                }
 
                 /* Note that if a keybinding is in context but the command is
                    not active we still stop the processing here.  */
