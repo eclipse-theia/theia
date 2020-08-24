@@ -62,6 +62,7 @@ describe('Saveable', function () {
 
     const toTearDown = new DisposableCollection();
 
+    /** @type {string | undefined} */
     const autoSave = preferences.get('editor.autoSave', undefined, rootUri.toString());
 
     beforeEach(async () => {

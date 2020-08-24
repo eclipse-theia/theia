@@ -39,6 +39,7 @@ describe('TypeScript', function () {
     const { ProgressStatusBarItem } = require('@theia/core/lib/browser/progress-status-bar-item');
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { PluginViewRegistry } = require('@theia/plugin-ext/lib/main/browser/view/plugin-view-registry');
+    const { Deferred } = require('@theia/core/lib/common/promise-util');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -504,7 +505,7 @@ module.exports = (port, host, argv) => Promise.resolve()
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('renameInputVisible'));
 
-        const renaming = commands.executeCommand('editor.action.rename');
+        commands.executeCommand('editor.action.rename');
         await waitForAnimation(() => contextKeyService.match('renameInputVisible')
             && document.activeElement instanceof HTMLInputElement
             && document.activeElement.selectionEnd === 'container'.length);
@@ -520,7 +521,11 @@ module.exports = (port, host, argv) => Promise.resolve()
         input.value = 'foo';
         keybindings.dispatchKeyDown('Enter', input);
 
-        await renaming;
+        // all rename edits should be grouped in one edit operation and applied in the same tick
+        const waitForApplyRenameEdits = new Deferred();
+        editor.getControl().onDidChangeModelContent(waitForApplyRenameEdits.resolve);
+        await waitForApplyRenameEdits.promise;
+
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('renameInputVisible'));
 
