@@ -117,6 +117,7 @@ export namespace FileStatNode {
 export type FileStatNodeData = Omit<FileStatNode, 'uri' | 'fileStat'> & {
     uri: string
     stat?: Stat | { type: FileType } & Partial<Stat>
+    // eslint-disable-next-line deprecation/deprecation
     fileStat?: DeprecatedFileStat
 };
 export namespace FileStatNodeData {
@@ -145,6 +146,7 @@ export namespace DirNode {
     export function uriCompare(node: TreeNode, node2: TreeNode): number {
         if (FileStatNode.is(node)) {
             if (FileStatNode.is(node2)) {
+                // eslint-disable-next-line deprecation/deprecation
                 return node.uri.displayName.localeCompare(node2.uri.displayName);
             }
             return 1;

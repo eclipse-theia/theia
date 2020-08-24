@@ -16,9 +16,10 @@
 
 import { inject, injectable } from 'inversify';
 import { Command, CommandRegistry, Disposable } from '../../common';
-import { Keybinding, KeybindingRegistry } from '../keybinding';
-import { QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenGroupItem, QuickOpenGroupItemOptions } from './quick-open-model';
-import { QuickOpenOptions } from './quick-open-service';
+import { KeybindingRegistry } from '../keybinding';
+import { Keybinding } from '../../common/keybinding';
+import { QuickOpenOptions } from '../../common/quick-open-service';
+import { QuickOpenModel, QuickOpenGroupItemOptions, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from '../../common/quick-open-model';
 import { QuickOpenContribution, QuickOpenHandlerRegistry, QuickOpenHandler } from './prefix-quick-open-service';
 import { ContextKeyService } from '../context-key-service';
 import { CLEAR_COMMAND_HISTORY } from './quick-command-contribution';

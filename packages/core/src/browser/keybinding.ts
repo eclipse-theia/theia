@@ -25,7 +25,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from '../common/logger';
 import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
 import { ContextKeyService } from './context-key-service';
-import * as common from '../common/keybinding';
+import { Keybinding } from '../common/keybinding';
 
 export enum KeybindingScope {
     DEFAULT,
@@ -36,12 +36,6 @@ export enum KeybindingScope {
 export namespace KeybindingScope {
     export const length = KeybindingScope.END - KeybindingScope.DEFAULT;
 }
-
-/**
- * @deprecated import from `@theia/core/lib/common/keybinding` instead
- */
-export type Keybinding = common.Keybinding;
-export const Keybinding = common.Keybinding;
 
 export interface ResolvedKeybinding extends Keybinding {
     /**
@@ -261,6 +255,7 @@ export class KeybindingRegistry {
     containsKeybindingInScope(binding: Keybinding, scope = KeybindingScope.USER): boolean {
         const bindingKeySequence = this.resolveKeybinding(binding);
         const collisions = this.getKeySequenceCollisions(this.keymaps[scope], bindingKeySequence)
+            // eslint-disable-next-line deprecation/deprecation
             .filter(b => b.context === binding.context && !b.when && !binding.when);
         if (collisions.full.length > 0) {
             return true;
@@ -437,6 +432,7 @@ export class KeybindingRegistry {
      * Only execute if it has no context (global context) or if we're in that context.
      */
     protected isEnabled(binding: Keybinding, event: KeyboardEvent): boolean {
+        // eslint-disable-next-line deprecation/deprecation
         const context = binding.context && this.contexts[binding.context];
         if (context && !context.isEnabled(binding)) {
             return false;
@@ -532,6 +528,7 @@ export class KeybindingRegistry {
             if (event && !this.isEnabled(binding, event)) {
                 return false;
             }
+            // eslint-disable-next-line deprecation/deprecation
             const { command, context, when, keybinding } = binding;
             if (binding.command.charAt(0) === '-') {
                 disabled = disabled || new Set<string>();

@@ -131,25 +131,15 @@ export const NAVIGATOR_CONTEXT_MENU: MenuPath = ['navigator-context-menu'];
  */
 export namespace NavigatorContextMenu {
     export const NAVIGATION = [...NAVIGATOR_CONTEXT_MENU, 'navigation'];
-    /** @deprecated use NAVIGATION */
-    export const OPEN = NAVIGATION;
-    /** @deprecated use NAVIGATION */
-    export const NEW = NAVIGATION;
 
     export const WORKSPACE = [...NAVIGATOR_CONTEXT_MENU, '2_workspace'];
 
     export const COMPARE = [...NAVIGATOR_CONTEXT_MENU, '3_compare'];
-    /** @deprecated use COMPARE */
-    export const DIFF = COMPARE;
 
     export const SEARCH = [...NAVIGATOR_CONTEXT_MENU, '4_search'];
     export const CLIPBOARD = [...NAVIGATOR_CONTEXT_MENU, '5_cutcopypaste'];
 
     export const MODIFICATION = [...NAVIGATOR_CONTEXT_MENU, '7_modification'];
-    /** @deprecated use MODIFICATION */
-    export const MOVE = MODIFICATION;
-    /** @deprecated use MODIFICATION */
-    export const ACTIONS = MODIFICATION;
 
     export const OPEN_WITH = [...NAVIGATION, 'open_with'];
 }
@@ -207,7 +197,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     @postConstruct()
     protected async init(): Promise<void> {
         await this.fileNavigatorPreferences.ready;
-        this.shell.currentChanged.connect(() => this.onCurrentWidgetChangedHandler());
+        this.shell.onDidChangeCurrentWidget(() => this.onCurrentWidgetChangedHandler());
 
         const updateFocusContextKeys = () => {
             const hasFocus = this.shell.activeWidget instanceof FileNavigatorWidget;
@@ -215,7 +205,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             this.contextKeyService.filesExplorerFocus.set(hasFocus);
         };
         updateFocusContextKeys();
-        this.shell.activeChanged.connect(updateFocusContextKeys);
+        this.shell.onDidChangeActiveWidget(updateFocusContextKeys);
         this.workspaceCommandContribution.onDidCreateNewFile(async event => this.onDidCreateNewResource(event));
         this.workspaceCommandContribution.onDidCreateNewFolder(async event => this.onDidCreateNewResource(event));
     }

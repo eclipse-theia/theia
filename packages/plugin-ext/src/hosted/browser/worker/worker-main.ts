@@ -96,6 +96,7 @@ const pluginManager = new PluginManagerExtImpl({
                 }
                 const plugin: Plugin = {
                     pluginPath: pluginModel.entryPoint.frontend!,
+                    // eslint-disable-next-line deprecation/deprecation
                     pluginFolder: pluginModel.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
@@ -110,6 +111,7 @@ const pluginManager = new PluginManagerExtImpl({
             } else {
                 foreign.push({
                     pluginPath: pluginModel.entryPoint.backend,
+                    // eslint-disable-next-line deprecation/deprecation
                     pluginFolder: pluginModel.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,

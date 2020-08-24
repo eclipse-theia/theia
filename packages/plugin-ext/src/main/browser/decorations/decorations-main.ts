@@ -24,7 +24,8 @@ import {
 import { interfaces } from 'inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Tree, TreeDecoration } from '@theia/core/lib/browser';
+import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
+import { Tree } from '@theia/core/lib/browser';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { ScmDecorationsService } from '@theia/scm/lib/browser/decorations/scm-decorations-service';
 
@@ -34,7 +35,7 @@ export class DecorationsMainImpl implements DecorationsMain, Disposable {
     // TODO: why it is SCM specific? VS Code apis about any decorations for the explorer
     private readonly scmDecorationsService: ScmDecorationsService;
 
-    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
+    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, WidgetDecoration.Data>>();
 
     protected readonly toDispose = new DisposableCollection();
 

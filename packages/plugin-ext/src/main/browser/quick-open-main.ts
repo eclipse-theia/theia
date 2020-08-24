@@ -16,11 +16,6 @@
 
 import { InputBoxOptions, QuickPickItem as QuickPickItemExt } from '@theia/plugin';
 import { interfaces } from 'inversify';
-import {
-    QuickOpenModel,
-    QuickOpenItem,
-    QuickOpenMode
-} from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import {
     QuickOpenExt,
@@ -40,7 +35,7 @@ import { ThemeIcon, QuickInputButton } from '../../plugin/types-impl';
 import { QuickPickService, QuickPickItem, QuickPickValue } from '@theia/core/lib/common/quick-pick-service';
 import { QuickTitleBar } from '@theia/core/lib/browser/quick-open/quick-title-bar';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
-import { QuickTitleButtonSide, QuickOpenGroupItem } from '@theia/core/lib/common/quick-open-model';
+import { QuickTitleButtonSide, QuickOpenGroupItem, QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/common/quick-open-model';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 
 export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel, Disposable {

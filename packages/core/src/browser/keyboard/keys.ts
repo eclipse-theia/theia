@@ -371,7 +371,7 @@ export namespace KeyCode {
             }
         }
 
-        // tslint:disable-next-line: deprecation
+        // eslint-disable-next-line deprecation/deprecation
         const keyCode = event.keyCode;
         if (keyCode) {
             const key = Key.getKey(keyCode);
@@ -401,6 +401,7 @@ export namespace KeyCode {
         if (key && Array.from(key).length === 1) {
             return key;
         }
+        // eslint-disable-next-line deprecation/deprecation
         const charCode = event.charCode;
         // Use the charCode property if it does not correspond to a unicode control character
         if (charCode && charCode > 0x1f && !(charCode >= 0x80 && charCode <= 0x9f)) {

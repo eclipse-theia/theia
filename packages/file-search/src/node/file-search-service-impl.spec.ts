@@ -49,6 +49,7 @@ describe('search-service', function (): void {
     it('shall fuzzy search this spec file', async () => {
         const rootUri = FileUri.create(path.resolve(__dirname, '..')).toString();
         const matches = await service.find('spc', { rootUris: [rootUri] });
+        // eslint-disable-next-line deprecation/deprecation
         const expectedFile = FileUri.create(__filename).displayName;
         const testFile = matches.find(e => e.endsWith(expectedFile));
         expect(testFile).to.be.not.undefined;
@@ -165,9 +166,9 @@ describe('search-service', function (): void {
             const matches = await service.find(searchPattern, { rootUris: [rootUri.toString()], fuzzyMatch: false, useGitIgnore: true, limit: 200 });
             for (const match of matches) {
                 const relativeUri = rootUri.relative(new URI(match));
-                assert.notEqual(relativeUri, undefined);
+                assert.notStrictEqual(relativeUri, undefined);
                 const relativeMatch = relativeUri!.toString();
-                assert.notEqual(relativeMatch.indexOf(searchPattern), -1, relativeMatch);
+                assert.notStrictEqual(relativeMatch.indexOf(searchPattern), -1, relativeMatch);
             }
         });
 
@@ -175,12 +176,12 @@ describe('search-service', function (): void {
             const matches = await service.find('shell', { rootUris: [rootUri.toString()], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
             for (const match of matches) {
                 const relativeUri = rootUri.relative(new URI(match));
-                assert.notEqual(relativeUri, undefined);
+                assert.notStrictEqual(relativeUri, undefined);
                 const relativeMatch = relativeUri!.toString();
                 let position = 0;
                 for (const ch of 'shell') {
                     position = relativeMatch.indexOf(ch, position);
-                    assert.notEqual(position, -1, relativeMatch);
+                    assert.notStrictEqual(position, -1, relativeMatch);
                 }
             }
         });

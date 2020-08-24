@@ -17,8 +17,9 @@
 import { injectable } from 'inversify';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
+import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
-import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
+import { TreeDecorator } from '@theia/core/lib/browser/tree/tree-decorator';
 import { MonacoOutlineSymbolInformationNode } from './monaco-outline-contribution';
 
 @injectable()
@@ -26,17 +27,17 @@ export class MonacoOutlineDecorator implements TreeDecorator {
 
     readonly id = 'theia-monaco-outline-decorator';
 
-    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
+    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, WidgetDecoration.Data>>();
 
-    async decorations(tree: Tree): Promise<Map<string, TreeDecoration.Data>> {
+    async decorations(tree: Tree): Promise<Map<string, WidgetDecoration.Data>> {
         return this.collectDecorations(tree);
     }
 
-    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {
+    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, WidgetDecoration.Data>> {
         return this.emitter.event;
     }
 
-    protected collectDecorations(tree: Tree): Map<string, TreeDecoration.Data> {
+    protected collectDecorations(tree: Tree): Map<string, WidgetDecoration.Data> {
         const result = new Map();
         if (tree.root === undefined) {
             return result;
@@ -51,8 +52,8 @@ export class MonacoOutlineDecorator implements TreeDecorator {
         return result;
     }
 
-    protected toDecoration(node: MonacoOutlineSymbolInformationNode): TreeDecoration.Data {
-        const captionSuffixes: TreeDecoration.CaptionAffix[] = [{
+    protected toDecoration(node: MonacoOutlineSymbolInformationNode): WidgetDecoration.Data {
+        const captionSuffixes: WidgetDecoration.CaptionAffix[] = [{
             data: (node.detail || ''),
             fontData: {
                 color: 'var(--theia-descriptionForeground)',

@@ -79,7 +79,7 @@ describe('nsfw-filesystem-watcher', function (): void {
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
         await sleep(2000);
 
-        assert.deepEqual(expectedUris, [...actualUris]);
+        assert.deepStrictEqual(expectedUris, [...actualUris]);
     });
 
     it('Should not receive file changes events from in the workspace by default if unwatched', async function (): Promise<void> {
@@ -111,7 +111,7 @@ describe('nsfw-filesystem-watcher', function (): void {
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
         await sleep(2000);
 
-        assert.deepEqual(0, actualUris.size);
+        assert.deepStrictEqual(0, actualUris.size);
     });
 
     function createNsfwFileSystemWatcherServer(): NsfwFileSystemWatcherServer {

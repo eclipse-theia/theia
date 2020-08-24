@@ -39,7 +39,9 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
     }
 
     getIcon(node: TreeViewNode): string | undefined {
+        // eslint-disable-next-line deprecation/deprecation
         if (node.icon) {
+            // eslint-disable-next-line deprecation/deprecation
             return node.icon;
         }
         if (node.themeIconId) {
@@ -56,7 +58,9 @@ export class PluginTreeViewNodeLabelProvider implements LabelProviderContributio
     }
 
     getName(node: TreeViewNode): string | undefined {
+        // eslint-disable-next-line deprecation/deprecation
         if (node.name) {
+            // eslint-disable-next-line deprecation/deprecation
             return node.name;
         }
         if (node.resourceUri) {

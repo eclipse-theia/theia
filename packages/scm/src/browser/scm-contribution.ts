@@ -128,7 +128,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         this.labelProvider.onDidChange(() => this.updateStatusBar());
 
         this.updateContextKeys();
-        this.shell.currentChanged.connect(() => this.updateContextKeys());
+        this.shell.onDidChangeCurrentWidget(() => this.updateContextKeys());
     }
 
     protected updateContextKeys(): void {

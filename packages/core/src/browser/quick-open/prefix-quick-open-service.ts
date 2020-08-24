@@ -15,12 +15,12 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open-model';
-import { QuickOpenService, QuickOpenOptions } from './quick-open-service';
+import { QuickOpenOptions } from '../../common/quick-open-service';
+import { QuickOpenModel, QuickOpenActionProvider, QuickOpenItem, QuickOpenMode } from '../../common/quick-open-model';
+import { QuickOpenService } from './quick-open-service';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { ILogger } from '../../common/logger';
 import { MaybePromise } from '../../common/types';
-import { QuickOpenActionProvider } from './quick-open-action-provider';
 import { QuickTitleBar } from './quick-title-bar';
 
 export const QuickOpenContribution = Symbol('QuickOpenContribution');

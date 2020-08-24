@@ -25,6 +25,7 @@ interface PreferenceJSONInputProps {
 export const PreferenceJSONInput: React.FC<PreferenceJSONInputProps> = ({ preferenceDisplayNode, onClick }) => (
     <a
         role='button'
+        // eslint-disable-next-line deprecation/deprecation
         title={preferenceDisplayNode.name}
         onClick={onClick}
         className='theia-json-input'

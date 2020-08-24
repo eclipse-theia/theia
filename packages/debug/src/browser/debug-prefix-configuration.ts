@@ -16,10 +16,8 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
-import {
-    QuickOpenContribution, QuickOpenHandler, QuickOpenModel,
-    PrefixQuickOpenService, QuickOpenOptions, QuickOpenHandlerRegistry, QuickOpenItem, QuickOpenMode
-} from '@theia/core/lib/browser/quick-open';
+import { QuickOpenContribution, QuickOpenHandler, PrefixQuickOpenService, QuickOpenHandlerRegistry } from '@theia/core/lib/browser/quick-open';
+import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/common/quick-open-model';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugConfigurationManager } from './debug-configuration-manager';
 import { DebugCommands } from './debug-frontend-application-contribution';
@@ -29,6 +27,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { DebugPreferences } from './debug-preferences';
+import { QuickOpenOptions } from '@theia/core/lib/common/quick-open-service';
 
 @injectable()
 export class DebugPrefixConfiguration implements CommandContribution, CommandHandler, QuickOpenContribution, QuickOpenHandler, QuickOpenModel {

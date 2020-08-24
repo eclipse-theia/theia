@@ -102,6 +102,7 @@ export class CodeActionAdapter {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private static _isCommand(smth: any): smth is theia.Command {
+        // eslint-disable-next-line deprecation/deprecation
         return typeof (<theia.Command>smth).command === 'string' || typeof (<theia.Command>smth).id === 'string';
     }
 

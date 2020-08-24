@@ -32,14 +32,14 @@ export interface TreeDecorator {
     /**
      * Fired when this decorator has calculated all the decoration data for the tree nodes. Keys are the unique identifier of the tree nodes.
      */
-    readonly onDidChangeDecorations: Event<(tree: Tree) => Map<string, TreeDecoration.Data>>;
+    readonly onDidChangeDecorations: Event<(tree: Tree) => Map<string, WidgetDecoration.Data>>;
 
     /**
      * Returns with the current decoration data for the tree argument.
      *
      * @param tree the tree to decorate.
      */
-    decorations(tree: Tree): MaybePromise<Map<string, TreeDecoration.Data>>;
+    decorations(tree: Tree): MaybePromise<Map<string, WidgetDecoration.Data>>;
 
 }
 
@@ -59,19 +59,19 @@ export interface TreeDecoratorService extends Disposable {
     /**
      * Returns with the decorators for the tree based on the actual state of this decorator service.
      */
-    getDecorations(tree: Tree): MaybePromise<Map<string, TreeDecoration.Data[]>>;
+    getDecorations(tree: Tree): MaybePromise<Map<string, WidgetDecoration.Data[]>>;
 
     /**
      * Transforms the decorators argument into an object, so that it can be safely serialized into JSON.
      */
-    deflateDecorators(decorations: Map<string, TreeDecoration.Data[]>): object;
+    deflateDecorators(decorations: Map<string, WidgetDecoration.Data[]>): object;
 
     /**
      * Counterpart of the [deflateDecorators](#deflateDecorators) method. Restores the argument into a Map
      * of tree node IDs and the corresponding decorations data array.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    inflateDecorators(state: any): Map<string, TreeDecoration.Data[]>;
+    inflateDecorators(state: any): Map<string, WidgetDecoration.Data[]>;
 
 }
 
@@ -98,7 +98,7 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
         return {};
     }
 
-    inflateDecorators(): Map<string, TreeDecoration.Data[]> {
+    inflateDecorators(): Map<string, WidgetDecoration.Data[]> {
         return new Map();
     }
 
@@ -128,7 +128,7 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
         this.toDispose.dispose();
     }
 
-    async getDecorations(tree: Tree): Promise<Map<string, TreeDecoration.Data[]>> {
+    async getDecorations(tree: Tree): Promise<Map<string, WidgetDecoration.Data[]>> {
         const changes = new Map();
         for (const decorator of this.decorators) {
             for (const [id, data] of (await decorator.decorations(tree)).entries()) {
@@ -142,7 +142,7 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
         return changes;
     }
 
-    deflateDecorators(decorations: Map<string, TreeDecoration.Data[]>): object {
+    deflateDecorators(decorations: Map<string, WidgetDecoration.Data[]>): object {
         // eslint-disable-next-line no-null/no-null
         const state = Object.create(null);
         for (const [id, data] of decorations) {
@@ -152,8 +152,8 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    inflateDecorators(state: any): Map<string, TreeDecoration.Data[]> {
-        const decorators = new Map<string, TreeDecoration.Data[]>();
+    inflateDecorators(state: any): Map<string, WidgetDecoration.Data[]> {
+        const decorators = new Map<string, WidgetDecoration.Data[]>();
         for (const id of Object.keys(state)) {
             decorators.set(id, state[id]);
         }
@@ -162,16 +162,11 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
 
 }
 
-/**
- * @deprecated import from `@theia/core/lib/browser/widget-decoration` instead.
- */
-export import TreeDecoration = WidgetDecoration;
-
 export interface DecoratedTreeNode extends TreeNode {
     /**
      * The additional tree decoration data attached to the tree node itself.
      */
-    readonly decorationData: TreeDecoration.Data;
+    readonly decorationData: WidgetDecoration.Data;
 }
 export namespace DecoratedTreeNode {
     /**

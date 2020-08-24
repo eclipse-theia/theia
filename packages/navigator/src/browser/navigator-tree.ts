@@ -53,6 +53,7 @@ export class FileNavigatorTree extends FileTree {
     async createWorkspaceRoot(rootFolder: FileStat, workspaceNode: WorkspaceNode): Promise<WorkspaceRootNode> {
         const node = this.toNode(rootFolder, workspaceNode) as WorkspaceRootNode;
         Object.assign(node, {
+            // eslint-disable-next-line deprecation/deprecation
             visible: workspaceNode.name !== WorkspaceNode.name,
         });
         return node;

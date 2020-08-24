@@ -26,14 +26,17 @@ export class TreeLabelProvider implements LabelProviderContribution {
     }
 
     getIcon(node: TreeNode): string | undefined {
+        // eslint-disable-next-line deprecation/deprecation
         return node.icon;
     }
 
     getName(node: TreeNode): string | undefined {
+        // eslint-disable-next-line deprecation/deprecation
         return node.name;
     }
 
     getLongName(node: TreeNode): string | undefined {
+        // eslint-disable-next-line deprecation/deprecation
         return node.description;
     }
 

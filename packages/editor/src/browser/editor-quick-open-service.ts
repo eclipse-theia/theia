@@ -15,11 +15,9 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import {
-    QuickOpenModel, QuickOpenItem, QuickOpenMode, PrefixQuickOpenService,
-    OpenerService, QuickOpenItemOptions,
-    QuickOpenHandler, QuickOpenOptions
-} from '@theia/core/lib/browser';
+import { QuickOpenOptions } from '@theia/core/lib/common/quick-open-service';
+import { PrefixQuickOpenService, OpenerService, QuickOpenHandler } from '@theia/core/lib/browser';
+import { QuickOpenModel, QuickOpenItemOptions, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/common/quick-open-model';
 import URI from '@theia/core/lib/common/uri';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { EditorManager } from './editor-manager';

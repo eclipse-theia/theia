@@ -35,15 +35,15 @@ describe('application-package', function (): void {
         const warn = sandbox.stub(console, 'warn');
         const root = createProjectWithTarget('foo');
         const applicationPackage = new ApplicationPackage({ projectPath: root });
-        assert.equal(applicationPackage.target, ApplicationProps.ApplicationTarget.browser);
-        assert.equal(warn.called, true);
+        assert.strictEqual(applicationPackage.target, ApplicationProps.ApplicationTarget.browser);
+        assert.strictEqual(warn.called, true);
     });
 
     it('should set target from package.json', function (): void {
         const target = 'electron';
         const root = createProjectWithTarget(target);
         const applicationPackage = new ApplicationPackage({ projectPath: root });
-        assert.equal(applicationPackage.target, target);
+        assert.strictEqual(applicationPackage.target, target);
     });
 
     it('should prefer target from passed options over target from package.json', function (): void {
@@ -51,7 +51,7 @@ describe('application-package', function (): void {
         const optTarget = 'browser';
         const root = createProjectWithTarget(pckTarget);
         const applicationPackage = new ApplicationPackage({ projectPath: root, appTarget: optTarget });
-        assert.equal(applicationPackage.target, optTarget);
+        assert.strictEqual(applicationPackage.target, optTarget);
     });
 
     function createProjectWithTarget(target: string): string {

@@ -90,6 +90,7 @@ describe('Tree Consistency', () => {
             await new Promise(resolve => setTimeout(resolve, 50));
             if (resolveCounter === tree.resolveCounter) {
                 assert.deepStrictEqual(tree.resolveCounter, 1);
+                // eslint-disable-next-line deprecation/deprecation
                 assert.deepStrictEqual(model.root!.name, 'Bar');
                 return;
             }

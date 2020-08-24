@@ -15,11 +15,9 @@
  ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
-import {
-    QuickOpenModel, QuickOpenItem, QuickOpenMode, PrefixQuickOpenService,
-    OpenerService, KeybindingRegistry, QuickOpenGroupItem, QuickOpenGroupItemOptions, QuickOpenItemOptions,
-    QuickOpenHandler, QuickOpenOptions
-} from '@theia/core/lib/browser';
+import { QuickOpenOptions } from '@theia/core/lib/common/quick-open-service';
+import { PrefixQuickOpenService, OpenerService, KeybindingRegistry, QuickOpenHandler } from '@theia/core/lib/browser';
+import { QuickOpenModel, QuickOpenItemOptions, QuickOpenGroupItemOptions, QuickOpenItem, QuickOpenMode, QuickOpenGroupItem } from '@theia/core/lib/common/quick-open-model';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService } from '../common/file-search-service';
@@ -317,7 +315,7 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
         if (this.workspaceService.isMultiRootWorkspaceOpened) {
             const rootUri = this.workspaceService.getWorkspaceRootUri(uri);
             if (rootUri) {
-                description = `${rootUri.displayName} • ${description}`;
+                description = `${this.labelProvider.getName(rootUri)} • ${description}`;
             }
         }
         const icon = this.labelProvider.getIcon(uri);

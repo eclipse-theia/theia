@@ -18,10 +18,10 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { Disposable, DisposableCollection } from '../../common/disposable';
 import { Event, Emitter } from '../../common/event';
 import { Tree, TreeNode } from './tree';
-import { TreeDecoration } from './tree-decorator';
 import { FuzzySearch } from './fuzzy-search';
 import { TopDownTreeIterator } from './tree-iterator';
 import { LabelProvider } from '../label-provider';
+import { WidgetDecoration } from '../widget-decoration';
 
 @injectable()
 export class TreeSearch implements Disposable {
@@ -46,8 +46,8 @@ export class TreeSearch implements Disposable {
         this.disposables.push(this.filteredNodesEmitter);
     }
 
-    getHighlights(): Map<string, TreeDecoration.CaptionHighlight> {
-        return new Map(this._filterResult.map(m => [m.item.id, this.toCaptionHighlight(m)] as [string, TreeDecoration.CaptionHighlight]));
+    getHighlights(): Map<string, WidgetDecoration.CaptionHighlight> {
+        return new Map(this._filterResult.map(m => [m.item.id, this.toCaptionHighlight(m)] as [string, WidgetDecoration.CaptionHighlight]));
     }
 
     /**
@@ -95,13 +95,13 @@ export class TreeSearch implements Disposable {
         this.filteredNodesEmitter.fire(nodes);
     }
 
-    protected toCaptionHighlight(match: FuzzySearch.Match<TreeNode>): TreeDecoration.CaptionHighlight {
+    protected toCaptionHighlight(match: FuzzySearch.Match<TreeNode>): WidgetDecoration.CaptionHighlight {
         return {
             ranges: match.ranges.map(this.mapRange.bind(this))
         };
     }
 
-    protected mapRange(range: FuzzySearch.Range): TreeDecoration.CaptionHighlight.Range {
+    protected mapRange(range: FuzzySearch.Range): WidgetDecoration.CaptionHighlight.Range {
         const { offset, length } = range;
         return {
             offset,

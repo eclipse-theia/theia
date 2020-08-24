@@ -38,6 +38,7 @@ export class SearchInWorkspaceLabelProvider implements LabelProviderContribution
 
     getName(node: SearchInWorkspaceRootFolderNode | SearchInWorkspaceFileNode): string {
         const uri = SearchInWorkspaceFileNode.is(node) ? node.fileUri : node.folderUri;
+        // eslint-disable-next-line deprecation/deprecation
         return new URI(uri).displayName;
     }
 

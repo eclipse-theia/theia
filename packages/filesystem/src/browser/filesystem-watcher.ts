@@ -21,6 +21,8 @@ import URI from '@theia/core/lib/common/uri';
 import { FileChangeType, FileOperation } from '../common/files';
 import { FileService } from './file-service';
 
+/* eslint-disable deprecation/deprecation */
+
 export {
     FileChangeType
 };

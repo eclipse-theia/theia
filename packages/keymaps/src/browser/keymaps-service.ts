@@ -122,6 +122,7 @@ export class KeymapsService {
             const keybindings = [];
             for (let keybinding of this.keybindingRegistry.getKeybindingsByScope(KeybindingScope.USER)) {
                 if (keybinding.command === newKeybinding.command &&
+                    // eslint-disable-next-line deprecation/deprecation
                     (keybinding.context || '') === (newKeybinding.context || '') &&
                     (keybinding.when || '') === (newKeybinding.when || '')) {
                     newAdded = true;
@@ -132,6 +133,7 @@ export class KeymapsService {
                 }
                 if (oldKeybinding && keybinding.keybinding === oldKeybinding &&
                     keybinding.command === '-' + newKeybinding.command &&
+                    // eslint-disable-next-line deprecation/deprecation
                     (keybinding.context || '') === (newKeybinding.context || '') &&
                     (keybinding.when || '') === (newKeybinding.when || '')) {
                     oldRemoved = true;
@@ -142,6 +144,7 @@ export class KeymapsService {
                 keybindings.push({
                     command: newKeybinding.command,
                     keybinding: newKeybinding.keybinding,
+                    // eslint-disable-next-line deprecation/deprecation
                     context: newKeybinding.context,
                     when: newKeybinding.when,
                     args: newKeybinding.args
@@ -153,6 +156,7 @@ export class KeymapsService {
                     command: '-' + newKeybinding.command,
                     // TODO key: oldKeybinding, see https://github.com/eclipse-theia/theia/issues/6879
                     keybinding: oldKeybinding,
+                    // eslint-disable-next-line deprecation/deprecation
                     context: newKeybinding.context,
                     when: newKeybinding.when,
                     args: newKeybinding.args

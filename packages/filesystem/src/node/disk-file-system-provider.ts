@@ -29,7 +29,7 @@ import * as os from 'os';
 import * as fs from 'fs';
 import {
     mkdir, open, close, read, write, fdatasync, Stats,
-    lstat, stat, readdir, readFile, exists, chmod,
+    lstat, stat, readdir, readFile, access, chmod,
     rmdir, unlink, rename, futimes, truncate
 } from 'fs';
 import { promisify } from 'util';
@@ -279,7 +279,7 @@ export class DiskFileSystemProvider implements Disposable,
 
             // Validate target unless { create: true, overwrite: true }
             if (!opts.create || !opts.overwrite) {
-                const fileExists = await promisify(exists)(filePath);
+                const fileExists = await promisify(access)(filePath).then(() => true, () => false);
                 if (fileExists) {
                     if (!opts.overwrite) {
                         throw createFileSystemProviderError('File already exists', FileSystemProviderErrorCode.FileExists);
@@ -316,7 +316,7 @@ export class DiskFileSystemProvider implements Disposable,
 
             let flags: string | undefined = undefined;
             if (opts.create) {
-                if (isWindows && await promisify(exists)(filePath)) {
+                if (isWindows && await promisify(access)(filePath).then(() => true, () => false)) {
                     try {
                         // On Windows and if the file exists, we use a different strategy of saving the file
                         // by first truncating the file and then writing with r+ flag. This helps to save hidden files on Windows
@@ -679,7 +679,7 @@ export class DiskFileSystemProvider implements Disposable,
         }
 
         // handle existing target (unless this is a case change)
-        if (!isSameResourceWithDifferentPathCase && await promisify(exists)(toFilePath)) {
+        if (!isSameResourceWithDifferentPathCase && await promisify(access)(toFilePath).then(() => true, () => false)) {
             if (!overwrite) {
                 throw createFileSystemProviderError('File at target already exists', FileSystemProviderErrorCode.FileExists);
             }

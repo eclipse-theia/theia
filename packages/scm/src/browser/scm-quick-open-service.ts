@@ -15,8 +15,9 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/browser/quick-open/quick-open-model';
-import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/quick-open-service';
+import { QuickOpenModel, QuickOpenMode, QuickOpenItem } from '@theia/core/lib/common/quick-open-model';
+import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
+import { QuickOpenOptions } from '@theia/core/lib/common/quick-open-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
 import { ScmService } from './scm-service';

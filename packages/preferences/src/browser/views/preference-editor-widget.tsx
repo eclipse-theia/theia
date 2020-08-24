@@ -26,6 +26,7 @@ import {
     CompositeTreeNode,
     SelectableTreeNode,
     PreferenceItem,
+    LabelProvider,
 } from '@theia/core/lib/browser';
 import { Message, } from '@theia/core/lib/browser/widgets/widget';
 import { SinglePreferenceDisplayFactory } from './components/single-preference-display-factory';
@@ -51,6 +52,7 @@ export class PreferencesEditorWidget extends ReactWidget {
     @inject(PreferenceService) protected readonly preferenceValueRetrievalService: PreferenceService;
     @inject(PreferencesTreeProvider) protected readonly preferenceTreeProvider: PreferencesTreeProvider;
     @inject(SinglePreferenceDisplayFactory) protected readonly singlePreferenceFactory: SinglePreferenceDisplayFactory;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
     @postConstruct()
     protected init(): void {
@@ -160,7 +162,7 @@ export class PreferencesEditorWidget extends ReactWidget {
                 key={`${category.id}-editor`}
                 id={`${category.id}-editor`}
             >
-                <li className="settings-section-title" data-id={category.id}>{category.name}</li>
+                <li className="settings-section-title" data-id={category.id}>{this.labelProvider.getName(category)}</li>
                 {children.map((preferenceNode: SelectableTreeNode | Preference.Branch) => {
                     if (Preference.Branch.is(preferenceNode)) {
                         return this.renderCategory(preferenceNode);

@@ -48,17 +48,6 @@ export interface TokenizerOption {
 
 }
 
-export namespace TokenizerOption {
-    /**
-     * The default TextMate tokenizer option.
-     *
-     * @deprecated Use the current value of `editor.maxTokenizationLineLength` preference instead.
-     */
-    export const DEFAULT: TokenizerOption = {
-        lineLimit: 400
-    };
-}
-
 export function createTextmateTokenizer(grammar: IGrammar, options: TokenizerOption): monaco.languages.EncodedTokensProvider & monaco.languages.TokensProvider {
     if (options.lineLimit !== undefined && (options.lineLimit <= 0 || !Number.isInteger(options.lineLimit))) {
         throw new Error(`The 'lineLimit' must be a positive integer. It was ${options.lineLimit}.`);

@@ -100,7 +100,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
         const updateFocusContextKey = () =>
             this.contextKeyService.searchViewletFocus.set(this.shell.activeWidget instanceof SearchInWorkspaceWidget);
         updateFocusContextKey();
-        this.shell.activeChanged.connect(updateFocusContextKey);
+        this.shell.onDidChangeActiveWidget(updateFocusContextKey);
     }
 
     async initializeLayout(app: FrontendApplication): Promise<void> {

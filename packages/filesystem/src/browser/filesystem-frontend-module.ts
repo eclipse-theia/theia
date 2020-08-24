@@ -49,8 +49,8 @@ export default new ContainerModule(bind => {
     bind(RemoteFileServiceContribution).toSelf().inSingletonScope();
     bind(FileServiceContribution).toService(RemoteFileServiceContribution);
 
+    /* eslint-disable deprecation/deprecation */
     bind(FileSystemWatcher).toSelf().inSingletonScope();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bind(FileSystem).toDynamicValue(({ container }) => {
         const fileService = container.get(FileService);
         const environments = container.get<EnvVariablesServer>(EnvVariablesServer);
@@ -203,6 +203,7 @@ export default new ContainerModule(bind => {
 
         };
     }).inSingletonScope();
+    /* eslint-enable deprecation/deprecation */
 
     bindFileResource(bind);
 

@@ -62,6 +62,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
 
     protected addLinkClickedListener(contentElement: HTMLElement, params: RenderContentParams): void {
         contentElement.addEventListener('click', (event: MouseEvent) => {
+            // eslint-disable-next-line deprecation/deprecation
             const candidate = (event.target || event.srcElement) as HTMLElement;
             const link = this.findLink(candidate, contentElement);
             if (link) {
@@ -130,6 +131,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                 return NodeFilter.FILTER_SKIP;
             }
         };
+        // eslint-disable-next-line deprecation/deprecation
         const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter, false);
         if (treeWalker.nextNode()) {
             const element = treeWalker.currentNode as HTMLElement;
@@ -198,6 +200,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                 return NodeFilter.FILTER_REJECT;
             }
         };
+        // eslint-disable-next-line deprecation/deprecation
         const treeWalker = document.createTreeWalker(content, NodeFilter.SHOW_ELEMENT, filter, false);
         const lineElements: HTMLElement[] = [];
         while (treeWalker.nextNode()) {

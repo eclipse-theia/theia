@@ -150,11 +150,14 @@ export class PluginHostRPC {
                         const pluginModel = plg.model;
                         const pluginLifecycle = plg.lifecycle;
 
+                        // eslint-disable-next-line deprecation/deprecation
                         const rawModel = await loadManifest(pluginModel.packagePath);
+                        // eslint-disable-next-line deprecation/deprecation
                         rawModel.packagePath = pluginModel.packagePath;
                         if (pluginModel.entryPoint!.frontend) {
                             foreign.push({
                                 pluginPath: pluginModel.entryPoint.frontend!,
+                                // eslint-disable-next-line deprecation/deprecation
                                 pluginFolder: pluginModel.packagePath,
                                 model: pluginModel,
                                 lifecycle: pluginLifecycle,

@@ -177,6 +177,7 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
     }
 }
 
+// eslint-disable-next-line deprecation/deprecation
 export function fromManyMarkdown(markup: (theia.MarkdownString | theia.MarkedString)[]): model.MarkdownString[] {
     return markup.map(fromMarkdown);
 }
@@ -193,6 +194,7 @@ function isCodeblock(thing: any): thing is Codeblock {
         && typeof (<Codeblock>thing).value === 'string';
 }
 
+// eslint-disable-next-line deprecation/deprecation
 export function fromMarkdown(markup: theia.MarkdownString | theia.MarkedString): model.MarkdownString {
     if (isCodeblock(markup)) {
         const { language, value } = markup;

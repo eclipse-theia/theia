@@ -126,7 +126,9 @@ export class CompletionAdapter {
 
         let insertText = item.label;
         let insertTextRules = item.keepWhitespace ? CompletionItemInsertTextRule.KeepWhitespace : 0;
+        // eslint-disable-next-line deprecation/deprecation
         if (item.textEdit) {
+            // eslint-disable-next-line deprecation/deprecation
             insertText = item.textEdit.newText;
         } else if (typeof item.insertText === 'string') {
             insertText = item.insertText;
@@ -136,6 +138,7 @@ export class CompletionAdapter {
         }
 
         let range: Completion['range'] | undefined;
+        // eslint-disable-next-line deprecation/deprecation
         const itemRange = item.textEdit?.range || item.range;
         if (Range.isRange(itemRange)) {
             range = Converter.fromRange(itemRange);

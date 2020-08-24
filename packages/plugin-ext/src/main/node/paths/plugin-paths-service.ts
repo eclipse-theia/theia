@@ -78,7 +78,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
     }
 
     protected async buildWorkspaceId(workspaceUri: string, rootUris: string[]): Promise<string> {
-        const untitledWorkspace = await getTemporaryWorkspaceFileUri(this.envServer);
+        const untitledWorkspace = await this.getUntitledWorkspace();
 
         if (untitledWorkspace.toString() === workspaceUri) {
             // if workspace is temporary
@@ -90,6 +90,7 @@ export class PluginPathsServiceImpl implements PluginPathsService {
             try {
                 stat = await fs.stat(FileUri.fsPath(workspaceUri));
             } catch { /* no-op */ }
+            // eslint-disable-next-line deprecation/deprecation
             let displayName = new URI(workspaceUri).displayName;
             if ((!stat || !stat.isDirectory()) && (displayName.endsWith(`.${THEIA_EXT}`) || displayName.endsWith(`.${VSCODE_EXT}`))) {
                 displayName = displayName.slice(0, displayName.lastIndexOf('.'));
@@ -97,6 +98,11 @@ export class PluginPathsServiceImpl implements PluginPathsService {
 
             return crypto.createHash('md5').update(workspaceUri).digest('hex');
         }
+    }
+
+    protected async getUntitledWorkspace(): Promise<URI> {
+        // eslint-disable-next-line deprecation/deprecation
+        return getTemporaryWorkspaceFileUri(this.envServer);
     }
 
     /**

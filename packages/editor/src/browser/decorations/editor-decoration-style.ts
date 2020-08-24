@@ -50,6 +50,9 @@ export namespace EditorDecorationStyle {
         }
         const style = document.createElement('style');
         style.id = 'editorDecorationsStyle';
+        // Note: Might be a typing error, the `type` field seems to not be deprecated according to MDN:
+        // https://developer.mozilla.org/en-US/docs/Web/API/HTMLStyleElement/type
+        // eslint-disable-next-line deprecation/deprecation
         style.type = 'text/css';
         style.media = 'screen';
         style.appendChild(document.createTextNode('')); // trick for webkit

@@ -879,10 +879,12 @@ export class SignatureHelp {
 
 export class Hover {
 
+    // eslint-disable-next-line deprecation/deprecation
     public contents: MarkdownString[] | theia.MarkedString[];
     public range?: Range;
 
     constructor(
+        // eslint-disable-next-line deprecation/deprecation
         contents: MarkdownString | theia.MarkedString | MarkdownString[] | theia.MarkedString[],
         range?: Range
     ) {
@@ -890,6 +892,7 @@ export class Hover {
             illegalArgument('contents must be defined');
         }
         if (Array.isArray(contents)) {
+            // eslint-disable-next-line deprecation/deprecation
             this.contents = <MarkdownString[] | theia.MarkedString[]>contents;
         } else if (isMarkdownString(contents)) {
             this.contents = [contents];

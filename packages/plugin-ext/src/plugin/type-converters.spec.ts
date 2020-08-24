@@ -40,7 +40,7 @@ describe('Type converters:', () => {
             const result: types.Range = Converter.toRange(modelRange);
 
             // then
-            assert.deepEqual(result, pluginRange);
+            assert.deepStrictEqual(result, pluginRange);
         });
 
         it('should convert to model range', () => {
@@ -48,8 +48,8 @@ describe('Type converters:', () => {
             const result: model.Range | undefined = Converter.fromRange(pluginRange);
 
             // then
-            assert.notEqual(result, undefined);
-            assert.deepEqual(result, modelRange);
+            assert.notStrictEqual(result, undefined);
+            assert.deepStrictEqual(result, modelRange);
         });
     });
 
@@ -65,7 +65,7 @@ describe('Type converters:', () => {
                 const result = isMarkdownString(markdownString);
 
                 // then
-                assert.deepEqual(result !== false, true);
+                assert.deepStrictEqual(result !== false, true);
             });
 
             it('should recognize markdown object', () => {
@@ -76,7 +76,7 @@ describe('Type converters:', () => {
                 const result = isMarkdownString(markdownObject);
 
                 // then
-                assert.deepEqual(result !== false, true);
+                assert.deepStrictEqual(result !== false, true);
             });
 
             it('should recognize markdown object with redundant fields', () => {
@@ -87,7 +87,7 @@ describe('Type converters:', () => {
                 const result = isMarkdownString(markdownObject);
 
                 // then
-                assert.deepEqual(result !== false, true);
+                assert.deepStrictEqual(result !== false, true);
             });
 
             it('should reject non markdown object', () => {
@@ -98,7 +98,7 @@ describe('Type converters:', () => {
                 const result = isMarkdownString(nonMarkdownObject);
 
                 // then
-                assert.deepEqual(result === false, true);
+                assert.deepStrictEqual(result === false, true);
             });
 
             it('should reject non markdown object if it contains isTrusted field', () => {
@@ -109,7 +109,7 @@ describe('Type converters:', () => {
                 const result = isMarkdownString(nonMarkdownObject);
 
                 // then
-                assert.deepEqual(result === false, true);
+                assert.deepStrictEqual(result === false, true);
             });
         });
 
@@ -119,15 +119,15 @@ describe('Type converters:', () => {
             const aLanguage = 'typescript';
             const aValue = 'const x=5;';
             const codeblock = { language: aLanguage, value: aValue };
-            const modelMarkdownWithCode = { value: '```' + aLanguage + '\n' + aValue + '\n```\n' };
+            const modelMarkdownWithCode: model.MarkdownString = { value: '```' + aLanguage + '\n' + aValue + '\n```\n' };
             const modelMarkdown: model.MarkdownString = { value: aStringWithMarkdown };
 
             it('should convert plugin markdown to model markdown', () => {
                 // when
-                const result = Converter.fromMarkdown(pluginMarkdown);
+                const result = { ...Converter.fromMarkdown(pluginMarkdown) };
 
                 // then
-                assert.deepEqual(result, modelMarkdown);
+                assert.deepStrictEqual(result, modelMarkdown);
             });
 
             it('should convert string to model markdown', () => {
@@ -135,7 +135,7 @@ describe('Type converters:', () => {
                 const result = Converter.fromMarkdown(aStringWithMarkdown);
 
                 // then
-                assert.deepEqual(result, modelMarkdown);
+                assert.deepStrictEqual(result, modelMarkdown);
             });
 
             it('should convert codeblock to model markdown', () => {
@@ -143,11 +143,12 @@ describe('Type converters:', () => {
                 const result = Converter.fromMarkdown(codeblock);
 
                 // then
-                assert.deepEqual(result, modelMarkdownWithCode);
+                assert.deepStrictEqual(result, modelMarkdownWithCode);
             });
 
             it('should convert array of markups to model markdown', () => {
                 // given
+                // eslint-disable-next-line deprecation/deprecation
                 const markups: (theia.MarkdownString | theia.MarkedString)[] = [
                     pluginMarkdown,
                     aStringWithMarkdown,
@@ -155,14 +156,16 @@ describe('Type converters:', () => {
                 ];
 
                 // when
-                const result = Converter.fromManyMarkdown(markups);
+                const result: model.MarkdownString[] = Converter.fromManyMarkdown(markups)
+                    // convert to vanilla JS Object for deepStrictEqual comparaison:
+                    .map(md => ({ ...md }));
 
                 // then
-                assert.deepEqual(Array.isArray(result), true);
-                assert.deepEqual(result.length, 3);
-                assert.deepEqual(result[0], modelMarkdown);
-                assert.deepEqual(result[1], modelMarkdown);
-                assert.deepEqual(result[2], modelMarkdownWithCode);
+                assert.deepStrictEqual(Array.isArray(result), true);
+                assert.deepStrictEqual(result.length, 3);
+                assert.deepStrictEqual(result[0], modelMarkdown);
+                assert.deepStrictEqual(result[1], modelMarkdown);
+                assert.deepStrictEqual(result[2], modelMarkdownWithCode);
             });
         });
 
@@ -265,8 +268,8 @@ describe('Type converters:', () => {
             const result: TaskDto | undefined = Converter.fromTask(shellPluginTask);
 
             // then
-            assert.notEqual(result, undefined);
-            assert.deepEqual(result, shellTaskDto);
+            assert.notStrictEqual(result, undefined);
+            assert.deepStrictEqual(result, shellTaskDto);
         });
 
         it('should convert from task dto', () => {
@@ -286,8 +289,8 @@ describe('Type converters:', () => {
             }
 
             // then
-            assert.notEqual(result, undefined);
-            assert.deepEqual(result, shellPluginTask);
+            assert.notStrictEqual(result, undefined);
+            assert.deepStrictEqual(result, shellPluginTask);
         });
 
         it('should convert to task dto from task with commandline', () => {
@@ -295,8 +298,8 @@ describe('Type converters:', () => {
             const result: TaskDto | undefined = Converter.fromTask(pluginTaskWithCommandLine);
 
             // then
-            assert.notEqual(result, undefined);
-            assert.deepEqual(result, shellTaskDtoWithCommandLine);
+            assert.notStrictEqual(result, undefined);
+            assert.deepStrictEqual(result, shellTaskDtoWithCommandLine);
         });
 
         it('should convert task with custom type to dto', () => {
@@ -304,8 +307,8 @@ describe('Type converters:', () => {
             const result: TaskDto | undefined = Converter.fromTask(customPluginTask);
 
             // then
-            assert.notEqual(result, undefined);
-            assert.deepEqual(result, customTaskDto);
+            assert.notStrictEqual(result, undefined);
+            assert.deepStrictEqual(result, customTaskDto);
         });
 
         it('should convert task with custom type from dto', () => {
@@ -325,7 +328,7 @@ describe('Type converters:', () => {
             }
 
             // then
-            assert.deepEqual(result, customPluginTask);
+            assert.deepStrictEqual(result, customPluginTask);
         });
 
         it('should convert to task dto from custom task with commandline', () => {
@@ -333,8 +336,8 @@ describe('Type converters:', () => {
             const result: TaskDto | undefined = Converter.fromTask(customPluginTaskWithCommandLine);
 
             // then
-            assert.notEqual(result, undefined);
-            assert.deepEqual(result, customTaskDtoWithCommandLine);
+            assert.notStrictEqual(result, undefined);
+            assert.deepStrictEqual(result, customTaskDtoWithCommandLine);
         });
     });
 
@@ -352,8 +355,8 @@ describe('Type converters:', () => {
             const result: theia.WebviewPanelShowOptions = Converter.toWebviewPanelShowOptions(viewColumn);
 
             // then
-            assert.notEqual(result, undefined);
-            assert.deepEqual(result, showOptions);
+            assert.notStrictEqual(result, undefined);
+            assert.deepStrictEqual(result, showOptions);
         });
 
         it('should create options from given "WebviewPanelShowOptions" object ', () => {
@@ -373,8 +376,8 @@ describe('Type converters:', () => {
             const result: theia.WebviewPanelShowOptions = Converter.toWebviewPanelShowOptions(incomingObject);
 
             // then
-            assert.notEqual(result, undefined);
-            assert.deepEqual(result, showOptions);
+            assert.notStrictEqual(result, undefined);
+            assert.deepStrictEqual(result, showOptions);
         });
 
         it('should set default "main" area', () => {
@@ -393,8 +396,8 @@ describe('Type converters:', () => {
             const result: theia.WebviewPanelShowOptions = Converter.toWebviewPanelShowOptions(incomingObject);
 
             // then
-            assert.notEqual(result, undefined);
-            assert.deepEqual(result, showOptions);
+            assert.notStrictEqual(result, undefined);
+            assert.deepStrictEqual(result, showOptions);
         });
     });
 });

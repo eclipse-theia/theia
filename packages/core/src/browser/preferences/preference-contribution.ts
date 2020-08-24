@@ -213,12 +213,9 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return { preferenceName, oldValue, newValue, scope, domain };
     }
 
-    /** @deprecated since 0.6.0 pass preferenceName as the second arg */
-    protected getDefaultValue(property: PreferenceItem): any;
-    protected getDefaultValue(property: PreferenceItem, preferenceName: string): any;
-    protected getDefaultValue(property: PreferenceItem, preferenceName?: string): any {
+    protected getDefaultValue(property: PreferenceItem, preferenceName: string): any {
         const config = FrontendApplicationConfigProvider.get();
-        if (preferenceName && FrontendApplicationPreferenceConfig.is(config) && preferenceName in config.preferences) {
+        if (FrontendApplicationPreferenceConfig.is(config) && preferenceName in config.preferences) {
             return config.preferences[preferenceName];
         }
         if (property.defaultValue !== undefined) {

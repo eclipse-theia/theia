@@ -139,14 +139,6 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
-     * Get the path of the workspace to use initially.
-     * @deprecated use `WorkspaceService#getDefaultWorkspaceUri` instead.
-     */
-    protected getDefaultWorkspacePath(): MaybePromise<string | undefined> {
-        return this.getDefaultWorkspaceUri();
-    }
-
-    /**
      * Set the URL fragment to the given workspace path.
      */
     protected setURLFragment(workspacePath: string): void {
@@ -408,6 +400,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     async getUntitledWorkspace(): Promise<URI> {
+        // eslint-disable-next-line deprecation/deprecation
         return getTemporaryWorkspaceFileUri(this.envVariableServer);
     }
 
@@ -485,8 +478,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         } else {
             this.setURLFragment('');
         }
-
-        window.location.reload(true);
+        window.location.reload();
     }
 
     protected openNewWindow(workspacePath: string): void {

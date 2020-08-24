@@ -684,6 +684,7 @@ export class ScmResourceFolderElement extends ScmElement<ScmResourceFolderElemen
     render(): JSX.Element {
         const { hover } = this.state;
         const { groupId, sourceUri, path, labelProvider, commands, menus, contextKeys } = this.props;
+        // eslint-disable-next-line deprecation/deprecation
         const sourceFileStat: FileStat = { uri: sourceUri, isDirectory: true, lastModification: 0 };
         const icon = labelProvider.getIcon(sourceFileStat);
 

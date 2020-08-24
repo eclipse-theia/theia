@@ -195,10 +195,11 @@ export class CommandsConverter {
     protected toInternalCommand(external: theia.Command): model.Command {
         // we're deprecating Command.id, so it has to be optional.
         // Existing code will have compiled against a non - optional version of the field, so asserting it to exist is ok
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any, deprecation/deprecation
         return KnownCommands.map((external.command || external.id)!, external.arguments, (mappedId: string, mappedArgs: any[]) =>
             ({
                 id: mappedId,
+                // eslint-disable-next-line deprecation/deprecation
                 title: external.title || external.label || ' ',
                 tooltip: external.tooltip,
                 arguments: mappedArgs

@@ -21,7 +21,8 @@ import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
 import { PreferenceChangeEvent } from '@theia/core/lib/browser/preferences/preference-proxy';
-import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
+import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
+import { TreeDecorator } from '@theia/core/lib/browser/tree/tree-decorator';
 import { Git } from '../common/git';
 import { WorkingDirectoryStatus } from '../common/git-model';
 import { GitFileChange, GitFileStatus } from '../common/git-model';
@@ -39,7 +40,7 @@ export class GitDecorator implements TreeDecorator {
     @inject(GitPreferences) protected readonly preferences: GitPreferences;
     @inject(ILogger) protected readonly logger: ILogger;
 
-    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
+    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, WidgetDecoration.Data>>();
 
     protected enabled: boolean;
     protected showColors: boolean;
@@ -52,7 +53,7 @@ export class GitDecorator implements TreeDecorator {
         this.showColors = this.preferences['git.decorations.colors'];
     }
 
-    async decorations(tree: Tree): Promise<Map<string, TreeDecoration.Data>> {
+    async decorations(tree: Tree): Promise<Map<string, WidgetDecoration.Data>> {
         const status = this.repositories.selectedRepositoryStatus;
         if (status) {
             return this.collectDecorators(tree, status);
@@ -60,15 +61,15 @@ export class GitDecorator implements TreeDecorator {
         return new Map();
     }
 
-    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {
+    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, WidgetDecoration.Data>> {
         return this.emitter.event;
     }
 
-    protected fireDidChangeDecorations(event: (tree: Tree) => Map<string, TreeDecoration.Data>): void {
+    protected fireDidChangeDecorations(event: (tree: Tree) => Map<string, WidgetDecoration.Data>): void {
         this.emitter.fire(event);
     }
 
-    protected collectDecorators(tree: Tree, status: WorkingDirectoryStatus | undefined): Map<string, TreeDecoration.Data> {
+    protected collectDecorators(tree: Tree, status: WorkingDirectoryStatus | undefined): Map<string, WidgetDecoration.Data> {
         const result = new Map();
         if (tree.root === undefined || !this.enabled) {
             return result;
@@ -83,7 +84,7 @@ export class GitDecorator implements TreeDecorator {
                 }
             }
         }
-        return new Map(Array.from(result.entries()).map(m => [m[0], this.toDecorator(m[1])] as [string, TreeDecoration.Data]));
+        return new Map(Array.from(result.entries()).map(m => [m[0], this.toDecorator(m[1])] as [string, WidgetDecoration.Data]));
     }
 
     protected appendContainerChanges(tree: Tree, changes: GitFileChange[]): Map<string, GitFileChange> {
@@ -113,11 +114,11 @@ export class GitDecorator implements TreeDecorator {
         return result;
     }
 
-    protected toDecorator(change: GitFileChange): TreeDecoration.Data {
+    protected toDecorator(change: GitFileChange): WidgetDecoration.Data {
         const data = GitFileStatus.toAbbreviation(change.status, change.staged);
         const color = GitFileStatus.getColor(change.status, change.staged);
         const tooltip = GitFileStatus.toString(change.status, change.staged);
-        let decorationData: TreeDecoration.Data = {
+        let decorationData: WidgetDecoration.Data = {
             tailDecorations: [
                 {
                     data,

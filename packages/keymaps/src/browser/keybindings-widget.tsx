@@ -497,6 +497,7 @@ export class KeybindingWidget extends ReactWidget {
     }
 
     protected getContextLabel(keybinding: ScopedKeybinding | undefined): string | undefined {
+        // eslint-disable-next-line deprecation/deprecation
         return keybinding ? keybinding.context || keybinding.when : undefined;
     }
 

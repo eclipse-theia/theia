@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as fs from 'fs';
 import { inject, injectable } from 'inversify';
 import { remote, FileFilter, OpenDialogOptions, SaveDialogOptions } from 'electron';
 import URI from '@theia/core/lib/common/uri';
@@ -21,7 +22,6 @@ import { isOSX } from '@theia/core/lib/common/os';
 import { MaybeArray } from '@theia/core/lib/common/types';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileStat } from '../../common/files';
-import { FileAccess } from '../../common/filesystem';
 import { DefaultFileDialogService, OpenFileDialogProps, SaveFileDialogProps } from '../../browser/file-dialog';
 
 // See https://github.com/electron/electron/blob/v9.0.2/docs/api/dialog.md
@@ -82,7 +82,7 @@ export class ElectronFileDialogService extends DefaultFileDialogService {
 
     protected async canReadWrite(uris: MaybeArray<URI>): Promise<boolean> {
         for (const uri of Array.isArray(uris) ? uris : [uris]) {
-            if (!(await this.fileService.access(uri, FileAccess.Constants.R_OK | FileAccess.Constants.W_OK))) {
+            if (!(await this.fileService.access(uri, fs.constants.R_OK | fs.constants.W_OK))) {
                 this.messageService.error(`Cannot access resource at ${uri.path}.`);
                 return false;
             }

@@ -21,7 +21,8 @@ import { notEmpty } from '@theia/core/lib/common/objects';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
-import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
+import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
+import { TreeDecorator } from '@theia/core/lib/browser/tree/tree-decorator';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
@@ -37,7 +38,7 @@ export class ProblemDecorator implements TreeDecorator {
 
     readonly id = 'theia-problem-decorator';
 
-    protected readonly emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>;
+    protected readonly emitter: Emitter<(tree: Tree) => Map<string, WidgetDecoration.Data>>;
 
     constructor(@inject(ProblemManager) protected readonly problemManager: ProblemManager) {
         this.emitter = new Emitter();
@@ -54,19 +55,19 @@ export class ProblemDecorator implements TreeDecorator {
         });
     }
 
-    async decorations(tree: Tree): Promise<Map<string, TreeDecoration.Data>> {
+    async decorations(tree: Tree): Promise<Map<string, WidgetDecoration.Data>> {
         return this.collectDecorators(tree);
     }
 
-    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {
+    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, WidgetDecoration.Data>> {
         return this.emitter.event;
     }
 
-    protected fireDidChangeDecorations(event: (tree: Tree) => Map<string, TreeDecoration.Data>): void {
+    protected fireDidChangeDecorations(event: (tree: Tree) => Map<string, WidgetDecoration.Data>): void {
         this.emitter.fire(event);
     }
 
-    protected collectDecorators(tree: Tree): Map<string, TreeDecoration.Data> {
+    protected collectDecorators(tree: Tree): Map<string, WidgetDecoration.Data> {
 
         const result = new Map();
 
@@ -84,7 +85,7 @@ export class ProblemDecorator implements TreeDecorator {
                 }
             }
         }
-        return new Map(Array.from(result.entries()).map(m => [m[0], this.toDecorator(m[1])] as [string, TreeDecoration.Data]));
+        return new Map(Array.from(result.entries()).map(m => [m[0], this.toDecorator(m[1])] as [string, WidgetDecoration.Data]));
     }
 
     protected appendContainerMarkers(tree: Tree, markers: Marker<Diagnostic>[]): Map<string, Marker<Diagnostic>> {
@@ -126,8 +127,8 @@ export class ProblemDecorator implements TreeDecorator {
             .filter(this.filterMarker.bind(this));
     }
 
-    protected toDecorator(marker: Marker<Diagnostic>): TreeDecoration.Data {
-        const position = TreeDecoration.IconOverlayPosition.BOTTOM_RIGHT;
+    protected toDecorator(marker: Marker<Diagnostic>): WidgetDecoration.Data {
+        const position = WidgetDecoration.IconOverlayPosition.BOTTOM_RIGHT;
         const icon = this.getOverlayIcon(marker);
         const color = this.getOverlayIconColor(marker);
         const priority = this.getPriority(marker);
@@ -158,7 +159,7 @@ export class ProblemDecorator implements TreeDecorator {
         }
     }
 
-    protected getOverlayIconColor(marker: Marker<Diagnostic>): TreeDecoration.Color {
+    protected getOverlayIconColor(marker: Marker<Diagnostic>): WidgetDecoration.Color {
         const { severity } = marker.data;
         switch (severity) {
             case 1: return 'var(--theia-editorError-foreground)';

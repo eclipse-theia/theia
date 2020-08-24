@@ -16,14 +16,11 @@
 
 import { injectable, inject, optional, postConstruct } from 'inversify';
 import { MessageType } from '@theia/core/lib/common/message-service-protocol';
-import {
-    QuickOpenService, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem,
-    QuickOpenMode, KeySequence, KeybindingRegistry
-} from '@theia/core/lib/browser';
-import { QuickOpenModel, QuickOpenActionProvider, QuickOpenAction } from '@theia/core/lib/common/quick-open-model';
+import { QuickOpenService, KeySequence, KeybindingRegistry } from '@theia/core/lib/browser';
+import { QuickOpenHideReason, QuickOpenOptions } from '@theia/core/lib/common/quick-open-service';
+import { QuickOpenModel, QuickOpenActionProvider, QuickOpenAction, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from '@theia/core/lib/common/quick-open-model';
 import { ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { MonacoContextKeyService } from './monaco-context-key-service';
-import { QuickOpenHideReason } from '@theia/core/lib/common/quick-open-service';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { BrowserMenuBarContribution } from '@theia/core/lib/browser/menu/browser-menu-plugin';
 

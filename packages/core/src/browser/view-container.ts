@@ -289,7 +289,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 }
             }),
             this.registerDND(newPart),
-            newPart.onVisibilityChanged(() => {
+            newPart.onDidChangeVisibility(() => {
                 this.updateTitle();
                 this.updateCurrentPart();
             }),
@@ -660,10 +660,6 @@ export class ViewContainerPart extends BaseWidget {
     protected readonly body: HTMLElement;
     protected readonly collapsedEmitter = new Emitter<boolean>();
     protected readonly contextMenuEmitter = new Emitter<MouseEvent>();
-    /**
-     * @deprecated since 0.11.0, use `onDidChangeVisibility` instead
-     */
-    readonly onVisibilityChanged = this.onDidChangeVisibility;
     protected readonly onTitleChangedEmitter = new Emitter<void>();
     readonly onTitleChanged = this.onTitleChangedEmitter.event;
     protected readonly onDidFocusEmitter = new Emitter<this>();

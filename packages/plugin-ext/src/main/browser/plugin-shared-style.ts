@@ -49,6 +49,7 @@ export class PluginSharedStyle {
         this.toUpdate.dispose();
 
         const style = this.style = document.createElement('style');
+        // eslint-disable-next-line deprecation/deprecation
         style.type = 'text/css';
         style.media = 'screen';
         document.getElementsByTagName('head')[0].appendChild(style);

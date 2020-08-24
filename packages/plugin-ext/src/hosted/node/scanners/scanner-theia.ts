@@ -49,7 +49,6 @@ import {
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
-import { isObject } from 'util';
 import { GrammarsReader } from './grammars-reader';
 import { CharacterPair } from '../../../common/plugin-api-rpc';
 import * as jsoncparser from 'jsonc-parser';
@@ -675,7 +674,7 @@ export class TheiaPluginScanner implements PluginScanner {
                 result = result || [];
                 result.push({ open: pair[0], close: pair[1] });
             } else {
-                if (!isObject(pair)) {
+                if (pair === null || typeof pair !== 'object') {
                     console.warn(`[${langId}]: language configuration: expected \`autoClosingPairs[${i}]\` to be an array of two strings or an object.`);
                     continue;
                 }
@@ -722,7 +721,7 @@ export class TheiaPluginScanner implements PluginScanner {
                 result = result || [];
                 result.push({ open: pair[0], close: pair[1] });
             } else {
-                if (!isObject(pair)) {
+                if (pair === null || typeof pair !== 'object') {
                     console.warn(`[${langId}]: language configuration: expected \`surroundingPairs[${i}]\` to be an array of two strings or an object.`);
                     continue;
                 }

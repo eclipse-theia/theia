@@ -39,7 +39,7 @@ import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
 import { Navigatable } from './navigatable';
 import { QuickViewService } from './quick-view-service';
-import { PrefixQuickOpenService, QuickOpenItem, QuickOpenMode, QuickOpenService, QuickOpenGroupItem } from './quick-open';
+import { PrefixQuickOpenService, QuickOpenService } from './quick-open';
 import { environment } from '@theia/application-package/lib/environment';
 import { IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
@@ -51,6 +51,7 @@ import { ClipboardService } from './clipboard-service';
 import { EncodingRegistry } from './encoding-registry';
 import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
+import { QuickOpenItem, QuickOpenMode, QuickOpenGroupItem } from '../common/quick-open-model';
 
 export namespace CommonMenus {
 

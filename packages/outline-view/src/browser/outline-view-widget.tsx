@@ -155,7 +155,7 @@ export class OutlineViewWidget extends TreeWidget {
      */
     protected getNodeTooltip(node: TreeNode): string | undefined {
         if (OutlineSymbolInformationNode.is(node)) {
-            return node.name + ` (${node.iconClass})`;
+            return this.labelProvider.getName(node) + ` (${node.iconClass})`;
         }
         return undefined;
     }

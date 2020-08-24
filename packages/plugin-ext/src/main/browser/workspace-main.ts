@@ -20,7 +20,7 @@ import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFol
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { URI as Uri } from 'vscode-uri';
 import { UriComponents } from '../../common/uri-components';
-import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
+import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/common/quick-open-model';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import URI from '@theia/core/lib/common/uri';

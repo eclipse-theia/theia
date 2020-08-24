@@ -17,7 +17,7 @@
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Path } from '@theia/core/lib/common/path';
-import { ApplicationShell, NavigatableWidget, WidgetManager } from '@theia/core/lib/browser';
+import { ApplicationShell, NavigatableWidget, WidgetManager, LabelProvider } from '@theia/core/lib/browser';
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -33,12 +33,14 @@ export class WorkspaceVariableContribution implements VariableContribution {
     protected readonly fileService: FileService;
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
 
     protected currentWidget: NavigatableWidget | undefined;
 
     @postConstruct()
     protected init(): void {
-        this.shell.currentChanged.connect(() => this.updateCurrentWidget());
+        this.shell.onDidChangeCurrentWidget(() => this.updateCurrentWidget());
         this.widgetManager.onDidCreateWidget(({ widget }) => {
             if (NavigatableWidget.is(widget)) {
                 widget.onDidChangeVisibility(() => {
@@ -167,7 +169,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The name of the workspace root folder',
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
-                return uri && uri.displayName;
+                return uri && this.labelProvider.getName(uri);
             }
         }));
         variables.registerVariable(scoped({
@@ -175,7 +177,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
             description: 'The name of the workspace root folder',
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
-                return uri && uri.displayName;
+                return uri && this.labelProvider.getName(uri);
             }
         }));
         variables.registerVariable(scoped({

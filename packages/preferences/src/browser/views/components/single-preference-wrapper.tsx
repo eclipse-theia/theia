@@ -90,7 +90,7 @@ export class SinglePreferenceWrapper extends React.Component<SinglePreferenceWra
                 data-id={preferenceDisplayNode.id}
             >
                 <div className="pref-name">
-                    {preferenceDisplayNode.name}
+                    {preferenceDisplayNode.name /* eslint-disable-line deprecation/deprecation */}
                     {this.renderOtherModifiedScopes(singlePreferenceValueDisplayNode.id, values, this.props.currentScope, this.props.preferencesService)}
                 </div>
                 <div className={`pref-context-gutter ${!currentValueIsDefaultValue ? 'theia-mod-item-modified' : ''}`}

@@ -25,7 +25,7 @@ import { TreeNode, CompositeTreeNode } from './tree';
 import { TreeModel } from './tree-model';
 import { ExpandableTreeNode } from './tree-expansion';
 import { SelectableTreeNode, TreeSelection } from './tree-selection';
-import { TreeDecoratorService, TreeDecoration, DecoratedTreeNode } from './tree-decorator';
+import { TreeDecoratorService, DecoratedTreeNode } from './tree-decorator';
 import { notEmpty } from '../../common/objects';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from '../widgets/react-widget';
@@ -39,6 +39,7 @@ import { TreeWidgetSelection } from './tree-widget-selection';
 import { MaybePromise } from '../../common/types';
 import { LabelProvider } from '../label-provider';
 import { CorePreferences } from '../core-preferences';
+import { WidgetDecoration } from '../widget-decoration';
 
 const debounce = require('lodash.debounce');
 
@@ -147,7 +148,7 @@ export namespace TreeWidget {
 export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected searchBox: SearchBox;
-    protected searchHighlights: Map<string, TreeDecoration.CaptionHighlight>;
+    protected searchHighlights: Map<string, WidgetDecoration.CaptionHighlight>;
 
     @inject(TreeDecoratorService)
     protected readonly decoratorService: TreeDecoratorService;
@@ -156,7 +157,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     @inject(SearchBoxFactory)
     protected readonly searchBoxFactory: SearchBoxFactory;
 
-    protected decorations: Map<string, TreeDecoration.Data[]> = new Map();
+    protected decorations: Map<string, WidgetDecoration.Data[]> = new Map();
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
@@ -587,7 +588,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param caption the caption.
      * @param highlight the tree decoration caption highlight.
      */
-    protected toReactNode(caption: string, highlight: TreeDecoration.CaptionHighlight): React.ReactNode[] {
+    protected toReactNode(caption: string, highlight: WidgetDecoration.CaptionHighlight): React.ReactNode[] {
         let style: React.CSSProperties = {};
         if (highlight.color) {
             style = {
@@ -601,15 +602,15 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 backgroundColor: highlight.backgroundColor
             };
         }
-        const createChildren = (fragment: TreeDecoration.CaptionHighlight.Fragment) => {
+        const createChildren = (fragment: WidgetDecoration.CaptionHighlight.Fragment) => {
             const { data } = fragment;
             if (fragment.highlight) {
-                return <mark className={TreeDecoration.Styles.CAPTION_HIGHLIGHT_CLASS} style={style}>{data}</mark>;
+                return <mark className={WidgetDecoration.Styles.CAPTION_HIGHLIGHT_CLASS} style={style}>{data}</mark>;
             } else {
                 return data;
             }
         };
-        return TreeDecoration.CaptionHighlight.split(caption, highlight).map(createChildren);
+        return WidgetDecoration.CaptionHighlight.split(caption, highlight).map(createChildren);
     }
 
     /**
@@ -647,7 +648,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param original the original css properties.
      * @param fontData the optional `fontData`.
      */
-    protected applyFontStyles(original: React.CSSProperties, fontData: TreeDecoration.FontData | undefined): React.CSSProperties {
+    protected applyFontStyles(original: React.CSSProperties, fontData: WidgetDecoration.FontData | undefined): React.CSSProperties {
         if (fontData === undefined) {
             return original;
         }
@@ -699,7 +700,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      */
     protected renderCaptionAffixes(node: TreeNode, props: NodeProps, affixKey: 'captionPrefixes' | 'captionSuffixes'): React.ReactNode {
         const suffix = affixKey === 'captionSuffixes';
-        const affixClass = suffix ? TreeDecoration.Styles.CAPTION_SUFFIX_CLASS : TreeDecoration.Styles.CAPTION_PREFIX_CLASS;
+        const affixClass = suffix ? WidgetDecoration.Styles.CAPTION_SUFFIX_CLASS : WidgetDecoration.Styles.CAPTION_PREFIX_CLASS;
         const classes = [TREE_NODE_SEGMENT_CLASS, affixClass];
         const affixes = this.getDecorationData(node, affixKey).filter(notEmpty).reduce((acc, current) => acc.concat(current), []);
         const children: React.ReactNode[] = [];
@@ -735,20 +736,20 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
         const overlayIcons: React.ReactNode[] = [];
         new Map(this.getDecorationData(node, 'iconOverlay').reverse().filter(notEmpty)
-            .map(overlay => [overlay.position, overlay] as [TreeDecoration.IconOverlayPosition, TreeDecoration.IconOverlay | TreeDecoration.IconClassOverlay]))
+            .map(overlay => [overlay.position, overlay] as [WidgetDecoration.IconOverlayPosition, WidgetDecoration.IconOverlay | WidgetDecoration.IconClassOverlay]))
             .forEach((overlay, position) => {
-                const iconClasses = [TreeDecoration.Styles.DECORATOR_SIZE_CLASS, TreeDecoration.IconOverlayPosition.getStyle(position)];
+                const iconClasses = [WidgetDecoration.Styles.DECORATOR_SIZE_CLASS, WidgetDecoration.IconOverlayPosition.getStyle(position)];
                 const style = (color?: string) => color === undefined ? {} : { color };
                 if (overlay.background) {
                     overlayIcons.push(<span key={node.id + 'bg'} className={this.getIconClass(overlay.background.shape, iconClasses)} style={style(overlay.background.color)}>
                     </span>);
                 }
-                const overlayIcon = (overlay as TreeDecoration.IconOverlay).icon || (overlay as TreeDecoration.IconClassOverlay).iconClass;
+                const overlayIcon = (overlay as WidgetDecoration.IconOverlay).icon || (overlay as WidgetDecoration.IconClassOverlay).iconClass;
                 overlayIcons.push(<span key={node.id} className={this.getIconClass(overlayIcon, iconClasses)} style={style(overlay.color)}></span>);
             });
 
         if (overlayIcons.length > 0) {
-            return <div className={TreeDecoration.Styles.ICON_WRAPPER_CLASS}>{icon}{overlayIcons}</div>;
+            return <div className={WidgetDecoration.Styles.ICON_WRAPPER_CLASS}>{icon}{overlayIcons}</div>;
         }
 
         return icon;
@@ -763,9 +764,9 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         return <React.Fragment>
             {this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).map((decoration, index) => {
                 const { tooltip } = decoration;
-                const { data, fontData } = decoration as TreeDecoration.TailDecoration;
-                const color = (decoration as TreeDecoration.TailDecorationIcon).color;
-                const icon = (decoration as TreeDecoration.TailDecorationIcon).icon || (decoration as TreeDecoration.TailDecorationIconClass).iconClass;
+                const { data, fontData } = decoration as WidgetDecoration.TailDecoration;
+                const color = (decoration as WidgetDecoration.TailDecorationIcon).color;
+                const icon = (decoration as WidgetDecoration.TailDecorationIcon).icon || (decoration as WidgetDecoration.TailDecorationIconClass).iconClass;
                 const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' ');
                 const style = fontData ? this.applyFontStyles({}, fontData) : color ? { color } : undefined;
                 const content = data ? data : icon ? <span key={node.id + 'icon' + index} className={this.getIconClass(icon)}></span> : '';
@@ -967,15 +968,15 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      *
      * @returns the list of tree decoration data.
      */
-    protected getDecorations(node: TreeNode): TreeDecoration.Data[] {
-        const decorations: TreeDecoration.Data[] = [];
+    protected getDecorations(node: TreeNode): WidgetDecoration.Data[] {
+        const decorations: WidgetDecoration.Data[] = [];
         if (DecoratedTreeNode.is(node)) {
             decorations.push(node.decorationData);
         }
         if (this.decorations.has(node.id)) {
             decorations.push(...this.decorations.get(node.id));
         }
-        return decorations.sort(TreeDecoration.Data.comparePriority);
+        return decorations.sort(WidgetDecoration.Data.comparePriority);
     }
 
     /**
@@ -985,7 +986,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      *
      * @returns the tree decoration data at the given key.
      */
-    protected getDecorationData<K extends keyof TreeDecoration.Data>(node: TreeNode, key: K): TreeDecoration.Data[K][] {
+    protected getDecorationData<K extends keyof WidgetDecoration.Data>(node: TreeNode, key: K): WidgetDecoration.Data[K][] {
         return this.getDecorations(node).filter(data => data[key] !== undefined).map(data => data[key]).filter(notEmpty);
     }
 

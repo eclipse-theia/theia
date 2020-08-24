@@ -18,7 +18,8 @@ import { inject, injectable } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
-import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
+import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
+import { TreeDecorator } from '@theia/core/lib/browser/tree/tree-decorator';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { DecorationData, ScmDecorationsService } from './scm-decorations-service';
@@ -43,7 +44,7 @@ export class ScmNavigatorDecorator implements TreeDecorator {
         });
     }
 
-    protected collectDecorators(tree: Tree): Map<string, TreeDecoration.Data> {
+    protected collectDecorators(tree: Tree): Map<string, WidgetDecoration.Data> {
         const result = new Map();
         if (tree.root === undefined || !this.decorationsMap) {
             return result;
@@ -58,10 +59,10 @@ export class ScmNavigatorDecorator implements TreeDecorator {
                 }
             }
         }
-        return new Map(Array.from(result.entries()).map(m => [m[0], this.toDecorator(m[1])] as [string, TreeDecoration.Data]));
+        return new Map(Array.from(result.entries()).map(m => [m[0], this.toDecorator(m[1])] as [string, WidgetDecoration.Data]));
     }
 
-    protected toDecorator(change: DecorationData): TreeDecoration.Data {
+    protected toDecorator(change: DecorationData): WidgetDecoration.Data {
         const colorVariable = change.color && this.colors.toCssVariableName(change.color.id);
         return {
             tailDecorations: [
@@ -76,9 +77,9 @@ export class ScmNavigatorDecorator implements TreeDecorator {
         };
     }
 
-    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
+    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, WidgetDecoration.Data>>();
 
-    async decorations(tree: Tree): Promise<Map<string, TreeDecoration.Data>> {
+    async decorations(tree: Tree): Promise<Map<string, WidgetDecoration.Data>> {
         if (this.decorationsMap) {
             return this.collectDecorators(tree);
         } else {
@@ -106,11 +107,11 @@ export class ScmNavigatorDecorator implements TreeDecorator {
         return result;
     }
 
-    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {
+    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, WidgetDecoration.Data>> {
         return this.emitter.event;
     }
 
-    fireDidChangeDecorations(event: (tree: Tree) => Map<string, TreeDecoration.Data>): void {
+    fireDidChangeDecorations(event: (tree: Tree) => Map<string, WidgetDecoration.Data>): void {
         this.emitter.fire(event);
     }
 

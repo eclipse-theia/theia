@@ -351,10 +351,7 @@ export class MonacoEditorProvider {
         }
     }
 
-    /** @deprecated always pass a language as an overrideIdentifier */
-    protected createOptions(prefixes: string[], uri: string): { [name: string]: any };
-    protected createOptions(prefixes: string[], uri: string, overrideIdentifier: string): { [name: string]: any };
-    protected createOptions(prefixes: string[], uri: string, overrideIdentifier?: string): { [name: string]: any } {
+    protected createOptions(prefixes: string[], uri: string, overrideIdentifier: string): { [name: string]: any } {
         return Object.keys(this.editorPreferences).reduce((options, preferenceName) => {
             const value = (<any>this.editorPreferences).get({ preferenceName, overrideIdentifier }, undefined, uri);
             return this.setOption(preferenceName, deepClone(value), prefixes, options);

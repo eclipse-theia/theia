@@ -158,6 +158,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
             return;
         }
         const styleElement = document.createElement('style');
+        // eslint-disable-next-line deprecation/deprecation
         styleElement.type = 'text/css';
         styleElement.className = 'theia-icon-theme';
         styleElement.innerHTML = this.styleSheetContent;

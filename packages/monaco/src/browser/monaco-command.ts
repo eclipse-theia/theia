@@ -19,13 +19,13 @@ import { Position, Location } from 'vscode-languageserver-types';
 import { CommandContribution, CommandRegistry, CommandHandler } from '@theia/core/lib/common/command';
 import { CommonCommands } from '@theia/core/lib/browser';
 import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
-import { QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { EditorCommands } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
 import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import { QuickOpenItem, QuickOpenMode } from '@theia/core/lib/common/quick-open-model';
 
 export namespace MonacoCommands {
 

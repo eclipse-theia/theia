@@ -16,7 +16,8 @@
 
 import { injectable, inject } from 'inversify';
 import { QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/common/quick-open-model';
-import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/quick-open-service';
+import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
+import { QuickOpenOptions } from '@theia/core/lib/common/quick-open-service';
 import { Git, Repository, Branch, BranchType, Tag, Remote, StashEntry } from '../common';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';

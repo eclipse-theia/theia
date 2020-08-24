@@ -71,12 +71,8 @@ export abstract class ContextMenuRenderer {
         }
     }
 
-    render(options: RenderContextMenuOptions): ContextMenuAccess;
-    /** @deprecated since 0.7.2 pass `RenderContextMenuOptions` instead */
-    render(menuPath: MenuPath, anchor: Anchor, onHide?: () => void): ContextMenuAccess;
-    render(menuPathOrOptions: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): ContextMenuAccess {
-        const resolvedOptions = RenderContextMenuOptions.resolve(menuPathOrOptions, anchor, onHide);
-        const access = this.doRender(resolvedOptions);
+    render(options: RenderContextMenuOptions): ContextMenuAccess {
+        const access = this.doRender(options);
         this.setCurrent(access);
         return access;
     }
@@ -90,25 +86,4 @@ export interface RenderContextMenuOptions {
     anchor: Anchor
     args?: any[]
     onHide?: () => void
-}
-export namespace RenderContextMenuOptions {
-    export function resolve(menuPathOrOptions: MenuPath | RenderContextMenuOptions, anchor?: Anchor, onHide?: () => void): RenderContextMenuOptions {
-        let menuPath: MenuPath;
-        let args: any[];
-        if (Array.isArray(menuPathOrOptions)) {
-            menuPath = menuPathOrOptions;
-            args = [anchor!];
-        } else {
-            menuPath = menuPathOrOptions.menuPath;
-            anchor = menuPathOrOptions.anchor;
-            onHide = menuPathOrOptions.onHide;
-            args = menuPathOrOptions.args ? [...menuPathOrOptions.args, anchor] : [anchor];
-        }
-        return {
-            menuPath,
-            anchor: anchor!,
-            onHide,
-            args
-        };
-    }
 }

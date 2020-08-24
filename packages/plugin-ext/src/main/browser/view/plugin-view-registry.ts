@@ -37,7 +37,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { SearchInWorkspaceWidget } from '@theia/search-in-workspace/lib/browser/search-in-workspace-widget';
 import { ViewContextKeyService } from './view-context-key-service';
 import { PROBLEMS_WIDGET_ID } from '@theia/markers/lib/browser/problem/problem-widget';
-import { OUTPUT_WIDGET_KIND } from '@theia/output/lib/browser/output-widget';
+import { OutputWidget } from '@theia/output/lib/browser/output-widget';
 import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug-console-contribution';
 import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
 
@@ -105,7 +105,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
 
         // VS Code Panels
         this.trackVisibleWidget(PROBLEMS_WIDGET_ID, { panelId: 'workbench.panel.markers' });
-        this.trackVisibleWidget(OUTPUT_WIDGET_KIND, { panelId: 'workbench.panel.output' });
+        this.trackVisibleWidget(OutputWidget.ID, { panelId: 'workbench.panel.output' });
         this.trackVisibleWidget(DebugConsoleContribution.options.id, { panelId: 'workbench.panel.repl' });
         this.trackVisibleWidget(TERMINAL_WIDGET_FACTORY_ID, { panelId: 'workbench.panel.terminal' });
         // TODO workbench.panel.comments - Theia does not have a proper comments view yet

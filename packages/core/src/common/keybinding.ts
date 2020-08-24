@@ -51,6 +51,7 @@ export namespace Keybinding {
         const copy: Keybinding = {
             command: binding.command,
             keybinding: binding.keybinding,
+            // eslint-disable-next-line deprecation/deprecation
             context: binding.context,
             when: binding.when,
             args: binding.args

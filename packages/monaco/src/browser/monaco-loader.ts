@@ -26,6 +26,7 @@ export function loadVsRequire(context: any): Promise<any> {
             const vsLoader = document.createElement('script');
             vsLoader.type = 'text/javascript';
             vsLoader.src = './vs/loader.js';
+            // eslint-disable-next-line deprecation/deprecation
             vsLoader.charset = 'utf-8';
             vsLoader.addEventListener('load', () => {
                 // Save Monaco's amd require and restore the original require

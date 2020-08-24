@@ -31,7 +31,6 @@ import { ContributionProvider, Event } from '@theia/core/lib/common';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution, ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
 import { MarkerInfoNode } from './marker-tree';
 import { MarkerTreeLabelProvider } from './marker-tree-label-provider';
-import { Signal } from '@phosphor/signaling';
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { WorkspaceUriLabelProviderContribution } from '@theia/workspace/lib/browser/workspace-uri-contribution';
@@ -56,7 +55,7 @@ before(() => {
     testContainer.bind(WorkspaceService).toConstantValue(workspaceService);
     testContainer.bind(WorkspaceVariableContribution).toSelf().inSingletonScope();
     testContainer.bind(ApplicationShell).toConstantValue({
-        currentChanged: new Signal({}),
+        onDidChangeCurrentWidget: () => undefined,
         widgets: () => []
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any);
@@ -66,9 +65,9 @@ before(() => {
     } as any);
     testContainer.bind(FileService).toConstantValue(<FileService>{});
 
+    testContainer.bind(LabelProvider).toSelf().inSingletonScope();
     testContainer.bind(DefaultUriLabelProviderContribution).toSelf().inSingletonScope();
     testContainer.bind(WorkspaceUriLabelProviderContribution).toSelf().inSingletonScope();
-    testContainer.bind(LabelProvider).toSelf().inSingletonScope();
     testContainer.bind(MarkerTreeLabelProvider).toSelf().inSingletonScope();
     testContainer.bind(TreeLabelProvider).toSelf().inSingletonScope();
     testContainer.bind(EnvVariablesServer).toConstantValue(new MockEnvVariablesServerImpl(FileUri.create(temp.track().mkdirSync())));

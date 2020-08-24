@@ -92,7 +92,8 @@ export class TerminalProcess extends Process {
 
             // node-pty actually wait for the underlying streams to be closed before emitting exit.
             // We should emulate the `exit` and `close` sequence.
-            this.terminal.on('exit', (code, signal) => {
+            this.terminal.onExit(event => {
+                const { exitCode, signal } = event;
                 // Make sure to only pass either code or signal as !undefined, not
                 // both.
                 //
@@ -102,20 +103,20 @@ export class TerminalProcess extends Process {
                 // signal parameter will hold the signal number and code should
                 // be ignored.
                 if (signal === undefined || signal === 0) {
-                    this.emitOnExit(code, undefined);
+                    this.emitOnExit(exitCode, undefined);
                 } else {
                     this.emitOnExit(undefined, signame(signal));
                 }
                 process.nextTick(() => {
                     if (signal === undefined || signal === 0) {
-                        this.emitOnClose(code, undefined);
+                        this.emitOnClose(exitCode, undefined);
                     } else {
                         this.emitOnClose(undefined, signame(signal));
                     }
                 });
             });
 
-            this.terminal.on('data', (data: string) => {
+            this.terminal.onData(data => {
                 ringBuffer.enq(data);
             });
 

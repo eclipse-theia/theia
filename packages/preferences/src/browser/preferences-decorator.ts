@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Tree, TreeDecorator, TreeDecoration, PreferenceDataProperty, PreferenceService } from '@theia/core/lib/browser';
+import { Tree, TreeDecorator, PreferenceDataProperty, PreferenceService } from '@theia/core/lib/browser';
+import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 import { Emitter, Event, MaybePromise } from '@theia/core';
 import { escapeInvisibleChars } from '@theia/core/lib/common/strings';
 
@@ -25,8 +26,8 @@ export class PreferencesDecorator implements TreeDecorator {
 
     protected activeFolderUri: string | undefined;
     protected preferences: { [id: string]: PreferenceDataProperty }[];
-    protected preferencesDecorations: Map<string, TreeDecoration.Data> = new Map();
-    protected readonly emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>> = new Emitter();
+    protected preferencesDecorations: Map<string, WidgetDecoration.Data> = new Map();
+    protected readonly emitter: Emitter<(tree: Tree) => Map<string, WidgetDecoration.Data>> = new Emitter();
 
     @inject(PreferenceService) protected readonly preferencesService: PreferenceService;
 
@@ -37,7 +38,7 @@ export class PreferencesDecorator implements TreeDecorator {
         });
     }
 
-    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {
+    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, WidgetDecoration.Data>> {
         return this.emitter.event;
     }
 
@@ -61,13 +62,13 @@ export class PreferencesDecorator implements TreeDecorator {
                             data: ' ' + description,
                             fontData: { color: 'var(--theia-descriptionForeground)' }
                         }]
-                }] as [string, TreeDecoration.Data];
+                }] as [string, WidgetDecoration.Data];
             }));
         }
         this.emitter.fire(() => this.preferencesDecorations);
     }
 
-    decorations(tree: Tree): MaybePromise<Map<string, TreeDecoration.Data>> {
+    decorations(tree: Tree): MaybePromise<Map<string, WidgetDecoration.Data>> {
         return this.preferencesDecorations;
     }
 

@@ -124,12 +124,9 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         }
     }
 
-    /** @deprecated pass MonacoEditorModel instead  */
-    protected getModelOptions(uri: string): monaco.editor.ITextModelUpdateOptions;
-    protected getModelOptions(model: MonacoEditorModel): monaco.editor.ITextModelUpdateOptions;
-    protected getModelOptions(arg: string | MonacoEditorModel): monaco.editor.ITextModelUpdateOptions {
-        const uri = typeof arg === 'string' ? arg : arg.uri;
-        const overrideIdentifier = typeof arg === 'string' ? undefined : arg.languageId;
+    protected getModelOptions(model: MonacoEditorModel): monaco.editor.ITextModelUpdateOptions {
+        const overrideIdentifier = model.languageId;
+        const uri = model.uri;
         return {
             tabSize: this.editorPreferences.get({ preferenceName: 'editor.tabSize', overrideIdentifier }, undefined, uri),
             insertSpaces: this.editorPreferences.get({ preferenceName: 'editor.insertSpaces', overrideIdentifier }, undefined, uri)

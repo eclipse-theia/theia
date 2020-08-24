@@ -447,7 +447,10 @@ export class TabBarRenderer extends TabBar.Renderer {
                 }
             }
 
-            this.contextMenuRenderer.render(this.contextMenuPath, event);
+            this.contextMenuRenderer.render({
+                menuPath: this.contextMenuPath,
+                anchor: event,
+            });
         }
     };
 

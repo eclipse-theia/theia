@@ -19,7 +19,8 @@ import { TaskService } from './task-service';
 import { TaskInfo, TaskConfiguration, TaskCustomization, TaskScope, TaskConfigurationScope } from '../common/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import URI from '@theia/core/lib/common/uri';
-import { QuickOpenHandler, QuickOpenService, QuickOpenOptions, QuickOpenBaseAction, LabelProvider } from '@theia/core/lib/browser';
+import { QuickOpenHandler, QuickOpenService, QuickOpenBaseAction, LabelProvider } from '@theia/core/lib/browser';
+import { QuickOpenOptions } from '@theia/core/lib/common/quick-open-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import {
@@ -268,7 +269,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
 
         const rootUris = (await this.workspaceService.roots).map(rootStat => rootStat.resource.toString());
         for (const rootFolder of rootUris) {
-            const folderName = new URI(rootFolder).displayName;
+            const folderName = this.labelProvider.getName(new URI(rootFolder));
             if (groupedTasks.has(rootFolder)) {
                 const configs = groupedTasks.get(rootFolder.toString())!;
                 this.items.push(
@@ -557,6 +558,7 @@ export class ConfigureBuildOrTestTaskQuickOpenItem extends TaskRunQuickOpenItem 
 function renderScope(scope: TaskConfigurationScope, isMulti: boolean): string {
     if (typeof scope === 'string') {
         if (isMulti) {
+            // eslint-disable-next-line deprecation/deprecation
             return new URI(scope).displayName;
         } else {
             return '';

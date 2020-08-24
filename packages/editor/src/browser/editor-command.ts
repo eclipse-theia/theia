@@ -17,7 +17,8 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider, QuickPickValue, ApplicationShell } from '@theia/core/lib/browser';
+import { CommonCommands, PreferenceService, LabelProvider, ApplicationShell } from '@theia/core/lib/browser';
+import { QuickPickService, QuickPickItem, QuickPickValue } from '@theia/core/lib/common/quick-pick-service';
 import { EditorManager } from './editor-manager';
 import { EncodingMode } from './editor';
 import { EditorPreferences } from './editor-preferences';

@@ -18,7 +18,8 @@ import { injectable } from 'inversify';
 import { v4 } from 'uuid';
 import URI from '@theia/core/lib/common/uri';
 import { Location } from '@theia/editor/lib/browser/editor';
-import { TreeDecoration, DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
+import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
+import { DecoratedTreeNode } from '@theia/core/lib/browser/tree/tree-decorator';
 import { TreeImpl, TreeNode, CompositeTreeNode, ExpandableTreeNode, SelectableTreeNode } from '@theia/core/lib/browser/tree';
 import { TypeHierarchyProvider, TypeHierarchyDirection, ResolveTypeHierarchyItemParams, TypeHierarchyItem } from '../typehierarchy-provider';
 
@@ -155,8 +156,9 @@ export namespace TypeHierarchyTree {
             return node;
         }
 
-        function decorationData(item: TypeHierarchyItem, direction: TypeHierarchyDirection): TreeDecoration.Data {
-            const captionSuffixes: TreeDecoration.CaptionAffix[] = [{
+        function decorationData(item: TypeHierarchyItem, direction: TypeHierarchyDirection): WidgetDecoration.Data {
+            const captionSuffixes: WidgetDecoration.CaptionAffix[] = [{
+                // eslint-disable-next-line deprecation/deprecation
                 data: new URI(item.uri).displayName,
                 fontData: {
                     color: 'var(--theia-descriptionForeground)',

@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, LabelProvider } from '@theia/core/lib/browser';
+import { QuickOpenService, LabelProvider } from '@theia/core/lib/browser';
+import { QuickOpenModel, QuickOpenGroupItem, QuickOpenMode, QuickOpenItem } from '@theia/core/lib/common/quick-open-model';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { WorkspaceService } from './workspace-service';
 import { WorkspacePreferences } from './workspace-preferences';

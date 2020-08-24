@@ -96,6 +96,7 @@ export class LocationListRenderer extends ReactRenderer {
     protected renderLocation(location: LocationListRenderer.Location): React.ReactNode {
         const { uri, isDrive } = location;
         const value = uri.toString();
+        // eslint-disable-next-line deprecation/deprecation
         return <option value={value} key={uri.toString()}>{isDrive ? uri.path.toString() : uri.displayName}</option>;
     }
 

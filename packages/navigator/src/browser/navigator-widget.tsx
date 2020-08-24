@@ -90,6 +90,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         super.doUpdateRows();
         this.title.label = LABEL;
         if (WorkspaceNode.is(this.model.root)) {
+            // eslint-disable-next-line deprecation/deprecation
             if (this.model.root.name === WorkspaceNode.name) {
                 const rootNode = this.model.root.children[0];
                 if (WorkspaceRootNode.is(rootNode)) {

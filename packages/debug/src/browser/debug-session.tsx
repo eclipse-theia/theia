@@ -152,7 +152,7 @@ export class DebugSession implements CompositeTreeElement {
                 sourceReference: Number(uri.query)
             };
         }
-        const name = uri.displayName;
+        const name = this.labelProvider.getName(uri);
         let path;
         const underlying = await this.fileService.toUnderlyingResource(uri);
         if (underlying.scheme === 'file') {

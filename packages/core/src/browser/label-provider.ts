@@ -33,19 +33,6 @@ const DEFAULT_FOLDER_ICON = 'fa fa-folder';
  */
 const DEFAULT_FILE_ICON = 'fa fa-file';
 
-/**
- * Internal folder icon class for the default (File Icons) theme.
- *
- * @deprecated Use `LabelProvider.folderIcon` to get a folder icon class for the current icon theme.
- */
-export const FOLDER_ICON = DEFAULT_FOLDER_ICON;
-/**
- * Internal file icon class for the default (File Icons) theme.
- *
- * @deprecated Use `LabelProvider.fileIcon` to get a file icon class for the current icon theme.
- */
-export const FILE_ICON = DEFAULT_FILE_ICON;
-
 export const LabelProviderContribution = Symbol('LabelProviderContribution');
 export interface LabelProviderContribution {
 
@@ -149,6 +136,7 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
     }
 
     protected getFileIcon(uri: URI): string | undefined {
+        // eslint-disable-next-line deprecation/deprecation
         const fileIcon = fileIcons.getClassWithColor(uri.displayName);
         if (!fileIcon) {
             return undefined;
@@ -158,6 +146,7 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
 
     getName(element: URI | URIIconReference): string | undefined {
         const uri = this.getUri(element);
+        // eslint-disable-next-line deprecation/deprecation
         return uri && uri.displayName;
     }
 

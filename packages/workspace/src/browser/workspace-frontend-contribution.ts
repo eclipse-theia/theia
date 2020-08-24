@@ -376,7 +376,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 filters: WorkspaceFrontendContribution.DEFAULT_FILE_FILTER
             });
             if (selected) {
-                const displayName = selected.displayName;
+                const displayName = this.labelProvider.getName(selected);
                 if (!displayName.endsWith(`.${THEIA_EXT}`) && !displayName.endsWith(`.${VSCODE_EXT}`)) {
                     selected = selected.parent.resolve(`${displayName}.${THEIA_EXT}`);
                 }

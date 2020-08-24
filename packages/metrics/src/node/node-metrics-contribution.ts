@@ -25,9 +25,7 @@ export class NodeMetricsContribution implements MetricsContribution {
     }
 
     startCollecting(): void {
-        const collectDefaultMetrics = prom.collectDefaultMetrics;
-
         // Probe every 5th second.
-        collectDefaultMetrics({ timeout: 5000 });
+        prom.collectDefaultMetrics({ timeout: 5000 });
     }
 }

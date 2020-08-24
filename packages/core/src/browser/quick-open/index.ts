@@ -14,10 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-export * from './quick-open-model';
 export * from './quick-open-action-provider';
 export * from './quick-open-service';
-export * from './quick-pick-service';
 export * from './quick-input-service';
 export * from './quick-command-service';
 export * from './quick-command-contribution';

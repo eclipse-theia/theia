@@ -15,7 +15,8 @@
  ********************************************************************************/
 
 import { expect } from 'chai';
-import { TreeDecoratorService, AbstractTreeDecoratorService, TreeDecoration } from './tree-decorator';
+import { TreeDecoratorService, AbstractTreeDecoratorService } from './tree-decorator';
+import { WidgetDecoration } from '../widget-decoration';
 
 /* eslint-disable no-unused-expressions */
 
@@ -38,7 +39,7 @@ describe('tree-decorator', () => {
         });
 
         it('should inflate an object into the corresponding map', () => {
-            const expected = new Map<string, TreeDecoration.Data[]>();
+            const expected = new Map<string, WidgetDecoration.Data[]>();
             expected.set('id_1', [
                 {
                     tooltip: 'tooltip'
@@ -86,7 +87,7 @@ describe('tree-decorator', () => {
         });
 
         it('should inflate an object into the corresponding map', () => {
-            const decorations = new Map<string, TreeDecoration.Data[]>();
+            const decorations = new Map<string, WidgetDecoration.Data[]>();
             decorations.set('id_1', [
                 {
                     tooltip: 'tooltip'
@@ -143,13 +144,13 @@ describe('tree-decorator', () => {
             ] as [number, number, number, boolean][]).forEach(test => {
                 const [input, offset, length, expected] = test;
                 it(`${input} should ${expected ? '' : 'not '}be contained in the [${offset}:${length}] range`, () => {
-                    expect(TreeDecoration.CaptionHighlight.Range.contains(input, { offset, length })).to.be.equal(expected);
+                    expect(WidgetDecoration.CaptionHighlight.Range.contains(input, { offset, length })).to.be.equal(expected);
                 });
             });
         });
 
         it('split', () => {
-            const actual = TreeDecoration.CaptionHighlight.split('alma', {
+            const actual = WidgetDecoration.CaptionHighlight.split('alma', {
                 ranges: [{ offset: 0, length: 1 }]
             });
             expect(actual).has.lengthOf(2);

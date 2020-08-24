@@ -16,7 +16,7 @@
 
 import { injectable, inject } from 'inversify';
 import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
-import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, LabelProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { HostedPluginServer } from '../common/plugin-dev-protocol';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
@@ -52,6 +52,9 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
 
     @inject(FrontendApplicationStateService)
     protected readonly frontendApplicationStateService: FrontendApplicationStateService;
+
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
 
     public initialize(): void {
         this.workspaceService.roots.then(roots => {
@@ -90,7 +93,7 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
     private updateTitle(root: FileStat | undefined): void {
         if (root) {
             const uri = root.resource;
-            document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE + ' - ' + uri.displayName;
+            document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE + ' - ' + this.labelProvider.getName(uri);
         } else {
             document.title = HostedPluginInformer.DEVELOPMENT_HOST_TITLE;
         }

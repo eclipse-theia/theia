@@ -162,7 +162,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
 
     @postConstruct()
     protected init(): void {
-        this.shell.currentChanged.connect(() => this.updateCurrentTerminal());
+        this.shell.onDidChangeCurrentWidget(() => this.updateCurrentTerminal());
         this.widgetManager.onDidCreateWidget(({ widget }) => {
             if (widget instanceof TerminalWidget) {
                 this.updateCurrentTerminal();
@@ -174,7 +174,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
         const terminalFocusKey = this.contextKeyService.createKey<boolean>('terminalFocus', false);
         const updateFocusKey = () => terminalFocusKey.set(this.shell.activeWidget instanceof TerminalWidget);
         updateFocusKey();
-        this.shell.activeChanged.connect(updateFocusKey);
+        this.shell.onDidChangeActiveWidget(updateFocusKey);
     }
 
     protected _currentTerminal: TerminalWidget | undefined;

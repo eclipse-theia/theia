@@ -99,7 +99,7 @@ describe('FileChangeCollection', () => {
                 collection.push({ uri, type });
             }
             const actual = collection.values().map(({ type }) => typeAsString(type)).join(' + ');
-            assert.equal(expectation, actual);
+            assert.strictEqual(expectation, actual);
         });
     }
 

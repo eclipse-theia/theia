@@ -141,7 +141,7 @@ export class ShellLayoutRestorer implements CommandContribution {
         this.storageService.setData(this.storageKey, undefined);
         ThemeService.get().reset(); // Theme service cannot use DI, so the current theme ID is stored elsewhere. Hence the explicit reset.
         this.logger.info('<<< The layout has been successfully reset.');
-        window.location.reload(true);
+        window.location.reload();
     }
 
     storeLayout(app: FrontendApplication): void {

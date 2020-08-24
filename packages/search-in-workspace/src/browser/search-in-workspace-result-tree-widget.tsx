@@ -389,7 +389,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const uri: URI = new URI(uriStr);
         const relativePath = new URI(rootUriStr).relative(uri.parent);
         return {
-            name: uri.displayName,
+            name: this.labelProvider.getName(uri),
             path: relativePath ? relativePath.toString() : ''
         };
     }

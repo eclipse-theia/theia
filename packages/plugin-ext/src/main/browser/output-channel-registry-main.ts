@@ -66,14 +66,14 @@ export class OutputChannelRegistryMainImpl implements OutputChannelRegistryMain 
             const activate = !preserveFocus;
             const reveal = preserveFocus;
             this.commonOutputWidget = await this.outputContribution.openView({ activate, reveal });
-            outputChannel.setVisibility(true);
+            outputChannel.show();
         }
     }
 
     $close(channelName: string): PromiseLike<void> {
         const outputChannel = this.getChannel(channelName);
         if (outputChannel) {
-            outputChannel.setVisibility(false);
+            outputChannel.hide();
         }
         const channels = this.outputChannelManager.getChannels();
         const isEmpty = channels.findIndex((channel: OutputChannel) => channel.isVisible) === -1;

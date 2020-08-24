@@ -156,9 +156,10 @@ export class PreferencesTreeWidget extends TreeWidget {
         }
 
         const attributes = this.createNodeAttributes(node, props);
-        const printedNameWithVisibleChildren = node.name && this.preferenceTreeProvider.isFiltered
-            ? `${node.name} (${this.calculateVisibleLeaves(node)})`
-            : node.name;
+        const name = this.labelProvider.getName(node);
+        const printedNameWithVisibleChildren = name && this.preferenceTreeProvider.isFiltered
+            ? `${name} (${this.calculateVisibleLeaves(node)})`
+            : name;
 
         const content = <div className={TREE_NODE_CONTENT_CLASS}>
             {this.renderExpansionToggle(node, props)}
