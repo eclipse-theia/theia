@@ -49,6 +49,10 @@
   line-height: var(--theia-private-menubar-height);
 }
 
+.p-MenuBar-item .p-MenuBar-itemLabel {
+  white-space: pre;
+}
+
 
 .p-MenuBar-item.p-mod-active {
   background: var(--theia-menubar-selectionBackground);
