@@ -43,7 +43,7 @@ export namespace KeybindingScope {
 export type Keybinding = common.Keybinding;
 export const Keybinding = common.Keybinding;
 
-export interface ResolvedKeybinding extends Keybinding {
+export interface ResolvedKeybinding extends common.Keybinding {
     /**
      * The KeyboardLayoutService may transform the `keybinding` depending on the
      * user's keyboard layout. This property holds the transformed keybinding that
@@ -53,7 +53,7 @@ export interface ResolvedKeybinding extends Keybinding {
     resolved?: KeyCode[];
 }
 
-export interface ScopedKeybinding extends Keybinding {
+export interface ScopedKeybinding extends common.Keybinding {
     /** Current keybinding scope */
     scope: KeybindingScope;
 }
@@ -77,7 +77,7 @@ export interface KeybindingContext {
      */
     readonly id: string;
 
-    isEnabled(arg: Keybinding): boolean;
+    isEnabled(arg: common.Keybinding): boolean;
 }
 export namespace KeybindingContexts {
 
@@ -170,7 +170,7 @@ export class KeybindingRegistry {
      *
      * @param binding
      */
-    registerKeybinding(binding: Keybinding): Disposable {
+    registerKeybinding(binding: common.Keybinding): Disposable {
         return this.doRegisterKeybinding(binding);
     }
 
@@ -179,7 +179,7 @@ export class KeybindingRegistry {
      *
      * @param bindings
      */
-    registerKeybindings(...bindings: Keybinding[]): Disposable {
+    registerKeybindings(...bindings: common.Keybinding[]): Disposable {
         return this.doRegisterKeybindings(bindings, KeybindingScope.DEFAULT);
     }
 
@@ -188,15 +188,15 @@ export class KeybindingRegistry {
      *
      * @param binding
      */
-    unregisterKeybinding(binding: Keybinding): void;
+    unregisterKeybinding(binding: common.Keybinding): void;
     /**
      * Unregister keybinding from the registry
      *
      * @param key
      */
     unregisterKeybinding(key: string): void;
-    unregisterKeybinding(keyOrBinding: Keybinding | string): void {
-        const key = Keybinding.is(keyOrBinding) ? keyOrBinding.keybinding : keyOrBinding;
+    unregisterKeybinding(keyOrBinding: common.Keybinding | string): void {
+        const key = common.Keybinding.is(keyOrBinding) ? keyOrBinding.keybinding : keyOrBinding;
         const keymap = this.keymaps[KeybindingScope.DEFAULT];
         const bindings = keymap.filter(el => el.keybinding === key);
 
@@ -208,7 +208,7 @@ export class KeybindingRegistry {
         });
     }
 
-    protected doRegisterKeybindings(bindings: Keybinding[], scope: KeybindingScope = KeybindingScope.DEFAULT): Disposable {
+    protected doRegisterKeybindings(bindings: common.Keybinding[], scope: KeybindingScope = KeybindingScope.DEFAULT): Disposable {
         const toDispose = new DisposableCollection();
         for (const binding of bindings) {
             toDispose.push(this.doRegisterKeybinding(binding, scope));
@@ -216,7 +216,7 @@ export class KeybindingRegistry {
         return toDispose;
     }
 
-    protected doRegisterKeybinding(binding: Keybinding, scope: KeybindingScope = KeybindingScope.DEFAULT): Disposable {
+    protected doRegisterKeybinding(binding: common.Keybinding, scope: KeybindingScope = KeybindingScope.DEFAULT): Disposable {
         try {
             this.resolveKeybinding(binding);
             const scoped = Object.assign(binding, { scope });
@@ -228,7 +228,7 @@ export class KeybindingRegistry {
                 }
             });
         } catch (error) {
-            this.logger.warn(`Could not register keybinding:\n  ${Keybinding.stringify(binding)}\n${error}`);
+            this.logger.warn(`Could not register keybinding:\n  ${common.Keybinding.stringify(binding)}\n${error}`);
             return Disposable.NULL;
         }
     }
@@ -258,7 +258,7 @@ export class KeybindingRegistry {
         }
     }
 
-    containsKeybindingInScope(binding: Keybinding, scope = KeybindingScope.USER): boolean {
+    containsKeybindingInScope(binding: common.Keybinding, scope = KeybindingScope.USER): boolean {
         const bindingKeySequence = this.resolveKeybinding(binding);
         const collisions = this.getKeySequenceCollisions(this.keymaps[scope], bindingKeySequence)
             .filter(b => b.context === binding.context && !b.when && !binding.when);
@@ -277,7 +277,7 @@ export class KeybindingRegistry {
     /**
      * Return a user visible representation of a keybinding.
      */
-    acceleratorFor(keybinding: Keybinding, separator: string = ' '): string[] {
+    acceleratorFor(keybinding: common.Keybinding, separator: string = ' '): string[] {
         const bindingKeySequence = this.resolveKeybinding(keybinding);
         return this.acceleratorForSequence(bindingKeySequence, separator);
     }
@@ -399,7 +399,7 @@ export class KeybindingRegistry {
         return result;
     }
 
-    protected isActive(binding: Keybinding): boolean {
+    protected isActive(binding: common.Keybinding): boolean {
         /* Pseudo commands like "passthrough" are always active (and not found
            in the command registry).  */
         if (this.isPseudoCommand(binding.command)) {
@@ -416,7 +416,7 @@ export class KeybindingRegistry {
      * @param binding to execute
      * @param event keyboard event.
      */
-    protected executeKeyBinding(binding: Keybinding, event: KeyboardEvent): void {
+    protected executeKeyBinding(binding: common.Keybinding, event: KeyboardEvent): void {
         if (this.isPseudoCommand(binding.command)) {
             /* Don't do anything, let the event propagate.  */
         } else {
@@ -438,7 +438,7 @@ export class KeybindingRegistry {
     /**
      * Only execute if it has no context (global context) or if we're in that context.
      */
-    protected isEnabled(binding: Keybinding, event: KeyboardEvent): boolean {
+    protected isEnabled(binding: common.Keybinding, event: KeyboardEvent): boolean {
         const context = binding.context && this.contexts[binding.context];
         if (context && !context.isEnabled(binding)) {
             return false;
@@ -569,7 +569,7 @@ export class KeybindingRegistry {
         return commandId === KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND;
     }
 
-    setKeymap(scope: KeybindingScope, bindings: Keybinding[]): void {
+    setKeymap(scope: KeybindingScope, bindings: common.Keybinding[]): void {
         this.resetKeybindingsForScope(scope);
         this.toResetKeymap.set(scope, this.doRegisterKeybindings(bindings, scope));
         this.keybindingsChanged.fire(undefined);
@@ -631,7 +631,7 @@ export namespace KeybindingRegistry {
          * @param fn callback filter on the results
          * @return filtered new result
          */
-        filter(fn: (binding: Keybinding) => boolean): KeybindingsResult {
+        filter(fn: (binding: common.Keybinding) => boolean): KeybindingsResult {
             const result = new KeybindingsResult();
             result.full = this.full.filter(fn);
             result.partial = this.partial.filter(fn);
