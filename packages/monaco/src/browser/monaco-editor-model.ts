@@ -25,6 +25,7 @@ import { Range } from 'vscode-languageserver-types';
 import { Saveable } from '@theia/core/lib/browser/saveable';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import { ILogger, Loggable, Log } from '@theia/core/lib/common/logger';
 
 export {
     TextDocumentSaveReason
@@ -80,7 +81,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     constructor(
         protected readonly resource: Resource,
         protected readonly m2p: MonacoToProtocolConverter,
-        protected readonly p2m: ProtocolToMonacoConverter
+        protected readonly p2m: ProtocolToMonacoConverter,
+        protected readonly logger?: ILogger
     ) {
         this.toDispose.push(resource);
         this.toDispose.push(this.toDisposeOnAutoSave);
@@ -301,6 +303,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     protected syncCancellationTokenSource = new CancellationTokenSource();
     protected cancelSync(): CancellationToken {
+        this.trace(log => log('MonacoEditorModel.cancelSync'));
         this.syncCancellationTokenSource.cancel();
         this.syncCancellationTokenSource = new CancellationTokenSource();
         return this.syncCancellationTokenSource.token;
@@ -311,12 +314,23 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.run(() => this.doSync(token));
     }
     protected async doSync(token: CancellationToken): Promise<void> {
+        this.trace(log => log('MonacoEditorModel.doSync - enter'));
         if (token.isCancellationRequested) {
+            this.trace(log => log('MonacoEditorModel.doSync - exit - cancelled'));
             return;
         }
 
         const value = await this.readContents();
-        if (value === undefined || token.isCancellationRequested || this._dirty) {
+        if (value === undefined) {
+            this.trace(log => log('MonacoEditorModel.doSync - exit - resource not found'));
+            return;
+        }
+        if (token.isCancellationRequested) {
+            this.trace(log => log('MonacoEditorModel.doSync - exit - cancelled while looking for a resource'));
+            return;
+        }
+        if (this._dirty) {
+            this.trace(log => log('MonacoEditorModel.doSync - exit - pending dirty changes'));
             return;
         }
 
@@ -325,6 +339,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             ignoreDirty: true,
             ignoreContentChanges: true
         });
+        this.trace(log => log('MonacoEditorModel.doSync - exit'));
     }
     protected async readContents(): Promise<string | monaco.editor.ITextBufferFactory | undefined> {
         try {
@@ -350,12 +365,15 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     protected ignoreDirtyEdits = false;
     protected markAsDirty(): void {
+        this.trace(log => log('MonacoEditorModel.markAsDirty - enter'));
         if (this.ignoreDirtyEdits) {
+            this.trace(log => log('MonacoEditorModel.markAsDirty - exit - ignoring dirty changes enabled'));
             return;
         }
         this.cancelSync();
         this.setDirty(true);
         this.doAutoSave();
+        this.trace(log => log('MonacoEditorModel.markAsDirty - exit'));
     }
 
     protected doAutoSave(): void {
@@ -373,6 +391,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     protected saveCancellationTokenSource = new CancellationTokenSource();
     protected cancelSave(): CancellationToken {
+        this.trace(log => log('MonacoEditorModel.cancelSave'));
         this.saveCancellationTokenSource.cancel();
         this.saveCancellationTokenSource = new CancellationTokenSource();
         return this.saveCancellationTokenSource.token;
@@ -391,6 +410,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     protected fireDidChangeContent(event: monaco.editor.IModelContentChangedEvent): void {
+        this.trace(log => log(`MonacoEditorModel.fireDidChangeContent - enter - ${JSON.stringify(event, undefined, 2)}`));
         if (this.model.getAlternativeVersionId() === this.bufferSavedVersionId) {
             this.setDirty(false);
         } else {
@@ -400,6 +420,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         const changeContentEvent = this.asContentChangedEvent(event);
         this.onDidChangeContentEmitter.fire(changeContentEvent);
         this.pushContentChanges(changeContentEvent.contentChanges);
+        this.trace(log => log('MonacoEditorModel.fireDidChangeContent - exit'));
     }
     protected asContentChangedEvent(event: monaco.editor.IModelContentChangedEvent): MonacoModelContentChangedEvent {
         const contentChanges = event.changes.map(change => this.asTextDocumentContentChangeEvent(change));
@@ -541,6 +562,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     async revert(options?: Saveable.RevertOptions): Promise<void> {
+        this.trace(log => log('MonacoEditorModel.revert - enter'));
         this.cancelSave();
         const soft = options && options.soft;
         if (soft !== true) {
@@ -553,6 +575,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             }
         }
         this.setDirty(false);
+        this.trace(log => log('MonacoEditorModel.revert - exit'));
     }
 
     createSnapshot(): object {
@@ -563,6 +586,14 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     applySnapshot(snapshot: { value: string }): void {
         this.model.setValue(snapshot.value);
+    }
+
+    protected trace(loggable: Loggable): void {
+        if (this.logger) {
+            this.logger.debug((log: Log) =>
+                loggable((message, ...params) => log(message, ...params, this.resource.uri.toString(true)))
+            );
+        }
     }
 
 }

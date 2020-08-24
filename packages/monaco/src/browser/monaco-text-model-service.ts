@@ -22,6 +22,7 @@ import { MonacoEditorModel } from './monaco-editor-model';
 import IReference = monaco.editor.IReference;
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import { ILogger } from '@theia/core/lib/common/logger';
 export { IReference };
 
 export const MonacoEditorModelFactory = Symbol('MonacoEditorModelFactory');
@@ -58,6 +59,9 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     @named(MonacoEditorModelFactory)
     protected readonly factories: ContributionProvider<MonacoEditorModelFactory>;
 
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     get models(): MonacoEditorModel[] {
         return this._models.values();
     }
@@ -87,7 +91,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
 
     protected createModel(resource: Resource): MaybePromise<MonacoEditorModel> {
         const factory = this.factories.getContributions().find(({ scheme }) => resource.uri.scheme === scheme);
-        return factory ? factory.createModel(resource) : new MonacoEditorModel(resource, this.m2p, this.p2m);
+        return factory ? factory.createModel(resource) : new MonacoEditorModel(resource, this.m2p, this.p2m, this.logger);
     }
 
     protected readonly modelOptions: { [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined) } = {
