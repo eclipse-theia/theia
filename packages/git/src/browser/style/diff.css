@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 .theia-git-diff-icon {
-    -webkit-mask: url('git-diff.svg');
+    -webkit-mask: url('git-diff.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
     mask: url('git-diff.svg');
 }
 
