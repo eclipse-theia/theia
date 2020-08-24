@@ -56,7 +56,7 @@ export class TextmateRegistry {
         if (existingProvider) {
             Promise.all([existingProvider.getGrammarDefinition(), provider.getGrammarDefinition()]).then(([a, b]) => {
                 if (a.location !== b.location || !a.location && !b.location) {
-                    console.warn(new Error(`a registered grammar provider for '${scope}' scope is overridden`));
+                    console.warn(`a registered grammar provider for '${scope}' scope is overridden`);
                 }
             });
         }
@@ -79,7 +79,7 @@ export class TextmateRegistry {
         const scopes = this.languageIdToScope.get(languageId) || [];
         const existingScope = scopes[0];
         if (typeof existingScope === 'string') {
-            console.warn(new Error(`'${languageId}' language is remapped from '${existingScope}' to '${scope}' scope`));
+            console.warn(`'${languageId}' language is remapped from '${existingScope}' to '${scope}' scope`);
         }
         scopes.unshift(scope);
         this.languageIdToScope.set(languageId, scopes);
@@ -109,7 +109,7 @@ export class TextmateRegistry {
         const configs = this.languageToConfig.get(languageId) || [];
         const existingConfig = configs[0];
         if (existingConfig) {
-            console.warn(new Error(`a registered grammar configuration for '${languageId}' language is overridden`));
+            console.warn(`a registered grammar configuration for '${languageId}' language is overridden`);
         }
         configs.unshift(config);
         this.languageToConfig.set(languageId, configs);
@@ -125,4 +125,5 @@ export class TextmateRegistry {
         const configs = this.languageToConfig.get(languageId);
         return configs && configs[0] || {};
     }
+
 }
