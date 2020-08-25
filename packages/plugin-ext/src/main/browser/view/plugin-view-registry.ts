@@ -193,7 +193,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const iconUrl = PluginSharedStyle.toExternalIconUrl(viewContainer.iconUrl);
         toDispose.push(this.style.insertRule('.' + containerClass + '.' + iconClass, () => `
                 mask: url('${iconUrl}') no-repeat 50% 50%;
-                -webkit-mask: url('${iconUrl}') no-repeat 50% 50% / var(--theia-private-sidebar-icon-size);
+                -webkit-mask: url('${iconUrl}') no-repeat 50% 50%;
             `));
         toDispose.push(this.doRegisterViewContainer(viewContainer.id, location, {
             label: viewContainer.title,

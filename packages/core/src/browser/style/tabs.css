@@ -189,9 +189,9 @@ body.theia-editor-highlightModifiedTabs
     background-position-y: 3px;
     background: var(--theia-icon-foreground);
     -webkit-mask-repeat: no-repeat;
-    -webkit-mask-size: 13px;
+    -webkit-mask-size: auto 13px;
     mask-repeat: no-repeat;
-    mask-size: 13px;
+    mask-size: auto 13px;
     padding-right: calc(var(--theia-ui-padding)/2);
 }
 

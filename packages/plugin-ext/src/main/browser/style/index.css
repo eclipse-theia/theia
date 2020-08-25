@@ -40,8 +40,8 @@
 }
 
 .theia-plugin-test-tab-icon {
-    -webkit-mask: url('test.svg');
-    mask: url('test.svg');
+    -webkit-mask: url('test.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
+    mask: url('test.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
 }
 
 .theia-plugin-file-icon,
