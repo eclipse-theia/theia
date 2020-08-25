@@ -25,8 +25,8 @@
 }
 
 .theia-mini-browser-icon {
-    mask: url('mini-browser.svg');
-    -webkit-mask: url('mini-browser.svg');
+    mask: url('mini-browser.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
+    -webkit-mask: url('mini-browser.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
 }
 
 .theia-mini-browser-toolbar {
