@@ -71,7 +71,7 @@ export class GitRepositoryProvider {
         this.fileService.onDidFilesChange(_ => this.lazyRefresh());
     }
 
-    protected lazyRefresh: () => Promise<void> = debounce(() => this.refresh(), 1000);
+    protected lazyRefresh: () => Promise<void> | undefined = debounce(() => this.refresh(), 1000);
 
     /**
      * Returns with the previously selected repository, or if no repository has been selected yet,
