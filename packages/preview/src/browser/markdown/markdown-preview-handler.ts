@@ -243,22 +243,23 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                         : self.renderToken(tokens, index, options);
                 };
             }
-            const originalImageRenderer = engine.renderer.rules['image'];
-            engine.renderer.rules['image'] = (tokens, index, options, env, self) => {
-                if (RenderContentParams.is(env)) {
-                    const documentUri = env.originUri;
-                    const token = tokens[index];
-                    if (token.attrs) {
-                        const srcAttr = token.attrs.find(a => a[0] === 'src');
-                        if (srcAttr) {
-                            const href = srcAttr[1];
-                            srcAttr[1] = this.linkNormalizer.normalizeLink(documentUri, href);
+            const originalImageRenderer = engine.renderer.rules.image;
+            if (originalImageRenderer) {
+                engine.renderer.rules.image = (tokens, index, options, env, self) => {
+                    if (RenderContentParams.is(env)) {
+                        const documentUri = env.originUri;
+                        const token = tokens[index];
+                        if (token.attrs) {
+                            const srcAttr = token.attrs.find(a => a[0] === 'src');
+                            if (srcAttr) {
+                                const href = srcAttr[1];
+                                srcAttr[1] = this.linkNormalizer.normalizeLink(documentUri, href);
+                            }
                         }
                     }
-                }
-                // tslint:disable-next-line:no-void-expression
-                return originalImageRenderer(tokens, index, options, env, self);
-            };
+                    return originalImageRenderer(tokens, index, options, env, self);
+                };
+            }
 
             const domParser = new DOMParser();
 
@@ -288,16 +289,17 @@ export class MarkdownPreviewHandler implements PreviewHandler {
 
             for (const name of ['html_block', 'html_inline']) {
                 const originalRenderer = engine.renderer.rules[name];
-                engine.renderer.rules[name] = (tokens, index, options, env, self) => {
-                    const currentToken = tokens[index];
-                    const content = currentToken.content;
-                    if (content.includes('<img') && RenderContentParams.is(env)) {
-                        const documentUri = env.originUri;
-                        currentToken.content = normalizeAllImgSrcInHTML(content, link => this.linkNormalizer.normalizeLink(documentUri, link));
-                    }
-                    // tslint:disable-next-line:no-void-expression
-                    return originalRenderer(tokens, index, options, env, self);
-                };
+                if (originalRenderer) {
+                    engine.renderer.rules[name] = (tokens, index, options, env, self) => {
+                        const currentToken = tokens[index];
+                        const content = currentToken.content;
+                        if (content.includes('<img') && RenderContentParams.is(env)) {
+                            const documentUri = env.originUri;
+                            currentToken.content = normalizeAllImgSrcInHTML(content, link => this.linkNormalizer.normalizeLink(documentUri, link));
+                        }
+                        return originalRenderer(tokens, index, options, env, self);
+                    };
+                }
             }
 
             anchor(engine, {});
