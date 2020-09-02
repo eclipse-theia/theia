@@ -41,6 +41,11 @@ export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
                 if (this.client) {
                     this.client.onDidFilesChanged(e);
                 }
+            },
+            onError: () => {
+                if (this.client) {
+                    this.client.onError();
+                }
             }
         });
         this.toDispose.push(this.remote);

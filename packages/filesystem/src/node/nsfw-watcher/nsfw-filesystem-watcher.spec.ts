@@ -57,6 +57,8 @@ describe('nsfw-filesystem-watcher', function (): void {
         const watcherClient = {
             onDidFilesChanged(event: DidFilesChangedParams): void {
                 event.changes.forEach(c => actualUris.add(c.uri.toString()));
+            },
+            onError(): void {
             }
         };
         watcherServer.setClient(watcherClient);
@@ -92,6 +94,8 @@ describe('nsfw-filesystem-watcher', function (): void {
         const watcherClient = {
             onDidFilesChanged(event: DidFilesChangedParams): void {
                 event.changes.forEach(c => actualUris.add(c.uri.toString()));
+            },
+            onError(): void {
             }
         };
         watcherServer.setClient(watcherClient);

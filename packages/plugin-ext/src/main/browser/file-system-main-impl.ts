@@ -160,6 +160,7 @@ class RemoteFileSystemProvider implements FileSystemProviderWithFileReadWriteCap
     private readonly _registration: IDisposable;
 
     readonly onDidChangeFile: Event<readonly FileChange[]> = this._onDidChange.event;
+    readonly onFileWatchError: Event<void> = new Emitter<void>().event;  // dummy, never fired
 
     readonly capabilities: FileSystemProviderCapabilities;
     readonly onDidChangeCapabilities: Event<void> = Event.None;

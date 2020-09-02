@@ -31,6 +31,9 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
     private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
     readonly onDidChangeFile = this.onDidChangeFileEmitter.event;
 
+    private readonly onFileWatchErrorEmitter = new Emitter<void>();
+    readonly onFileWatchError = this.onFileWatchErrorEmitter.event;
+
     constructor(
         protected readonly delegate: FileSystemProvider,
         protected readonly options: DelegatingFileSystemProvider.Options,
@@ -38,6 +41,8 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
     ) {
         this.toDispose.push(this.onDidChangeFileEmitter);
         this.toDispose.push(delegate.onDidChangeFile(changes => this.handleFileChanges(changes)));
+        this.toDispose.push(this.onFileWatchErrorEmitter);
+        this.toDispose.push(delegate.onFileWatchError(changes => this.onFileWatchErrorEmitter.fire()));
     }
 
     dispose(): void {

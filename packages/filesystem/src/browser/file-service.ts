@@ -65,6 +65,7 @@ import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/core/lib/common/encoding-service';
 import { Mutable } from '@theia/core/lib/common/types';
 import { readFileIntoStream } from '../common/io';
+import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 
 export interface FileOperationParticipant {
 
@@ -247,6 +248,9 @@ export class FileService {
     @inject(ContributionProvider) @named(FileServiceContribution)
     protected readonly contributions: ContributionProvider<FileServiceContribution>;
 
+    @inject(FileSystemWatcherErrorHandler)
+    protected readonly watcherErrorHandler: FileSystemWatcherErrorHandler;
+
     @postConstruct()
     protected init(): void {
         for (const contribution of this.contributions.getContributions()) {
@@ -308,6 +312,7 @@ export class FileService {
 
         const providerDisposables = new DisposableCollection();
         providerDisposables.push(provider.onDidChangeFile(changes => this.onDidFilesChangeEmitter.fire(new FileChangesEvent(changes))));
+        providerDisposables.push(provider.onFileWatchError(() => this.handleFileWatchError()));
         providerDisposables.push(provider.onDidChangeCapabilities(() => this.onDidChangeFileSystemProviderCapabilitiesEmitter.fire({ provider, scheme })));
 
         return Disposable.create(() => {
@@ -1675,4 +1680,7 @@ export class FileService {
 
     // #endregion
 
+    protected handleFileWatchError(): void {
+        this.watcherErrorHandler.handleError();
+    }
 }

@@ -40,6 +40,11 @@ export interface FileSystemWatcherClient {
      * Notify when files under watched uris are changed.
      */
     onDidFilesChanged(event: DidFilesChangedParams): void;
+
+    /**
+     * Notify when unable to watch files because of Linux handle limit.
+     */
+    onError(): void;
 }
 
 export interface WatchOptions {

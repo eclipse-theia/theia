@@ -564,6 +564,7 @@ export interface FileSystemProvider {
     readonly onDidChangeCapabilities: Event<void>;
 
     readonly onDidChangeFile: Event<readonly FileChange[]>;
+    readonly onFileWatchError: Event<void>;
     watch(resource: URI, opts: WatchOptions): IDisposable;
 
     stat(resource: URI): Promise<Stat>;
