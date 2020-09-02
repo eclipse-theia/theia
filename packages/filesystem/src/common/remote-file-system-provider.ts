@@ -68,6 +68,7 @@ export interface RemoteFileStreamError extends Error {
 
 export interface RemoteFileSystemClient {
     notifyDidChangeFile(event: { changes: RemoteFileChange[] }): void;
+    notifyFileWatchError(): void;
     notifyDidChangeCapabilities(capabilities: FileSystemProviderCapabilities): void;
     onFileStreamData(handle: number, data: number[]): void;
     onFileStreamEnd(handle: number, error: RemoteFileStreamError | undefined): void;
@@ -107,6 +108,9 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
 
     private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
     readonly onDidChangeFile = this.onDidChangeFileEmitter.event;
+
+    private readonly onFileWatchErrorEmitter = new Emitter<void>();
+    readonly onFileWatchError = this.onFileWatchErrorEmitter.event;
 
     private readonly onDidChangeCapabilitiesEmitter = new Emitter<void>();
     readonly onDidChangeCapabilities = this.onDidChangeCapabilitiesEmitter.event;
@@ -150,6 +154,9 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
         this.server.setClient({
             notifyDidChangeFile: ({ changes }) => {
                 this.onDidChangeFileEmitter.fire(changes.map(event => ({ resource: new URI(event.resource), type: event.type })));
+            },
+            notifyFileWatchError: () => {
+                this.onFileWatchErrorEmitter.fire();
             },
             notifyDidChangeCapabilities: capabilities => this.setCapabilities(capabilities),
             onFileStreamData: (handle, data) => this.onFileStreamDataEmitter.fire([handle, Uint8Array.from(data)]),
@@ -336,6 +343,11 @@ export class FileSystemProviderServer implements RemoteFileSystemServer {
                 this.client.notifyDidChangeFile({
                     changes: changes.map(({ resource, type }) => ({ resource: resource.toString(), type }))
                 });
+            }
+        }));
+        this.toDispose.push(this.provider.onFileWatchError(() => {
+            if (this.client) {
+                this.client.notifyFileWatchError();
             }
         }));
     }

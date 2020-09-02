@@ -131,6 +131,11 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
             errorCallback: error => {
                 // see https://github.com/atom/github/issues/342
                 console.warn(`Failed to watch "${basePath}":`, error);
+                if (error === 'Inotify limit reached') {
+                    if (this.client) {
+                        this.client.onError();
+                    }
+                }
                 this.unwatchFileChanges(watcherId);
             },
             ...this.options.nsfwOptions

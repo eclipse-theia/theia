@@ -95,6 +95,9 @@ export class DiskFileSystemProvider implements Disposable,
     private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
     readonly onDidChangeFile = this.onDidChangeFileEmitter.event;
 
+    private readonly onFileWatchErrorEmitter = new Emitter<void>();
+    readonly onFileWatchError = this.onFileWatchErrorEmitter.event;
+
     protected readonly toDispose = new DisposableCollection(
         this.onDidChangeFileEmitter
     );
@@ -112,7 +115,8 @@ export class DiskFileSystemProvider implements Disposable,
             onDidFilesChanged: params => this.onDidChangeFileEmitter.fire(params.changes.map(({ uri, type }) => ({
                 resource: new URI(uri),
                 type
-            })))
+            }))),
+            onError: () => this.onFileWatchErrorEmitter.fire()
         });
     }
 
