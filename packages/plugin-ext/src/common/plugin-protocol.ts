@@ -58,8 +58,24 @@ export interface PluginPackage {
     icon?: string;
 }
 export namespace PluginPackage {
-    export function toPluginUrl(pck: PluginPackage, relativePath: string): string {
-        return `hostedPlugin/${getPluginId(pck)}/${encodeURIComponent(relativePath)}`;
+    export const RESOURCE_SCHEME = 'pluginresource';
+
+    export function toPluginUri(pck: PluginPackage, relativePath: string): string {
+        return PluginUri.toPluginUri(getPluginId(pck), relativePath);
+    }
+
+    export function toPlugingUriPath(pck: PluginPackage, relativePath: string): string {
+        return PluginUri.toPlugingUriPath(getPluginId(pck), relativePath);
+    }
+}
+
+export namespace PluginUri {
+    export function toPlugingUriPath(pluginId: string, relativePath: string): string {
+        return `/hostedPlugin/${pluginId}/${encodeURIComponent(relativePath)}`;
+    }
+
+    export function toPluginUri(pluginId: string, relativePath: string): string {
+        return `${PluginPackage.RESOURCE_SCHEME}://${toPlugingUriPath(pluginId, relativePath)}`;
     }
 }
 

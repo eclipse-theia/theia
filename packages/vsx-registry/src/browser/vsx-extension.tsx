@@ -27,6 +27,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { VSXExtensionNamespaceAccess, VSXUser } from '../common/vsx-registry-types';
+import { PluginSharedStyle } from '@theia/plugin-ext/lib/main/browser/plugin-shared-style';
 
 @injectable()
 export class VSXExtensionData {
@@ -147,7 +148,7 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         const plugin = this.plugin;
         const iconUrl = plugin && plugin.metadata.model.iconUrl;
         if (iconUrl) {
-            return new Endpoint({ path: iconUrl }).getRestUrl().toString();
+            return PluginSharedStyle.toExternalIconUrl(iconUrl);
         }
         return this.data['iconUrl'];
     }

@@ -45,6 +45,6 @@ export namespace PluginIconPath {
         const absolutePath = path.isAbsolute(arg) ? arg : path.join(packagePath, arg);
         const normalizedPath = path.normalize(absolutePath);
         const relativePath = path.relative(packagePath, normalizedPath);
-        return PluginPackage.toPluginUrl(plugin.rawModel, relativePath);
+        return PluginPackage.toPluginUri(plugin.rawModel, relativePath);
     }
 }

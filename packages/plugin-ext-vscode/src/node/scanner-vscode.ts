@@ -48,9 +48,9 @@ export class VsCodePluginScanner extends TheiaPluginScanner implements PluginSca
             entryPoint: {
                 backend: plugin.main
             },
-            iconUrl: plugin.icon && PluginPackage.toPluginUrl(plugin, plugin.icon),
-            readmeUrl: PluginPackage.toPluginUrl(plugin, './README.md'),
-            licenseUrl: PluginPackage.toPluginUrl(plugin, './LICENSE')
+            iconUrl: plugin.icon && PluginPackage.toPluginUri(plugin, plugin.icon),
+            readmeUrl: PluginPackage.toPluginUri(plugin, './README.md'),
+            licenseUrl: PluginPackage.toPluginUri(plugin, './LICENSE')
         };
         return result;
     }

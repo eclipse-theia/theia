@@ -328,7 +328,7 @@ export class TheiaPluginScanner implements PluginScanner {
     }
 
     protected toPluginUrl(pck: PluginPackage, relativePath: string): string {
-        return PluginPackage.toPluginUrl(pck, relativePath);
+        return PluginPackage.toPluginUri(pck, relativePath);
     }
 
     protected readColors(pck: PluginPackage): ColorDefinition[] | undefined {
@@ -418,10 +418,14 @@ export class TheiaPluginScanner implements PluginScanner {
         const result: SnippetContribution[] = [];
         for (const contribution of pck.contributes.snippets) {
             if (contribution.path) {
+                const absolutePath = path.join(pck.packagePath, contribution.path);
+                const normalizedPath = path.normalize(absolutePath);
+                const relativePath = path.relative(pck.packagePath, normalizedPath);
+
                 result.push({
                     language: contribution.language,
                     source: pck.displayName || pck.name,
-                    uri: FileUri.create(path.join(pck.packagePath, contribution.path)).toString()
+                    uri: PluginPackage.toPluginUri(pck, relativePath).toString()
                 });
             }
         }

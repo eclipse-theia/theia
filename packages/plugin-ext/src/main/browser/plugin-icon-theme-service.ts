@@ -24,7 +24,7 @@ import debounce = require('lodash.debounce');
 import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject, postConstruct } from 'inversify';
 import { IconThemeService, IconTheme, IconThemeDefinition } from '@theia/core/lib/browser/icon-theme-service';
-import { IconThemeContribution, DeployedPlugin, UiTheme, getPluginId } from '../../common/plugin-protocol';
+import { IconThemeContribution, DeployedPlugin, UiTheme, getPluginId, PluginUri } from '../../common/plugin-protocol';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter } from '@theia/core/lib/common/event';
@@ -331,7 +331,7 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
         const iconUri = this.locationUri.resolve(iconPath);
         const relativePath = this.packageRootUri.path.relative(iconUri.path.normalize());
         return relativePath && `url('${new Endpoint({
-            path: `hostedPlugin/${this.pluginId}/${encodeURIComponent(relativePath.normalize().toString())}`
+            path: PluginUri.toPlugingUriPath(this.pluginId, relativePath.toString())
         }).getRestUrl().toString()}')`;
     }
 

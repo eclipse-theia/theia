@@ -22,16 +22,16 @@ import * as jsoncparser from 'jsonc-parser';
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError } from '@theia/filesystem/lib/common/files';
+import { ResourceProvider } from '@theia/core/lib/common';
 
 @injectable()
 export class MonacoSnippetSuggestProvider implements monaco.languages.CompletionItemProvider {
 
     private static readonly _maxPrefix = 10000;
 
-    @inject(FileService)
-    protected readonly fileService: FileService;
+    @inject(ResourceProvider)
+    protected readonly resourceProvider: ResourceProvider;
 
     protected readonly snippets = new Map<string, Snippet[]>();
     protected readonly pendingSnippets = new Map<string, Promise<void>[]>();
@@ -114,7 +114,7 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
         }
     }
 
-    fromURI(uri: string | URI, options: SnippetLoadOptions): Disposable {
+    fromURI(uri: string, options: SnippetLoadOptions): Disposable {
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
         const pending = this.loadURI(uri, options, toDispose);
         const { language } = options;
@@ -136,10 +136,11 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
     /**
      * should NOT throw to prevent load errors on suggest
      */
-    protected async loadURI(uri: string | URI, options: SnippetLoadOptions, toDispose: DisposableCollection): Promise<void> {
+    protected async loadURI(uri: string, options: SnippetLoadOptions, toDispose: DisposableCollection): Promise<void> {
+        const resourceUri = new URI(uri);
+        const resource = await this.resourceProvider(resourceUri);
         try {
-            const resource = typeof uri === 'string' ? new URI(uri) : uri;
-            const { value } = await this.fileService.read(resource);
+            const value = await resource.readContents();
             if (toDispose.disposed) {
                 return;
             }
@@ -149,6 +150,8 @@ export class MonacoSnippetSuggestProvider implements monaco.languages.Completion
             if (!(e instanceof FileOperationError)) {
                 console.error(e);
             }
+        } finally {
+            resource.dispose();
         }
     }
 

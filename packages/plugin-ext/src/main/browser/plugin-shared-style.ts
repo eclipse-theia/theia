@@ -17,9 +17,10 @@
 import { injectable } from 'inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { ThemeService, Theme } from '@theia/core/lib/browser/theming';
-import { IconUrl } from '../../common/plugin-protocol';
+import { IconUrl, PluginPackage } from '../../common/plugin-protocol';
 import { Reference, SyncReferenceCollection } from '@theia/core/lib/common/reference';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import URI from '@theia/core/lib/common/uri';
 
 export interface PluginIconKey {
     url: IconUrl
@@ -121,8 +122,9 @@ export class PluginSharedStyle {
     }
 
     static toExternalIconUrl(iconUrl: string): string {
-        if (iconUrl.startsWith('hostedPlugin/')) {
-            return new Endpoint({ path: iconUrl }).getRestUrl().toString();
+        const uri = new URI(iconUrl);
+        if (PluginPackage.RESOURCE_SCHEME === uri.scheme) {
+            return new Endpoint({ path: uri.path.toString() }).getRestUrl().toString();
         }
         return iconUrl;
     }

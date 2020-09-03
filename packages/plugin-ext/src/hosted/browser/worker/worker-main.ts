@@ -19,7 +19,7 @@ import { RPCProtocolImpl } from '../../../common/rpc-protocol';
 import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin } from '../../../common/plugin-api-rpc';
 import { createAPIFactory } from '../../../plugin/plugin-context';
-import { getPluginId, PluginMetadata, PluginPackage } from '../../../common/plugin-protocol';
+import { PluginMetadata, PluginPackage } from '../../../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
@@ -69,7 +69,7 @@ const pluginManager = new PluginManagerExtImpl({
             if (isElectron()) {
                 ctx.importScripts(plugin.pluginPath);
             } else {
-                ctx.importScripts('/hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
+                ctx.importScripts(PluginPackage.toPlugingUriPath(plugin.rawModel, plugin.pluginPath));
             }
         }
 

@@ -332,7 +332,7 @@ export class QuickInputExt implements QuickInput {
             const absolutePath = path.isAbsolute(arg) ? arg : path.join(packagePath, arg);
             const normalizedPath = path.normalize(absolutePath);
             const relativePath = path.relative(packagePath, normalizedPath);
-            return PluginPackage.toPluginUrl(this.plugin.rawModel, relativePath);
+            return PluginPackage.toPluginUri(this.plugin.rawModel, relativePath);
         };
         if ('id' in iconPath || iconPath instanceof ThemeIcon) {
             return iconPath;
