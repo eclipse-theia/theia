@@ -20,7 +20,7 @@ import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import { ApplicationError } from '@theia/core/lib/common';
 
 /**
- * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService` instead
+ * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService` instead
  */
 export const FileSystem = Symbol('FileSystem');
 export interface FileSystem {
@@ -32,28 +32,28 @@ export interface FileSystem {
      *
      * `undefined` if a file for the given URI does not exist.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.resolve` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.resolve` instead
      */
     getFileStat(uri: string): Promise<FileStat | undefined>;
 
     /**
      * Finds out if a file identified by the resource exists.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.exists` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.exists` instead
      */
     exists(uri: string): Promise<boolean>;
 
     /**
      * Resolve the contents of a file identified by the resource.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.read` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.read` instead
      */
     resolveContent(uri: string, options?: { encoding?: string }): Promise<{ stat: FileStat, content: string }>;
 
     /**
      * Updates the content replacing its previous value.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.write` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.write` instead
      */
     setContent(file: FileStat, content: string, options?: { encoding?: string }): Promise<FileStat>;
 
@@ -69,7 +69,7 @@ export interface FileSystem {
      * | 3 |     ✓    |     undefined     | read & write file in `encoding` |
      * | 4 |     ✓    |        ✓         | read file in `encoding`; write file in `overwriteEncoding` |
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.write` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.write` instead
      */
     updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string, overwriteEncoding?: string }): Promise<FileStat>;
 
@@ -85,7 +85,7 @@ export interface FileSystem {
      * | empty dir |    ✓    |   x  |     x     | overwrite |
      * | dir       |    ✓    |   x  | overwrite | overwrite |
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.move` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.move` instead
      */
     move(sourceUri: string, targetUri: string, options?: FileMoveOptions): Promise<FileStat>;
 
@@ -94,7 +94,7 @@ export interface FileSystem {
      *
      * The optional parameter overwrite can be set to replace an existing file at the location.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.copy` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.copy` instead
      */
     copy(sourceUri: string, targetUri: string, options?: { overwrite?: boolean, recursive?: boolean }): Promise<FileStat>;
 
@@ -104,7 +104,7 @@ export interface FileSystem {
      *
      * The optional parameter content can be used as value to fill into the new file.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.create` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.create` instead
      */
     createFile(uri: string, options?: { content?: string, encoding?: string }): Promise<FileStat>;
 
@@ -112,7 +112,7 @@ export interface FileSystem {
      * Creates a new folder with the given path. The returned promise
      * will have the stat model object as a result.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.createFolder` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.createFolder` instead
      */
     createFolder(uri: string): Promise<FileStat>;
 
@@ -126,21 +126,21 @@ export interface FileSystem {
      * Deletes the provided file. The optional moveToTrash parameter allows to
      * move the file to trash.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.delete` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.delete` instead
      */
     delete(uri: string, options?: FileDeleteOptions): Promise<void>;
 
     /**
      * Returns the encoding of the given file resource.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908) use `FileService.read` without `autoGuessEncoding` option instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908) use `FileService.read` without `autoGuessEncoding` option instead
      */
     getEncoding(uri: string): Promise<string>;
 
     /**
      * Guess encoding of a given file based on its content.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.read` with `autoGuessEncoding` option instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.read` with `autoGuessEncoding` option instead
      */
     guessEncoding(uri: string): Promise<string | undefined>;
 
@@ -152,14 +152,14 @@ export interface FileSystem {
     /**
      * Returns a promise that resolves to a file stat representing the current user's home directory.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `EnvVariablesServer.getHomeDirUri` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `EnvVariablesServer.getHomeDirUri` instead
      */
     getCurrentUserHome(): Promise<FileStat | undefined>;
 
     /**
      * Resolves to an array of URIs pointing to the available drives on the filesystem.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `EnvVariablesServer.getDrives` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `EnvVariablesServer.getDrives` instead
      */
     getDrives(): Promise<string[]>;
 
@@ -170,7 +170,7 @@ export interface FileSystem {
      * It is possible to create a mask consisting of the bitwise `OR` of two or more values (e.g. FileAccess.Constants.W_OK | FileAccess.Constants.R_OK).
      * If `mode` is not defined, `FileAccess.Constants.F_OK` will be used instead.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.access` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.access` instead
      */
     access(uri: string, mode?: number): Promise<boolean>
 
@@ -182,13 +182,13 @@ export interface FileSystem {
      * portable and platform independent. Paths should only be used in cases you directly
      * interact with the OS, e.g. when running a command on the shell.
      *
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.fsPath` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.fsPath` instead
      */
     getFsPath(uri: string): Promise<string | undefined>
 }
 
 /**
- * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.access` instead
+ * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.access` instead
  */
 export namespace FileAccess {
 
@@ -231,7 +231,7 @@ export interface FileDeleteOptions {
 /**
  * A file resource with meta information.
  *
- * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileStat` from `@theia/filesystem/lib/common/files` instead
+ * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileStat` from `@theia/filesystem/lib/common/files` instead
  */
 export interface FileStat {
 
@@ -279,7 +279,7 @@ export namespace FileStat {
 }
 
 /**
- * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileOperationError` instead
+ * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileOperationError` instead
  */
 export namespace FileSystemError {
     export const FileNotFound = ApplicationError.declare(-33000, (uri: string, prefix?: string) => ({

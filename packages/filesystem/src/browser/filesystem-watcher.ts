@@ -48,7 +48,7 @@ export namespace FileChange {
 }
 
 /**
- * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileChangesEvent` instead
+ * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileChangesEvent` instead
  */
 export type FileChangeEvent = FileChange[];
 export namespace FileChangeEvent {
@@ -70,7 +70,7 @@ export namespace FileChangeEvent {
 }
 
 /**
- * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `UserFileOperationEvent` instead
+ * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `UserFileOperationEvent` instead
  */
 export interface FileMoveEvent extends WaitUntilEvent {
     sourceUri: URI
@@ -83,7 +83,7 @@ export namespace FileMoveEvent {
 }
 
 /**
- * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `UserFileOperationEvent` instead
+ * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `UserFileOperationEvent` instead
  */
 export interface FileEvent extends WaitUntilEvent {
     uri: URI
@@ -129,7 +129,7 @@ export class FileOperationEmitter<E extends WaitUntilEvent> implements Disposabl
  * `on(will|did)(create|rename|delete)` events solely come from application
  * usage, not from actual filesystem.
  *
- * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.watch` instead
+ * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.watch` instead
  */
 @injectable()
 export class FileSystemWatcher implements Disposable {
@@ -139,54 +139,54 @@ export class FileSystemWatcher implements Disposable {
 
     protected readonly onFileChangedEmitter = new Emitter<FileChangeEvent>();
     /**
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFilesChange` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFilesChange` instead
      */
     readonly onFilesChanged = this.onFileChangedEmitter.event;
 
     protected readonly fileCreateEmitter = new FileOperationEmitter<FileEvent>();
     /**
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onWillRunUserOperation` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onWillRunUserOperation` instead
      */
     readonly onWillCreate = this.fileCreateEmitter.onWill;
     /**
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFailUserOperation` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFailUserOperation` instead
      */
     readonly onDidFailCreate = this.fileCreateEmitter.onDidFail;
     /**
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908),
-     * insead use `FileService.onDidRunUserOperation` for events triggered by user gestures
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908),
+     * instead use `FileService.onDidRunUserOperation` for events triggered by user gestures
      * or `FileService.onDidRunOperation` triggered by user gestures and programmatically
      */
     readonly onDidCreate = this.fileCreateEmitter.onDid;
 
     protected readonly fileDeleteEmitter = new FileOperationEmitter<FileEvent>();
     /**
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onWillRunUserOperation` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onWillRunUserOperation` instead
      */
     readonly onWillDelete = this.fileDeleteEmitter.onWill;
     /**
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFailUserOperation` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFailUserOperation` instead
      */
     readonly onDidFailDelete = this.fileDeleteEmitter.onDidFail;
     /**
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908),
-     * insead use `FileService.onDidRunUserOperation` for events triggered by user gestures
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908),
+     * instead use `FileService.onDidRunUserOperation` for events triggered by user gestures
      * or `FileService.onDidRunOperation` triggered by user gestures and programmatically
      */
     readonly onDidDelete = this.fileDeleteEmitter.onDid;
 
     protected readonly fileMoveEmitter = new FileOperationEmitter<FileMoveEvent>();
     /**
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onWillRunUserOperation` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onWillRunUserOperation` instead
      */
     readonly onWillMove = this.fileMoveEmitter.onWill;
     /**
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFailUserOperation` instead
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908), use `FileService.onDidFailUserOperation` instead
      */
     readonly onDidFailMove = this.fileMoveEmitter.onDidFail;
     /**
-     * @deprecated since 1.4.0 - in order to suppot VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908),
-     * insead use `FileService.onDidRunUserOperation` for events triggered by user gestures
+     * @deprecated since 1.4.0 - in order to support VS Code FS API (https://github.com/eclipse-theia/theia/pull/7908),
+     * instead use `FileService.onDidRunUserOperation` for events triggered by user gestures
      * or `FileService.onDidRunOperation` triggered by user gestures and programmatically
      */
     readonly onDidMove = this.fileMoveEmitter.onDid;

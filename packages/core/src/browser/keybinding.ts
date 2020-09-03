@@ -184,7 +184,7 @@ export class KeybindingRegistry {
     }
 
     /**
-     * Unregister keybindings from the registry using the key of the given keybinging
+     * Unregister keybindings from the registry using the key of the given keybinding
      *
      * @param binding a Keybinding specifying the key to be unregistered
      */

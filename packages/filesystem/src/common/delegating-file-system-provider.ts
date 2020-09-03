@@ -186,7 +186,7 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
     /**
      * Converts from an underlying fs provider resource format.
      *
-     * For example converting `file` resources unser a user home to `user-storage` resource:
+     * For example converting `file` resources under a user home to `user-storage` resource:
      * - file://home/.theia/settings.json => user-storage:/user/settings.json
      * - file://documents/some-document.txt => undefined
      */
@@ -212,7 +212,7 @@ export namespace DelegatingFileSystemProvider {
         /**
          * Converts from an underlying fs provider resource format.
          *
-         * For example converting `file` resources unser a user home to `user-storage` resource:
+         * For example converting `file` resources under a user home to `user-storage` resource:
          * - file://home/.theia/settings.json => user-storage:/settings.json
          * - file://documents/some-document.txt => undefined
          */

@@ -198,7 +198,7 @@ export class LinkComputer {
             lastIncludedCharIndex--;
         } while (lastIncludedCharIndex > linkBeginIndex);
 
-        // Handle links enclosed in parens, square brackets and curlys.
+        // Handle links enclosed in parens, square and curly brackets.
         if (linkBeginIndex > 0) {
             const charCodeBeforeLink = line.charCodeAt(linkBeginIndex - 1);
             const lastCharCodeInLink = line.charCodeAt(lastIncludedCharIndex);
