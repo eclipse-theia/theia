@@ -123,7 +123,7 @@ export class EncodingService {
     async detectEncoding(data: BinaryBuffer, autoGuessEncoding?: boolean): Promise<DetectedEncoding> {
         const buffer = Buffer.from(data.buffer);
         const bytesRead = data.byteLength;
-        // Always first check for BOM to find out abouÏt encoding
+        // Always first check for BOM to find out about encoding
         let encoding = this.detectEncodingByBOMFromBuffer(buffer, bytesRead);
 
         // Detect 0 bytes to see if file is binary or UTF-16 LE/BEÏ

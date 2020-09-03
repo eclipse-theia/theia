@@ -61,14 +61,14 @@ export const enum FileChangeType {
  */
 export interface FileChange {
 
-	/**
-	 * The type of change that occurred to the file.
-	 */
+    /**
+     * The type of change that occurred to the file.
+     */
     readonly type: FileChangeType;
 
-	/**
-	 * The unified resource identifier of the file that changed.
-	 */
+    /**
+     * The unified resource identifier of the file that changed.
+     */
     readonly resource: URI;
 }
 
@@ -76,11 +76,11 @@ export class FileChangesEvent {
 
     constructor(public readonly changes: readonly FileChange[]) { }
 
-	/**
-	 * Returns true if this change event contains the provided file with the given change type (if provided). In case of
-	 * type DELETED, this method will also return true if a folder got deleted that is the parent of the
-	 * provided file path.
-	 */
+    /**
+     * Returns true if this change event contains the provided file with the given change type (if provided). In case of
+     * type DELETED, this method will also return true if a folder got deleted that is the parent of the
+     * provided file path.
+     */
     contains(resource: URI, type?: FileChangeType): boolean {
         if (!resource) {
             return false;
@@ -102,44 +102,44 @@ export class FileChangesEvent {
         });
     }
 
-	/**
-	 * Returns the changes that describe added files.
-	 */
+    /**
+     * Returns the changes that describe added files.
+     */
     getAdded(): FileChange[] {
         return this.getOfType(FileChangeType.ADDED);
     }
 
-	/**
-	 * Returns if this event contains added files.
-	 */
+    /**
+     * Returns if this event contains added files.
+     */
     gotAdded(): boolean {
         return this.hasType(FileChangeType.ADDED);
     }
 
-	/**
-	 * Returns the changes that describe deleted files.
-	 */
+    /**
+     * Returns the changes that describe deleted files.
+     */
     getDeleted(): FileChange[] {
         return this.getOfType(FileChangeType.DELETED);
     }
 
-	/**
-	 * Returns if this event contains deleted files.
-	 */
+    /**
+     * Returns if this event contains deleted files.
+     */
     gotDeleted(): boolean {
         return this.hasType(FileChangeType.DELETED);
     }
 
-	/**
-	 * Returns the changes that describe updated files.
-	 */
+    /**
+     * Returns the changes that describe updated files.
+     */
     getUpdated(): FileChange[] {
         return this.getOfType(FileChangeType.UPDATED);
     }
 
-	/**
-	 * Returns if this event contains updated files.
-	 */
+    /**
+     * Returns if this event contains updated files.
+     */
     gotUpdated(): boolean {
         return this.hasType(FileChangeType.UPDATED);
     }
@@ -155,48 +155,48 @@ export class FileChangesEvent {
 
 export interface BaseStat {
 
-	/**
-	 * The unified resource identifier of this file or folder.
-	 */
+    /**
+     * The unified resource identifier of this file or folder.
+     */
     resource: URI;
 
-	/**
-	 * The name which is the last segment
-	 * of the {{path}}.
-	 */
+    /**
+     * The name which is the last segment
+     * of the {{path}}.
+     */
     name: string;
 
-	/**
-	 * The size of the file.
-	 *
-	 * The value may or may not be resolved as
-	 * it is optional.
-	 */
+    /**
+     * The size of the file.
+     *
+     * The value may or may not be resolved as
+     * it is optional.
+     */
     size?: number;
 
-	/**
-	 * The last modification date represented as millis from unix epoch.
-	 *
-	 * The value may or may not be resolved as
-	 * it is optional.
-	 */
+    /**
+     * The last modification date represented as millis from unix epoch.
+     *
+     * The value may or may not be resolved as
+     * it is optional.
+     */
     mtime?: number;
 
-	/**
-	 * The creation date represented as millis from unix epoch.
-	 *
-	 * The value may or may not be resolved as
-	 * it is optional.
-	 */
+    /**
+     * The creation date represented as millis from unix epoch.
+     *
+     * The value may or may not be resolved as
+     * it is optional.
+     */
     ctime?: number;
 
-	/**
-	 * A unique identifier thet represents the
-	 * current state of the file or directory.
-	 *
-	 * The value may or may not be resolved as
-	 * it is optional.
-	 */
+    /**
+     * A unique identifier that represents the
+     * current state of the file or directory.
+     *
+     * The value may or may not be resolved as
+     * it is optional.
+     */
     etag?: string;
 }
 export namespace BaseStat {
@@ -220,24 +220,24 @@ export interface BaseStatWithMetadata extends BaseStat {
  */
 export interface FileStat extends BaseStat {
 
-	/**
-	 * The resource is a file.
-	 */
+    /**
+     * The resource is a file.
+     */
     isFile: boolean;
 
-	/**
-	 * The resource is a directory.
-	 */
+    /**
+     * The resource is a directory.
+     */
     isDirectory: boolean;
 
-	/**
-	 * The resource is a symbolic link.
-	 */
+    /**
+     * The resource is a symbolic link.
+     */
     isSymbolicLink: boolean;
 
-	/**
-	 * The children of the file stat or undefined if none.
-	 */
+    /**
+     * The children of the file stat or undefined if none.
+     */
     children?: FileStat[];
 }
 export namespace FileStat {
@@ -310,74 +310,74 @@ export interface ResolveFileResultWithMetadata extends ResolveFileResult {
 
 export interface FileContent extends BaseStatWithMetadata {
 
-	/**
-	 * The content of a file as buffer.
-	 */
+    /**
+     * The content of a file as buffer.
+     */
     value: BinaryBuffer;
 }
 
 export interface FileStreamContent extends BaseStatWithMetadata {
 
-	/**
-	 * The content of a file as stream.
-	 */
+    /**
+     * The content of a file as stream.
+     */
     value: BinaryBufferReadableStream;
 }
 
 export interface WriteFileOptions {
 
-	/**
-	 * The last known modification time of the file. This can be used to prevent dirty writes.
-	 */
+    /**
+     * The last known modification time of the file. This can be used to prevent dirty writes.
+     */
     readonly mtime?: number;
 
-	/**
-	 * The etag of the file. This can be used to prevent dirty writes.
-	 */
+    /**
+     * The etag of the file. This can be used to prevent dirty writes.
+     */
     readonly etag?: string;
 }
 
 export interface ReadFileOptions extends FileReadStreamOptions {
 
-	/**
-	 * The optional etag parameter allows to return early from resolving the resource if
-	 * the contents on disk match the etag. This prevents accumulated reading of resources
-	 * that have been read already with the same etag.
-	 * It is the task of the caller to makes sure to handle this error case from the promise.
-	 */
+    /**
+     * The optional etag parameter allows to return early from resolving the resource if
+     * the contents on disk match the etag. This prevents accumulated reading of resources
+     * that have been read already with the same etag.
+     * It is the task of the caller to makes sure to handle this error case from the promise.
+     */
     readonly etag?: string;
 }
 
 export interface WriteFileOptions {
 
-	/**
-	 * The last known modification time of the file. This can be used to prevent dirty writes.
-	 */
+    /**
+     * The last known modification time of the file. This can be used to prevent dirty writes.
+     */
     readonly mtime?: number;
 
-	/**
-	 * The etag of the file. This can be used to prevent dirty writes.
-	 */
+    /**
+     * The etag of the file. This can be used to prevent dirty writes.
+     */
     readonly etag?: string;
 }
 
 export interface ResolveFileOptions {
 
-	/**
-	 * Automatically continue resolving children of a directory until the provided resources
-	 * are found.
-	 */
+    /**
+     * Automatically continue resolving children of a directory until the provided resources
+     * are found.
+     */
     readonly resolveTo?: readonly URI[];
 
-	/**
-	 * Automatically continue resolving children of a directory if the number of children is 1.
-	 */
+    /**
+     * Automatically continue resolving children of a directory if the number of children is 1.
+     */
     readonly resolveSingleChildDescendants?: boolean;
 
-	/**
-	 * Will resolve mtime, ctime, size and etag of files if enabled. This can have a negative impact
-	 * on performance and thus should only be used when these values are required.
-	 */
+    /**
+     * Will resolve mtime, ctime, size and etag of files if enabled. This can have a negative impact
+     * on performance and thus should only be used when these values are required.
+     */
     readonly resolveMetadata?: boolean;
 }
 
@@ -434,21 +434,21 @@ export interface FileOverwriteOptions {
 
 export interface FileReadStreamOptions {
 
-	/**
-	 * Is an integer specifying where to begin reading from in the file. If position is undefined,
-	 * data will be read from the current file position.
-	 */
+    /**
+     * Is an integer specifying where to begin reading from in the file. If position is undefined,
+     * data will be read from the current file position.
+     */
     readonly position?: number;
 
-	/**
-	 * Is an integer specifying how many bytes to read from the file. By default, all bytes
-	 * will be read.
-	 */
+    /**
+     * Is an integer specifying how many bytes to read from the file. By default, all bytes
+     * will be read.
+     */
     readonly length?: number;
 
-	/**
-	 * If provided, the size of the file will be checked against the limits.
-	 */
+    /**
+     * If provided, the size of the file will be checked against the limits.
+     */
     limits?: {
         readonly size?: number;
         readonly memory?: number;
@@ -488,14 +488,14 @@ export enum FileType {
 export interface Stat {
     type: FileType;
 
-	/**
-	 * The last modification date represented as millis from unix epoch.
-	 */
+    /**
+     * The last modification date represented as millis from unix epoch.
+     */
     mtime: number;
 
-	/**
-	 * The creation date represented as millis from unix epoch.
-	 */
+    /**
+     * The creation date represented as millis from unix epoch.
+     */
     ctime: number;
 
     size: number;
