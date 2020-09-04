@@ -34,7 +34,7 @@ export interface StatefulWidget {
     /**
      * Called on unload to store the inner state.
      */
-    storeState(): object;
+    storeState(): object | undefined;
 
     /**
      * Called when the widget got created by the storage service
@@ -208,6 +208,9 @@ export class ShellLayoutRestorer implements CommandContribution {
             let innerState = undefined;
             if (StatefulWidget.is(widget)) {
                 innerState = widget.storeState();
+                if (innerState === undefined) {
+                    return undefined;
+                }
             }
             return {
                 constructionOptions: desc,

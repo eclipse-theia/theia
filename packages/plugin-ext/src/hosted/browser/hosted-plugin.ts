@@ -196,19 +196,23 @@ export class HostedPluginSupport {
         this.viewRegistry.onDidExpandView(id => this.activateByView(id));
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
+
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
             if (factoryId === WebviewWidget.FACTORY_ID && widget instanceof WebviewWidget) {
                 const storeState = widget.storeState.bind(widget);
                 const restoreState = widget.restoreState.bind(widget);
+
                 widget.storeState = () => {
                     if (this.webviewRevivers.has(widget.viewType)) {
                         return storeState();
                     }
-                    return {};
+
+                    return undefined;
                 };
-                widget.restoreState = oldState => {
-                    if (oldState.viewType) {
-                        restoreState(oldState);
+
+                widget.restoreState = state => {
+                    if (state.viewType) {
+                        restoreState(state);
                         this.preserveWebview(widget);
                     } else {
                         widget.dispose();
