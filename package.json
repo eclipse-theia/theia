@@ -93,7 +93,7 @@
     "vscode-builtin-docker": "https://open-vsx.org/api/vscode/docker/1.44.2/file/vscode.docker-1.44.2.vsix",
     "vscode-builtin-emmet": "https://open-vsx.org/api/vscode/emmet/1.44.2/file/vscode.emmet-1.44.2.vsix",
     "vscode-builtin-fsharp": "https://open-vsx.org/api/vscode/fsharp/1.44.2/file/vscode.fsharp-1.44.2.vsix",
-    "vscode-builtin-go": "https://open-vsx.org/api/vscode/go/1.44.2/file/vscode.go-1.44.2.vsix",
+    "golang.Go": "https://open-vsx.org/api/golang/Go/0.16.2/file/golang.Go-0.16.2.vsix",
     "vscode-builtin-groovy": "https://open-vsx.org/api/vscode/groovy/1.44.2/file/vscode.groovy-1.44.2.vsix",
     "vscode-builtin-grunt": "https://open-vsx.org/api/vscode/grunt/1.44.2/file/vscode.grunt-1.44.2.vsix",
     "vscode-builtin-gulp": "https://open-vsx.org/api/vscode/gulp/1.44.2/file/vscode.gulp-1.44.2.vsix",
