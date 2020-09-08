@@ -162,6 +162,12 @@
       ],
       "@theia/languages/*": [
         "packages/languages/*"
+      ],
+      "@theia/timeline/lib/*": [
+        "packages/timeline/src/*"
+      ],
+      "@theia/timeline/*": [
+        "packages/timeline/*"
       ]
     }
   }

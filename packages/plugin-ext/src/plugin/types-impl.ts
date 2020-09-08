@@ -2147,3 +2147,18 @@ export class CallHierarchyOutgoingCall {
         this.to = item;
     }
 }
+
+export class TimelineItem {
+    timestamp: number;
+    label: string;
+    id?: string;
+    iconPath?: theia.Uri | { light: theia.Uri; dark: theia.Uri } | ThemeIcon;
+    description?: string;
+    detail?: string;
+    command?: theia.Command;
+    contextValue?: string;
+    constructor(label: string, timestamp: number) {
+        this.label = label;
+        this.timestamp = timestamp;
+    }
+}

@@ -67,6 +67,9 @@
     },
     {
       "path": "../callhierarchy/compile.tsconfig.json"
+    },
+    {
+      "path": "../timeline/compile.tsconfig.json"
     }
   ]
 }

@@ -119,7 +119,8 @@ import {
     CommentMode,
     CallHierarchyItem,
     CallHierarchyIncomingCall,
-    CallHierarchyOutgoingCall
+    CallHierarchyOutgoingCall,
+    TimelineItem
 } from './types-impl';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
@@ -151,6 +152,7 @@ import { ClipboardExt } from './clipboard-ext';
 import { WebviewsExtImpl } from './webviews';
 import { ExtHostFileSystemEventService } from './file-system-event-service-ext-impl';
 import { LabelServiceExtImpl } from '../plugin/label-service';
+import { TimelineExtImpl } from './timeline';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -184,6 +186,7 @@ export function createAPIFactory(
     const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry));
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     const labelServiceExt = rpc.set(MAIN_RPC_CONTEXT.LABEL_SERVICE_EXT, new LabelServiceExtImpl(rpc));
+    const timelineExt = rpc.set(MAIN_RPC_CONTEXT.TIMELINE_EXT, new TimelineExtImpl(rpc, commandRegistry));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -496,6 +499,9 @@ export function createAPIFactory(
             },
             registerResourceLabelFormatter(formatter: ResourceLabelFormatter): theia.Disposable {
                 return labelServiceExt.$registerResourceLabelFormatter(formatter);
+            },
+            registerTimelineProvider(scheme: string | string[], provider: theia.TimelineProvider): theia.Disposable {
+                return timelineExt.registerTimelineProvider(plugin, scheme, provider);
             }
         };
 
@@ -873,7 +879,8 @@ export function createAPIFactory(
             CommentMode,
             CallHierarchyItem,
             CallHierarchyIncomingCall,
-            CallHierarchyOutgoingCall
+            CallHierarchyOutgoingCall,
+            TimelineItem
         };
     };
 }

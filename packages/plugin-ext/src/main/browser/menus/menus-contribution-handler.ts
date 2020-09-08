@@ -26,7 +26,7 @@ import { TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browse
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { QuickCommandService } from '@theia/core/lib/browser/quick-open/quick-command-service';
 import { VIEW_ITEM_CONTEXT_MENU, TreeViewWidget, VIEW_ITEM_INLINE_MENU } from '../view/tree-view-widget';
-import { DeployedPlugin, Menu, ScmCommandArg, TreeViewSelection } from '../../../common';
+import { DeployedPlugin, Menu, ScmCommandArg, TimelineCommandArg, TreeViewSelection } from '../../../common';
 import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stack-frames-widget';
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
@@ -41,6 +41,8 @@ import { ViewContextKeyService } from '../view/view-context-key-service';
 import { WebviewWidget } from '../webview/webview';
 import { Navigatable } from '@theia/core/lib/browser/navigatable';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { TIMELINE_ITEM_CONTEXT_MENU } from '@theia/timeline/lib/browser/timeline-tree-widget';
+import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
 export namespace CodeEditorWidget {
@@ -146,6 +148,16 @@ export class MenusContributionPointHandler {
                     const inline = menu.group && /^inline/.test(menu.group) || false;
                     const menuPath = inline ? ScmTreeWidget.RESOURCE_INLINE_MENU : ScmTreeWidget.RESOURCE_CONTEXT_MENU;
                     toDispose.push(this.registerScmMenuAction(menuPath, menu));
+                }
+            } else if (location === 'timeline/item/context') {
+                for (const menu of allMenus[location]) {
+                    toDispose.push(this.registerMenuAction(TIMELINE_ITEM_CONTEXT_MENU, menu,
+                        command => ({
+                            execute: (...args) => this.commands.executeCommand(command, ...this.toTimelineArgs(...args)),
+                            isEnabled: (...args) => this.commands.isEnabled(command, ...this.toTimelineArgs(...args)),
+                            isVisible: (...args) => this.commands.isVisible(command, ...this.toTimelineArgs(...args))
+                        })
+                    ));
                 }
             } else if (location === 'debug/callstack/context') {
                 for (const menu of allMenus[location]) {
@@ -288,6 +300,22 @@ export class MenusContributionPointHandler {
                 resourceStateHandle: arg.handle
             };
         }
+    }
+
+    protected toTimelineArgs(...args: any[]): any[] {
+        const timelineArgs: any[] = [];
+        const arg = args[0];
+        timelineArgs.push(this.toTimelineArg(arg));
+        timelineArgs.push(CodeUri.parse(arg.uri));
+        timelineArgs.push('source' in arg ? arg.source : '');
+        return timelineArgs;
+    }
+    protected toTimelineArg(arg: TimelineItem): TimelineCommandArg {
+        return {
+            timelineHandle: arg.handle,
+            source: arg.source,
+            uri: arg.uri
+        };
     }
 
     protected registerGlobalMenuAction(menuPath: MenuPath, menu: Menu): Disposable {
