@@ -31,6 +31,7 @@ import { WorkerEnvExtImpl } from './worker-env-ext';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
 import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 import { WebviewsExtImpl } from '../../../plugin/webviews';
+import { loadManifest } from './plugin-manifest-loader';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -81,7 +82,7 @@ const pluginManager = new PluginManagerExtImpl({
             return ctx[plugin.lifecycle.frontendModuleName];
         }
     },
-    init(rawPluginData: PluginMetadata[]): [Plugin[], Plugin[]] {
+    async init(rawPluginData: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> {
         const result: Plugin[] = [];
         const foreign: Plugin[] = [];
         for (const plg of rawPluginData) {
@@ -94,14 +95,14 @@ const pluginManager = new PluginManagerExtImpl({
                 } else {
                     frontendInitPath = '';
                 }
+                const rawModel = await loadManifest(pluginModel);
+
                 const plugin: Plugin = {
                     pluginPath: pluginModel.entryPoint.frontend!,
                     pluginFolder: pluginModel.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
-                    get rawModel(): PluginPackage {
-                        throw new Error('not supported');
-                    }
+                    rawModel
                 };
                 result.push(plugin);
                 const apiImpl = apiFactory(plugin);
@@ -173,6 +174,7 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
 rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocuments);
 rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
 rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
+rpc.set(MAIN_RPC_CONTEXT.STORAGE_EXT, storageProxy);
 rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, webviewExt);
 
 function isElectron(): boolean {
