@@ -1,0 +1,44 @@
+{
+  "name": "@theia/timeline",
+  "version": "1.5.0",
+  "description": "Theia - Timeline Extension",
+  "dependencies": {
+    "@theia/core": "^1.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/timeline-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "lint": "theiaext lint",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "clean": "theiaext clean"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^1.1.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

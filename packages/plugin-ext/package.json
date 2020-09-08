@@ -22,6 +22,7 @@
     "@theia/search-in-workspace": "^1.5.0",
     "@theia/task": "^1.5.0",
     "@theia/terminal": "^1.5.0",
+    "@theia/timeline": "^1.5.0",
     "@theia/workspace": "^1.5.0",
     "@types/connect": "^3.4.32",
     "@types/mime": "^2.0.1",
