@@ -232,7 +232,8 @@ export class ElectronMainApplication {
             minWidth: 200,
             minHeight: 120,
             webPreferences: {
-                nodeIntegration: true // https://github.com/eclipse-theia/theia/issues/2018
+                nodeIntegration: true, // https://github.com/eclipse-theia/theia/issues/2018
+                nodeIntegrationInWorker: true
             },
             ...windowOptionsFromConfig,
         };
