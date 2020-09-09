@@ -64,7 +64,10 @@ import {
     SelectionRange,
     CallHierarchyDefinition,
     CallHierarchyReference,
-    SearchInWorkspaceResult
+    SearchInWorkspaceResult,
+    AuthenticationSession,
+    AuthenticationSessionsChangeEvent,
+    AuthenticationProviderInformation
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1450,6 +1453,7 @@ export interface ClipboardMain {
 }
 
 export const PLUGIN_RPC_CONTEXT = {
+    AUTHENTICATION_MAIN: <ProxyIdentifier<AuthenticationMain>>createProxyIdentifier<AuthenticationMain>('AuthenticationMain'),
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
     DIALOGS_MAIN: createProxyIdentifier<DialogsMain>('DialogsMain'),
@@ -1480,6 +1484,7 @@ export const PLUGIN_RPC_CONTEXT = {
 };
 
 export const MAIN_RPC_CONTEXT = {
+    AUTHENTICATION_EXT: createProxyIdentifier<AuthenticationExt>('AuthenticationExt'),
     HOSTED_PLUGIN_MANAGER_EXT: createProxyIdentifier<PluginManagerExt>('PluginManagerExt'),
     COMMAND_REGISTRY_EXT: createProxyIdentifier<CommandRegistryExt>('CommandRegistryExt'),
     QUICK_OPEN_EXT: createProxyIdentifier<QuickOpenExt>('QuickOpenExt'),
@@ -1523,6 +1528,24 @@ export interface TasksMain {
     $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;
+}
+
+export interface AuthenticationExt {
+    $getSessions(id: string): Promise<ReadonlyArray<AuthenticationSession>>;
+    $login(id: string, scopes: string[]): Promise<AuthenticationSession>;
+    $logout(id: string, sessionId: string): Promise<void>;
+    $onDidChangeAuthenticationSessions(id: string, label: string, event: AuthenticationSessionsChangeEvent): Promise<void>;
+    $onDidChangeAuthenticationProviders(added: AuthenticationProviderInformation[], removed: AuthenticationProviderInformation[]): Promise<void>;
+}
+
+export interface AuthenticationMain {
+    $registerAuthenticationProvider(id: string, label: string, supportsMultipleAccounts: boolean): void;
+    $unregisterAuthenticationProvider(id: string): void;
+    $getProviderIds(): Promise<string[]>;
+    $updateSessions(providerId: string, event: AuthenticationSessionsChangeEvent): void;
+    $getSession(providerId: string, scopes: string[], extensionId: string, extensionName: string,
+                options: { createIfNone?: boolean, clearSessionPreference?: boolean }): Promise<theia.AuthenticationSession | undefined>;
+    $logout(providerId: string, sessionId: string): Promise<void>;
 }
 
 export interface RawColorInfo {

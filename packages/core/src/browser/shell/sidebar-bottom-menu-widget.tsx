@@ -54,6 +54,17 @@ export class SidebarBottomMenuWidget extends ReactWidget {
     this.update();
   }
 
+  removeMenu(menuId: string): void {
+      const menu = this.menus.find(m => m.id === menuId);
+      if (menu) {
+          const index = this.menus.indexOf(menu);
+          if (index !== -1) {
+              this.menus.splice(index, 1);
+              this.update();
+          }
+      }
+  }
+
   protected onClick(e: React.MouseEvent<HTMLElement, MouseEvent>, menuPath: MenuPath): void {
     this.contextMenuRenderer.render({
       menuPath,

@@ -540,3 +540,21 @@ export interface LinePreview {
     text: string;
     character: number;
 }
+
+export interface AuthenticationSession {
+    id: string;
+    accessToken: string;
+    account: { id: string, label: string };
+    scopes: ReadonlyArray<string>;
+}
+
+export interface AuthenticationSessionsChangeEvent {
+    added: ReadonlyArray<string>;
+    removed: ReadonlyArray<string>;
+    changed: ReadonlyArray<string>;
+}
+
+export interface AuthenticationProviderInformation {
+    id: string;
+    label: string;
+}
