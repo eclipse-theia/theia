@@ -19,7 +19,7 @@
 import debounce = require('lodash.debounce');
 import { injectable, inject } from 'inversify';
 import { TabBar, Widget } from '@phosphor/widgets';
-import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry } from '../common/menu';
+import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplication, FrontendApplicationContribution } from './frontend-application';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
@@ -51,6 +51,7 @@ import { ClipboardService } from './clipboard-service';
 import { EncodingRegistry } from './encoding-registry';
 import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
+import { AuthenticationService } from './authentication-service';
 
 export namespace CommonMenus {
 
@@ -327,6 +328,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(EnvVariablesServer)
     protected readonly environments: EnvVariablesServer;
 
+    @inject(AuthenticationService)
+    protected readonly authenticationService: AuthenticationService;
+
     async configure(app: FrontendApplication): Promise<void> {
         const configDirUri = await this.environments.getConfigDirUri();
         // Global settings
@@ -361,6 +365,21 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             title: 'Settings',
             menuPath: SETTINGS_MENU,
             order: 0,
+        });
+        const accountsMenu = {
+            id: 'accounts-menu',
+            iconClass: 'codicon codicon-person',
+            title: 'Accounts',
+            menuPath: ACCOUNTS_MENU,
+            order: 1,
+        };
+        this.authenticationService.onDidRegisterAuthenticationProvider(() => {
+            app.shell.leftPanelHandler.addMenu(accountsMenu);
+        });
+        this.authenticationService.onDidUnregisterAuthenticationProvider(() => {
+            if (this.authenticationService.getProviderIds().length === 0) {
+                app.shell.leftPanelHandler.removeMenu(accountsMenu.id);
+            }
         });
     }
 

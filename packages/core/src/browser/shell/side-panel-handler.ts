@@ -394,6 +394,15 @@ export class SidePanelHandler {
         this.bottomMenu.addMenu(menu);
     }
 
+    /**
+     * Remove a menu from the sidebar bottom.
+     *
+     * @param menuId id of the menu to remove
+     */
+    removeMenu(menuId: string): void {
+        this.bottomMenu.removeMenu(menuId);
+    }
+
     // should be a property to preserve fn identity
     protected updateToolbarTitle = (): void => {
         const currentTitle = this.tabBar && this.tabBar.currentTitle;
