@@ -897,7 +897,7 @@ export class ApplicationShell extends Widget {
     /**
      * A signal emitted whenever the `currentWidget` property is changed.
      *
-     * @deprecated since 0.11.0, use `onDidChangeActiveWidget` instead
+     * @deprecated since 0.11.0, use `onDidChangeCurrentWidget` instead
      */
     readonly currentChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
 
