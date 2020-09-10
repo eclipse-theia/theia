@@ -590,7 +590,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
     protected trace(loggable: Loggable): void {
         if (this.logger) {
-            this.logger.debug((log: Log) =>
+            this.logger.trace((log: Log) =>
                 loggable((message, ...params) => log(message, ...params, this.resource.uri.toString(true)))
             );
         }
