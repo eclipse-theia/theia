@@ -382,7 +382,10 @@ export class KeybindingWidget extends ReactWidget {
      * @param item the keybinding item for the row.
      */
     protected renderEdit(item: KeybindingItem): React.ReactNode {
-        return <a title='Edit Keybinding' href='#' onClick={a => this.editKeybinding(item)}><i className='fa fa-pencil kb-action-item'></i></a>;
+        return <a title='Edit Keybinding' href='#' onClick={e => {
+            e.preventDefault();
+            this.editKeybinding(item);
+        }}><i className='fa fa-pencil kb-action-item'></i></a>;
     }
 
     /**
@@ -392,7 +395,10 @@ export class KeybindingWidget extends ReactWidget {
      */
     protected renderReset(item: KeybindingItem): React.ReactNode {
         return (item.keybinding && item.keybinding.scope === KeybindingScope.USER)
-            ? <a title='Reset Keybinding' href='#' onClick={a => this.resetKeybinding(item)}><i className='fa fa-undo kb-action-item'></i></a> : '';
+            ? <a title='Reset Keybinding' href='#' onClick={e => {
+                e.preventDefault();
+                this.resetKeybinding(item);
+            }}><i className='fa fa-undo kb-action-item'></i></a> : '';
     }
 
     /**
