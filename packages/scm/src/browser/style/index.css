@@ -246,8 +246,8 @@
 }
 
 .scm-tab-icon {
-    -webkit-mask: url('scm.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
-    mask: url('scm.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
+    -webkit-mask: url('scm.svg');
+    mask: url('scm.svg');
 }
 
 .theia-scm-inline-actions-container {
