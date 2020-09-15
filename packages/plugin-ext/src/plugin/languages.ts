@@ -385,7 +385,7 @@ export class LanguagesExtImpl implements LanguagesExt {
     registerDocumentRangeFormattingEditProvider(selector: theia.DocumentSelector, provider: theia.DocumentRangeFormattingEditProvider,
         pluginInfo: PluginInfo): theia.Disposable {
         const callId = this.addNewAdapter(new RangeFormattingAdapter(provider, this.documents));
-        this.proxy.$registerRangeFormattingProvider(callId, pluginInfo, this.transformDocumentSelector(selector));
+        this.proxy.$registerRangeFormattingSupport(callId, pluginInfo, this.transformDocumentSelector(selector));
         return this.createDisposable(callId);
     }
 
