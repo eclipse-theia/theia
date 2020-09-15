@@ -3,6 +3,7 @@
 ## v1.6.0
 
 - [core] added functionality for handling context menu for `tab-bars` without activating the shell tab-bar [#6965](https://github.com/eclipse-theia/theia/pull/6965)
+- [filesystem] fixed issue for the deprecated `FileSystem` where the incorrect thing was injected [#8507](https://github.com/eclipse-theia/theia/pull/8507)
 
 <a name="breaking_changes_1.6.0">[Breaking Changes:](#breaking_changes_1.6.0)</a>
 
