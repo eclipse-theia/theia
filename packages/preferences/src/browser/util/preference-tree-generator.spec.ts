@@ -30,6 +30,7 @@ import { Container } from 'inversify';
 import { PreferenceTreeGenerator } from './preference-tree-generator';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { Preference } from './preference-types';
 
 disableJSDOM();
 
@@ -51,4 +52,50 @@ describe('preference-tree-generator', () => {
         expect(preferenceTreeGenerator['split'](testString)).deep.eq(testString.split(splitter));
     });
 
+    it('PreferenceTreeGenerator.format', () => {
+        const testString = 'aaaBbbCcc Dddd eee';
+        expect(preferenceTreeGenerator['format'](testString)).eq('Aaa Bbb Ccc Dddd Eee');
+    });
+
+    describe('PreferenceTreeGenerator.createLeafNode', () => {
+        it('name include semicolon and category parsed correctly when it contain more than one word', () => {
+            const property = 'merge-conflict.autoNavigateNextConflict.enabled';
+            const expectedName = 'Auto Navigate Next Conflict: Enabled';
+            testLeafName(property, expectedName);
+        });
+
+        it('name does not include semicolon and category parsed correctly when it contain more than one word', () => {
+            const property = 'merge-conflict.autoNavigateNextConflict';
+            const expectedName = 'Auto Navigate Next Conflict';
+            testLeafName(property, expectedName);
+        });
+
+        it('name include semicolon and category parsed correctly when it contain than one word', () => {
+            const property = 'merge.autoNavigateNextConflict.enabled';
+            const expectedName = 'Auto Navigate Next Conflict: Enabled';
+            testLeafName(property, expectedName);
+        });
+
+        it('name does not include semicolon and category parsed correctly when it contain one word', () => {
+            const property = 'merge.autoNavigateNextConflict';
+            const expectedName = 'Auto Navigate Next Conflict';
+            testLeafName(property, expectedName);
+        });
+
+        function testLeafName(property: string, expectedName: string): void {
+            const preferencesGroups: Preference.Branch[] = [];
+            const root = preferenceTreeGenerator['createRootNode'](preferencesGroups);
+            const preferencesGroup = preferenceTreeGenerator['createPreferencesGroup']('group', root);
+
+            const expectedSelectableTreeNode = {
+                id: property,
+                name: expectedName,
+                parent: preferencesGroup,
+                visible: true,
+                selected: false,
+            };
+            expect(preferenceTreeGenerator['createLeafNode'](property, preferencesGroup)).deep.eq(expectedSelectableTreeNode);
+        }
+
+    });
 });

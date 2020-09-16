@@ -69,8 +69,13 @@ export class PreferenceTreeGenerator {
     });
 
     protected createLeafNode = (property: string, preferencesGroup: Preference.Branch): SelectableTreeNode => {
-        const propertySpecifier = this.split(property).slice(1);
-        const name = propertySpecifier.map(word => word.slice(0, 1).toLocaleUpperCase() + word.slice(1)).join(' ').trim();
+        const propertyWithoutCategory = property.split('.').slice(1);
+        const leafName = this.formatString(propertyWithoutCategory[0]);
+        let name = leafName;
+        if (propertyWithoutCategory.length !== 1) {
+            const leafValue = this.formatString(propertyWithoutCategory[1]);
+            name = `${leafName}: ${leafValue}`;
+        }
         return {
             id: property,
             name,
@@ -119,4 +124,8 @@ export class PreferenceTreeGenerator {
         return split;
     }
 
+    private formatString(string: string): string {
+        const specifier = this.split(string);
+        return specifier.map(word => word.slice(0, 1).toLocaleUpperCase() + word.slice(1)).join(' ').trim();
+    }
 }
