@@ -189,13 +189,17 @@
     text-decoration: underline;
 }
 
-
-
-.theia-settings-container .settings-section-title {
+.theia-settings-container .settings-section-category-title {
     font-weight: bold;
     font-size: var(--theia-ui-font-size3);
     padding-left: calc(2 * var(--theia-ui-padding));
-}
+  }
+  
+.theia-settings-container .settings-section-subcategory-title {
+    font-weight: bold;
+    font-size: var(--theia-ui-font-size2);
+    padding-left: calc(2 * var(--theia-ui-padding));
+  }
 
 .theia-settings-container .settings-section>li {
     list-style-type: none;
