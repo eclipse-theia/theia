@@ -772,6 +772,11 @@ export enum DiagnosticSeverity {
     Hint = 3
 }
 
+export enum DebugConsoleMode {
+    Separate = 0,
+    MergeWithParent = 1
+}
+
 export class DiagnosticRelatedInformation {
     location: Location;
     message: string;
