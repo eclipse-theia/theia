@@ -67,6 +67,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/common/modes',
                 'vs/editor/contrib/suggest/suggest',
                 'vs/editor/contrib/snippet/snippetParser',
+                'vs/editor/contrib/format/format',
                 'vs/platform/configuration/common/configuration',
                 'vs/platform/configuration/common/configurationModels',
                 'vs/editor/common/services/resolverService',
@@ -86,6 +87,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 standaloneServices: any, standaloneLanguages: any, quickOpenWidget: any, quickOpenModel: any,
                 filters: any, themeService: any, styler: any, colorRegistry: any, color: any,
                 platform: any, modes: any, suggest: any, snippetParser: any,
+                format: any,
                 configuration: any, configurationModels: any,
                 resolverService: any,
                 codeEditorService: any, codeEditorServiceImpl: any, openerService: any,
@@ -109,6 +111,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 global.monaco.modes = modes;
                 global.monaco.suggest = suggest;
                 global.monaco.snippetParser = snippetParser;
+                global.monaco.format = format;
                 global.monaco.contextkey = contextKey;
                 global.monaco.contextKeyService = contextKeyService;
                 global.monaco.mime = mime;
