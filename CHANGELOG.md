@@ -3,6 +3,7 @@
 ## v1.6.0
 
 - [core] added functionality for handling context menu for `tab-bars` without activating the shell tab-bar [#6965](https://github.com/eclipse-theia/theia/pull/6965)
+- [workspace] "save as" command does not save changes to old file and opens the new file. [#8514](https://github.com/eclipse-theia/theia/pull/8514)
 
 <a name="breaking_changes_1.6.0">[Breaking Changes:](#breaking_changes_1.6.0)</a>
 
