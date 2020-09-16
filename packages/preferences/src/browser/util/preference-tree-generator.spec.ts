@@ -30,6 +30,7 @@ import { Container } from 'inversify';
 import { PreferenceTreeGenerator } from './preference-tree-generator';
 import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { Preference } from './preference-types';
 
 disableJSDOM();
 
@@ -51,4 +52,38 @@ describe('preference-tree-generator', () => {
         expect(preferenceTreeGenerator['split'](testString)).deep.eq(testString.split(splitter));
     });
 
+    it('PreferenceTreeGenerator.format', () => {
+        const testString = 'aaaBbbCcc Dddd eee';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Aaa Bbb Ccc Dddd Eee');
+    });
+
+    describe('PreferenceTreeGenerator.createLeafNode', () => {
+        it('when property constructs of three parts the third part is the leaf', () => {
+            const property = 'category-name.subcategory.leaf';
+            const expectedName = 'Leaf';
+            testLeafName(property, expectedName);
+        });
+
+        it('when property constructs of two parts the second part is the leaf', () => {
+            const property = 'category-name.leaf';
+            const expectedName = 'Leaf';
+            testLeafName(property, expectedName);
+        });
+
+        function testLeafName(property: string, expectedName: string): void {
+            const preferencesGroups: Preference.Branch[] = [];
+            const root = preferenceTreeGenerator['createRootNode'](preferencesGroups);
+            const preferencesGroup = preferenceTreeGenerator['createPreferencesGroup']('group', root);
+
+            const expectedSelectableTreeNode = {
+                id: property,
+                name: expectedName,
+                parent: preferencesGroup,
+                visible: true,
+                selected: false,
+            };
+            expect(preferenceTreeGenerator['createLeafNode'](property, preferencesGroup)).deep.eq(expectedSelectableTreeNode);
+        }
+
+    });
 });
