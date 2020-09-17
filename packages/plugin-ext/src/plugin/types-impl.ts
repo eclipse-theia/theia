@@ -736,6 +736,7 @@ export class CompletionItem implements theia.CompletionItem {
 
     label: string;
     kind?: CompletionItemKind;
+    tags?: CompletionItemTag[];
     detail: string;
     documentation: string | MarkdownString;
     sortText: string;
@@ -814,6 +815,10 @@ export class Location {
 
 export enum DiagnosticTag {
     Unnecessary = 1,
+}
+
+export enum CompletionItemTag {
+    Deprecated = 1,
 }
 
 export class Diagnostic {
