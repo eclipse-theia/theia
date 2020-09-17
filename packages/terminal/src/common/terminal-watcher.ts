@@ -16,7 +16,11 @@
 
 import { injectable } from 'inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { IBaseTerminalClient, IBaseTerminalExitEvent, IBaseTerminalErrorEvent } from './base-terminal-protocol';
+import {
+    IBaseTerminalClient,
+    IBaseTerminalExitEvent,
+    IBaseTerminalErrorEvent
+} from './base-terminal-protocol';
 
 @injectable()
 export class TerminalWatcher {
@@ -24,7 +28,15 @@ export class TerminalWatcher {
     getTerminalClient(): IBaseTerminalClient {
         const exitEmitter = this.onTerminalExitEmitter;
         const errorEmitter = this.onTerminalErrorEmitter;
+        const storeTerminalEnvVariablesEmitter = this.onStoreTerminalEnvVariablesRequestedEmitter;
+        const updateTerminalEnvVariablesEmitter = this.onUpdateTerminalEnvVariablesRequestedEmitter;
         return {
+            storeTerminalEnvVariables(data: string): void {
+                storeTerminalEnvVariablesEmitter.fire(data);
+            },
+            updateTerminalEnvVariables(): void {
+                updateTerminalEnvVariablesEmitter.fire(undefined);
+            },
             onTerminalExitChanged(event: IBaseTerminalExitEvent): void {
                 exitEmitter.fire(event);
             },
@@ -36,6 +48,8 @@ export class TerminalWatcher {
 
     private onTerminalExitEmitter = new Emitter<IBaseTerminalExitEvent>();
     private onTerminalErrorEmitter = new Emitter<IBaseTerminalErrorEvent>();
+    private onStoreTerminalEnvVariablesRequestedEmitter = new Emitter<string>();
+    private onUpdateTerminalEnvVariablesRequestedEmitter = new Emitter<undefined>();
 
     get onTerminalExit(): Event<IBaseTerminalExitEvent> {
         return this.onTerminalExitEmitter.event;
@@ -43,5 +57,13 @@ export class TerminalWatcher {
 
     get onTerminalError(): Event<IBaseTerminalErrorEvent> {
         return this.onTerminalErrorEmitter.event;
+    }
+
+    get onStoreTerminalEnvVariablesRequested(): Event<string> {
+        return this.onStoreTerminalEnvVariablesRequestedEmitter.event;
+    }
+
+    get onUpdateTerminalEnvVariablesRequested(): Event<undefined> {
+        return this.onUpdateTerminalEnvVariablesRequestedEmitter.event;
     }
 }
