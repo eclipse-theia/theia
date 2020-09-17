@@ -25,7 +25,8 @@ import {
     PluginAPI,
     ConfigStorage,
     PluginManagerInitializeParams,
-    PluginManagerStartParams
+    PluginManagerStartParams,
+    TerminalServiceExt
 } from '../common/plugin-api-rpc';
 import { PluginMetadata, PluginJsonValidationContribution } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
@@ -106,6 +107,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     constructor(
         private readonly host: PluginHost,
         private readonly envExt: EnvExtImpl,
+        private readonly terminalService: TerminalServiceExt,
         private readonly storageProxy: KeyValueStorageProxy,
         private readonly preferencesManager: PreferenceRegistryExtImpl,
         private readonly webview: WebviewsExtImpl,
@@ -355,7 +357,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             asAbsolutePath: asAbsolutePath,
             logPath: logPath,
             storagePath: storagePath,
-            globalStoragePath: globalStoragePath
+            globalStoragePath: globalStoragePath,
+            environmentVariableCollection: this.terminalService.getEnvironmentVariableCollection(plugin.model.id)
         };
         this.pluginContextsMap.set(plugin.model.id, pluginContext);
 
