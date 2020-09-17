@@ -6352,6 +6352,17 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Completion item tags are extra annotations that tweak the rendering of a completion
+     * item.
+     */
+    export enum CompletionItemTag {
+        /**
+         * Render a completion as obsolete, usually using a strike-out.
+         */
+        Deprecated = 1
+    }
+
+    /**
      * A completion item represents a text snippet that is proposed to complete text that is being typed.
      *
      * It is sufficient to create a completion item from just a [label](#CompletionItem.label). In that
@@ -6386,6 +6397,11 @@ declare module '@theia/plugin' {
          * about this item, like type or symbol information.
          */
         detail?: string;
+
+        /**
+         * Tags for this completion item.
+         */
+        tags?: ReadonlyArray<CompletionItemTag>;
 
         /**
          * A human-readable string that represents a doc-comment.
