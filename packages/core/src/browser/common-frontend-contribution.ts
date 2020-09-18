@@ -342,6 +342,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.contextKeyService.createKey<boolean>('isLinux', OS.type() === OS.Type.Linux);
         this.contextKeyService.createKey<boolean>('isMac', OS.type() === OS.Type.OSX);
         this.contextKeyService.createKey<boolean>('isWindows', OS.type() === OS.Type.Windows);
+        this.contextKeyService.createKey<boolean>('isWeb', !this.isElectron());
 
         this.initResourceContextKeys();
         this.registerCtrlWHandling();
