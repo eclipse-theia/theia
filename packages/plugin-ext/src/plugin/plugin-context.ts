@@ -786,16 +786,16 @@ export function createAPIFactory(
             }
         };
 
-        const comment: typeof theia.comment = {
+        const comments: typeof theia.comments = {
             createCommentController(id: string, label: string): theia.CommentController {
+                // TODO replace the dummy implementation, see https://github.com/eclipse-theia/theia/issues/8492
                 return {
-                    id, label, inputBox: undefined,
-                    createCommentThread(commentId: string, resource: Uri, range: Range, comments: theia.Comment[]): theia.CommentThread {
+                    id, label,
+                    createCommentThread(uri: Uri, range: Range, commentsArray: theia.Comment[]): theia.CommentThread {
                         return {
-                            id: commentId,
-                            resource,
+                            uri,
                             range,
-                            comments,
+                            comments: commentsArray,
                             collapsibleState: 0,
                             dispose(): void {
                             }
@@ -811,7 +811,7 @@ export function createAPIFactory(
             version: require('../../package.json').version,
             authentication,
             commands,
-            comment,
+            comments,
             window,
             workspace,
             env,

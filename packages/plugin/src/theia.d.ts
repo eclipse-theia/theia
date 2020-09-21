@@ -9230,6 +9230,8 @@ declare module '@theia/plugin' {
         resolveWorkspaceSymbol?(symbol: SymbolInformation, token: CancellationToken | undefined): ProviderResult<SymbolInformation>;
     }
 
+    //#region Comments
+
     /**
      * Collapsible state of a [comment thread](#CommentThread)
      */
@@ -9265,25 +9267,20 @@ declare module '@theia/plugin' {
      */
     export interface CommentThread {
         /**
-         * A unique identifier of the comment thread.
-         */
-        readonly id: string;
-
-        /**
          * The uri of the document the thread has been created on.
          */
-        readonly resource: Uri;
+        readonly uri: Uri;
 
         /**
          * The range the comment thread is located within the document. The thread icon will be shown
          * at the first line of the range.
          */
-        readonly range: Range;
+        range: Range;
 
         /**
          * The ordered comments of the thread.
          */
-        comments: Comment[];
+        comments: ReadonlyArray<Comment>;
 
         /**
          * Whether the thread should be collapsed or expanded when opening the document.
@@ -9292,159 +9289,34 @@ declare module '@theia/plugin' {
         collapsibleState: CommentThreadCollapsibleState;
 
         /**
+         * Context value of the comment thread. This can be used to contribute thread specific actions.
+         * For example, a comment thread is given a context value as `editable`. When contributing actions to `comments/commentThread/title`
+         * using `menus` extension point, you can specify context value for key `commentThread` in `when` expression like `commentThread == editable`.
+         * ```
+         *	"contributes": {
+         *		"menus": {
+         *			"comments/commentThread/title": [
+         *				{
+         *					"command": "extension.deleteCommentThread",
+         *					"when": "commentThread == editable"
+         *				}
+         *			]
+         *		}
+         *	}
+         * ```
+         * This will show action `extension.deleteCommentThread` only for comment threads with `contextValue` is `editable`.
+         */
+        contextValue?: string;
+
+        /**
          * The optional human-readable label describing the [Comment Thread](#CommentThread)
          */
         label?: string;
 
         /**
-         * Optional accept input command
-         *
-         * `acceptInputCommand` is the default action rendered on Comment Widget, which is always placed rightmost.
-         * This command will be invoked when users the user accepts the value in the comment editor.
-         * This command will disabled when the comment editor is empty.
-         */
-        acceptInputCommand?: Command;
-
-        /**
-         * Optional additonal commands.
-         *
-         * `additionalCommands` are the secondary actions rendered on Comment Widget.
-         */
-        additionalCommands?: Command[];
-
-        /**
-         * The command to be executed when users try to delete the comment thread. Currently, this is only called
-         * when the user collapses a comment thread that has no comments in it.
-         */
-        deleteCommand?: Command;
-
-        /**
          * Dispose this comment thread.
          *
-         * Once disposed, this comment thread will be removed from visible editors and Comment Panel when approriate.
-         */
-        dispose(): void;
-    }
-
-    /**
-     * Commenting range provider for a [comment controller](#CommentController).
-     */
-    export interface CommentingRangeProvider {
-        /**
-         * Provide a list of ranges which allow new comment threads creation or null for a given document
-         */
-        provideCommentingRanges(document: TextDocument, token: CancellationToken): ProviderResult<Range[]>;
-    }
-
-    /**
-     * Comment thread template for new comment thread creation.
-     */
-    export interface CommentThreadTemplate {
-        /**
-         * The human-readable label describing the [Comment Thread](#CommentThread)
-         */
-        readonly label: string;
-
-        /**
-         * Optional accept input command
-         *
-         * `acceptInputCommand` is the default action rendered on Comment Widget, which is always placed rightmost.
-         * This command will be invoked when users the user accepts the value in the comment editor.
-         * This command will disabled when the comment editor is empty.
-         */
-        readonly acceptInputCommand?: Command;
-
-        /**
-         * Optional additonal commands.
-         *
-         * `additionalCommands` are the secondary actions rendered on Comment Widget.
-         */
-        readonly additionalCommands?: Command[];
-
-        /**
-         * The command to be executed when users try to delete the comment thread. Currently, this is only called
-         * when the user collapses a comment thread that has no comments in it.
-         */
-        readonly deleteCommand?: Command;
-    }
-
-    /**
-     * The comment input box in Comment Widget.
-     */
-    export interface CommentInputBox {
-        /**
-         * Setter and getter for the contents of the comment input box
-         */
-        value: string;
-
-        /**
-         * The uri of the document comment input box has been created on
-         */
-        resource: Uri;
-
-        /**
-         * The range the comment input box is located within the document
-         */
-        range: Range;
-    }
-
-    /**
-     * A comment controller is able to provide [comments](#CommentThread) support to the editor and
-     * provide users various ways to interact with comments.
-     */
-    export interface CommentController {
-        /**
-         * The id of this comment controller.
-         */
-        readonly id: string;
-
-        /**
-         * The human-readable label of this comment controller.
-         */
-        readonly label: string;
-
-        /**
-         * The active [comment input box](#CommentInputBox) or `undefined`. The active `inputBox` is the input box of
-         * the comment thread widget that currently has focus. It's `undefined` when the focus is not in any CommentInputBox.
-         */
-        readonly inputBox: CommentInputBox | undefined;
-
-        /**
-         * Optional comment thread template information.
-         *
-         * The comment controller will use this information to create the comment widget when users attempt to create new comment thread
-         * from the gutter or command palette.
-         *
-         * When users run `CommentThreadTemplate.acceptInputCommand` or `CommentThreadTemplate.additionalCommands`, extensions should create
-         * the approriate [CommentThread](#CommentThread).
-         *
-         * If not provided, users won't be able to create new comment threads in the editor.
-         */
-        template?: CommentThreadTemplate;
-
-        /**
-         * Optional commenting range provider. Provide a list [ranges](#Range) which support commenting to any given resource uri.
-         *
-         * If not provided and `emptyCommentThreadFactory` exits, users can leave comments in any document opened in the editor.
-         */
-        commentingRangeProvider?: CommentingRangeProvider;
-
-        /**
-         * Create a [comment thread](#CommentThread). The comment thread will be displayed in visible text editors (if the resource matches)
-         * and Comments Panel once created.
-         *
-         * @param id An `id` for the comment thread.
-         * @param resource The uri of the document the thread has been created on.
-         * @param range The range the comment thread is located within the document.
-         * @param comments The ordered comments of the thread.
-         */
-        createCommentThread(id: string, resource: Uri, range: Range, comments: Comment[]): CommentThread;
-
-        /**
-         * Dispose this comment controller.
-         *
-         * Once disposed, all [comment threads](#CommentThread) created by this comment controller will also be removed from the editor
-         * and Comments Panel.
+         * Once disposed, this comment thread will be removed from visible editors and Comment Panel when appropriate.
          */
         dispose(): void;
     }
@@ -9512,6 +9384,19 @@ declare module '@theia/plugin' {
          * Context value of the comment. This can be used to contribute comment specific actions.
          * For example, a comment is given a context value as `editable`. When contributing actions to `comments/comment/title`
          * using `menus` extension point, you can specify context value for key `comment` in `when` expression like `comment == editable`.
+         * ```json
+         *	"contributes": {
+         *		"menus": {
+         *			"comments/comment/title": [
+         *				{
+         *					"command": "extension.deleteComment",
+         *					"when": "comment == editable"
+         *				}
+         *			]
+         *		}
+         *	}
+         * ```
+         * This will show action `extension.deleteComment` only for comments with `contextValue` is `editable`.
          */
         contextValue?: string;
 
@@ -9527,7 +9412,98 @@ declare module '@theia/plugin' {
         label?: string;
     }
 
-    namespace comment {
+    /**
+     * Command argument for actions registered in `comments/commentThread/context`.
+     */
+    export interface CommentReply {
+        /**
+         * The active [comment thread](#CommentThread)
+         */
+        thread: CommentThread;
+
+        /**
+         * The value in the comment editor
+         */
+        text: string;
+    }
+
+    /**
+     * Commenting range provider for a [comment controller](#CommentController).
+     */
+    export interface CommentingRangeProvider {
+        /**
+         * Provide a list of ranges which allow new comment threads creation or null for a given document
+         */
+        provideCommentingRanges(document: TextDocument, token: CancellationToken): ProviderResult<Range[]>;
+    }
+
+    /**
+     * Represents a [comment controller](#CommentController)'s [options](#CommentController.options).
+     */
+    export interface CommentOptions {
+        /**
+         * An optional string to show on the comment input box when it's collapsed.
+         */
+        prompt?: string;
+
+        /**
+         * An optional string to show as placeholder in the comment input box when it's focused.
+         */
+        placeHolder?: string;
+    }
+
+    /**
+     * A comment controller is able to provide [comments](#CommentThread) support to the editor and
+     * provide users various ways to interact with comments.
+     */
+    export interface CommentController {
+        /**
+         * The id of this comment controller.
+         */
+        readonly id: string;
+
+        /**
+         * The human-readable label of this comment controller.
+         */
+        readonly label: string;
+
+        /**
+         * Comment controller options
+         */
+        options?: CommentOptions;
+
+        /**
+         * Optional commenting range provider. Provide a list [ranges](#Range) which support commenting to any given resource uri.
+         *
+         * If not provided, users can leave comments in any document opened in the editor.
+         */
+        commentingRangeProvider?: CommentingRangeProvider;
+
+        /**
+         * Create a [comment thread](#CommentThread). The comment thread will be displayed in visible text editors (if the resource matches)
+         * and Comments Panel once created.
+         *
+         * @param uri The uri of the document the thread has been created on.
+         * @param range The range the comment thread is located within the document.
+         * @param comments The ordered comments of the thread.
+         */
+        createCommentThread(uri: Uri, range: Range, comments: Comment[]): CommentThread;
+
+        /**
+         * Optional reaction handler for creating and deleting reactions on a [comment](#Comment).
+         */
+        reactionHandler?: (comment: Comment, reaction: CommentReaction) => Promise<void>;
+
+        /**
+         * Dispose this comment controller.
+         *
+         * Once disposed, all [comment threads](#CommentThread) created by this comment controller will also be removed from the editor
+         * and Comments Panel.
+         */
+        dispose(): void;
+    }
+
+    namespace comments {
         /**
          * Creates a new [comment controller](#CommentController) instance.
          *
@@ -9537,6 +9513,8 @@ declare module '@theia/plugin' {
          */
         export function createCommentController(id: string, label: string): CommentController;
     }
+
+    //#endregion
 
     /**
 	 * A selection range represents a part of a selection hierarchy. A selection range
