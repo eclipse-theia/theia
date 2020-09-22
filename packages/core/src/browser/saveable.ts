@@ -179,11 +179,29 @@ export namespace SaveableWidget {
     }
 }
 
+/**
+ * Possible formatting types when saving.
+ */
+export const enum FormatType {
+    /**
+     * Formatting should occur (default).
+     */
+    ON = 1,
+    /**
+     * Formatting should not occur.
+     */
+    OFF,
+    /**
+     * Formatting should only occur if the resource is dirty.
+     */
+    DIRTY
+};
+
 export interface SaveOptions {
     /**
-     * Controls whether formatting should be applied upon saving
+     * Formatting type to apply when saving.
      */
-    readonly skipFormatting?: boolean;
+    readonly formatType?: FormatType;
 }
 
 /**
