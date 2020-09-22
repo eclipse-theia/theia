@@ -293,6 +293,9 @@ export class MonacoEditorProvider {
         if (event.reason !== TextDocumentSaveReason.Manual) {
             return [];
         }
+        if (event.options?.skipFormatting) {
+            return [];
+        }
         const overrideIdentifier = editor.document.languageId;
         const uri = editor.uri.toString();
         const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier }, undefined, uri)!;
