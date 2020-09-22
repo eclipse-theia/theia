@@ -36,7 +36,7 @@ import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { OS, ContributionProvider } from '@theia/core';
-import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, FormatType } from '@theia/core/lib/browser';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
@@ -289,11 +289,22 @@ export class MonacoEditorProvider {
         }
     }
 
-    protected async formatOnSave(editor: MonacoEditor, event: WillSaveMonacoModelEvent): Promise<monaco.editor.IIdentifiedSingleEditOperation[]> {
+    protected shouldFormat(editor: MonacoEditor, event: WillSaveMonacoModelEvent): boolean {
         if (event.reason !== TextDocumentSaveReason.Manual) {
-            return [];
+            return false;
         }
-        if (event.options?.skipFormatting) {
+        if (event.options?.formatType) {
+            switch (event.options.formatType) {
+                case FormatType.ON: return true;
+                case FormatType.OFF: return false;
+                case FormatType.DIRTY: return editor.document.dirty;
+            }
+        }
+        return true;
+    }
+
+    protected async formatOnSave(editor: MonacoEditor, event: WillSaveMonacoModelEvent): Promise<monaco.editor.IIdentifiedSingleEditOperation[]> {
+        if (!this.shouldFormat(editor, event)) {
             return [];
         }
         const overrideIdentifier = editor.document.languageId;
