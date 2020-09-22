@@ -230,6 +230,11 @@ export namespace CommonCommands {
         category: FILE_CATEGORY,
         label: 'Save',
     };
+    export const SAVE_WITHOUT_FORMATTING: Command = {
+        id: 'core.saveWithoutFormatting',
+        category: FILE_CATEGORY,
+        label: 'Save without Formatting',
+    };
     export const SAVE_ALL: Command = {
         id: 'core.saveAll',
         category: FILE_CATEGORY,
@@ -444,6 +449,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE.id
+        });
+        registry.registerMenuAction(CommonMenus.FILE_SAVE, {
+            commandId: CommonCommands.SAVE_WITHOUT_FORMATTING.id
         });
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE_ALL.id
@@ -747,6 +755,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.SAVE, {
             execute: () => this.shell.save()
         });
+        commandRegistry.registerCommand(CommonCommands.SAVE_WITHOUT_FORMATTING, {
+            execute: () => this.shell.save({ skipFormatting: true })
+        });
         commandRegistry.registerCommand(CommonCommands.SAVE_ALL, {
             execute: () => this.shell.saveAll()
         });
@@ -923,6 +934,10 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 command: CommonCommands.SAVE.id,
                 keybinding: 'ctrlcmd+s'
+            },
+            {
+                command: CommonCommands.SAVE_WITHOUT_FORMATTING.id,
+                keybinding: 'ctrlcmd+k s'
             },
             {
                 command: CommonCommands.SAVE_ALL.id,
