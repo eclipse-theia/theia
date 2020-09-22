@@ -30,7 +30,6 @@ import {
 import { PluginMetadata, PluginJsonValidationContribution } from '../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 import { join } from 'path';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvExtImpl } from './env';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { Memento, KeyValueStorageProxy } from './plugin-storage';
@@ -91,7 +90,6 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     /** promises to whether loading each plugin has been successful */
     private readonly loadedPlugins = new Map<string, Promise<boolean>>();
     private readonly activatedPlugins = new Map<string, ActivatedPlugin>();
-    private readonly pluginActivationPromises = new Map<string, Deferred<void>>();
     private readonly pluginContextsMap = new Map<string, theia.PluginContext>();
 
     private onDidChangeEmitter = new Emitter<void>();
@@ -120,7 +118,6 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
             return this.stopAll();
         }
         this.registry.delete(pluginId);
-        this.pluginActivationPromises.delete(pluginId);
         this.pluginContextsMap.delete(pluginId);
         this.loadedPlugins.delete(pluginId);
         const plugin = this.activatedPlugins.get(pluginId);
@@ -144,7 +141,6 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         this.registry.clear();
         this.loadedPlugins.clear();
         this.activatedPlugins.clear();
-        this.pluginActivationPromises.clear();
         this.pluginContextsMap.clear();
         await Promise.all(promises);
     }
@@ -295,9 +291,6 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
                     await this.startPlugin(plugin, configStorage, pluginMain);
                     return true;
                 } catch (err) {
-                    if (this.pluginActivationPromises.has(plugin.model.id)) {
-                        this.pluginActivationPromises.get(plugin.model.id)!.reject(err);
-                    }
                     const message = `Activating extension '${plugin.model.displayName || plugin.model.name}' failed:`;
                     this.messageRegistryProxy.$showMessage(MainMessageType.Error, message + ' ' + err.message, {}, []);
                     console.error(message, err);
@@ -367,12 +360,6 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         if (typeof pluginMain[plugin.lifecycle.startMethod] === 'function') {
             const pluginExport = await pluginMain[plugin.lifecycle.startMethod].apply(getGlobal(), [pluginContext]);
             this.activatedPlugins.set(plugin.model.id, new ActivatedPlugin(pluginContext, pluginExport, stopFn));
-
-            // resolve activation promise
-            if (this.pluginActivationPromises.has(plugin.model.id)) {
-                this.pluginActivationPromises.get(plugin.model.id)!.resolve();
-                this.pluginActivationPromises.delete(plugin.model.id);
-            }
         } else {
             // https://github.com/TypeFox/vscode/blob/70b8db24a37fafc77247de7f7cb5bb0195120ed0/src/vs/workbench/api/common/extHostExtensionService.ts#L400-L401
             console.log(`plugin ${id}, ${plugin.lifecycle.startMethod} method is undefined so the module is the extension's exports`);
@@ -404,17 +391,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
     }
 
     activatePlugin(pluginId: string): PromiseLike<void> {
-        if (this.pluginActivationPromises.has(pluginId)) {
-            return this.pluginActivationPromises.get(pluginId)!.promise;
-        }
-
-        const deferred = new Deferred<void>();
-
-        if (this.activatedPlugins.get(pluginId)) {
-            deferred.resolve();
-        }
-        this.pluginActivationPromises.set(pluginId, deferred);
-        return deferred.promise;
+        return this.$activatePlugin(pluginId);
     }
 
     get onDidChange(): theia.Event<void> {
