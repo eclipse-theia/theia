@@ -6490,6 +6490,11 @@ declare module '@theia/plugin' {
         textEdit?: TextEdit;
 
         /**
+         * @deprecated Use `CompletionItem.tags` instead.
+         */
+        deprecated?: boolean;
+
+        /**
          * Creates a new completion item.
          *
          * Completion items must have at least a [label](#CompletionItem.label) which then

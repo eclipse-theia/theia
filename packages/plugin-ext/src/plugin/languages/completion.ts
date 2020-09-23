@@ -16,7 +16,7 @@
 
 import { URI } from 'vscode-uri';
 import * as theia from '@theia/plugin';
-import { CompletionList, Range, SnippetString } from '../types-impl';
+import { CompletionItemTag, CompletionList, Range, SnippetString } from '../types-impl';
 import { DocumentsExtImpl } from '../documents';
 import * as Converter from '../type-converters';
 import { Position } from '../../common/plugin-api-rpc';
@@ -146,6 +146,10 @@ export class CompletionAdapter {
             };
         }
 
+        const tags = (!!item.tags?.length || item.deprecated === true)
+            ? [CompletionItemTag.Deprecated]
+            : undefined;
+
         return {
             id,
             parentId,
@@ -161,7 +165,8 @@ export class CompletionAdapter {
             range,
             additionalTextEdits: item.additionalTextEdits && item.additionalTextEdits.map(Converter.fromTextEdit),
             command: this.commands.converter.toSafeCommand(item.command, toDispose),
-            commitCharacters: item.commitCharacters
+            commitCharacters: item.commitCharacters,
+            tags
         };
     }
 
