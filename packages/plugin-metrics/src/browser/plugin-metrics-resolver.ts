@@ -21,7 +21,7 @@ import { PluginMetricsCreator } from './plugin-metrics-creator';
 import { createRequestData } from '../common/plugin-metrics-types';
 
 /**
- * This class helps resolve language server requests into successess or failures
+ * This class helps resolve language server requests into successes or failures
  * and sends the data to the metricsExtractor
  */
 @injectable()
