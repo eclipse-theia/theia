@@ -155,6 +155,8 @@ export namespace NavigatorContextMenu {
     export const OPEN_WITH = [...NAVIGATION, 'open_with'];
 }
 
+export const FILE_NAVIGATOR_TOGGLE_COMMAND_ID = 'fileNavigator:toggle';
+
 @injectable()
 export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> implements FrontendApplicationContribution, TabBarToolbarContribution {
 
@@ -200,7 +202,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 area: 'left',
                 rank: 100
             },
-            toggleCommandId: 'fileNavigator:toggle',
+            toggleCommandId: FILE_NAVIGATOR_TOGGLE_COMMAND_ID,
             toggleKeybinding: 'ctrlcmd+shift+e'
         });
     }
