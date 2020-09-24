@@ -7,13 +7,13 @@
     "node": ">=12.14.1 <13"
   },
   "resolutions": {
-    "**/@types/node": "~10.3.6",
+    "**/@types/node": "12",
     "**/node-abi": "^2.18.0"
   },
   "devDependencies": {
     "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^11.0.4",
-    "@types/node": "~10.3.6",
+    "@types/node": "12",
     "@types/sinon": "^2.3.5",
     "@types/temp": "^0.8.29",
     "@types/uuid": "^7.0.3",

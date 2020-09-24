@@ -60,8 +60,8 @@ export function startDebugAdapter(executable: theia.DebugAdapterExecutable): Com
     }
 
     return {
-        input: childProcess.stdin,
-        output: childProcess.stdout,
+        input: childProcess.stdin!,
+        output: childProcess.stdout!,
         dispose: () => childProcess.kill()
     };
 }
