@@ -32,6 +32,7 @@ import { ScmHistoryCommit, ScmFileChange } from '@theia/scm-extra/lib/browser/sc
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GitCommitDetailWidgetOptions } from './history/git-commit-detail-widget';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { ScmInput } from '@theia/scm/lib/browser/scm-input';
 
 @injectable()
 export class GitScmProviderOptions {
@@ -40,6 +41,8 @@ export class GitScmProviderOptions {
 
 @injectable()
 export class GitScmProvider implements ScmProvider {
+
+    public input: ScmInput;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
@@ -156,6 +159,7 @@ export class GitScmProvider implements ScmProvider {
         state.groups.push(this.createGroup('index', 'Staged changes', state.stagedChanges, true));
         state.groups.push(this.createGroup('workingTree', 'Changes', state.unstagedChanges, false));
         this.state = state;
+        this.input.placeholder = `Message (press {0} to commit${status && status.branch ? ' on \'' + status.branch + '\'' : ''})`;
         this.fireDidChange();
     }
 
