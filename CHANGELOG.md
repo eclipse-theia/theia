@@ -4,6 +4,9 @@
 
 - [scm] show in the commit textbox the branch to which the commit will go [#6156](https://github.com/eclipse-theia/theia/pull/6156)
 
+<a name="breaking_changes_1.7.0">[Breaking Changes:](#breaking_changes_1.7.0)</a>
+
+- [plugin-metrics] renamed `AnalyticsFromRequests.succesfulResponses` to `AnalyticsFromRequests.successfulResponses` []()
 
 ## v1.6.0 - 24/09/2020
 
