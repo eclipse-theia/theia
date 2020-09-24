@@ -66,34 +66,167 @@ export interface PreferenceChanges {
 }
 
 export const PreferenceService = Symbol('PreferenceService');
+/**
+ * Service to manage preferences including, among others, getting and setting preference values as well
+ * as listening to preference changes.
+ *
+ * Depending on your use case you might also want to look at {@link createPreferenceProxy} with which
+ * you can easily create a typesafe schema-based interface for your preferences. Internally the proxy
+ * uses the PreferenceService so both approaches are compatible.
+ */
 export interface PreferenceService extends Disposable {
+    /**
+     * Promise indicating whether the service successfully initialized.
+     */
     readonly ready: Promise<void>;
+    /**
+     * Retrieve the stored value for the given preference.
+     *
+     * @param preferenceName the preference identifier.
+     *
+     * @returns the value stored for the given preference when it exists, `undefined` otherwise.
+     */
     get<T>(preferenceName: string): T | undefined;
+    /**
+     * Retrieve the stored value for the given preference.
+     *
+     * @param preferenceName the preference identifier.
+     * @param defaultValue the value to return when no value for the given preference is stored.
+     *
+     * @returns the value stored for the given preference when it exists, otherwise the given default value.
+     */
     get<T>(preferenceName: string, defaultValue: T): T;
+    /**
+     * Retrieve the stored value for the given preference and resourceUri.
+     *
+     * @param preferenceName the preference identifier.
+     * @param defaultValue the value to return when no value for the given preference is stored.
+     * @param resourceUri the uri of the resource for which the preference is stored. This used to retrieve
+     * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     *
+     * @returns the value stored for the given preference and resourceUri when it exists, otherwise the given
+     * default value.
+     */
     get<T>(preferenceName: string, defaultValue: T, resourceUri?: string): T;
+    /**
+     * Retrieve the stored value for the given preference and resourceUri.
+     *
+     * @param preferenceName the preference identifier.
+     * @param defaultValue the value to return when no value for the given preference is stored.
+     * @param resourceUri the uri of the resource for which the preference is stored. This used to retrieve
+     * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     *
+     * @returns the value stored for the given preference and resourceUri when it exists, otherwise the given
+     * default value.
+     */
     get<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): T | undefined;
+    /**
+     * Sets the given preference to the given value.
+     *
+     * @param preferenceName the preference identifier.
+     * @param value the new value of the preference.
+     * @param scope the scope for which the value shall be set, i.e. user, workspace etc.
+     * When the folder scope is specified a resourceUri must be provided.
+     * @param resourceUri the uri of the resource for which the preference is stored. This used to store
+     * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     *
+     * @returns a promise which resolves to `undefined` when setting the preference was successful. Otherwise it rejects
+     * with an error.
+     */
     set(preferenceName: string, value: any, scope?: PreferenceScope, resourceUri?: string): Promise<void>;
+    /**
+     * Registers a callback which will be called whenever a preference is changed.
+     */
     onPreferenceChanged: Event<PreferenceChange>;
+    /**
+     * Registers a callback which will be called whenever one or more preferences are changed.
+     */
     onPreferencesChanged: Event<PreferenceChanges>;
-
-    inspect<T>(preferenceName: string, resourceUri?: string): {
-        preferenceName: string,
-        defaultValue: T | undefined,
-        globalValue: T | undefined, // User Preference
-        workspaceValue: T | undefined, // Workspace Preference
-        workspaceFolderValue: T | undefined // Folder Preference
-    } | undefined;
-
+    /**
+     * Retrieve the stored value for the given preference and resourceUri in all available scopes.
+     *
+     * @param preferenceName the preference identifier.
+     * @param resourceUri the uri of the resource for which the preference is stored.
+     *
+     * @return an object containing the value of the given preference for all scopes.
+     */
+    inspect<T>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined;
+    /**
+     * Returns a new preference identifier based on the given OverridePreferenceName.
+     *
+     * @param options the override specification.
+     *
+     * @returns the calculated string based on the given OverridePreferenceName.
+     */
     overridePreferenceName(options: OverridePreferenceName): string;
+    /**
+     * Tries to split the given preference identifier into the original OverridePreferenceName attributes
+     * with which this identifier was created. Returns `undefined` if this is not possible, for example
+     * when the given preference identifier was not generated by `overridePreferenceName`.
+     *
+     * This method is checked when resolving preferences. Therefore together with "overridePreferenceName"
+     * this can be used to handle specialized preferences, e.g. "[markdown].editor.autoIndent" and "editor.autoIndent".
+     *
+     * @param preferenceName the preferenceName which might have been created via {@link PreferenceService.overridePreferenceName}.
+     *
+     * @returns the OverridePreferenceName which was used to create the given `preferenceName` if this was the case,
+     * `undefined` otherwise.
+     */
     overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined;
-
+    /**
+     * Retrieve the stored value for the given preference and resourceUri.
+     *
+     * @param preferenceName the preference identifier.
+     * @param defaultValue the value to return when no value for the given preference is stored.
+     * @param resourceUri the uri of the resource for which the preference is stored. This used to retrieve
+     * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     *
+     * @returns an object containing the value stored for the given preference and resourceUri when it exists,
+     * otherwise the given default value. If determinable the object will also contain the uri of the configuration
+     * resource in which the preference was stored.
+     */
     resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T>;
+    /**
+     * Returns the uri of the configuration resource for the given scope and optional resource uri.
+     *
+     * @param scope the PreferenceScope to query for.
+     * @param resourceUri the optional uri of the resource-specific preference handling
+     *
+     * @returns the uri of the configuration resource for the given scope and optional resource uri it it exists,
+     * `undefined` otherwise.
+     */
     getConfigUri(scope: PreferenceScope, resourceUri?: string): URI | undefined;
 }
 
 /**
+ * Return type of the {@link PreferenceService.inspect} call.
+ */
+export interface PreferenceInspection<T> {
+    /**
+     * The preference identifier.
+     */
+    preferenceName: string,
+    /**
+     * Value in default scope.
+     */
+    defaultValue: T | undefined,
+    /**
+     * Value in user scope.
+     */
+    globalValue: T | undefined,
+    /**
+     * Value in workspace scope.
+     */
+    workspaceValue: T | undefined,
+    /**
+     * Value in folder scope.
+     */
+    workspaceFolderValue: T | undefined
+}
+
+/**
  * We cannot load providers directly in the case if they depend on `PreferenceService` somehow.
- * It allows to load them lazilly after DI is configured.
+ * It allows to load them lazily after DI is configured.
  */
 export const PreferenceProviderProvider = Symbol('PreferenceProviderProvider');
 export type PreferenceProviderProvider = (scope: PreferenceScope, uri?: URI) => PreferenceProvider;
@@ -233,10 +366,7 @@ export class PreferenceServiceImpl implements PreferenceService {
         return this.resolve<T>(preferenceName, defaultValue, resourceUri).value;
     }
 
-    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): {
-        configUri?: URI,
-        value?: T
-    } {
+    resolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T> {
         const { value, configUri } = this.doResolve(preferenceName, defaultValue, resourceUri);
         if (value === undefined) {
             const overridden = this.overriddenPreferenceName(preferenceName);
