@@ -163,7 +163,7 @@ export class RawProcess extends Process {
 
     kill(signal?: string): void {
         if (this.process && this.killed === false) {
-            this.process.kill(signal);
+            this.process.kill(signal as NodeJS.Signals);
         }
     }
 
