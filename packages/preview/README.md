@@ -15,6 +15,20 @@
 The `@theia/preview` extension adds the ability to display rendered previews of supported resources.\
 The extension comes with built-in support for rendering `markdown` files.
 
+## Contribute Custom Previews
+
+To provide custom previews implement and bind the `PreviewHandler` interface, e.g.
+
+```typescript
+@injectable
+class MyPreviewHandler implements PreviewHandler {
+  ...
+}
+// in container
+bind(MyPreviewHandler).toSelf().inSingletonScope();
+bind(PreviewHandler).toService(MyPreviewHandler);
+```
+
 ## Additional Information
 
 - [API documentation for `@theia/preview`](https://eclipse-theia.github.io/theia/docs/next/modules/preview.html)
