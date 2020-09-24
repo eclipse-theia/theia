@@ -33,6 +33,21 @@ export interface PreferenceEventEmitter<T> {
     readonly ready: Promise<void>;
 }
 
+/**
+ * Generic interface to declare a typesafe get function based on the given
+ * configuration type.
+ *
+ * ### Illustration
+ *
+ * ```ts
+ * interface PreferenceConfiguration {
+ *  'myext.enabled': boolean,
+ * }
+ * const enabled : boolean = prefs.get('myext.enabled'); // valid
+ * const debug : string = prefs.get('myext.enabled'); // invalid
+ * prefs.get('foobar'); // invalid
+ * ```
+ */
 export interface PreferenceRetrieval<T> {
     get<K extends keyof T>(preferenceName: K | {
         preferenceName: K,
@@ -40,14 +55,66 @@ export interface PreferenceRetrieval<T> {
     }, defaultValue?: T[K], resourceUri?: string): T[K];
 }
 
+/**
+ * Typesafe schema-based preferences utility based on the {@link PreferenceService}.
+ * Can be used to get preferences as well as listen to preference changes.
+ *
+ * See {@link createPreferenceProxy} on how to instantiate preference proxies.
+ *
+ * ### Example usage
+ *
+ * ```ts
+ * preferences.onPreferenceChanged(({ preferenceName, newValue }) => { ... });
+ * const enabled = preferences['myext.enabled'];
+ * ```
+ */
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T> & PreferenceRetrieval<T>;
+/**
+ * Proxy configuration parameters.
+ */
 export interface PreferenceProxyOptions {
+    /**
+     * Prefix which is transparently added to all preference identifiers.
+     */
     prefix?: string;
+    /**
+     * The default resourceUri to use if none was specified when calling "set" or "get".
+     */
     resourceUri?: string;
+    /**
+     * The overrideIdentifier to use with the underlying preferenceService.
+     * Useful to potentially override existing values while keeping both values in store.
+     *
+     * For example to store different editor settings, e.g. "[markdown].editor.autoIndent",
+     * "[json].editor.autoIndent" and "editor.autoIndent"
+     */
     overrideIdentifier?: string;
+    /**
+     * Indicates whether '.' in schema properties shall be interpreted as regular names (flat),
+     * as declaring nested objects (deep) or both. Default is flat.
+     *
+     * When 'deep' or 'both' is given, nested preference proxies can be retrieved.
+     */
     style?: 'flat' | 'deep' | 'both';
 }
 
+/**
+ * Creates a preference proxy for typesafe preference handling.
+ *
+ * @param preferences the underlying preference service to use for preference handling.
+ * @param schema the JSON Schema which describes which preferences are available including types and descriptions.
+ * @param options configuration options.
+ *
+ * @returns the created preference proxy.
+ *
+ * ### Usage
+ *
+ *  1. Create JSON Schema specifying your preferences
+ *  2. Create Configuration type based on the JSON Schema
+ *  3. Bind the return value of `createPreferenceProxy` to make your preferences available wherever needed.
+ *
+ * See {@link CorePreferences} for an example.
+ */
 export function createPreferenceProxy<T>(preferences: PreferenceService, schema: PreferenceSchema, options?: PreferenceProxyOptions): PreferenceProxy<T> {
     const opts = options || {};
     const prefix = opts.prefix || '';
