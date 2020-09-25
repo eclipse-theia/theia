@@ -128,7 +128,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
 
     protected createModel(resource: Resource): MaybePromise<MonacoEditorModel> {
         const factory = this.factories.getContributions().find(({ scheme }) => resource.uri.scheme === scheme);
-        return factory ? factory.createModel(resource) : new MonacoEditorModel(resource, this.m2p, this.p2m, this.logger);
+        return factory ? factory.createModel(resource) : new MonacoEditorModel(resource, this.m2p, this.p2m, this.logger, this.editorPreferences);
     }
 
     protected readonly modelOptions: { [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined) } = {
