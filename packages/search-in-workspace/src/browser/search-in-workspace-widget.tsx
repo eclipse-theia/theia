@@ -25,6 +25,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 import { CancellationTokenSource } from '@theia/core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
+import { EditorManager } from '@theia/editor/lib/browser';
 
 export interface SearchFieldState {
     className: string;
@@ -85,6 +86,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     @inject(ProgressBarFactory)
     protected readonly progressBarFactory: ProgressBarFactory;
+
+    @inject(EditorManager) protected readonly editorManager: EditorManager;
 
     @postConstruct()
     protected init(): void {
@@ -334,9 +337,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderNotification(): React.ReactNode {
-        if (this.workspaceService.tryGetRoots().length <= 0) {
+        if (this.workspaceService.tryGetRoots().length <= 0 && this.editorManager.all.length <= 0) {
             return <div className='search-notification show'>
-                <div>Cannot search without an active workspace present.</div>
+                <div>You have not opened or specified a folder. Only open files are currently searched.</div>
             </div>;
         }
         return <div

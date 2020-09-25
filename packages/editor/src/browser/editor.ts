@@ -31,6 +31,10 @@ export type TextEditorProvider = (uri: URI) => Promise<TextEditor>;
 export interface TextEditorDocument extends lsp.TextDocument, Saveable, Disposable {
     getLineContent(lineNumber: number): string;
     getLineMaxColumn(lineNumber: number): number;
+    /**
+     * @since 1.8.0
+     */
+    findMatches?(options: FindMatchesOptions): FindMatch[];
 }
 
 // Refactoring
@@ -148,6 +152,46 @@ export const enum EncodingMode {
      * Instructs the encoding support to decode the current input with the provided encoding
      */
     Decode
+}
+
+/**
+ * Options for searching in an editor.
+ */
+export interface FindMatchesOptions {
+    /**
+     * The string used to search. If it is a regular expression, set `isRegex` to true.
+     */
+    searchString: string;
+    /**
+     * Used to indicate that `searchString` is a regular expression.
+     */
+    isRegex: boolean;
+    /**
+     * Force the matching to match lower/upper case exactly.
+     */
+    matchCase: boolean;
+    /**
+     * Force the matching to match entire words only.
+     */
+    matchWholeWord: boolean;
+    /**
+     * Limit the number of results.
+     */
+    limitResultCount?: number;
+}
+
+/**
+ * Representation of a find match.
+ */
+export interface FindMatch {
+    /**
+     * The textual match.
+     */
+    readonly matches: string[];
+    /**
+     * The range for the given match.
+     */
+    readonly range: Range;
 }
 
 export interface TextEditor extends Disposable, TextEditorSelection, Navigatable {
