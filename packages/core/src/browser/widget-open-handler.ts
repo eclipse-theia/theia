@@ -12,6 +12,10 @@
  * https://www.gnu.org/software/classpath/license.html.
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ *
+ * Contributors:
+ *     TypeFox- Initial API and implementation
+ *     Tobias Ortmayr <tortmayr@eclipsesource.com> Contributed on behalf of STMicroelectronics - Documentation
  ********************************************************************************/
 
 import { inject, postConstruct, injectable } from 'inversify';
@@ -23,10 +27,13 @@ import { OpenHandler, OpenerOptions } from './opener-service';
 import { WidgetManager } from './widget-manager';
 
 export type WidgetOpenMode = 'open' | 'reveal' | 'activate';
-
+/**
+ * Representation of the {@link WidgetOpenerOptions}.
+ * Defines serializable generic options used by the {@link WidgetOpenHandler}.
+ */
 export interface WidgetOpenerOptions extends OpenerOptions {
     /**
-     * Whether the widget should be only opened, revealed or activated.
+     * Determines whether the widget should be only opened, revealed or activated.
      * By default is `activate`.
      */
     mode?: WidgetOpenMode;
@@ -37,6 +44,9 @@ export interface WidgetOpenerOptions extends OpenerOptions {
     widgetOptions?: ApplicationShell.WidgetOptions;
 }
 
+/**
+ * Generic base class for {@link Openhandler}s that are using a widget to open the given uri.
+ */
 @injectable()
 export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHandler {
 
@@ -75,6 +85,10 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
     /**
      * Open a widget for the given uri and options.
      * Reject if the given options is not an widget options or a widget cannot be opened.
+     * @param uri the uri of the resource that should be opened.
+     * @param options the widget opener options.
+     *
+     * @returns promise of the widget that resovlves when the widget has been opened
      */
     async open(uri: URI, options?: WidgetOpenerOptions): Promise<W> {
         const widget = await this.getOrCreateWidget(uri, options);
@@ -97,7 +111,10 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
     }
 
     /**
-     * Return an existing widget for the given uri.
+     * Tries to get an existing widget for the given uri.
+     * @param uri the uri of the widget.
+     *
+     * @returns a promise that resolves to the existing widget or `undefined` if no widget for the given uri exists.
      */
     getByUri(uri: URI): Promise<W | undefined> {
         return this.getWidget(uri);
@@ -106,14 +123,19 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
     /**
      * Return an existing widget for the given uri or creates a new one.
      *
-     * It does not open a widget, use `open` instead.
+     * It does not open a widget, use {@link WidgetOpenHandler#open} instead.
+     * @param uri uri of the widget.
+     *
+     * @returns a promise of the existing or newly created widget.
      */
     getOrCreateByUri(uri: URI): Promise<W> {
         return this.getOrCreateWidget(uri);
     }
 
     /**
-     * All opened widgets.
+     * Retrieves all open widgets that haven been opened by this handler.
+     *
+     * @returns all open widgets for this open handler.
      */
     get all(): W[] {
         return this.widgetManager.getWidgets(this.id) as W[];
@@ -131,6 +153,12 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
 
     protected abstract createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): Object;
 
+    /**
+     * Closes all widgets that have been openend by this open handler.
+     * @param options the given close options that should be applied to all widgets.
+     *
+     * @returns a promise of all closed widgets that resolves after they have been closed.
+     */
     async closeAll(options?: ApplicationShell.CloseOptions): Promise<W[]> {
         const closed = await Promise.all(this.all.map(widget => this.shell.closeWidget(widget.id, options)));
         return closed.filter(widget => !!widget) as W[];
