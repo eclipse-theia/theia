@@ -275,9 +275,14 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
         this.toHide.push(this.on(WebviewMessageChannels.doUpdateState, (state: any) => {
             this._state = state;
         }));
-        this.toHide.push(this.on(WebviewMessageChannels.didFocus, () =>
+        this.toHide.push(this.on(WebviewMessageChannels.didFocus, () => {
             // emulate the webview focus without actually changing focus
-            this.node.dispatchEvent(new FocusEvent('focus'))
+            this.node.dispatchEvent(new FocusEvent('focus'));
+            // We have to dispatch 'mousedown' event in the <webview> in order
+            // to inform 'phosphor' to close the menu if open
+            // ('phosphor' closes the menu when a 'mousedown' event emitted)
+            this.node.dispatchEvent(new MouseEvent('mousedown'));
+        }
         ));
         this.toHide.push(this.on(WebviewMessageChannels.didBlur, () => {
             /* no-op: webview loses focus only if another element gains focus in the main window */
