@@ -17,11 +17,13 @@
 import { injectable, inject } from 'inversify';
 import { MenuBar, Menu as MenuWidget, Widget } from '@phosphor/widgets';
 import { CommandRegistry as PhosphorCommandRegistry } from '@phosphor/commands';
+import { ElementExt } from '@phosphor/domutils';
 import {
     CommandRegistry, ActionMenuNode, CompositeMenuNode,
     MenuModelRegistry, MAIN_MENU_BAR, MenuPath, DisposableCollection, Disposable, MenuNode
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
+import { Key } from '../keyboard/keys';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 import { ContextKeyService } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
@@ -31,6 +33,19 @@ import { ApplicationShell } from '../shell';
 export abstract class MenuBarWidget extends MenuBar {
     abstract activateMenu(label: string, ...labels: string[]): Promise<MenuWidget>;
     abstract triggerMenuItem(label: string, ...labels: string[]): Promise<MenuWidget.IItem>;
+
+    handleEvent(event: Event): void {
+        // on menubar click - if the menu is open -
+        // close active menu and restore the last focused element
+        if (event instanceof MouseEvent &&
+            event.type === 'mousedown' &&
+            ElementExt.hitTest(this.node, event.clientX, event.clientY) &&
+            this.activeMenu?.isVisible &&
+            this.activeMenu instanceof DynamicMenuWidget) {
+            this.activeMenu.restoreFocusedElement();
+        }
+        super.handleEvent(event);
+    }
 }
 
 @injectable()
@@ -237,19 +252,15 @@ export class DynamicMenuWidget extends MenuWidget {
     public aboutToShow({ previousFocusedElement }: { previousFocusedElement: HTMLElement | undefined }): void {
         this.preserveFocusedElement(previousFocusedElement);
         this.clearItems();
-        this.runWithPreservedFocusContext(() => {
-            this.options.commands.snapshot();
-            this.updateSubMenus(this, this.menu, this.options.commands);
-        });
+        this.options.commands.snapshot();
+        this.updateSubMenus(this, this.menu, this.options.commands);
     }
 
-    public open(x: number, y: number, options?: MenuWidget.IOpenOptions): void {
-        const cb = () => {
+    handleEvent(event: Event): void {
+        if (event instanceof KeyboardEvent && event.key === Key.ESCAPE.code) {
             this.restoreFocusedElement();
-            this.aboutToClose.disconnect(cb);
-        };
-        this.aboutToClose.connect(cb);
-        super.open(x, y, options);
+        }
+        super.handleEvent(event);
     }
 
     private updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: MenuCommandRegistry): void {
@@ -308,36 +319,20 @@ export class DynamicMenuWidget extends MenuWidget {
     }
 
     protected preserveFocusedElement(previousFocusedElement: Element | null = document.activeElement): boolean {
-        if (!this.previousFocusedElement && previousFocusedElement instanceof HTMLElement) {
+        if (previousFocusedElement instanceof HTMLElement) {
             this.previousFocusedElement = previousFocusedElement;
             return true;
         }
         return false;
     }
 
-    protected restoreFocusedElement(): boolean {
+    public restoreFocusedElement(): boolean {
         if (this.previousFocusedElement) {
             this.previousFocusedElement.focus({ preventScroll: true });
             this.previousFocusedElement = undefined;
             return true;
         }
         return false;
-    }
-
-    protected runWithPreservedFocusContext(what: () => void): void {
-        let focusToRestore: HTMLElement | undefined = undefined;
-        const { activeElement } = document;
-        if (this.previousFocusedElement && activeElement instanceof HTMLElement && this.previousFocusedElement !== activeElement) {
-            focusToRestore = activeElement;
-            this.previousFocusedElement.focus({ preventScroll: true });
-        }
-        try {
-            what();
-        } finally {
-            if (focusToRestore) {
-                focusToRestore.focus({ preventScroll: true });
-            }
-        }
     }
 
 }
