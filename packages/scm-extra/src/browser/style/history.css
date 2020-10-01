@@ -70,7 +70,6 @@
     display: flex;
     width: 100%;
     box-sizing: border-box;
-    padding: 0 8px 0 2px;
 }
 
 .theia-scm-history .commitListElement .containerHead .headContent .image-container{
@@ -82,7 +81,8 @@
 }
 
 .theia-scm-history .commitListElement .containerHead .headContent .headLabelContainer{
-    min-width: calc(100% - 93px);
+    flex-grow: 1;
+    min-width: 0;
 }
 
 .theia-scm-history .commitListElement .containerHead .headContent .headLabelContainer.singleFileMode{
