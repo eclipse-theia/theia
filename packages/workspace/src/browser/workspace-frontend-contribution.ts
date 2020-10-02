@@ -424,8 +424,6 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 await this.fileService.move(uri, selected, { overwrite });
                 overwrite = true;
                 await this.fileService.move(temp, uri, { overwrite });
-                await this.commandRegistry.executeCommand(CommonCommands.CLOSE_TAB.id);
-                await open(this.openerService, selected);
             } catch (e) {
                 console.warn(e);
             }
