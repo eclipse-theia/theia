@@ -36,7 +36,6 @@
 - [scm] fixed activation request of the scm-widget [#8508](https://github.com/eclipse-theia/theia/pull/8508)
 - [search-in-workspace] added handling to respect the `files.exclude` preference when searching [#8433](https://github.com/eclipse-theia/theia/pull/8433)
 - [timeline] added the `@theia/timeline` extension [#7997](https://github.com/eclipse-theia/theia/pull/7997)
->>>>>>> master
 
 <a name="breaking_changes_1.6.0">[Breaking Changes:](#breaking_changes_1.6.0)</a>
 
