@@ -420,6 +420,7 @@ export class HostedPluginSupport {
             })());
         }
         await Promise.all(thenable);
+        await this.activateByEvent('onStartupFinished');
         if (toDisconnect.disposed) {
             return;
         }

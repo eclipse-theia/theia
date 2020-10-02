@@ -232,7 +232,11 @@ export class ElectronMainApplication {
             minWidth: 200,
             minHeight: 120,
             webPreferences: {
-                nodeIntegration: true // https://github.com/eclipse-theia/theia/issues/2018
+                // https://github.com/eclipse-theia/theia/issues/2018
+                nodeIntegration: true,
+                // Setting the following option to `true` causes some features to break, somehow.
+                // Issue: https://github.com/eclipse-theia/theia/issues/8577
+                nodeIntegrationInWorker: false,
             },
             ...windowOptionsFromConfig,
         };

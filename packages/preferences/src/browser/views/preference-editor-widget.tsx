@@ -154,13 +154,15 @@ export class PreferencesEditorWidget extends ReactWidget {
 
     protected renderCategory(category: Preference.Branch): React.ReactNode {
         const children = category.children.concat(category.leaves).sort((a, b) => this.sort(a.id, b.id));
+        const isCategory = category.parent?.parent === undefined;
+        const categoryLevelClass = isCategory ? 'settings-section-category-title' : 'settings-section-subcategory-title';
         return category.visible && (
             <ul
                 className="settings-section"
                 key={`${category.id}-editor`}
                 id={`${category.id}-editor`}
             >
-                <li className="settings-section-title" data-id={category.id}>{category.name}</li>
+                <li className={categoryLevelClass} data-id={category.id}>{category.name}</li>
                 {children.map((preferenceNode: SelectableTreeNode | Preference.Branch) => {
                     if (Preference.Branch.is(preferenceNode)) {
                         return this.renderCategory(preferenceNode);

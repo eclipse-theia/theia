@@ -562,14 +562,21 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         const languageSelector = this.toLanguageSelector(selector);
-        const documentFormattingEditSupport = this.createDocumentFormattingSupport(handle);
+        const documentFormattingEditSupport = this.createDocumentFormattingSupport(handle, pluginInfo);
         this.register(handle, monaco.languages.registerDocumentFormattingEditProvider(languageSelector, documentFormattingEditSupport));
     }
 
-    createDocumentFormattingSupport(handle: number): monaco.languages.DocumentFormattingEditProvider {
-        return {
-            provideDocumentFormattingEdits: (model, options, token) => this.provideDocumentFormattingEdits(handle, model, options, token)
+    createDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo): monaco.languages.DocumentFormattingEditProvider {
+        const provider: monaco.languages.DocumentFormattingEditProvider = {
+            extensionId: {
+                value: pluginInfo.id
+            },
+            displayName: pluginInfo.name,
+            provideDocumentFormattingEdits: (model, options, token) =>
+                this.provideDocumentFormattingEdits(handle, model, options, token)
         };
+
+        return provider;
     }
 
     protected provideDocumentFormattingEdits(handle: number, model: monaco.editor.ITextModel,
@@ -577,16 +584,23 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return this.proxy.$provideDocumentFormattingEdits(handle, model.uri, options, token);
     }
 
-    $registerRangeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    $registerRangeFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         const languageSelector = this.toLanguageSelector(selector);
-        const rangeFormattingEditProvider = this.createRangeFormattingProvider(handle);
+        const rangeFormattingEditProvider = this.createRangeFormattingSupport(handle, pluginInfo);
         this.register(handle, monaco.languages.registerDocumentRangeFormattingEditProvider(languageSelector, rangeFormattingEditProvider));
     }
 
-    createRangeFormattingProvider(handle: number): monaco.languages.DocumentRangeFormattingEditProvider {
-        return {
-            provideDocumentRangeFormattingEdits: (model, range: Range, options, token) => this.provideDocumentRangeFormattingEdits(handle, model, range, options, token)
+    createRangeFormattingSupport(handle: number, pluginInfo: PluginInfo): monaco.languages.DocumentRangeFormattingEditProvider {
+        const provider: monaco.languages.DocumentRangeFormattingEditProvider = {
+            extensionId: {
+                value: pluginInfo.id
+            },
+            displayName: pluginInfo.name,
+            provideDocumentRangeFormattingEdits: (model, range: Range, options, token) =>
+                this.provideDocumentRangeFormattingEdits(handle, model, range, options, token)
         };
+
+        return provider;
     }
 
     protected provideDocumentRangeFormattingEdits(handle: number, model: monaco.editor.ITextModel,

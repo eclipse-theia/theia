@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 TypeFox and others.
+ * Copyright (C) 2020 Arm and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,27 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-.scm-diff-container {
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    height: 100%;
-}
+import { inject, injectable } from 'inversify';
+import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
+import { GitResourceOpener } from './git-resource-opener';
+import URI from '@theia/core/lib/common/uri';
 
-.scm-diff-container .listContainer {
-    flex: 1;
-    position: relative;
-}
+@injectable()
+export class GitOpenerInPrimaryArea implements GitResourceOpener {
+    @inject(EditorManager) protected readonly editorManager: EditorManager;
 
-.scm-diff-container .listContainer .commitList {
-    height: 100%;
-}
+    async open(changeUri: URI): Promise<void> {
+        await this.editorManager.open(changeUri, { mode: 'reveal' });
 
-.scm-diff-container .subject {
-    font-size: var(--theia-ui-font-size2);
-    font-weight: bold;
-}
-
-.scm-diff-container .noWrapInfo {
-    width: 100%;
+    }
 }

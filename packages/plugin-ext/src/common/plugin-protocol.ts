@@ -58,7 +58,7 @@ export interface PluginPackage {
     icon?: string;
 }
 export namespace PluginPackage {
-    export function toPluginUrl(pck: PluginPackage, relativePath: string): string {
+    export function toPluginUrl(pck: PluginPackage | PluginModel, relativePath: string): string {
         return `hostedPlugin/${getPluginId(pck)}/${encodeURIComponent(relativePath)}`;
     }
 }

@@ -25,7 +25,6 @@
 import { UUID } from '@phosphor/coreutils/lib/uuid';
 import { illegalArgument } from '../common/errors';
 import * as theia from '@theia/plugin';
-import * as crypto from 'crypto';
 import { URI } from 'vscode-uri';
 import { relative } from '../common/paths-util';
 import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
@@ -737,6 +736,7 @@ export class CompletionItem implements theia.CompletionItem {
 
     label: string;
     kind?: CompletionItemKind;
+    tags?: CompletionItemTag[];
     detail: string;
     documentation: string | MarkdownString;
     sortText: string;
@@ -771,6 +771,11 @@ export enum DiagnosticSeverity {
     Warning = 1,
     Information = 2,
     Hint = 3
+}
+
+export enum DebugConsoleMode {
+    Separate = 0,
+    MergeWithParent = 1
 }
 
 export class DiagnosticRelatedInformation {
@@ -810,6 +815,10 @@ export class Location {
 
 export enum DiagnosticTag {
     Unnecessary = 1,
+}
+
+export enum CompletionItemTag {
+    Deprecated = 1,
 }
 
 export class Diagnostic {
@@ -1401,6 +1410,14 @@ export enum ProgressLocation {
     Notification = 15
 }
 
+function computeTaskExecutionId(values: string[]): string {
+    let id: string = '';
+    for (let i = 0; i < values.length; i++) {
+        id += values[i].replace(/,/g, ',,') + ',';
+    }
+    return id;
+}
+
 export class ProcessExecution {
     private executionProcess: string;
     private arguments: string[];
@@ -1457,17 +1474,17 @@ export class ProcessExecution {
     }
 
     public computeId(): string {
-        const hash = crypto.createHash('md5');
-        hash.update('process');
+        const props: string[] = [];
+        props.push('process');
         if (this.executionProcess !== undefined) {
-            hash.update(this.executionProcess);
+            props.push(this.executionProcess);
         }
         if (this.arguments && this.arguments.length > 0) {
             for (const arg of this.arguments) {
-                hash.update(arg);
+                props.push(arg);
             }
         }
-        return hash.digest('hex');
+        return computeTaskExecutionId(props);
     }
 
     public static is(value: theia.ShellExecution | theia.ProcessExecution): boolean {
@@ -1562,20 +1579,20 @@ export class ShellExecution {
     }
 
     public computeId(): string {
-        const hash = crypto.createHash('md5');
-        hash.update('shell');
+        const props: string[] = [];
+        props.push('shell');
         if (this.shellCommandLine !== undefined) {
-            hash.update(this.shellCommandLine);
+            props.push(this.shellCommandLine);
         }
         if (this.shellCommand !== undefined) {
-            hash.update(typeof this.shellCommand === 'string' ? this.shellCommand : this.shellCommand.value);
+            props.push(typeof this.shellCommand === 'string' ? this.shellCommand : this.shellCommand.value);
         }
         if (this.arguments && this.arguments.length > 0) {
             for (const arg of this.arguments) {
-                hash.update(typeof arg === 'string' ? arg : arg.value);
+                props.push(typeof arg === 'string' ? arg : arg.value);
             }
         }
-        return hash.digest('hex');
+        return computeTaskExecutionId(props);
     }
 
     public static is(value: theia.ShellExecution | theia.ProcessExecution): boolean {

@@ -116,7 +116,7 @@ export class MultiRingBuffer implements Disposable {
     }
 
     enq(str: string, encoding = 'utf8'): void {
-        let buffer: Buffer = Buffer.from(str, encoding);
+        let buffer: Buffer = Buffer.from(str, encoding as BufferEncoding);
 
         // Take the last elements of string if it's too big, drop the rest
         if (buffer.length > this.maxSize) {

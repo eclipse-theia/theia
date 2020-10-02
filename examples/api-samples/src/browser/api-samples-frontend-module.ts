@@ -20,6 +20,8 @@ import { bindSampleUnclosableView } from './view/sample-unclosable-view-contribu
 import { bindSampleOutputChannelWithSeverity } from './output/sample-output-channel-with-severity';
 import { bindSampleMenu } from './menu/sample-menu-contribution';
 
+import '../../src/browser/style/branding.css';
+
 export default new ContainerModule(bind => {
     bindDynamicLabelProvider(bind);
     bindSampleUnclosableView(bind);

@@ -26,7 +26,7 @@ export interface MethodToAnalytics {
 
 export interface AnalyticsFromRequests {
     totalRequests: number;
-    succesfulResponses: number;
+    successfulResponses: number;
     sumOfTimeForSuccess: number;
     sumOfTimeForFailure: number;
 }
@@ -66,14 +66,14 @@ export function createDefaultAnalytics(timeTaken: number, isRequestSuccessful: b
         return {
             sumOfTimeForSuccess: timeTaken,
             sumOfTimeForFailure: 0,
-            succesfulResponses: 0,
+            successfulResponses: 0,
             totalRequests: 0
         };
     } else {
         return {
             sumOfTimeForSuccess: 0,
             sumOfTimeForFailure: timeTaken,
-            succesfulResponses: 0,
+            successfulResponses: 0,
             totalRequests: 0
         };
     }

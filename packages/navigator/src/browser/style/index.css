@@ -43,6 +43,6 @@
 }
 
 .navigator-tab-icon {
-    -webkit-mask: url('files.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
-    mask: url('files.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
+    -webkit-mask: url('files.svg');
+    mask: url('files.svg');
 }

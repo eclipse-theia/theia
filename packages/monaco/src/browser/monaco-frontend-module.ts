@@ -61,6 +61,7 @@ import { WorkspaceSymbolCommand } from './workspace-symbol-command';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
+import { MonacoFormattingConflictsContribution } from './monaco-formatting-conflicts';
 
 decorate(injectable(), monaco.contextKeyService.ContextKeyService);
 
@@ -103,9 +104,11 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindContributionProvider(bind, MonacoEditorModelFactory);
     bind(MonacoCommandService).toSelf().inTransientScope();
     bind(MonacoCommandServiceFactory).toAutoFactory(MonacoCommandService);
+
     bind(TextEditorProvider).toProvider(context =>
         uri => context.container.get(MonacoEditorProvider).get(uri)
     );
+
     bind(MonacoDiffNavigatorFactory).toSelf().inSingletonScope();
     bind(DiffNavigatorProvider).toFactory(context =>
         editor => context.container.get(MonacoEditorProvider).getDiffNavigator(editor)
@@ -113,6 +116,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoOutlineContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoOutlineContribution);
+
+    bind(MonacoFormattingConflictsContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(MonacoFormattingConflictsContribution);
 
     bind(MonacoStatusBarContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoStatusBarContribution);

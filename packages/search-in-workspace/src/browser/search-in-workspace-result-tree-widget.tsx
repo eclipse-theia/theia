@@ -33,7 +33,7 @@ import {
 import { CancellationTokenSource, Emitter, Event } from '@theia/core';
 import { EditorManager, EditorDecoration, TrackedRangeStickiness, OverviewRulerLane, EditorWidget, ReplaceOperation, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileResourceResolver } from '@theia/filesystem/lib/browser';
+import { FileResourceResolver, FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions, SearchMatch } from '../common/search-in-workspace-interface';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
 import { MEMORY_TEXT } from './in-memory-text-resource';
@@ -120,6 +120,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @inject(SearchInWorkspacePreferences) protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
     @inject(ProgressService) protected readonly progressService: ProgressService;
     @inject(ColorRegistry) protected readonly colorRegistry: ColorRegistry;
+    @inject(FileSystemPreferences) protected readonly filesystemPreferences: FileSystemPreferences;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -201,6 +202,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     async search(searchTerm: string, searchOptions: SearchInWorkspaceOptions): Promise<void> {
         this.searchTerm = searchTerm;
         const collapseValue: string = this.searchInWorkspacePreferences['search.collapseResults'];
+        searchOptions = {
+            ...searchOptions,
+            exclude: this.getExcludeGlobs(searchOptions.exclude)
+        };
         this.resultTree.clear();
         if (this.cancelIndicator) {
             this.cancelIndicator.cancel();
@@ -771,6 +776,18 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             });
         }
         return decorations;
+    }
+
+    /**
+     * Get the list of exclude globs.
+     * @param excludeOptions the exclude search option.
+     *
+     * @returns the list of exclude globs.
+     */
+    protected getExcludeGlobs(excludeOptions?: string[]): string[] {
+        const excludePreferences = this.filesystemPreferences['files.exclude'];
+        const excludePreferencesGlobs = Object.keys(excludePreferences).filter(key => !!excludePreferences[key]);
+        return [...new Set([...excludePreferencesGlobs, ...excludeOptions])];
     }
 
     /**

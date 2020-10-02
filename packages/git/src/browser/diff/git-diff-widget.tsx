@@ -15,50 +15,41 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from 'inversify';
-import URI from '@theia/core/lib/common/uri';
-import { StatefulWidget, DiffUris, Message } from '@theia/core/lib/browser';
-import { EditorManager, EditorOpenerOptions, EditorWidget, DiffNavigatorProvider, DiffNavigator } from '@theia/editor/lib/browser';
-import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
-import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
-import { GitScmProvider, GitScmFileChange } from '../git-scm-provider';
+import {
+    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, Message, MessageLoop, PreferenceChangeEvent
+} from '@theia/core/lib/browser';
+import { EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser';
+import { GitDiffTreeModel } from './git-diff-tree-model';
 import { GitWatcher } from '../../common';
-import { GIT_RESOURCE_SCHEME } from '../git-resource';
-import { ScmNavigableListWidget, ScmItemComponent } from '@theia/scm-extra/lib/browser/scm-navigable-list-widget';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { GitDiffHeaderWidget } from './git-diff-header-widget';
+import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { GitRepositoryProvider } from '../git-repository-provider';
-import * as React from 'react';
-import { MaybePromise } from '@theia/core/lib/common/types';
-import { ScmFileChangeNode } from '@theia/scm-extra/lib/browser/scm-file-change-node';
+import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
+import { ScmPreferences, ScmConfiguration } from '@theia/scm/lib/browser/scm-preferences';
 
-/* eslint-disable no-null/no-null */
-
-type GitFileChangeNode = ScmFileChangeNode & { fileChange: GitScmFileChange };
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export const GIT_DIFF = 'git-diff';
 @injectable()
-export class GitDiffWidget extends ScmNavigableListWidget<GitFileChangeNode> implements StatefulWidget {
+export class GitDiffWidget extends BaseWidget implements StatefulWidget {
 
     protected readonly GIT_DIFF_TITLE = 'Diff';
 
-    protected fileChangeNodes: GitFileChangeNode[] = [];
-    protected options: Git.Options.Diff;
-
-    protected gitStatus?: WorkingDirectoryStatus;
-
-    protected listView?: GitDiffListContainer;
-
-    protected deferredListContainer = new Deferred<HTMLElement>();
-
-    @inject(Git) protected readonly git: Git;
     @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider;
     @inject(DiffNavigatorProvider) protected readonly diffNavigatorProvider: DiffNavigatorProvider;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(GitWatcher) protected readonly gitWatcher: GitWatcher;
+    @inject(GitDiffHeaderWidget) protected readonly diffHeaderWidget: GitDiffHeaderWidget;
+    @inject(ScmTreeWidget) protected readonly resourceWidget: ScmTreeWidget;
+    @inject(GitDiffTreeModel) protected readonly model: GitDiffTreeModel;
+    @inject(ScmService) protected readonly scmService: ScmService;
+    @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
+
+    protected panel: Panel;
 
     constructor() {
         super();
         this.id = GIT_DIFF;
-        this.scrollContainer = 'git-diff-list-container';
         this.title.label = this.GIT_DIFF_TITLE;
         this.title.caption = this.GIT_DIFF_TITLE;
         this.title.closable = true;
@@ -66,364 +57,95 @@ export class GitDiffWidget extends ScmNavigableListWidget<GitFileChangeNode> imp
 
         this.addClass('theia-scm');
         this.addClass('theia-git');
+        this.addClass('git-diff-container');
     }
 
     @postConstruct()
     protected init(): void {
-        this.toDispose.push(this.gitWatcher.onGitEvent(async gitEvent => {
-            if (this.options) {
-                this.setContent(this.options);
+        const layout = new PanelLayout();
+        this.layout = layout;
+        this.panel = new Panel({
+            layout: new PanelLayout({
+            })
+        });
+        this.panel.node.tabIndex = -1;
+        this.panel.node.setAttribute('class', 'theia-scm-panel');
+        layout.addWidget(this.panel);
+
+        this.containerLayout.addWidget(this.diffHeaderWidget);
+        this.containerLayout.addWidget(this.resourceWidget);
+
+        this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
+        this.toDispose.push(this.scmPreferences.onPreferenceChanged((e: PreferenceChangeEvent<ScmConfiguration>) => {
+            if (e.preferenceName === 'scm.defaultViewMode') {
+                this.updateViewMode(e.newValue!);
             }
         }));
-        this.toDispose.push(this.labelProvider.onDidChange(event => {
-            const affectsFiles = this.fileChangeNodes.some(node => event.affects(new URI(node.fileChange.uri)));
-            if (this.options && affectsFiles) {
-                this.setContent(this.options);
-            }
-        }));
     }
 
-    protected getScrollContainer(): MaybePromise<HTMLElement> {
-        return this.deferredListContainer.promise;
+    set viewMode(mode: 'tree' | 'list') {
+        this.resourceWidget.viewMode = mode;
+    }
+    get viewMode(): 'tree' | 'list' {
+        return this.resourceWidget.viewMode;
     }
 
-    protected get toRevision(): string | undefined {
-        return this.options.range && this.options.range.toRevision;
-    }
-
-    protected get fromRevision(): string | number | undefined {
-        return this.options.range && this.options.range.fromRevision;
-    }
-
-    async setContent(options: Git.Options.Diff): Promise<void> {
-        this.options = options;
-        const scmRepository = this.findRepositoryOrSelected(options.uri);
-        if (scmRepository && scmRepository.provider.id === 'git') {
-            const provider = scmRepository.provider as GitScmProvider;
-            const repository = { localUri: scmRepository.provider.rootUri };
-            const gitFileChanges = await this.git.diff(repository, {
-                range: options.range,
-                uri: options.uri
-            });
-            const scmFileChanges: GitFileChangeNode[] = gitFileChanges
-                .map(change => new GitScmFileChange(change, provider, options.range))
-                .map(fileChange => ({ fileChange, commitId: fileChange.gitFileChange.uri }));
-            this.fileChangeNodes = scmFileChanges;
-            this.update();
-        }
-    }
-
-    protected findRepositoryOrSelected(uri?: string): ScmRepository | undefined {
-        if (uri) {
-            return this.scmService.findRepository(new URI(uri));
-        }
-        return this.scmService.selectedRepository;
-    }
-
-    storeState(): object {
-        const { fileChangeNodes, options } = this;
-        return {
-            fileChangeNodes,
-            options
-        };
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    restoreState(oldState: any): void {
-        this.fileChangeNodes = oldState['fileChangeNodes'];
-        this.options = oldState['options'];
+    async setContent(options: GitDiffTreeModel.Options): Promise<void> {
+        this.model.setContent(options);
+        this.diffHeaderWidget.setContent(options.diffOptions);
         this.update();
     }
 
-    protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        if (this.listView) {
-            this.listView.focus();
-        }
+    get containerLayout(): PanelLayout {
+        return this.panel.layout as PanelLayout;
     }
 
-    protected render(): React.ReactNode {
-        this.scmNodes = this.fileChangeNodes;
-        const commitishBar = this.renderDiffListHeader();
-        const fileChangeList = this.renderFileChangeList();
-        return <div className='scm-diff-container'>{commitishBar}{fileChangeList}</div>;
+    /**
+     * Updates the view mode based on the preference value.
+     * @param preference the view mode preference.
+     */
+    protected updateViewMode(preference: 'tree' | 'list'): void {
+        this.viewMode = preference;
     }
 
-    protected renderDiffListHeader(): React.ReactNode {
-        return this.doRenderDiffListHeader(
-            this.renderRepositoryHeader(),
-            this.renderPathHeader(),
-            this.renderRevisionHeader(),
-            this.renderToolbar()
-        );
+    protected updateImmediately(): void {
+        this.onUpdateRequest(Widget.Msg.UpdateRequest);
     }
 
-    protected doRenderDiffListHeader(...children: React.ReactNode[]): React.ReactNode {
-        return <div className='diff-header'>{...children}</div>;
+    protected onUpdateRequest(msg: Message): void {
+        MessageLoop.sendMessage(this.diffHeaderWidget, msg);
+        MessageLoop.sendMessage(this.resourceWidget, msg);
+        super.onUpdateRequest(msg);
     }
 
-    protected renderRepositoryHeader(): React.ReactNode {
-        if (this.options && this.options.uri) {
-            return this.renderHeaderRow({ name: 'repository', value: this.getRepositoryLabel(this.options.uri) });
-        }
-        return undefined;
+    protected onAfterAttach(msg: Message): void {
+        this.node.appendChild(this.diffHeaderWidget.node);
+        this.node.appendChild(this.resourceWidget.node);
+
+        super.onAfterAttach(msg);
+        this.update();
     }
 
-    protected renderPathHeader(): React.ReactNode {
-        return this.renderHeaderRow({
-            classNames: ['diff-header'],
-            name: 'path',
-            value: this.renderPath()
-        });
-    }
-    protected renderPath(): React.ReactNode {
-        if (this.options.uri) {
-            const path = this.scmLabelProvider.relativePath(this.options.uri);
-            if (path.length > 0) {
-                return '/' + path;
-            } else {
-                return this.labelProvider.getLongName(new URI(this.options.uri));
-            }
-        }
-        return null;
+    goToPreviousChange(): void {
+        this.resourceWidget.goToPreviousChange();
     }
 
-    protected renderRevisionHeader(): React.ReactNode {
-        return this.renderHeaderRow({
-            classNames: ['diff-header'],
-            name: 'revision: ',
-            value: this.renderRevision()
-        });
-    }
-    protected renderRevision(): React.ReactNode {
-        if (!this.fromRevision) {
-            return null;
-        }
-        if (typeof this.fromRevision === 'string') {
-            return this.fromRevision;
-        }
-        return (this.toRevision || 'HEAD') + '~' + this.fromRevision;
+    goToNextChange(): void {
+        this.resourceWidget.goToNextChange();
     }
 
-    protected renderToolbar(): React.ReactNode {
-        return this.doRenderToolbar(
-            this.renderNavigationLeft(),
-            this.renderNavigationRight()
-        );
-    }
-    protected doRenderToolbar(...children: React.ReactNode[]): React.ReactNode {
-        return this.renderHeaderRow({
-            classNames: ['diff-nav', 'space-between'],
-            name: 'Files changed',
-            value: <div className='lrBtns'>{...children}</div>
-        });
+    storeState(): any {
+        const state: object = {
+            commitState: this.diffHeaderWidget.storeState(),
+            changesTreeState: this.resourceWidget.storeState(),
+        };
+        return state;
     }
 
-    protected readonly showPreviousChange = () => this.doShowPreviousChange();
-    protected doShowPreviousChange(): void {
-        this.navigateLeft();
+    restoreState(oldState: any): void {
+        const { commitState, changesTreeState } = oldState;
+        this.diffHeaderWidget.restoreState(commitState);
+        this.resourceWidget.restoreState(changesTreeState);
     }
 
-    protected renderNavigationLeft(): React.ReactNode {
-        return <span key='lnav' className='fa fa-arrow-left' title='Previous Change' onClick={this.showPreviousChange}></span>;
-    }
-
-    protected readonly showNextChange = () => this.doShowNextChange();
-    protected doShowNextChange(): void {
-        this.navigateRight();
-    }
-
-    protected renderNavigationRight(): React.ReactNode {
-        return <span key='rnav' className='fa fa-arrow-right' title='Next Change' onClick={this.showNextChange}></span>;
-    }
-
-    protected renderFileChangeList(): React.ReactNode {
-        const files: React.ReactNode[] = [];
-        for (const fileChange of this.fileChangeNodes) {
-            const fileChangeElement: React.ReactNode = this.renderGitItem(fileChange);
-            files.push(fileChangeElement);
-        }
-        if (!files.length) {
-            return <div>No files changed.</div>;
-        }
-        return <GitDiffListContainer
-            ref={ref => this.listView = ref || undefined}
-            id={this.scrollContainer}
-            files={files}
-            addDiffListKeyListeners={this.addGitDiffListKeyListeners}
-            setListContainer={this.setListContainer} />;
-    }
-
-    protected setListContainer = (listContainerElement: HTMLDivElement) => this.deferredListContainer.resolve(listContainerElement);
-
-    protected addGitDiffListKeyListeners = (id: string) => this.doAddGitDiffListKeyListeners(id);
-    protected doAddGitDiffListKeyListeners(id: string): void {
-        const container = document.getElementById(id);
-        if (container) {
-            this.addListNavigationKeyListeners(container);
-        }
-    }
-
-    protected renderGitItem(change: GitFileChangeNode): React.ReactNode {
-        return <ScmItemComponent key={change.fileChange.uri.toString()} {...{
-            labelProvider: this.labelProvider,
-            scmLabelProvider: this.scmLabelProvider,
-            change,
-            revealChange: () => this.revealChange(change.fileChange.gitFileChange),
-            selectNode: () => this.selectNode(change)
-        }} />;
-    }
-
-    protected navigateRight(): void {
-        const selected = this.getSelected();
-        if (selected) {
-            const uri = this.getUriToOpen(selected.fileChange.gitFileChange);
-            this.editorManager.getByUri(uri).then(widget => {
-                if (widget) {
-                    const diffNavigator: DiffNavigator = this.diffNavigatorProvider(widget.editor);
-                    if (diffNavigator.canNavigate() && diffNavigator.hasNext()) {
-                        diffNavigator.next();
-                    } else {
-                        this.selectNextNode();
-                        this.openSelected();
-                    }
-                } else {
-                    this.revealChange(selected.fileChange.gitFileChange);
-                }
-            });
-        } else if (this.scmNodes.length > 0) {
-            this.selectNode(this.scmNodes[0]);
-            this.openSelected();
-        }
-    }
-
-    protected navigateLeft(): void {
-        const selected = this.getSelected();
-        if (selected) {
-            const uri = this.getUriToOpen(selected.fileChange.gitFileChange);
-            this.editorManager.getByUri(uri).then(widget => {
-                if (widget) {
-                    const diffNavigator: DiffNavigator = this.diffNavigatorProvider(widget.editor);
-                    if (diffNavigator.canNavigate() && diffNavigator.hasPrevious()) {
-                        diffNavigator.previous();
-                    } else {
-                        this.selectPreviousNode();
-                        this.openSelected();
-                    }
-                } else {
-                    this.revealChange(selected.fileChange.gitFileChange);
-                }
-            });
-        }
-    }
-
-    protected selectNextNode(): void {
-        const idx = this.indexOfSelected;
-        if (idx >= 0 && idx < this.scmNodes.length - 1) {
-            this.selectNode(this.scmNodes[idx + 1]);
-        } else if (this.scmNodes.length > 0 && (idx === -1 || idx === this.scmNodes.length - 1)) {
-            this.selectNode(this.scmNodes[0]);
-        }
-    }
-
-    protected selectPreviousNode(): void {
-        const idx = this.indexOfSelected;
-        if (idx > 0) {
-            this.selectNode(this.scmNodes[idx - 1]);
-        } else if (idx === 0) {
-            this.selectNode(this.scmNodes[this.scmNodes.length - 1]);
-        }
-    }
-
-    protected handleListEnter(): void {
-        this.openSelected();
-    }
-
-    protected openSelected(): void {
-        const selected = this.getSelected();
-        if (selected) {
-            this.revealChange(selected.fileChange.gitFileChange);
-        }
-    }
-
-    getUriToOpen(change: GitFileChange): URI {
-        const uri: URI = new URI(change.uri);
-
-        let fromURI = uri;
-        if (change.oldUri) { // set on renamed and copied
-            fromURI = new URI(change.oldUri);
-        }
-        if (this.fromRevision !== undefined) {
-            if (typeof this.fromRevision !== 'number') {
-                fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.fromRevision);
-            } else {
-                fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + '~' + this.fromRevision);
-            }
-        } else {
-            // default is to compare with previous revision
-            fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + '~1');
-        }
-
-        let toURI = uri;
-        if (this.toRevision) {
-            toURI = toURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision);
-        }
-
-        let uriToOpen = uri;
-        if (change.status === GitFileStatus.Deleted) {
-            uriToOpen = fromURI;
-        } else if (change.status === GitFileStatus.New) {
-            uriToOpen = toURI;
-        } else {
-            uriToOpen = DiffUris.encode(fromURI, toURI);
-        }
-        return uriToOpen;
-    }
-
-    async openChanges(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
-        const stringUri = uri.toString();
-        const change = this.fileChangeNodes.find(n => n.fileChange.uri.toString() === stringUri);
-        return change && this.openChange(change.fileChange.gitFileChange, options);
-    }
-
-    openChange(change: GitFileChange, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
-        const uriToOpen = this.getUriToOpen(change);
-        return this.editorManager.open(uriToOpen, options);
-    }
-
-    protected async revealChange(change: GitFileChange): Promise<void> {
-        await this.openChange(change, { mode: 'reveal' });
-    }
-
-}
-
-export namespace GitDiffListContainer {
-    export interface Props {
-        id: string
-        files: React.ReactNode[]
-        addDiffListKeyListeners: (id: string) => void
-        setListContainer: (listContainer: HTMLDivElement) => void
-    }
-}
-
-export class GitDiffListContainer extends React.Component<GitDiffListContainer.Props> {
-    protected listContainer?: HTMLDivElement;
-
-    render(): JSX.Element {
-        const { id, files } = this.props;
-        return <div ref={ref => this.listContainer = ref || undefined} className='listContainer filesChanged' id={id} tabIndex={0}>{...files}</div>;
-    }
-
-    componentDidMount(): void {
-        this.props.addDiffListKeyListeners(this.props.id);
-        if (this.listContainer) {
-            this.props.setListContainer(this.listContainer);
-        }
-    }
-
-    focus(): void {
-        if (this.listContainer) {
-            this.listContainer.focus({ preventScroll: true });
-        }
-    }
 }
