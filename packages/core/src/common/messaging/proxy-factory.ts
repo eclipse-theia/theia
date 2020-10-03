@@ -132,14 +132,8 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * response.
      */
     listen(connection: MessageConnection): void {
-        if (this.target) {
-            for (const prop in this.target) {
-                if (typeof this.target[prop] === 'function') {
-                    connection.onRequest(prop, (...args) => this.onRequest(prop, ...args));
-                    connection.onNotification(prop, (...args) => this.onNotification(prop, ...args));
-                }
-            }
-        }
+        connection.onRequest((prop, ...args) => this.onRequest(prop, ...args));
+        connection.onNotification((prop, ...args) => this.onNotification(prop, ...args));
         connection.onDispose(() => this.waitForConnection());
         connection.listen();
         this.connectionPromiseResolve(connection);
@@ -159,7 +153,11 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      */
     protected async onRequest(method: string, ...args: any[]): Promise<any> {
         try {
-            return await this.target[method](...args);
+            if (this.target) {
+                return await this.target[method](...args);
+            } else {
+                throw new Error(`no target was set to handle ${method}`);
+            }
         } catch (error) {
             const e = this.serializeError(error);
             if (e instanceof ResponseError) {
@@ -179,7 +177,9 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * methods calls.
      */
     protected onNotification(method: string, ...args: any[]): void {
-        this.target[method](...args);
+        if (this.target) {
+            this.target[method](...args);
+        }
     }
 
     /**
