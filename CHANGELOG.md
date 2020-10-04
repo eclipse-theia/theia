@@ -8,6 +8,8 @@
 <a name="breaking_changes_1.7.0">[Breaking Changes:](#breaking_changes_1.7.0)</a>
 
 - [plugin-metrics] renamed `AnalyticsFromRequests.succesfulResponses` to `AnalyticsFromRequests.successfulResponses` []()
+- [core] change progress notification cancelable property default from true to false [#8479](https://github.com/eclipse-theia/theia/pull/8479)
+- [messages] empty notifications and progress notifications will not be shown [#8479](https://github.com/eclipse-theia/theia/pull/8479)
 
 ## v1.6.0 - 24/09/2020
 
