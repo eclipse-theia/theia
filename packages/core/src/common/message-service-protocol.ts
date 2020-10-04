@@ -42,9 +42,7 @@ export interface ProgressMessage extends Message {
 export namespace ProgressMessage {
     export const Cancel = 'Cancel';
     export function isCancelable(message: ProgressMessage): boolean {
-        return !message.options
-            || message.options.cancelable === undefined
-            || message.options.cancelable === true;
+        return !!message.options?.cancelable;
     }
 }
 
