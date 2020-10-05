@@ -283,7 +283,7 @@ export class TerminalFrontendContribution implements TerminalService, CommandCon
             execute: () => (this.shell.activeWidget as TerminalWidget).clearOutput()
         });
 
-        commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, new UriAwareCommandHandler<URI>(this.selectionService, {
+        commands.registerCommand(TerminalCommands.TERMINAL_CONTEXT, UriAwareCommandHandler.MonoSelect(this.selectionService, {
             execute: uri => this.openInTerminal(uri)
         }));
 

@@ -101,7 +101,7 @@ export class ScmHistoryContribution extends AbstractViewContribution<ScmHistoryW
     }
 
     protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
-        return new UriAwareCommandHandler(this.selectionService, handler);
+        return UriAwareCommandHandler.MonoSelect(this.selectionService, handler);
     }
 
 }
