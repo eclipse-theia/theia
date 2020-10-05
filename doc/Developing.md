@@ -56,6 +56,11 @@ For Windows instructions [click here](#building-on-windows).
    - Preferably, **use** Node version [`12.14.1`](https://nodejs.org/download/release/v12.14.1/),  as it is the the recommended minimum version according to the framework's supported `electron` version.
  - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.7.0
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
+ - g++-4.8
+ - xvfb
+ - libsecret-1-dev
+ - libx11-dev
+ - libxkbfile-dev
 
 Some additional tools and libraries are needed depending on your platform:
 
