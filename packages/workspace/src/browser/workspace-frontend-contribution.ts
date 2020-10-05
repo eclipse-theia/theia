@@ -150,7 +150,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             execute: () => this.saveWorkspaceAs()
         });
         commands.registerCommand(WorkspaceCommands.SAVE_AS,
-            new UriAwareCommandHandler(this.selectionService, {
+            UriAwareCommandHandler.MonoSelect(this.selectionService, {
                 execute: (uri: URI) => this.saveAs(uri),
             }));
     }
