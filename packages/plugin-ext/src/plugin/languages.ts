@@ -88,6 +88,8 @@ import { Event } from '@theia/core/lib/common/event';
 import { CommandRegistryImpl } from './command-registry';
 import { DeclarationAdapter } from './languages/declaration';
 import { CallHierarchyAdapter } from './languages/call-hierarchy';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { DocumentSemanticTokensAdapter, DocumentRangeSemanticTokensAdapter } from './languages/semantic-highlighting';
 
 /* eslint-disable @typescript-eslint/indent */
 type Adapter = CompletionAdapter |
@@ -111,7 +113,9 @@ type Adapter = CompletionAdapter |
     SelectionRangeProviderAdapter |
     ColorProviderAdapter |
     RenameAdapter |
-    CallHierarchyAdapter;
+    CallHierarchyAdapter |
+    DocumentRangeSemanticTokensAdapter |
+    DocumentSemanticTokensAdapter;
 /* eslint-enable @typescript-eslint/indent */
 
 export class LanguagesExtImpl implements LanguagesExt {
@@ -588,6 +592,46 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, CallHierarchyAdapter, adapter => adapter.provideCallers(definition, token), undefined);
     }
     // ### Call Hierarchy Provider end
+
+    // #region semantic coloring
+
+    registerDocumentSemanticTokensProvider(selector: theia.DocumentSelector, provider: theia.DocumentSemanticTokensProvider, legend: theia.SemanticTokensLegend,
+        pluginInfo: PluginInfo): theia.Disposable {
+        const eventHandle = (typeof provider.onDidChangeSemanticTokens === 'function' ? this.nextCallId() : undefined);
+
+        const handle = this.addNewAdapter(new DocumentSemanticTokensAdapter(this.documents, provider));
+        this.proxy.$registerDocumentSemanticTokensProvider(handle, pluginInfo, this.transformDocumentSelector(selector), legend, eventHandle);
+        let result = this.createDisposable(handle);
+
+        if (eventHandle) {
+            // eslint-disable-next-line no-unsanitized/method
+            const subscription = provider.onDidChangeSemanticTokens!(_ => this.proxy.$emitDocumentSemanticTokensEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+
+        return result;
+    }
+
+    $provideDocumentSemanticTokens(handle: number, resource: UriComponents, previousResultId: number, token: theia.CancellationToken): Promise<BinaryBuffer | null> {
+        return this.withAdapter(handle, DocumentSemanticTokensAdapter, adapter => adapter.provideDocumentSemanticTokens(URI.revive(resource), previousResultId, token), null);
+    }
+
+    $releaseDocumentSemanticTokens(handle: number, semanticColoringResultId: number): void {
+        this.withAdapter(handle, DocumentSemanticTokensAdapter, adapter => adapter.releaseDocumentSemanticColoring(semanticColoringResultId), undefined);
+    }
+
+    registerDocumentRangeSemanticTokensProvider(selector: theia.DocumentSelector, provider: theia.DocumentRangeSemanticTokensProvider,
+        legend: theia.SemanticTokensLegend, pluginInfo: PluginInfo): theia.Disposable {
+        const handle = this.addNewAdapter(new DocumentRangeSemanticTokensAdapter(this.documents, provider));
+        this.proxy.$registerDocumentRangeSemanticTokensProvider(handle, pluginInfo, this.transformDocumentSelector(selector), legend);
+        return this.createDisposable(handle);
+    }
+
+    $provideDocumentRangeSemanticTokens(handle: number, resource: UriComponents, range: Range, token: theia.CancellationToken): Promise<BinaryBuffer | null> {
+        return this.withAdapter(handle, DocumentRangeSemanticTokensAdapter, adapter => adapter.provideDocumentRangeSemanticTokens(URI.revive(resource), range, token), null);
+    }
+
+    // #endregion
 }
 
 function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule[] | undefined {
