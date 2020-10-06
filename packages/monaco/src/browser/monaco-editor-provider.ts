@@ -95,6 +95,32 @@ export class MonacoEditorProvider {
         const staticServices = monaco.services.StaticServices;
         const init = staticServices.init.bind(monaco.services.StaticServices);
 
+        const themeService = staticServices.standaloneThemeService.get();
+        const originalGetTheme: (typeof themeService)['getTheme'] = themeService.getTheme.bind(themeService);
+        const patchedGetTokenStyleMetadataFlag = '__patched_getTokenStyleMetadata';
+        // based on https://github.com/microsoft/vscode/commit/4731a227e377da8cb14ed5697dd1ba8faea40538
+        // TODO remove after migrating to monaco 0.21
+        themeService.getTheme = () => {
+            const theme = originalGetTheme();
+            if (!(patchedGetTokenStyleMetadataFlag in theme)) {
+                Object.defineProperty(theme, patchedGetTokenStyleMetadataFlag, { enumerable: false, configurable: false, writable: false, value: true });
+                theme.getTokenStyleMetadata = (type, modifiers) => {
+                    // use theme rules match
+                    const style = theme.tokenTheme._match([type].concat(modifiers).join('.'));
+                    const metadata = style.metadata;
+                    const foreground = monaco.modes.TokenMetadata.getForeground(metadata);
+                    const fontStyle = monaco.modes.TokenMetadata.getFontStyle(metadata);
+                    return {
+                        foreground: foreground,
+                        italic: Boolean(fontStyle & monaco.modes.FontStyle.Italic),
+                        bold: Boolean(fontStyle & monaco.modes.FontStyle.Bold),
+                        underline: Boolean(fontStyle & monaco.modes.FontStyle.Underline)
+                    };
+                };
+            }
+            return theme;
+        };
+
         monaco.services.StaticServices.init = o => {
             const result = init(o);
             result[0].set(monaco.services.ICodeEditorService, codeEditorService);
