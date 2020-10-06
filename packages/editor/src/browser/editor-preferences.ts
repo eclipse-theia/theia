@@ -109,7 +109,7 @@ const codeEditorPreferenceProperties = {
     },
     'editor.semanticHighlighting.enabled': {
         'type': 'boolean',
-        'default': false,
+        'default': true,
         'description': 'Controls whether the semanticHighlighting is shown for the languages that support it.'
     },
     'editor.stablePeek': {

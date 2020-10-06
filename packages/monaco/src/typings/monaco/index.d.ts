@@ -762,6 +762,14 @@ declare module monaco.services {
         get(overrides?: monaco.editor.IEditorOverrideServices): T;
     }
 
+    // https://github.com/microsoft/vscode/blob/0eb3a02ca2bcfab5faa3dc6e52d7c079efafcab0/src/vs/platform/theme/common/themeService.ts#L78
+    export interface ITokenStyle {
+        readonly foreground?: number;
+        readonly bold?: boolean;
+        readonly underline?: boolean;
+        readonly italic?: boolean;
+    }
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/standalone/common/standaloneThemeService.ts#L28
     export interface IStandaloneThemeService extends monaco.theme.IThemeService {
         // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/standalone/browser/standaloneThemeServiceImpl.ts#L178
@@ -779,11 +787,14 @@ declare module monaco.services {
 
         // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/platform/theme/common/themeService.ts#L98
         getColor(color: string, useDefault?: boolean): monaco.color.Color | undefined;
+
+        getTokenStyleMetadata(type: string, modifiers: string[], modelLanguage: string): ITokenStyle | undefined;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/modes/supports/tokenization.ts#L188
     export interface TokenTheme {
         match(languageId: LanguageId, scope: string): number;
+        _match(token: string): any;
         getColorMap(): monaco.color.Color[];
     }
 
@@ -1300,6 +1311,15 @@ declare module monaco.modes {
         readonly onDidChange: monaco.IEvent<any>;
     }
     export const TokenizationRegistry: TokenizationRegistry;
+
+    // https://github.com/microsoft/vscode/blob/0eb3a02ca2bcfab5faa3dc6e52d7c079efafcab0/src/vs/editor/common/modes.ts#L66-L76
+    export const enum FontStyle {
+        NotSet = -1,
+        None = 0,
+        Italic = 1,
+        Bold = 2,
+        Underline = 4
+    }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/modes.ts#L148
     export class TokenMetadata {
