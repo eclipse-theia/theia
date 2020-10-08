@@ -133,7 +133,11 @@ export class FileNavigatorWidget extends FileTreeWidget {
     }
 
     protected renderTree(model: TreeModel): React.ReactNode {
-        return super.renderTree(model) || this.renderOpenWorkspaceDiv();
+        return this.model.root === undefined
+            ? this.renderOpenWorkspaceDiv()
+            : this.isEmptyMultiRootWorkspace(model)
+                ? this.renderEmptyMultiRootWorkspace()
+                : super.renderTree(model);
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -181,11 +185,17 @@ export class FileNavigatorWidget extends FileTreeWidget {
         this.commandService.executeCommand(WorkspaceCommands.OPEN_FOLDER.id);
     }
 
+    protected readonly addFolder = () => this.doAddFolder();
+    protected doAddFolder(): void {
+        this.commandService.executeCommand(WorkspaceCommands.ADD_FOLDER.id);
+    }
+
     protected readonly keyUpHandler = (e: React.KeyboardEvent) => {
         if (Key.ENTER.keyCode === e.keyCode) {
             (e.target as HTMLElement).click();
         }
     };
+
     /**
      * Instead of rendering the file resources from the workspace, we render a placeholder
      * button when the workspace root is not yet set.
@@ -199,7 +209,8 @@ export class FileNavigatorWidget extends FileTreeWidget {
                 Open Workspace
             </button>;
         } else {
-            openButton = <button className='theia-button open-workspace-button' title='Select a folder as your workspace root' onClick={this.openFolder}
+            openButton = <button className='theia-button open-workspace-button' title='Select a folder as your workspace root'
+                onClick={this.openFolder}
                 onKeyUp={this.keyUpHandler}>
                 Open Folder
             </button>;
@@ -211,6 +222,27 @@ export class FileNavigatorWidget extends FileTreeWidget {
                 {openButton}
             </div>
         </div>;
+    }
+
+    /**
+     * When a multi-root workspace is opened, a user can remove all the folders from it.
+     * Instead of displaying an empty navigator tree, this will show a button to add more folders.
+     */
+    protected renderEmptyMultiRootWorkspace(): React.ReactNode {
+        return <div className='theia-navigator-container'>
+            <div className='center'>You have not yet added a folder to the workspace.</div>
+            <div className='open-workspace-button-container'>
+                <button className='theia-button open-workspace-button' title='Add a folder to your workspace'
+                    onClick={this.addFolder}
+                    onKeyUp={this.keyUpHandler}>
+                    Add Folder
+                </button>
+            </div>
+        </div>;
+    }
+
+    protected isEmptyMultiRootWorkspace(model: TreeModel): boolean {
+        return WorkspaceNode.is(model.root) && model.root.children.length === 0;
     }
 
     protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
