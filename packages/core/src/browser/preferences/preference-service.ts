@@ -27,11 +27,31 @@ import { PreferenceConfigurations } from './preference-configurations';
 
 export { PreferenceScope };
 
+/**
+ * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.
+ * This means that the value from a more general scope will be used.
+ */
 export interface PreferenceChange {
+    /**
+     * The name of the changed preference.
+     */
     readonly preferenceName: string;
+    /**
+     * The new value of the changed preference.
+     */
     readonly newValue?: any;
+    /**
+     * The old value of the changed preference.
+     */
     readonly oldValue?: any;
+    /**
+     * The {@link PreferenceScope} of the changed preference.
+     */
     readonly scope: PreferenceScope;
+    /**
+     * Tests wether the given resource is affected by the preference change.
+     * @param resourceUri the uri of the resource to test.
+     */
     affects(resourceUri?: string): boolean;
 }
 
@@ -60,7 +80,9 @@ export class PreferenceChangeImpl implements PreferenceChange {
         return !resourcePath || !domain || domain.some(uri => new URI(uri).path.relativity(resourcePath) >= 0);
     }
 }
-
+/**
+ * A key-value storage for {@link PreferenceChange}s. Used to aggregate multiple simultaneous preference changes.
+ */
 export interface PreferenceChanges {
     [preferenceName: string]: PreferenceChange
 }

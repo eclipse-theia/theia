@@ -31,6 +31,31 @@ import { Mutable } from '../../common/types';
 /* eslint-disable guard-for-in, @typescript-eslint/no-explicit-any */
 
 export const PreferenceContribution = Symbol('PreferenceContribution');
+
+/**
+ * A {@link PreferenceContribution} allows adding additional custom preferences.
+ * For this, the {@link PreferenceContribution} has to provide a valid JSON Schema specifying which preferences
+ * are available including their types and description.
+ *
+ * ### Example usage
+ * ```typescript
+ * const MyPreferencesSchema: PreferenceSchema = {
+ *     'type': 'object',
+ *     'properties': {
+ *         'myext.decorations.enabled': {
+ *             'type': 'boolean',
+ *             'description': 'Show file status',
+ *             'default': true
+ *         },
+ *         // [...]
+ *     }
+ * }
+ * @injectable()
+ * export class MyPreferenceContribution implements PreferenceContribution{
+ *     schema= MyPreferencesSchema;
+ * }
+ * ```
+ */
 export interface PreferenceContribution {
     readonly schema: PreferenceSchema;
 }
@@ -56,7 +81,10 @@ const OVERRIDE_PROPERTY = '\\[(.*)\\]$';
 export const OVERRIDE_PROPERTY_PATTERN = new RegExp(OVERRIDE_PROPERTY);
 
 const OVERRIDE_PATTERN_WITH_SUBSTITUTION = '\\[(${0})\\]$';
-
+/**
+ * Specialized {@link FrontendApplicationConfig} to configure default
+ * preference values for the {@link PreferenceSchemaProvider}.
+ */
 export interface FrontendApplicationPreferenceConfig extends FrontendApplicationConfig {
     preferences: {
         [preferenceName: string]: any
@@ -68,6 +96,11 @@ export namespace FrontendApplicationPreferenceConfig {
     }
 }
 
+/**
+ * The {@link PreferenceSchemaProvider} collects all {@link PreferenceContribution}s and combines
+ * the preference schema provided by these contributions into one collective schema. The preferences which
+ * are provided by this {@link PreferenceProvider} are derived from this combined schema.
+ */
 @injectable()
 export class PreferenceSchemaProvider extends PreferenceProvider {
 
@@ -96,6 +129,15 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
     }
 
     protected readonly overrideIdentifiers = new Set<string>();
+
+    /**
+     * Register a new overrideIdentifier. Existing identifiers are not replaced.
+     *
+     * Allows overriding existing values while keeping both values in store.
+     * For example to store different editor settings, e.g. "[markdown].editor.autoIndent",
+     * "[json].editor.autoIndent" and "editor.autoIndent"
+     * @param overrideIdentifier the new overrideIdentifier
+     */
     registerOverrideIdentifier(overrideIdentifier: string): void {
         if (this.overrideIdentifiers.has(overrideIdentifier)) {
             return;
