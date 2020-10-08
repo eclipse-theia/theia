@@ -417,6 +417,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             const edits = jsoncparser.format(data, undefined, { tabSize: 3, insertSpaces: true, eol: '' });
             const result = jsoncparser.applyEdits(data, edits);
             await this.fileService.write(workspaceFile.resource, result);
+            await this.updateRoots();
             return this.fileService.resolve(workspaceFile.resource);
         }
     }

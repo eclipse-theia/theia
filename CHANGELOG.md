@@ -4,6 +4,7 @@
 
 - [git] the changes in the commit details (opened from the history view) and in the diff view (opened with 'Compare With...' on a folder's context menu) are now switchable between 'list' and 'tree' modes [#8084](https://github.com/eclipse-theia/theia/pull/8084)
 - [scm] show in the commit textbox the branch to which the commit will go [#6156](https://github.com/eclipse-theia/theia/pull/6156)
+- [workspace] fixed issue where folders were incorrectly added to workspace when calling WorkspaceService.addRoot() in quick succession [8605](https://github.com/eclipse-theia/theia/pull/8605)
 
 <a name="breaking_changes_1.7.0">[Breaking Changes:](#breaking_changes_1.7.0)</a>
 
