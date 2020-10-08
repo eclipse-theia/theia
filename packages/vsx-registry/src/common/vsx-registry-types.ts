@@ -15,13 +15,41 @@
  ********************************************************************************/
 
 /**
- * Should be aligned with https://github.com/eclipse/openvsx/blob/793d0691258a6029e5ebb8cc8783b366b67d16ca/server/src/main/java/org/eclipse/openvsx/RegistryAPI.java#L192-L196
+ * The possible options when performing a search.
+ *
+ * For available options, and default values consult the `swagger`: https://open-vsx.org/swagger-ui/#/registry-api/searchUsingGET.
+ *
+ * Should be aligned with https://github.com/eclipse/openvsx/blob/b5694a712e07d266801394916bac30609e16d77b/server/src/main/java/org/eclipse/openvsx/RegistryAPI.java#L246-L266
  */
 export interface VSXSearchParam {
+    /**
+     * The query text for searching.
+     */
     query?: string;
+    /**
+     * The extension category.
+     */
     category?: string;
+    /**
+     * The maximum number of entries to return.
+     */
     size?: number;
+    /**
+     * The number of entries to skip (usually a multiple of the page size).
+     */
     offset?: number;
+    /**
+     * The sort order.
+     */
+    sortOrder?: 'asc' | 'desc';
+    /**
+     * The sort key.
+     */
+    sortBy?: 'averageRating' | 'downloadCount' | 'relevance' | 'timestamp';
+    /**
+     * Determines whether to include information regarding all available entries for the entry.
+     */
+    includeAllVersions?: boolean;
 }
 
 /**
