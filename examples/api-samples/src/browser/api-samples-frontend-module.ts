@@ -19,6 +19,11 @@ import { bindDynamicLabelProvider } from './label/sample-dynamic-label-provider-
 import { bindSampleUnclosableView } from './view/sample-unclosable-view-contribution';
 import { bindSampleOutputChannelWithSeverity } from './output/sample-output-channel-with-severity';
 import { bindSampleMenu } from './menu/sample-menu-contribution';
+import { inject, injectable } from 'inversify';
+import { EditorWidget } from '@theia/editor/lib/browser';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { MiniBrowserOpenHandler } from '@theia/mini-browser/lib/browser/mini-browser-open-handler';
+import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
 
 import '../../src/browser/style/branding.css';
 
@@ -27,4 +32,27 @@ export default new ContainerModule(bind => {
     bindSampleUnclosableView(bind);
     bindSampleOutputChannelWithSeverity(bind);
     bindSampleMenu(bind);
+    bind(FrontendApplicationContribution).to(MyCustomFrontendContribution).inSingletonScope();
 });
+
+@injectable()
+class MyCustomFrontendContribution implements FrontendApplicationContribution {
+
+    @inject(MiniBrowserOpenHandler)
+    protected openHandler: MiniBrowserOpenHandler;
+
+    onStart(app: FrontendApplication): void {
+        app.shell.onDidAddWidget(widget => {
+            if (widget instanceof EditorWidget) {
+                const { editor } = widget;
+                if (editor instanceof MonacoEditor) {
+                    const uri = editor.getResourceUri();
+                    if (uri && uri.scheme === 'file' && uri.path.ext === '.html') {
+                        this.openHandler.open(uri, { widgetOptions: { ref: widget, mode: 'open-to-right' } });
+                    }
+                }
+            }
+        });
+    }
+
+}

@@ -5,6 +5,7 @@
   "description": "Theia - Example code to demonstrate Theia API",
   "dependencies": {
     "@theia/core": "^1.6.0",
+    "@theia/mini-browser": "^1.6.0",
     "@theia/output": "^1.6.0"
   },
   "theiaExtensions": [
