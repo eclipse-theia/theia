@@ -46,27 +46,41 @@ export class VSXRegistryAPI {
     protected readonly environment: VSXEnvironment;
 
     async search(param?: VSXSearchParam): Promise<VSXSearchResult> {
+        const searchUri = await this.buildSearchUri(param);
+        return this.fetchJson<VSXSearchResult>(searchUri);
+    }
+
+    protected async buildSearchUri(param?: VSXSearchParam): Promise<string> {
         const apiUri = await this.environment.getRegistryApiUri();
         let searchUri = apiUri.resolve('-/search').toString();
         if (param) {
-            let query = '';
+            const query: string[] = [];
             if (param.query) {
-                query += 'query=' + encodeURIComponent(param.query);
+                query.push('query=' + encodeURIComponent(param.query));
             }
             if (param.category) {
-                query += 'category=' + encodeURIComponent(param.category);
+                query.push('category=' + encodeURIComponent(param.category));
             }
             if (param.size) {
-                query += 'size=' + param.size;
+                query.push('size=' + param.size);
             }
             if (param.offset) {
-                query += 'offset=' + param.offset;
+                query.push('offset=' + param.offset);
             }
-            if (query) {
-                searchUri += '?' + query;
+            if (param.sortOrder) {
+                query.push('sortOrder=' + encodeURIComponent(param.sortOrder));
+            }
+            if (param.sortBy) {
+                query.push('sortBy=' + encodeURIComponent(param.sortBy));
+            }
+            if (param.includeAllVersions) {
+                query.push('includeAllVersions=' + param.includeAllVersions);
+            }
+            if (query.length > 0) {
+                searchUri += '?' + query.join('&');
             }
         }
-        return this.fetchJson<VSXSearchResult>(searchUri);
+        return searchUri;
     }
 
     async getExtension(id: string): Promise<VSXExtensionRaw> {
