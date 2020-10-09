@@ -25,6 +25,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from '../common/logger';
 import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
 import { ContextKeyService } from './context-key-service';
+import { CorePreferences } from './core-preferences';
 import * as common from '../common/keybinding';
 
 export enum KeybindingScope {
@@ -100,6 +101,9 @@ export class KeybindingRegistry {
 
     protected readonly contexts: { [id: string]: KeybindingContext } = {};
     protected readonly keymaps: ScopedKeybinding[][] = [...Array(KeybindingScope.length)].map(() => []);
+
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
 
     @inject(KeyboardLayoutService)
     protected readonly keyboardLayoutService: KeyboardLayoutService;
@@ -497,7 +501,8 @@ export class KeybindingRegistry {
             return;
         }
 
-        const keyCode = KeyCode.createKeyCode(event);
+        const eventDispatch = this.corePreferences['keyboard.dispatch'];
+        const keyCode = KeyCode.createKeyCode(event, eventDispatch);
         /* Keycode is only a modifier, next keycode will be modifier + key.
            Ignore this one.  */
         if (keyCode.isModifierOnly()) {

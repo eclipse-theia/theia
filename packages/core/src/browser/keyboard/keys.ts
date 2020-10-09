@@ -177,7 +177,7 @@ export class KeyCode {
     /**
      * Create a KeyCode from one of several input types.
      */
-    public static createKeyCode(input: KeyboardEvent | Keystroke | KeyCodeSchema | string): KeyCode {
+    public static createKeyCode(input: KeyboardEvent | Keystroke | KeyCodeSchema | string, eventDispatch: 'code' | 'keyCode' = 'code'): KeyCode {
         if (typeof input === 'string') {
             const parts = input.split('+');
             if (!KeyCode.isModifierString(parts[0])) {
@@ -188,7 +188,7 @@ export class KeyCode {
             }
             return KeyCode.createKeyCode({ modifiers: parts as KeyModifier[] });
         } else if (KeyCode.isKeyboardEvent(input)) {
-            const key = KeyCode.toKey(input);
+            const key = KeyCode.toKey(input, eventDispatch);
             return new KeyCode({
                 key: Key.isModifier(key.code) ? undefined : key,
                 meta: isOSX && input.metaKey,
@@ -344,9 +344,9 @@ export namespace KeyCode {
      * `keyIdentifier` is used to access this deprecated field:
      * https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyIdentifier
      */
-    export function toKey(event: KeyboardEvent): Key {
+    export function toKey(event: KeyboardEvent, dispatch: 'code' | 'keyCode' = 'code'): Key {
         const code = event.code;
-        if (code) {
+        if (code && dispatch === 'code') {
             if (isOSX) {
                 // https://github.com/eclipse-theia/theia/issues/4986
                 const char = event.key;
