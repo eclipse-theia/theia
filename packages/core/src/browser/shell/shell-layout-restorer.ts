@@ -265,13 +265,19 @@ export class ShellLayoutRestorer implements CommandContribution {
     protected parse<T>(layoutData: string, parseContext: ShellLayoutRestorer.ParseContext): T {
         return JSON.parse(layoutData, (property: string, value) => {
             if (this.isWidgetsProperty(property)) {
-                const widgets: (Widget | undefined)[] = [];
+                const widgets: Widget[] = [];
                 const descs = (value as WidgetDescription[]);
                 for (let i = 0; i < descs.length; i++) {
                     parseContext.push(async context => {
-                        widgets[i] = await this.convertToWidget(descs[i], context);
+                        const widget = await this.convertToWidget(descs[i], context);
+                        if (widget) {
+                            // restoring of the widgets for the panel starts with the last widget
+                            // to preserve the order, the new widget must be inserted at the start of the array
+                            widgets.unshift(widget);
+                        }
                     });
                 }
+
                 return widgets;
             } else if (value && typeof value === 'object' && !Array.isArray(value)) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -279,7 +285,10 @@ export class ShellLayoutRestorer implements CommandContribution {
                 for (const p in value) {
                     if (this.isWidgetProperty(p)) {
                         parseContext.push(async context => {
-                            copy[p] = await this.convertToWidget(value[p], context);
+                            const widget = await this.convertToWidget(value[p], context);
+                            if (widget) {
+                                copy[p] = widget;
+                            }
                         });
                     } else {
                         copy[p] = value[p];
