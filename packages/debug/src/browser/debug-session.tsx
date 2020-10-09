@@ -85,27 +85,9 @@ export class DebugSession implements CompositeTreeElement {
             this.connection,
             this.on('initialized', () => this.configure()),
             this.on('breakpoint', ({ body }) => this.updateBreakpoint(body)),
-            this.on('continued', ({ body: { allThreadsContinued, threadId } }) => {
-                if (allThreadsContinued !== false) {
-                    this.clearThreads();
-                } else {
-                    this.clearThread(threadId);
-                }
-            }),
-            this.on('stopped', async ({ body }) => {
-                // Update thread list
-                await this.updateThreads(body);
-
-                // Update current thread's frames immediately
-                await this.updateFrames();
-            }),
-            this.on('thread', ({ body: { reason, threadId } }) => {
-                if (reason === 'started') {
-                    this.scheduleUpdateThreads();
-                } else if (reason === 'exited') {
-                    this.clearThread(threadId);
-                }
-            }),
+            this.on('continued', e => this.handleContinued(e)),
+            this.on('stopped', e => this.handleStopped(e)),
+            this.on('thread', e => this.handleThread(e)),
             this.on('terminated', () => this.terminated = true),
             this.on('capabilities', event => this.updateCapabilities(event.body.capabilities)),
             this.breakpoints.onDidChangeMarkers(uri => this.updateBreakpoints({ uri, sourceModified: true }))
@@ -759,4 +741,27 @@ export class DebugSession implements CompositeTreeElement {
         return this.threads;
     }
 
+    protected async handleContinued({ body: { allThreadsContinued, threadId } }: DebugProtocol.ContinuedEvent): Promise<void> {
+        if (allThreadsContinued !== false) {
+            this.clearThreads();
+        } else {
+            this.clearThread(threadId);
+        }
+    };
+
+    protected async handleStopped({ body }: DebugProtocol.StoppedEvent): Promise<void> {
+        // Update thread list
+        await this.updateThreads(body);
+
+        // Update current thread's frames immediately
+        await this.updateFrames();
+    };
+
+    protected async handleThread({ body: { reason, threadId } }: DebugProtocol.ThreadEvent): Promise<void> {
+        if (reason === 'started') {
+            this.scheduleUpdateThreads();
+        } else if (reason === 'exited') {
+            this.clearThread(threadId);
+        }
+    };
 }
