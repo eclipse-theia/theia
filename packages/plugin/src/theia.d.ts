@@ -3395,7 +3395,7 @@ declare module '@theia/plugin' {
      * webview first becomes visible after the restart, this state is passed to `deserializeWebviewPanel`.
      * The extension can then restore the old `WebviewPanel` from this state.
      */
-    interface WebviewPanelSerializer {
+    interface WebviewPanelSerializer<T = unknown> {
         /**
          * Restore a webview panel from its seriailzed `state`.
          *
@@ -3407,7 +3407,7 @@ declare module '@theia/plugin' {
          *
          * @return PromiseLike indicating that the webview has been fully restored.
          */
-        deserializeWebviewPanel(webviewPanel: WebviewPanel, state: any): PromiseLike<void>;
+        deserializeWebviewPanel(webviewPanel: WebviewPanel, state: T): PromiseLike<void>;
     }
 
     /**
@@ -6623,7 +6623,7 @@ declare module '@theia/plugin' {
      * Represents a collection of [completion items](#CompletionItem) to be presented
      * in the editor.
      */
-    export class CompletionList {
+    export class CompletionList<T extends CompletionItem = CompletionItem> {
 
         /**
          * This list is not complete. Further typing should result in recomputing
@@ -6657,7 +6657,7 @@ declare module '@theia/plugin' {
      * Providers are asked for completions either explicitly by a user gesture or -depending on the configuration-
      * implicitly when typing words or trigger characters.
      */
-    export interface CompletionItemProvider {
+    export interface CompletionItemProvider<T extends CompletionItem = CompletionItem> {
 
         /**
          * Provide completion items for the given position and document.
@@ -6672,9 +6672,8 @@ declare module '@theia/plugin' {
          */
         provideCompletionItems(document: TextDocument,
             position: Position,
-            token: CancellationToken | undefined,
-            context: CompletionContext
-        ): ProviderResult<CompletionItem[] | CompletionList>;
+            token: CancellationToken,
+            context: CompletionContext): ProviderResult<T[] | CompletionList<T>>;
 
         /**
          * Given a completion item fill in more data, like [doc-comment](#CompletionItem.documentation)
@@ -6687,7 +6686,7 @@ declare module '@theia/plugin' {
          * @return The resolved completion item or a thenable that resolves to of such. It is OK to return the given
          * `item`. When no result is returned, the given `item` will be used.
          */
-        resolveCompletionItem?(item: CompletionItem, token?: CancellationToken): ProviderResult<CompletionItem>;
+        resolveCompletionItem?(item: T, token: CancellationToken): ProviderResult<T>;
     }
 
     /**
@@ -7055,7 +7054,7 @@ declare module '@theia/plugin' {
      * A code lens provider adds [commands](#Command) to source text. The commands will be shown
      * as dedicated horizontal lines in between the source text.
      */
-    export interface CodeLensProvider {
+    export interface CodeLensProvider<T extends CodeLens = CodeLens> {
         /**
          * An optional event to signal that the code lenses from this provider have changed.
          */
@@ -7070,7 +7069,7 @@ declare module '@theia/plugin' {
          * @return An array of code lenses or a thenable that resolves to such. The lack of a result can be
          * signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<CodeLens[]>;
+        provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<T[]>;
         /**
          * This function will be called for each visible code lens, usually when scrolling and after
          * calls to [compute](#CodeLensProvider.provideCodeLenses)-lenses.
@@ -7079,7 +7078,7 @@ declare module '@theia/plugin' {
          * @param token A cancellation token.
          * @return The given, resolved code lens or thenable that resolves to such.
          */
-        resolveCodeLens?(codeLens: CodeLens, token: CancellationToken): ProviderResult<CodeLens>;
+        resolveCodeLens?(codeLens: T, token: CancellationToken): ProviderResult<T>;
     }
 
     /**
@@ -7448,7 +7447,7 @@ declare module '@theia/plugin' {
      * The document link provider defines the contract between extensions and feature of showing
      * links in the editor.
      */
-    export interface DocumentLinkProvider {
+    export interface DocumentLinkProvider<T extends DocumentLink = DocumentLink> {
 
         /**
          * Provide links for the given document. Note that the editor ships with a default provider that detects
@@ -7459,7 +7458,7 @@ declare module '@theia/plugin' {
          * @return An array of [document links](#DocumentLink) or a thenable that resolves to such. The lack of a result
          * can be signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideDocumentLinks(document: TextDocument, token: CancellationToken | undefined): ProviderResult<DocumentLink[]>;
+        provideDocumentLinks(document: TextDocument, token: CancellationToken): ProviderResult<T[]>;
 
         /**
          * Given a link fill in its [target](#DocumentLink.target). This method is called when an incomplete
@@ -7470,7 +7469,7 @@ declare module '@theia/plugin' {
          * @param link The link that is to be resolved.
          * @param token A cancellation token.
          */
-        resolveDocumentLink?(link: DocumentLink, token: CancellationToken | undefined): ProviderResult<DocumentLink>;
+        resolveDocumentLink?(link: T, token: CancellationToken): ProviderResult<T>;
     }
 
     /**
@@ -9112,13 +9111,13 @@ declare module '@theia/plugin' {
         detail?: string;
     }
 
-    export interface TaskProvider {
+    export interface TaskProvider<T extends Task = Task> {
         /**
          * Provides tasks.
          * @param token A cancellation token.
          * @return an array of tasks
          */
-        provideTasks(token?: CancellationToken): ProviderResult<Task[]>;
+        provideTasks(token: CancellationToken): ProviderResult<T[]>;
 
         /**
          * Resolves a task that has no [`execution`](#Task.execution) set. Tasks are
@@ -9130,7 +9129,7 @@ declare module '@theia/plugin' {
          * @param token A cancellation token.
          * @return The resolved task
          */
-        resolveTask(task: Task, token?: CancellationToken): ProviderResult<Task>;
+        resolveTask(task: T, token: CancellationToken): ProviderResult<T>;
     }
 
     /**
@@ -9311,7 +9310,7 @@ declare module '@theia/plugin' {
     /* The workspace symbol provider interface defines the contract between extensions
     * and the [symbol search](https://code.visualstudio.com/docs/editor/intellisense)-feature.
     */
-    export interface WorkspaceSymbolProvider {
+    export interface WorkspaceSymbolProvider<T extends SymbolInformation = SymbolInformation> {
 
         /**
          * Project-wide search for a symbol matching the given query string.
@@ -9331,7 +9330,7 @@ declare module '@theia/plugin' {
          * resolves to such. The lack of a result can be signaled by
          * returning undefined, null, or an empty array.
          */
-        provideWorkspaceSymbols(query: string, token: CancellationToken | undefined): ProviderResult<SymbolInformation[]>;
+        provideWorkspaceSymbols(query: string, token: CancellationToken): ProviderResult<T[]>;
 
         /**
          * Given a symbol fill in its [location](#SymbolInformation.location). This method is called whenever a symbol
@@ -9345,7 +9344,7 @@ declare module '@theia/plugin' {
          * @return The resolved symbol or a thenable that resolves to that. When no result is returned,
          * the given `symbol` is used.
          */
-        resolveWorkspaceSymbol?(symbol: SymbolInformation, token: CancellationToken | undefined): ProviderResult<SymbolInformation>;
+        resolveWorkspaceSymbol?(symbol: T, token: CancellationToken): ProviderResult<T>;
     }
 
     //#region Comments
