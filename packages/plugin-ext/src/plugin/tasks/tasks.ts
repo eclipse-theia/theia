@@ -135,7 +135,7 @@ export class TasksExtImpl implements TasksExt {
         throw new Error('Task was not successfully transformed into a task config');
     }
 
-    $provideTasks(handle: number, token?: theia.CancellationToken): Promise<TaskDto[] | undefined> {
+    $provideTasks(handle: number, token: theia.CancellationToken): Promise<TaskDto[] | undefined> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
             return adapter.provideTasks(token);
@@ -144,7 +144,7 @@ export class TasksExtImpl implements TasksExt {
         }
     }
 
-    $resolveTask(handle: number, task: TaskDto, token?: theia.CancellationToken): Promise<TaskDto | undefined> {
+    $resolveTask(handle: number, task: TaskDto, token: theia.CancellationToken): Promise<TaskDto | undefined> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
             return adapter.resolveTask(task, token);
