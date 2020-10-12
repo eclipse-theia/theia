@@ -127,7 +127,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         const widget = this.shell.currentWidget;
         if (widget instanceof EditorWidget) {
             this.setCurrentEditor(widget);
-        } else if (!this._currentEditor || !this._currentEditor.isVisible) {
+        } else if (!this._currentEditor || !this._currentEditor.isVisible || this.currentEditor !== this.recentlyVisible) {
             this.setCurrentEditor(this.recentlyVisible);
         }
     }
