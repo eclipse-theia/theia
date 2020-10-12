@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
- :root {
+:root {
     --theia-view-container-title-height: var(--theia-content-line-height);
     --theia-view-container-content-height: calc(100% - var(--theia-view-container-title-height));
 }
