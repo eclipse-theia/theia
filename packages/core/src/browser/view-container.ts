@@ -257,7 +257,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
         const description = this.widgetManager.getDescription(widget);
         const partId = description ? JSON.stringify(description) : widget.id;
-        const newPart = new ViewContainerPart(widget, partId, this.id, this.toolbarRegistry, this.toolbarFactory, options);
+        const newPart = this.createPart(widget, partId, options);
         this.registerPart(newPart);
         if (newPart.options && newPart.options.order !== undefined) {
             const index = this.getParts().findIndex(part => part.options.order === undefined || part.options.order > newPart.options.order!);
@@ -289,7 +289,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 }
             }),
             this.registerDND(newPart),
-            newPart.onVisibilityChanged(() => {
+            newPart.onDidChangeVisibility(() => {
                 this.updateTitle();
                 this.updateCurrentPart();
             }),
@@ -310,6 +310,10 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
         newPart.disposed.connect(() => toRemoveWidget.dispose());
         return toRemoveWidget;
+    }
+
+    protected createPart(widget: Widget, partId: string, options?: ViewContainer.Factory.WidgetOptions | undefined): ViewContainerPart {
+        return new ViewContainerPart(widget, partId, this.id, this.toolbarRegistry, this.toolbarFactory, options);
     }
 
     removeWidget(widget: Widget): boolean {
