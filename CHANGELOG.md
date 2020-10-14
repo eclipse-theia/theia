@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.11.0
+
+- [preferences] preferences schemas can now be modified or completely removed from the UI by downstream packages [#8626](https://github.com/eclipse-theia/theia/pull/8626)
+
 ## v1.10.0 - 1/28/2021
 
 - [api-samples] added example on how to contribute toggleable toolbar items [#8968](https://github.com/eclipse-theia/theia/pull/8968)
