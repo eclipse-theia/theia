@@ -15,6 +15,9 @@
  ********************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable max-len */
+
+// eslint-disable-next-line spaced-comment
 /// <reference types='@theia/monaco-editor-core/monaco'/>
 
 declare module monaco.languages {
@@ -1496,7 +1499,7 @@ declare module monaco.error {
 
 declare module monaco.path {
     // https://github.com/microsoft/vscode/blob/320fbada86c113835aef4fb9d7c4bc5b74678166/src/vs/base/common/path.ts#L1494
-    export function normalize(path: string): string;
+    export function normalize(uriPath: string): string;
 }
 
 declare module monaco.wordHelper {

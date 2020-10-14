@@ -20,6 +20,6 @@
   },
   "ignorePatterns": [
     "node_modules",
-    "*.d.ts"
+    "lib"
   ]
 }
