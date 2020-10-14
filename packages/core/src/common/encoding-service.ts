@@ -28,10 +28,10 @@ import { BinaryBuffer, BinaryBufferReadableStream, BinaryBufferReadable } from '
 import { UTF8, UTF8_with_bom, UTF16be, UTF16le, UTF16be_BOM, UTF16le_BOM, UTF8_BOM } from './encodings';
 import { newWriteableStream, ReadableStream, Readable } from './stream';
 
-const ZERO_BYTE_DETECTION_BUFFER_MAX_LEN = 512; 	// number of bytes to look at to decide about a file being binary or not
-const NO_ENCODING_GUESS_MIN_BYTES = 512; 			// when not auto guessing the encoding, small number of bytes are enough
-const AUTO_ENCODING_GUESS_MIN_BYTES = 512 * 8; 		// with auto guessing we want a lot more content to be read for guessing
-const AUTO_ENCODING_GUESS_MAX_BYTES = 512 * 128; 	// set an upper limit for the number of bytes we pass on to jschardet
+const ZERO_BYTE_DETECTION_BUFFER_MAX_LEN = 512;   // number of bytes to look at to decide about a file being binary or not
+const NO_ENCODING_GUESS_MIN_BYTES = 512;          // when not auto guessing the encoding, small number of bytes are enough
+const AUTO_ENCODING_GUESS_MIN_BYTES = 512 * 8;    // with auto guessing we want a lot more content to be read for guessing
+const AUTO_ENCODING_GUESS_MAX_BYTES = 512 * 128;  // set an upper limit for the number of bytes we pass on to jschardet
 
 // we explicitly ignore a specific set of encodings from auto guessing
 // - ASCII: we never want this encoding (most UTF-8 files would happily detect as
