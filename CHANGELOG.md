@@ -6,6 +6,7 @@
 
 - [file-search] Deprecate dependency on `@theia/process` and replaced its usage by node's `child_process` api.
 - [electron] Removed `attachWillPreventUnload` method from the Electron main application. The `confirmExit` logic is handled on the frontend. [#8732](https://github.com/eclipse-theia/theia/pull/8732)
+- [preferences] preferences schemas can now be modified or completely removed from the UI by downstream packages [#8626](https://github.com/eclipse-theia/theia/pull/8626)
 
 ## v1.7.0 - 29/10/2020
 
