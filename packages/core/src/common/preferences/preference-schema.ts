@@ -68,6 +68,7 @@ export interface PreferenceItem extends IJSONSchema {
     defaultValue?: JSONValue;
     overridable?: boolean;
     [key: string]: any;
+    hidden?: boolean;
 }
 export interface PreferenceSchemaProperty extends PreferenceItem {
     description?: string;
@@ -91,3 +92,21 @@ export namespace PreferenceDataProperty {
         return <PreferenceDataProperty>schemaProps;
     }
 }
+
+export interface PreferenceSchemaModification {
+    properties: PreferenceSchemaPropertyModifications
+}
+
+export interface PreferenceSchemaPropertyModifications {
+    [name: string]: PreferenceSchemaPropertyModification
+}
+
+export interface PreferenceSchemaPropertyModification {
+    minimum?: number;
+    default?: any;
+    enum?: string[];
+    description?: string;
+    hidden?: boolean;
+}
+
+export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'boolean' | 'null';
