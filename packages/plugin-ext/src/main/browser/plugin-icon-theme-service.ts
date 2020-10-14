@@ -282,8 +282,8 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
     font-family: '${firstFont.id}';
     font-size: ${firstFont.size || '150%'};
     -webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	vertical-align: top;
+    -moz-osx-font-smoothing: grayscale;
+    vertical-align: top;
 }
 `;
             }
@@ -298,9 +298,9 @@ export class PluginIconTheme extends PluginIconThemeDefinition implements IconTh
                     this.styleSheetContent += `${selectors.join(', ')} {
     content: ' ';
     background-image: ${cssUrl};
-	background-size: 16px;
-	background-position: left center;
-	background-repeat: no-repeat;
+    background-size: 16px;
+    background-position: left center;
+    background-repeat: no-repeat;
 }
 `;
                 }

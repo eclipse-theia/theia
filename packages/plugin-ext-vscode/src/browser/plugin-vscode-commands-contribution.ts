@@ -377,13 +377,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         /**
          * TODO:
-         * Keep Open	workbench.action.keepEditor
-         * Open Next	workbench.action.openNextRecentlyUsedEditorInGroup
-         * Open Previous	workbench.action.openPreviousRecentlyUsedEditorInGroup
-         * Copy Path of Active File	workbench.action.files.copyPathOfActiveFile
-         * Reveal Active File in Windows	workbench.action.files.revealActiveFileInWindows
-         * Show Opened File in New Window	workbench.action.files.showOpenedFileInNewWindow
-         * Compare Opened File With	workbench.files.action.compareFileWith
+         * Keep Open: workbench.action.keepEditor
+         * Open Next: workbench.action.openNextRecentlyUsedEditorInGroup
+         * Open Previous: workbench.action.openPreviousRecentlyUsedEditorInGroup
+         * Copy Path of Active File: workbench.action.files.copyPathOfActiveFile
+         * Reveal Active File in Windows: workbench.action.files.revealActiveFileInWindows
+         * Show Opened File in New Window: workbench.action.files.showOpenedFileInNewWindow
+         * Compare Opened File With: workbench.files.action.compareFileWith
          */
 
         // Register built-in language service commands

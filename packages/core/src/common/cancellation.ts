@@ -23,9 +23,9 @@ import { Event, Emitter } from './event';
 export interface CancellationToken {
     readonly isCancellationRequested: boolean;
     /*
-	 * An event emitted when cancellation is requested
-	 * @event
-	 */
+     * An event emitted when cancellation is requested
+     * @event
+     */
     readonly onCancellationRequested: Event<void>;
 }
 

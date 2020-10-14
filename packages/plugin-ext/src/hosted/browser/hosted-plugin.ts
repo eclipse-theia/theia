@@ -754,13 +754,13 @@ export class HostedPluginSupport {
 
     protected getDeserializationFailedContents(message: string): string {
         return `<!DOCTYPE html>
-		<html>
-			<head>
-				<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
-			</head>
-			<body>${message}</body>
-		</html>`;
+        <html>
+            <head>
+                <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none';">
+            </head>
+            <body>${message}</body>
+        </html>`;
     }
 
 }

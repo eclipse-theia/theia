@@ -29,14 +29,14 @@ import { WriteableStream, ErrorTransformer, DataTransformer } from '@theia/core/
 
 export interface CreateReadStreamOptions extends FileReadStreamOptions {
 
-	/**
-	 * The size of the buffer to use before sending to the stream.
-	 */
+    /**
+     * The size of the buffer to use before sending to the stream.
+     */
     bufferSize: number;
 
-	/**
-	 * Allows to massage any possibly error that happens during reading.
-	 */
+    /**
+     * Allows to massage any possibly error that happens during reading.
+     */
     errorTransformer?: ErrorTransformer;
 }
 

@@ -1423,9 +1423,9 @@ export class FileService {
 
     private toWatchKey(provider: FileSystemProvider, resource: URI, options: WatchOptions): string {
         return [
-            this.toMapKey(provider, resource), 	// lowercase path if the provider is case insensitive
-            String(options.recursive),			// use recursive: true | false as part of the key
-            options.excludes.join()				// use excludes as part of the key
+            this.toMapKey(provider, resource),  // lowercase path if the provider is case insensitive
+            String(options.recursive),          // use recursive: true | false as part of the key
+            options.excludes.join()             // use excludes as part of the key
         ].join();
     }
 

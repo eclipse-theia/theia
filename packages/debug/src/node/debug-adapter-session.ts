@@ -104,7 +104,7 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
                     if (message.length > 0) {
                         this.send(message);
                     }
-                    continue;	// there may be more complete messages to process
+                    continue; // there may be more complete messages to process
                 }
             } else {
                 let idx = this.buffer.indexOf(DebugAdapterSessionImpl.CONTENT_LENGTH);
