@@ -16,6 +16,6 @@
 
 export = mv;
 declare module mv { }
+// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type MvOptions = { mkdirp?: boolean, clobber?: boolean, limit?: number };
 declare function mv(sourcePath: string, targetPath: string, options?: MvOptions, cb?: (error: NodeJS.ErrnoException) => void): void;
-
