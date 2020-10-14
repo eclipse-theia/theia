@@ -20,7 +20,8 @@ import {
     PreferenceProxy,
     PreferenceService,
     PreferenceSchema,
-    PreferenceContribution
+    PreferenceContribution,
+    PreferenceModificationContribution
 } from '@theia/core/lib/browser/preferences';
 
 export const scmPreferenceSchema: PreferenceSchema = {
@@ -36,6 +37,43 @@ export const scmPreferenceSchema: PreferenceSchema = {
             description: 'Controls the default source control view mode.',
             default: 'list'
         }
+    }
+};
+
+export const TestSchemaMods = {
+    properties: {
+        'workbench.list.openMode': {
+            default: 'doubleClick',
+        },
+        'workbench.editor.highlightModifiedTabs': {
+            hidden: true,
+        },
+        'application.confirmExit': {
+            enum: [
+                'ifRequired',
+                'always',
+            ],
+        },
+        'workbench.commandPalette.history': {
+            minimum: 10,
+        },
+        'workbench.colorTheme': {
+            description: 'Another description about specifying the color theme used in the workbench.'
+        },
+
+        // Git built-in plugin preferences
+        'git.enableSmartCommit': {
+            hidden: true,
+        },
+        'git.autoRepositoryDetection': {
+            description: 'Configures when foobar projects should be automatically detected.',
+        },
+        'git.branchWhitespaceChar': {
+            enum: ['-', '_', '--', '__'],
+        },
+        'git.autofetchPeriod': {
+            minimum: 60,
+        },
     }
 };
 
@@ -57,5 +95,5 @@ export function bindScmPreferences(bind: interfaces.Bind): void {
     }).inSingletonScope();
 
     bind(PreferenceContribution).toConstantValue({ schema: scmPreferenceSchema });
+    bind(PreferenceModificationContribution).toConstantValue({ schemaModification: TestSchemaMods });
 }
-
