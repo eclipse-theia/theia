@@ -29,7 +29,7 @@ class TestCliManager extends CliManager {
 }
 
 beforeEach(() => {
-    yargs.reset();
+    yargs.global([]);
 });
 
 describe('CliManager', () => {

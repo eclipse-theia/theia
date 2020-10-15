@@ -126,8 +126,10 @@ describe('editor-preview-manager', () => {
     });
     it('should should transition the editor to permanent on pin events.', async () => {
         // Fake creation call.
+        // eslint-disable-next-line no-unsanitized/method
         await onCreateListeners.pop()!({ factoryId: EditorPreviewWidgetFactory.ID, widget: mockPreviewWidget });
         // Fake pinned call
+        // eslint-disable-next-line no-unsanitized/method
         onPinnedListeners.pop()!({ preview: mockPreviewWidget, editorWidget: mockEditorWidget });
 
         expect(mockPreviewWidget.dispose.calledOnce).to.be.true;
