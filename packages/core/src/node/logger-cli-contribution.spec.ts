@@ -41,7 +41,7 @@ describe('log-level-cli-contribution', () => {
         container.load(module);
 
         cli = container.get(LogLevelCliContribution);
-        yargs.reset();
+        yargs.global([]);
         cli.configure(yargs);
 
         consoleErrorSpy = sinon.spy(console, 'error');
