@@ -606,7 +606,7 @@ export interface FileSystemProvider {
      * Retrieve the content of a given directory.
      * @param resource The `URI` of the directory.
      *
-     * @returns A map containing the {@link FileType} for each child resource (uri).
+     * @returns A map containing the {@link FileType} for each child resource, identified by name.
      */
     readdir(resource: URI): Promise<[string, FileType][]>;
 
