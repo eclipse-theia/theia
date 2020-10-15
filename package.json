@@ -52,7 +52,7 @@
     "prepare:build": "yarn build && run lint && run build \"@theia/example-*\" --stream --parallel",
     "prepare:hoisting": "theia check:hoisted -s",
     "clean": "yarn lint:clean && node scripts/run-reverse-topo.js yarn clean",
-    "build": "tsc -b configs/root-compilation.tsconfig.json --verbose",
+    "build": "tsc -b configs/root-compilation.tsconfig.json",
     "watch": "tsc -b configs/root-compilation.tsconfig.json -w",
     "lint": "run lint",
     "lint:clean": "rimraf .eslintcache",
