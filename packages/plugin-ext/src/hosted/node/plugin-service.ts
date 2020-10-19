@@ -105,8 +105,8 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         return plugins;
     }
 
-    onMessage(message: string): Promise<void> {
-        this.hostedPlugin.onMessage(message);
+    onMessage(pluginHostId: string, message: string): Promise<void> {
+        this.hostedPlugin.onMessage(pluginHostId, message);
         return Promise.resolve();
     }
 
