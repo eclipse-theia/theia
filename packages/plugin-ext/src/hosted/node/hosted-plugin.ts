@@ -71,18 +71,17 @@ export class HostedPluginSupport {
         }
     }
 
-    onMessage(message: string): void {
+    onMessage(pluginHostId: string, message: string): void {
         // need to perform routing
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const jsonMessage: any = JSON.parse(message);
         if (this.pluginRunners.length > 0) {
             this.pluginRunners.forEach(runner => {
-                if (runner.acceptMessage(jsonMessage)) {
-                    runner.onMessage(jsonMessage);
+                if (runner.acceptMessage(pluginHostId, message)) {
+                    runner.onMessage(pluginHostId, message);
                 }
             });
         } else {
-            this.hostedPluginProcess.onMessage(jsonMessage.content);
+            this.hostedPluginProcess.onMessage(pluginHostId, message);
         }
     }
 

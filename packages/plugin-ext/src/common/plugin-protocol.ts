@@ -772,7 +772,7 @@ export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): st
 
 export const HostedPluginClient = Symbol('HostedPluginClient');
 export interface HostedPluginClient {
-    postMessage(message: string): Promise<void>;
+    postMessage(pluginHost: string, message: string): Promise<void>;
 
     log(logPart: LogPart): void;
 
@@ -816,9 +816,11 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
 
     getExtPluginAPI(): Promise<ExtPluginApi[]>;
 
-    onMessage(message: string): Promise<void>;
+    onMessage(targetHost: string, message: string): Promise<void>;
 
 }
+
+export const PLUGIN_HOST_BACKEND = 'main';
 
 export interface WorkspaceStorageKind {
     workspace?: string | undefined;
@@ -851,9 +853,9 @@ export interface PluginServer {
 export const ServerPluginRunner = Symbol('ServerPluginRunner');
 export interface ServerPluginRunner {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    acceptMessage(jsonMessage: any): boolean;
+    acceptMessage(pluginHostId: string, jsonMessage: string): boolean;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onMessage(jsonMessage: any): void;
+    onMessage(pluginHostId: string, jsonMessage: string): void;
     setClient(client: HostedPluginClient): void;
     setDefault(defaultRunner: ServerPluginRunner): void;
     clientClosed(): void;
