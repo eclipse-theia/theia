@@ -35,19 +35,19 @@ export class FileDownloadCommandContribution implements CommandContribution {
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(
             FileDownloadCommands.DOWNLOAD,
-            new UriAwareCommandHandler<URI[]>(this.selectionService, {
+            UriAwareCommandHandler.MultiSelect(this.selectionService, {
                 execute: uris => this.executeDownload(uris),
                 isEnabled: uris => this.isDownloadEnabled(uris),
                 isVisible: uris => this.isDownloadVisible(uris),
-            }, { multi: true })
+            })
         );
         registry.registerCommand(
             FileDownloadCommands.COPY_DOWNLOAD_LINK,
-            new UriAwareCommandHandler<URI[]>(this.selectionService, {
+            UriAwareCommandHandler.MultiSelect(this.selectionService, {
                 execute: uris => this.executeDownload(uris, { copyLink: true }),
                 isEnabled: uris => isChrome && this.isDownloadEnabled(uris),
                 isVisible: uris => isChrome && this.isDownloadVisible(uris),
-            }, { multi: true })
+            })
         );
     }
 

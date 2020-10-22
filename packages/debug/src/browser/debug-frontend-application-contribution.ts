@@ -491,7 +491,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             }
         };
 
-        menus.registerSubmenu(DebugMenus.DEBUG, 'Debug');
+        menus.registerSubmenu(DebugMenus.DEBUG, 'Run');
         registerMenuActions(DebugMenus.DEBUG_CONTROLS,
             DebugCommands.START,
             DebugCommands.START_NO_DEBUG,

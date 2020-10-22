@@ -59,10 +59,14 @@ export class FileNavigatorTree extends FileTree {
     }
 }
 
+/**
+ * File tree root node for multi-root workspaces.
+ */
 export interface WorkspaceNode extends CompositeTreeNode, SelectableTreeNode {
     children: WorkspaceRootNode[];
 }
 export namespace WorkspaceNode {
+
     export const id = 'WorkspaceNodeId';
     export const name = 'WorkspaceNode';
 
@@ -70,6 +74,9 @@ export namespace WorkspaceNode {
         return CompositeTreeNode.is(node) && node.id === WorkspaceNode.id;
     }
 
+    /**
+     * Create a `WorkspaceNode` that can be used as a `Tree` root.
+     */
     export function createRoot(multiRootName?: string): WorkspaceNode {
         return {
             id: WorkspaceNode.id,
@@ -82,10 +89,14 @@ export namespace WorkspaceNode {
     }
 }
 
+/**
+ * A node representing a folder from a multi-root workspace.
+ */
 export interface WorkspaceRootNode extends DirNode {
     parent: WorkspaceNode;
 }
 export namespace WorkspaceRootNode {
+
     export function is(node: Object | undefined): node is WorkspaceRootNode {
         return DirNode.is(node) && WorkspaceNode.is(node.parent);
     }

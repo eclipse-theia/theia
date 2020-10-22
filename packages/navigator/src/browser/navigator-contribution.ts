@@ -333,7 +333,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             isEnabled: () => this.navigatorDiff.isFirstFileSelected,
             isVisible: () => this.navigatorDiff.isFirstFileSelected
         });
-        registry.registerCommand(FileNavigatorCommands.COPY_RELATIVE_FILE_PATH, new UriAwareCommandHandler<URI[]>(this.selectionService, {
+        registry.registerCommand(FileNavigatorCommands.COPY_RELATIVE_FILE_PATH, UriAwareCommandHandler.MultiSelect(this.selectionService, {
             isEnabled: uris => !!uris.length,
             isVisible: uris => !!uris.length,
             execute: async uris => {
@@ -346,7 +346,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 }).join(lineDelimiter);
                 await this.clipboardService.writeText(text);
             }
-        }, { multi: true }));
+        }));
         registry.registerCommand(FileNavigatorCommands.OPEN, {
             isEnabled: () => this.getSelectedFileNodes().length > 0,
             isVisible: () => this.getSelectedFileNodes().length > 0,
