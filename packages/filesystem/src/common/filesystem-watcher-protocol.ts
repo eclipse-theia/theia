@@ -49,7 +49,7 @@ export interface FileSystemWatcherServiceClient {
 export interface DidFilesChangedParams {
     /** Clients to route the events to. */
     clients?: number[];
-    /** FileSystem changes that occured. */
+    /** FileSystem changes that occurred. */
     changes: FileChange[];
 }
 
