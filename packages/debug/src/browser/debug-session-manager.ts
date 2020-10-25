@@ -201,6 +201,7 @@ export class DebugSessionManager {
     }
 
     protected configurationIds = new Map<string, number>();
+
     protected async resolveConfiguration(options: Readonly<DebugSessionOptions>): Promise<InternalDebugSessionOptions> {
         if (InternalDebugSessionOptions.is(options)) {
             return options;
@@ -273,10 +274,13 @@ export class DebugSessionManager {
     }
 
     restart(): Promise<DebugSession | undefined>;
+
     restart(session: DebugSession): Promise<DebugSession>;
+
     async restart(session: DebugSession | undefined = this.currentSession): Promise<DebugSession | undefined> {
         return session && this.doRestart(session);
     }
+
     protected async doRestart(session: DebugSession, restart?: any): Promise<DebugSession | undefined> {
         if (await session.restart()) {
             return session;

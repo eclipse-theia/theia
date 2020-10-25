@@ -30,6 +30,7 @@ import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 import { DebugAdapterPath } from '../common/debug-service';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { DebugPluginContribution } from './debug-plugin-contribution';
 
 /**
  * DebugSessionContribution symbol for DI.
@@ -50,7 +51,6 @@ export interface DebugSessionContribution {
      */
     debugSessionFactory(): DebugSessionFactory;
 }
-
 /**
  * DebugSessionContributionRegistry symbol for DI.
  */
@@ -95,7 +95,6 @@ export interface DebugSessionFactory {
 
 @injectable()
 export class DefaultDebugSessionFactory implements DebugSessionFactory {
-
     @inject(WebSocketConnectionProvider)
     protected readonly connectionProvider: WebSocketConnectionProvider;
     @inject(TerminalService)
@@ -114,6 +113,8 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     protected readonly debugPreferences: DebugPreferences;
     @inject(FileService)
     protected readonly fileService: FileService;
+    @inject(ContributionProvider) @named(DebugPluginContribution)
+    protected readonly debugPluginCP: ContributionProvider<DebugPluginContribution>;
 
     get(sessionId: string, options: DebugSessionOptions): DebugSession {
         const connection = new DebugSessionConnection(
@@ -133,7 +134,8 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
             this.breakpoints,
             this.labelProvider,
             this.messages,
-            this.fileService);
+            this.fileService,
+            this.debugPluginCP);
     }
 
     protected getTraceOutputChannel(): OutputChannel | undefined {

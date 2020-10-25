@@ -24,14 +24,15 @@ import * as request from 'request';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
-import { DebugConfiguration } from '../common';
 import { environment } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
 import { MetadataScanner } from '@theia/plugin-ext/lib/hosted/node/metadata-scanner';
+import { DebugPluginConfiguration } from '@theia/debug/lib/browser/debug-plugin-contribution';
 
 const processTree = require('ps-tree');
+const DEFAULT_HOSTED_PLUGIN_PORT = 3030;
 
 export const HostedInstanceManager = Symbol('HostedInstanceManager');
 
@@ -59,7 +60,7 @@ export interface HostedInstanceManager {
      * @param debugConfig debug configuration
      * @returns uri where new Theia instance is run
      */
-    debug(pluginUri: URI, debugConfig: DebugConfiguration): Promise<URI>;
+    debug(pluginUri: URI, debugConfig: DebugPluginConfiguration): Promise<URI>;
 
     /**
      * Terminates hosted plugin instance.
@@ -117,11 +118,11 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         return this.doRun(pluginUri, port);
     }
 
-    async debug(pluginUri: URI, debugConfig: DebugConfiguration): Promise<URI> {
+    async debug(pluginUri: URI, debugConfig: DebugPluginConfiguration): Promise<URI> {
         return this.doRun(pluginUri, undefined, debugConfig);
     }
 
-    private async doRun(pluginUri: URI, port?: number, debugConfig?: DebugConfiguration): Promise<URI> {
+    private async doRun(pluginUri: URI, port?: number, debugConfig?: DebugPluginConfiguration): Promise<URI> {
         if (this.isPluginRunning) {
             this.hostedPluginSupport.sendLog({ data: 'Hosted plugin instance is already running.', type: LogType.Info });
             throw new Error('Hosted instance is already running.');
@@ -141,8 +142,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
             throw new Error('Not supported plugin location: ' + pluginUri.toString());
         }
 
-        this.instanceUri = await this.postProcessInstanceUri(
-            await this.runHostedPluginTheiaInstance(command, processOptions));
+        this.instanceUri = await this.postProcessInstanceUri(await this.runHostedPluginTheiaInstance(command, processOptions));
         this.pluginUri = pluginUri;
         // disable redirect to grab the release
         this.instanceOptions = {
@@ -218,11 +218,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
             const url = this.instanceUri.toString();
             request.head(url, this.instanceOptions).on('response', res => {
                 // Wait that the status is OK
-                if (res.statusCode === 200) {
-                    resolve(true);
-                } else {
-                    resolve(false);
-                }
+                resolve(res.statusCode === 200);
             }).on('error', error => {
                 resolve(false);
             });
@@ -243,7 +239,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         return false;
     }
 
-    protected async getStartCommand(port?: number, debugConfig?: DebugConfiguration): Promise<string[]> {
+    protected async getStartCommand(port?: number, debugConfig?: DebugPluginConfiguration): Promise<string[]> {
 
         const processArguments = process.argv;
         let command: string[];
@@ -270,19 +266,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         }
 
         if (debugConfig) {
-            let debugString = '--hosted-plugin-';
-            if (debugConfig.debugMode) {
-                debugString += debugConfig.debugMode;
-            } else {
-                debugString += 'inspect';
-            }
-
-            debugString += '=0.0.0.0';
-
-            if (debugConfig.port) {
-                debugString += ':' + debugConfig.port;
-            }
-            command.push(debugString);
+            command.push(`--hosted-plugin-${debugConfig.debugMode || 'inspect'}=0.0.0.0:${debugConfig.debugPort ? ':' + debugConfig.debugPort : ''}`);
         }
         return command;
     }
@@ -303,23 +287,32 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
                 const line = data.toString();
                 const match = THEIA_INSTANCE_REGEX.exec(line);
                 if (match) {
-                    this.hostedInstanceProcess.stdout.removeListener('data', outputListener);
+                    if (this.hostedInstanceProcess.stdout) {
+                        this.hostedInstanceProcess.stdout.removeListener('data', outputListener);
+                    }
                     started = true;
                     resolve(new URI(match[1]));
                 }
             };
 
             this.hostedInstanceProcess = cp.spawn(command.shift()!, command, options);
+
             this.hostedInstanceProcess.on('error', () => { this.isPluginRunning = false; });
             this.hostedInstanceProcess.on('exit', () => { this.isPluginRunning = false; });
-            this.hostedInstanceProcess.stdout.addListener('data', outputListener);
 
-            this.hostedInstanceProcess.stdout.addListener('data', data => {
-                this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Info });
-            });
-            this.hostedInstanceProcess.stderr.addListener('data', data => {
-                this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Error });
-            });
+            if (this.hostedInstanceProcess.stdout) {
+                this.hostedInstanceProcess.stdout.addListener('data', outputListener);
+
+                this.hostedInstanceProcess.stdout.addListener('data', data => {
+                    this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Info });
+                });
+            }
+
+            if (this.hostedInstanceProcess.stderr) {
+                this.hostedInstanceProcess.stderr.addListener('data', data => {
+                    this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Error });
+                });
+            }
 
             setTimeout(() => {
                 if (!started) {
@@ -376,17 +369,14 @@ export class NodeHostedPluginRunner extends AbstractHostedInstanceManager {
         return options;
     }
 
-    protected async getStartCommand(port?: number, config?: DebugConfiguration): Promise<string[]> {
+    protected async getStartCommand(port?: number, debugConfig?: DebugPluginConfiguration): Promise<string[]> {
         if (!port) {
-            if (process.env.HOSTED_PLUGIN_PORT) {
-                port = Number(process.env.HOSTED_PLUGIN_PORT);
-            } else {
-                port = 3030;
-            }
+            port = process.env.HOSTED_PLUGIN_PORT ?
+                Number(process.env.HOSTED_PLUGIN_PORT) :
+                (debugConfig && debugConfig.debugPort ? Number(debugConfig.debugPort) : DEFAULT_HOSTED_PLUGIN_PORT);
         }
-        return super.getStartCommand(port, config);
+        return super.getStartCommand(port, debugConfig);
     }
-
 }
 
 @injectable()

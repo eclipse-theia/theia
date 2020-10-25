@@ -168,6 +168,9 @@
       ],
       "@theia/timeline/*": [
         "packages/timeline/*"
+      ],
+      "@theia/debug/./lib/*": [
+        "packages/debug/src/*"
       ]
     }
   }

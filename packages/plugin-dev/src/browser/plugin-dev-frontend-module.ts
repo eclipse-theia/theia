@@ -25,11 +25,13 @@ import { HostedPluginFrontendContribution } from './hosted-plugin-frontend-contr
 import { CommandContribution } from '@theia/core/lib/common/command';
 import { HostedPluginServer, hostedServicePath } from '../common/plugin-dev-protocol';
 import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
+import { DebugPluginContribution } from '@theia/debug/lib/browser/debug-plugin-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindHostedPluginPreferences(bind);
     bind(HostedPluginLogViewer).toSelf().inSingletonScope();
     bind(HostedPluginManagerClient).toSelf().inSingletonScope();
+    bind(DebugPluginContribution).toService(HostedPluginManagerClient);
 
     bind(FrontendApplicationContribution).to(HostedPluginInformer).inSingletonScope();
     bind(FrontendApplicationContribution).to(HostedPluginController).inSingletonScope();
