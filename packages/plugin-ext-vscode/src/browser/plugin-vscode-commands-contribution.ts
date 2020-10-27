@@ -29,7 +29,9 @@ import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/appl
 import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { CodeEditorWidget } from '@theia/plugin-ext/lib/main/browser/menus/menus-contribution-handler';
+import {
+    CodeEditorWidgetUtil
+} from '@theia/plugin-ext/lib/main/browser/menus/menus-contribution-handler';
 import {
     TextDocumentShowOptions,
     Location,
@@ -102,6 +104,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly quickOpenWorkspace: QuickOpenWorkspace;
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
+    @inject(CodeEditorWidgetUtil)
+    protected readonly codeEditorWidgetUtil: CodeEditorWidgetUtil;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -233,7 +237,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                         return (resourceUri && resourceUri.toString()) === uriString;
                     });
                 }
-                if (CodeEditorWidget.is(widget)) {
+                if (this.codeEditorWidgetUtil.is(widget)) {
                     await this.shell.closeWidget(widget.id);
                 }
             }
@@ -249,7 +253,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     });
                 }
                 for (const widget of this.shell.widgets) {
-                    if (CodeEditorWidget.is(widget) && widget !== editor) {
+                    if (this.codeEditorWidgetUtil.is(widget) && widget !== editor) {
                         await this.shell.closeWidget(widget.id);
                     }
                 }
@@ -269,7 +273,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     const tabBar = this.shell.getTabBarFor(editor);
                     if (tabBar) {
                         this.shell.closeTabs(tabBar,
-                            ({ owner }) => CodeEditorWidget.is(owner)
+                            ({ owner }) => this.codeEditorWidgetUtil.is(owner)
                         );
                     }
                 }
@@ -283,7 +287,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     for (const tabBar of this.shell.allTabBars) {
                         if (tabBar !== editorTabBar) {
                             this.shell.closeTabs(tabBar,
-                                ({ owner }) => CodeEditorWidget.is(owner)
+                                ({ owner }) => this.codeEditorWidgetUtil.is(owner)
                             );
                         }
                     }
@@ -303,7 +307,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                                     left = false;
                                     return false;
                                 }
-                                return left && CodeEditorWidget.is(owner);
+                                return left && this.codeEditorWidgetUtil.is(owner);
                             }
                         );
                     }
@@ -323,7 +327,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                                     left = false;
                                     return false;
                                 }
-                                return !left && CodeEditorWidget.is(owner);
+                                return !left && this.codeEditorWidgetUtil.is(owner);
                             }
                         );
                     }
@@ -334,7 +338,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: async () => {
                 const promises = [];
                 for (const widget of this.shell.widgets) {
-                    if (CodeEditorWidget.is(widget)) {
+                    if (this.codeEditorWidgetUtil.is(widget)) {
                         promises.push(this.shell.closeWidget(widget.id));
                     }
                 }
