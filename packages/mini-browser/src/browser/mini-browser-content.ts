@@ -469,9 +469,9 @@ export class MiniBrowserContent extends BaseWidget {
     protected handleInputChange(e: KeyboardEvent): void {
         const { key } = KeyCode.createKeyCode(e);
         if (key && Key.ENTER.keyCode === key.keyCode && this.getToolbarProps() === 'show') {
-            const { srcElement } = e;
-            if (srcElement instanceof HTMLInputElement) {
-                this.mapLocation(srcElement.value).then(location => this.submitInputEmitter.fire(location));
+            const { target } = e;
+            if (target instanceof HTMLInputElement) {
+                this.mapLocation(target.value).then(location => this.submitInputEmitter.fire(location));
             }
         }
     }

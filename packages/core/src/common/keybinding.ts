@@ -13,11 +13,19 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-
+/**
+ * A Keybinding binds a specific key sequence ({@link Keybinding#keybinding}) to trigger a command ({@link Keybinding#command}). A Keybinding optionally may
+ * define a "when clause" ({@link Keybinding#when}) to specify in which context it becomes active.
+ * @see KeyBindingRegistry
+ */
 export interface Keybinding {
-    /** Command identifier, this needs to be a unique string.  */
+    /**
+     * Unique command identifier of the command to be triggered by this keybinding.
+     */
     command: string;
-    /** Keybinding string as defined in packages/keymaps/README.md.  */
+    /**
+     * The key sequence for the keybinding as defined in packages/keymaps/README.md.
+     */
     keybinding: string;
     /**
      * The optional keybinding context where this binding belongs to.
@@ -28,12 +36,14 @@ export interface Keybinding {
      */
     context?: string;
     /**
-     * https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts
+     * An optional clause defining the condition when the keybinding is active, e.g. based on the current focus.
+     * See {@link https://code.visualstudio.com/docs/getstarted/keybindings#_when-clause-contexts} for more details.
      */
     when?: string;
 
     /**
-     * Specified when the command has arguments that are passed to the command handler.
+     * Optional arguments that will be passed to the command when it gets triggered via this keybinding.
+     * Needs to be specified when the triggered command expects arguments to be passed to the command handler.
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args?: any;

@@ -424,8 +424,8 @@ export interface OpenDialogOptionsMain {
      * like "TypeScript", and an array of extensions, e.g.
      * ```ts
      * {
-     * 	'Images': ['png', 'jpg']
-     * 	'TypeScript': ['ts', 'tsx']
+     *  'Images': ['png', 'jpg']
+     *  'TypeScript': ['ts', 'tsx']
      * }
      * ```
      */
@@ -451,8 +451,8 @@ export interface SaveDialogOptionsMain {
      * like "TypeScript", and an array of extensions, e.g.
      * ```ts
      * {
-     * 	'Images': ['png', 'jpg']
-     * 	'TypeScript': ['ts', 'tsx']
+     *  'Images': ['png', 'jpg']
+     *  'TypeScript': ['ts', 'tsx']
      * }
      * ```
      */
