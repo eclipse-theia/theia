@@ -21,6 +21,7 @@ export * from './tree-navigation';
 export * from './tree-iterator';
 export * from './tree-model';
 export * from './tree-widget';
+export * from './tree-view-welcome-widget';
 export * from './tree-container';
 export * from './tree-decorator';
 export * from './tree-search';

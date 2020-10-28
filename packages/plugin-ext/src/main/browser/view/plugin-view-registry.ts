@@ -18,14 +18,14 @@ import { injectable, inject, postConstruct } from 'inversify';
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
-    StatefulWidget, CommonMenus, BaseWidget
+    StatefulWidget, CommonMenus, BaseWidget, TreeViewWelcomeWidget
 } from '@theia/core/lib/browser';
-import { ViewContainer, View } from '../../../common';
+import { ViewContainer, View, ViewWelcome } from '../../../common';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { DebugWidget } from '@theia/debug/lib/browser/view/debug-widget';
 import { PluginViewWidget, PluginViewWidgetIdentifier } from './plugin-view-widget';
 import { SCM_VIEW_CONTAINER_ID, ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
-import { EXPLORER_VIEW_CONTAINER_ID } from '@theia/navigator/lib/browser';
+import { EXPLORER_VIEW_CONTAINER_ID, FileNavigatorWidget, FILE_NAVIGATOR_ID } from '@theia/navigator/lib/browser';
 import { FileNavigatorContribution } from '@theia/navigator/lib/browser/navigator-contribution';
 import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/debug-frontend-application-contribution';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -40,12 +40,13 @@ import { PROBLEMS_WIDGET_ID } from '@theia/markers/lib/browser/problem/problem-w
 import { OUTPUT_WIDGET_KIND } from '@theia/output/lib/browser/output-widget';
 import { DebugConsoleContribution } from '@theia/debug/lib/browser/console/debug-console-contribution';
 import { TERMINAL_WIDGET_FACTORY_ID } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { TreeViewWidget } from './tree-view-widget';
 
 export const PLUGIN_VIEW_FACTORY_ID = 'plugin-view';
 export const PLUGIN_VIEW_CONTAINER_FACTORY_ID = 'plugin-view-container';
 export const PLUGIN_VIEW_DATA_FACTORY_ID = 'plugin-view-data';
 
-export type ViewDataProvider = (params: { state?: object, viewInfo: View }) => Promise<Widget>;
+export type ViewDataProvider = (params: { state?: object, viewInfo: View }) => Promise<TreeViewWidget>;
 
 @injectable()
 export class PluginViewRegistry implements FrontendApplicationContribution {
@@ -87,6 +88,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     readonly onDidExpandView = this.onDidExpandViewEmitter.event;
 
     private readonly views = new Map<string, [string, View]>();
+    private readonly viewsWelcome = new Map<string, ViewWelcome[]>();
     private readonly viewContainers = new Map<string, [string, ViewContainerTitleOptions]>();
     private readonly containerViews = new Map<string, string[]>();
     private readonly viewClauseContexts = new Map<string, Set<string>>();
@@ -132,6 +134,16 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 waitUntil(this.prepareView(widget));
             }
         });
+        this.widgetManager.onDidCreateWidget(event => {
+            if (event.widget instanceof FileNavigatorWidget) {
+                this.registerViewWelcome({
+                    view: 'explorer',
+                    // eslint-disable-next-line max-len
+                    content: 'You have not yet opened a folder.\n[Open Folder](command:workbench.action.files.openFolder)',
+                    order: 0
+                });
+            }
+        });
         this.doRegisterViewContainer('test', 'left', {
             label: 'Test',
             iconClass: 'theia-plugin-test-tab-icon',
@@ -144,7 +156,23 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                     this.updateViewVisibility(view.id);
                 }
             }
+            for (const [viewId, viewWelcomes] of this.viewsWelcome) {
+                for (const [index] of viewWelcomes.entries()) {
+                    const viewWelcomeId = this.toViewWelcomeId(index, viewId);
+                    const clauseContext = this.viewClauseContexts.get(viewWelcomeId);
+                    if (clauseContext && e.affects(clauseContext)) {
+                        this.updateViewWelcomeVisibility(viewId);
+                    }
+                }
+            }
         });
+    }
+
+    protected async updateViewWelcomeVisibility(viewId: string): Promise<void> {
+        const widget = await this.getTreeViewWelcomeWidget(viewId);
+        if (widget) {
+            widget.handleWelcomeContextChange();
+        }
     }
 
     protected async updateViewVisibility(viewId: string): Promise<void> {
@@ -283,6 +311,50 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             execute: () => this.openView(view.id, { activate: true })
         }));
         return toDispose;
+    }
+
+    registerViewWelcome(viewWelcome: ViewWelcome): Disposable {
+        const toDispose = new DisposableCollection();
+
+        const viewsWelcome = this.viewsWelcome.get(viewWelcome.view) || [];
+        viewsWelcome.push(viewWelcome);
+        this.viewsWelcome.set(viewWelcome.view, viewsWelcome);
+        this.handleViewWelcomeChange(viewWelcome.view);
+        toDispose.push(Disposable.create(() => {
+            const index = viewsWelcome.indexOf(viewWelcome);
+            if (index !== -1) {
+                viewsWelcome.splice(index, 1);
+            }
+            this.handleViewWelcomeChange(viewWelcome.view);
+        }));
+
+        if (viewWelcome.when) {
+            const index = viewsWelcome.indexOf(viewWelcome);
+            const viewWelcomeId = this.toViewWelcomeId(index, viewWelcome.view);
+            this.viewClauseContexts.set(viewWelcomeId, this.contextKeyService.parseKeys(viewWelcome.when));
+            toDispose.push(Disposable.create(() => this.viewClauseContexts.delete(viewWelcomeId)));
+        }
+        return toDispose;
+    }
+
+    async handleViewWelcomeChange(viewId: string): Promise<void> {
+        const widget = await this.getTreeViewWelcomeWidget(viewId);
+        if (widget) {
+            widget.handleViewWelcomeContentChange(this.getViewWelcomes(viewId));
+        }
+    }
+
+    protected async getTreeViewWelcomeWidget(viewId: string): Promise<TreeViewWelcomeWidget | undefined> {
+        switch (viewId) {
+            case 'explorer':
+                return this.widgetManager.getWidget<TreeViewWelcomeWidget>(FILE_NAVIGATOR_ID);
+            default:
+                return this.widgetManager.getWidget<TreeViewWelcomeWidget>(PLUGIN_VIEW_DATA_FACTORY_ID, { id: viewId });
+        }
+    }
+
+    getViewWelcomes(viewId: string): ViewWelcome[] {
+        return this.viewsWelcome.get(viewId) || [];
     }
 
     async getView(viewId: string): Promise<PluginViewWidget | undefined> {
@@ -501,6 +573,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return identifier.viewId;
     }
 
+    protected toViewWelcomeId(index: number, viewId: string): string {
+        return `view-welcome.${viewId}.${index}`;
+    }
+
     /**
      * retrieve restored layout state from previous user session but close widgets
      * widgets should be opened only when view data providers are registered
@@ -561,6 +637,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const [, viewInfo] = view;
         const state = this.viewDataState.get(viewId);
         const widget = await provider({ state, viewInfo });
+        widget.handleViewWelcomeContentChange(this.getViewWelcomes(viewId));
         if (StatefulWidget.is(widget)) {
             this.storeViewDataStateOnDispose(viewId, widget);
         } else {

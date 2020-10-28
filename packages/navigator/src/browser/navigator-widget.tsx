@@ -18,10 +18,10 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CorePreferences, ViewContainerTitleOptions, Key } from '@theia/core/lib/browser';
+import { CorePreferences, ViewContainerTitleOptions, Key, TreeModel } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
-    TreeProps, TreeModel, TreeNode
+    TreeProps, TreeNode
 } from '@theia/core/lib/browser';
 import { FileTreeWidget, FileNode, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -133,11 +133,14 @@ export class FileNavigatorWidget extends FileTreeWidget {
     }
 
     protected renderTree(model: TreeModel): React.ReactNode {
-        return this.model.root === undefined
-            ? this.renderOpenWorkspaceDiv()
-            : this.isEmptyMultiRootWorkspace(model)
-                ? this.renderEmptyMultiRootWorkspace()
-                : super.renderTree(model);
+        if (this.model.root && this.isEmptyMultiRootWorkspace(model)) {
+            return this.renderEmptyMultiRootWorkspace();
+        }
+        return super.renderTree(model);
+    }
+
+    protected shouldShowWelcomeView(): boolean {
+        return this.model.root === undefined;
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -195,34 +198,6 @@ export class FileNavigatorWidget extends FileTreeWidget {
             (e.target as HTMLElement).click();
         }
     };
-
-    /**
-     * Instead of rendering the file resources from the workspace, we render a placeholder
-     * button when the workspace root is not yet set.
-     */
-    protected renderOpenWorkspaceDiv(): React.ReactNode {
-        let openButton;
-
-        if (this.canOpenWorkspaceFileAndFolder) {
-            openButton = <button className='theia-button open-workspace-button' title='Select a folder or a workspace-file to open as your workspace'
-                onClick={this.openWorkspace} onKeyUp={this.keyUpHandler}>
-                Open Workspace
-            </button>;
-        } else {
-            openButton = <button className='theia-button open-workspace-button' title='Select a folder as your workspace root'
-                onClick={this.openFolder}
-                onKeyUp={this.keyUpHandler}>
-                Open Folder
-            </button>;
-        }
-
-        return <div className='theia-navigator-container'>
-            <div className='center'>You have not yet opened a workspace.</div>
-            <div className='open-workspace-button-container'>
-                {openButton}
-            </div>
-        </div>;
-    }
 
     /**
      * When a multi-root workspace is opened, a user can remove all the folders from it.

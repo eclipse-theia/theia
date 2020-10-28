@@ -20,7 +20,7 @@ import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposa
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import { isCancelled } from '@theia/core/lib/common/cancellation';
-import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget, CompositeTreeNode } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, CompositeTreeNode, TreeViewWelcomeWidget } from '@theia/core/lib/browser';
 import { FileUploadService } from '../file-upload-service';
 import { DirNode, FileStatNode, FileStatNodeData } from './file-tree';
 import { FileTreeModel } from './file-tree-model';
@@ -33,7 +33,7 @@ export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 @injectable()
-export class FileTreeWidget extends TreeWidget {
+export class FileTreeWidget extends TreeViewWelcomeWidget {
 
     protected readonly toCancelNodeExpansion = new DisposableCollection();
 
