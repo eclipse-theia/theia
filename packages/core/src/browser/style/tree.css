@@ -14,6 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+:root {
+    --theia-welcomeView-horizontal-padding: 20px;
+    --theia-welcomeView-elements-margin: 13px;
+    --theia-welcomeView-button-maxWidth: 260px;
+}
+
 .theia-Tree {
     overflow: hidden;
     font-size: var(--theia-ui-font-size1);
@@ -151,4 +157,35 @@
 }
 .theia-tree-node-indent.active {
     border-color: var(--theia-tree-indentGuidesStroke);
+}
+
+.theia-TreeContainer .theia-WelcomeView {
+    padding-top: var(--theia-ui-padding);
+    padding-right: var(--theia-welcomeView-horizontal-padding);
+    padding-left: var(--theia-welcomeView-horizontal-padding);
+}
+
+.theia-TreeContainer .theia-WelcomeView > * {
+    margin: var(--theia-welcomeView-elements-margin) 0;
+}
+
+.theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewButtonWrapper {
+    display: flex;
+    padding: 0 var(--theia-ui-padding);
+}
+
+.theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewButton {
+    width: 100%;
+    max-width: var(--theia-welcomeView-button-maxWidth);
+    margin: auto;
+}
+
+.theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewCommandLink {
+    cursor: pointer;
+}
+
+.theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewCommandLink.disabled {
+    pointer-events: none;
+    cursor: default;
+    opacity: var(--theia-mod-disabled-opacity);
 }

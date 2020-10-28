@@ -27,6 +27,7 @@ import { TreeSearch } from './tree-search';
 import { FuzzySearch } from './fuzzy-search';
 import { SearchBox, SearchBoxFactory, SearchBoxProps } from './search-box';
 import { SearchBoxDebounce } from './search-box-debounce';
+import { TreeViewWelcomeWidget } from './tree-view-welcome-widget';
 
 export function createTreeContainer(parent: interfaces.Container, props?: Partial<TreeProps>): Container {
     const child = new Container({ defaultScope: 'Singleton' });
@@ -51,6 +52,8 @@ export function createTreeContainer(parent: interfaces.Container, props?: Partia
         ...defaultTreeProps,
         ...props
     });
+
+    child.bind(TreeViewWelcomeWidget).toSelf();
 
     child.bind(TreeSearch).toSelf().inSingletonScope();
     child.bind(FuzzySearch).toSelf().inSingletonScope();

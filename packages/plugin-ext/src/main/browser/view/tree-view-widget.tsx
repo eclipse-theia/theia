@@ -19,7 +19,6 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { TreeViewsExt, TreeViewSelection } from '../../../common/plugin-api-rpc';
 import { Command } from '../../../common/plugin-api-rpc-model';
 import {
-    TreeWidget,
     TreeNode,
     NodeProps,
     SelectableTreeNode,
@@ -29,7 +28,8 @@ import {
     TREE_NODE_SEGMENT_CLASS,
     TREE_NODE_SEGMENT_GROW_CLASS,
     TREE_NODE_TAIL_CLASS,
-    TreeModelImpl
+    TreeModelImpl,
+    TreeViewWelcomeWidget
 } from '@theia/core/lib/browser';
 import { TreeViewItem, TreeViewItemCollapsibleState } from '../../../common/plugin-api-rpc';
 import { MenuPath, MenuModelRegistry, ActionMenuNode } from '@theia/core/lib/common/menu';
@@ -37,11 +37,11 @@ import * as React from 'react';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ViewContextKeyService } from './view-context-key-service';
 import { Widget } from '@theia/core/lib/browser/widgets/widget';
-import { CommandRegistry } from '@theia/core/lib/common/command';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { View } from '../../../common/plugin-protocol';
 import CoreURI from '@theia/core/lib/common/uri';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 export const TREE_NODE_HYPERLINK = 'theia-TreeNodeHyperlink';
 export const VIEW_ITEM_CONTEXT_MENU: MenuPath = ['view-item-context-menu'];
@@ -94,15 +94,26 @@ export class PluginTree extends TreeImpl {
     @inject(MessageService)
     protected readonly notification: MessageService;
 
+    protected readonly onDidChangeWelcomeStateEmitter: Emitter<void> = new Emitter<void>();
+    readonly onDidChangeWelcomeState = this.onDidChangeWelcomeStateEmitter.event;
+
     private _proxy: TreeViewsExt | undefined;
     private _viewInfo: View | undefined;
+    private _isEmpty: boolean;
 
     set proxy(proxy: TreeViewsExt | undefined) {
         this._proxy = proxy;
     }
+    get proxy(): TreeViewsExt | undefined {
+        return this._proxy;
+    }
 
     set viewInfo(viewInfo: View) {
         this._viewInfo = viewInfo;
+    }
+
+    get isEmpty(): boolean {
+        return this._isEmpty;
     }
 
     protected async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
@@ -116,6 +127,11 @@ export class PluginTree extends TreeImpl {
     protected async fetchChildren(proxy: TreeViewsExt, parent: CompositeTreeNode): Promise<TreeViewItem[]> {
         try {
             const children = await proxy.$getChildren(this.identifier.id, parent.id);
+            const oldEmpty = this._isEmpty;
+            this._isEmpty = !children || children.length === 0;
+            if (oldEmpty !== this._isEmpty) {
+                this.onDidChangeWelcomeStateEmitter.fire();
+            }
             return children || [];
         } catch (e) {
             if (e) {
@@ -189,23 +205,31 @@ export class PluginTreeModel extends TreeModelImpl {
     set proxy(proxy: TreeViewsExt | undefined) {
         this.tree.proxy = proxy;
     }
+    get proxy(): TreeViewsExt | undefined {
+        return this.tree.proxy;
+    }
 
     set viewInfo(viewInfo: View) {
         this.tree.viewInfo = viewInfo;
     }
 
+    get isTreeEmpty(): boolean {
+        return this.tree.isEmpty;
+    }
+
+    get onDidChangeWelcomeState(): Event<void> {
+        return this.tree.onDidChangeWelcomeState;
+    }
+
 }
 
 @injectable()
-export class TreeViewWidget extends TreeWidget {
+export class TreeViewWidget extends TreeViewWelcomeWidget {
 
     protected _contextSelection = false;
 
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
-
-    @inject(CommandRegistry)
-    protected readonly commands: CommandRegistry;
 
     @inject(ViewContextKeyService)
     protected readonly contextKeys: ViewContextKeyService;
@@ -216,6 +240,9 @@ export class TreeViewWidget extends TreeWidget {
     @inject(PluginTreeModel)
     readonly model: PluginTreeModel;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     protected readonly onDidChangeVisibilityEmitter = new Emitter<boolean>();
     readonly onDidChangeVisibility = this.onDidChangeVisibilityEmitter.event;
 
@@ -225,6 +252,9 @@ export class TreeViewWidget extends TreeWidget {
         this.id = this.identifier.id;
         this.addClass('theia-tree-view');
         this.node.style.height = '100%';
+
+        this.model.onDidChangeWelcomeState(this.update, this);
+        this.toDispose.push(this.model.onDidChangeWelcomeState(this.update, this));
         this.toDispose.push(this.onDidChangeVisibilityEmitter);
     }
 
@@ -391,5 +421,9 @@ export class TreeViewWidget extends TreeWidget {
             return <div className='theia-TreeViewInfo'>{this._message}</div>;
         }
         return undefined;
+    }
+
+    shouldShowWelcomeView(): boolean {
+        return (this.model.proxy === undefined || this.model.isTreeEmpty) && this.message === undefined;
     }
 }

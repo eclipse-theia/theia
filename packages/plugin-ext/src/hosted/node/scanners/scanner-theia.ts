@@ -36,6 +36,8 @@ import {
     PluginPackageViewContainer,
     View,
     PluginPackageView,
+    ViewWelcome,
+    PluginPackageViewWelcome,
     Menu,
     PluginPackageMenu,
     PluginPackageDebuggersContribution,
@@ -205,6 +207,14 @@ export class TheiaPluginScanner implements PluginScanner {
             }
         } catch (err) {
             console.error(`Could not read '${rawPlugin.name}' contribution 'views'.`, rawPlugin.contributes!.views, err);
+        }
+
+        try {
+            if (rawPlugin.contributes!.viewsWelcome) {
+                contributions.viewsWelcome = this.readViewsWelcome(rawPlugin.contributes!.viewsWelcome, rawPlugin.contributes!.views);
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'viewsWelcome'.`, rawPlugin.contributes!.viewsWelcome, err);
         }
 
         try {
@@ -481,6 +491,33 @@ export class TheiaPluginScanner implements PluginScanner {
         };
 
         return result;
+    }
+
+    private readViewsWelcome(rawViewsWelcome: PluginPackageViewWelcome[], rowViews: { [location: string]: PluginPackageView[]; } | undefined): ViewWelcome[] {
+        return rawViewsWelcome.map(rawViewWelcome => this.readViewWelcome(rawViewWelcome, this.extractPluginViewsIds(rowViews)));
+    }
+
+    private readViewWelcome(rawViewWelcome: PluginPackageViewWelcome, pluginViewsIds: string[]): ViewWelcome {
+        const result: ViewWelcome = {
+            view: rawViewWelcome.view,
+            content: rawViewWelcome.contents,
+            when: rawViewWelcome.when,
+            // if the plugin contributes Welcome view to its own view - it will be ordered first
+            order: pluginViewsIds.findIndex(v => v === rawViewWelcome.view) > -1 ? 0 : 1
+        };
+
+        return result;
+    }
+
+    private extractPluginViewsIds(views: { [location: string]: PluginPackageView[] } | undefined): string[] {
+        const pluginViewsIds: string[] = [];
+        if (views) {
+            for (const location of Object.keys(views)) {
+                const viewsIds = views[location].map(view => view.id);
+                pluginViewsIds.push(...viewsIds);
+            };
+        }
+        return pluginViewsIds;
     }
 
     private readMenus(rawMenus: PluginPackageMenu[]): Menu[] {
