@@ -31,6 +31,8 @@ import { Configuration, ConfigurationModel } from './preferences/configuration';
 import { WorkspaceExtImpl } from './workspace';
 import cloneDeep = require('lodash.clonedeep');
 
+const injectionRe = /\b__proto__\b|\bconstructor\.prototype\b/;
+
 enum ConfigurationTarget {
     Global = 1,
     Workspace = 2,
@@ -239,6 +241,9 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
 
     private parseConfigurationData(data: { [key: string]: any }): { [key: string]: any } {
         return Object.keys(data).reduce((result: any, key: string) => {
+            if (injectionRe.test(key)) {
+                return result;
+            }
             const parts = key.split('.');
             let branch = result;
 
@@ -248,7 +253,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                     continue;
                 }
                 if (!branch[parts[i]]) {
-                    branch[parts[i]] = {};
+                    branch[parts[i]] = Object.create(null);
                 }
                 branch = branch[parts[i]];
 
@@ -263,7 +268,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                 }
             }
             return result;
-        }, {});
+        }, Object.create(null));
     }
 
     private toConfigurationChangeEvent(eventData: PreferenceChangeExt[]): theia.ConfigurationChangeEvent {
