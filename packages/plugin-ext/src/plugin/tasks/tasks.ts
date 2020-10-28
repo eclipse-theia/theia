@@ -27,6 +27,7 @@ import { Disposable } from '../types-impl';
 import { RPCProtocol, ConnectionClosedError } from '../../common/rpc-protocol';
 import { TaskProviderAdapter } from './task-provider';
 import { Emitter, Event } from '@theia/core/lib/common/event';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
 
 export class TasksExtImpl implements TasksExt {
     private proxy: TasksMain;
@@ -135,7 +136,7 @@ export class TasksExtImpl implements TasksExt {
         throw new Error('Task was not successfully transformed into a task config');
     }
 
-    $provideTasks(handle: number, token: theia.CancellationToken): Promise<TaskDto[] | undefined> {
+    $provideTasks(handle: number, token: theia.CancellationToken = CancellationToken.None): Promise<TaskDto[] | undefined> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
             return adapter.provideTasks(token);
