@@ -29,6 +29,7 @@ export interface IPCConnectionOptions {
 
 @injectable()
 export class HostedPluginSupport {
+    private isPluginProcessRunning = false;
     private client: HostedPluginClient;
 
     @inject(ILogger)
@@ -36,8 +37,6 @@ export class HostedPluginSupport {
 
     @inject(HostedPluginProcess)
     protected readonly hostedPluginProcess: HostedPluginProcess;
-
-    private isPluginProcessRunning = false;
 
     /**
      * Optional runners to delegate some work
@@ -87,11 +86,7 @@ export class HostedPluginSupport {
         }
     }
 
-    private terminatePluginServer(): void {
-        this.hostedPluginProcess.terminatePluginServer();
-    }
-
-    public runPluginServer(): void {
+    runPluginServer(): void {
         if (!this.isPluginProcessRunning) {
             this.hostedPluginProcess.runPluginServer();
             this.isPluginProcessRunning = true;
@@ -101,19 +96,22 @@ export class HostedPluginSupport {
     /**
      * Provides additional plugin ids.
      */
-    public async getExtraDeployedPluginIds(): Promise<string[]> {
+    async getExtraDeployedPluginIds(): Promise<string[]> {
         return [].concat.apply([], await Promise.all(this.pluginRunners.map(runner => runner.getExtraDeployedPluginIds())));
     }
 
     /**
      * Provides additional deployed plugins.
      */
-    public async getExtraDeployedPlugins(): Promise<DeployedPlugin[]> {
+    async getExtraDeployedPlugins(): Promise<DeployedPlugin[]> {
         return [].concat.apply([], await Promise.all(this.pluginRunners.map(runner => runner.getExtraDeployedPlugins())));
     }
 
-    public sendLog(logPart: LogPart): void {
+    sendLog(logPart: LogPart): void {
         this.client.log(logPart);
     }
 
+    private terminatePluginServer(): void {
+        this.hostedPluginProcess.terminatePluginServer();
+    }
 }
