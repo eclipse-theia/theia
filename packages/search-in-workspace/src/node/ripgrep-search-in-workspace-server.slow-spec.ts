@@ -681,6 +681,20 @@ describe('ripgrep-search-in-workspace-server', function (): void {
         ripgrepServer.search(pattern, [rootDirAUri], { include: ['*.txt'], matchWholeWord: true });
     });
 
+    it('should return 1 result when searching for "test" while ignoring all ".txt" files', done => {
+        const pattern = 'test';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceExpectation[] = [
+                { root: rootDirAUri, fileUri: 'glob', line: 1, character: 1, length: pattern.length, lineText: '' },
+            ];
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, [rootDirAUri, rootDirBUri], { exclude: ['*.txt'] });
+    });
+
     // Try searching in an UTF-8 file.
     it('should search in a UTF-8 file', done => {
         const pattern = ' jag';

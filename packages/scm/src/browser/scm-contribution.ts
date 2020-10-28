@@ -34,9 +34,9 @@ import { ScmService } from './scm-service';
 import { ScmWidget } from '../browser/scm-widget';
 import URI from '@theia/core/lib/common/uri';
 import { ScmQuickOpenService } from './scm-quick-open-service';
-import { ScmRepository } from './scm-repository';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
+import { ScmCommand } from './scm-provider';
 
 export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
@@ -222,26 +222,16 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
 
     protected async acceptInput(): Promise<void> {
         const command = this.acceptInputCommand();
-        if (command) {
-            await this.commands.executeCommand(command.command, command.repository);
+        if (command && command.command) {
+            await this.commands.executeCommand(command.command, ...command.arguments ? command.arguments : []);
         }
     }
-    protected acceptInputCommand(): {
-        command: string
-        repository: ScmRepository
-    } | undefined {
+    protected acceptInputCommand(): ScmCommand | undefined {
         const repository = this.scmService.selectedRepository;
         if (!repository) {
             return undefined;
         }
-        const command = repository.provider.acceptInputCommand;
-        if (!command || !command.command) {
-            return undefined;
-        }
-        return {
-            command: command.command,
-            repository
-        };
+        return  repository.provider.acceptInputCommand;
     }
 
     protected readonly statusBarDisposable = new DisposableCollection();

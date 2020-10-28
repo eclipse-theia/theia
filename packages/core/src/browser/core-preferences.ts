@@ -81,12 +81,22 @@ export const corePreferenceSchema: PreferenceSchema = {
             enum: ['onHover', 'none', 'always'],
             default: 'onHover',
             description: 'Controls whether the tree should render indent guides.'
-        }
+        },
+        'keyboard.dispatch': {
+            type: 'string',
+            enum: [
+                'code',
+                'keyCode',
+            ],
+            default: 'code',
+            description: 'Whether to interpret keypresses by the `code` of the physical key, or by the `keyCode` provided by the OS.'
+        },
     }
 };
 
 export interface CoreConfiguration {
     'application.confirmExit': 'never' | 'ifRequired' | 'always';
+    'keyboard.dispatch': 'code' | 'keyCode';
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;

@@ -29,7 +29,9 @@ import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/appl
 import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { CodeEditorWidget } from '@theia/plugin-ext/lib/main/browser/menus/menus-contribution-handler';
+import {
+    CodeEditorWidgetUtil
+} from '@theia/plugin-ext/lib/main/browser/menus/menus-contribution-handler';
 import {
     TextDocumentShowOptions,
     Location,
@@ -55,7 +57,12 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { FileNavigatorCommands } from '@theia/navigator/lib/browser/navigator-contribution';
+import {
+    FileNavigatorCommands,
+    FILE_NAVIGATOR_TOGGLE_COMMAND_ID
+} from '@theia/navigator/lib/browser/navigator-contribution';
+import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '@theia/navigator/lib/browser';
+import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -97,6 +104,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly quickOpenWorkspace: QuickOpenWorkspace;
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
+    @inject(CodeEditorWidgetUtil)
+    protected readonly codeEditorWidgetUtil: CodeEditorWidgetUtil;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -228,7 +237,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                         return (resourceUri && resourceUri.toString()) === uriString;
                     });
                 }
-                if (CodeEditorWidget.is(widget)) {
+                if (this.codeEditorWidgetUtil.is(widget)) {
                     await this.shell.closeWidget(widget.id);
                 }
             }
@@ -244,7 +253,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     });
                 }
                 for (const widget of this.shell.widgets) {
-                    if (CodeEditorWidget.is(widget) && widget !== editor) {
+                    if (this.codeEditorWidgetUtil.is(widget) && widget !== editor) {
                         await this.shell.closeWidget(widget.id);
                     }
                 }
@@ -264,7 +273,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     const tabBar = this.shell.getTabBarFor(editor);
                     if (tabBar) {
                         this.shell.closeTabs(tabBar,
-                            ({ owner }) => CodeEditorWidget.is(owner)
+                            ({ owner }) => this.codeEditorWidgetUtil.is(owner)
                         );
                     }
                 }
@@ -278,7 +287,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     for (const tabBar of this.shell.allTabBars) {
                         if (tabBar !== editorTabBar) {
                             this.shell.closeTabs(tabBar,
-                                ({ owner }) => CodeEditorWidget.is(owner)
+                                ({ owner }) => this.codeEditorWidgetUtil.is(owner)
                             );
                         }
                     }
@@ -298,7 +307,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                                     left = false;
                                     return false;
                                 }
-                                return left && CodeEditorWidget.is(owner);
+                                return left && this.codeEditorWidgetUtil.is(owner);
                             }
                         );
                     }
@@ -318,7 +327,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                                     left = false;
                                     return false;
                                 }
-                                return !left && CodeEditorWidget.is(owner);
+                                return !left && this.codeEditorWidgetUtil.is(owner);
                             }
                         );
                     }
@@ -329,7 +338,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: async () => {
                 const promises = [];
                 for (const widget of this.shell.widgets) {
-                    if (CodeEditorWidget.is(widget)) {
+                    if (this.codeEditorWidgetUtil.is(widget)) {
                         promises.push(this.shell.closeWidget(widget.id));
                     }
                 }
@@ -372,13 +381,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         /**
          * TODO:
-         * Keep Open	workbench.action.keepEditor
-         * Open Next	workbench.action.openNextRecentlyUsedEditorInGroup
-         * Open Previous	workbench.action.openPreviousRecentlyUsedEditorInGroup
-         * Copy Path of Active File	workbench.action.files.copyPathOfActiveFile
-         * Reveal Active File in Windows	workbench.action.files.revealActiveFileInWindows
-         * Show Opened File in New Window	workbench.action.files.showOpenedFileInNewWindow
-         * Compare Opened File With	workbench.files.action.compareFileWith
+         * Keep Open: workbench.action.keepEditor
+         * Open Next: workbench.action.openNextRecentlyUsedEditorInGroup
+         * Open Previous: workbench.action.openPreviousRecentlyUsedEditorInGroup
+         * Copy Path of Active File: workbench.action.files.copyPathOfActiveFile
+         * Reveal Active File in Windows: workbench.action.files.revealActiveFileInWindows
+         * Show Opened File in New Window: workbench.action.files.showOpenedFileInNewWindow
+         * Compare Opened File With: workbench.files.action.compareFileWith
          */
 
         // Register built-in language service commands
@@ -573,6 +582,27 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             id: 'copyRelativeFilePath'
         }, {
             execute: () => commands.executeCommand(FileNavigatorCommands.COPY_RELATIVE_FILE_PATH.id)
+        });
+        commands.registerCommand({
+            id: 'revealInExplorer'
+        }, {
+            execute: async (resource: URI | object) => {
+                if (!URI.isUri(resource)) {
+                    return;
+                }
+                let navigator = await this.shell.revealWidget(FILE_NAVIGATOR_ID);
+                if (!navigator) {
+                    await this.commandService.executeCommand(FILE_NAVIGATOR_TOGGLE_COMMAND_ID);
+                    navigator = await this.shell.revealWidget(FILE_NAVIGATOR_ID);
+                }
+                if (navigator instanceof FileNavigatorWidget) {
+                    const model = navigator.model;
+                    const node = await model.revealFile(new TheiaURI(resource));
+                    if (SelectableTreeNode.is(node)) {
+                        model.selectNode(node);
+                    }
+                }
+            }
         });
     }
 }

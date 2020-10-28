@@ -45,11 +45,12 @@ import { TIMELINE_ITEM_CONTEXT_MENU } from '@theia/timeline/lib/browser/timeline
 import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
-export namespace CodeEditorWidget {
-    export function is(arg: any): arg is CodeEditorWidget {
+@injectable()
+export class CodeEditorWidgetUtil {
+    is(arg: any): arg is CodeEditorWidget {
         return arg instanceof EditorWidget || arg instanceof WebviewWidget;
     }
-    export function getResourceUri(editor: CodeEditorWidget): CodeUri | undefined {
+    getResourceUri(editor: CodeEditorWidget): CodeUri | undefined {
         const resourceUri = Navigatable.is(editor) && editor.getResourceUri();
         return resourceUri ? resourceUri['codeUri'] : undefined;
     }
@@ -88,6 +89,9 @@ export class MenusContributionPointHandler {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    @inject(CodeEditorWidgetUtil)
+    protected readonly codeEditorWidgetUtil: CodeEditorWidgetUtil;
+
     handle(plugin: DeployedPlugin): Disposable {
         const allMenus = plugin.contributes && plugin.contributes.menus;
         if (!allMenus) {
@@ -104,9 +108,9 @@ export class MenusContributionPointHandler {
             } else if (location === 'editor/title') {
                 for (const action of allMenus[location]) {
                     toDispose.push(this.registerTitleAction(location, action, {
-                        execute: widget => CodeEditorWidget.is(widget) && this.commands.executeCommand(action.command, CodeEditorWidget.getResourceUri(widget)),
-                        isEnabled: widget => CodeEditorWidget.is(widget) && this.commands.isEnabled(action.command, CodeEditorWidget.getResourceUri(widget)),
-                        isVisible: widget => CodeEditorWidget.is(widget) && this.commands.isVisible(action.command, CodeEditorWidget.getResourceUri(widget))
+                        execute: widget => this.codeEditorWidgetUtil.is(widget) && this.commands.executeCommand(action.command, this.codeEditorWidgetUtil.getResourceUri(widget)),
+                        isEnabled: widget => this.codeEditorWidgetUtil.is(widget) && this.commands.isEnabled(action.command, this.codeEditorWidgetUtil.getResourceUri(widget)),
+                        isVisible: widget => this.codeEditorWidgetUtil.is(widget) && this.commands.isVisible(action.command, this.codeEditorWidgetUtil.getResourceUri(widget))
                     }));
                 }
             } else if (location === 'view/title') {

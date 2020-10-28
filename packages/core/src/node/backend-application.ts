@@ -117,6 +117,12 @@ export class BackendApplication {
             }
         });
 
+        // Workaround for Electron not installing a handler to ignore SIGPIPE error
+        // (https://github.com/electron/electron/issues/13254)
+        process.on('SIGPIPE', () => {
+            console.error(new Error('Unexpected SIGPIPE'));
+        });
+
         // Handles normal process termination.
         process.on('exit', () => this.onStop());
         // Handles `Ctrl+C`.

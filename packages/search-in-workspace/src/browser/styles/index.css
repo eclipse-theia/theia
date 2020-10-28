@@ -368,8 +368,8 @@
 }
 
 .search-in-workspace-tab-icon {
-    -webkit-mask: url('search.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
-    mask: url('search.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
+    -webkit-mask: url('search.svg');
+    mask: url('search.svg');
 }
 
 .highlighted-count-container {

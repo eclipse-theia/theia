@@ -40,7 +40,7 @@ export class PluginMetricsCreator {
      * create a metric.
      *
      * @param pluginID The id of the plugin
-     * @param errorContents The contents that the langauge server error has produced
+     * @param errorContents The contents that the language server error has produced
      */
     async createErrorMetric(requestData: DataFromRequest): Promise<void> {
         if (!requestData.pluginID) {
@@ -49,7 +49,7 @@ export class PluginMetricsCreator {
 
         const method = this.extractMethodFromValue(requestData.errorContentsOrMethod);
 
-        // only log the metric if we can find the method that it occured in
+        // only log the metric if we can find the method that it occurred in
         if (method) {
             const createdMetric = createRequestData(requestData.pluginID, method, requestData.timeTaken);
             this.createMetric(createdMetric, false);
@@ -75,7 +75,7 @@ export class PluginMetricsCreator {
             const currentAnalytics = thisExtension[method];
             if (currentAnalytics) {
                 currentAnalytics.totalRequests -= 1;
-                currentAnalytics.succesfulResponses -= 1;
+                currentAnalytics.successfulResponses -= 1;
             }
         }
     }
@@ -104,7 +104,7 @@ export class PluginMetricsCreator {
             if (currentAnalytic) {
                 currentAnalytic.totalRequests += 1;
                 if (isRequestSuccessful) {
-                    currentAnalytic.succesfulResponses += 1;
+                    currentAnalytic.successfulResponses += 1;
                 }
                 if (isRequestSuccessful) {
                     currentAnalytic.sumOfTimeForSuccess = currentAnalytic.sumOfTimeForSuccess + requestData.timeTaken;

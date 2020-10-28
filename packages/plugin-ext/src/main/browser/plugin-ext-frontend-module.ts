@@ -35,7 +35,7 @@ import { PluginFrontendViewContribution } from './plugin-frontend-view-contribut
 import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 import { EditorModelService } from './text-editor-model-service';
 import { UntitledResourceResolver } from './editor/untitled-resource';
-import { MenusContributionPointHandler } from './menus/menus-contribution-handler';
+import { CodeEditorWidgetUtil, MenusContributionPointHandler } from './menus/menus-contribution-handler';
 import { PluginContributionHandler } from './plugin-contribution-handler';
 import { PluginViewRegistry, PLUGIN_VIEW_CONTAINER_FACTORY_ID, PLUGIN_VIEW_FACTORY_ID, PLUGIN_VIEW_DATA_FACTORY_ID } from './view/plugin-view-registry';
 import { TextContentResourceResolver } from './workspace-main';
@@ -185,6 +185,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(LabelProviderContribution).toService(PluginIconThemeService);
 
     bind(MenusContributionPointHandler).toSelf().inSingletonScope();
+    bind(CodeEditorWidgetUtil).toSelf().inSingletonScope();
     bind(KeybindingsContributionPointHandler).toSelf().inSingletonScope();
     bind(PluginContributionHandler).toSelf().inSingletonScope();
 

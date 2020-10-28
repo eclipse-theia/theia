@@ -7,13 +7,13 @@
     "node": ">=12.14.1 <13"
   },
   "resolutions": {
-    "**/@types/node": "~10.3.6",
+    "**/@types/node": "12",
     "**/node-abi": "^2.18.0"
   },
   "devDependencies": {
     "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^11.0.4",
-    "@types/node": "~10.3.6",
+    "@types/node": "12",
     "@types/sinon": "^2.3.5",
     "@types/temp": "^0.8.29",
     "@types/uuid": "^7.0.3",
@@ -52,7 +52,7 @@
     "prepare:build": "yarn build && run lint && run build \"@theia/example-*\" --stream --parallel",
     "prepare:hoisting": "theia check:hoisted -s",
     "clean": "yarn lint:clean && node scripts/run-reverse-topo.js yarn clean",
-    "build": "tsc -b configs/root-compilation.tsconfig.json --verbose",
+    "build": "tsc -b configs/root-compilation.tsconfig.json",
     "watch": "tsc -b configs/root-compilation.tsconfig.json -w",
     "lint": "run lint",
     "lint:clean": "rimraf .eslintcache",
@@ -107,6 +107,7 @@
     "vscode-builtin-jake": "https://open-vsx.org/api/vscode/jake/1.44.2/file/vscode.jake-1.44.2.vsix",
     "vscode-builtin-java": "https://open-vsx.org/api/vscode/java/1.44.2/file/vscode.java-1.44.2.vsix",
     "vscode-builtin-javascript": "https://open-vsx.org/api/vscode/javascript/1.44.2/file/vscode.javascript-1.44.2.vsix",
+    "vscode-builtin-js-debug": "https://open-vsx.org/api/ms-vscode/js-debug/1.49.8/file/ms-vscode.js-debug-1.49.8.vsix",
     "vscode-builtin-json": "https://open-vsx.org/api/vscode/json/1.46.1/file/vscode.json-1.46.1.vsix",
     "vscode-builtin-json-language-features": "https://open-vsx.org/api/vscode/json-language-features/1.46.1/file/vscode.json-language-features-1.46.1.vsix",
     "vscode-builtin-less": "https://open-vsx.org/api/vscode/less/1.44.2/file/vscode.less-1.44.2.vsix",
@@ -117,8 +118,8 @@
     "vscode-builtin-markdown-language-features": "https://open-vsx.org/api/vscode/markdown-language-features/1.39.1/file/vscode.markdown-language-features-1.39.1.vsix",
     "vscode-builtin-merge-conflict": "https://open-vsx.org/api/vscode/merge-conflict/1.44.2/file/vscode.merge-conflict-1.44.2.vsix",
     "vscode-builtin-npm": "https://open-vsx.org/api/vscode/npm/1.44.2/file/vscode.npm-1.44.2.vsix",
-    "vscode-builtin-node-debug": "https://github.com/theia-ide/vscode-node-debug/releases/download/v1.35.3/node-debug-1.35.3.vsix",
-    "vscode-builtin-node-debug2": "https://open-vsx.org/api/ms-vscode/node-debug2/1.33.0/file/ms-vscode.node-debug2-1.33.0.vsix",
+    "vscode-builtin-node-debug": "https://open-vsx.org/api/ms-vscode/node-debug/1.44.8/file/ms-vscode.node-debug-1.44.8.vsix",
+    "vscode-builtin-node-debug2": "https://open-vsx.org/api/ms-vscode/node-debug2/1.42.1/file/ms-vscode.node-debug2-1.42.1.vsix",
     "vscode-builtin-objective-c": "https://open-vsx.org/api/vscode/objective-c/1.44.2/file/vscode.objective-c-1.44.2.vsix",
     "vscode-builtin-perl": "https://open-vsx.org/api/vscode/perl/1.44.2/file/vscode.perl-1.44.2.vsix",
     "vscode-builtin-powershell": "https://open-vsx.org/api/vscode/powershell/1.44.2/file/vscode.powershell-1.44.2.vsix",

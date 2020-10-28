@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable no-var */
+
 type WebKitEntriesCallback = ((entries: WebKitEntry[]) => void) | { handleEvent(entries: WebKitEntry[]): void; };
 
 type WebKitErrorCallback = ((err: DOMError) => void) | { handleEvent(err: DOMError): void; };

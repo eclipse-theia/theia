@@ -20,8 +20,28 @@ import { ILogger, Emitter, Event, ContributionProvider, MaybePromise, WaitUntilE
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export const WidgetFactory = Symbol('WidgetFactory');
+
 /**
- * `OpenHandler` should be implemented to provide a new opener.
+ * A {@link WidgetFactory} is used to create new widgets. Factory-specific information (options) can be passed as serializable JSON data.
+ * The common {@link WidgetManager} collects  `WidgetFactory` contributions and delegates to the corresponding factory when
+ * a widget should be created or restored. To identify widgets the `WidgetManager` uses a description composed of the factory id and the options.
+ * The `WidgetFactory` does support both, synchronous and asynchronous widget creation.
+ *
+ * ### Example usage
+ *
+ * ```typescript
+ * export class MyWidget extends BaseWidget {
+ * }
+ *
+ * @injectable()
+ * export class MyWidgetFactory implements WidgetFactory {
+ *     id = 'myWidgetFactory';
+ *
+ *     createWidget(): MaybePromise<Widget> {
+ *         return new MyWidget();
+ *    }
+ * }
+ * ```
  */
 export interface WidgetFactory {
 
@@ -31,8 +51,10 @@ export interface WidgetFactory {
     readonly id: string;
 
     /**
-     * Creates a widget and attaches it to the application shell.
-     * @param options serializable JSON data.
+     * Creates a widget using the given options.
+     * @param options factory specific information as serializable JSON data.
+     *
+     * @returns the newly created widget or a promise of the widget
      */
     createWidget(options?: any): MaybePromise<Widget>;
 }
@@ -82,7 +104,9 @@ export interface DidCreateWidgetEvent {
 }
 
 /**
- * Creates and manages widgets.
+ * The {@link WidgetManager} is the common component responsible for creating and managing widgets. Additional widget factories
+ * can be registered by using the {@link WidgetFactory} contribution point. To identify a widget, created by a factory, the factory id and
+ * the creation options are used. This key is commonly referred to as `description` of the widget.
  */
 @injectable()
 export class WidgetManager {
@@ -106,13 +130,14 @@ export class WidgetManager {
     readonly onWillCreateWidget: Event<WillCreateWidgetEvent> = this.onWillCreateWidgetEmitter.event;
 
     protected readonly onDidCreateWidgetEmitter = new Emitter<DidCreateWidgetEvent>();
+
     readonly onDidCreateWidget: Event<DidCreateWidgetEvent> = this.onDidCreateWidgetEmitter.event;
 
     /**
-     * Get the list of widgets created for the given factory id.
+     * Get the list of widgets created by the given widget factory.
      * @param factoryId the widget factory id.
      *
-     * @returns the list of widgets created for the given factory id.
+     * @returns the list of widgets created by the factory with the given id.
      */
     getWidgets(factoryId: string): Widget[] {
         const result: Widget[] = [];
@@ -125,7 +150,9 @@ export class WidgetManager {
     }
 
     /**
-     * Try and get the widget.
+     * Try to get the existing widget for the given description.
+     * @param factoryId The widget factory id.
+     * @param options The widget factory specific information.
      *
      * @returns the widget if available, else `undefined`.
      */
@@ -140,8 +167,10 @@ export class WidgetManager {
 
     /**
      * Get the widget for the given description.
+     * @param factoryId The widget factory id.
+     * @param options The widget factory specific information.
      *
-     * @returns a promise resolving to the widget if available, else `undefined.
+     * @returns a promise resolving to the widget if available, else `undefined`.
      */
     async getWidget<T extends Widget>(factoryId: string, options?: any): Promise<T | undefined> {
         const key = this.toKey({ factoryId, options });
@@ -159,7 +188,11 @@ export class WidgetManager {
     }
 
     /**
-     * Creates or returns the widget for the given description.
+     * Creates a new widget or returns the existing widget for the given description.
+     * @param factoryId the widget factory id.
+     * @param options the widget factory specific information.
+     *
+     * @returns a promise resolving to the widget.
      */
     async getOrCreateWidget<T extends Widget>(factoryId: string, options?: any): Promise<T> {
         const key = this.toKey({ factoryId, options });

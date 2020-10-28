@@ -148,6 +148,15 @@ describe('keys api', () => {
         stub.restore();
     });
 
+    it('should properly handle eventDispatch', () => {
+        const event = new KeyboardEvent('keydown', {
+            code: Key.CAPS_LOCK.code,
+        });
+        Object.defineProperty(event, 'keyCode', { get: () => Key.ESCAPE.keyCode });
+        expect(KeyCode.createKeyCode(event, 'code').toString()).to.be.equal(Key.CAPS_LOCK.easyString);
+        expect(KeyCode.createKeyCode(event, 'keyCode').toString()).to.be.equal(Key.ESCAPE.easyString);
+    });
+
     it('should serialize a keycode properly with a + M4', () => {
         const stub = sinon.stub(os, 'isOSX').value(true);
         const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.MacCtrl] });

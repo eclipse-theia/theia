@@ -63,7 +63,7 @@ export class TimelineContribution implements CommandContribution, TabBarToolbarC
             }
         };
         this.widgetManager.onWillCreateWidget(async event => {
-           if (event.widget.id === EXPLORER_VIEW_CONTAINER_ID) {
+           if (event.widget.id === EXPLORER_VIEW_CONTAINER_ID && this.timelineService.getSources().length > 0) {
                event.waitUntil(attachTimeline(event.widget));
            }
         });

@@ -285,6 +285,38 @@
             });
         };
 
+        /**
+        * @param {MouseEvent} e
+        */
+        const handleInnerMousedown = (e) => {
+            host.postMessage('did-mousedown', {
+                altKey: e.altKey,
+                button: e.button,
+                buttons: e.buttons,
+                clientX: e.clientX,
+                clientY: e.clientY,
+                ctrlKey: e.ctrlKey,
+                metaKey: e.metaKey,
+                shiftKey: e.shiftKey
+            });
+        };
+
+        /**
+        * @param {MouseEvent} e
+        */
+        const handleInnerMouseup = (e) => {
+            host.postMessage('did-mouseup', {
+                altKey: e.altKey,
+                button: e.button,
+                buttons: e.buttons,
+                clientX: e.clientX,
+                clientY: e.clientY,
+                ctrlKey: e.ctrlKey,
+                metaKey: e.metaKey,
+                shiftKey: e.shiftKey
+            });
+        };
+
         function preventDefaultBrowserHotkeys(e) {
             var isOSX = navigator.platform.toUpperCase().indexOf('MAC')>=0;
 
@@ -480,7 +512,7 @@
                 const onLoad = (contentDocument, contentWindow) => {
                     if (contentDocument && contentDocument.body) {
                         // Workaround for https://github.com/Microsoft/vscode/issues/12865
-                        // check new scrollY and reset if neccessary
+                        // check new scrollY and reset if necessary
                         setInitialScrollPosition(contentDocument.body, contentWindow);
                     }
 
@@ -533,6 +565,8 @@
                     newFrame.contentWindow.addEventListener('click', handleInnerClick);
                     newFrame.contentWindow.addEventListener('auxclick', handleAuxClick);
                     newFrame.contentWindow.addEventListener('keydown', handleInnerKeydown);
+                    newFrame.contentWindow.addEventListener('mousedown', handleInnerMousedown);
+                    newFrame.contentWindow.addEventListener('mouseup', handleInnerMouseup);
                     newFrame.contentWindow.addEventListener('contextmenu', e => e.preventDefault());
 
                     if (host.onIframeLoaded) {

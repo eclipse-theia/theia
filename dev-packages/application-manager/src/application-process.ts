@@ -32,7 +32,7 @@ export class ApplicationProcess {
     ) { }
 
     spawn(command: string, args?: string[], options?: cp.SpawnOptions): cp.ChildProcess {
-        return cp.spawn(command, args, Object.assign({}, this.defaultOptions, options));
+        return cp.spawn(command, args || [], Object.assign({}, this.defaultOptions, options));
     }
 
     fork(modulePath: string, args?: string[], options?: cp.ForkOptions): cp.ChildProcess {
@@ -60,8 +60,8 @@ export class ApplicationProcess {
 
     protected promisify(command: string, p: cp.ChildProcess): Promise<void> {
         return new Promise((resolve, reject) => {
-            p.stdout.on('data', data => this.pck.log(data.toString()));
-            p.stderr.on('data', data => this.pck.error(data.toString()));
+            p.stdout!.on('data', data => this.pck.log(data.toString()));
+            p.stderr!.on('data', data => this.pck.error(data.toString()));
             p.on('error', reject);
             p.on('close', (code, signal) => {
                 if (signal) {

@@ -20,7 +20,7 @@ import * as fs from 'fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node';
-import { NsfwFileSystemWatcherServer } from './nsfw-filesystem-watcher';
+import { NsfwFileSystemWatcherService } from './nsfw-filesystem-service';
 import { DidFilesChangedParams } from '../../common/filesystem-watcher-protocol';
 /* eslint-disable no-unused-expressions */
 
@@ -30,36 +30,37 @@ const track = temp.track();
 describe('nsfw-filesystem-watcher', function (): void {
 
     let root: URI;
-    let watcherServer: NsfwFileSystemWatcherServer;
+    let watcherService: NsfwFileSystemWatcherService;
     let watcherId: number;
 
     this.timeout(10000);
 
     beforeEach(async () => {
         root = FileUri.create(fs.realpathSync(temp.mkdirSync('node-fs-root')));
-        watcherServer = createNsfwFileSystemWatcherServer();
-        watcherId = await watcherServer.watchFileChanges(root.toString());
+        watcherService = createNsfwFileSystemWatcherService();
+        watcherId = await watcherService.watchFileChanges(0, root.toString());
         await sleep(2000);
     });
 
     afterEach(async () => {
         track.cleanupSync();
-        watcherServer.dispose();
+        watcherService.dispose();
     });
 
     it('Should receive file changes events from in the workspace by default.', async function (): Promise<void> {
         if (process.platform === 'win32') {
             this.skip();
-            return;
         }
         const actualUris = new Set<string>();
 
         const watcherClient = {
             onDidFilesChanged(event: DidFilesChangedParams): void {
                 event.changes.forEach(c => actualUris.add(c.uri.toString()));
+            },
+            onError(): void {
             }
         };
-        watcherServer.setClient(watcherClient);
+        watcherService.setClient(watcherClient);
 
         const expectedUris = [
             root.resolve('foo').toString(),
@@ -79,25 +80,26 @@ describe('nsfw-filesystem-watcher', function (): void {
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
         await sleep(2000);
 
-        assert.deepEqual(expectedUris, [...actualUris]);
+        assert.deepStrictEqual(expectedUris, [...actualUris]);
     });
 
     it('Should not receive file changes events from in the workspace by default if unwatched', async function (): Promise<void> {
         if (process.platform === 'win32') {
             this.skip();
-            return;
         }
         const actualUris = new Set<string>();
 
         const watcherClient = {
             onDidFilesChanged(event: DidFilesChangedParams): void {
                 event.changes.forEach(c => actualUris.add(c.uri.toString()));
+            },
+            onError(): void {
             }
         };
-        watcherServer.setClient(watcherClient);
+        watcherService.setClient(watcherClient);
 
         /* Unwatch root */
-        watcherServer.unwatchFileChanges(watcherId);
+        watcherService.unwatchFileChanges(watcherId);
 
         fs.mkdirSync(FileUri.fsPath(root.resolve('foo')));
         expect(fs.statSync(FileUri.fsPath(root.resolve('foo'))).isDirectory()).to.be.true;
@@ -111,11 +113,11 @@ describe('nsfw-filesystem-watcher', function (): void {
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
         await sleep(2000);
 
-        assert.deepEqual(0, actualUris.size);
+        assert.deepStrictEqual(0, actualUris.size);
     });
 
-    function createNsfwFileSystemWatcherServer(): NsfwFileSystemWatcherServer {
-        return new NsfwFileSystemWatcherServer({
+    function createNsfwFileSystemWatcherService(): NsfwFileSystemWatcherService {
+        return new NsfwFileSystemWatcherService({
             verbose: true
         });
     }

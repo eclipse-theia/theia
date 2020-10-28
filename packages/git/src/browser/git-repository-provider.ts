@@ -165,7 +165,7 @@ export class GitRepositoryProvider {
 
     protected registerScmProvider(repository: Repository): void {
         const provider = this.scmProviderFactory({ repository });
-        this.scmService.registerScmProvider(provider, {
+        const scmRepository = this.scmService.registerScmProvider(provider, {
             input: {
                 placeholder: 'Message (press {0} to commit)',
                 validator: async value => {
@@ -177,6 +177,7 @@ export class GitRepositoryProvider {
                 }
             }
         });
+        provider.input = scmRepository.input;
     }
 
     protected toScmRepository(repository: Repository | undefined): ScmRepository | undefined {

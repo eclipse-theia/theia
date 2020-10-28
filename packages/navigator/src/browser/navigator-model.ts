@@ -99,7 +99,9 @@ export class FileNavigatorModel extends FileTreeModel {
     }
 
     protected doOpenNode(node: TreeNode): void {
-        if (FileNode.is(node)) {
+        if (node.visible === false) {
+            return;
+        } else if (FileNode.is(node)) {
             open(this.openerService, node.uri);
         } else {
             super.doOpenNode(node);

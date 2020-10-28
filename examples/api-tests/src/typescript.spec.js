@@ -188,7 +188,7 @@ module.exports = (port, host, argv) => Promise.resolve()
     }
 
     /**
-     * We ignore attributes on purprse since they are not stable.
+     * We ignore attributes on purpose since they are not stable.
      * But structure is important for us to see whether the plain text is rendered or markdown.
      *
      * @param {Element} element
@@ -619,7 +619,7 @@ DIV {
         assert.isFalse(hover.contentWidget.isVisible);
     });
 
-    it('highligh semantic (write) occurences', async function () {
+    it('highligh semantic (write) occurrences', async function () {
         const editor = await openEditor(serverUri);
         // const |container = new Container();
         const lineNumber = 11;
@@ -640,7 +640,7 @@ DIV {
         editor.getControl().setPosition({ lineNumber, column });
         // @ts-ignore
         assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'container');
-        // highlight occurences is not trigged on the explicit position change, so move a cursor as a user
+        // highlight occurrences is not trigged on the explicit position change, so move a cursor as a user
         keybindings.dispatchKeyDown('ArrowRight');
         await waitForAnimation(() => hasWriteDecoration());
 
@@ -781,7 +781,7 @@ SPAN {
         const lineNumber = 5;
         const editor = await openEditor(serverUri);
         // @ts-ignore
-        const originalLenght = editor.getControl().getModel().getLineLength(lineNumber);
+        const originalLength = editor.getControl().getModel().getLineLength(lineNumber);
 
         // const { Container[ ] } = require('inversify');
         // @ts-ignore
@@ -792,19 +792,19 @@ SPAN {
         }]);
 
         // @ts-ignore
-        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLenght + 1);
+        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLength + 1);
 
         await commands.executeCommand('editor.action.formatDocument');
 
         // @ts-ignore
-        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLenght);
+        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLength);
     });
 
     it('editor.action.formatSelection', async function () {
         const lineNumber = 5;
         const editor = await openEditor(serverUri);
         // @ts-ignore
-        const originalLenght = editor.getControl().getModel().getLineLength(lineNumber);
+        const originalLength = editor.getControl().getModel().getLineLength(lineNumber);
 
         // const { Container[  }  ]= require('inversify');
         // @ts-ignore
@@ -815,7 +815,7 @@ SPAN {
         }]);
 
         // @ts-ignore
-        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLenght + 2);
+        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLength + 2);
 
         // [const { Container  }]  = require('inversify');
         editor.getControl().setSelection({ startLineNumber: lineNumber, startColumn: 1, endLineNumber: lineNumber, endColumn: 21 });
@@ -824,7 +824,7 @@ SPAN {
 
         // [const { Container }]  = require('inversify');
         // @ts-ignore
-        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLenght + 1);
+        assert.equal(editor.getControl().getModel().getLineLength(lineNumber), originalLength + 1);
     });
 
     for (const referenceViewCommand of ['references-view.find', 'references-view.findImplementations']) {

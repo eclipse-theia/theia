@@ -95,6 +95,9 @@ export class DiskFileSystemProvider implements Disposable,
     private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
     readonly onDidChangeFile = this.onDidChangeFileEmitter.event;
 
+    private readonly onFileWatchErrorEmitter = new Emitter<void>();
+    readonly onFileWatchError = this.onFileWatchErrorEmitter.event;
+
     protected readonly toDispose = new DisposableCollection(
         this.onDidChangeFileEmitter
     );
@@ -112,7 +115,8 @@ export class DiskFileSystemProvider implements Disposable,
             onDidFilesChanged: params => this.onDidChangeFileEmitter.fire(params.changes.map(({ uri, type }) => ({
                 resource: new URI(uri),
                 type
-            })))
+            }))),
+            onError: () => this.onFileWatchErrorEmitter.fire()
         });
     }
 
@@ -800,18 +804,35 @@ export class DiskFileSystemProvider implements Disposable,
     // #region File Watching
 
     watch(resource: URI, opts: WatchOptions): Disposable {
-        const toUnwatch = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
-        this.watcher.watchFileChanges(resource.toString(), {
+        const watcherService = this.watcher;
+        /**
+         * Disposable handle. Can be disposed early (before the watcher is allocated.)
+         */
+        const handle = {
+            disposed: false,
+            watcherId: undefined as number | undefined,
+            dispose(): void {
+                if (this.disposed) {
+                    return;
+                }
+                if (this.watcherId !== undefined) {
+                    watcherService.unwatchFileChanges(this.watcherId);
+                }
+                this.disposed = true;
+            },
+        };
+        watcherService.watchFileChanges(resource.toString(), {
+            // Convert from `files.WatchOptions` to internal `watcher-protocol.WatchOptions`:
             ignored: opts.excludes
-        }).then(watcher => {
-            if (toUnwatch.disposed) {
-                this.watcher.unwatchFileChanges(watcher);
+        }).then(watcherId => {
+            if (handle.disposed) {
+                watcherService.unwatchFileChanges(watcherId);
             } else {
-                toUnwatch.push(Disposable.create(() => this.watcher.unwatchFileChanges(watcher)));
+                handle.watcherId = watcherId;
             }
         });
-        this.toDispose.push(toUnwatch);
-        return toUnwatch;
+        this.toDispose.push(handle);
+        return handle;
     }
 
     // #endregion

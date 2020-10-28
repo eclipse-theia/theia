@@ -1582,168 +1582,168 @@ declare module '@theia/plugin' {
         waitUntil(thenable: PromiseLike<any>): void;
     }
 
-	/**
-	 * An event that is fired when files are going to be created.
-	 *
-	 * To make modifications to the workspace before the files are created,
-	 * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
-	 * thenable that resolves to a [workspace edit](#WorkspaceEdit).
-	 */
+    /**
+     * An event that is fired when files are going to be created.
+     *
+     * To make modifications to the workspace before the files are created,
+     * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
+     * thenable that resolves to a [workspace edit](#WorkspaceEdit).
+     */
     export interface FileWillCreateEvent {
 
-		/**
-		 * The files that are going to be created.
-		 */
+        /**
+         * The files that are going to be created.
+         */
         readonly files: ReadonlyArray<Uri>;
 
-		/**
-		 * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
-		 *
-		 * *Note:* This function can only be called during event dispatch and not
-		 * in an asynchronous manner:
-		 *
-		 * ```ts
-		 * workspace.onWillCreateFiles(event => {
-		 * 	// async, will *throw* an error
-		 * 	setTimeout(() => event.waitUntil(promise));
-		 *
-		 * 	// sync, OK
-		 * 	event.waitUntil(promise);
-		 * })
-		 * ```
-		 *
-		 * @param thenable A thenable that delays saving.
-		 */
+        /**
+         * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
+         *
+         * *Note:* This function can only be called during event dispatch and not
+         * in an asynchronous manner:
+         *
+         * ```ts
+         * workspace.onWillCreateFiles(event => {
+         * 	// async, will *throw* an error
+         * 	setTimeout(() => event.waitUntil(promise));
+         *
+         * 	// sync, OK
+         * 	event.waitUntil(promise);
+         * })
+         * ```
+         *
+         * @param thenable A thenable that delays saving.
+         */
         waitUntil(thenable: Thenable<WorkspaceEdit>): void;
 
-		/**
-		 * Allows to pause the event until the provided thenable resolves.
-		 *
-		 * *Note:* This function can only be called during event dispatch.
-		 *
-		 * @param thenable A thenable that delays saving.
-		 */
+        /**
+         * Allows to pause the event until the provided thenable resolves.
+         *
+         * *Note:* This function can only be called during event dispatch.
+         *
+         * @param thenable A thenable that delays saving.
+         */
         waitUntil(thenable: Thenable<any>): void;
     }
 
-	/**
-	 * An event that is fired after files are created.
-	 */
+    /**
+     * An event that is fired after files are created.
+     */
     export interface FileCreateEvent {
 
-		/**
-		 * The files that got created.
-		 */
+        /**
+         * The files that got created.
+         */
         readonly files: ReadonlyArray<Uri>;
     }
 
-	/**
-	 * An event that is fired when files are going to be deleted.
-	 *
-	 * To make modifications to the workspace before the files are deleted,
-	 * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
-	 * thenable that resolves to a [workspace edit](#WorkspaceEdit).
-	 */
+    /**
+     * An event that is fired when files are going to be deleted.
+     *
+     * To make modifications to the workspace before the files are deleted,
+     * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
+     * thenable that resolves to a [workspace edit](#WorkspaceEdit).
+     */
     export interface FileWillDeleteEvent {
 
-		/**
-		 * The files that are going to be deleted.
-		 */
+        /**
+         * The files that are going to be deleted.
+         */
         readonly files: ReadonlyArray<Uri>;
 
-		/**
-		 * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
-		 *
-		 * *Note:* This function can only be called during event dispatch and not
-		 * in an asynchronous manner:
-		 *
-		 * ```ts
-		 * workspace.onWillCreateFiles(event => {
-		 * 	// async, will *throw* an error
-		 * 	setTimeout(() => event.waitUntil(promise));
-		 *
-		 * 	// sync, OK
-		 * 	event.waitUntil(promise);
-		 * })
-		 * ```
-		 *
-		 * @param thenable A thenable that delays saving.
-		 */
+        /**
+         * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
+         *
+         * *Note:* This function can only be called during event dispatch and not
+         * in an asynchronous manner:
+         *
+         * ```ts
+         * workspace.onWillCreateFiles(event => {
+         * 	// async, will *throw* an error
+         * 	setTimeout(() => event.waitUntil(promise));
+         *
+         * 	// sync, OK
+         * 	event.waitUntil(promise);
+         * })
+         * ```
+         *
+         * @param thenable A thenable that delays saving.
+         */
         waitUntil(thenable: Thenable<WorkspaceEdit>): void;
 
-		/**
-		 * Allows to pause the event until the provided thenable resolves.
-		 *
-		 * *Note:* This function can only be called during event dispatch.
-		 *
-		 * @param thenable A thenable that delays saving.
-		 */
+        /**
+         * Allows to pause the event until the provided thenable resolves.
+         *
+         * *Note:* This function can only be called during event dispatch.
+         *
+         * @param thenable A thenable that delays saving.
+         */
         waitUntil(thenable: Thenable<any>): void;
     }
 
-	/**
-	 * An event that is fired after files are deleted.
-	 */
+    /**
+     * An event that is fired after files are deleted.
+     */
     export interface FileDeleteEvent {
 
-		/**
-		 * The files that got deleted.
-		 */
+        /**
+         * The files that got deleted.
+         */
         readonly files: ReadonlyArray<Uri>;
     }
 
-	/**
-	 * An event that is fired when files are going to be renamed.
-	 *
-	 * To make modifications to the workspace before the files are renamed,
-	 * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
-	 * thenable that resolves to a [workspace edit](#WorkspaceEdit).
-	 */
+    /**
+     * An event that is fired when files are going to be renamed.
+     *
+     * To make modifications to the workspace before the files are renamed,
+     * call the [`waitUntil](#FileWillCreateEvent.waitUntil)-function with a
+     * thenable that resolves to a [workspace edit](#WorkspaceEdit).
+     */
     export interface FileWillRenameEvent {
 
-		/**
-		 * The files that are going to be renamed.
-		 */
+        /**
+         * The files that are going to be renamed.
+         */
         readonly files: ReadonlyArray<{ oldUri: Uri, newUri: Uri }>;
 
-		/**
-		 * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
-		 *
-		 * *Note:* This function can only be called during event dispatch and not
-		 * in an asynchronous manner:
-		 *
-		 * ```ts
-		 * workspace.onWillCreateFiles(event => {
-		 * 	// async, will *throw* an error
-		 * 	setTimeout(() => event.waitUntil(promise));
-		 *
-		 * 	// sync, OK
-		 * 	event.waitUntil(promise);
-		 * })
-		 * ```
-		 *
-		 * @param thenable A thenable that delays saving.
-		 */
+        /**
+         * Allows to pause the event and to apply a [workspace edit](#WorkspaceEdit).
+         *
+         * *Note:* This function can only be called during event dispatch and not
+         * in an asynchronous manner:
+         *
+         * ```ts
+         * workspace.onWillCreateFiles(event => {
+         * 	// async, will *throw* an error
+         * 	setTimeout(() => event.waitUntil(promise));
+         *
+         * 	// sync, OK
+         * 	event.waitUntil(promise);
+         * })
+         * ```
+         *
+         * @param thenable A thenable that delays saving.
+         */
         waitUntil(thenable: Thenable<WorkspaceEdit>): void;
 
-		/**
-		 * Allows to pause the event until the provided thenable resolves.
-		 *
-		 * *Note:* This function can only be called during event dispatch.
-		 *
-		 * @param thenable A thenable that delays saving.
-		 */
+        /**
+         * Allows to pause the event until the provided thenable resolves.
+         *
+         * *Note:* This function can only be called during event dispatch.
+         *
+         * @param thenable A thenable that delays saving.
+         */
         waitUntil(thenable: Thenable<any>): void;
     }
 
-	/**
-	 * An event that is fired after files are renamed.
-	 */
+    /**
+     * An event that is fired after files are renamed.
+     */
     export interface FileRenameEvent {
 
-		/**
-		 * The files that got renamed.
-		 */
+        /**
+         * The files that got renamed.
+         */
         readonly files: ReadonlyArray<{ oldUri: Uri, newUri: Uri }>;
     }
 
@@ -2872,6 +2872,113 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * A type of mutation that can be applied to an environment variable.
+     */
+    export enum EnvironmentVariableMutatorType {
+        /**
+         * Replace the variable's existing value.
+         */
+        Replace = 1,
+        /**
+         * Append to the end of the variable's existing value.
+         */
+        Append = 2,
+        /**
+         * Prepend to the start of the variable's existing value.
+         */
+        Prepend = 3
+    }
+
+    /**
+     * A type of mutation and its value to be applied to an environment variable.
+     */
+    export interface EnvironmentVariableMutator {
+        /**
+         * The type of mutation that will occur to the variable.
+         */
+        readonly type: EnvironmentVariableMutatorType;
+
+        /**
+         * The value to use for the variable.
+         */
+        readonly value: string;
+    }
+
+    /**
+     * A collection of mutations that an extension can apply to a process environment.
+     */
+    export interface EnvironmentVariableCollection {
+        /**
+         * Whether the collection should be cached for the workspace and applied to the terminal
+         * across window reloads. When true the collection will be active immediately such when the
+         * window reloads. Additionally, this API will return the cached version if it exists. The
+         * collection will be invalidated when the extension is uninstalled or when the collection
+         * is cleared. Defaults to true.
+         */
+        persistent: boolean;
+
+        /**
+         * Replace an environment variable with a value.
+         *
+         * Note that an extension can only make a single change to any one variable, so this will
+         * overwrite any previous calls to replace, append or prepend.
+         *
+         * @param variable The variable to replace.
+         * @param value The value to replace the variable with.
+         */
+        replace(variable: string, value: string): void;
+
+        /**
+         * Append a value to an environment variable.
+         *
+         * Note that an extension can only make a single change to any one variable, so this will
+         * overwrite any previous calls to replace, append or prepend.
+         *
+         * @param variable The variable to append to.
+         * @param value The value to append to the variable.
+         */
+        append(variable: string, value: string): void;
+
+        /**
+         * Prepend a value to an environment variable.
+         *
+         * Note that an extension can only make a single change to any one variable, so this will
+         * overwrite any previous calls to replace, append or prepend.
+         *
+         * @param variable The variable to prepend.
+         * @param value The value to prepend to the variable.
+         */
+        prepend(variable: string, value: string): void;
+
+        /**
+         * Gets the mutator that this collection applies to a variable, if any.
+         *
+         * @param variable The variable to get the mutator for.
+         */
+        get(variable: string): EnvironmentVariableMutator | undefined;
+
+        /**
+         * Iterate over each mutator in this collection.
+         *
+         * @param callback Function to execute for each entry.
+         * @param thisArg The `this` context used when invoking the handler function.
+         */
+        forEach(callback: (variable: string, mutator: EnvironmentVariableMutator, collection: EnvironmentVariableCollection) => any, thisArg?: any): void;
+
+        /**
+         * Deletes this collection's mutator for a variable.
+         *
+         * @param variable The variable to delete the mutator for.
+         */
+        delete(variable: string): void;
+
+        /**
+         * Clears all mutators from this collection.
+         */
+        clear(): void;
+    }
+
+    /**
      * A plug-in context is a collection of utilities private to a
      * plug-in.
      *
@@ -2902,6 +3009,12 @@ declare module '@theia/plugin' {
          * The absolute file path of the directory containing the extension.
          */
         extensionPath: string;
+
+        /**
+         * Gets the extension's environment variable collection for this workspace, enabling changes
+         * to be applied to terminal environment variables.
+         */
+        readonly environmentVariableCollection: EnvironmentVariableCollection;
 
         /**
          * Get the absolute path of a resource contained in the extension.
@@ -3282,7 +3395,7 @@ declare module '@theia/plugin' {
      * webview first becomes visible after the restart, this state is passed to `deserializeWebviewPanel`.
      * The extension can then restore the old `WebviewPanel` from this state.
      */
-    interface WebviewPanelSerializer {
+    interface WebviewPanelSerializer<T = unknown> {
         /**
          * Restore a webview panel from its seriailzed `state`.
          *
@@ -3294,7 +3407,7 @@ declare module '@theia/plugin' {
          *
          * @return PromiseLike indicating that the webview has been fully restored.
          */
-        deserializeWebviewPanel(webviewPanel: WebviewPanel, state: any): PromiseLike<void>;
+        deserializeWebviewPanel(webviewPanel: WebviewPanel, state: T): PromiseLike<void>;
     }
 
     /**
@@ -4520,379 +4633,379 @@ declare module '@theia/plugin' {
         readonly index: number;
     }
 
-	/**
-	 * Enumeration of file types. The types `File` and `Directory` can also be
-	 * a symbolic link, in that case use `FileType.File | FileType.SymbolicLink` and
-	 * `FileType.Directory | FileType.SymbolicLink`.
-	 */
+    /**
+     * Enumeration of file types. The types `File` and `Directory` can also be
+     * a symbolic link, in that case use `FileType.File | FileType.SymbolicLink` and
+     * `FileType.Directory | FileType.SymbolicLink`.
+     */
     export enum FileType {
-		/**
-		 * The file type is unknown.
-		 */
+        /**
+         * The file type is unknown.
+         */
         Unknown = 0,
-		/**
-		 * A regular file.
-		 */
+        /**
+         * A regular file.
+         */
         File = 1,
-		/**
-		 * A directory.
-		 */
+        /**
+         * A directory.
+         */
         Directory = 2,
-		/**
-		 * A symbolic link to a file.
-		 */
+        /**
+         * A symbolic link to a file.
+         */
         SymbolicLink = 64
     }
 
-	/**
-	 * The `FileStat`-type represents metadata about a file
-	 */
+    /**
+     * The `FileStat`-type represents metadata about a file
+     */
     export interface FileStat {
-		/**
-		 * The type of the file, e.g. is a regular file, a directory, or symbolic link
-		 * to a file.
-		 *
-		 * *Note:* This value might be a bitmask, e.g. `FileType.File | FileType.SymbolicLink`.
-		 */
+        /**
+         * The type of the file, e.g. is a regular file, a directory, or symbolic link
+         * to a file.
+         *
+         * *Note:* This value might be a bitmask, e.g. `FileType.File | FileType.SymbolicLink`.
+         */
         type: FileType;
-		/**
-		 * The creation timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
-		 */
+        /**
+         * The creation timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
+         */
         ctime: number;
-		/**
-		 * The modification timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
-		 *
-		 * *Note:* If the file changed, it is important to provide an updated `mtime` that advanced
-		 * from the previous value. Otherwise there may be optimizations in place that will not show
-		 * the updated file contents in an editor for example.
-		 */
+        /**
+         * The modification timestamp in milliseconds elapsed since January 1, 1970 00:00:00 UTC.
+         *
+         * *Note:* If the file changed, it is important to provide an updated `mtime` that advanced
+         * from the previous value. Otherwise there may be optimizations in place that will not show
+         * the updated file contents in an editor for example.
+         */
         mtime: number;
-		/**
-		 * The size in bytes.
-		 *
-		 * *Note:* If the file changed, it is important to provide an updated `size`. Otherwise there
-		 * may be optimizations in place that will not show the updated file contents in an editor for
-		 * example.
-		 */
+        /**
+         * The size in bytes.
+         *
+         * *Note:* If the file changed, it is important to provide an updated `size`. Otherwise there
+         * may be optimizations in place that will not show the updated file contents in an editor for
+         * example.
+         */
         size: number;
     }
 
-	/**
-	 * A type that filesystem providers should use to signal errors.
-	 *
-	 * This class has factory methods for common error-cases, like `FileNotFound` when
-	 * a file or folder doesn't exist, use them like so: `throw vscode.FileSystemError.FileNotFound(someUri);`
-	 */
+    /**
+     * A type that filesystem providers should use to signal errors.
+     *
+     * This class has factory methods for common error-cases, like `FileNotFound` when
+     * a file or folder doesn't exist, use them like so: `throw vscode.FileSystemError.FileNotFound(someUri);`
+     */
     export class FileSystemError extends Error {
 
-		/**
-		 * Create an error to signal that a file or folder wasn't found.
-		 * @param messageOrUri Message or uri.
-		 */
+        /**
+         * Create an error to signal that a file or folder wasn't found.
+         * @param messageOrUri Message or uri.
+         */
         static FileNotFound(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
-		 * Create an error to signal that a file or folder already exists, e.g. when
-		 * creating but not overwriting a file.
-		 * @param messageOrUri Message or uri.
-		 */
+        /**
+         * Create an error to signal that a file or folder already exists, e.g. when
+         * creating but not overwriting a file.
+         * @param messageOrUri Message or uri.
+         */
         static FileExists(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
-		 * Create an error to signal that a file is not a folder.
-		 * @param messageOrUri Message or uri.
-		 */
+        /**
+         * Create an error to signal that a file is not a folder.
+         * @param messageOrUri Message or uri.
+         */
         static FileNotADirectory(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
-		 * Create an error to signal that a file is a folder.
-		 * @param messageOrUri Message or uri.
-		 */
+        /**
+         * Create an error to signal that a file is a folder.
+         * @param messageOrUri Message or uri.
+         */
         static FileIsADirectory(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
-		 * Create an error to signal that an operation lacks required permissions.
-		 * @param messageOrUri Message or uri.
-		 */
+        /**
+         * Create an error to signal that an operation lacks required permissions.
+         * @param messageOrUri Message or uri.
+         */
         static NoPermissions(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
-		 * Create an error to signal that the file system is unavailable or too busy to
-		 * complete a request.
-		 * @param messageOrUri Message or uri.
-		 */
+        /**
+         * Create an error to signal that the file system is unavailable or too busy to
+         * complete a request.
+         * @param messageOrUri Message or uri.
+         */
         static Unavailable(messageOrUri?: string | Uri): FileSystemError;
 
-		/**
-		 * Creates a new filesystem error.
-		 *
-		 * @param messageOrUri Message or uri.
-		 */
+        /**
+         * Creates a new filesystem error.
+         *
+         * @param messageOrUri Message or uri.
+         */
         constructor(messageOrUri?: string | Uri);
 
-		/**
-		 * A code that identifies this error.
-		 *
-		 * Possible values are names of errors, like [`FileNotFound`](#FileSystemError.FileNotFound),
-		 * or `Unknown` for unspecified errors.
-		 */
+        /**
+         * A code that identifies this error.
+         *
+         * Possible values are names of errors, like [`FileNotFound`](#FileSystemError.FileNotFound),
+         * or `Unknown` for unspecified errors.
+         */
         readonly code: string;
     }
 
-	/**
-	 * Enumeration of file change types.
-	 */
+    /**
+     * Enumeration of file change types.
+     */
     export enum FileChangeType {
 
-		/**
-		 * The contents or metadata of a file have changed.
-		 */
+        /**
+         * The contents or metadata of a file have changed.
+         */
         Changed = 1,
 
-		/**
-		 * A file has been created.
-		 */
+        /**
+         * A file has been created.
+         */
         Created = 2,
 
-		/**
-		 * A file has been deleted.
-		 */
+        /**
+         * A file has been deleted.
+         */
         Deleted = 3,
     }
 
-	/**
-	 * The event filesystem providers must use to signal a file change.
-	 */
+    /**
+     * The event filesystem providers must use to signal a file change.
+     */
     export interface FileChangeEvent {
 
-		/**
-		 * The type of change.
-		 */
+        /**
+         * The type of change.
+         */
         readonly type: FileChangeType;
 
-		/**
-		 * The uri of the file that has changed.
-		 */
+        /**
+         * The uri of the file that has changed.
+         */
         readonly uri: Uri;
     }
 
-	/**
-	 * The filesystem provider defines what the editor needs to read, write, discover,
-	 * and to manage files and folders. It allows extensions to serve files from remote places,
-	 * like ftp-servers, and to seamlessly integrate those into the editor.
-	 *
-	 * * *Note 1:* The filesystem provider API works with [uris](#Uri) and assumes hierarchical
-	 * paths, e.g. `foo:/my/path` is a child of `foo:/my/` and a parent of `foo:/my/path/deeper`.
-	 * * *Note 2:* There is an activation event `onFileSystem:<scheme>` that fires when a file
-	 * or folder is being accessed.
-	 * * *Note 3:* The word 'file' is often used to denote all [kinds](#FileType) of files, e.g.
-	 * folders, symbolic links, and regular files.
-	 */
+    /**
+     * The filesystem provider defines what the editor needs to read, write, discover,
+     * and to manage files and folders. It allows extensions to serve files from remote places,
+     * like ftp-servers, and to seamlessly integrate those into the editor.
+     *
+     * * *Note 1:* The filesystem provider API works with [uris](#Uri) and assumes hierarchical
+     * paths, e.g. `foo:/my/path` is a child of `foo:/my/` and a parent of `foo:/my/path/deeper`.
+     * * *Note 2:* There is an activation event `onFileSystem:<scheme>` that fires when a file
+     * or folder is being accessed.
+     * * *Note 3:* The word 'file' is often used to denote all [kinds](#FileType) of files, e.g.
+     * folders, symbolic links, and regular files.
+     */
     export interface FileSystemProvider {
 
-		/**
-		 * An event to signal that a resource has been created, changed, or deleted. This
-		 * event should fire for resources that are being [watched](#FileSystemProvider.watch)
-		 * by clients of this provider.
-		 *
-		 * *Note:* It is important that the metadata of the file that changed provides an
-		 * updated `mtime` that advanced from the previous value in the [stat](#FileStat) and a
-		 * correct `size` value. Otherwise there may be optimizations in place that will not show
-		 * the change in an editor for example.
-		 */
+        /**
+         * An event to signal that a resource has been created, changed, or deleted. This
+         * event should fire for resources that are being [watched](#FileSystemProvider.watch)
+         * by clients of this provider.
+         *
+         * *Note:* It is important that the metadata of the file that changed provides an
+         * updated `mtime` that advanced from the previous value in the [stat](#FileStat) and a
+         * correct `size` value. Otherwise there may be optimizations in place that will not show
+         * the change in an editor for example.
+         */
         readonly onDidChangeFile: Event<FileChangeEvent[]>;
 
-		/**
-		 * Subscribe to events in the file or folder denoted by `uri`.
-		 *
-		 * The editor will call this function for files and folders. In the latter case, the
-		 * options differ from defaults, e.g. what files/folders to exclude from watching
-		 * and if subfolders, sub-subfolder, etc. should be watched (`recursive`).
-		 *
-		 * @param uri The uri of the file to be watched.
-		 * @param options Configures the watch.
-		 * @returns A disposable that tells the provider to stop watching the `uri`.
-		 */
+        /**
+         * Subscribe to events in the file or folder denoted by `uri`.
+         *
+         * The editor will call this function for files and folders. In the latter case, the
+         * options differ from defaults, e.g. what files/folders to exclude from watching
+         * and if subfolders, sub-subfolder, etc. should be watched (`recursive`).
+         *
+         * @param uri The uri of the file to be watched.
+         * @param options Configures the watch.
+         * @returns A disposable that tells the provider to stop watching the `uri`.
+         */
         watch(uri: Uri, options: { recursive: boolean; excludes: string[] }): Disposable;
 
-		/**
-		 * Retrieve metadata about a file.
-		 *
-		 * Note that the metadata for symbolic links should be the metadata of the file they refer to.
-		 * Still, the [SymbolicLink](#FileType.SymbolicLink)-type must be used in addition to the actual type, e.g.
-		 * `FileType.SymbolicLink | FileType.Directory`.
-		 *
-		 * @param uri The uri of the file to retrieve metadata about.
-		 * @return The file metadata about the file.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-		 */
+        /**
+         * Retrieve metadata about a file.
+         *
+         * Note that the metadata for symbolic links should be the metadata of the file they refer to.
+         * Still, the [SymbolicLink](#FileType.SymbolicLink)-type must be used in addition to the actual type, e.g.
+         * `FileType.SymbolicLink | FileType.Directory`.
+         *
+         * @param uri The uri of the file to retrieve metadata about.
+         * @return The file metadata about the file.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+         */
         stat(uri: Uri): FileStat | Promise<FileStat>;
 
-		/**
-		 * Retrieve all entries of a [directory](#FileType.Directory).
-		 *
-		 * @param uri The uri of the folder.
-		 * @return An array of name/type-tuples or a thenable that resolves to such.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-		 */
+        /**
+         * Retrieve all entries of a [directory](#FileType.Directory).
+         *
+         * @param uri The uri of the folder.
+         * @return An array of name/type-tuples or a thenable that resolves to such.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+         */
         readDirectory(uri: Uri): [string, FileType][] | Promise<[string, FileType][]>;
 
-		/**
-		 * Create a new directory (Note, that new files are created via `write`-calls).
-		 *
-		 * @param uri The uri of the new folder.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist, e.g. no mkdirp-logic required.
-		 * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists.
-		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-		 */
+        /**
+         * Create a new directory (Note, that new files are created via `write`-calls).
+         *
+         * @param uri The uri of the new folder.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist, e.g. no mkdirp-logic required.
+         * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists.
+         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+         */
         createDirectory(uri: Uri): void | Promise<void>;
 
-		/**
-		 * Read the entire contents of a file.
-		 *
-		 * @param uri The uri of the file.
-		 * @return An array of bytes or a thenable that resolves to such.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-		 */
+        /**
+         * Read the entire contents of a file.
+         *
+         * @param uri The uri of the file.
+         * @return An array of bytes or a thenable that resolves to such.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+         */
         readFile(uri: Uri): Uint8Array | Promise<Uint8Array>;
 
-		/**
-		 * Write data to a file, replacing its entire contents.
-		 *
-		 * @param uri The uri of the file.
-		 * @param content The new content of the file.
-		 * @param options Defines if missing files should or must be created.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist and `create` is not set.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist and `create` is set, e.g. no mkdirp-logic required.
-		 * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists, `create` is set but `overwrite` is not set.
-		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-		 */
+        /**
+         * Write data to a file, replacing its entire contents.
+         *
+         * @param uri The uri of the file.
+         * @param content The new content of the file.
+         * @param options Defines if missing files should or must be created.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist and `create` is not set.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when the parent of `uri` doesn't exist and `create` is set, e.g. no mkdirp-logic required.
+         * @throws [`FileExists`](#FileSystemError.FileExists) when `uri` already exists, `create` is set but `overwrite` is not set.
+         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+         */
         writeFile(uri: Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void | Promise<void>;
 
-		/**
-		 * Delete a file.
-		 *
-		 * @param uri The resource that is to be deleted.
-		 * @param options Defines if deletion of folders is recursive.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
-		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-		 */
+        /**
+         * Delete a file.
+         *
+         * @param uri The resource that is to be deleted.
+         * @param options Defines if deletion of folders is recursive.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `uri` doesn't exist.
+         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+         */
         delete(uri: Uri, options: { recursive: boolean }): void | Promise<void>;
 
-		/**
-		 * Rename a file or folder.
-		 *
-		 * @param oldUri The existing file.
-		 * @param newUri The new location.
-		 * @param options Defines if existing files should be overwritten.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `oldUri` doesn't exist.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `newUri` doesn't exist, e.g. no mkdirp-logic required.
-		 * @throws [`FileExists`](#FileSystemError.FileExists) when `newUri` exists and when the `overwrite` option is not `true`.
-		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-		 */
+        /**
+         * Rename a file or folder.
+         *
+         * @param oldUri The existing file.
+         * @param newUri The new location.
+         * @param options Defines if existing files should be overwritten.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `oldUri` doesn't exist.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `newUri` doesn't exist, e.g. no mkdirp-logic required.
+         * @throws [`FileExists`](#FileSystemError.FileExists) when `newUri` exists and when the `overwrite` option is not `true`.
+         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+         */
         rename(oldUri: Uri, newUri: Uri, options: { overwrite: boolean }): void | Promise<void>;
 
-		/**
-		 * Copy files or folders. Implementing this function is optional but it will speedup
-		 * the copy operation.
-		 *
-		 * @param source The existing file.
-		 * @param destination The destination location.
-		 * @param options Defines if existing files should be overwritten.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `source` doesn't exist.
-		 * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `destination` doesn't exist, e.g. no mkdirp-logic required.
-		 * @throws [`FileExists`](#FileSystemError.FileExists) when `destination` exists and when the `overwrite` option is not `true`.
-		 * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
-		 */
+        /**
+         * Copy files or folders. Implementing this function is optional but it will speedup
+         * the copy operation.
+         *
+         * @param source The existing file.
+         * @param destination The destination location.
+         * @param options Defines if existing files should be overwritten.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when `source` doesn't exist.
+         * @throws [`FileNotFound`](#FileSystemError.FileNotFound) when parent of `destination` doesn't exist, e.g. no mkdirp-logic required.
+         * @throws [`FileExists`](#FileSystemError.FileExists) when `destination` exists and when the `overwrite` option is not `true`.
+         * @throws [`NoPermissions`](#FileSystemError.NoPermissions) when permissions aren't sufficient.
+         */
         copy?(source: Uri, destination: Uri, options: { overwrite: boolean }): void | Promise<void>;
     }
 
-	/**
-	 * The file system interface exposes the editor's built-in and contributed
-	 * [file system providers](#FileSystemProvider). It allows extensions to work
-	 * with files from the local disk as well as files from remote places, like the
-	 * remote extension host or ftp-servers.
-	 *
-	 * *Note* that an instance of this interface is available as [`workspace.fs`](#workspace.fs).
-	 */
+    /**
+     * The file system interface exposes the editor's built-in and contributed
+     * [file system providers](#FileSystemProvider). It allows extensions to work
+     * with files from the local disk as well as files from remote places, like the
+     * remote extension host or ftp-servers.
+     *
+     * *Note* that an instance of this interface is available as [`workspace.fs`](#workspace.fs).
+     */
 
 
-	/**
-	 * The file system interface exposes the editor's built-in and contributed
-	 * [file system providers](#FileSystemProvider). It allows extensions to work
-	 * with files from the local disk as well as files from remote places, like the
-	 * remote extension host or ftp-servers.
-	 *
-	 * *Note* that an instance of this interface is available as [`workspace.fs`](#workspace.fs).
-	 */
+    /**
+     * The file system interface exposes the editor's built-in and contributed
+     * [file system providers](#FileSystemProvider). It allows extensions to work
+     * with files from the local disk as well as files from remote places, like the
+     * remote extension host or ftp-servers.
+     *
+     * *Note* that an instance of this interface is available as [`workspace.fs`](#workspace.fs).
+     */
     export interface FileSystem {
 
-		/**
-		 * Retrieve metadata about a file.
-		 *
-		 * @param uri The uri of the file to retrieve metadata about.
-		 * @return The file metadata about the file.
-		 */
+        /**
+         * Retrieve metadata about a file.
+         *
+         * @param uri The uri of the file to retrieve metadata about.
+         * @return The file metadata about the file.
+         */
         stat(uri: Uri): Thenable<FileStat>;
 
-		/**
-		 * Retrieve all entries of a [directory](#FileType.Directory).
-		 *
-		 * @param uri The uri of the folder.
-		 * @return An array of name/type-tuples or a thenable that resolves to such.
-		 */
+        /**
+         * Retrieve all entries of a [directory](#FileType.Directory).
+         *
+         * @param uri The uri of the folder.
+         * @return An array of name/type-tuples or a thenable that resolves to such.
+         */
         readDirectory(uri: Uri): Thenable<[string, FileType][]>;
 
-		/**
-		 * Create a new directory (Note, that new files are created via `write`-calls).
-		 *
-		 * *Note* that missing directories are created automatically, e.g this call has
-		 * `mkdirp` semantics.
-		 *
-		 * @param uri The uri of the new folder.
-		 */
+        /**
+         * Create a new directory (Note, that new files are created via `write`-calls).
+         *
+         * *Note* that missing directories are created automatically, e.g this call has
+         * `mkdirp` semantics.
+         *
+         * @param uri The uri of the new folder.
+         */
         createDirectory(uri: Uri): Thenable<void>;
 
-		/**
-		 * Read the entire contents of a file.
-		 *
-		 * @param uri The uri of the file.
-		 * @return An array of bytes or a thenable that resolves to such.
-		 */
+        /**
+         * Read the entire contents of a file.
+         *
+         * @param uri The uri of the file.
+         * @return An array of bytes or a thenable that resolves to such.
+         */
         readFile(uri: Uri): Thenable<Uint8Array>;
 
-		/**
-		 * Write data to a file, replacing its entire contents.
-		 *
-		 * @param uri The uri of the file.
-		 * @param content The new content of the file.
-		 */
+        /**
+         * Write data to a file, replacing its entire contents.
+         *
+         * @param uri The uri of the file.
+         * @param content The new content of the file.
+         */
         writeFile(uri: Uri, content: Uint8Array): Thenable<void>;
 
-		/**
-		 * Delete a file.
-		 *
-		 * @param uri The resource that is to be deleted.
-		 * @param options Defines if trash can should be used and if deletion of folders is recursive
-		 */
+        /**
+         * Delete a file.
+         *
+         * @param uri The resource that is to be deleted.
+         * @param options Defines if trash can should be used and if deletion of folders is recursive
+         */
         delete(uri: Uri, options?: { recursive?: boolean, useTrash?: boolean }): Thenable<void>;
 
-		/**
-		 * Rename a file or folder.
-		 *
-		 * @param oldUri The existing file.
-		 * @param newUri The new location.
-		 * @param options Defines if existing files should be overwritten.
-		 */
+        /**
+         * Rename a file or folder.
+         *
+         * @param oldUri The existing file.
+         * @param newUri The new location.
+         * @param options Defines if existing files should be overwritten.
+         */
         rename(source: Uri, target: Uri, options?: { overwrite?: boolean }): Thenable<void>;
 
-		/**
-		 * Copy files or folders.
-		 *
-		 * @param source The existing file.
-		 * @param destination The destination location.
-		 * @param options Defines if existing files should be overwritten.
-		 */
+        /**
+         * Copy files or folders.
+         *
+         * @param source The existing file.
+         * @param destination The destination location.
+         * @param options Defines if existing files should be overwritten.
+         */
         copy(source: Uri, target: Uri, options?: { overwrite?: boolean }): Thenable<void>;
     }
 
@@ -5216,17 +5329,17 @@ declare module '@theia/plugin' {
          */
         export function applyEdit(edit: WorkspaceEdit): PromiseLike<boolean>;
 
-		/**
-		 * Register a filesystem provider for a given scheme, e.g. `ftp`.
-		 *
-		 * There can only be one provider per scheme and an error is being thrown when a scheme
-		 * has been claimed by another provider or when it is reserved.
-		 *
-		 * @param scheme The uri-[scheme](#Uri.scheme) the provider registers for.
-		 * @param provider The filesystem provider.
-		 * @param options Immutable metadata about the provider.
-		 * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
-		 */
+        /**
+         * Register a filesystem provider for a given scheme, e.g. `ftp`.
+         *
+         * There can only be one provider per scheme and an error is being thrown when a scheme
+         * has been claimed by another provider or when it is reserved.
+         *
+         * @param scheme The uri-[scheme](#Uri.scheme) the provider registers for.
+         * @param provider The filesystem provider.
+         * @param options Immutable metadata about the provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
         export function registerFileSystemProvider(scheme: string, provider: FileSystemProvider, options?: { readonly isCaseSensitive?: boolean, readonly isReadonly?: boolean }): Disposable;
 
         /**
@@ -6352,6 +6465,17 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Completion item tags are extra annotations that tweak the rendering of a completion
+     * item.
+     */
+    export enum CompletionItemTag {
+        /**
+         * Render a completion as obsolete, usually using a strike-out.
+         */
+        Deprecated = 1
+    }
+
+    /**
      * A completion item represents a text snippet that is proposed to complete text that is being typed.
      *
      * It is sufficient to create a completion item from just a [label](#CompletionItem.label). In that
@@ -6388,6 +6512,11 @@ declare module '@theia/plugin' {
         detail?: string;
 
         /**
+         * Tags for this completion item.
+         */
+        tags?: ReadonlyArray<CompletionItemTag>;
+
+        /**
          * A human-readable string that represents a doc-comment.
          */
         documentation?: string | MarkdownString;
@@ -6421,16 +6550,16 @@ declare module '@theia/plugin' {
         insertText?: string | SnippetString;
 
         /**
-		 * A range or a insert and replace range selecting the text that should be replaced by this completion item.
-		 *
-		 * When omitted, the range of the [current word](#TextDocument.getWordRangeAtPosition) is used as replace-range
-		 * and as insert-range the start of the [current word](#TextDocument.getWordRangeAtPosition) to the
-		 * current position is used.
-		 *
-		 * *Note 1:* A range must be a [single line](#Range.isSingleLine) and it must
-		 * [contain](#Range.contains) the position at which completion has been [requested](#CompletionItemProvider.provideCompletionItems).
-		 * *Note 2:* A insert range must be a prefix of a replace range, that means it must be contained and starting at the same position.
-		 */
+         * A range or a insert and replace range selecting the text that should be replaced by this completion item.
+         *
+         * When omitted, the range of the [current word](#TextDocument.getWordRangeAtPosition) is used as replace-range
+         * and as insert-range the start of the [current word](#TextDocument.getWordRangeAtPosition) to the
+         * current position is used.
+         *
+         * *Note 1:* A range must be a [single line](#Range.isSingleLine) and it must
+         * [contain](#Range.contains) the position at which completion has been [requested](#CompletionItemProvider.provideCompletionItems).
+         * *Note 2:* A insert range must be a prefix of a replace range, that means it must be contained and starting at the same position.
+         */
         range?: Range | { inserting: Range; replacing: Range; };
 
         /**
@@ -6474,6 +6603,11 @@ declare module '@theia/plugin' {
         textEdit?: TextEdit;
 
         /**
+         * @deprecated Use `CompletionItem.tags` instead.
+         */
+        deprecated?: boolean;
+
+        /**
          * Creates a new completion item.
          *
          * Completion items must have at least a [label](#CompletionItem.label) which then
@@ -6489,7 +6623,7 @@ declare module '@theia/plugin' {
      * Represents a collection of [completion items](#CompletionItem) to be presented
      * in the editor.
      */
-    export class CompletionList {
+    export class CompletionList<T extends CompletionItem = CompletionItem> {
 
         /**
          * This list is not complete. Further typing should result in recomputing
@@ -6523,7 +6657,7 @@ declare module '@theia/plugin' {
      * Providers are asked for completions either explicitly by a user gesture or -depending on the configuration-
      * implicitly when typing words or trigger characters.
      */
-    export interface CompletionItemProvider {
+    export interface CompletionItemProvider<T extends CompletionItem = CompletionItem> {
 
         /**
          * Provide completion items for the given position and document.
@@ -6538,9 +6672,8 @@ declare module '@theia/plugin' {
          */
         provideCompletionItems(document: TextDocument,
             position: Position,
-            token: CancellationToken | undefined,
-            context: CompletionContext
-        ): ProviderResult<CompletionItem[] | CompletionList>;
+            token: CancellationToken,
+            context: CompletionContext): ProviderResult<T[] | CompletionList<T>>;
 
         /**
          * Given a completion item fill in more data, like [doc-comment](#CompletionItem.documentation)
@@ -6553,7 +6686,7 @@ declare module '@theia/plugin' {
          * @return The resolved completion item or a thenable that resolves to of such. It is OK to return the given
          * `item`. When no result is returned, the given `item` will be used.
          */
-        resolveCompletionItem?(item: CompletionItem, token?: CancellationToken): ProviderResult<CompletionItem>;
+        resolveCompletionItem?(item: T, token: CancellationToken): ProviderResult<T>;
     }
 
     /**
@@ -6921,7 +7054,7 @@ declare module '@theia/plugin' {
      * A code lens provider adds [commands](#Command) to source text. The commands will be shown
      * as dedicated horizontal lines in between the source text.
      */
-    export interface CodeLensProvider {
+    export interface CodeLensProvider<T extends CodeLens = CodeLens> {
         /**
          * An optional event to signal that the code lenses from this provider have changed.
          */
@@ -6936,7 +7069,7 @@ declare module '@theia/plugin' {
          * @return An array of code lenses or a thenable that resolves to such. The lack of a result can be
          * signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<CodeLens[]>;
+        provideCodeLenses(document: TextDocument, token: CancellationToken): ProviderResult<T[]>;
         /**
          * This function will be called for each visible code lens, usually when scrolling and after
          * calls to [compute](#CodeLensProvider.provideCodeLenses)-lenses.
@@ -6945,7 +7078,7 @@ declare module '@theia/plugin' {
          * @param token A cancellation token.
          * @return The given, resolved code lens or thenable that resolves to such.
          */
-        resolveCodeLens?(codeLens: CodeLens, token: CancellationToken): ProviderResult<CodeLens>;
+        resolveCodeLens?(codeLens: T, token: CancellationToken): ProviderResult<T>;
     }
 
     /**
@@ -7277,36 +7410,36 @@ declare module '@theia/plugin' {
     }
 
     /**
-	 * A document link is a range in a text document that links to an internal or external resource, like another
-	 * text document or a web site.
-	 */
+     * A document link is a range in a text document that links to an internal or external resource, like another
+     * text document or a web site.
+     */
     export class DocumentLink {
 
-		/**
-		 * The range this link applies to.
-		 */
+        /**
+         * The range this link applies to.
+         */
         range: Range;
 
-		/**
-		 * The uri this link points to.
-		 */
+        /**
+         * The uri this link points to.
+         */
         target?: Uri;
 
-		/**
-		 * The tooltip text when you hover over this link.
-		 *
-		 * If a tooltip is provided, is will be displayed in a string that includes instructions on how to
-		 * trigger the link, such as `{0} (ctrl + click)`. The specific instructions vary depending on OS,
-		 * user settings, and localization.
-		 */
+        /**
+         * The tooltip text when you hover over this link.
+         *
+         * If a tooltip is provided, is will be displayed in a string that includes instructions on how to
+         * trigger the link, such as `{0} (ctrl + click)`. The specific instructions vary depending on OS,
+         * user settings, and localization.
+         */
         tooltip?: string;
 
-		/**
-		 * Creates a new document link.
-		 *
-		 * @param range The range the document link applies to. Must not be empty.
-		 * @param target The uri the document link points to.
-		 */
+        /**
+         * Creates a new document link.
+         *
+         * @param range The range the document link applies to. Must not be empty.
+         * @param target The uri the document link points to.
+         */
         constructor(range: Range, target?: Uri);
     }
 
@@ -7314,7 +7447,7 @@ declare module '@theia/plugin' {
      * The document link provider defines the contract between extensions and feature of showing
      * links in the editor.
      */
-    export interface DocumentLinkProvider {
+    export interface DocumentLinkProvider<T extends DocumentLink = DocumentLink> {
 
         /**
          * Provide links for the given document. Note that the editor ships with a default provider that detects
@@ -7325,7 +7458,7 @@ declare module '@theia/plugin' {
          * @return An array of [document links](#DocumentLink) or a thenable that resolves to such. The lack of a result
          * can be signaled by returning `undefined`, `null`, or an empty array.
          */
-        provideDocumentLinks(document: TextDocument, token: CancellationToken | undefined): ProviderResult<DocumentLink[]>;
+        provideDocumentLinks(document: TextDocument, token: CancellationToken): ProviderResult<T[]>;
 
         /**
          * Given a link fill in its [target](#DocumentLink.target). This method is called when an incomplete
@@ -7336,7 +7469,7 @@ declare module '@theia/plugin' {
          * @param link The link that is to be resolved.
          * @param token A cancellation token.
          */
-        resolveDocumentLink?(link: DocumentLink, token: CancellationToken | undefined): ProviderResult<DocumentLink>;
+        resolveDocumentLink?(link: T, token: CancellationToken): ProviderResult<T>;
     }
 
     /**
@@ -8226,19 +8359,19 @@ declare module '@theia/plugin' {
          */
         resolveDebugConfiguration?(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration>;
 
-		/**
-		 * This hook is directly called after 'resolveDebugConfiguration' but with all variables substituted.
-		 * It can be used to resolve or verify a [debug configuration](#DebugConfiguration) by filling in missing values or by adding/changing/removing attributes.
-		 * If more than one debug configuration provider is registered for the same type, the 'resolveDebugConfigurationWithSubstitutedVariables' calls are chained
-		 * in arbitrary order and the initial debug configuration is piped through the chain.
-		 * Returning the value 'undefined' prevents the debug session from starting.
-		 * Returning the value 'null' prevents the debug session from starting and opens the underlying debug configuration instead.
-		 *
-		 * @param folder The workspace folder from which the configuration originates from or `undefined` for a folderless setup.
-		 * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
-		 * @param token A cancellation token.
-		 * @return The resolved debug configuration or undefined or null.
-		 */
+        /**
+         * This hook is directly called after 'resolveDebugConfiguration' but with all variables substituted.
+         * It can be used to resolve or verify a [debug configuration](#DebugConfiguration) by filling in missing values or by adding/changing/removing attributes.
+         * If more than one debug configuration provider is registered for the same type, the 'resolveDebugConfigurationWithSubstitutedVariables' calls are chained
+         * in arbitrary order and the initial debug configuration is piped through the chain.
+         * Returning the value 'undefined' prevents the debug session from starting.
+         * Returning the value 'null' prevents the debug session from starting and opens the underlying debug configuration instead.
+         *
+         * @param folder The workspace folder from which the configuration originates from or `undefined` for a folderless setup.
+         * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
+         * @param token A cancellation token.
+         * @return The resolved debug configuration or undefined or null.
+         */
         resolveDebugConfigurationWithSubstitutedVariables?(folder: WorkspaceFolder | undefined, debugConfiguration: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration>;
     }
 
@@ -8978,13 +9111,13 @@ declare module '@theia/plugin' {
         detail?: string;
     }
 
-    export interface TaskProvider {
+    export interface TaskProvider<T extends Task = Task> {
         /**
          * Provides tasks.
          * @param token A cancellation token.
          * @return an array of tasks
          */
-        provideTasks(token?: CancellationToken): ProviderResult<Task[]>;
+        provideTasks(token: CancellationToken): ProviderResult<T[]>;
 
         /**
          * Resolves a task that has no [`execution`](#Task.execution) set. Tasks are
@@ -8996,7 +9129,7 @@ declare module '@theia/plugin' {
          * @param token A cancellation token.
          * @return The resolved task
          */
-        resolveTask(task: Task, token?: CancellationToken): ProviderResult<Task>;
+        resolveTask(task: T, token: CancellationToken): ProviderResult<T>;
     }
 
     /**
@@ -9177,7 +9310,7 @@ declare module '@theia/plugin' {
     /* The workspace symbol provider interface defines the contract between extensions
     * and the [symbol search](https://code.visualstudio.com/docs/editor/intellisense)-feature.
     */
-    export interface WorkspaceSymbolProvider {
+    export interface WorkspaceSymbolProvider<T extends SymbolInformation = SymbolInformation> {
 
         /**
          * Project-wide search for a symbol matching the given query string.
@@ -9197,7 +9330,7 @@ declare module '@theia/plugin' {
          * resolves to such. The lack of a result can be signaled by
          * returning undefined, null, or an empty array.
          */
-        provideWorkspaceSymbols(query: string, token: CancellationToken | undefined): ProviderResult<SymbolInformation[]>;
+        provideWorkspaceSymbols(query: string, token: CancellationToken): ProviderResult<T[]>;
 
         /**
          * Given a symbol fill in its [location](#SymbolInformation.location). This method is called whenever a symbol
@@ -9211,8 +9344,10 @@ declare module '@theia/plugin' {
          * @return The resolved symbol or a thenable that resolves to that. When no result is returned,
          * the given `symbol` is used.
          */
-        resolveWorkspaceSymbol?(symbol: SymbolInformation, token: CancellationToken | undefined): ProviderResult<SymbolInformation>;
+        resolveWorkspaceSymbol?(symbol: T, token: CancellationToken): ProviderResult<T>;
     }
+
+    //#region Comments
 
     /**
      * Collapsible state of a [comment thread](#CommentThread)
@@ -9249,25 +9384,20 @@ declare module '@theia/plugin' {
      */
     export interface CommentThread {
         /**
-         * A unique identifier of the comment thread.
-         */
-        readonly id: string;
-
-        /**
          * The uri of the document the thread has been created on.
          */
-        readonly resource: Uri;
+        readonly uri: Uri;
 
         /**
          * The range the comment thread is located within the document. The thread icon will be shown
          * at the first line of the range.
          */
-        readonly range: Range;
+        range: Range;
 
         /**
          * The ordered comments of the thread.
          */
-        comments: Comment[];
+        comments: ReadonlyArray<Comment>;
 
         /**
          * Whether the thread should be collapsed or expanded when opening the document.
@@ -9276,159 +9406,34 @@ declare module '@theia/plugin' {
         collapsibleState: CommentThreadCollapsibleState;
 
         /**
+         * Context value of the comment thread. This can be used to contribute thread specific actions.
+         * For example, a comment thread is given a context value as `editable`. When contributing actions to `comments/commentThread/title`
+         * using `menus` extension point, you can specify context value for key `commentThread` in `when` expression like `commentThread == editable`.
+         * ```
+         *	"contributes": {
+         *		"menus": {
+         *			"comments/commentThread/title": [
+         *				{
+         *					"command": "extension.deleteCommentThread",
+         *					"when": "commentThread == editable"
+         *				}
+         *			]
+         *		}
+         *	}
+         * ```
+         * This will show action `extension.deleteCommentThread` only for comment threads with `contextValue` is `editable`.
+         */
+        contextValue?: string;
+
+        /**
          * The optional human-readable label describing the [Comment Thread](#CommentThread)
          */
         label?: string;
 
         /**
-         * Optional accept input command
-         *
-         * `acceptInputCommand` is the default action rendered on Comment Widget, which is always placed rightmost.
-         * This command will be invoked when users the user accepts the value in the comment editor.
-         * This command will disabled when the comment editor is empty.
-         */
-        acceptInputCommand?: Command;
-
-        /**
-         * Optional additonal commands.
-         *
-         * `additionalCommands` are the secondary actions rendered on Comment Widget.
-         */
-        additionalCommands?: Command[];
-
-        /**
-         * The command to be executed when users try to delete the comment thread. Currently, this is only called
-         * when the user collapses a comment thread that has no comments in it.
-         */
-        deleteCommand?: Command;
-
-        /**
          * Dispose this comment thread.
          *
-         * Once disposed, this comment thread will be removed from visible editors and Comment Panel when approriate.
-         */
-        dispose(): void;
-    }
-
-    /**
-     * Commenting range provider for a [comment controller](#CommentController).
-     */
-    export interface CommentingRangeProvider {
-        /**
-         * Provide a list of ranges which allow new comment threads creation or null for a given document
-         */
-        provideCommentingRanges(document: TextDocument, token: CancellationToken): ProviderResult<Range[]>;
-    }
-
-    /**
-     * Comment thread template for new comment thread creation.
-     */
-    export interface CommentThreadTemplate {
-        /**
-         * The human-readable label describing the [Comment Thread](#CommentThread)
-         */
-        readonly label: string;
-
-        /**
-         * Optional accept input command
-         *
-         * `acceptInputCommand` is the default action rendered on Comment Widget, which is always placed rightmost.
-         * This command will be invoked when users the user accepts the value in the comment editor.
-         * This command will disabled when the comment editor is empty.
-         */
-        readonly acceptInputCommand?: Command;
-
-        /**
-         * Optional additonal commands.
-         *
-         * `additionalCommands` are the secondary actions rendered on Comment Widget.
-         */
-        readonly additionalCommands?: Command[];
-
-        /**
-         * The command to be executed when users try to delete the comment thread. Currently, this is only called
-         * when the user collapses a comment thread that has no comments in it.
-         */
-        readonly deleteCommand?: Command;
-    }
-
-    /**
-     * The comment input box in Comment Widget.
-     */
-    export interface CommentInputBox {
-        /**
-         * Setter and getter for the contents of the comment input box
-         */
-        value: string;
-
-        /**
-         * The uri of the document comment input box has been created on
-         */
-        resource: Uri;
-
-        /**
-         * The range the comment input box is located within the document
-         */
-        range: Range;
-    }
-
-    /**
-     * A comment controller is able to provide [comments](#CommentThread) support to the editor and
-     * provide users various ways to interact with comments.
-     */
-    export interface CommentController {
-        /**
-         * The id of this comment controller.
-         */
-        readonly id: string;
-
-        /**
-         * The human-readable label of this comment controller.
-         */
-        readonly label: string;
-
-        /**
-         * The active [comment input box](#CommentInputBox) or `undefined`. The active `inputBox` is the input box of
-         * the comment thread widget that currently has focus. It's `undefined` when the focus is not in any CommentInputBox.
-         */
-        readonly inputBox: CommentInputBox | undefined;
-
-        /**
-         * Optional comment thread template information.
-         *
-         * The comment controller will use this information to create the comment widget when users attempt to create new comment thread
-         * from the gutter or command palette.
-         *
-         * When users run `CommentThreadTemplate.acceptInputCommand` or `CommentThreadTemplate.additionalCommands`, extensions should create
-         * the approriate [CommentThread](#CommentThread).
-         *
-         * If not provided, users won't be able to create new comment threads in the editor.
-         */
-        template?: CommentThreadTemplate;
-
-        /**
-         * Optional commenting range provider. Provide a list [ranges](#Range) which support commenting to any given resource uri.
-         *
-         * If not provided and `emptyCommentThreadFactory` exits, users can leave comments in any document opened in the editor.
-         */
-        commentingRangeProvider?: CommentingRangeProvider;
-
-        /**
-         * Create a [comment thread](#CommentThread). The comment thread will be displayed in visible text editors (if the resource matches)
-         * and Comments Panel once created.
-         *
-         * @param id An `id` for the comment thread.
-         * @param resource The uri of the document the thread has been created on.
-         * @param range The range the comment thread is located within the document.
-         * @param comments The ordered comments of the thread.
-         */
-        createCommentThread(id: string, resource: Uri, range: Range, comments: Comment[]): CommentThread;
-
-        /**
-         * Dispose this comment controller.
-         *
-         * Once disposed, all [comment threads](#CommentThread) created by this comment controller will also be removed from the editor
-         * and Comments Panel.
+         * Once disposed, this comment thread will be removed from visible editors and Comment Panel when appropriate.
          */
         dispose(): void;
     }
@@ -9496,6 +9501,19 @@ declare module '@theia/plugin' {
          * Context value of the comment. This can be used to contribute comment specific actions.
          * For example, a comment is given a context value as `editable`. When contributing actions to `comments/comment/title`
          * using `menus` extension point, you can specify context value for key `comment` in `when` expression like `comment == editable`.
+         * ```json
+         *	"contributes": {
+         *		"menus": {
+         *			"comments/comment/title": [
+         *				{
+         *					"command": "extension.deleteComment",
+         *					"when": "comment == editable"
+         *				}
+         *			]
+         *		}
+         *	}
+         * ```
+         * This will show action `extension.deleteComment` only for comments with `contextValue` is `editable`.
          */
         contextValue?: string;
 
@@ -9511,7 +9529,98 @@ declare module '@theia/plugin' {
         label?: string;
     }
 
-    namespace comment {
+    /**
+     * Command argument for actions registered in `comments/commentThread/context`.
+     */
+    export interface CommentReply {
+        /**
+         * The active [comment thread](#CommentThread)
+         */
+        thread: CommentThread;
+
+        /**
+         * The value in the comment editor
+         */
+        text: string;
+    }
+
+    /**
+     * Commenting range provider for a [comment controller](#CommentController).
+     */
+    export interface CommentingRangeProvider {
+        /**
+         * Provide a list of ranges which allow new comment threads creation or null for a given document
+         */
+        provideCommentingRanges(document: TextDocument, token: CancellationToken): ProviderResult<Range[]>;
+    }
+
+    /**
+     * Represents a [comment controller](#CommentController)'s [options](#CommentController.options).
+     */
+    export interface CommentOptions {
+        /**
+         * An optional string to show on the comment input box when it's collapsed.
+         */
+        prompt?: string;
+
+        /**
+         * An optional string to show as placeholder in the comment input box when it's focused.
+         */
+        placeHolder?: string;
+    }
+
+    /**
+     * A comment controller is able to provide [comments](#CommentThread) support to the editor and
+     * provide users various ways to interact with comments.
+     */
+    export interface CommentController {
+        /**
+         * The id of this comment controller.
+         */
+        readonly id: string;
+
+        /**
+         * The human-readable label of this comment controller.
+         */
+        readonly label: string;
+
+        /**
+         * Comment controller options
+         */
+        options?: CommentOptions;
+
+        /**
+         * Optional commenting range provider. Provide a list [ranges](#Range) which support commenting to any given resource uri.
+         *
+         * If not provided, users can leave comments in any document opened in the editor.
+         */
+        commentingRangeProvider?: CommentingRangeProvider;
+
+        /**
+         * Create a [comment thread](#CommentThread). The comment thread will be displayed in visible text editors (if the resource matches)
+         * and Comments Panel once created.
+         *
+         * @param uri The uri of the document the thread has been created on.
+         * @param range The range the comment thread is located within the document.
+         * @param comments The ordered comments of the thread.
+         */
+        createCommentThread(uri: Uri, range: Range, comments: Comment[]): CommentThread;
+
+        /**
+         * Optional reaction handler for creating and deleting reactions on a [comment](#Comment).
+         */
+        reactionHandler?: (comment: Comment, reaction: CommentReaction) => Promise<void>;
+
+        /**
+         * Dispose this comment controller.
+         *
+         * Once disposed, all [comment threads](#CommentThread) created by this comment controller will also be removed from the editor
+         * and Comments Panel.
+         */
+        dispose(): void;
+    }
+
+    namespace comments {
         /**
          * Creates a new [comment controller](#CommentController) instance.
          *
@@ -9522,184 +9631,319 @@ declare module '@theia/plugin' {
         export function createCommentController(id: string, label: string): CommentController;
     }
 
+    //#endregion
+
     /**
-	 * A selection range represents a part of a selection hierarchy. A selection range
-	 * may have a parent selection range that contains it.
-	 */
+     * A selection range represents a part of a selection hierarchy. A selection range
+     * may have a parent selection range that contains it.
+     */
     export class SelectionRange {
 
-		/**
-		 * The [range](#Range) of this selection range.
-		 */
+        /**
+         * The [range](#Range) of this selection range.
+         */
         range: Range;
 
-		/**
-		 * The parent selection range containing this range.
-		 */
+        /**
+         * The parent selection range containing this range.
+         */
         parent?: SelectionRange;
 
-		/**
-		 * Creates a new selection range.
-		 *
-		 * @param range The range of the selection range.
-		 * @param parent The parent of the selection range.
-		 */
+        /**
+         * Creates a new selection range.
+         *
+         * @param range The range of the selection range.
+         * @param parent The parent of the selection range.
+         */
         constructor(range: Range, parent?: SelectionRange);
     }
 
     export interface SelectionRangeProvider {
-		/**
-		 * Provide selection ranges for the given positions.
-		 *
-		 * Selection ranges should be computed individually and independent for each position. The editor will merge
-		 * and deduplicate ranges but providers must return hierarchies of selection ranges so that a range
-		 * is [contained](#Range.contains) by its parent.
-		 *
-		 * @param document The document in which the command was invoked.
-		 * @param positions The positions at which the command was invoked.
-		 * @param token A cancellation token.
-		 * @return Selection ranges or a thenable that resolves to such. The lack of a result can be
-		 * signaled by returning `undefined` or `null`.
-		 */
+        /**
+         * Provide selection ranges for the given positions.
+         *
+         * Selection ranges should be computed individually and independent for each position. The editor will merge
+         * and deduplicate ranges but providers must return hierarchies of selection ranges so that a range
+         * is [contained](#Range.contains) by its parent.
+         *
+         * @param document The document in which the command was invoked.
+         * @param positions The positions at which the command was invoked.
+         * @param token A cancellation token.
+         * @return Selection ranges or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
         provideSelectionRanges(document: TextDocument, positions: Position[], token: CancellationToken): ProviderResult<SelectionRange[]>;
     }
 
     /**
-	 * Represents programming constructs like functions or constructors in the context
-	 * of call hierarchy.
-	 */
+     * Represents programming constructs like functions or constructors in the context
+     * of call hierarchy.
+     */
     export class CallHierarchyItem {
-		/**
-		 * The name of this item.
-		 */
+        /**
+         * The name of this item.
+         */
         name: string;
 
-		/**
-		 * The kind of this item.
-		 */
+        /**
+         * The kind of this item.
+         */
         kind: SymbolKind;
 
-		/**
-		 * More detail for this item, e.g. the signature of a function.
-		 */
+        /**
+         * More detail for this item, e.g. the signature of a function.
+         */
         detail?: string;
 
-		/**
-		 * The resource identifier of this item.
-		 */
+        /**
+         * The resource identifier of this item.
+         */
         uri: Uri;
 
-		/**
-		 * The range enclosing this symbol not including leading/trailing whitespace but everything else, e.g. comments and code.
-		 */
+        /**
+         * The range enclosing this symbol not including leading/trailing whitespace but everything else, e.g. comments and code.
+         */
         range: Range;
 
-		/**
-		 * The range that should be selected and revealed when this symbol is being picked, e.g. the name of a function.
-		 * Must be contained by the [`range`](#CallHierarchyItem.range).
-		 */
+        /**
+         * The range that should be selected and revealed when this symbol is being picked, e.g. the name of a function.
+         * Must be contained by the [`range`](#CallHierarchyItem.range).
+         */
         selectionRange: Range;
 
-		/**
-		 * Creates a new call hierarchy item.
-		 */
+        /**
+         * Creates a new call hierarchy item.
+         */
         constructor(kind: SymbolKind, name: string, detail: string, uri: Uri, range: Range, selectionRange: Range);
     }
 
-	/**
-	 * Represents an incoming call, e.g. a caller of a method or constructor.
-	 */
+    /**
+     * Represents an incoming call, e.g. a caller of a method or constructor.
+     */
     export class CallHierarchyIncomingCall {
 
-		/**
-		 * The item that makes the call.
-		 */
+        /**
+         * The item that makes the call.
+         */
         from: CallHierarchyItem;
 
-		/**
-		 * The range at which at which the calls appears. This is relative to the caller
-		 * denoted by [`this.from`](#CallHierarchyIncomingCall.from).
-		 */
+        /**
+         * The range at which at which the calls appears. This is relative to the caller
+         * denoted by [`this.from`](#CallHierarchyIncomingCall.from).
+         */
         fromRanges: Range[];
 
-		/**
-		 * Create a new call object.
-		 *
-		 * @param item The item making the call.
-		 * @param fromRanges The ranges at which the calls appear.
-		 */
+        /**
+         * Create a new call object.
+         *
+         * @param item The item making the call.
+         * @param fromRanges The ranges at which the calls appear.
+         */
         constructor(item: CallHierarchyItem, fromRanges: Range[]);
     }
 
-	/**
-	 * Represents an outgoing call, e.g. calling a getter from a method or a method from a constructor etc.
-	 */
+    /**
+     * Represents an outgoing call, e.g. calling a getter from a method or a method from a constructor etc.
+     */
     export class CallHierarchyOutgoingCall {
 
-		/**
-		 * The item that is called.
-		 */
+        /**
+         * The item that is called.
+         */
         to: CallHierarchyItem;
 
-		/**
-		 * The range at which this item is called. This is the range relative to the caller, e.g the item
-		 * passed to [`provideCallHierarchyOutgoingCalls`](#CallHierarchyItemProvider.provideCallHierarchyOutgoingCalls)
-		 * and not [`this.to`](#CallHierarchyOutgoingCall.to).
-		 */
+        /**
+         * The range at which this item is called. This is the range relative to the caller, e.g the item
+         * passed to [`provideCallHierarchyOutgoingCalls`](#CallHierarchyItemProvider.provideCallHierarchyOutgoingCalls)
+         * and not [`this.to`](#CallHierarchyOutgoingCall.to).
+         */
         fromRanges: Range[];
 
-		/**
-		 * Create a new call object.
-		 *
-		 * @param item The item being called
-		 * @param fromRanges The ranges at which the calls appear.
-		 */
+        /**
+         * Create a new call object.
+         *
+         * @param item The item being called
+         * @param fromRanges The ranges at which the calls appear.
+         */
         constructor(item: CallHierarchyItem, fromRanges: Range[]);
     }
 
-	/**
-	 * The call hierarchy provider interface describes the constract between extensions
-	 * and the call hierarchy feature which allows to browse calls and caller of function,
-	 * methods, constructor etc.
-	 */
+    /**
+     * The call hierarchy provider interface describes the constract between extensions
+     * and the call hierarchy feature which allows to browse calls and caller of function,
+     * methods, constructor etc.
+     */
     export interface CallHierarchyProvider {
 
-		/**
-		 * Bootstraps call hierarchy by returning the item that is denoted by the given document
-		 * and position. This item will be used as entry into the call graph. Providers should
-		 * return `undefined` or `null` when there is no item at the given location.
-		 *
-		 * @param document The document in which the command was invoked.
-		 * @param position The position at which the command was invoked.
-		 * @param token A cancellation token.
-		 * @returns A call hierarchy item or a thenable that resolves to such. The lack of a result can be
-		 * signaled by returning `undefined` or `null`.
-		 */
+        /**
+         * Bootstraps call hierarchy by returning the item that is denoted by the given document
+         * and position. This item will be used as entry into the call graph. Providers should
+         * return `undefined` or `null` when there is no item at the given location.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param token A cancellation token.
+         * @returns A call hierarchy item or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
         prepareCallHierarchy(document: TextDocument, position: Position, token: CancellationToken): ProviderResult<CallHierarchyItem>;
 
-		/**
-		 * Provide all incoming calls for an item, e.g all callers for a method. In graph terms this describes directed
-		 * and annotated edges inside the call graph, e.g the given item is the starting node and the result is the nodes
-		 * that can be reached.
-		 *
-		 * @param item The hierarchy item for which incoming calls should be computed.
-		 * @param token A cancellation token.
-		 * @returns A set of incoming calls or a thenable that resolves to such. The lack of a result can be
-		 * signaled by returning `undefined` or `null`.
-		 */
+        /**
+         * Provide all incoming calls for an item, e.g all callers for a method. In graph terms this describes directed
+         * and annotated edges inside the call graph, e.g the given item is the starting node and the result is the nodes
+         * that can be reached.
+         *
+         * @param item The hierarchy item for which incoming calls should be computed.
+         * @param token A cancellation token.
+         * @returns A set of incoming calls or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
         provideCallHierarchyIncomingCalls(item: CallHierarchyItem, token: CancellationToken): ProviderResult<CallHierarchyIncomingCall[]>;
 
-		/**
-		 * Provide all outgoing calls for an item, e.g call calls to functions, methods, or constructors from the given item. In
-		 * graph terms this describes directed and annotated edges inside the call graph, e.g the given item is the starting
-		 * node and the result is the nodes that can be reached.
-		 *
-		 * @param item The hierarchy item for which outgoing calls should be computed.
-		 * @param token A cancellation token.
-		 * @returns A set of outgoing calls or a thenable that resolves to such. The lack of a result can be
-		 * signaled by returning `undefined` or `null`.
-		 */
+        /**
+         * Provide all outgoing calls for an item, e.g call calls to functions, methods, or constructors from the given item. In
+         * graph terms this describes directed and annotated edges inside the call graph, e.g the given item is the starting
+         * node and the result is the nodes that can be reached.
+         *
+         * @param item The hierarchy item for which outgoing calls should be computed.
+         * @param token A cancellation token.
+         * @returns A set of outgoing calls or a thenable that resolves to such. The lack of a result can be
+         * signaled by returning `undefined` or `null`.
+         */
         provideCallHierarchyOutgoingCalls(item: CallHierarchyItem, token: CancellationToken): ProviderResult<CallHierarchyOutgoingCall[]>;
+    }
+
+    /**
+     * Represents a session of a currently logged in user.
+     */
+    export interface AuthenticationSession {
+        /**
+         * The identifier of the authentication session.
+         */
+        readonly id: string;
+
+        /**
+         * The access token.
+         */
+        readonly accessToken: string;
+
+        /**
+         * The account associated with the session.
+         */
+        readonly account: AuthenticationSessionAccountInformation;
+
+        /**
+         * The permissions granted by the session's access token. Available scopes
+         * are defined by the [AuthenticationProvider](#AuthenticationProvider).
+         */
+        readonly scopes: ReadonlyArray<string>;
+    }
+
+    /**
+     * The information of an account associated with an [AuthenticationSession](#AuthenticationSession).
+     */
+    export interface AuthenticationSessionAccountInformation {
+        /**
+         * The unique identifier of the account.
+         */
+        readonly id: string;
+
+        /**
+         * The human-readable name of the account.
+         */
+        readonly label: string;
+    }
+
+
+    /**
+     * Options to be used when getting an [AuthenticationSession](#AuthenticationSession) from an [AuthenticationProvider](#AuthenticationProvider).
+     */
+    export interface AuthenticationGetSessionOptions {
+        /**
+         * Whether login should be performed if there is no matching session.
+         *
+         * If true, a modal dialog will be shown asking the user to sign in. If false, a numbered badge will be shown
+         * on the accounts activity bar icon. An entry for the extension will be added under the menu to sign in. This
+         * allows quietly prompting the user to sign in.
+         *
+         * Defaults to false.
+         */
+        createIfNone?: boolean;
+
+        /**
+         * Whether the existing user session preference should be cleared.
+         *
+         * For authentication providers that support being signed into multiple accounts at once, the user will be
+         * prompted to select an account to use when [getSession](#authentication.getSession) is called. This preference
+         * is remembered until [getSession](#authentication.getSession) is called with this flag.
+         *
+         * Defaults to false.
+         */
+        clearSessionPreference?: boolean;
+    }
+
+    /**
+     * Basic information about an [authenticationProvider](#AuthenticationProvider)
+     */
+    export interface AuthenticationProviderInformation {
+        /**
+         * The unique identifier of the authentication provider.
+         */
+        readonly id: string;
+
+        /**
+         * The human-readable name of the authentication provider.
+         */
+        readonly label: string;
+    }
+
+    /**
+     * An [event](#Event) which fires when an [AuthenticationSession](#AuthenticationSession) is added, removed, or changed.
+     */
+    export interface AuthenticationSessionsChangeEvent {
+        /**
+         * The [authenticationProvider](#AuthenticationProvider) that has had its sessions change.
+         */
+        readonly provider: AuthenticationProviderInformation;
+    }
+
+    /**
+     * Namespace for authentication.
+     */
+    export namespace authentication {
+        /**
+         * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
+         * registered, or if the user does not consent to sharing authentication information with
+         * the extension. If there are multiple sessions with the same scopes, the user will be shown a
+         * quickpick to select which account they would like to use.
+         *
+         * Currently, there are only two authentication providers that are contributed from built in extensions
+         * to VS Code that implement GitHub and Microsoft authentication: their providerId's are 'github' and 'microsoft'.
+         * @param providerId The id of the provider to use
+         * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
+         * @param options The [getSessionOptions](#GetSessionOptions) to use
+         * @returns A thenable that resolves to an authentication session
+         */
+        export function getSession(providerId: string, scopes: string[], options: AuthenticationGetSessionOptions & { createIfNone: true }): Thenable<AuthenticationSession>;
+
+        /**
+         * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
+         * registered, or if the user does not consent to sharing authentication information with
+         * the extension. If there are multiple sessions with the same scopes, the user will be shown a
+         * quickpick to select which account they would like to use.
+         *
+         * @param providerId The id of the provider to use
+         * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
+         * @param options The [getSessionOptions](#GetSessionOptions) to use
+         * @returns A thenable that resolves to an authentication session if available, or undefined if there are no sessions
+         */
+        export function getSession(providerId: string, scopes: string[], options?: AuthenticationGetSessionOptions): Thenable<AuthenticationSession | undefined>;
+
+        /**
+         * An [event](#Event) which fires when the authentication sessions of an authentication provider have
+         * been added, removed, or changed.
+         */
+        export const onDidChangeSessions: Event<AuthenticationSessionsChangeEvent>;
     }
 }
 

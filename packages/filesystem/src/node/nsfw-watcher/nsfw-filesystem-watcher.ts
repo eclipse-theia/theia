@@ -33,10 +33,16 @@ const debounce = require('lodash.debounce');
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+/**
+ * @deprecated since 1.6.0
+ */
 export interface WatcherOptions {
     ignored: IMinimatch[]
 }
 
+/**
+ * @deprecated since 1.6.0 use `NsfwFileSystemWatcherService` instead.
+ */
 export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
 
     protected client: FileSystemWatcherClient | undefined;
@@ -131,6 +137,11 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
             errorCallback: error => {
                 // see https://github.com/atom/github/issues/342
                 console.warn(`Failed to watch "${basePath}":`, error);
+                if (error === 'Inotify limit reached') {
+                    if (this.client) {
+                        this.client.onError();
+                    }
+                }
                 this.unwatchFileChanges(watcherId);
             },
             ...this.options.nsfwOptions

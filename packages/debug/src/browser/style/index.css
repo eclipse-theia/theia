@@ -156,13 +156,13 @@
 }
 
 .debug-tab-icon {
-    -webkit-mask: url('debug-dark.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
-    mask: url('debug-dark.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
+    -webkit-mask: url('debug-dark.svg');
+    mask: url('debug-dark.svg');
 }
 
 .theia-debug-console-icon {
-    -webkit-mask: url('repl.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
-    mask: url('repl.svg') 50% 50% / var(--theia-private-sidebar-icon-size) no-repeat;
+    -webkit-mask: url('repl.svg');
+    mask: url('repl.svg');
 }
 
 /** Console */

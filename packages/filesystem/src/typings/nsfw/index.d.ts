@@ -13,4 +13,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+
+// eslint-disable-next-line spaced-comment
 /// <reference types="@theia/core/src/typings/nsfw/index"/>

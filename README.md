@@ -2,7 +2,7 @@
 <div id="theia-logo" align="center">
     <br />
     <img src="https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia-logo.svg?sanitize=true" alt="Theia Logo" width="300"/>
-    <h3>Cloud & Desktop IDE Platform</h3>
+    <h3>Cloud & Desktop IDE Framework</h3>
 </div>
 
 <div id="badges" align="center">
@@ -15,7 +15,7 @@
   [![Open questions](https://img.shields.io/badge/Open-questions-blue.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/question)
   [![Open bugs](https://img.shields.io/badge/Open-bugs-red.svg?style=flat-curved)](https://github.com/eclipse-theia/theia/labels/bug)
 
-  Eclipse Theia is an extensible platform to develop full-fledged multi-language Cloud & Desktop IDE-like products with state-of-the-art web  technologies.
+  Eclipse Theia is an extensible framework to develop full-fledged multi-language Cloud & Desktop IDE-like products with state-of-the-art web  technologies.
 
   **Theia 1.0 has been released. Read the [announcement](https://dev.to/svenefftinge/theia-1-0-finally-a-good-browser-ide-3ok0).**
 

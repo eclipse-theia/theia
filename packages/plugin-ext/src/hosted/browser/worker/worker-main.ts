@@ -17,9 +17,9 @@
 import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocolImpl } from '../../../common/rpc-protocol';
 import { PluginManagerExtImpl } from '../../../plugin/plugin-manager';
-import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin } from '../../../common/plugin-api-rpc';
+import { MAIN_RPC_CONTEXT, Plugin, emptyPlugin, TerminalServiceExt } from '../../../common/plugin-api-rpc';
 import { createAPIFactory } from '../../../plugin/plugin-context';
-import { getPluginId, PluginMetadata, PluginPackage } from '../../../common/plugin-protocol';
+import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
 import * as theia from '@theia/plugin';
 import { PreferenceRegistryExtImpl } from '../../../plugin/preference-registry';
 import { ExtPluginApi } from '../../../common/plugin-ext-api-contribution';
@@ -31,6 +31,8 @@ import { WorkerEnvExtImpl } from './worker-env-ext';
 import { ClipboardExt } from '../../../plugin/clipboard-ext';
 import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 import { WebviewsExtImpl } from '../../../plugin/webviews';
+import { loadManifest } from './plugin-manifest-loader';
+import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -61,6 +63,7 @@ const preferenceRegistryExt = new PreferenceRegistryExtImpl(rpc, workspaceExt);
 const debugExt = createDebugExtStub(rpc);
 const clipboardExt = new ClipboardExt(rpc);
 const webviewExt = new WebviewsExtImpl(rpc, workspaceExt);
+const terminalService: TerminalServiceExt = new TerminalServiceExtImpl(rpc);
 
 const pluginManager = new PluginManagerExtImpl({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,10 +84,15 @@ const pluginManager = new PluginManagerExtImpl({
             return ctx[plugin.lifecycle.frontendModuleName];
         }
     },
-    init(rawPluginData: PluginMetadata[]): [Plugin[], Plugin[]] {
+    async init(rawPluginData: PluginMetadata[]): Promise<[Plugin[], Plugin[]]> {
         const result: Plugin[] = [];
         const foreign: Plugin[] = [];
-        for (const plg of rawPluginData) {
+        // Process the plugins concurrently, making sure to keep the order.
+        const plugins = await Promise.all<{
+            /** Where to push the plugin: `result` or `foreign` */
+            target: Plugin[],
+            plugin: Plugin
+        }>(rawPluginData.map(async plg => {
             const pluginModel = plg.model;
             const pluginLifecycle = plg.lifecycle;
             if (pluginModel.entryPoint!.frontend) {
@@ -94,32 +102,37 @@ const pluginManager = new PluginManagerExtImpl({
                 } else {
                     frontendInitPath = '';
                 }
+                const rawModel = await loadManifest(pluginModel);
                 const plugin: Plugin = {
                     pluginPath: pluginModel.entryPoint.frontend!,
                     pluginFolder: pluginModel.packagePath,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
-                    get rawModel(): PluginPackage {
-                        throw new Error('not supported');
-                    }
+                    rawModel
                 };
-                result.push(plugin);
                 const apiImpl = apiFactory(plugin);
                 pluginsApiImpl.set(plugin.model.id, apiImpl);
                 pluginsModulesNames.set(plugin.lifecycle.frontendModuleName!, plugin);
+                return { target: result, plugin };
             } else {
-                foreign.push({
-                    pluginPath: pluginModel.entryPoint.backend,
-                    pluginFolder: pluginModel.packagePath,
-                    model: pluginModel,
-                    lifecycle: pluginLifecycle,
-                    get rawModel(): PluginPackage {
-                        throw new Error('not supported');
+                return {
+                    target: foreign,
+                    plugin: {
+                        pluginPath: pluginModel.entryPoint.backend,
+                        pluginFolder: pluginModel.packagePath,
+                        model: pluginModel,
+                        lifecycle: pluginLifecycle,
+                        get rawModel(): never {
+                            throw new Error('not supported');
+                        }
                     }
-                });
+                };
             }
+        }));
+        // Collect the ordered plugins and insert them in the target array:
+        for (const { target, plugin } of plugins) {
+            target.push(plugin);
         }
-
         return [result, foreign];
     },
     initExtApi(extApi: ExtPluginApi[]): void {
@@ -135,7 +148,7 @@ const pluginManager = new PluginManagerExtImpl({
             }
         }
     }
-}, envExt, storageProxy, preferenceRegistryExt, webviewExt, rpc);
+}, envExt, terminalService, storageProxy, preferenceRegistryExt, webviewExt, rpc);
 
 const apiFactory = createAPIFactory(
     rpc,
@@ -173,6 +186,7 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, pluginManager);
 rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, editorsAndDocuments);
 rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, workspaceExt);
 rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, preferenceRegistryExt);
+rpc.set(MAIN_RPC_CONTEXT.STORAGE_EXT, storageProxy);
 rpc.set(MAIN_RPC_CONTEXT.WEBVIEWS_EXT, webviewExt);
 
 function isElectron(): boolean {

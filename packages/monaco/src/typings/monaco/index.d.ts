@@ -15,7 +15,51 @@
  ********************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable max-len */
+
+// eslint-disable-next-line spaced-comment
 /// <reference types='@theia/monaco-editor-core/monaco'/>
+
+declare module monaco.languages {
+
+    export class ExtensionIdentifier {
+        public readonly value: string;
+    }
+
+    /**
+     * The document formatting provider interface defines the contract between extensions and
+     * the formatting-feature.
+     */
+    export interface DocumentFormattingEditProvider {
+        readonly extensionId?: ExtensionIdentifier;
+    }
+
+    /**
+     * The document formatting provider interface defines the contract between extensions and
+     * the formatting-feature.
+     */
+    export interface DocumentRangeFormattingEditProvider {
+        readonly extensionId?: ExtensionIdentifier;
+    }
+
+}
+
+declare module monaco.format {
+
+    export const enum FormattingMode {
+        Explicit = 1,
+        Silent = 2
+    }
+
+    export interface IFormattingEditProviderSelector {
+        <T extends (monaco.languages.DocumentFormattingEditProvider | monaco.languages.DocumentRangeFormattingEditProvider)>(formatter: T[], document: monaco.editor.ITextModel, mode: FormattingMode): Promise<T | undefined>;
+    }
+
+    export abstract class FormattingConflicts {
+        static setFormatterSelector(selector: IFormattingEditProviderSelector): monaco.IDisposable;
+    }
+
+}
 
 declare module monaco.instantiation {
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/platform/instantiation/common/instantiation.ts#L86
@@ -1455,7 +1499,7 @@ declare module monaco.error {
 
 declare module monaco.path {
     // https://github.com/microsoft/vscode/blob/320fbada86c113835aef4fb9d7c4bc5b74678166/src/vs/base/common/path.ts#L1494
-    export function normalize(path: string): string;
+    export function normalize(uriPath: string): string;
 }
 
 declare module monaco.wordHelper {

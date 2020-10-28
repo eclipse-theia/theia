@@ -66,8 +66,12 @@ export class NotificationManager extends MessageClient {
     protected readonly onUpdatedEmitter = new Emitter<NotificationUpdateEvent>();
     readonly onUpdated = this.onUpdatedEmitter.event;
     protected readonly fireUpdatedEvent = throttle(() => {
-        const notifications = deepClone(Array.from(this.notifications.values()));
-        const toasts = deepClone(Array.from(this.toasts.values()));
+        const notifications = deepClone(Array.from(this.notifications.values()).filter((notification: Notification) =>
+            notification.message
+        ));
+        const toasts = deepClone(Array.from(this.toasts.values()).filter((toast: Notification) =>
+            toast.message
+        ));
         const visibilityState = this.visibilityState;
         this.onUpdatedEmitter.fire({ notifications, toasts, visibilityState });
     }, 250, { leading: true, trailing: true });
@@ -269,8 +273,9 @@ export class NotificationManager extends MessageClient {
         if (cancellationToken.isCancellationRequested) {
             this.clear(messageId);
         } else {
-            notification.message = update.message ? `${originalMessage.text}: ${update.message}` : originalMessage.text;
-            notification.progress = this.toPlainProgress(update);
+            notification.message = originalMessage.text && update.message ? `${originalMessage.text}: ${update.message}` :
+                originalMessage.text || update?.message || notification.message;
+            notification.progress = this.toPlainProgress(update) || notification.progress;
         }
         this.fireUpdatedEvent();
     }

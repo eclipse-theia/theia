@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import { DisposableCollection } from '@theia/core';
 import { Message } from '@phosphor/messaging';
 import * as React from 'react';
 import TextareaAutosize from 'react-autosize-textarea';
@@ -31,6 +32,8 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
 
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry;
+
+    protected readonly toDisposeOnRepositoryChange = new DisposableCollection();
 
     protected shouldScrollToRow = true;
 
@@ -50,6 +53,25 @@ export class ScmCommitWidget extends ReactWidget implements StatefulWidget {
         };
         this.addClass('theia-scm-commit');
         this.id = ScmCommitWidget.ID;
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.refreshOnRepositoryChange();
+        this.toDisposeOnDetach.push(this.scmService.onDidChangeSelectedRepository(() => {
+            this.refreshOnRepositoryChange();
+            this.update();
+        }));
+    }
+
+    protected refreshOnRepositoryChange(): void {
+        this.toDisposeOnRepositoryChange.dispose();
+        const repository = this.scmService.selectedRepository;
+        if (repository) {
+            this.toDisposeOnRepositoryChange.push(repository.provider.onDidChange(async () => {
+                this.update();
+            }));
+        }
     }
 
     protected onActivateRequest(msg: Message): void {

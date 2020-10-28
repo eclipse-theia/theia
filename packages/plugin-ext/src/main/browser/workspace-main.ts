@@ -166,7 +166,10 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         for (const rootUri of rootUris) {
             roots[rootUri] = {};
         }
-        const opts: FileSearchService.Options = { rootOptions: roots };
+        const opts: FileSearchService.Options = {
+            rootOptions: roots,
+            useGitIgnore: excludePatternOrDisregardExcludes !== false
+        };
         if (includePattern) {
             opts.includePatterns = [includePattern];
         }

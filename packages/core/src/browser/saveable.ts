@@ -29,7 +29,7 @@ export interface Saveable {
     /**
      * Saves dirty changes.
      */
-    save(): MaybePromise<void>;
+    save(options?: SaveOptions): MaybePromise<void>;
     /**
      * Reverts dirty changes.
      */
@@ -87,10 +87,10 @@ export namespace Saveable {
         return !!getDirty(arg);
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export async function save(arg: any): Promise<void> {
+    export async function save(arg: any, options?: SaveOptions): Promise<void> {
         const saveable = get(arg);
         if (saveable) {
-            await saveable.save();
+            await saveable.save(options);
         }
     }
     export function apply(widget: Widget): SaveableWidget | undefined {
@@ -177,6 +177,31 @@ export namespace SaveableWidget {
     export interface CloseOptions {
         shouldSave?(): MaybePromise<boolean | undefined>
     }
+}
+
+/**
+ * Possible formatting types when saving.
+ */
+export const enum FormatType {
+    /**
+     * Formatting should occur (default).
+     */
+    ON = 1,
+    /**
+     * Formatting should not occur.
+     */
+    OFF,
+    /**
+     * Formatting should only occur if the resource is dirty.
+     */
+    DIRTY
+};
+
+export interface SaveOptions {
+    /**
+     * Formatting type to apply when saving.
+     */
+    readonly formatType?: FormatType;
 }
 
 /**

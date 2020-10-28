@@ -64,7 +64,10 @@ import {
     SelectionRange,
     CallHierarchyDefinition,
     CallHierarchyReference,
-    SearchInWorkspaceResult
+    SearchInWorkspaceResult,
+    AuthenticationSession,
+    AuthenticationSessionsChangeEvent,
+    AuthenticationProviderInformation
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -84,6 +87,7 @@ import type {
     TimelineChangeEvent,
     TimelineProviderDescriptor
 } from '@theia/timeline/lib/common/timeline-model';
+import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -242,6 +246,8 @@ export interface TerminalServiceExt {
     $terminalOnInput(id: string, data: string): void;
     $terminalSizeChanged(id: string, cols: number, rows: number): void;
     $currentTerminalChanged(id: string | undefined): void;
+    $initEnvironmentVariableCollections(collections: [string, SerializableEnvironmentVariableCollection][]): void;
+    getEnvironmentVariableCollection(extensionIdentifier: string): theia.EnvironmentVariableCollection;
 }
 export interface OutputChannelRegistryExt {
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel
@@ -309,6 +315,8 @@ export interface TerminalServiceMain {
      * @param id - terminal id.
      */
     $dispose(id: string): void;
+
+    $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void;
 }
 
 export interface AutoFocus {
@@ -416,8 +424,8 @@ export interface OpenDialogOptionsMain {
      * like "TypeScript", and an array of extensions, e.g.
      * ```ts
      * {
-     * 	'Images': ['png', 'jpg']
-     * 	'TypeScript': ['ts', 'tsx']
+     *  'Images': ['png', 'jpg']
+     *  'TypeScript': ['ts', 'tsx']
      * }
      * ```
      */
@@ -443,8 +451,8 @@ export interface SaveDialogOptionsMain {
      * like "TypeScript", and an array of extensions, e.g.
      * ```ts
      * {
-     * 	'Images': ['png', 'jpg']
-     * 	'TypeScript': ['ts', 'tsx']
+     *  'Images': ['png', 'jpg']
+     *  'TypeScript': ['ts', 'tsx']
      * }
      * ```
      */
@@ -1304,7 +1312,7 @@ export interface LanguagesMain {
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
-    $registerRangeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerRangeFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
     $registerDocumentLinkProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerCodeLensSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle?: number): void;
@@ -1450,6 +1458,7 @@ export interface ClipboardMain {
 }
 
 export const PLUGIN_RPC_CONTEXT = {
+    AUTHENTICATION_MAIN: <ProxyIdentifier<AuthenticationMain>>createProxyIdentifier<AuthenticationMain>('AuthenticationMain'),
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
     DIALOGS_MAIN: createProxyIdentifier<DialogsMain>('DialogsMain'),
@@ -1480,6 +1489,7 @@ export const PLUGIN_RPC_CONTEXT = {
 };
 
 export const MAIN_RPC_CONTEXT = {
+    AUTHENTICATION_EXT: createProxyIdentifier<AuthenticationExt>('AuthenticationExt'),
     HOSTED_PLUGIN_MANAGER_EXT: createProxyIdentifier<PluginManagerExt>('PluginManagerExt'),
     COMMAND_REGISTRY_EXT: createProxyIdentifier<CommandRegistryExt>('CommandRegistryExt'),
     QUICK_OPEN_EXT: createProxyIdentifier<QuickOpenExt>('QuickOpenExt'),
@@ -1523,6 +1533,24 @@ export interface TasksMain {
     $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;
+}
+
+export interface AuthenticationExt {
+    $getSessions(id: string): Promise<ReadonlyArray<AuthenticationSession>>;
+    $login(id: string, scopes: string[]): Promise<AuthenticationSession>;
+    $logout(id: string, sessionId: string): Promise<void>;
+    $onDidChangeAuthenticationSessions(id: string, label: string, event: AuthenticationSessionsChangeEvent): Promise<void>;
+    $onDidChangeAuthenticationProviders(added: AuthenticationProviderInformation[], removed: AuthenticationProviderInformation[]): Promise<void>;
+}
+
+export interface AuthenticationMain {
+    $registerAuthenticationProvider(id: string, label: string, supportsMultipleAccounts: boolean): void;
+    $unregisterAuthenticationProvider(id: string): void;
+    $getProviderIds(): Promise<string[]>;
+    $updateSessions(providerId: string, event: AuthenticationSessionsChangeEvent): void;
+    $getSession(providerId: string, scopes: string[], extensionId: string, extensionName: string,
+                options: { createIfNone?: boolean, clearSessionPreference?: boolean }): Promise<theia.AuthenticationSession | undefined>;
+    $logout(providerId: string, sessionId: string): Promise<void>;
 }
 
 export interface RawColorInfo {

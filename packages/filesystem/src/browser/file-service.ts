@@ -65,13 +65,14 @@ import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/core/lib/common/encoding-service';
 import { Mutable } from '@theia/core/lib/common/types';
 import { readFileIntoStream } from '../common/io';
+import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 
 export interface FileOperationParticipant {
 
-	/**
-	 * Participate in a file operation of a working copy. Allows to
-	 * change the working copy before it is being saved to disk.
-	 */
+    /**
+     * Participate in a file operation of a working copy. Allows to
+     * change the working copy before it is being saved to disk.
+     */
     participate(
         target: URI,
         source: URI | undefined,
@@ -89,9 +90,9 @@ export interface ReadEncodingOptions {
      */
     encoding?: string;
 
-	/**
-	 * The optional guessEncoding parameter allows to guess encoding from content of the file.
-	 */
+    /**
+     * The optional guessEncoding parameter allows to guess encoding from content of the file.
+     */
     autoGuessEncoding?: boolean;
 }
 
@@ -102,41 +103,41 @@ export interface WriteEncodingOptions {
      */
     encoding?: string;
 
-	/**
-	 * If set to true, will enforce the selected encoding and not perform any detection using BOMs.
-	 */
+    /**
+     * If set to true, will enforce the selected encoding and not perform any detection using BOMs.
+     */
     overwriteEncoding?: boolean;
 }
 
 export interface ReadTextFileOptions extends ReadEncodingOptions, ReadFileOptions {
-	/**
-	 * The optional acceptTextOnly parameter allows to fail this request early if the file
-	 * contents are not textual.
-	 */
+    /**
+     * The optional acceptTextOnly parameter allows to fail this request early if the file
+     * contents are not textual.
+     */
     acceptTextOnly?: boolean;
 }
 
 interface BaseTextFileContent extends BaseStatWithMetadata {
 
-	/**
-	 * The encoding of the content if known.
-	 */
+    /**
+     * The encoding of the content if known.
+     */
     encoding: string;
 }
 
 export interface TextFileContent extends BaseTextFileContent {
 
-	/**
-	 * The content of a text file.
-	 */
+    /**
+     * The content of a text file.
+     */
     value: string;
 }
 
 export interface TextFileStreamContent extends BaseTextFileContent {
 
-	/**
-	 * The line grouped content of a text file.
-	 */
+    /**
+     * The line grouped content of a text file.
+     */
     value: ReadableStream<string>;
 }
 
@@ -150,60 +151,95 @@ export interface UpdateTextFileOptions extends WriteEncodingOptions, WriteFileOp
 
 export interface UserFileOperationEvent extends WaitUntilEvent {
 
-	/**
-	 * An identifier to correlate the operation through the
-	 * different event types (before, after, error).
-	 */
+    /**
+     * An identifier to correlate the operation through the
+     * different event types (before, after, error).
+     */
     readonly correlationId: number;
 
-	/**
-	 * The file operation that is taking place.
-	 */
+    /**
+     * The file operation that is taking place.
+     */
     readonly operation: FileOperation;
 
-	/**
-	 * The resource the event is about.
-	 */
+    /**
+     * The resource the event is about.
+     */
     readonly target: URI;
 
-	/**
-	 * A property that is defined for move operations.
-	 */
+    /**
+     * A property that is defined for move operations.
+     */
     readonly source?: URI;
 }
 
 export const FileServiceContribution = Symbol('FileServiceContribution');
+
+/**
+ * A {@link FileServiceContribution} can be used to add custom {@link FileSystemProvider}s.
+ * For this, the contribution has to listen to the {@link FileSystemProviderActivationEvent} and register
+ * the custom {@link FileSystemProvider}s according to the scheme when this event is fired.
+ *
+ * ### Example usage
+ * ```ts
+ * export class MyFileServiceContribution implements FileServiceContribution {
+ *     registerFileSystemProviders(service: FileService): void {
+ *         service.onWillActivateFileSystemProvider(event => {
+ *             if (event.scheme === 'mySyncProviderScheme') {
+ *                 service.registerProvider('mySyncProviderScheme', this.mySyncProvider);
+ *             }
+ *             if (event.scheme === 'myAsyncProviderScheme') {
+ *                 event.waitUntil((async () => {
+ *                     const myAsyncProvider = await this.createAsyncProvider();
+ *                     service.registerProvider('myAsyncProviderScheme', myAsyncProvider);
+ *                 })());
+ *             }
+ *         });
+ *
+ *     }
+ *```
+ */
 export interface FileServiceContribution {
     /**
-     * ```ts
-     *  service.onWillActivateFileSystemProvider(event => {
-     *      if (event.scheme === 'mySyncProviderScheme') {
-     *          service.registerProvider('mySyncProviderScheme', this.mySyncProvider);
-     *      }
-     *      if (event.scheme === 'myAsyncProviderScheme') {
-     *          event.waitUntil((async () => {
-     *              const myAsyncProvider = await this.createAsyncProvider();
-     *              service.registerProvider('myAsyncProviderScheme', myAsyncProvider);
-     *          })());
-     *      }
-     *  });
-     * ```
+     * Register custom file system providers for the given {@link FileService}.
+     * @param service The file service for which the providers should be registered.
      */
     registerFileSystemProviders(service: FileService): void;
 }
 
+/**
+ * Represents the `FileSystemProviderRegistration` event.
+ * This event is fired by the {@link FileService} if a {@link FileSystemProvider} is
+ * registered to or unregistered from the service.
+ */
 export interface FileSystemProviderRegistrationEvent {
+    /** `True` if a new provider has been registered, `false` if a provider has been unregistered. */
     added: boolean;
+    /** The (uri) scheme for which the provider was (previously) registered */
     scheme: string;
+    /** The affected file system provider for which this event was fired. */
     provider?: FileSystemProvider;
 }
 
+/**
+ * Represents the `FileSystemProviderCapabilitiesChange` event.
+ * This event is fired by the {@link FileService} if the capabilities of one of its managed
+ * {@link FileSystemProvider}s have changed.
+ */
 export interface FileSystemProviderCapabilitiesChangeEvent {
+    /** The affected file system provider for which this event was fired. */
     provider: FileSystemProvider;
+    /** The (uri) scheme for which the provider is registered */
     scheme: string;
 }
 
+/**
+ * Represents the `FileSystemProviderActivation` event.
+ * This event is fired by the {@link FileService} if it wants to activate the
+ * {@link FileSystemProvider} for a specific scheme.
+ */
 export interface FileSystemProviderActivationEvent extends WaitUntilEvent {
+    /** The (uri) scheme for which the provider should be activated */
     scheme: string;
 }
 
@@ -224,6 +260,12 @@ export class TextFileOperationError extends FileOperationError {
 
 }
 
+/**
+ * The {@link FileService} is the common facade responsible for all interactions with file systems.
+ * It manages all registered {@link FileSystemProvider}s and
+ *  forwards calls to the responsible {@link FileSystemProvider}, determined by the scheme.
+ * For additional documentation regarding the provided functions see also {@link FileSystemProvider}.
+ */
 @injectable()
 export class FileService {
 
@@ -246,6 +288,9 @@ export class FileService {
 
     @inject(ContributionProvider) @named(FileServiceContribution)
     protected readonly contributions: ContributionProvider<FileServiceContribution>;
+
+    @inject(FileSystemWatcherErrorHandler)
+    protected readonly watcherErrorHandler: FileSystemWatcherErrorHandler;
 
     @postConstruct()
     protected init(): void {
@@ -298,6 +343,13 @@ export class FileService {
     private readonly providers = new Map<string, FileSystemProvider>();
     private readonly activations = new Map<string, Promise<FileSystemProvider>>();
 
+    /**
+     * Registers a new {@link FileSystemProvider} for the given scheme.
+     * @param scheme The (uri) scheme for which the provider should be registered.
+     * @param provider The file system provider that should be registered.
+     *
+     * @returns A `Disposable` that can be invoked to unregister the given provider.
+     */
     registerProvider(scheme: string, provider: FileSystemProvider): Disposable {
         if (this.providers.has(scheme)) {
             throw new Error(`A filesystem provider for the scheme '${scheme}' is already registered.`);
@@ -308,6 +360,7 @@ export class FileService {
 
         const providerDisposables = new DisposableCollection();
         providerDisposables.push(provider.onDidChangeFile(changes => this.onDidFilesChangeEmitter.fire(new FileChangesEvent(changes))));
+        providerDisposables.push(provider.onFileWatchError(() => this.handleFileWatchError()));
         providerDisposables.push(provider.onDidChangeCapabilities(() => this.onDidChangeFileSystemProviderCapabilitiesEmitter.fire({ provider, scheme })));
 
         return Disposable.create(() => {
@@ -318,6 +371,12 @@ export class FileService {
         });
     }
 
+    /**
+     * Try to activate the registered provider for the given scheme
+     * @param scheme  The uri scheme for which the responsible provider should be activated.
+     *
+     * @returns A promise of the activated file system provider. Only resolves if a provider is available for this scheme, gets rejected otherwise.
+     */
     async activateProvider(scheme: string): Promise<FileSystemProvider> {
         let provider = this.providers.get(scheme);
         if (provider) {
@@ -342,10 +401,23 @@ export class FileService {
         return activation;
     }
 
+    /**
+     * Tests if the service (i.e. any of its registered {@link FileSystemProvider}s) can handle the given resource.
+     * @param resource `URI` of the resource to test.
+     *
+     * @returns `true` if the resource can be handled, `false` otherwise.
+     */
     canHandleResource(resource: URI): boolean {
         return this.providers.has(resource.scheme);
     }
 
+    /**
+     * Tests if the service (i.e the {@link FileSystemProvider} registered for the given uri scheme) provides the given capability.
+     * @param resource `URI` of the resource to test.
+     * @param capability The required capability.
+     *
+     * @returns `true` if the resource can be handled and the required capability can be provided.
+     */
     hasCapability(resource: URI, capability: FileSystemProviderCapabilities): boolean {
         const provider = this.providers.get(resource.scheme);
 
@@ -389,6 +461,13 @@ export class FileService {
      */
     readonly onDidRunOperation = this.onDidRunOperationEmitter.event;
 
+    /**
+     * Try to resolve file information and metadata for the given resource.
+     * @param resource `URI` of the resource that should be resolved.
+     * @param options  Options to customize the resolvement process.
+     *
+     * @return A promise that resolves if the resource could be successfully resolved.
+     */
     resolve(resource: URI, options: ResolveMetadataFileOptions): Promise<FileStatWithMetadata>;
     resolve(resource: URI, options?: ResolveFileOptions | undefined): Promise<FileStat>;
     async resolve(resource: any, options?: any) {
@@ -480,6 +559,13 @@ export class FileService {
         return fileStat;
     }
 
+    /**
+     * Try to resolve file information and metadata for all given resource.
+     * @param toResolve An array of all the resources (and corresponding resolvement options) that should be resolved.
+     *
+     * @returns A promise of all resolved resources. The promise is not rejected if any of the given resources cannot be resolved.
+     * Instead this is reflected with the `success` flag of the corresponding {@link ResolveFileResult}.
+     */
     async resolveAll(toResolve: { resource: URI, options?: ResolveFileOptions }[]): Promise<ResolveFileResult[]>;
     async resolveAll(toResolve: { resource: URI, options: ResolveMetadataFileOptions }[]): Promise<ResolveFileResultWithMetadata[]>;
     async resolveAll(toResolve: { resource: URI; options?: ResolveFileOptions; }[]): Promise<ResolveFileResult[]> {
@@ -494,6 +580,13 @@ export class FileService {
         }));
     }
 
+    /**
+     * Tests if the given resource exists in the filesystem.
+     * @param resource `URI` of the resource which should be tested.
+     * @throws Will throw an error if no {@link FileSystemProvider} is registered for the given resource.
+     *
+     * @returns A promise that resolves to `true` if the resource exists.
+     */
     async exists(resource: URI): Promise<boolean> {
         const provider = await this.withProvider(resource);
 
@@ -531,6 +624,10 @@ export class FileService {
      * interact with the OS, e.g. when running a command on the shell.
      *
      * If you need to display human readable simple or long names then use `LabelProvider` instead.
+     * @param resource `URI` of the resource that should be resolved.
+     * @throws Will throw an error if no {@link FileSystemProvider} is registered for the given resource.
+     *
+     * @returns A promise of the resolved fs path.
      */
     async fsPath(resource: URI): Promise<string> {
         const provider = await this.withProvider(resource);
@@ -1326,9 +1423,9 @@ export class FileService {
 
     private toWatchKey(provider: FileSystemProvider, resource: URI, options: WatchOptions): string {
         return [
-            this.toMapKey(provider, resource), 	// lowercase path if the provider is case insensitive
-            String(options.recursive),			// use recursive: true | false as part of the key
-            options.excludes.join()				// use excludes as part of the key
+            this.toMapKey(provider, resource),  // lowercase path if the provider is case insensitive
+            String(options.recursive),          // use recursive: true | false as part of the key
+            options.excludes.join()             // use excludes as part of the key
         ].join();
     }
 
@@ -1675,4 +1772,7 @@ export class FileService {
 
     // #endregion
 
+    protected handleFileWatchError(): void {
+        this.watcherErrorHandler.handleError();
+    }
 }

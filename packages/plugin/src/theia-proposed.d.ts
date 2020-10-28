@@ -14,11 +14,142 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 /**
-* This is the place for API experiments and proposals.
-* These API are NOT stable and subject to change. Use it on own risk.
-*/
+ * This is the place for API experiments and proposals.
+ * These API are NOT stable and subject to change. Use it on own risk.
+ */
 declare module '@theia/plugin' {
+    // #region auth provider
+
+    /**
+     * An [event](#Event) which fires when an [AuthenticationProvider](#AuthenticationProvider) is added or removed.
+     */
+    export interface AuthenticationProvidersChangeEvent {
+        /**
+         * The ids of the [authenticationProvider](#AuthenticationProvider)s that have been added.
+         */
+        readonly added: ReadonlyArray<AuthenticationProviderInformation>;
+
+        /**
+         * The ids of the [authenticationProvider](#AuthenticationProvider)s that have been removed.
+         */
+        readonly removed: ReadonlyArray<AuthenticationProviderInformation>;
+    }
+
+    /**
+     * An [event](#Event) which fires when an [AuthenticationSession](#AuthenticationSession) is added, removed, or changed.
+     */
+    export interface AuthenticationProviderAuthenticationSessionsChangeEvent {
+        /**
+         * The ids of the [AuthenticationSession](#AuthenticationSession)s that have been added.
+         */
+        readonly added: ReadonlyArray<string>;
+
+        /**
+         * The ids of the [AuthenticationSession](#AuthenticationSession)s that have been removed.
+         */
+        readonly removed: ReadonlyArray<string>;
+
+        /**
+         * The ids of the [AuthenticationSession](#AuthenticationSession)s that have been changed.
+         */
+        readonly changed: ReadonlyArray<string>;
+    }
+
+    /**
+     * **WARNING** When writing an AuthenticationProvider, `id` should be treated as part of your extension's
+     * API, changing it is a breaking change for all extensions relying on the provider. The id is
+     * treated case-sensitively.
+     */
+    export interface AuthenticationProvider {
+        /**
+         * Used as an identifier for extensions trying to work with a particular
+         * provider: 'microsoft', 'github', etc. id must be unique, registering
+         * another provider with the same id will fail.
+         */
+        readonly id: string;
+
+        /**
+         * The human-readable name of the provider.
+         */
+        readonly label: string;
+
+        /**
+         * Whether it is possible to be signed into multiple accounts at once with this provider
+         */
+        readonly supportsMultipleAccounts: boolean;
+
+        /**
+         * An [event](#Event) which fires when the array of sessions has changed, or data
+         * within a session has changed.
+         */
+        readonly onDidChangeSessions: Event<AuthenticationProviderAuthenticationSessionsChangeEvent>;
+
+        /**
+         * Returns an array of current sessions.
+         */
+        getSessions(): Thenable<ReadonlyArray<AuthenticationSession>>;
+
+        /**
+         * Prompts a user to login.
+         */
+        login(scopes: string[]): Thenable<AuthenticationSession>;
+
+        /**
+         * Removes the session corresponding to session id.
+         * @param sessionId The session id to log out of
+         */
+        logout(sessionId: string): Thenable<void>;
+    }
+
+    export namespace authentication {
+        /**
+         * Register an authentication provider.
+         *
+         * There can only be one provider per id and an error is being thrown when an id
+         * has already been used by another provider.
+         *
+         * @param provider The authentication provider provider.
+         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         */
+        export function registerAuthenticationProvider(provider: AuthenticationProvider): Disposable;
+
+        /**
+         * Fires with the provider id that was registered or unregistered.
+         */
+        export const onDidChangeAuthenticationProviders: Event<AuthenticationProvidersChangeEvent>;
+
+        /**
+         * @deprecated
+         * The ids of the currently registered authentication providers.
+         * @returns An array of the ids of authentication providers that are currently registered.
+         */
+        export function getProviderIds(): Thenable<ReadonlyArray<string>>;
+
+        /**
+         * @deprecated
+         * An array of the ids of authentication providers that are currently registered.
+         */
+        export const providerIds: ReadonlyArray<string>;
+
+        /**
+         * An array of the information of authentication providers that are currently registered.
+         */
+        export const providers: ReadonlyArray<AuthenticationProviderInformation>;
+
+        /**
+         * @deprecated
+         * Logout of a specific session.
+         * @param providerId The id of the provider to use
+         * @param sessionId The session id to remove
+         * provider
+         */
+        export function logout(providerId: string, sessionId: string): Thenable<void>;
+    }
+
+    // #endregion
 
     /**
      * The contiguous set of modified lines in a diff.
@@ -33,9 +164,9 @@ declare module '@theia/plugin' {
     export namespace commands {
 
         /**
-        * Get the keybindings associated to commandId.
-        * @param commandId The ID of the command for which we are looking for keybindings.
-        */
+         * Get the keybindings associated to commandId.
+         * @param commandId The ID of the command for which we are looking for keybindings.
+         */
         export function getKeyBinding(commandId: string): PromiseLike<CommandKeyBinding[] | undefined>;
 
         /**
@@ -122,7 +253,7 @@ declare module '@theia/plugin' {
         provideDecoration(uri: Uri, token: CancellationToken): ProviderResult<DecorationData>;
     }
 
-    //#region LogLevel: https://github.com/microsoft/vscode/issues/85992
+    // #region LogLevel: https://github.com/microsoft/vscode/issues/85992
 
     /**
      * The severity level of a log message
@@ -149,13 +280,13 @@ declare module '@theia/plugin' {
         export const onDidChangeLogLevel: Event<LogLevel>;
     }
 
-    //#endregion
+    // #endregion
 
     export namespace window {
         export function registerDecorationProvider(provider: DecorationProvider): Disposable;
     }
 
-    //#region Tree View
+    // #region Tree View
     // copied from https://github.com/microsoft/vscode/blob/3ea5c9ddbebd8ec68e3b821f9c39c3ec785fde97/src/vs/vscode.proposed.d.ts#L1447-L1476
     /**
      * Label describing the [Tree item](#TreeItem)
@@ -183,13 +314,14 @@ declare module '@theia/plugin' {
 
         /**
          * @param label Label describing this item
-         * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item. Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
+         * @param collapsibleState [TreeItemCollapsibleState](#TreeItemCollapsibleState) of the tree item.
+         * Default is [TreeItemCollapsibleState.None](#TreeItemCollapsibleState.None)
          */
         constructor(label: TreeItemLabel, collapsibleState?: TreeItemCollapsibleState);
     }
-    //#endregion
+    // #endregion
 
-    //#region search in workspace
+    // #region search in workspace
     /**
      * The parameters of a query for text search.
      */
@@ -360,9 +492,9 @@ declare module '@theia/plugin' {
          */
         limitHit?: boolean;
     }
-    //#endregion
+    // #endregion
 
-    //#region read/write in chunks: https://github.com/microsoft/vscode/issues/84515
+    // #region read/write in chunks: https://github.com/microsoft/vscode/issues/84515
 
     export interface FileSystemProvider {
         open?(resource: Uri, options: { create: boolean; }): number | Thenable<number>;
@@ -371,8 +503,7 @@ declare module '@theia/plugin' {
         write?(fd: number, pos: number, data: Uint8Array, offset: number, length: number): number | Thenable<number>;
     }
 
-    //#endregion
-
+    // #endregion
 
     export interface ResourceLabelFormatter {
         scheme: string;
@@ -383,7 +514,6 @@ declare module '@theia/plugin' {
     export interface ResourceLabelFormatting {
         label: string; // myLabel:/${path}
         // TODO@isi
-        // eslint-disable-next-line vscode-dts-literal-or-types
         separator: '/' | '\\' | '';
         tildify?: boolean;
         normalizeDriveLetter?: boolean;
@@ -395,7 +525,7 @@ declare module '@theia/plugin' {
         export function registerResourceLabelFormatter(formatter: ResourceLabelFormatter): Disposable;
     }
 
-    //#region timeline
+    // #region timeline
     // copied from https://github.com/microsoft/vscode/blob/d69a79b73808559a91206d73d7717ff5f798f23c/src/vs/vscode.proposed.d.ts#L1870-L2017
     export class TimelineItem {
         /**
@@ -440,16 +570,14 @@ declare module '@theia/plugin' {
          * For example, a timeline item is given a context value as `commit`. When contributing actions to `timeline/item/context`
          * using `menus` extension point, you can specify context value for key `timelineItem` in `when` expression like `timelineItem == commit`.
          * ```
-         *	"contributes": {
-         *		"menus": {
-         *			"timeline/item/context": [
-         *				{
-         *					"command": "extension.copyCommitId",
-         *					"when": "timelineItem == commit"
-         *				}
-         *			]
-         *		}
-         *	}
+         * "contributes": {
+         *   "menus": {
+         *     "timeline/item/context": [{
+         *       "command": "extension.copyCommitId",
+         *       "when": "timelineItem == commit"
+         *      }]
+         *   }
+         * }
          * ```
          * This will show the `extension.copyCommitId` action only for items where `contextValue` is `commit`.
          */
@@ -546,5 +674,5 @@ declare module '@theia/plugin' {
         export function registerTimelineProvider(scheme: string | string[], provider: TimelineProvider): Disposable;
     }
 
-    //#endregion
+    // #endregion
 }

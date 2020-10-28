@@ -34,6 +34,7 @@ import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { RemoteFileServiceContribution } from './remote-file-service-contribution';
+import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 import { UTF8 } from '@theia/core/lib/common/encodings';
 
 export default new ContainerModule(bind => {
@@ -50,6 +51,8 @@ export default new ContainerModule(bind => {
     bind(FileServiceContribution).toService(RemoteFileServiceContribution);
 
     bind(FileSystemWatcher).toSelf().inSingletonScope();
+    bind(FileSystemWatcherErrorHandler).toSelf().inSingletonScope();
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bind(FileSystem).toDynamicValue(({ container }) => {
         const fileService = container.get(FileService);
@@ -79,7 +82,7 @@ export default new ContainerModule(bind => {
             }
             throw error;
         };
-        return class implements FileSystem {
+        return new class implements FileSystem {
             async getFileStat(uri: string): Promise<FileStat | undefined> {
                 try {
                     const stat = await fileService.resolve(new URI(uri), { resolveMetadata: true });
