@@ -22,6 +22,7 @@ import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
 import { performance, PerformanceObserver } from 'perf_hooks';
 import { inject, named, injectable, postConstruct } from 'inversify';
+import { daemonize } from 'cdaemon';
 import { ContributionProvider, MaybePromise } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
@@ -45,6 +46,7 @@ export interface BackendApplicationContribution {
 const defaultPort = environment.electron.is() ? 0 : 3000;
 const defaultHost = 'localhost';
 const defaultSSL = false;
+const defaultDaemonize = false;
 
 const appProjectPath = 'app-project-path';
 
@@ -59,6 +61,7 @@ export class BackendApplicationCliContribution implements CliContribution {
     cert: string | undefined;
     certkey: string | undefined;
     projectPath: string;
+    daemon: boolean | undefined;
 
     configure(conf: yargs.Argv): void {
         conf.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: defaultPort });
@@ -67,6 +70,7 @@ export class BackendApplicationCliContribution implements CliContribution {
         conf.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
         conf.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
         conf.option(appProjectPath, { description: 'Sets the application project directory', default: this.appProjectPath() });
+        conf.option('daemon', { alias: 'd', description: 'Run in background.', type: 'boolean', default: defaultDaemonize });
     }
 
     setArguments(args: yargs.Arguments): void {
@@ -76,6 +80,7 @@ export class BackendApplicationCliContribution implements CliContribution {
         this.cert = args.cert;
         this.certkey = args.certkey;
         this.projectPath = args[appProjectPath];
+        this.daemon = args.daemon;
     }
 
     protected appProjectPath(): string {
@@ -236,6 +241,12 @@ export class BackendApplication {
         server.listen(port, hostname, () => {
             const scheme = this.cliParams.ssl ? 'https' : 'http';
             console.info(`Theia app listening on ${scheme}://${hostname || 'localhost'}:${(server.address() as AddressInfo).port}.`);
+
+            if (this.cliParams.daemon) {
+                console.info('Theia app running in background.');
+                daemonize(true, true);
+            }
+
             deferred.resolve(server);
         });
 
