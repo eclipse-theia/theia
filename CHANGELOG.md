@@ -7,6 +7,7 @@
 - [filesystem] file watchers refactoring:
   - Added `FileSystemWatcherService` component that should be a singleton centralizing watch requests for all clients.
   - Added `FileSystemWatcherServiceDispatcher` to register yourself and listen to file change events.
+- [core] added the --daemon command-line option [#8668](https://github.com/eclipse-theia/theia/pull/8683)
 
 <a name="breaking_changes_1.7.0">[Breaking Changes:](#breaking_changes_1.7.0)</a>
 
