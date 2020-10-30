@@ -88,6 +88,8 @@ import type {
     TimelineProviderDescriptor
 } from '@theia/timeline/lib/common/timeline-model';
 import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
+import { ThemeType } from '@theia/core/lib/browser/theming';
+import { Disposable } from '@theia/core/lib/common/disposable';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -561,6 +563,12 @@ export interface TimelineMain {
     $registerTimelineProvider(provider: TimelineProviderDescriptor): Promise<void>;
     $fireTimelineChanged(e: TimelineChangeEvent): Promise<void>;
     $unregisterTimelineProvider(source: string): Promise<void>;
+}
+
+export interface ThemingExt {
+    $onColorThemeChange(type: ThemeType): void;
+}
+export interface ThemingMain extends Disposable {
 }
 
 export interface DialogsMain {
@@ -1492,7 +1500,8 @@ export const PLUGIN_RPC_CONTEXT = {
     WINDOW_MAIN: createProxyIdentifier<WindowMain>('WindowMain'),
     CLIPBOARD_MAIN: <ProxyIdentifier<ClipboardMain>>createProxyIdentifier<ClipboardMain>('ClipboardMain'),
     LABEL_SERVICE_MAIN: <ProxyIdentifier<LabelServiceMain>>createProxyIdentifier<LabelServiceMain>('LabelServiceMain'),
-    TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain')
+    TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain'),
+    THEMING_MAIN: <ProxyIdentifier<ThemingMain>>createProxyIdentifier<ThemingMain>('ThemingMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -1521,7 +1530,8 @@ export const MAIN_RPC_CONTEXT = {
     SCM_EXT: createProxyIdentifier<ScmExt>('ScmExt'),
     DECORATIONS_EXT: createProxyIdentifier<DecorationsExt>('DecorationsExt'),
     LABEL_SERVICE_EXT: createProxyIdentifier<LabelServiceExt>('LabelServiceExt'),
-    TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt')
+    TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt'),
+    THEMING_EXT: createProxyIdentifier<ThemingExt>('ThemingExt')
 };
 
 export interface TasksExt {

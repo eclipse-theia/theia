@@ -96,6 +96,19 @@ export enum ViewColumn {
 }
 
 /**
+ * Represents a color theme kind.
+ */
+export enum ColorThemeKind {
+    Light = 1,
+    Dark = 2,
+    HighContrast = 3
+}
+
+export class ColorTheme implements theia.ColorTheme {
+    constructor(public readonly kind: ColorThemeKind) { }
+}
+
+/**
  * Represents sources that can cause `window.onDidChangeEditorSelection`
  */
 export enum TextEditorSelectionChangeKind {
