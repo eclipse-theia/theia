@@ -3963,6 +3963,36 @@ declare module '@theia/plugin' {
          * @return A new [InputBox](#InputBox).
          */
         export function createInputBox(): InputBox;
+
+        /**
+         * The currently active color theme as configured in the settings. The active
+         * theme can be changed via the `workbench.colorTheme` setting.
+         */
+        export let activeColorTheme: ColorTheme;
+
+        /**
+         * An [event](#Event) which fires when the active color theme is changed or has changes.
+         */
+        export const onDidChangeActiveColorTheme: Event<ColorTheme>;
+    }
+
+    /**
+     * Represents a color theme kind.
+     */
+    export enum ColorThemeKind {
+        Light = 1,
+        Dark = 2,
+        HighContrast = 3
+    }
+
+    /**
+     * Represents a color theme.
+     */
+    export interface ColorTheme {
+        /**
+         * The kind of this color theme: light, dark or high contrast.
+         */
+        readonly kind: ColorThemeKind;
     }
 
     /**
