@@ -92,8 +92,8 @@ export class ThemeService {
         return result;
     }
 
-    getTheme(themeId: string): Theme {
-        return this.themes[themeId] || this.defaultTheme;
+    getTheme(themeId: string): Theme | undefined {
+        return this.themes[themeId];
     }
 
     startupTheme(): void {
@@ -110,22 +110,24 @@ export class ThemeService {
         const newTheme = this.getTheme(themeId);
         const oldTheme = this.activeTheme;
         if (oldTheme) {
-            if (oldTheme.id === newTheme.id) {
+            if (oldTheme.id === newTheme?.id) {
                 return;
             }
             oldTheme.deactivate();
         }
-        newTheme.activate();
-        this.activeTheme = newTheme;
-        window.localStorage.setItem('theme', themeId);
-        this.themeChange.fire({
-            newTheme, oldTheme
-        });
+        if (newTheme) {
+            newTheme.activate();
+            this.activeTheme = newTheme;
+            window.localStorage.setItem('theme', themeId);
+            this.themeChange.fire({
+                newTheme, oldTheme
+            });
+        }
     }
 
     getCurrentTheme(): Theme {
         const themeId = window.localStorage.getItem('theme') || this.defaultTheme.id;
-        return this.getTheme(themeId);
+        return this.themes[themeId];
     }
 
     /**
