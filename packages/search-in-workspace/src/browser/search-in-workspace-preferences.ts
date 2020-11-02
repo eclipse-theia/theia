@@ -42,6 +42,11 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
             default: 300,
             type: 'number',
         },
+        'search.searchOnEditorModification': {
+            description: 'Search the active editor when modified.',
+            default: true,
+            type: 'boolean',
+        }
     }
 };
 
@@ -50,6 +55,7 @@ export class SearchInWorkspaceConfiguration {
     'search.collapseResults': string;
     'search.searchOnType': boolean;
     'search.searchOnTypeDebouncePeriod': number;
+    'search.searchOnEditorModification': boolean;
 }
 
 export const SearchInWorkspacePreferences = Symbol('SearchInWorkspacePreferences');
