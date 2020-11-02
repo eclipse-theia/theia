@@ -107,6 +107,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected _replaceTerm = '';
     protected searchTerm = '';
 
+    // The default root name to add external search results in the case that a workspace is opened.
+    protected readonly defaultRootName = 'Other files';
+    protected forceVisibleRootNode = false;
+
     protected appliedDecorations = new Map<string, string[]>();
 
     cancelIndicator?: CancellationTokenSource;
@@ -303,10 +307,16 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const editors = this.findMatchedEditors(this.editorManager.all, searchOptions);
         editors.forEach(async widget => {
             const matches = this.findMatches(searchTerm, widget, searchOptions);
-            numberOfResults += matches.length;
-            const fileUri: string = widget.editor.uri.toString();
-            const root: string = this.workspaceService.getWorkspaceRootUri(widget.editor.uri)!.toString();
-            searchResults.push({ root, fileUri, matches });
+            if (matches.length > 0) {
+                numberOfResults += matches.length;
+                const fileUri: string = widget.editor.uri.toString();
+                const root: string | undefined = this.workspaceService.getWorkspaceRootUri(widget.editor.uri)?.toString();
+                searchResults.push({
+                    root: root ?? this.defaultRootName,
+                    fileUri,
+                    matches
+                });
+            }
         });
 
         return {
@@ -320,11 +330,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
      * @param result Search result.
      */
     protected appendToResultTree(result: SearchInWorkspaceResult): void {
-        if (result.matches.length <= 0) {
-            return;
-        }
         const collapseValue: string = this.searchInWorkspacePreferences['search.collapseResults'];
-        const { path } = this.filenameAndPath(result.root, result.fileUri);
+        let path: string;
+        if (result.root === this.defaultRootName) {
+            path = new URI(result.fileUri).path.dir.toString();
+        } else {
+            path = this.filenameAndPath(result.root, result.fileUri).path;
+        }
         const tree = this.resultTree;
         let rootFolderNode = tree.get(result.root);
         if (!rootFolderNode) {
@@ -345,6 +357,29 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         this.collapseFileNode(fileNode, collapseValue);
     }
 
+    /**
+     * Handle when searching completed.
+     */
+    protected handleSearchCompleted(cancelIndicator: CancellationTokenSource): void {
+        cancelIndicator.cancel();
+        this.sortResultTree();
+        this.refreshModelChildren();
+    }
+
+    /**
+     * Sort the result tree by URIs.
+     */
+    protected sortResultTree(): void {
+        // Sort the result map by folder URI.
+        const entries = [...this.resultTree.entries()];
+        entries.sort(([, a], [, b]) => this.compare(a.folderUri, b.folderUri));
+        this.resultTree = new Map(entries);
+        // Update the list of children nodes, sorting them by their file URI.
+        entries.forEach(([, folder]) => {
+            folder.children.sort((a, b) => this.compare(a.fileUri, b.fileUri));
+        });
+    }
+
     async search(searchTerm: string, searchOptions: SearchInWorkspaceOptions): Promise<void> {
         this.searchTerm = searchTerm;
         searchOptions = {
@@ -352,6 +387,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             exclude: this.getExcludeGlobs(searchOptions.exclude)
         };
         this.resultTree.clear();
+        this.forceVisibleRootNode = false;
         if (this.cancelIndicator) {
             this.cancelIndicator.cancel();
         }
@@ -373,19 +409,27 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         });
 
         // Collect search results for opened editors which otherwise may not be found by ripgrep (ex: dirty editors).
-        const { numberOfResults: monacoNumberOfResults, matches: monacoMatches } = this.searchInOpenEditors(searchTerm, searchOptions);
-        monacoMatches.forEach(m => {
-            this.appendToResultTree(m);
-            // Exclude pattern beginning with './' works after the fix of #8469.
-            const { name, path } = this.filenameAndPath(m.root, m.fileUri);
-            const excludePath: string = path === '' ? './' + name : path + '/' + name;
-            // Exclude files already covered by searching individual editors.
-            searchOptions.exclude = (searchOptions.exclude) ? searchOptions.exclude.concat(excludePath) : [excludePath];
+        const { numberOfResults, matches } = this.searchInOpenEditors(searchTerm, searchOptions);
+
+        // The root node is visible if outside workspace results are found and workspace root(s) are present.
+        this.forceVisibleRootNode = matches.some(m => m.root === this.defaultRootName) && this.workspaceService.opened;
+
+        matches.forEach(m => this.appendToResultTree(m));
+
+        // Exclude files already covered by searching open editors.
+        this.editorManager.all.forEach(e => {
+            const rootUri = this.workspaceService.getWorkspaceRootUri(e.editor.uri);
+            if (rootUri) {
+                // Exclude pattern beginning with './' works after the fix of #8469.
+                const { name, path } = this.filenameAndPath(e.editor.uri.toString(), rootUri.toString());
+                const excludePath: string = path === '' ? './' + name : path + '/' + name;
+                searchOptions.exclude = (searchOptions.exclude) ? searchOptions.exclude.concat(excludePath) : [excludePath];
+            }
         });
 
         // Reduce `maxResults` due to editor results.
         if (searchOptions.maxResults) {
-            searchOptions.maxResults -= monacoNumberOfResults;
+            searchOptions.maxResults -= numberOfResults;
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -402,18 +446,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 pendingRefreshTimeout = setTimeout(() => this.refreshModelChildren(), 100);
             },
             onDone: () => {
-                cancelIndicator.cancel();
-                // Sort the result map by folder URI.
-                this.resultTree = new Map([...this.resultTree]
-                    .sort((a: [string, SearchInWorkspaceRootFolderNode], b: [string, SearchInWorkspaceRootFolderNode]) => this.compare(a[1].folderUri, b[1].folderUri)));
-                // Update the list of children nodes, sorting them by their file URI.
-                Array.from(this.resultTree.values())
-                    .forEach((folder: SearchInWorkspaceRootFolderNode) => {
-                        folder.children = folder.children.sort((a: SearchInWorkspaceFileNode, b: SearchInWorkspaceFileNode) => this.compare(a.fileUri, b.fileUri));
-                    });
-                this.refreshModelChildren();
+                this.handleSearchCompleted(cancelIndicator);
             }
-        }, searchOptions).catch(() => undefined);
+        }, searchOptions).catch(() => {
+            this.handleSearchCompleted(cancelIndicator);
+        });
     }
 
     focusFirstResult(): void {
@@ -491,7 +528,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             expanded: true,
             id: rootUri,
             parent: this.model.root as SearchInWorkspaceRoot,
-            visible: this.workspaceService.isMultiRootWorkspaceOpened
+            visible: this.forceVisibleRootNode || this.workspaceService.isMultiRootWorkspaceOpened
         };
     }
 
@@ -740,9 +777,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                         <span className={'file-name'}>
                             {this.toNodeName(node)}
                         </span>
-                        <span className={'file-path'}>
-                            {node.path}
-                        </span>
+                        {node.path !== '/' + this.defaultRootName &&
+                            <span className={'file-path'}>
+                                {node.path}
+                            </span>
+                        }
                     </div>
                 </div>
                 <span className='notification-count-container highlighted-count-container'>
