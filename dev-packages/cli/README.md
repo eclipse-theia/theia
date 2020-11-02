@@ -15,10 +15,11 @@
 - [**Description**](#description)
 - [**Getting Started**](#getting-started)
 - [**Configure**](#configure)
-  - [**Build Target**](#build-target)
   - [**Application Properties**](#application-properties)
   - [**Default Preferences**](#default-preferences)
   - [**Default Theme**](#default-theme)
+  - [**Build Target**](#build-target)
+  - [**Electron Frontend Application Config**](#electron-frontend-application-config)
   - [**Using Latest Builds**](#using-latest-builds)
 - [**Building**](#building)
   - [**Build**](#build)
@@ -126,6 +127,37 @@ The target can be configured in the `package.json` via `theia/target` property, 
 ```
 
 For `electron` target applications, is it mandatory to include **Electron** runtime dependencies. The `@theia/electron` package is the easiest way to install the necessary dependencies.
+
+### Electron Frontend Application Config
+
+The `electron` frontend application configuration provides configuration options for the `electron` target.\
+The currently supported configurations are:
+
+- `disallowReloadKeybinding`: if set to `true`, reloading the current browser window won't be possible with the <kbd>Ctrl/Cmd</kbd> + <kbd>r</kbd> keybinding. It is `false` by default. Has no effect if not in an electron environment.
+- `windowOptions`: override or add properties to the electron `windowOptions`.
+
+```json
+{
+    "theia": {
+        "target": "electron",
+        "frontend": {
+            "config": {
+                "electron": {
+                    "disallowReloadKeybinding": true,
+                    "windowOptions": {
+                        "titleBarStyle": "hidden",
+                        "webPreferences": {
+                            "webSecurity": false,
+                            "nodeIntegration": true,
+                            "webviewTag": true
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
 
 ### Using Latest Builds
 
