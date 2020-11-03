@@ -23,7 +23,8 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebuggerContribution } from '../../../common/plugin-protocol';
-
+import { DebugRequestTypes } from '@theia/debug/lib/browser/debug-session-connection';
+import * as theia from '@theia/plugin';
 /**
  * Debug adapter contribution registrator.
  */
@@ -101,7 +102,7 @@ export class PluginDebugService implements DebugService, PluginDebugAdapterContr
         return [...debugTypes];
     }
 
-    async provideDebugConfigurations(debugType: string, workspaceFolderUri: string | undefined): Promise<DebugConfiguration[]> {
+    async provideDebugConfigurations(debugType: keyof DebugRequestTypes, workspaceFolderUri: string | undefined): Promise<theia.DebugConfiguration[]> {
         const contributor = this.contributors.get(debugType);
         if (contributor) {
             return contributor.provideDebugConfigurations && contributor.provideDebugConfigurations(workspaceFolderUri) || [];

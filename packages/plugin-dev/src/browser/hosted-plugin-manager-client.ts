@@ -23,11 +23,12 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { OpenFileDialogFactory, DirNode } from '@theia/filesystem/lib/browser';
 import { HostedPluginServer } from '../common/plugin-dev-protocol';
-import { DebugConfiguration as HostedDebugConfig } from '../common';
+import { DebugPluginConfiguration, LaunchVSCodeArgument, LaunchVSCodeRequest, LaunchVSCodeResult } from '@theia/debug/lib/browser/debug-contribution';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { HostedPluginPreferences } from './hosted-plugin-preferences';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
 
 /**
  * Commands to control Hosted plugin instances.
@@ -86,6 +87,8 @@ export interface HostedInstanceData {
 export class HostedPluginManagerClient {
     private openNewTabAskDialog: OpenHostedInstanceLinkDialog;
 
+    private connection: DebugSessionConnection;
+
     // path to the plugin on the file system
     protected pluginLocation: URI | undefined;
 
@@ -138,7 +141,7 @@ export class HostedPluginManagerClient {
         return undefined;
     }
 
-    async start(debugConfig?: HostedDebugConfig): Promise<void> {
+    async start(debugConfig?: DebugPluginConfiguration): Promise<void> {
         if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
             this.messageService.warn('Hosted instance is already running.');
             return;
@@ -174,9 +177,11 @@ export class HostedPluginManagerClient {
         }
     }
 
-    async debug(): Promise<void> {
-        await this.start({ debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
+    async debug(config?: DebugPluginConfiguration): Promise<string | undefined> {
+        await this.start(this.setDebugConfig(config));
         await this.startDebugSessionManager();
+
+        return this.pluginInstanceURL;
     }
 
     async startDebugSessionManager(): Promise<void> {
@@ -289,6 +294,18 @@ export class HostedPluginManagerClient {
         }
     }
 
+    register(configType: string, connection: DebugSessionConnection): void {
+        if (configType === 'pwa-extensionHost') {
+            this.connection = connection;
+            this.connection.onRequest('launchVSCode', (request: LaunchVSCodeRequest) => this.launchVSCode(request));
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            this.connection.on('exited', async (args: any) => {
+                await this.stop();
+            });
+        }
+    }
+
     /**
      * Opens window with URL to the running plugin instance.
      */
@@ -308,8 +325,59 @@ export class HostedPluginManagerClient {
         }
     }
 
-    protected getErrorMessage(error: Error): string {
-        return error.message.substring(error.message.indexOf(':') + 1);
+    protected async launchVSCode({ arguments: { args } }: LaunchVSCodeRequest): Promise<LaunchVSCodeResult> {
+        let result = {};
+        let instanceURI;
+
+        const sessions = this.debugSessionManager.sessions.filter(session => session.id !== this.connection.sessionId);
+
+        /* if `launchVSCode` is invoked and sessions do not exist - it means that `start` debug was invoked.
+           if `launchVSCode` is invoked and sessions do exist - it means that `restartSessions()` was invoked,
+           which invoked `this.sendRequest('restart', {})`, which restarted `vscode-builtin-js-debug` plugin which is
+           connected to first session (sessions[0]), which means that other existing (child) sessions need to be terminated
+           and new ones will be created by running `startDebugSessionManager()`
+         */
+        if (sessions.length > 0) {
+            sessions.forEach(session => session.terminate(false));
+            await this.startDebugSessionManager();
+            instanceURI = this.pluginInstanceURL;
+        } else {
+            instanceURI = await this.debug(this.getDebugPluginConfig(args));
+        }
+
+        if (instanceURI) {
+            const instanceURL = new URL(instanceURI);
+            if (instanceURL.port) {
+                result = Object.assign(result, { rendererDebugPort: instanceURL.port });
+            }
+        }
+        return result;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    protected getErrorMessage(error: any): string {
+        return error?.message?.substring(error.message.indexOf(':') + 1) || '';
+    }
+
+    private setDebugConfig(config?: DebugPluginConfiguration): DebugPluginConfiguration {
+        config = Object.assign(config || {}, { debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
+        if (config.pluginLocation) {
+            this.pluginLocation = new URI((!config.pluginLocation.startsWith('/') ? '/' : '') + config.pluginLocation.replace(/\\/g, '/')).withScheme('file');
+        }
+        return config;
+    }
+
+    private getDebugPluginConfig(args: LaunchVSCodeArgument[]): DebugPluginConfiguration {
+        let pluginLocation;
+        for (const arg of args) {
+            if (arg?.prefix === '--extensionDevelopmentPath=') {
+                pluginLocation = arg.path;
+            }
+        }
+
+        return {
+            pluginLocation
+        };
     }
 }
 
