@@ -282,9 +282,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
                 const line = data.toString();
                 const match = THEIA_INSTANCE_REGEX.exec(line);
                 if (match) {
-                    if (this.hostedInstanceProcess.stdout) {
-                        this.hostedInstanceProcess.stdout.removeListener('data', outputListener);
-                    }
+                    this.hostedInstanceProcess.stdout!.removeListener('data', outputListener);
                     started = true;
                     resolve(new URI(match[1]));
                 }
@@ -294,20 +292,14 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
 
             this.hostedInstanceProcess.on('error', () => { this.isPluginRunning = false; });
             this.hostedInstanceProcess.on('exit', () => { this.isPluginRunning = false; });
+            this.hostedInstanceProcess.stdout!.addListener('data', outputListener);
 
-            if (this.hostedInstanceProcess.stdout) {
-                this.hostedInstanceProcess.stdout.addListener('data', outputListener);
-
-                this.hostedInstanceProcess.stdout.addListener('data', data => {
-                    this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Info });
-                });
-            }
-
-            if (this.hostedInstanceProcess.stderr) {
-                this.hostedInstanceProcess.stderr.addListener('data', data => {
-                    this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Error });
-                });
-            }
+            this.hostedInstanceProcess.stdout!.addListener('data', data => {
+                this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Info });
+            });
+            this.hostedInstanceProcess.stderr!.addListener('data', data => {
+                this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Error });
+            });
 
             setTimeout(() => {
                 if (!started) {
