@@ -31,7 +31,6 @@ import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-pl
 import { MetadataScanner } from '@theia/plugin-ext/lib/hosted/node/metadata-scanner';
 import { DebugPluginConfiguration } from '@theia/debug/lib/browser/debug-plugin-contribution';
 
-const processTree = require('ps-tree');
 const DEFAULT_HOSTED_PLUGIN_PORT = 3030;
 
 export const HostedInstanceManager = Symbol('HostedInstanceManager');
@@ -156,13 +155,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
 
     terminate(): void {
         if (this.isPluginRunning) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            processTree(this.hostedInstanceProcess.pid, (err: Error, children: Array<any>) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const args = ['-SIGTERM', this.hostedInstanceProcess.pid.toString()].concat(children.map((p: any) => p.PID));
-                cp.spawn('kill', args);
-            });
+            this.hostedPluginSupport.killProcessTree(this.hostedInstanceProcess.pid);
             this.hostedPluginSupport.sendLog({ data: 'Hosted instance has been terminated', type: LogType.Info });
+            this.isPluginRunning = false;
         } else {
             throw new Error('Hosted plugin instance is not running.');
         }
@@ -266,7 +261,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         }
 
         if (debugConfig) {
-            command.push(`--hosted-plugin-${debugConfig.debugMode || 'inspect'}=0.0.0.0:${debugConfig.debugPort ? ':' + debugConfig.debugPort : ''}`);
+            command.push(`--hosted-plugin-${debugConfig.debugMode || 'inspect'}=0.0.0.0${debugConfig.debugPort ? ':' + debugConfig.debugPort : ''}`);
         }
         return command;
     }

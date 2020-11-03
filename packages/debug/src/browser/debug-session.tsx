@@ -330,6 +330,9 @@ export class DebugSession implements CompositeTreeElement {
             if (!await this.exited(1000)) {
                 await this.disconnect(restart);
             }
+        } else if (this.configuration.type === 'pwa-extensionHost') {
+            await this.stopExtensionHost(true);
+            this.fireExited();
         } else {
             await this.disconnect(restart);
         }
@@ -345,6 +348,14 @@ export class DebugSession implements CompositeTreeElement {
         const timeout = 500;
         if (!await this.exited(timeout)) {
             this.fireExited(new Error(`timeout after ${timeout} ms`));
+        }
+    }
+
+    protected async stopExtensionHost(checkRunning: boolean): Promise<void> {
+        for (const contrib of this.debugPluginContribs) {
+            if (contrib.stop) {
+                await contrib.stop(checkRunning);
+            }
         }
     }
 
@@ -368,6 +379,9 @@ export class DebugSession implements CompositeTreeElement {
     async restart(): Promise<boolean> {
         if (this.capabilities.supportsRestartRequest) {
             this.terminated = false;
+            if (this.configuration.type === 'pwa-extensionHost') {
+                await this.stopExtensionHost(true);
+            }
             await this.sendRequest('restart', {});
             return true;
         }
@@ -800,21 +814,16 @@ export class DebugSession implements CompositeTreeElement {
 
     private getDebugPluginConfig(args: LaunchVSCodeArgument[]): DebugPluginConfiguration {
         let pluginLocation;
-        let debugPort;
-
         for (const arg of args) {
             if (arg && arg.prefix) {
                 if (arg.prefix === '--extensionDevelopmentPath=') {
                     pluginLocation = arg.path!;
-                } else if (arg.prefix.indexOf('--inspect-extensions=') !== -1) {
-                    debugPort = arg.prefix.substring(arg.prefix.indexOf('--inspect-extensions=') + 21);
                 }
             }
         }
 
         return {
-            pluginLocation,
-            debugPort
+            pluginLocation
         };
     }
 }

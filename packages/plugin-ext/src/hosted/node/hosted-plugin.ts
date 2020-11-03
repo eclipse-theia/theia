@@ -87,6 +87,10 @@ export class HostedPluginSupport {
         }
     }
 
+    public killProcessTree(parentPID: number): void {
+        this.hostedPluginProcess.killProcessTree(parentPID);
+    }
+
     private terminatePluginServer(): void {
         this.hostedPluginProcess.terminatePluginServer();
     }

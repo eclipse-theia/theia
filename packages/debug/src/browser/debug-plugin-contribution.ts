@@ -20,6 +20,7 @@ export const DebugPluginContribution = Symbol('DebugPluginContribution');
 
 export interface DebugPluginContribution {
     debug(debugConfig: DebugPluginConfiguration): Promise<string>;
+    stop(checkRunning: boolean): Promise<void>;
 }
 
 export interface DebugPluginConfiguration {

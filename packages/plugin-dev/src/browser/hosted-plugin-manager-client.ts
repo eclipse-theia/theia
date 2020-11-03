@@ -175,11 +175,7 @@ export class HostedPluginManagerClient {
     }
 
     async debug(config?: DebugPluginConfiguration): Promise<string | undefined> {
-        config = Object.assign(config || {}, { debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
-        if (config.pluginLocation) {
-            this.pluginLocation = new URI(config.pluginLocation).withScheme('file');
-        }
-        await this.start(config);
+        await this.start(this.setDebugConfig(config));
         await this.startDebugSessionManager();
 
         return this.pluginInstanceURL;
@@ -314,6 +310,14 @@ export class HostedPluginManagerClient {
 
     protected getErrorMessage(error: Error): string {
         return error.message.substring(error.message.indexOf(':') + 1);
+    }
+
+    private setDebugConfig(config?: DebugPluginConfiguration): DebugPluginConfiguration {
+        config = Object.assign(config || {}, { debugMode: this.hostedPluginPreferences['hosted-plugin.debugMode'] });
+        if (config.pluginLocation) {
+            this.pluginLocation = new URI((!config.pluginLocation.startsWith('/') ? '/' : '') + config.pluginLocation.replace(/\\/g, '/')).withScheme('file');
+        }
+        return config;
     }
 }
 
