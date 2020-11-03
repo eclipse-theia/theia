@@ -50,6 +50,8 @@ import { PluginDebugAdapterContributionRegistrator, PluginDebugService } from '.
 import { HostedPluginSupport } from '../../../hosted/browser/hosted-plugin';
 import { DebugFunctionBreakpoint } from '@theia/debug/lib/browser/model/debug-function-breakpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { ContributionProvider } from '@theia/core/lib/common';
+import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 
 export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugExt: DebugExt;
@@ -68,6 +70,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly adapterContributionRegistrator: PluginDebugAdapterContributionRegistrator;
     private readonly fileService: FileService;
     private readonly pluginService: HostedPluginSupport;
+    private readonly debugContributionProvider: ContributionProvider<DebugContribution>;
 
     private readonly debuggerContributions = new Map<string, DisposableCollection>();
     private readonly toDispose = new DisposableCollection();
@@ -86,6 +89,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.debugPreferences = container.get(DebugPreferences);
         this.adapterContributionRegistrator = container.get(PluginDebugService);
         this.sessionContributionRegistrator = container.get(PluginDebugSessionContributionRegistry);
+        this.debugContributionProvider = container.getNamed(ContributionProvider, DebugContribution);
         this.fileService = container.get(FileService);
         this.pluginService = container.get(HostedPluginSupport);
 
@@ -141,7 +145,8 @@ export class DebugMainImpl implements DebugMain, Disposable {
                 return new PluginWebSocketChannel(connection);
             },
             this.fileService,
-            terminalOptionsExt
+            terminalOptionsExt,
+            this.debugContributionProvider
         );
 
         const toDispose = new DisposableCollection(

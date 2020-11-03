@@ -611,11 +611,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             execute: (config?: DebugSessionOptions) => this.start(true, config)
         });
         registry.registerCommand(DebugCommands.STOP, {
-            execute: () => this.manager.currentSession && this.manager.currentSession.terminate(),
+            execute: () => this.manager.terminateSessions(),
             isEnabled: () => this.manager.state !== DebugState.Inactive
         });
         registry.registerCommand(DebugCommands.RESTART, {
-            execute: () => this.manager.restart(),
+            execute: () => this.manager.restartSessions(),
             isEnabled: () => this.manager.state !== DebugState.Inactive
         });
 

@@ -29,6 +29,8 @@ import { IWebSocket } from '@theia/core/shared/vscode-ws-jsonrpc';
 import { TerminalWidgetOptions, TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
+import { ContributionProvider } from '@theia/core';
 
 export class PluginDebugSession extends DebugSession {
     constructor(
@@ -41,8 +43,9 @@ export class PluginDebugSession extends DebugSession {
         protected readonly labelProvider: LabelProvider,
         protected readonly messages: MessageClient,
         protected readonly fileService: FileService,
-        protected readonly terminalOptionsExt: TerminalOptionsExt | undefined) {
-        super(id, options, connection, terminalServer, editorManager, breakpoints, labelProvider, messages, fileService);
+        protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
+        protected readonly debugContributionProvider: ContributionProvider<DebugContribution>) {
+        super(id, options, connection, terminalServer, editorManager, breakpoints, labelProvider, messages, fileService, debugContributionProvider);
     }
 
     protected async doCreateTerminal(terminalWidgetOptions: TerminalWidgetOptions): Promise<TerminalWidget> {
@@ -66,7 +69,8 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected readonly debugPreferences: DebugPreferences,
         protected readonly connectionFactory: (sessionId: string) => Promise<IWebSocket>,
         protected readonly fileService: FileService,
-        protected readonly terminalOptionsExt: TerminalOptionsExt | undefined
+        protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
+        protected readonly debugContributionProvider: ContributionProvider<DebugContribution>
     ) {
         super();
     }
@@ -87,6 +91,8 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
             this.labelProvider,
             this.messages,
             this.fileService,
-            this.terminalOptionsExt);
+            this.terminalOptionsExt,
+            this.debugContributionProvider
+        );
     }
 }
