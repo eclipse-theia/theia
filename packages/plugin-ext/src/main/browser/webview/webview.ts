@@ -320,7 +320,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected dispatchMouseEvent(type: string, data: MouseEvent): void {
         const domRect = this.node.getBoundingClientRect();
-        this.node.dispatchEvent(new MouseEvent(type, {
+        document.dispatchEvent(new MouseEvent(type, {
             ...data,
             clientX: domRect.x + data.clientX,
             clientY: domRect.y + data.clientY
