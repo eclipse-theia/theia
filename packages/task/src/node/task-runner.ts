@@ -22,18 +22,36 @@ import { TaskConfiguration } from '../common/task-protocol';
 
 export const TaskRunnerContribution = Symbol('TaskRunnerContribution');
 
-/** Allows to contribute custom Task Runners. */
+/** The {@link TaskRunnerContribution} can be used to contribute custom {@link TaskRunner}s. */
 export interface TaskRunnerContribution {
+    /**
+     * Register custom runners using the given {@link TaskRunnerRegistry}.
+     * @param runners the common task runner registry.
+     */
     registerRunner(runners: TaskRunnerRegistry): void;
 }
 
 export const TaskRunner = Symbol('TaskRunner');
-/** A Task Runner knows how to run and kill a Task of a particular type. */
+/**
+ * A {@link TaskRunner} knows how to run a task configuration of a particular type.
+ */
 export interface TaskRunner {
-    /** Runs a task based on the given task configuration. */
-    run(taskConfig: TaskConfiguration, ctx?: string): Promise<Task>;
+    /**
+     * Runs a task based on the given `TaskConfiguration`.
+     * @param taskConfig the task configuration that should be executed.
+     * @param ctx the execution context.
+     *
+     * @returns a promise of the (currently running) {@link Task}.
+     */
+    run(tskConfig: TaskConfiguration, ctx?: string): Promise<Task>;
 }
 
+/**
+ * The {@link TaskRunnerRegistry} is the common component for the registration and provisioning of
+ * {@link TaskRunner}s. Theia will collect all {@link TaskRunner}s and invoke {@link TaskRunnerContribution#registerRunner}
+ * for each contribution. The `TaskServer` will use the runners provided by this registry to execute `TaskConfiguration`s that
+ * have been triggered by the user.
+ */
 @injectable()
 export class TaskRunnerRegistry {
 
@@ -49,8 +67,15 @@ export class TaskRunnerRegistry {
         this.runners = new Map();
         this.defaultRunner = this.processTaskRunner;
     }
-
-    /** Registers the given Task Runner to execute the Tasks of the specified type. */
+    /**
+     * Registers the given {@link TaskRunner} to execute Tasks of the specified type.
+     * If there is already a {@link TaskRunner} registered for the specified type the registration will
+     * be overwritten with the new value.
+     * @param type the task type for which the given runner should be registered.
+     * @param runner the task runner that should be registered.
+     *
+     * @returns a `Disposable` that can be invoked to unregister the given runner.
+     */
     registerRunner(type: string, runner: TaskRunner): Disposable {
         this.runners.set(type, runner);
         return {
@@ -58,12 +83,22 @@ export class TaskRunnerRegistry {
         };
     }
 
-    /** Returns a Task Runner registered for the specified Task type or a default Task Runner if none. */
+    /**
+     * Retrieves the {@link TaskRunner} registered for the specified Task type.
+     * @param type the task type.
+     *
+     * @returns the registered {@link TaskRunner} or a default runner if none is registered for the specified type.
+     */
     getRunner(type: string): TaskRunner {
         const runner = this.runners.get(type);
         return runner ? runner : this.defaultRunner;
     }
 
+    /**
+     * Derives all task types for which a {@link TaskRunner} is registered.
+     *
+     * @returns all derived task types.
+     */
     getRunnerTypes(): string[] {
         return [...this.runners.keys()];
     }
