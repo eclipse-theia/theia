@@ -41,7 +41,7 @@ describe('CliManager', () => {
                 conf.option('bar', { alias: 'b', description: 'Some bla.', default: 'my-default', type: 'string' });
             },
             setArguments(args: yargs.Arguments): void {
-                value.resolve(args['foo']);
+                value.resolve(args['foo'] as string);
             }
         });
         await mnr.initializeCli(['-f', 'bla']);
@@ -56,7 +56,7 @@ describe('CliManager', () => {
                 conf.option('bar', { alias: 'b', description: 'Some bla.', default: 'my-default', type: 'string' });
             },
             setArguments(args: yargs.Arguments): MaybePromise<void> {
-                value.resolve(args['bar']);
+                value.resolve(args['bar'] as string);
             }
         });
         await mnr.initializeCli(['--foo']);

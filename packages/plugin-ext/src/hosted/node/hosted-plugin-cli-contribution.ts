@@ -67,9 +67,9 @@ export class HostedPluginCliContribution implements CliContribution {
     }
 
     setArguments(args: Arguments): void {
-        this._extensionTestsPath = args[HostedPluginCliContribution.EXTENSION_TESTS_PATH];
-        this._pluginHostTerminateTimeout = args[HostedPluginCliContribution.PLUGIN_HOST_TERMINATE_TIMEOUT];
-        this._pluginHostStopTimeout = args[HostedPluginCliContribution.PLUGIN_HOST_STOP_TIMEOUT];
+        this._extensionTestsPath = args[HostedPluginCliContribution.EXTENSION_TESTS_PATH] as string;
+        this._pluginHostTerminateTimeout = args[HostedPluginCliContribution.PLUGIN_HOST_TERMINATE_TIMEOUT] as number;
+        this._pluginHostStopTimeout = args[HostedPluginCliContribution.PLUGIN_HOST_STOP_TIMEOUT] as number;
     }
 
 }

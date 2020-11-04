@@ -39,7 +39,7 @@ export class PluginVsCodeCliContribution implements CliContribution, PluginHostE
     }
 
     setArguments(args: Arguments): void {
-        const arg = args[PluginVsCodeCliContribution.VSCODE_API_VERSION];
+        const arg = args[PluginVsCodeCliContribution.VSCODE_API_VERSION] as string;
         if (arg) {
             this.vsCodeApiVersion = arg;
         }

@@ -51,12 +51,12 @@ export class PluginCliContribution implements CliContribution {
     }
 
     setArguments(args: Arguments): void {
-        const pluginsArg = args[PluginCliContribution.PLUGINS];
+        const pluginsArg = args[PluginCliContribution.PLUGINS] as string;
         if (pluginsArg && String(pluginsArg).startsWith(`${LocalDirectoryPluginDeployerResolver.LOCAL_DIR}:`)) {
             this._localDir = pluginsArg;
         }
 
-        const maxSessionLogsFoldersArg = args[PluginCliContribution.PLUGIN_MAX_SESSION_LOGS_FOLDERS];
+        const maxSessionLogsFoldersArg = args[PluginCliContribution.PLUGIN_MAX_SESSION_LOGS_FOLDERS] as number;
         if (maxSessionLogsFoldersArg && Number.isInteger(maxSessionLogsFoldersArg) && maxSessionLogsFoldersArg > 0) {
             this._maxSessionLogsFolders = maxSessionLogsFoldersArg;
         }

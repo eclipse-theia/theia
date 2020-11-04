@@ -110,12 +110,12 @@ export class BackendApplicationCliContribution implements CliContribution {
     }
 
     setArguments(args: yargs.Arguments): void {
-        this.port = args.port;
-        this.hostname = args.hostname;
-        this.ssl = args.ssl;
-        this.cert = args.cert;
-        this.certkey = args.certkey;
-        this.projectPath = args[appProjectPath];
+        this.port = args.port as number;
+        this.hostname = args.hostname as string;
+        this.ssl = args.ssl as boolean;
+        this.cert = args.cert as string;
+        this.certkey = args.certkey as string;
+        this.projectPath = args[appProjectPath] as string;
     }
 
     protected appProjectPath(): string {
