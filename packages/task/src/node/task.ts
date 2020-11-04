@@ -18,13 +18,23 @@ import { injectable } from 'inversify';
 import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise } from '@theia/core/lib/common/';
 import { TaskManager } from './task-manager';
 import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskOutputEvent } from '../common/task-protocol';
-
+/**
+ * Represents the options used for running a task.
+ */
 export interface TaskOptions {
+    /** The task label */
     label: string;
+    /** The task configuration which should be executed */
     config: TaskConfiguration;
+    /** The optional execution context */
     context?: string;
 }
 
+/**
+ * A {@link Task} represents the execution state of a `TaskConfiguration`.
+ * Implementing classes have to call the {@link Task#fireOutputLine} function
+ * whenever a new output occurs during the execution.
+ */
 @injectable()
 export abstract class Task implements Disposable {
 
@@ -45,7 +55,11 @@ export abstract class Task implements Disposable {
         this.toDispose.push(this.outputEmitter);
     }
 
-    /** Terminates the task. */
+    /**
+     * Terminate this task.
+     *
+     * @returns a promise that resolves once the task has been properly terminated.
+     */
     abstract kill(): Promise<void>;
 
     get onExit(): Event<TaskExitedEvent> {
@@ -64,8 +78,12 @@ export abstract class Task implements Disposable {
     protected fireOutputLine(event: TaskOutputEvent): void {
         this.outputEmitter.fire(event);
     }
-
-    /** Returns runtime information about task. */
+    /**
+     * Retrieves the runtime information about this task.
+     * The runtime information computation may happen asynchronous.
+     *
+     * @returns (a promise of) the runtime information as `TaskInfo`.
+     */
     abstract getRuntimeInfo(): MaybePromise<TaskInfo>;
 
     get id(): number {
