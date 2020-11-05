@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as cp from 'child_process';
 import * as fuzzy from 'fuzzy';
 import * as readline from 'readline';
 import { rgPath } from 'vscode-ripgrep';
@@ -30,7 +31,9 @@ export class FileSearchServiceImpl implements FileSearchService {
 
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,
-        @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory) { }
+        /** @deprecated since 1.7.0 */
+        @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory,
+    ) { }
 
     async find(searchPattern: string, options: FileSearchService.Options, clientToken?: CancellationToken): Promise<string[]> {
         const cancellationSource = new CancellationTokenSource();
@@ -111,37 +114,38 @@ export class FileSearchServiceImpl implements FileSearchService {
         return [...exactMatches, ...fuzzyMatches].slice(0, opts.limit);
     }
 
-    private doFind(rootUri: URI, options: FileSearchService.BaseOptions,
-        accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
+    private doFind(rootUri: URI, options: FileSearchService.BaseOptions, accept: (fileUri: string) => void, token: CancellationToken): Promise<void> {
         return new Promise((resolve, reject) => {
-            try {
-                const cwd = FileUri.fsPath(rootUri);
-                const args = this.getSearchArgs(options);
-                // TODO: why not just child_process.spawn, theia process are supposed to be used for user processes like tasks and terminals, not internal
-                const process = this.rawProcessFactory({ command: rgPath, args, options: { cwd } });
-                process.onError(reject);
-                process.outputStream.on('close', resolve);
-                token.onCancellationRequested(() => process.kill());
-
-                const lineReader = readline.createInterface({
-                    input: process.outputStream,
-                    output: process.inputStream
-                });
-                lineReader.on('line', line => {
-                    if (token.isCancellationRequested) {
-                        process.kill();
-                    } else {
-                        accept(line);
-                    }
-                });
-            } catch (e) {
-                reject(e);
-            }
+            const cwd = FileUri.fsPath(rootUri);
+            const args = this.getSearchArgs(options);
+            const ripgrep = cp.spawn(rgPath, args, { cwd, stdio: ['pipe', 'pipe', 'inherit'] });
+            ripgrep.on('error', reject);
+            ripgrep.on('exit', (code, signal) => {
+                if (typeof code === 'number' && code !== 0) {
+                    reject(new Error(`"${rgPath}" exited with code: ${code}`));
+                } else if (typeof signal === 'string') {
+                    reject(new Error(`"${rgPath}" was terminated by signal: ${signal}`));
+                }
+            });
+            token.onCancellationRequested(() => {
+                ripgrep.kill(); // most likely sends a signal.
+                resolve(); // avoid rejecting for no good reason.
+            });
+            const lineReader = readline.createInterface({
+                input: ripgrep.stdout,
+                crlfDelay: Infinity,
+            });
+            lineReader.on('line', line => {
+                if (!token.isCancellationRequested) {
+                    accept(line);
+                }
+            });
+            lineReader.on('close', () => resolve());
         });
     }
 
     private getSearchArgs(options: FileSearchService.BaseOptions): string[] {
-        const args = ['--files', '--hidden', '--case-sensitive'];
+        const args = ['--files', '--hidden'];
         if (options.includePatterns) {
             for (const includePattern of options.includePatterns) {
                 if (includePattern) {
@@ -156,8 +160,11 @@ export class FileSearchServiceImpl implements FileSearchService {
                 }
             }
         }
-        if (!options.useGitIgnore) {
-            args.push('-uu');
+        if (options.useGitIgnore) {
+            // ripgrep follows `.gitignore` by default, but it doesn't exclude `.git`:
+            args.push('--glob', '!.git');
+        } else {
+            args.push('--no-ignore');
         }
         return args;
     }

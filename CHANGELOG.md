@@ -1,5 +1,11 @@
 # Change Log
 
+## v1.8.0
+
+<a name="breaking_changes_1.8.0">[Breaking Changes:](#breaking_changes_1.8.0)</a>
+
+- [file-search] Deprecate dependency on `@theia/process` and replaced its usage by node's `child_process` api.
+
 ## v1.7.0 - 29/10/2020
 
 <a name="release_milestone_1.7.0">[1.7.0 Release Milestone](https://github.com/eclipse-theia/theia/milestone/12?closed=1)</a>
