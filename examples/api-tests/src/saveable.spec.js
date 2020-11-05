@@ -281,7 +281,7 @@ describe('Saveable', function () {
         }
     });
 
-    it('delete and add again file for dirty', async () => {
+    it.skip('delete and add again file for dirty', async () => {
         editor.getControl().setValue('bar');
         assert.isTrue(Saveable.isDirty(widget), 'should be dirty before delete');
         assert.isTrue(editor.document.valid, 'should be valid before delete');
