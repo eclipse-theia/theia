@@ -29,6 +29,7 @@ import { Command } from '@theia/core/lib/common';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
 import * as fuzzy from 'fuzzy';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',
@@ -55,6 +56,8 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
     protected readonly navigationLocationService: NavigationLocationService;
     @inject(MessageService)
     protected readonly messageService: MessageService;
+    @inject(FileSystemPreferences)
+    protected readonly fsPreferences: FileSystemPreferences;
 
     /**
      * Whether to hide .gitignored (and other ignored) files.
@@ -198,7 +201,9 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
                 fuzzyMatch: true,
                 limit: 200,
                 useGitIgnore: this.hideIgnoredFiles,
-                excludePatterns: ['*.git*']
+                excludePatterns: this.hideIgnoredFiles
+                    ? Object.keys(this.fsPreferences['files.exclude'])
+                    : undefined,
             }, token).then(handler);
         } else {
             if (roots.length !== 0) {
