@@ -67,6 +67,7 @@ describe('Saveable', function () {
 
     beforeEach(async () => {
         await preferences.set('editor.autoSave', 'off', undefined, rootUri.toString());
+        await preferences.set('editor.closeOnFileDelete', true);
         await editorManager.closeAll({ save: false });
         await fileService.create(fileUri, 'foo', { fromUserGesture: false, overwrite: true });
         widget =  /** @type {EditorWidget & SaveableWidget} */
@@ -227,6 +228,22 @@ describe('Saveable', function () {
         assert.equal(state.value, 'foo', 'fs should NOT be updated after rejected close');
     });
 
+    it('delete file for saved with editor.CloseOnFileDelete off', async () => {
+        await preferences.set('editor.closeOnFileDelete', false);
+        assert.isFalse(Saveable.isDirty(widget), 'should NOT be dirty before delete');
+        assert.isTrue(editor.document.valid, 'should be valid before delete');
+        const waitForInvalid = new Deferred();
+        const listener = editor.document.onDidChangeValid(() => waitForInvalid.resolve());
+        try {
+            await fileService.delete(fileUri);
+            await waitForInvalid.promise;
+            assert.isFalse(editor.document.valid, 'should be INVALID after delete');
+            assert.isFalse(widget.isDisposed, 'model should NOT be disposed after delete');
+        } finally {
+            listener.dispose();
+        }
+    });
+
     it('accept save on close and reject it', async () => {
         let outOfSync = false;
         toTearDown.push(setShouldOverwrite(async () => {
@@ -284,7 +301,7 @@ describe('Saveable', function () {
         try {
             await fileService.delete(fileUri);
             await waitForDidChangeTitle.promise;
-            assert.isTrue(widget.title.label.endsWith('(deleted from disk)'), 'should be marked as deleted');
+            assert.isTrue(widget.title.label.endsWith('(deleted)'), 'should be marked as deleted');
             assert.isTrue(Saveable.isDirty(widget), 'should be dirty after delete');
             assert.isFalse(widget.isDisposed, 'model should NOT be disposed after delete');
         } finally {
@@ -296,7 +313,7 @@ describe('Saveable', function () {
         try {
             await fileService.create(fileUri, 'foo');
             await waitForDidChangeTitle.promise;
-            assert.isFalse(widget.title.label.endsWith('(deleted from disk)'), 'should NOT be marked as deleted');
+            assert.isFalse(widget.title.label.endsWith('(deleted)'), 'should NOT be marked as deleted');
             assert.isTrue(Saveable.isDirty(widget), 'should be dirty after added again');
             assert.isFalse(widget.isDisposed, 'model should NOT be disposed after added again');
         } finally {
