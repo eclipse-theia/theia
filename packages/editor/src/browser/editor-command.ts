@@ -168,9 +168,13 @@ export class EditorCommandContribution implements CommandContribution {
 
     @postConstruct()
     protected init(): void {
-        this.editorPreferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'editor.autoSave' && e.newValue === 'on') {
-                this.shell.saveAll();
+        this.editorPreferences.onPreferenceChanged(({ preferenceName, oldValue, newValue }) => {
+            if (preferenceName === 'editor.autoSave') {
+                const autoSaveWasOnBeforeChange = !oldValue || oldValue === 'on';
+                const autoSaveIsOnAfterChange = !newValue || newValue === 'on';
+                if (!autoSaveWasOnBeforeChange && autoSaveIsOnAfterChange) {
+                    this.shell.saveAll();
+                }
             }
         });
     }
