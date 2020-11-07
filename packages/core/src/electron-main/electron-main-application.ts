@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { session, screen, globalShortcut, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent, dialog } from 'electron';
+import { session, screen, globalShortcut, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent } from 'electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -213,7 +213,6 @@ export class ElectronMainApplication {
         const electronWindow = new BrowserWindow(options);
         this.attachReadyToShow(electronWindow);
         this.attachSaveWindowState(electronWindow);
-        this.attachWillPreventUnload(electronWindow);
         this.attachGlobalShortcuts(electronWindow);
         this.restoreMaximizedState(electronWindow, options);
         return electronWindow;
@@ -337,26 +336,6 @@ export class ElectronMainApplication {
         electronWindow.on('close', saveWindowState);
         electronWindow.on('resize', saveWindowStateDelayed);
         electronWindow.on('move', saveWindowStateDelayed);
-    }
-
-    /**
-     * Catch window closing event and display a confirmation window.
-     */
-    protected attachWillPreventUnload(electronWindow: BrowserWindow): void {
-        // Fired when a beforeunload handler tries to prevent the page unloading
-        electronWindow.webContents.on('will-prevent-unload', async event => {
-            const { response } = await dialog.showMessageBox(electronWindow, {
-                type: 'question',
-                buttons: ['Yes', 'No'],
-                title: 'Confirm',
-                message: 'Are you sure you want to quit?',
-                detail: 'Any unsaved changes will not be saved.'
-            });
-            if (response === 0) { // 'Yes'
-                // This ignores the beforeunload callback, allowing the page to unload
-                event.preventDefault();
-            }
-        });
     }
 
     /**
