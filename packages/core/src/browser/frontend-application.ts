@@ -24,6 +24,7 @@ import { ShellLayoutRestorer, ApplicationShellLayoutMigrationError } from './she
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { preventNavigation, parseCssTime, animationFrame } from './browser';
 import { CorePreferences } from './core-preferences';
+import { WindowService } from './window/window-service';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
@@ -95,6 +96,9 @@ export class FrontendApplication {
 
     @inject(CorePreferences)
     protected readonly corePreferences: CorePreferences;
+
+    @inject(WindowService)
+    protected readonly windowsService: WindowService;
 
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
@@ -182,8 +186,7 @@ export class FrontendApplication {
      */
     protected registerEventListeners(): void {
         this.registerCompositionEventListeners(); /* Hotfix. See above. */
-
-        window.addEventListener('beforeunload', () => {
+        this.windowsService.onUnload(() => {
             this.stateService.state = 'closing_window';
             this.layoutRestorer.storeLayout(this);
             this.stopContributions();
