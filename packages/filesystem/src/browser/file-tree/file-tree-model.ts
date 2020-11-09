@@ -61,6 +61,8 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
                     const node = DirNode.createRoot(fileStat);
                     this.navigateTo(node);
                 }
+            }).catch(() => {
+                // no-op, allow failures for file dialog text input
             });
         } else {
             this.navigateTo(undefined);
