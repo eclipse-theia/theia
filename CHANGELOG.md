@@ -1,4 +1,13 @@
 # Change Log
+
+## v1.12.0
+
+- [filesystem] add text input and navigate up icon to file dialog [#8748](https://github.com/eclipse-theia/theia/pull/8748)
+
+<a name="breaking_changes_1.12.0">[Breaking Changes:](#breaking_changes_1.12.0)</a>
+
+- [filesystem] `FileDialog` and `LocationListRenderer` now require `FileService` to be passed into constructor for text-based file dialog navigation in browser [#8748](https://github.com/eclipse-theia/theia/pull/8748)
+
 ## v1.11.0 - 2/25/2021
 
 - [api-samples] added example to echo the currently supported vscode API version [#8191](https://github.com/eclipse-theia/theia/pull/8191)
@@ -39,7 +48,6 @@
 - [search-in-workspace] fixed styling of the replace item border [#9090](https://github.com/eclipse-theia/theia/pull/9090)
 - [task] updated logic to activate corresponding terminal when using the `show running tasks` action [#9016](https://github.com/eclipse-theia/theia/pull/9016)
 - [vsx-registry] added API compatibility handling when installing extensions through the 'extensions-view' [#8191](https://github.com/eclipse-theia/theia/pull/8191)
-
 
 <a name="breaking_changes_1.11.0">[Breaking Changes:](#breaking_changes_1.11.0)</a>
 

@@ -8,6 +8,7 @@
   --theia-private-horizontal-tab-scrollbar-rail-height: 7px;
   --theia-private-horizontal-tab-scrollbar-height: 5px;
   --theia-tabbar-toolbar-z-index: 1001;
+  --theia-toolbar-active-transform-scale: 1.272019649;
 }
 
 /*-----------------------------------------------------------------------------
@@ -352,7 +353,7 @@ body.theia-editor-highlightModifiedTabs
 }
 
 .p-TabBar-toolbar .item.enabled.active {
-    transform: scale(1.272019649);
+    transform: scale(var(--theia-toolbar-active-transform-scale));
 }
 
 .p-TabBar-toolbar .item.toggled {
