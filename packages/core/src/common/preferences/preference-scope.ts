@@ -60,6 +60,8 @@ export namespace PreferenceScope {
                 return PreferenceScope.Folder;
             case 'resource':
                 return PreferenceScope.Folder;
+            case 'language-overridable':
+                return PreferenceScope.Folder;
         }
     }
 }
