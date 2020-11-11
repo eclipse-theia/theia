@@ -48,8 +48,12 @@ export class NotificationExtImpl implements NotificationExt {
         return progress;
     }
 
-    protected mapLocation(pluginLocation: ProgressLocation): string | undefined {
-        switch (pluginLocation) {
+    protected mapLocation(location: ProgressLocation | { viewId: string }): string | undefined {
+        if (typeof location === 'object') {
+            return location.viewId;
+        }
+
+        switch (location) {
             case ProgressLocation.Notification: return 'notification';
             case ProgressLocation.SourceControl: return 'scm';
             case ProgressLocation.Window: return 'window';
