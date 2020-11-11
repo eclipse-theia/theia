@@ -484,7 +484,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     }
 
     protected toViewContainerIdentifier(viewContainerId: string): ViewContainerIdentifier {
-        return { id: PLUGIN_VIEW_CONTAINER_FACTORY_ID + ':' + viewContainerId };
+        return { id: PLUGIN_VIEW_CONTAINER_FACTORY_ID + ':' + viewContainerId, progressLocationId: viewContainerId };
     }
     protected toViewContainerId(identifier: ViewContainerIdentifier): string {
         return identifier.id.substr(PLUGIN_VIEW_CONTAINER_FACTORY_ID.length + 1);
