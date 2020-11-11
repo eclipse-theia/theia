@@ -78,6 +78,12 @@ These have precedence over the default associations of the languages installed.'
             type: 'number',
             default: MAX_FILE_SIZE_MB,
             markdownDescription: 'Controls the max file size in MB which is possible to open.'
+        },
+        'files.trimTrailingWhitespace': {
+            'type': 'boolean',
+            'default': false,
+            'description': 'When enabled, will trim trailing whitespace when saving a file.',
+            'scope': 'language-overridable'
         }
     }
 };
@@ -91,6 +97,7 @@ export interface FileSystemConfiguration {
     'files.autoGuessEncoding': boolean;
     'files.participants.timeout': number;
     'files.maxFileSizeMB': number;
+    'files.trimTrailingWhitespace': boolean;
 }
 
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
