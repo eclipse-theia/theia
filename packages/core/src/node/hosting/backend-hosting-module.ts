@@ -15,14 +15,12 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { BackendApplicationContribution } from '../../node';
-import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
-import { ElectronTokenBackendContribution } from './electron-token-backend-contribution';
-import { ElectronTokenValidator } from './electron-token-validator';
+import { WsRequestValidatorContribution } from '../ws-request-validators';
+import { BackendApplicationHosts } from './backend-application-hosts';
+import { WsOriginValidator } from './ws-origin-validator';
 
-export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(ElectronTokenBackendContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(ElectronTokenBackendContribution);
-    bind(ElectronTokenValidator).toSelf().inSingletonScope();
-    bind(WsRequestValidatorContribution).toService(ElectronTokenValidator);
+export default new ContainerModule(bind => {
+    bind(BackendApplicationHosts).toSelf().inSingletonScope();
+    bind(WsOriginValidator).toSelf().inSingletonScope();
+    bind(WsRequestValidatorContribution).toService(WsOriginValidator);
 });

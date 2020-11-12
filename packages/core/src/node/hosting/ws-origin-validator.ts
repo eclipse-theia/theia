@@ -14,15 +14,23 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
-import { BackendApplicationContribution } from '../../node';
-import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
-import { ElectronTokenBackendContribution } from './electron-token-backend-contribution';
-import { ElectronTokenValidator } from './electron-token-validator';
+import * as http from 'http';
+import { inject, injectable } from 'inversify';
+import * as url from 'url';
+import { WsRequestValidatorContribution } from '../ws-request-validators';
+import { BackendApplicationHosts } from './backend-application-hosts';
 
-export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(ElectronTokenBackendContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(ElectronTokenBackendContribution);
-    bind(ElectronTokenValidator).toSelf().inSingletonScope();
-    bind(WsRequestValidatorContribution).toService(ElectronTokenValidator);
-});
+@injectable()
+export class WsOriginValidator implements WsRequestValidatorContribution {
+
+    @inject(BackendApplicationHosts)
+    protected readonly backendApplicationHosts: BackendApplicationHosts;
+
+    allowWsUpgrade(request: http.IncomingMessage): boolean {
+        if (!this.backendApplicationHosts.hasKnownHosts() || !request.headers.origin) {
+            return true;
+        }
+        const origin = url.parse(request.headers.origin);
+        return this.backendApplicationHosts.hosts.has(origin.host!);
+    }
+}

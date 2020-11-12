@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { session, screen, globalShortcut, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent } from 'electron';
+import { screen, globalShortcut, app, BrowserWindow, BrowserWindowConstructorOptions, Event as ElectronEvent } from 'electron';
 import * as path from 'path';
 import { Argv } from 'yargs';
 import { AddressInfo } from 'net';
@@ -27,6 +27,7 @@ import { FileUri } from '../node/file-uri';
 import { Deferred } from '../common/promise-util';
 import { MaybePromise } from '../common/types';
 import { ContributionProvider } from '../common/contribution-provider';
+import { ElectronSecurityTokenService } from './electron-security-token-service';
 import { ElectronSecurityToken } from '../electron-common/electron-token';
 const Storage = require('electron-store');
 const createYargs: (argv?: string[], cwd?: string) => Argv = require('yargs/yargs');
@@ -162,16 +163,21 @@ export class ElectronMainApplication {
     @inject(ElectronMainApplicationGlobals)
     protected readonly globals: ElectronMainApplicationGlobals;
 
-    @inject(ElectronSecurityToken)
-    protected electronSecurityToken: ElectronSecurityToken;
-
     @inject(ElectronMainProcessArgv)
     protected processArgv: ElectronMainProcessArgv;
 
-    protected readonly electronStore = new Storage();
-    protected readonly backendPort = new Deferred<number>();
+    @inject(ElectronSecurityTokenService)
+    protected electronSecurityTokenService: ElectronSecurityTokenService;
 
-    protected _config: FrontendApplicationConfig;
+    @inject(ElectronSecurityToken)
+    protected readonly electronSecurityToken: ElectronSecurityToken;
+
+    protected readonly electronStore = new Storage();
+
+    protected readonly _backendPort = new Deferred<number>();
+    readonly backendPort = this._backendPort.promise;
+
+    protected _config: FrontendApplicationConfig | undefined;
     get config(): FrontendApplicationConfig {
         if (!this._config) {
             throw new Error('You have to start the application first.');
@@ -183,7 +189,7 @@ export class ElectronMainApplication {
         this._config = config;
         this.hookApplicationEvents();
         const port = await this.startBackend();
-        this.backendPort.resolve(port);
+        this._backendPort.resolve(port);
         await app.whenReady();
         await this.attachElectronSecurityToken(port);
         await this.startContributions();
@@ -279,8 +285,8 @@ export class ElectronMainApplication {
     }
 
     protected async createWindowUri(): Promise<URI> {
-        const port = await this.backendPort.promise;
-        return FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH).withQuery(`port=${port}`);
+        return FileUri.create(this.globals.THEIA_FRONTEND_HTML_PATH)
+            .withQuery(`port=${await this.backendPort}`);
     }
 
     protected getDefaultWindowState(): BrowserWindowConstructorOptions {
@@ -418,12 +424,7 @@ export class ElectronMainApplication {
     }
 
     protected async attachElectronSecurityToken(port: number): Promise<void> {
-        session.defaultSession.cookies.set({
-            url: `http://localhost:${port}/`,
-            name: ElectronSecurityToken,
-            value: JSON.stringify(this.electronSecurityToken),
-            httpOnly: true
-        });
+        await this.electronSecurityTokenService.setElectronSecurityTokenCookie(`http://localhost:${port}`);
     }
 
     protected hookApplicationEvents(): void {

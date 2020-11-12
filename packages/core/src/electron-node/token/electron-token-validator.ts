@@ -17,16 +17,27 @@
 import * as http from 'http';
 import * as cookie from 'cookie';
 import * as crypto from 'crypto';
-import { injectable } from 'inversify';
+import { injectable, postConstruct } from 'inversify';
+import { MaybePromise } from '../../common';
 import { ElectronSecurityToken } from '../../electron-common/electron-token';
+import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
 
 /**
  * On Electron, we want to make sure that only Electron's browser-windows access the backend services.
  */
 @injectable()
-export class ElectronTokenValidator {
+export class ElectronTokenValidator implements WsRequestValidatorContribution {
 
-    protected electronSecurityToken: ElectronSecurityToken = this.getToken();
+    protected electronSecurityToken: ElectronSecurityToken;
+
+    @postConstruct()
+    protected postConstruct(): void {
+        this.electronSecurityToken = this.getToken();
+    }
+
+    allowWsUpgrade(request: http.IncomingMessage): MaybePromise<boolean> {
+        return this.allowRequest(request);
+    }
 
     /**
      * Expects the token to be passed via cookies by default.

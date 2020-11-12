@@ -17,6 +17,7 @@
 import { interfaces } from 'inversify';
 import { PluginApiContribution } from './plugin-service';
 import { BackendApplicationContribution, CliContribution } from '@theia/core/lib/node';
+import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { PluginsKeyValueStorage } from './plugins-key-value-storage';
 import { PluginDeployerContribution } from './plugin-deployer-contribution';
 import {
@@ -40,6 +41,7 @@ import { PluginTheiaDeployerParticipant } from './plugin-theia-deployer-particip
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(PluginApiContribution);
+    bind(WsRequestValidatorContribution).toService(PluginApiContribution);
 
     bindContributionProvider(bind, PluginDeployerParticipant);
     bind(PluginDeployer).to(PluginDeployerImpl).inSingletonScope();

@@ -14,15 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
-import { BackendApplicationContribution } from '../../node';
-import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
-import { ElectronTokenBackendContribution } from './electron-token-backend-contribution';
-import { ElectronTokenValidator } from './electron-token-validator';
+import { session } from 'electron';
+import { inject, injectable } from 'inversify';
+import { ElectronSecurityToken } from '../electron-common/electron-token';
 
-export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(ElectronTokenBackendContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(ElectronTokenBackendContribution);
-    bind(ElectronTokenValidator).toSelf().inSingletonScope();
-    bind(WsRequestValidatorContribution).toService(ElectronTokenValidator);
-});
+@injectable()
+export class ElectronSecurityTokenService {
+
+    @inject(ElectronSecurityToken)
+    protected readonly electronSecurityToken: ElectronSecurityToken;
+
+    async setElectronSecurityTokenCookie(url: string): Promise<void> {
+        await session.defaultSession.cookies.set({
+            url,
+            name: ElectronSecurityToken,
+            value: JSON.stringify(this.electronSecurityToken),
+            httpOnly: true
+        });
+    }
+}

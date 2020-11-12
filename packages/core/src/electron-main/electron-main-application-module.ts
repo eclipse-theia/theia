@@ -25,6 +25,7 @@ import { ElectronMainWindowServiceImpl } from './electron-main-window-service-im
 import { ElectronMessagingContribution } from './messaging/electron-messaging-contribution';
 import { ElectronMessagingService } from './messaging/electron-messaging-service';
 import { ElectronConnectionHandler } from '../electron-common/messaging/electron-connection-handler';
+import { ElectronSecurityTokenService } from './electron-security-token-service';
 
 const electronSecurityToken: ElectronSecurityToken = { value: v4() };
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,6 +35,7 @@ export default new ContainerModule(bind => {
     bind(ElectronMainApplication).toSelf().inSingletonScope();
     bind(ElectronMessagingContribution).toSelf().inSingletonScope();
     bind(ElectronSecurityToken).toConstantValue(electronSecurityToken);
+    bind(ElectronSecurityTokenService).toSelf().inSingletonScope();
 
     bindContributionProvider(bind, ElectronConnectionHandler);
     bindContributionProvider(bind, ElectronMessagingService.Contribution);

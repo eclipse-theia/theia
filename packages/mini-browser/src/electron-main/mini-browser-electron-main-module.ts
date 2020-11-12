@@ -14,15 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
 import { ContainerModule } from 'inversify';
-import { BackendApplicationContribution } from '../../node';
-import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
-import { ElectronTokenBackendContribution } from './electron-token-backend-contribution';
-import { ElectronTokenValidator } from './electron-token-validator';
+import { MiniBrowserElectronMainContribution } from './mini-browser-electron-main-contribution';
 
-export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(ElectronTokenBackendContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(ElectronTokenBackendContribution);
-    bind(ElectronTokenValidator).toSelf().inSingletonScope();
-    bind(WsRequestValidatorContribution).toService(ElectronTokenValidator);
+export default new ContainerModule(bind => {
+    bind(MiniBrowserElectronMainContribution).toSelf().inSingletonScope();
+    bind(ElectronMainApplicationContribution).toService(MiniBrowserElectronMainContribution);
 });

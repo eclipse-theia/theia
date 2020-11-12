@@ -19,6 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Endpoint } from '@theia/core/lib/browser';
 import { MaybePromise, Prioritizeable } from '@theia/core/lib/common/types';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { MiniBrowserEnvironment } from './environment/mini-browser-environment';
 
 /**
  * Contribution for the `LocationMapperService`.
@@ -127,6 +128,9 @@ export class LocationWithoutSchemeMapper implements LocationMapper {
 @injectable()
 export class FileLocationMapper implements LocationMapper {
 
+    @inject(MiniBrowserEnvironment)
+    protected readonly miniBrowserEnvironment: MiniBrowserEnvironment;
+
     canHandle(location: string): MaybePromise<number> {
         return location.startsWith('file://') ? 1 : 0;
     }
@@ -140,11 +144,14 @@ export class FileLocationMapper implements LocationMapper {
         if (rawLocation.charAt(0) === '/') {
             rawLocation = rawLocation.substr(1);
         }
-        return new MiniBrowserEndpoint().getRestUrl().resolve(rawLocation).toString();
+        return this.miniBrowserEnvironment.getRandomEndpoint().getRestUrl().resolve(rawLocation).toString();
     }
 
 }
 
+/**
+ * @deprecated since 1.8.0
+ */
 export class MiniBrowserEndpoint extends Endpoint {
     constructor() {
         super({ path: 'mini-browser' });
