@@ -7,7 +7,9 @@
     "@theia/filesystem": "^1.8.0",
     "@types/mime-types": "^2.1.0",
     "mime-types": "^2.1.18",
-    "pdfobject": "^2.0.201604172"
+    "pdfobject": "^2.0.201604172",
+    "vhost": "^3.0.2",
+    "uuid": "^8.0.0"
   },
   "publishConfig": {
     "access": "public"
@@ -15,7 +17,12 @@
   "theiaExtensions": [
     {
       "backend": "lib/node/mini-browser-backend-module",
-      "frontend": "lib/browser/mini-browser-frontend-module"
+      "frontend": "lib/browser/mini-browser-frontend-module",
+      "electronMain": "lib/electron-main/mini-browser-electron-main-module"
+    },
+    {
+      "frontend": "lib/browser/environment/mini-browser-environment-module",
+      "frontendElectron": "lib/electron-browser/environment/electron-mini-browser-environment-module"
     }
   ],
   "keywords": [

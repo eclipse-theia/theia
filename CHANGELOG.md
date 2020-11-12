@@ -3,11 +3,20 @@
 ## v1.9.0
 
 - [plugin-ext-vscode] added support for the command `workbench.extensions.installExtension`. [#8745](https://github.com/eclipse-theia/theia/pull/8745)
+- [core] added `THEIA_HOSTS` environment variable (browser applications only).
+  - Used to filter incoming WebSocket connections: if `Origin` header does not match the list of hosts it will be refused.
+  - Value is a comma-separated list of domain names including the port if not `80` nor `443`.
+  - Example: `app.some.domain.com,app.other.domain:12345`.
 
 <a name="breaking_changes_1.9.0">[Breaking Changes:](#breaking_changes_1.9.0)</a>
 
 - [plugin-ext] `LocalDirectoryPluginDeployerResolver` has moved from `packages/plugin-ext/src/main/node/resolvers/plugin-local-dir-resolver.ts` to `packages/plugin-ext/src/main/node/resolvers/local-file-plugin-deployer-resolver.ts` and now derives from `LocalPluginDeployerResolver`.
 - [`download:plugins`] errors when downloading plugins now result in build failures, unless `--ignore-errors` flag is passed [#8788](https://github.com/eclipse-theia/theia/pull/8788)
+- [core] Deprecated `ElectronMessagingContribution`, token validation is now done in `ElectronTokenValidator` as a `WsRequestValidatorContribution`.
+- [mini-browser] New unique endpoint.
+  - `{{uuid}}.mini-browser.{{hostname}}` by default.
+  - Can be configured via `THEIA_MINI_BROWSER_HOST_PATTERN` environment variable.
+  - Clients must setup this new hostname in their DNS resolvers.
 
 ## v1.8.0 - 26/11/2020
 

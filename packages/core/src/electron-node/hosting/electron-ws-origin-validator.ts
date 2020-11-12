@@ -14,15 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
-import { BackendApplicationContribution } from '../../node';
+import * as http from 'http';
+import { injectable } from 'inversify';
 import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
-import { ElectronTokenBackendContribution } from './electron-token-backend-contribution';
-import { ElectronTokenValidator } from './electron-token-validator';
 
-export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(ElectronTokenBackendContribution).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toService(ElectronTokenBackendContribution);
-    bind(ElectronTokenValidator).toSelf().inSingletonScope();
-    bind(WsRequestValidatorContribution).toService(ElectronTokenValidator);
-});
+@injectable()
+export class ElectronWsOriginValidator implements WsRequestValidatorContribution {
+
+    allowWsUpgrade(request: http.IncomingMessage): boolean {
+        // On Electron the main page is served from the `file` protocol.
+        // We don't expect the requests to come from anywhere else.
+        return request.headers.origin === 'file://';
+    }
+}

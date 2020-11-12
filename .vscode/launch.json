@@ -38,7 +38,8 @@
       ],
       "env": {
         "NODE_ENV": "development",
-        "THEIA_WEBVIEW_EXTERNAL_ENDPOINT": "${env:THEIA_WEBVIEW_EXTERNAL_ENDPOINT}"
+        "THEIA_WEBVIEW_EXTERNAL_ENDPOINT": "${env:THEIA_WEBVIEW_EXTERNAL_ENDPOINT}",
+        "THEIA_MINI_BROWSER_HOST_PATTERN": "${env:THEIA_MINI_BROWSER_HOST_PATTERN}"
       },
       "sourceMaps": true,
       "outFiles": [
