@@ -1,5 +1,13 @@
 # Change Log
 
+## v1.9.0
+
+- [plugin-ext-vscode] added support for the command `workbench.extensions.installExtension`. [#8745](https://github.com/eclipse-theia/theia/pull/8745)
+
+<a name="breaking_changes_1.9.0">[Breaking Changes:](#breaking_changes_1.9.0)</a>
+
+- [plugin-ext] `LocalDirectoryPluginDeployerResolver` has moved from `packages/plugin-ext/src/main/node/resolvers/plugin-local-dir-resolver.ts` to `packages/plugin-ext/src/main/node/resolvers/local-file-plugin-deployer-resolver.ts` and now derives from `LocalPluginDeployerResolver`.
+
 ## v1.8.0 - 26/11/2020
 
 - [api-tests] fixed issue with `saveable` test suite [#8736](https://github.com/eclipse-theia/theia/pull/8736)

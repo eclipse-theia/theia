@@ -53,6 +53,7 @@ import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 import { inject, injectable } from 'inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from 'vscode-uri';
+import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
@@ -63,6 +64,7 @@ import {
 } from '@theia/navigator/lib/browser/navigator-contribution';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '@theia/navigator/lib/browser';
 import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection';
+import { UriComponents } from '@theia/plugin-ext/lib/common/uri-components';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -106,6 +108,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly terminalService: TerminalService;
     @inject(CodeEditorWidgetUtil)
     protected readonly codeEditorWidgetUtil: CodeEditorWidgetUtil;
+    @inject(PluginServer)
+    protected readonly pluginServer: PluginServer;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -207,6 +211,15 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
             execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)
+        });
+        commands.registerCommand({ id: 'workbench.extensions.installExtension' }, {
+            execute: async (vsixUriOrExtensionId: UriComponents | string) => {
+                if (typeof vsixUriOrExtensionId === 'string') {
+                    this.pluginServer.deploy(`vscode:extension/${vsixUriOrExtensionId}`);
+                } else {
+                    this.pluginServer.deploy(`local-file:${URI.revive(vsixUriOrExtensionId).fsPath}`);
+                }
+            }
         });
         commands.registerCommand({ id: 'workbench.action.files.save', }, {
             execute: (uri?: monaco.Uri) => {
