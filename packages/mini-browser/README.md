@@ -14,6 +14,13 @@
 
 The `@theia/mini-browser` extension provides a browser widget with the corresponding backend endpoints.
 
+### Environment Variables
+
+- `THEIA_MINI_BROWSER_HOST_PATTERN`
+  - A string pattern possibly containing `{{hostname}}` which will be replaced. This is the host for which the `mini-browser` will serve.
+  - It is a good practice to host the `mini-browser` handlers on a sub-domain as it is more secure.
+  - Defaults to `{{uuid}}.mini-browser.{{hostname}}`.
+
 ## Additional Information
 
 - [API documentation for `@theia/mini-browser`](https://eclipse-theia.github.io/theia/docs/next/modules/mini_browser.html)

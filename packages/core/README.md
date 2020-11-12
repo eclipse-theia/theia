@@ -84,6 +84,16 @@ root INFO [nsfw-watcher: 10734] Started watching: /Users/captain.future/git/thei
 ```
 Where `root` is the name of the logger and `INFO` is the log level. These are optionally followed by the name of a child process and the process ID.
 
+## Environment Variables
+
+- `THEIA_HOSTS`
+  - A comma-separated list of hosts expected to resolve to the current application.
+    - e.g: `theia.app.com,some.other.domain:3000`
+  - The port number is important if your application is not hosted on either `80` or `443`.
+  - If possible, you should set this environment variable:
+    - When not set, Theia will allow any origin to access the WebSocket services.
+    - When set, Theia will only allow the origins defined in this environment variable.
+
 ## Additional Information
 
 - [API documentation for `@theia/core`](https://eclipse-theia.github.io/theia/docs/next/modules/core.html)

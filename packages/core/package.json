@@ -74,6 +74,10 @@
     {
       "frontendElectron": "lib/electron-browser/token/electron-token-frontend-module",
       "backendElectron": "lib/electron-node/token/electron-token-backend-module"
+    },
+    {
+      "backend": "lib/node/hosting/backend-hosting-module",
+      "backendElectron": "lib/electron-node/hosting/electron-backend-hosting-module"
     }
   ],
   "keywords": [
