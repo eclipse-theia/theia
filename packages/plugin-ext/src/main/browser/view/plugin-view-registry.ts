@@ -505,7 +505,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         const widgets = this.widgetManager.getWidgets(PLUGIN_VIEW_DATA_FACTORY_ID);
         for (const widget of widgets) {
             if (StatefulWidget.is(widget)) {
-                this.viewDataState.set(widget.id, widget.storeState());
+                const state = widget.storeState();
+                if (state) {
+                    this.viewDataState.set(widget.id, state);
+                }
             }
             widget.dispose();
         }
@@ -565,7 +568,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     protected storeViewDataStateOnDispose(viewId: string, widget: Widget & StatefulWidget): void {
         const dispose = widget.dispose.bind(widget);
         widget.dispose = () => {
-            this.viewDataState.set(viewId, widget.storeState());
+            const state = widget.storeState();
+            if (state) {
+                this.viewDataState.set(viewId, state);
+            }
             dispose();
         };
     }

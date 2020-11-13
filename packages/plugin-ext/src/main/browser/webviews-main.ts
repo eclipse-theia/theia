@@ -34,7 +34,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
 
     private readonly proxy: WebviewsExt;
     protected readonly shell: ApplicationShell;
-    protected readonly widgets: WidgetManager;
+    protected readonly widgetManager: WidgetManager;
     protected readonly pluginService: HostedPluginSupport;
     protected readonly viewColumnService: ViewColumnService;
     private readonly toDispose = new DisposableCollection();
@@ -43,7 +43,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEWS_EXT);
         this.shell = container.get(ApplicationShell);
         this.viewColumnService = container.get(ViewColumnService);
-        this.widgets = container.get(WidgetManager);
+        this.widgetManager = container.get(WidgetManager);
         this.pluginService = container.get(HostedPluginSupport);
         this.toDispose.push(this.shell.onDidChangeActiveWidget(() => this.updateViewStates()));
         this.toDispose.push(this.shell.onDidChangeCurrentWidget(() => this.updateViewStates()));
@@ -61,7 +61,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         showOptions: WebviewPanelShowOptions,
         options: WebviewPanelOptions & WebviewOptions
     ): Promise<void> {
-        const view = await this.widgets.getOrCreateWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: panelId });
+        const view = await this.widgetManager.getOrCreateWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id: panelId });
         this.hookWebview(view);
         view.viewType = viewType;
         view.title.label = title;
@@ -217,7 +217,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     }
 
     protected readonly updateViewStates = debounce(() => {
-        for (const widget of this.widgets.getWidgets(WebviewWidget.FACTORY_ID)) {
+        for (const widget of this.widgetManager.getWidgets(WebviewWidget.FACTORY_ID)) {
             if (widget instanceof WebviewWidget) {
                 this.updateViewState(widget);
             }
@@ -251,7 +251,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     }
 
     private async tryGetWebview(id: string): Promise<WebviewWidget | undefined> {
-        return this.widgets.getWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id });
+        return this.widgetManager.getWidget<WebviewWidget>(WebviewWidget.FACTORY_ID, <WebviewWidgetIdentifier>{ id });
     }
 
 }
