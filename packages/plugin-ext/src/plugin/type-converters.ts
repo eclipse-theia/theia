@@ -705,6 +705,9 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     const taskDto = {} as TaskDto;
     taskDto.label = task.name;
     taskDto.source = task.source;
+    if ((task as types.Task).hasProblemMatchers) {
+        taskDto.problemMatcher = task.problemMatchers;
+    }
     if ('detail' in task) {
         taskDto.detail = (task as theia.Task2).detail;
     }
@@ -748,7 +751,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, label, source, scope, detail, command, args, options, windows, ...properties } = taskDto;
+    const { type, label, source, scope, problemMatcher, detail, command, args, options, windows, ...properties } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
