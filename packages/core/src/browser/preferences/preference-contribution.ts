@@ -106,6 +106,8 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
 
     protected readonly preferences: { [name: string]: any } = {};
     protected readonly combinedSchema: PreferenceDataSchema = { properties: {}, patternProperties: {} };
+    protected readonly workspaceSchema: PreferenceDataSchema = { properties: {}, patternProperties: {} };
+    protected readonly folderSchema: PreferenceDataSchema = { properties: {}, patternProperties: {} };
 
     @inject(ContributionProvider) @named(PreferenceContribution)
     protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>;
@@ -187,9 +189,9 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
             const overridden = this.overriddenPreferenceName(preferenceName);
             if (overridden) {
                 delete this.overridePatternProperties.properties[`[${overridden.overrideIdentifier}]`];
-                delete this.combinedSchema.properties[`[${overridden.overrideIdentifier}]`];
+                this.removePropFromSchemas(`[${overridden.overrideIdentifier}]`);
             } else {
-                delete this.combinedSchema.properties[preferenceName];
+                this.removePropFromSchemas(preferenceName);
             }
             const newValue = change.oldValue;
             const oldValue = change.newValue;
@@ -229,7 +231,7 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
                 if (schemaProps.overridable) {
                     this.overridePatternProperties.properties[preferenceName] = schemaProps;
                 }
-                this.combinedSchema.properties[preferenceName] = schemaProps;
+                this.updateSchemaProps(preferenceName, schemaProps);
 
                 const value = schemaProps.defaultValue = this.getDefaultValue(schemaProps, preferenceName);
                 if (this.testOverrideValue(preferenceName, value)) {
@@ -289,6 +291,18 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
 
     getCombinedSchema(): PreferenceDataSchema {
         return this.combinedSchema;
+    }
+
+    getSchema(scope: PreferenceScope): PreferenceDataSchema {
+        switch (scope) {
+            case PreferenceScope.Default:
+            case PreferenceScope.User:
+                return this.combinedSchema;
+            case PreferenceScope.Workspace:
+                return this.workspaceSchema;
+            case PreferenceScope.Folder:
+                return this.folderSchema;
+        }
     }
 
     setSchema(schema: PreferenceSchema): Disposable {
@@ -374,5 +388,32 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
 
     testOverrideValue(name: string, value: any): value is PreferenceSchemaProperties {
         return PreferenceSchemaProperties.is(value) && OVERRIDE_PROPERTY_PATTERN.test(name);
+    }
+
+    private updateSchemaProps(key: string, property: PreferenceDataProperty): void {
+        this.combinedSchema.properties[key] = property;
+
+        switch (property.scope) {
+            case PreferenceScope.Workspace:
+                this.workspaceSchema.properties[key] = property;
+                break;
+            case PreferenceScope.Folder:
+                this.folderSchema.properties[key] = property;
+                break;
+        }
+    }
+
+    private removePropFromSchemas(key: string): void {
+        const scope = this.combinedSchema.properties[key].scope;
+
+        delete this.combinedSchema.properties[key];
+        switch (scope) {
+            case PreferenceScope.Workspace:
+                delete this.workspaceSchema.properties[key];
+                break;
+            case PreferenceScope.Folder:
+                delete this.folderSchema.properties[key];
+                break;
+        }
     }
 }
