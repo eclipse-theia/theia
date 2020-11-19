@@ -149,4 +149,74 @@ describe('download plugins', () => {
         );
         expect(pluginsDirContent).to.deep.equal([]);
     });
+
+    it('resolves packages from open-vsx', async () => {
+        await fs.writeFile(
+            packageJsonPath,
+            JSON.stringify({
+                theiaPlugins: {
+                    'dummy-plugin': 'dummy/plugin@latest',
+                },
+            })
+        );
+
+        // mock fetch to return openvsx API response then return our dummy plugin
+        fetchModuleFetchStub.value(async (url: string) => {
+            if (url === 'https://open-vsx.org/api/dummy/plugin/latest') {
+                return Promise.resolve(
+                    new Response(
+                        JSON.stringify({
+                            files: {
+                                download: dummyPluginUrl,
+                            },
+                        })
+                    )
+                );
+            }
+            if (url === dummyPluginUrl) {
+                return Promise.resolve(
+                    new Response(
+                        createReadStream(
+                            path.resolve(__dirname, '../test-resources/dummy-plugin.vsix')
+                        ),
+                        {
+                            status: 200,
+                            headers: { 'Content-type': 'application/octet-stream' },
+                        }
+                    )
+                );
+            }
+            return Promise.reject(`fetched unexpected URL: ${url}`);
+        });
+
+        await downloadPlugins();
+
+        // lockfile has been written, with integrity and `resolved` key
+        const lock = JSON.parse(await fs.readFile(pluginsLockPath, 'utf-8'));
+        expect(lock['dummy/plugin@latest']).to.include({
+            integrity: dummyPluginIntegrity,
+            resolved: dummyPluginUrl,
+        });
+    });
+
+    it('does not resolves packages from open-vsx when resoled in lockfile', async () => {
+        await fs.writeFile(
+            packageJsonPath,
+            JSON.stringify({
+                theiaPlugins: {
+                    'dummy-plugin': 'dummy/plugin@latest',
+                },
+            })
+        );
+        await fs.writeFile(
+            pluginsLockPath,
+            JSON.stringify({
+                'dummy/plugin@latest': {
+                    integrity: dummyPluginIntegrity,
+                    resolved: dummyPluginUrl,
+                },
+            })
+        );
+        await downloadPlugins();
+    });
 });
