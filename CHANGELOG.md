@@ -7,6 +7,7 @@
 <a name="breaking_changes_1.9.0">[Breaking Changes:](#breaking_changes_1.9.0)</a>
 
 - [plugin-ext] `LocalDirectoryPluginDeployerResolver` has moved from `packages/plugin-ext/src/main/node/resolvers/plugin-local-dir-resolver.ts` to `packages/plugin-ext/src/main/node/resolvers/local-file-plugin-deployer-resolver.ts` and now derives from `LocalPluginDeployerResolver`.
+- [`download:plugins`] errors when downloading plugins now result in build failures, unless `--ignore-errors` flag is passed [#8788](https://github.com/eclipse-theia/theia/pull/8788)
 
 ## v1.8.0 - 26/11/2020
 
