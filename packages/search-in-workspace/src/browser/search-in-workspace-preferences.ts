@@ -30,13 +30,26 @@ export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
             default: 'auto',
             type: 'string',
             enum: ['auto', 'alwaysCollapse', 'alwaysExpand'],
-        }
+        },
+        'search.searchOnType': {
+            description: 'Search all files as you type in the search field.',
+            default: true,
+            type: 'boolean',
+        },
+        'search.searchOnTypeDebouncePeriod': {
+            // eslint-disable-next-line max-len
+            description: 'When `search.searchOnType` is enabled, controls the timeout in milliseconds between a character being typed and the search starting. Has no effect when `search.searchOnType` is disabled.',
+            default: 300,
+            type: 'number',
+        },
     }
 };
 
 export class SearchInWorkspaceConfiguration {
     'search.lineNumbers': boolean;
     'search.collapseResults': string;
+    'search.searchOnType': boolean;
+    'search.searchOnTypeDebouncePeriod': number;
 }
 
 export const SearchInWorkspacePreferences = Symbol('SearchInWorkspacePreferences');

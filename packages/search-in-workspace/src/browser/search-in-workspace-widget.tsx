@@ -26,6 +26,7 @@ import { SearchInWorkspaceContextKeyService } from './search-in-workspace-contex
 import { CancellationTokenSource } from '@theia/core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { EditorManager } from '@theia/editor/lib/browser';
+import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
 
 export interface SearchFieldState {
     className: string;
@@ -88,6 +89,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected readonly progressBarFactory: ProgressBarFactory;
 
     @inject(EditorManager) protected readonly editorManager: EditorManager;
+
+    @inject(SearchInWorkspacePreferences)
+    protected readonly searchInWorkspacePreferences: SearchInWorkspacePreferences;
 
     @postConstruct()
     protected init(): void {
@@ -361,7 +365,22 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.update();
     }
 
-    protected readonly search = (e: React.KeyboardEvent) => this.doSearch(e);
+    protected readonly search = (e: React.KeyboardEvent) => {
+        e.persist();
+        const searchOnType = this.searchInWorkspacePreferences['search.searchOnType'];
+        if (searchOnType) {
+            const delay = searchOnType ? this.searchInWorkspacePreferences['search.searchOnTypeDebouncePeriod'] : 0;
+            setTimeout(() => this.doSearch(e), delay);
+        }
+    };
+
+    protected readonly onKeyDownSearch = (e: React.KeyboardEvent) => {
+        if (e.keyCode === Key.ENTER.keyCode) {
+            this.searchTerm = (e.target as HTMLInputElement).value;
+            this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
+        }
+    };
+
     protected doSearch(e: React.KeyboardEvent): void {
         if (e.target) {
             const searchValue = (e.target as HTMLInputElement).value;
@@ -387,6 +406,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             defaultValue={this.searchTerm}
             autoComplete='off'
             onKeyUp={this.search}
+            onKeyDown={this.onKeyDownSearch}
             onFocus={this.handleFocusSearchInputBox}
             onBlur={this.handleBlurSearchInputBox}
         ></input>;
