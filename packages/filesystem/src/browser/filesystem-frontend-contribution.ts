@@ -29,7 +29,7 @@ import { MimeService } from '@theia/core/lib/browser/mime-service';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
 import { FileSystemPreferences } from './filesystem-preferences';
 import { FileSelection } from './file-selection';
-import { FileUploadService } from './file-upload-service';
+import { FileUploadService, FileUploadResult } from './file-upload-service';
 import { FileService, UserFileOperationEvent } from './file-service';
 import { FileChangesEvent, FileChangeType, FileOperation } from '../common/files';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -128,13 +128,14 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         return !environment.electron.is() && fileStat.isDirectory;
     }
 
-    protected async upload(selection: FileSelection): Promise<void> {
+    protected async upload(selection: FileSelection): Promise<FileUploadResult | undefined> {
         try {
             const source = TreeWidgetSelection.getSource(this.selectionService.selection);
-            await this.uploadService.upload(selection.fileStat.resource);
+            const fileUploadResult = await this.uploadService.upload(selection.fileStat.resource);
             if (ExpandableTreeNode.is(selection) && source) {
                 await source.model.expandNode(selection);
             }
+            return fileUploadResult;
         } catch (e) {
             if (!isCancelled(e)) {
                 console.error(e);
