@@ -34,17 +34,11 @@
     width: 100%;
 }
 
-
-.theia-scm-history .commitList .commitListElement {
-    margin: 3px 0;
-}
-
 .theia-scm-history .commitListElement.first .containerHead {
     border: none;
 }
 
 .theia-scm-history .commitListElement .containerHead {
-    width: calc(100% - 5px);
     height: 50px;
     display: flex;
     align-items: center;
@@ -70,6 +64,7 @@
     display: flex;
     width: 100%;
     box-sizing: border-box;
+    padding: 8px 0 2px 0;
 }
 
 .theia-scm-history .commitListElement .containerHead .headContent .image-container{
@@ -110,10 +105,10 @@
     background: var(--theia-list-focusBackground);
     padding: 5px;
     border-radius: 7px;
-    margin-left: 5px;
     align-items: center;
     justify-content: flex-end;
     min-width: 30px;
+    margin-right: 5px;
     color: var(--theia-theia-list-focusForeground);
 }
 
