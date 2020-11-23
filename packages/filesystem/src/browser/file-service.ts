@@ -24,7 +24,7 @@
 // and https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/workbench/services/workingCopy/common/workingCopyFileOperationParticipant.ts
 
 /* eslint-disable max-len */
-/* eslint-disable no-shadow */
+/* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable no-null/no-null */
 /* eslint-disable @typescript-eslint/tslint/config */
 /* eslint-disable @typescript-eslint/no-explicit-any */

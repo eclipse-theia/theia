@@ -50,7 +50,8 @@
     ],
     "no-new-wrappers": "error",
     "no-null/no-null": "error",
-    "no-shadow": [
+    "no-shadow": "off",
+    "@typescript-eslint/no-shadow": [
       "error",
       {
         "hoist": "all"
