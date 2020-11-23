@@ -61,7 +61,8 @@
     "watch": "concurrently -n compile,bundle \"theiaext watch --preserveWatchOutput\" \"theia build --watch --mode development\"",
     "start": "theia start --plugins=local-dir:../../plugins",
     "start:debug": "yarn start --log-level=debug",
-    "test": "electron-mocha --timeout 60000 \"./lib/test/**/*.espec.js\""
+    "test": "echo skip",
+    "test(disabled)": "electron-mocha --timeout 60000 \"./lib/test/**/*.espec.js\""
   },
   "devDependencies": {
     "@theia/cli": "^1.7.0"

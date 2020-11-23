@@ -1,0 +1,75 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  CXX: c++
+  NODE_OPTIONS: --max_old_space_size=4096
+  THEIA_SKIP_BUILD: 1
+
+jobs:
+  build-lint-test:
+    continue-on-error: true
+    strategy:
+      matrix:
+        os:
+        - ubuntu-latest
+        - windows-latest
+        - macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Setup (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu')
+      run: |
+        sudo apt-get install python3 g++-4.8 libsecret-1-dev xvfb libx11-dev libxkbfile-dev
+        export DISPLAY=:99.0
+        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        echo "XVFB configured"
+    - name: Use Node.js 12
+      uses: actions/setup-node@v1
+      with:
+        node-version: 12
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Yarn Install
+      uses: nick-invision/retry@v2.2.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        command: yarn
+        max_attempts: 2
+        retry_on: error
+        retry_wait_seconds: 600
+        timeout_minutes: 10
+    - name: node_modules Symlink Hack (Windows)
+      # See: https://github.com/yarnpkg/yarn/issues/4564
+      if: startsWith(matrix.os, 'windows')
+      run: node -e "fs.symlinkSync(path.resolve('node_modules'), path.resolve('node_modules/node_modules'));"
+    - name: Linting (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu')
+      run: npx lerna run --concurrency=4 lint
+    - name: Build TypeScript Packages
+      run: yarn run tsc
+    - name: Build Example Applications
+      run: npx lerna run --parallel --stream --scope "@theia/example-*" build
+    - name: Unit Testing
+      run: npx lerna run --concurrency=1 --stream --scope "@theia/!(example-)*" test
+    - name: Integration Testing (Ubuntu)
+      if: startsWith(matrix.os, 'ubuntu')
+      uses: nick-invision/retry@v2.2.0
+      with:
+        command: yarn --cwd examples/browser test
+        max_attempts: 3
+        timeout_minutes: 60
+    - name: Publish Next (push on master, Ubuntu)
+      # Only publish next from Ubuntu if a commit was pushed on master.
+      if: github.event_name == 'push' && github.ref == 'refs/heads/master' && startsWith(matrix.os, 'ubuntu')
+      run: yarn run publish:next
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

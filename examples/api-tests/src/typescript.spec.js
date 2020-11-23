@@ -453,7 +453,8 @@ module.exports = (port, host, argv) => Promise.resolve()
         assert.equal(activeEditor.getControl().getModel().getWordAtPosition({ lineNumber, column }).word, 'Container');
     });
 
-    it('editor.action.triggerSuggest navigate', async function () {
+    // TODO: Re-enable, currently flaky and source of false-negatives.
+    it.skip('editor.action.triggerSuggest navigate', async function () {
         const editor = await openEditor(serverUri);
         // const { [|Container] } = require('inversify');
         editor.getControl().setPosition({ lineNumber: 5, column: 9 });

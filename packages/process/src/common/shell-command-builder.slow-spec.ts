@@ -112,9 +112,9 @@ const shellConfigs = [{
         : undefined,
 }, {
     name: 'powershell',
-    path: execShellCommand(isWindows
-        ? 'where powershell'
-        : 'command -v pwsh'),
+    path: isWindows
+        ? execShellCommand('where powershell')
+        : undefined,
 }];
 
 /* eslint-disable max-len */
