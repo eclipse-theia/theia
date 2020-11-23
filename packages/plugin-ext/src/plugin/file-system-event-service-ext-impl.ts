@@ -24,7 +24,7 @@
  */
 
 /* eslint-disable max-len */
-/* eslint-disable no-shadow */
+/* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/tslint/config */
 

@@ -20,7 +20,7 @@
 // based on https://github.com/microsoft/vscode/blob/04c36be045a94fee58e5f8992d3e3fd980294a84/src/vs/platform/files/node/diskFileSystemProvider.ts
 
 /* eslint-disable no-null/no-null */
-/* eslint-disable no-shadow */
+/* eslint-disable @typescript-eslint/no-shadow */
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { basename, dirname, normalize, join } from 'path';

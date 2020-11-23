@@ -24,7 +24,7 @@ import * as strings from '@theia/core/lib/common/strings';
 import * as paths from './paths';
 import { CharCode } from '@theia/core/lib/common/char-code';
 
-/* eslint-disable no-shadow, no-null/no-null */
+/* eslint-disable @typescript-eslint/no-shadow, no-null/no-null */
 export interface IExpression {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [pattern: string]: boolean | SiblingClause | any;
@@ -429,10 +429,10 @@ function trivia3(pattern: string, options: IGlobOptions): ParsedStringPattern {
 function trivia4and5(path: string, pattern: string, matchPathEnds: boolean): ParsedStringPattern {
     const nativePath = paths.nativeSep !== paths.sep ? path.replace(ALL_FORWARD_SLASHES, paths.nativeSep) : path;
     const nativePathEnd = paths.nativeSep + nativePath;
-    // eslint-disable-next-line no-shadow
+    // eslint-disable-next-line @typescript-eslint/no-shadow
     const parsedPattern: ParsedStringPattern = matchPathEnds ? function (path, basename): string {
         return path && (path === nativePath || strings.endsWith(path, nativePathEnd)) ? pattern : null!;
-        // eslint-disable-next-line no-shadow
+        // eslint-disable-next-line @typescript-eslint/no-shadow
     } : function (path, basename): string {
         return path && path === nativePath ? pattern : null!;
     };
@@ -560,7 +560,7 @@ export function isRelativePattern(obj: any): obj is IRelativePattern {
  * Same as `parse`, but the ParsedExpression is guaranteed to return a Promise
  */
 export function parseToAsync(expression: IExpression, options?: IGlobOptions): ParsedExpression {
-    // eslint-disable-next-line no-shadow
+    // eslint-disable-next-line @typescript-eslint/no-shadow
     const parsedExpression = parse(expression, options);
     return (path: string, basename?: string, hasSibling?: (name: string) => boolean | Promise<boolean>): string | Promise<string> => {
         const result = parsedExpression(path, basename, hasSibling);
@@ -591,9 +591,9 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
             return <ParsedStringPattern>parsedPatterns[0];
         }
 
-        // eslint-disable-next-line no-shadow
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         const resultExpression: ParsedStringPattern = function (path: string, basename: string): string | Promise<string> {
-            // eslint-disable-next-line no-shadow
+            // eslint-disable-next-line @typescript-eslint/no-shadow
             // tslint:disable-next-line:one-variable-per-declaration
             for (let i = 0, n = parsedPatterns.length; i < n; i++) {
                 // Pattern matches path
@@ -606,13 +606,13 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
             return null!;
         };
 
-        // eslint-disable-next-line no-shadow
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         const withBasenames = parsedPatterns.find(pattern => !!(<ParsedStringPattern>pattern).allBasenames);
         if (withBasenames) {
             resultExpression.allBasenames = (<ParsedStringPattern>withBasenames).allBasenames;
         }
 
-        // eslint-disable-next-line no-shadow
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         const allPaths = parsedPatterns.reduce((all, current) => current.allPaths ? all.concat(current.allPaths) : all, <string[]>[]);
         if (allPaths.length) {
             resultExpression.allPaths = allPaths;
@@ -624,7 +624,7 @@ function parsedExpression(expression: IExpression, options: IGlobOptions): Parse
     const resultExpression: ParsedStringPattern = function (path: string, basename: string, hasSibling?: (name: string) => boolean | Promise<boolean>): string | Promise<string> {
         let name: string = null!;
 
-        // eslint-disable-next-line no-shadow
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         for (let i = 0, n = parsedPatterns.length; i < n; i++) {
             // Pattern matches path
             const parsedPattern = (<ParsedExpressionPattern>parsedPatterns[i]);
