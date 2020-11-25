@@ -58,6 +58,9 @@
       "@theia/editor/lib/*": [
         "packages/editor/src/*"
       ],
+      "@theia/external-terminal/lib/*": [
+        "packages/external-terminal/src/*"
+      ],
       "@theia/file-search/lib/*": [
         "packages/file-search/src/*"
       ],
