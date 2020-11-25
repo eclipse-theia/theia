@@ -387,7 +387,7 @@ export namespace KeyCode {
                 return key;
             }
         }
-        throw new Error(`Cannot get key code from the keyboard event: ${event}.`);
+        throw new Error(`Cannot get key code from the keyboard event: ${JSON.stringify(event)}.`);
     }
 
     /**
