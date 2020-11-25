@@ -112,7 +112,8 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
             mocha.setup({
                 reporter: 'spec',
                 ui: 'bdd',
-                useColors: true
+                useColors: true,
+                retries: 5
             } as MochaSetupOptions);
         });
 
