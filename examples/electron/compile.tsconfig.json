@@ -36,6 +36,9 @@
       "path": "../../packages/editor-preview/compile.tsconfig.json"
     },
     {
+      "path": "../../packages/external-terminal/compile.tsconfig.json"
+    },
+    {
       "path": "../../packages/file-search/compile.tsconfig.json"
     },
     {
