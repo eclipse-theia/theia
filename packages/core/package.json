@@ -28,7 +28,7 @@
     "drivelist": "^9.0.2",
     "es6-promise": "^4.2.4",
     "express": "^4.16.3",
-    "file-icons-js": "^1.0.3",
+    "file-icons-js": "~1.0.3",
     "font-awesome": "^4.7.0",
     "fs-extra": "^4.0.2",
     "fuzzy": "^0.1.3",
