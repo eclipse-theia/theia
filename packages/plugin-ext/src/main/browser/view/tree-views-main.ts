@@ -18,10 +18,15 @@ import { interfaces } from 'inversify';
 import { MAIN_RPC_CONTEXT, TreeViewsMain, TreeViewsExt, TreeViewRevealOptions } from '../../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../../common/rpc-protocol';
 import { PluginViewRegistry, PLUGIN_VIEW_DATA_FACTORY_ID } from './plugin-view-registry';
-import { SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode, WidgetManager } from '@theia/core/lib/browser';
+import {
+    SelectableTreeNode,
+    ExpandableTreeNode,
+    CompositeTreeNode,
+    WidgetManager
+} from '@theia/core/lib/browser';
 import { ViewContextKeyService } from './view-context-key-service';
 import { Disposable, DisposableCollection } from '@theia/core';
-import { TreeViewWidget, TreeViewNode } from './tree-view-widget';
+import { TreeViewWidget, TreeViewNode, PluginTreeModel } from './tree-view-widget';
 import { PluginViewWidget } from './plugin-view-widget';
 
 export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
@@ -97,19 +102,36 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
         }
     }
 
+    // elementParentChain parameter contain a list of tree ids from root to the revealed node
+    // all parents of the revealed node should be fetched and expanded in order for it to reveal
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async $reveal(treeViewId: string, treeItemId: string, options: TreeViewRevealOptions): Promise<any> {
-        const viewPanel = await this.viewRegistry.openView(treeViewId, { activate: options.focus });
+    async $reveal(treeViewId: string, elementParentChain: string[], options: TreeViewRevealOptions): Promise<any> {
+        const viewPanel = await this.viewRegistry.openView(treeViewId, { activate: options.focus, reveal: true });
         const widget = viewPanel && viewPanel.widgets[0];
         if (widget instanceof TreeViewWidget) {
-            const treeNode = widget.model.getNode(treeItemId);
+            // pop last element which is the node to reveal
+            const elementId = elementParentChain.pop();
+            await this.expandParentChain(widget.model, elementParentChain);
+            const treeNode = widget.model.getNode(elementId);
             if (treeNode) {
                 if (options.expand && ExpandableTreeNode.is(treeNode)) {
-                    widget.model.expandNode(treeNode);
+                    await widget.model.expandNode(treeNode);
                 }
                 if (options.select && SelectableTreeNode.is(treeNode)) {
                     widget.model.selectNode(treeNode);
                 }
+            }
+        }
+    }
+
+    /**
+     * Expand all parents of the node to reveal from root. This should also fetch missing nodes to the frontend.
+     */
+    private async expandParentChain(model: PluginTreeModel, elementParentChain: string[]): Promise<void> {
+        for (const elementId of elementParentChain) {
+            const treeNode = model.getNode(elementId);
+            if (ExpandableTreeNode.is(treeNode)) {
+                await model.expandNode(treeNode);
             }
         }
     }

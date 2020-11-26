@@ -199,15 +199,9 @@ class TreeViewExtImpl<T> implements Disposable {
     async reveal(element: T, options?: Partial<TreeViewRevealOptions>): Promise<void> {
         await this.pendingRefresh;
 
-        let elementId;
-        this.nodes.forEach((el, id) => {
-            if (Object.is(el.value, element)) {
-                elementId = id;
-            }
-        });
-
-        if (elementId) {
-            return this.proxy.$reveal(this.treeViewId, elementId, {
+        const elementParentChain = await this.calculateRevealParentChain(element);
+        if (elementParentChain) {
+            return this.proxy.$reveal(this.treeViewId, elementParentChain, {
                 select: true, focus: false, expand: false, ...options
             });
         }
@@ -238,6 +232,75 @@ class TreeViewExtImpl<T> implements Disposable {
         return element && element.value;
     }
 
+    /**
+     * calculate the chain of node ids from root to element so that the frontend can expand all of them and reveal element.
+     * this is needed as the frontend may not have the full tree nodes.
+     * throughout the parent chain this.getChildren is called in order to fill this.nodes cache.
+     *
+     * returns undefined if wasn't able to calculate the path due to inconsistencies.
+     *
+     * @param element element to reveal
+     */
+    private async calculateRevealParentChain(element: T | undefined): Promise<string[] | undefined> {
+        if (!element) {
+            // root
+            return [];
+        }
+        const parent = this.treeDataProvider.getParent && await this.treeDataProvider.getParent(element);
+        const chain = await this.calculateRevealParentChain(parent);
+        if (!chain) {
+            // parents are inconsistent
+            return undefined;
+        }
+        const parentId = chain.length ? chain[chain.length - 1] : '';
+        const treeItem = await this.treeDataProvider.getTreeItem(element);
+        if (treeItem.id) {
+            return chain.concat(treeItem.id);
+        }
+        // getChildren fills this.nodes and generate ids for them which are needed later
+        const children = await this.getChildren(parentId);
+        if (!children) {
+            return undefined; // parent is inconsistent
+        }
+        const idLabel = this.getTreeItemIdLabel(treeItem);
+        let possibleIndex = children.length;
+        // find the right element id by searching all possible id names in the cache
+        while (possibleIndex-- > 0) {
+            const candidateId = this.buildTreeItemId(parentId, possibleIndex, idLabel);
+            if (this.nodes.has(candidateId)) {
+                return chain.concat(candidateId);
+            }
+        }
+        // couldn't calculate consistent parent chain and id
+        return undefined;
+    }
+
+    private getTreeItemLabel(treeItem: TreeItem2): string | undefined {
+        const treeItemLabel: string | TreeItemLabel | undefined = treeItem.label;
+        if (typeof treeItemLabel === 'object' && typeof treeItemLabel.label === 'string') {
+            return treeItemLabel.label;
+        } else {
+            return treeItem.label;
+        }
+    }
+
+    private getTreeItemIdLabel(treeItem: TreeItem2): string | undefined {
+        let idLabel = this.getTreeItemLabel(treeItem);
+        // Use resource URI if label is not set
+        if (idLabel === undefined && treeItem.resourceUri) {
+            idLabel = treeItem.resourceUri.path.toString();
+            idLabel = decodeURIComponent(idLabel);
+            if (idLabel.indexOf('/') >= 0) {
+                idLabel = idLabel.substring(idLabel.lastIndexOf('/') + 1);
+            }
+        }
+        return idLabel;
+    }
+
+    private buildTreeItemId(parentId: string, index: number, idLabel: string | undefined): string {
+        return `${parentId}/${index}:${idLabel}`;
+    }
+
     async getChildren(parentId: string): Promise<TreeViewItem[] | undefined> {
         const parentNode = this.nodes.get(parentId);
         const parent = parentNode && parentNode.value;
@@ -258,28 +321,12 @@ class TreeViewExtImpl<T> implements Disposable {
                 const treeItem: TreeItem2 = await this.treeDataProvider.getTreeItem(value);
                 // Convert theia.TreeItem to the TreeViewItem
 
-                // Take a label
-                let label: string | undefined;
-                const treeItemLabel: string | TreeItemLabel | undefined = treeItem.label;
-                if (typeof treeItemLabel === 'object' && typeof treeItemLabel.label === 'string') {
-                    label = treeItemLabel.label;
-                } else {
-                    label = treeItem.label;
-                }
-
-                let idLabel = label;
-                // Use resource URI if label is not set
-                if (idLabel === undefined && treeItem.resourceUri) {
-                    idLabel = treeItem.resourceUri.path.toString();
-                    idLabel = decodeURIComponent(idLabel);
-                    if (idLabel.indexOf('/') >= 0) {
-                        idLabel = idLabel.substring(idLabel.lastIndexOf('/') + 1);
-                    }
-                }
+                const label = this.getTreeItemLabel(treeItem);
+                const idLabel = this.getTreeItemIdLabel(treeItem);
 
                 // Generate the ID
                 // ID is used for caching the element
-                const id = treeItem.id || `${parentId}/${index}:${idLabel}`;
+                const id = treeItem.id || this.buildTreeItemId(parentId, index, idLabel);
 
                 const toDisposeElement = new DisposableCollection();
                 const node: TreeExtNode<T> = {
