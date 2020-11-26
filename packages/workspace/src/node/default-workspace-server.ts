@@ -39,7 +39,7 @@ export class WorkspaceCliContribution implements CliContribution {
     }
 
     setArguments(args: yargs.Arguments): void {
-        let wsPath: string | undefined = args._[2];
+        let wsPath: string | undefined = typeof args._[2] === 'undefined' ? undefined : String(args._[2]);
         if (!wsPath) {
             wsPath = args['root-dir'] as string;
             if (!wsPath) {
