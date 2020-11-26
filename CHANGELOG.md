@@ -1,11 +1,44 @@
 # Change Log
 
-## v1.8.0
+## v1.8.0 - 26/11/2020
+
+- [api-tests] fixed issue with `saveable` test suite [#8736](https://github.com/eclipse-theia/theia/pull/8736)
+- [application-manager] enabled `monaco-editor.*` sourcemaps when debugging [#8744](https://github.com/eclipse-theia/theia/pull/8744)
+- [console] updated the `anser` import workaround [#8741](https://github.com/eclipse-theia/theia/pull/8741)
+- [core] added ability to filter tree nodes [#8540](https://github.com/eclipse-theia/theia/pull/8540)
+- [debug] fixed issue where the debug-view is not properly updated when hidden [#8645](https://github.com/eclipse-theia/theia/pull/8645)
+- [documentation] improved documentation for `@theia/cli` electron configurations [#8699](https://github.com/eclipse-theia/theia/pull/8699)
+- [documentation] improved documentation for `BackendApplicationContribution` [#8686](https://github.com/eclipse-theia/theia/pull/8686)
+- [documentation] improved documentation for `MenuContribution` [#8715](https://github.com/eclipse-theia/theia/pull/8715)
+- [documentation] improved documentation for `MessageService` [#8688](https://github.com/eclipse-theia/theia/pull/8688)
+- [documentation] improved documentation for `PreferenceContribution` [#8677](https://github.com/eclipse-theia/theia/pull/8677)
+- [documentation] improved documentation for `Task` API [#8695](https://github.com/eclipse-theia/theia/pull/8695)
+- [documentation] improved documentation for `TreeDecorator` and `TreeDecoratorService` [#8698](https://github.com/eclipse-theia/theia/pull/8698)
+- [documentation] updated publishing documentation for the repository [#8719](https://github.com/eclipse-theia/theia/pull/8719)
+- [editor] enabled `editor.semanticHighlighting.enabled` by default [#8593](https://github.com/eclipse-theia/theia/pull/8593)
+- [electron] fixed issue with `application.confirmExit` preventing the app from closing [#8732](https://github.com/eclipse-theia/theia/pull/8732)
+- [file-search] fixed issue where file-search did not properly ignore the `.git` folder [#8721](https://github.com/eclipse-theia/theia/pull/8721)
+- [monaco] added ability to compare quick-open entries [#8185](https://github.com/eclipse-theia/theia/pull/8185)
+- [output] improved extensibility of output channel commands [#8733](https://github.com/eclipse-theia/theia/pull/8733)
+- [plugin] added ability to use `viewId` as a progress location [#8700](https://github.com/eclipse-theia/theia/pull/8700)
+- [plugin] added logic to only store webviews when they have a corresponding serializer [#8680](https://github.com/eclipse-theia/theia/pull8680)
+- [plugin] added support for `activeColorTheme` and `onDidChangeActiveColorTheme` API [#8710](https://github.com/eclipse-theia/theia/pull/8710)
+- [plugin] added support for semantic highlighting [#8593](https://github.com/eclipse-theia/theia/pull/8593)
+- [plugin] fixed issue where problem matchers specified by task providers are not respected [#8756](https://github.com/eclipse-theia/theia/pull/8756)
+- [plugin] fixed issues with the `Authentication` API [#8725](https://github.com/eclipse-theia/theia/pull/8725)
+- [plugin] fixed terminating hosted instance issue [#8674](https://github.com/eclipse-theia/theia/pull/8674)
+- [preview] fixed issue where empty document content was not properly rendered [#8729](https://github.com/eclipse-theia/theia/pull/8729)
+- [repo] updated `eslint` and peer-dependencies to latest versions [#8770](https://github.com/eclipse-theia/theia/pull/8770)
+- [search-in-workspace] added ability to perform searches in dirty editors [#8579](https://github.com/eclipse-theia/theia/pull/8579)
+- [search-in-workspace] added ability to search opened editors outside the workspace [#8646](https://github.com/eclipse-theia/theia/pull/8646)
+- [security] updated `yargs` dependency [#8711](https://github.com/eclipse-theia/theia/pull/8711)
+- [workspace] fixed missing binding of `WorkspaceFrontendContribution` [#8734](https://github.com/eclipse-theia/theia/pull/8734)
 
 <a name="breaking_changes_1.8.0">[Breaking Changes:](#breaking_changes_1.8.0)</a>
 
-- [file-search] Deprecate dependency on `@theia/process` and replaced its usage by node's `child_process` api.
-- [electron] Removed `attachWillPreventUnload` method from the Electron main application. The `confirmExit` logic is handled on the frontend. [#8732](https://github.com/eclipse-theia/theia/pull/8732)
+- [electron] removed `attachWillPreventUnload` method from the Electron main application. The `confirmExit` logic is handled on the frontend [#8732](https://github.com/eclipse-theia/theia/pull/8732)
+- [file-search] deprecated dependency on `@theia/process` and replaced its usage by node's `child_process` API [#8721](https://github.com/eclipse-theia/theia/pull/8721)
+
 
 ## v1.7.0 - 29/10/2020
 
