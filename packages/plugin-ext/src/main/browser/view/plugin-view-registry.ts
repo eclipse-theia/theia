@@ -292,10 +292,14 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         return this.widgetManager.getWidget<PluginViewWidget>(PLUGIN_VIEW_FACTORY_ID, this.toPluginViewWidgetIdentifier(viewId));
     }
 
-    async openView(viewId: string, options?: { activate?: boolean }): Promise<PluginViewWidget | undefined> {
+    async openView(viewId: string, options?: { activate?: boolean, reveal?: boolean }): Promise<PluginViewWidget | undefined> {
         const view = await this.doOpenView(viewId);
-        if (view && options && options.activate === true) {
-            await this.shell.activateWidget(view.id);
+        if (view && options) {
+            if (options.activate === true) {
+                await this.shell.activateWidget(view.id);
+            } else if (options.reveal === true) {
+                await this.shell.revealWidget(view.id);
+            }
         }
         return view;
     }

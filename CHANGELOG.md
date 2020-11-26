@@ -18,6 +18,7 @@
   - Can be configured via `THEIA_MINI_BROWSER_HOST_PATTERN` environment variable.
   - Clients must setup this new hostname in their DNS resolvers.
 - [task] remove bash login shell when run from task to align with vscode.
+- [plugin-ext] TreeViewsMain.$reveal second parameter changed from string element id to string array element parent chain
 
 ## v1.8.0 - 26/11/2020
 
