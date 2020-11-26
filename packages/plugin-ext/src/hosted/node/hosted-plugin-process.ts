@@ -95,7 +95,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
 
         this.terminatingPluginServer = true;
-        // eslint-disable-next-line no-shadow
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         const cp = this.childProcess;
         this.childProcess = undefined;
 
@@ -122,7 +122,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         this.killProcessTree(cp.pid);
     }
 
-    private killProcessTree(parentPid: number): void {
+    killProcessTree(parentPid: number): void {
         psTree(parentPid, (_, childProcesses) => {
             childProcesses.forEach(childProcess =>
                 this.killProcess(parseInt(childProcess.PID))
@@ -188,8 +188,8 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
 
         const childProcess = cp.fork(this.configuration.path, options.args, forkOptions);
-        childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
-        childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
+        childProcess.stdout!.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
+        childProcess.stderr!.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString().trim()}`));
 
         this.logger.debug(`[${options.serverName}: ${childProcess.pid}] IPC started`);
         childProcess.once('exit', (code: number, signal: string) => this.onChildProcessExit(options.serverName, childProcess.pid, code, signal));

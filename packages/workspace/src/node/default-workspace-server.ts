@@ -39,9 +39,9 @@ export class WorkspaceCliContribution implements CliContribution {
     }
 
     setArguments(args: yargs.Arguments): void {
-        let wsPath = args._[2];
+        let wsPath: string | undefined = args._[2];
         if (!wsPath) {
-            wsPath = args['root-dir'];
+            wsPath = args['root-dir'] as string;
             if (!wsPath) {
                 this.workspaceRoot.resolve();
                 return;

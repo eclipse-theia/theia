@@ -9,6 +9,9 @@
       "mv": [
         "src/typings/mv"
       ],
+      "nsfw": [
+        "src/typings/nsfw"
+      ],
       "trash": [
         "src/typings/trash"
       ]

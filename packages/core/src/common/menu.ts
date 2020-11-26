@@ -19,16 +19,37 @@ import { Disposable } from './disposable';
 import { CommandRegistry, Command } from './command';
 import { ContributionProvider } from './contribution-provider';
 
+/**
+ * A menu entry representing an action, e.g. "New File".
+ */
 export interface MenuAction {
+    /**
+     * The command to execute.
+     */
     commandId: string
     /**
      * In addition to the mandatory command property, an alternative command can be defined.
      * It will be shown and invoked when pressing Alt while opening a menu.
      */
     alt?: string;
+    /**
+     * A specific label for this action. If not specified the command label or command id will be used.
+     */
     label?: string
+    /**
+     * Icon class(es). If not specified the icon class associated with the specified command
+     * (i.e. `command.iconClass`) will be used if it exists.
+     */
     icon?: string
+    /**
+     * Menu entries are sorted in ascending order based on their `order` strings. If omitted the determined
+     * label will be used instead.
+     */
     order?: string
+    /**
+     * Optional expression which will be evaluated by the {@link ContextKeyService} to determine visibility
+     * of the action, e.g. `resourceLangId == markdown`.
+     */
     when?: string
 }
 
@@ -40,8 +61,18 @@ export namespace MenuAction {
     }
 }
 
+/**
+ * Additional options when creating a new submenu.
+ */
 export interface SubMenuOptions {
+    /**
+     * The class to use for the submenu icon.
+     */
     iconClass?: string
+    /**
+     * Menu entries are sorted in ascending order based on their `order` strings. If omitted the determined
+     * label will be used instead.
+     */
     order?: string
 }
 
@@ -57,6 +88,29 @@ export const MenuContribution = Symbol('MenuContribution');
 
 /**
  * Representation of a menu contribution.
+ *
+ * Note that there are also convenience classes which combine multiple contributions into one.
+ * For example to register a view together with a menu and keybinding you could use
+ * {@link AbstractViewContribution} instead.
+ *
+ * ### Example usage
+ *
+ * ```ts
+ * import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR } from '@theia/core';
+ *
+ * @injectable()
+ * export class NewMenuContribution implements MenuContribution {
+ *    registerMenus(menus: MenuModelRegistry): void {
+ *         const menuPath = [...MAIN_MENU_BAR, '99_mymenu'];
+ *         menus.registerSubmenu(menuPath, 'My Menu');
+ *
+ *         menus.registerMenuAction(menuPath, {
+ *            commandId: MyCommand.id,
+ *            label: 'My Action'
+ *         });
+ *     }
+ * }
+ * ```
  */
 export interface MenuContribution {
     /**
@@ -66,6 +120,11 @@ export interface MenuContribution {
     registerMenus(menus: MenuModelRegistry): void;
 }
 
+/**
+ * The MenuModelRegistry allows to register and unregister menus, submenus and actions
+ * via strings and {@link MenuAction}s without the need to access the underlying UI
+ * representation.
+ */
 @injectable()
 export class MenuModelRegistry {
     protected readonly root = new CompositeMenuNode('');
@@ -82,16 +141,41 @@ export class MenuModelRegistry {
         }
     }
 
+    /**
+     * Adds the given menu action to the menu denoted by the given path.
+     *
+     * @returns a disposable which, when called, will remove the menu action again.
+     */
     registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
         const menuNode = new ActionMenuNode(item, this.commands);
         return this.registerMenuNode(menuPath, menuNode);
     }
 
+    /**
+     * Adds the given menu node to the menu denoted by the given path.
+     *
+     * @returns a disposable which, when called, will remove the menu node again.
+     */
     registerMenuNode(menuPath: MenuPath, menuNode: MenuNode): Disposable {
         const parent = this.findGroup(menuPath);
         return parent.addNode(menuNode);
     }
 
+    /**
+     * Register a new menu at the given path with the given label.
+     * (If the menu already exists without a label, iconClass or order this method can be used to set them.)
+     *
+     * @param menuPath the path for which a new submenu shall be registered.
+     * @param label the label to be used for the new submenu.
+     * @param options optionally allows to set an icon class and specify the order of the new menu.
+     *
+     * @returns if the menu was successfully created a disposable will be returned which,
+     * when called, will remove the menu again. If the menu already existed a no-op disposable
+     * will be returned.
+     *
+     * Note that if the menu already existed and was registered with a different label an error
+     * will be thrown.
+     */
     registerSubmenu(menuPath: MenuPath, label: string, options?: SubMenuOptions): Disposable {
         if (menuPath.length === 0) {
             throw new Error('The sub menu path cannot be empty.');
@@ -123,21 +207,24 @@ export class MenuModelRegistry {
     }
 
     /**
-     * Unregister menu item from the registry
+     * Unregister all menu nodes with the same id as the given menu action.
      *
-     * @param item
+     * @param item the item whose id will be used.
+     * @param menuPath if specified only nodes within the path will be unregistered.
      */
     unregisterMenuAction(item: MenuAction, menuPath?: MenuPath): void;
     /**
-     * Unregister menu item from the registry
+     * Unregister all menu nodes with the same id as the given command.
      *
-     * @param command
+     * @param command the command whose id will be used.
+     * @param menuPath if specified only nodes within the path will be unregistered.
      */
     unregisterMenuAction(command: Command, menuPath?: MenuPath): void;
     /**
-     * Unregister menu item from the registry
+     * Unregister all menu nodes with the given id.
      *
-     * @param id
+     * @param id the id which shall be removed.
+     * @param menuPath if specified only nodes within the path will be unregistered.
      */
     unregisterMenuAction(id: string, menuPath?: MenuPath): void;
     unregisterMenuAction(itemOrCommandOrId: MenuAction | Command | string, menuPath?: MenuPath): void {
@@ -156,6 +243,7 @@ export class MenuModelRegistry {
 
     /**
      * Recurse all menus, removing any menus matching the `id`.
+     *
      * @param id technical identifier of the `MenuNode`.
      */
     unregisterMenuNode(id: string): void {
@@ -191,21 +279,40 @@ export class MenuModelRegistry {
         return newSub;
     }
 
+    /**
+     * Returns the menu at the given path.
+     *
+     * @param menuPath the path specifying the menu to return. If not given the empty path will be used.
+     *
+     * @returns the root menu when `menuPath` is empty. If `menuPath` is not empty the specified menu is
+     * returned if it exists, otherwise an error is thrown.
+     */
     getMenu(menuPath: MenuPath = []): CompositeMenuNode {
         return this.findGroup(menuPath);
     }
 }
 
+/**
+ * Base interface of the nodes used in the menu tree structure.
+ */
 export interface MenuNode {
+    /**
+     * the optional label for this specific node.
+     */
     readonly label?: string
     /**
-     * technical identifier
+     * technical identifier.
      */
     readonly id: string
-
+    /**
+     * Menu nodes are sorted in ascending order based on their `sortString`.
+     */
     readonly sortString: string
 }
 
+/**
+ * Node representing a (sub)menu in the menu tree structure.
+ */
 export class CompositeMenuNode implements MenuNode {
     protected readonly _children: MenuNode[] = [];
     public iconClass?: string;
@@ -226,6 +333,11 @@ export class CompositeMenuNode implements MenuNode {
         return this._children;
     }
 
+    /**
+     * Inserts the given node at the position indicated by `sortString`.
+     *
+     * @returns a disposable which, when called, will remove the given node again.
+     */
     public addNode(node: MenuNode): Disposable {
         this._children.push(node);
         this._children.sort((m1, m2) => {
@@ -254,6 +366,11 @@ export class CompositeMenuNode implements MenuNode {
         };
     }
 
+    /**
+     * Removes the first node with the given id.
+     *
+     * @param id node id.
+     */
     public removeNode(id: string): void {
         const node = this._children.find(n => n.id === id);
         if (node) {
@@ -272,11 +389,23 @@ export class CompositeMenuNode implements MenuNode {
         return this.label !== undefined;
     }
 
+    /**
+     * Indicates whether the given node is the special `navigation` menu.
+     *
+     * @param node the menu node to check.
+     * @returns `true` when the given node is a {@link CompositeMenuNode} with id `navigation`,
+     * `false` otherwise.
+     */
     static isNavigationGroup(node: MenuNode): node is CompositeMenuNode {
         return node instanceof CompositeMenuNode && node.id === 'navigation';
     }
 }
 
+/**
+ * Node representing an action in the menu tree structure.
+ * It's based on {@link MenuAction} for which it tries to determine the
+ * best label, icon and sortString with the given data.
+ */
 export class ActionMenuNode implements MenuNode {
 
     readonly altNode: ActionMenuNode | undefined;

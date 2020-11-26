@@ -16,7 +16,6 @@
 
 import { ContainerModule } from 'inversify';
 import { OutputWidget, OUTPUT_WIDGET_KIND } from './output-widget';
-import { CommandContribution } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WidgetFactory, bindViewContribution, OpenHandler } from '@theia/core/lib/browser';
@@ -32,7 +31,6 @@ import { OutputEditorModelFactory } from './output-editor-model-factory';
 
 export default new ContainerModule(bind => {
     bind(OutputChannelManager).toSelf().inSingletonScope();
-    bind(CommandContribution).toService(OutputChannelManager);
     bind(ResourceResolver).toService(OutputChannelManager);
     bind(MonacoEditorFactory).to(OutputEditorFactory).inSingletonScope();
     bind(MonacoEditorModelFactory).to(OutputEditorModelFactory).inSingletonScope();

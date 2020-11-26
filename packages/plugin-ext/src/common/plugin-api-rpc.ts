@@ -87,6 +87,9 @@ import type {
     TimelineChangeEvent,
     TimelineProviderDescriptor
 } from '@theia/timeline/lib/common/timeline-model';
+import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
+import { ThemeType } from '@theia/core/lib/browser/theming';
+import { Disposable } from '@theia/core/lib/common/disposable';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -245,6 +248,8 @@ export interface TerminalServiceExt {
     $terminalOnInput(id: string, data: string): void;
     $terminalSizeChanged(id: string, cols: number, rows: number): void;
     $currentTerminalChanged(id: string | undefined): void;
+    $initEnvironmentVariableCollections(collections: [string, SerializableEnvironmentVariableCollection][]): void;
+    getEnvironmentVariableCollection(extensionIdentifier: string): theia.EnvironmentVariableCollection;
 }
 export interface OutputChannelRegistryExt {
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel
@@ -312,6 +317,8 @@ export interface TerminalServiceMain {
      * @param id - terminal id.
      */
     $dispose(id: string): void;
+
+    $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void;
 }
 
 export interface AutoFocus {
@@ -419,8 +426,8 @@ export interface OpenDialogOptionsMain {
      * like "TypeScript", and an array of extensions, e.g.
      * ```ts
      * {
-     * 	'Images': ['png', 'jpg']
-     * 	'TypeScript': ['ts', 'tsx']
+     *  'Images': ['png', 'jpg']
+     *  'TypeScript': ['ts', 'tsx']
      * }
      * ```
      */
@@ -446,8 +453,8 @@ export interface SaveDialogOptionsMain {
      * like "TypeScript", and an array of extensions, e.g.
      * ```ts
      * {
-     * 	'Images': ['png', 'jpg']
-     * 	'TypeScript': ['ts', 'tsx']
+     *  'Images': ['png', 'jpg']
+     *  'TypeScript': ['ts', 'tsx']
      * }
      * ```
      */
@@ -556,6 +563,12 @@ export interface TimelineMain {
     $registerTimelineProvider(provider: TimelineProviderDescriptor): Promise<void>;
     $fireTimelineChanged(e: TimelineChangeEvent): Promise<void>;
     $unregisterTimelineProvider(source: string): Promise<void>;
+}
+
+export interface ThemingExt {
+    $onColorThemeChange(type: ThemeType): void;
+}
+export interface ThemingMain extends Disposable {
 }
 
 export interface DialogsMain {
@@ -1200,6 +1213,9 @@ export interface TaskDto {
     label: string;
     source?: string;
     scope: string | number;
+    // Provide a more specific type when necessary (see ProblemMatcherContribution)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    problemMatcher?: any;
     detail?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
@@ -1274,6 +1290,9 @@ export interface LanguagesExt {
     $provideColorPresentations(handle: number, resource: UriComponents, colorInfo: RawColorInfo, token: CancellationToken): PromiseLike<ColorPresentation[]>;
     $provideRenameEdits(handle: number, resource: UriComponents, position: Position, newName: string, token: CancellationToken): PromiseLike<WorkspaceEditDto | undefined>;
     $resolveRenameLocation(handle: number, resource: UriComponents, position: Position, token: CancellationToken): PromiseLike<RenameLocation | undefined>;
+    $provideDocumentSemanticTokens(handle: number, resource: UriComponents, previousResultId: number, token: CancellationToken): Promise<BinaryBuffer | null>;
+    $releaseDocumentSemanticTokens(handle: number, semanticColoringResultId: number): void;
+    $provideDocumentRangeSemanticTokens(handle: number, resource: UriComponents, range: Range, token: CancellationToken): Promise<BinaryBuffer | null>;
     $provideRootDefinition(handle: number, resource: UriComponents, location: Position, token: CancellationToken): Promise<CallHierarchyDefinition | undefined>;
     $provideCallers(handle: number, definition: CallHierarchyDefinition, token: CancellationToken): Promise<CallHierarchyReference[] | undefined>;
 }
@@ -1307,7 +1326,7 @@ export interface LanguagesMain {
     $clearDiagnostics(id: string): void;
     $changeDiagnostics(id: string, delta: [string, MarkerData[]][]): void;
     $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
-    $registerRangeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
+    $registerRangeFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerOnTypeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], autoFormatTriggerCharacters: string[]): void;
     $registerDocumentLinkProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerCodeLensSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], eventHandle?: number): void;
@@ -1318,6 +1337,10 @@ export interface LanguagesMain {
     $registerSelectionRangeProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerDocumentColorProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void;
     $registerRenameProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], supportsResolveInitialValues: boolean): void;
+    $registerDocumentSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[],
+        legend: theia.SemanticTokensLegend, eventHandle: number | undefined): void;
+    $emitDocumentSemanticTokensEvent(eventHandle: number): void;
+    $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend): void;
     $registerCallHierarchyProvider(handle: number, selector: SerializedDocumentFilter[]): void;
 }
 
@@ -1480,7 +1503,8 @@ export const PLUGIN_RPC_CONTEXT = {
     WINDOW_MAIN: createProxyIdentifier<WindowMain>('WindowMain'),
     CLIPBOARD_MAIN: <ProxyIdentifier<ClipboardMain>>createProxyIdentifier<ClipboardMain>('ClipboardMain'),
     LABEL_SERVICE_MAIN: <ProxyIdentifier<LabelServiceMain>>createProxyIdentifier<LabelServiceMain>('LabelServiceMain'),
-    TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain')
+    TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain'),
+    THEMING_MAIN: <ProxyIdentifier<ThemingMain>>createProxyIdentifier<ThemingMain>('ThemingMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -1509,7 +1533,8 @@ export const MAIN_RPC_CONTEXT = {
     SCM_EXT: createProxyIdentifier<ScmExt>('ScmExt'),
     DECORATIONS_EXT: createProxyIdentifier<DecorationsExt>('DecorationsExt'),
     LABEL_SERVICE_EXT: createProxyIdentifier<LabelServiceExt>('LabelServiceExt'),
-    TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt')
+    TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt'),
+    THEMING_EXT: createProxyIdentifier<ThemingExt>('ThemingExt')
 };
 
 export interface TasksExt {
@@ -1544,7 +1569,7 @@ export interface AuthenticationMain {
     $getProviderIds(): Promise<string[]>;
     $updateSessions(providerId: string, event: AuthenticationSessionsChangeEvent): void;
     $getSession(providerId: string, scopes: string[], extensionId: string, extensionName: string,
-                options: { createIfNone?: boolean, clearSessionPreference?: boolean }): Promise<theia.AuthenticationSession | undefined>;
+        options: { createIfNone?: boolean, clearSessionPreference?: boolean }): Promise<theia.AuthenticationSession | undefined>;
     $logout(providerId: string, sessionId: string): Promise<void>;
 }
 

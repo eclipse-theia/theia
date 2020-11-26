@@ -56,7 +56,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     }).inSingletonScope();
 
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
-    for (const identifier of [CommandContribution, KeybindingContribution, MenuContribution]) {
+    for (const identifier of [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution]) {
         bind(identifier).toService(WorkspaceFrontendContribution);
     }
 

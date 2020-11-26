@@ -25,6 +25,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from '../common/logger';
 import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
 import { ContextKeyService } from './context-key-service';
+import { CorePreferences } from './core-preferences';
 import * as common from '../common/keybinding';
 
 export enum KeybindingScope {
@@ -60,7 +61,7 @@ export interface ScopedKeybinding extends common.Keybinding {
 
 export const KeybindingContribution = Symbol('KeybindingContribution');
 /**
- * Representation of a keybinding contribution.
+ * Allows extensions to contribute {@link common.Keybinding}s
  */
 export interface KeybindingContribution {
     /**
@@ -100,6 +101,9 @@ export class KeybindingRegistry {
 
     protected readonly contexts: { [id: string]: KeybindingContext } = {};
     protected readonly keymaps: ScopedKeybinding[][] = [...Array(KeybindingScope.length)].map(() => []);
+
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
 
     @inject(KeyboardLayoutService)
     protected readonly keyboardLayoutService: KeyboardLayoutService;
@@ -168,36 +172,36 @@ export class KeybindingRegistry {
      *
      * Keybindings registered later have higher priority during evaluation.
      *
-     * @param binding
+     * @param binding the keybinding to be registered
      */
     registerKeybinding(binding: common.Keybinding): Disposable {
         return this.doRegisterKeybinding(binding);
     }
 
     /**
-     * Register default keybindings to the registry
+     * Register multiple default keybindings to the registry
      *
-     * @param bindings
+     * @param bindings An array of keybinding to be registered
      */
     registerKeybindings(...bindings: common.Keybinding[]): Disposable {
         return this.doRegisterKeybindings(bindings, KeybindingScope.DEFAULT);
     }
 
     /**
-     * Unregister keybindings from the registry using the key of the given keybinding
+     * Unregister all keybindings from the registry that are bound to the key of the given keybinding
      *
-     * @param binding a Keybinding specifying the key to be unregistered
+     * @param binding a keybinding specifying the key to be unregistered
      */
     unregisterKeybinding(binding: common.Keybinding): void;
     /**
-     * Unregister keybindings with the given key from the registry
+     * Unregister all keybindings with the given key from the registry
      *
      * @param key a key to be unregistered
      */
     unregisterKeybinding(key: string): void;
     /**
      * Unregister all existing keybindings for the given command
-     * @param command the command to unregister keybindings for
+     * @param command the command to unregister all keybindings for
      */
     unregisterKeybinding(command: Command): void;
 
@@ -266,6 +270,12 @@ export class KeybindingRegistry {
         }
     }
 
+    /**
+     * Checks whether a colliding {@link common.Keybinding} exists in a specific scope.
+     * @param binding the keybinding to check
+     * @param scope the keybinding scope to check
+     * @returns true if there is a colliding keybinding
+     */
     containsKeybindingInScope(binding: common.Keybinding, scope = KeybindingScope.USER): boolean {
         const bindingKeySequence = this.resolveKeybinding(binding);
         const collisions = this.getKeySequenceCollisions(this.keymaps[scope], bindingKeySequence)
@@ -283,7 +293,10 @@ export class KeybindingRegistry {
     }
 
     /**
-     * Return a user visible representation of a keybinding.
+     * Get a user visible representation of a {@link common.Keybinding}.
+     * @returns an array of strings representing all elements of the {@link KeySequence} defined by the {@link common.Keybinding}
+     * @param keybinding the keybinding
+     * @param separator the separator to be used to stringify {@link KeyCode}s that are part of the {@link KeySequence}
      */
     acceleratorFor(keybinding: common.Keybinding, separator: string = ' '): string[] {
         const bindingKeySequence = this.resolveKeybinding(keybinding);
@@ -291,14 +304,20 @@ export class KeybindingRegistry {
     }
 
     /**
-     * Return a user visible representation of a key sequence.
+     * Get a user visible representation of a {@link KeySequence}.
+     * @returns an array of strings representing all elements of the {@link KeySequence}
+     * @param keySequence the keysequence
+     * @param separator the separator to be used to stringify {@link KeyCode}s that are part of the {@link KeySequence}
      */
     acceleratorForSequence(keySequence: KeySequence, separator: string = ' '): string[] {
         return keySequence.map(keyCode => this.acceleratorForKeyCode(keyCode, separator));
     }
 
     /**
-     * Return a user visible representation of a key code (a key with modifiers).
+     * Get a user visible representation of a key code (a key with modifiers).
+     * @returns a string representing the {@link KeyCode}
+     * @param keyCode the keycode
+     * @param separator the separator used to separate keys (key and modifiers) in the returning string
      */
     acceleratorForKeyCode(keyCode: KeyCode, separator: string = ' '): string {
         const keyCodeResult = [];
@@ -383,9 +402,10 @@ export class KeybindingRegistry {
     }
 
     /**
-     * Get the keybindings associated to commandId.
+     * Get all keybindings associated to a commandId.
      *
      * @param commandId The ID of the command for which we are looking for keybindings.
+     * @returns an array of {@link ScopedKeybinding}
      */
     getKeybindingsForCommand(commandId: string): ScopedKeybinding[] {
         const result: ScopedKeybinding[] = [];
@@ -497,7 +517,8 @@ export class KeybindingRegistry {
             return;
         }
 
-        const keyCode = KeyCode.createKeyCode(event);
+        const eventDispatch = this.corePreferences['keyboard.dispatch'];
+        const keyCode = KeyCode.createKeyCode(event, eventDispatch);
         /* Keycode is only a modifier, next keycode will be modifier + key.
            Ignore this one.  */
         if (keyCode.isModifierOnly()) {
@@ -577,6 +598,11 @@ export class KeybindingRegistry {
         return commandId === KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND;
     }
 
+    /**
+     * Sets a new keymap replacing all existing {@link common.Keybinding}s in the given scope.
+     * @param scope the keybinding scope
+     * @param bindings an array containing the new {@link common.Keybinding}s
+     */
     setKeymap(scope: KeybindingScope, bindings: common.Keybinding[]): void {
         this.resetKeybindingsForScope(scope);
         this.toResetKeymap.set(scope, this.doRegisterKeybindings(bindings, scope));
@@ -605,6 +631,11 @@ export class KeybindingRegistry {
         }
     }
 
+    /**
+     * Get all {@link common.Keybinding}s for a {@link KeybindingScope}.
+     * @returns an array of {@link common.ScopedKeybinding}
+     * @param scope the keybinding scope to retrieve the {@link common.Keybinding}s for.
+     */
     getKeybindingsByScope(scope: KeybindingScope): ScopedKeybinding[] {
         return this.keymaps[scope];
     }

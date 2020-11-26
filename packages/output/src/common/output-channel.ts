@@ -19,23 +19,16 @@ import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Resource, ResourceResolver } from '@theia/core/lib/common/resource';
-import { CommandRegistry, CommandContribution } from '@theia/core/lib/common/command';
-import { QuickPickService } from '@theia/core/lib/browser';
 import { Emitter, Event, Disposable, DisposableCollection } from '@theia/core';
-import { QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoTextModelService, IReference } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { OutputUri } from './output-uri';
 import { OutputResource } from '../browser/output-resource';
 import { OutputPreferences } from './output-preferences';
 import { OutputConfigSchema } from './output-preferences';
-import { OutputCommands } from '../browser/output-commands';
 
 @injectable()
-export class OutputChannelManager implements CommandContribution, Disposable, ResourceResolver {
-
-    @inject(QuickPickService)
-    protected readonly quickPickService: QuickPickService;
+export class OutputChannelManager implements Disposable, ResourceResolver {
 
     @inject(MonacoTextModelService)
     protected readonly textModelService: MonacoTextModelService;
@@ -61,122 +54,6 @@ export class OutputChannelManager implements CommandContribution, Disposable, Re
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnChannelDeletion = new Map<string, Disposable>();
-
-    registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(OutputCommands.APPEND, {
-            execute: ({ name, text }: { name: string, text: string }) => {
-                if (name && text) {
-                    this.getChannel(name).append(text);
-                }
-            }
-        });
-        registry.registerCommand(OutputCommands.APPEND_LINE, {
-            execute: ({ name, text }: { name: string, text: string }) => {
-                if (name && text) {
-                    this.getChannel(name).appendLine(text);
-                }
-            }
-        });
-        registry.registerCommand(OutputCommands.CLEAR, {
-            execute: ({ name }: { name: string }) => {
-                if (name) {
-                    this.getChannel(name).clear();
-                }
-            }
-        });
-        registry.registerCommand(OutputCommands.DISPOSE, {
-            execute: ({ name }: { name: string }) => {
-                if (name) {
-                    this.deleteChannel(name);
-                }
-            }
-        });
-        registry.registerCommand(OutputCommands.SHOW, {
-            execute: ({ name, options }: { name: string, options?: { preserveFocus?: boolean } }) => {
-                if (name) {
-                    const preserveFocus = options && options.preserveFocus || false;
-                    this.getChannel(name).show({ preserveFocus });
-                }
-            }
-        });
-        registry.registerCommand(OutputCommands.HIDE, {
-            execute: ({ name }: { name: string }) => {
-                if (name) {
-                    this.getChannel(name).hide();
-                }
-            }
-        });
-
-        registry.registerCommand(OutputCommands.CLEAR__QUICK_PICK, {
-            execute: async () => {
-                const channel = await this.pick({
-                    placeholder: 'Clear output channel.',
-                    channels: this.getChannels().slice()
-                });
-                if (channel) {
-                    channel.clear();
-                }
-            },
-            isEnabled: () => !!this.getChannels().length,
-            isVisible: () => !!this.getChannels().length
-        });
-        registry.registerCommand(OutputCommands.SHOW__QUICK_PICK, {
-            execute: async () => {
-                const channel = await this.pick({
-                    placeholder: 'Show output channel.',
-                    channels: this.getChannels().slice()
-                });
-                if (channel) {
-                    const { name } = channel;
-                    registry.executeCommand(OutputCommands.SHOW.id, { name, options: { preserveFocus: false } });
-                }
-            },
-            isEnabled: () => !!this.getChannels().length,
-            isVisible: () => !!this.getChannels().length
-        });
-        registry.registerCommand(OutputCommands.HIDE__QUICK_PICK, {
-            execute: async () => {
-                const channel = await this.pick({
-                    placeholder: 'Hide output channel.',
-                    channels: this.getVisibleChannels().slice()
-                });
-                if (channel) {
-                    const { name } = channel;
-                    registry.executeCommand(OutputCommands.HIDE.id, { name });
-                }
-            },
-            isEnabled: () => !!this.getVisibleChannels().length,
-            isVisible: () => !!this.getVisibleChannels().length
-        });
-        registry.registerCommand(OutputCommands.DISPOSE__QUICK_PICK, {
-            execute: async () => {
-                const channel = await this.pick({
-                    placeholder: 'Close output channel.',
-                    channels: this.getChannels().slice()
-                });
-                if (channel) {
-                    const { name } = channel;
-                    registry.executeCommand(OutputCommands.DISPOSE.id, { name });
-                }
-            },
-            isEnabled: () => !!this.getChannels().length,
-            isVisible: () => !!this.getChannels().length
-        });
-    }
-
-    protected async pick({ channels, placeholder }: { channels: OutputChannel[], placeholder: string }): Promise<OutputChannel | undefined> {
-        const items: QuickPickItem<OutputChannel>[] = [];
-        for (let i = 0; i < channels.length; i++) {
-            const channel = channels[i];
-            if (i === 0) {
-                items.push({ label: channel.isVisible ? 'Output Channels' : 'Hidden Channels', type: 'separator' });
-            } else if (!channel.isVisible && channels[i - 1].isVisible) {
-                items.push({ label: 'Hidden Channels', type: 'separator' });
-            }
-            items.push({ label: channel.name, value: channel });
-        }
-        return this.quickPickService.show(items, { placeholder });
-    }
 
     getChannel(name: string): OutputChannel {
         const existing = this.channels.get(name);

@@ -67,6 +67,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/common/modes',
                 'vs/editor/contrib/suggest/suggest',
                 'vs/editor/contrib/snippet/snippetParser',
+                'vs/editor/contrib/format/format',
                 'vs/platform/configuration/common/configuration',
                 'vs/platform/configuration/common/configurationModels',
                 'vs/editor/common/services/resolverService',
@@ -79,20 +80,24 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/common/model/wordHelper',
                 'vs/base/common/errors',
                 'vs/base/common/path',
-                'vs/editor/common/model/textModel'
+                'vs/editor/common/model/textModel',
+                'vs/base/common/strings',
+                'vs/base/common/async'
             ], (commands: any, actions: any,
                 keybindingsRegistry: any, keybindingResolver: any, resolvedKeybinding: any, keybindingLabels: any,
                 keyCodes: any, mime: any, editorExtensions: any, simpleServices: any,
                 standaloneServices: any, standaloneLanguages: any, quickOpenWidget: any, quickOpenModel: any,
                 filters: any, themeService: any, styler: any, colorRegistry: any, color: any,
                 platform: any, modes: any, suggest: any, snippetParser: any,
+                format: any,
                 configuration: any, configurationModels: any,
                 resolverService: any,
                 codeEditorService: any, codeEditorServiceImpl: any, openerService: any,
                 markerService: any,
                 contextKey: any, contextKeyService: any,
                 wordHelper: any,
-                error: any, path: any, textModel: any) => {
+                error: any, path: any,
+                textModel: any, strings: any, async: any) => {
                 const global: any = self;
                 global.monaco.commands = commands;
                 global.monaco.actions = actions;
@@ -109,6 +114,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 global.monaco.modes = modes;
                 global.monaco.suggest = suggest;
                 global.monaco.snippetParser = snippetParser;
+                global.monaco.format = format;
                 global.monaco.contextkey = contextKey;
                 global.monaco.contextKeyService = contextKeyService;
                 global.monaco.mime = mime;
@@ -116,6 +122,8 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 global.monaco.error = error;
                 global.monaco.path = path;
                 global.monaco.textModel = textModel;
+                global.monaco.strings = strings;
+                global.monaco.async = async;
                 resolve();
             });
         });

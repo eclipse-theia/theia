@@ -66,6 +66,9 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
+        if (this.folders && this.folders.length === 0) {
+            return undefined;
+        }
         return this.folders;
     }
 

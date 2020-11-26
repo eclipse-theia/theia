@@ -14,6 +14,27 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+.theia-scm-history .history-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
+}
+
+.theia-scm-history .listContainer {
+    flex: 1;
+    position: relative;
+}
+
+.theia-scm-history .commitList {
+    height: 100%;
+}
+
+.theia-scm-history .history-container .noWrapInfo {
+    width: 100%;
+}
+
+
 .theia-scm-history .commitList .commitListElement {
     margin: 3px 0;
 }

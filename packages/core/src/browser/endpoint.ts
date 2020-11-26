@@ -28,7 +28,7 @@ export class Endpoint {
 
     constructor(
         protected readonly options: Endpoint.Options = {},
-        protected readonly location: Endpoint.Location = window.location
+        protected readonly location: Endpoint.Location = self.location
     ) { }
 
     getWebSocketUrl(): URI {

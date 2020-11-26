@@ -129,7 +129,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
             if (e.event.added.length > 0) {
                 const sessions = await this.getSessions(e.providerId);
                 sessions.forEach(session => {
-                    if (disposableMap.get(session.id)) {
+                    if (sessions.find(s => disposableMap.get(s.id))) {
                         return;
                     }
                     const disposables = new DisposableCollection();
@@ -280,7 +280,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
             const scopesList = scopes.sort().join('');
             const extensionHasExistingRequest = providerRequests
                 && providerRequests[scopesList]
-                && providerRequests[scopesList].requestingExtensionIds.indexOf(extensionId) > 0;
+                && providerRequests[scopesList].requestingExtensionIds.indexOf(extensionId) > -1;
 
             if (extensionHasExistingRequest) {
                 return;

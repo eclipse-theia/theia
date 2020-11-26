@@ -197,19 +197,22 @@ export class HostedPluginSupport {
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
         this.fileService.onWillActivateFileSystemProvider(event => this.ensureFileSystemActivation(event));
+
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
             if (factoryId === WebviewWidget.FACTORY_ID && widget instanceof WebviewWidget) {
                 const storeState = widget.storeState.bind(widget);
                 const restoreState = widget.restoreState.bind(widget);
+
                 widget.storeState = () => {
                     if (this.webviewRevivers.has(widget.viewType)) {
                         return storeState();
                     }
-                    return {};
+                    return undefined;
                 };
-                widget.restoreState = oldState => {
-                    if (oldState.viewType) {
-                        restoreState(oldState);
+
+                widget.restoreState = state => {
+                    if (state.viewType) {
+                        restoreState(state);
                         this.preserveWebview(widget);
                     } else {
                         widget.dispose();
@@ -420,6 +423,7 @@ export class HostedPluginSupport {
             })());
         }
         await Promise.all(thenable);
+        await this.activateByEvent('onStartupFinished');
         if (toDisconnect.disposed) {
             return;
         }
@@ -753,13 +757,13 @@ export class HostedPluginSupport {
 
     protected getDeserializationFailedContents(message: string): string {
         return `<!DOCTYPE html>
-		<html>
-			<head>
-				<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
-				<meta http-equiv="Content-Security-Policy" content="default-src 'none';">
-			</head>
-			<body>${message}</body>
-		</html>`;
+        <html>
+            <head>
+                <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none';">
+            </head>
+            <body>${message}</body>
+        </html>`;
     }
 
 }

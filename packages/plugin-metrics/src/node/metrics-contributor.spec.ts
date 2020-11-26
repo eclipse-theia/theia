@@ -40,7 +40,7 @@ describe('Metrics contributor:', () => {
             const analytics = {
                 sumOfTimeForFailure: 0,
                 sumOfTimeForSuccess: 5,
-                succesfulResponses: 10,
+                successfulResponses: 10,
                 totalRequests: 15
             } as AnalyticsFromRequests;
             const metricExtensionID = 'my_test_metric.test_metric';
@@ -72,7 +72,7 @@ describe('Metrics contributor:', () => {
             const firstClientAnalytics = {
                 sumOfTimeForFailure: 0,
                 sumOfTimeForSuccess: 5,
-                succesfulResponses: 10,
+                successfulResponses: 10,
                 totalRequests: 15
             } as AnalyticsFromRequests;
             const firstClientMetricExtensionID = 'my_test_metric.test_metric';
@@ -86,7 +86,7 @@ describe('Metrics contributor:', () => {
             const secondClientAnalytics = {
                 sumOfTimeForFailure: 0,
                 sumOfTimeForSuccess: 15,
-                succesfulResponses: 20,
+                successfulResponses: 20,
                 totalRequests: 18
             } as AnalyticsFromRequests;
             const secondClientMetricsMap = {
@@ -110,7 +110,7 @@ describe('Metrics contributor:', () => {
             const expectedAnalytics = {
                 sumOfTimeForFailure: 0,
                 sumOfTimeForSuccess: 20,
-                succesfulResponses: 30,
+                successfulResponses: 30,
                 totalRequests: 33
             } as AnalyticsFromRequests;
 
@@ -130,7 +130,7 @@ describe('Metrics contributor:', () => {
             const firstClientAnalytics = {
                 sumOfTimeForFailure: 0,
                 sumOfTimeForSuccess: 5,
-                succesfulResponses: 10,
+                successfulResponses: 10,
                 totalRequests: 15
             } as AnalyticsFromRequests;
             const firstClientMetricExtensionID = 'my_test_metric.test_metric';
@@ -144,7 +144,7 @@ describe('Metrics contributor:', () => {
             const secondClientAnalytics = {
                 sumOfTimeForFailure: 0,
                 sumOfTimeForSuccess: 15,
-                succesfulResponses: 20,
+                successfulResponses: 20,
                 totalRequests: 18
             } as AnalyticsFromRequests;
             const secondClientMetricExtensionID = 'my_other_test_metric.test_metric';
@@ -185,7 +185,7 @@ describe('Metrics contributor:', () => {
             const firstClientAnalytics = {
                 sumOfTimeForFailure: 0,
                 sumOfTimeForSuccess: 5,
-                succesfulResponses: 10,
+                successfulResponses: 10,
                 totalRequests: 15
             } as AnalyticsFromRequests;
             const firstClientMetricExtensionID = 'my_test_metric.test_metric';
@@ -198,7 +198,7 @@ describe('Metrics contributor:', () => {
             const secondClientAnalytics = {
                 sumOfTimeForFailure: 0,
                 sumOfTimeForSuccess: 15,
-                succesfulResponses: 20,
+                successfulResponses: 20,
                 totalRequests: 18
             } as AnalyticsFromRequests;
             const secondClientMetricMethod = 'textDocument/myOthertestMethod';

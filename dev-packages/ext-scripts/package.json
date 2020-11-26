@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "@theia/ext-scripts",
-  "version": "1.5.0",
+  "version": "1.8.0",
   "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "description": "NPM scripts for Theia packages.",
   "bin": {
@@ -11,7 +11,7 @@
   "theia-monorepo-scripts": {
     "ext:clean": "theiaext compile:clean && theiaext lint:clean && theiaext test:clean",
     "ext:build": "concurrently -n compile,lint -c blue,green \"theiaext compile\" \"theiaext lint\"",
-    "ext:compile": "tsc -b compile.tsconfig.json --verbose",
+    "ext:compile": "tsc -b compile.tsconfig.json",
     "ext:compile:clean": "rimraf lib *.tsbuildinfo",
     "ext:lint": "eslint --cache=true --no-error-on-unmatched-pattern=true \"{src,test}/**/*.{ts,tsx}\"",
     "ext:lint:clean": "rimraf .eslintcache",

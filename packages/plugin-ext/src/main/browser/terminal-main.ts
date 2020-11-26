@@ -22,6 +22,8 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { TerminalServiceMain, TerminalServiceExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { SerializableEnvironmentVariableCollection } from '@theia/terminal/lib/common/base-terminal-protocol';
+import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 
 /**
  * Plugin api service allows working with terminal emulator.
@@ -31,12 +33,14 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
     private readonly terminals: TerminalService;
     private readonly shell: ApplicationShell;
     private readonly extProxy: TerminalServiceExt;
+    private readonly shellTerminalServer: ShellTerminalServerProxy;
 
     private readonly toDispose = new DisposableCollection();
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.terminals = container.get(TerminalService);
         this.shell = container.get(ApplicationShell);
+        this.shellTerminalServer = container.get(ShellTerminalServerProxy);
         this.extProxy = rpc.getProxy(MAIN_RPC_CONTEXT.TERMINAL_EXT);
         this.toDispose.push(this.terminals.onDidCreateTerminal(terminal => this.trackTerminal(terminal)));
         for (const terminal of this.terminals.all) {
@@ -44,6 +48,19 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
         }
         this.toDispose.push(this.terminals.onDidChangeCurrentTerminal(() => this.updateCurrentTerminal()));
         this.updateCurrentTerminal();
+        if (this.shellTerminalServer.collections.size > 0) {
+            const collectionAsArray = [...this.shellTerminalServer.collections.entries()];
+            const serializedCollections: [string, SerializableEnvironmentVariableCollection][] = collectionAsArray.map(e => [e[0], [...e[1].map.entries()]]);
+            this.extProxy.$initEnvironmentVariableCollections(serializedCollections);
+        }
+    }
+
+    $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void {
+        if (collection) {
+            this.shellTerminalServer.setCollection(extensionIdentifier, persistent, collection);
+        } else {
+            this.shellTerminalServer.deleteCollection(extensionIdentifier);
+        }
     }
 
     dispose(): void {

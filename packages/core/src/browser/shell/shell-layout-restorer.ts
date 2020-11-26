@@ -32,9 +32,9 @@ import { ApplicationShell, applicationShellLayoutVersion, ApplicationShellLayout
 export interface StatefulWidget {
 
     /**
-     * Called on unload to store the inner state.
+     * Called on unload to store the inner state. Returns 'undefined' if the widget cannot be stored.
      */
-    storeState(): object;
+    storeState(): object | undefined;
 
     /**
      * Called when the widget got created by the storage service
@@ -205,14 +205,18 @@ export class ShellLayoutRestorer implements CommandContribution {
     private convertToDescription(widget: Widget): WidgetDescription | undefined {
         const desc = this.widgetManager.getDescription(widget);
         if (desc) {
-            let innerState = undefined;
             if (StatefulWidget.is(widget)) {
-                innerState = widget.storeState();
+                const innerState = widget.storeState();
+                return innerState ? {
+                    constructionOptions: desc,
+                    innerWidgetState: this.deflate(innerState)
+                } : undefined;
+            } else {
+                return {
+                    constructionOptions: desc,
+                    innerWidgetState: undefined
+                };
             }
-            return {
-                constructionOptions: desc,
-                innerWidgetState: innerState && this.deflate(innerState)
-            };
         }
     }
 
@@ -265,7 +269,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     protected parse<T>(layoutData: string, parseContext: ShellLayoutRestorer.ParseContext): T {
         return JSON.parse(layoutData, (property: string, value) => {
             if (this.isWidgetsProperty(property)) {
-                const widgets: (Widget | undefined)[] = [];
+                const widgets = parseContext.filteredArray();
                 const descs = (value as WidgetDescription[]);
                 for (let i = 0; i < descs.length; i++) {
                     parseContext.push(async context => {
@@ -347,9 +351,22 @@ export class ShellLayoutRestorer implements CommandContribution {
     }
 
 }
+
 export namespace ShellLayoutRestorer {
+
     export class ParseContext {
         protected readonly toInflate: Inflate[] = [];
+        protected readonly toFilter: Widgets[] = [];
+
+        /**
+         * Returns an array, which will be filtered from undefined elements
+         * after resolving promises, that create widgets.
+         */
+        filteredArray(): Widgets {
+            const array: Widgets = [];
+            this.toFilter.push(array);
+            return array;
+        }
 
         push(toInflate: Inflate): void {
             this.toInflate.push(toInflate);
@@ -361,8 +378,20 @@ export namespace ShellLayoutRestorer {
                 pending.push(this.toInflate.pop()!(context));
             }
             await Promise.all(pending);
+
+            if (this.toFilter.length) {
+                this.toFilter.forEach(array => {
+                    for (let i = 0; i < array.length; i++) {
+                        if (array[i] === undefined) {
+                            array.splice(i--, 1);
+                        }
+                    }
+                });
+            }
         }
     }
+
+    export type Widgets = (Widget | undefined)[];
     export type Inflate = (context: InflateContext) => Promise<void>;
     export interface InflateContext extends ApplicationShellLayoutMigrationContext {
         readonly migrations: ApplicationShellLayoutMigration[];

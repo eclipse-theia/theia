@@ -30,8 +30,7 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
 import { MetadataScanner } from '@theia/plugin-ext/lib/hosted/node/metadata-scanner';
-
-const processTree = require('ps-tree');
+import { HostedPluginProcess } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin-process';
 
 export const HostedInstanceManager = Symbol('HostedInstanceManager');
 
@@ -109,6 +108,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     @inject(MetadataScanner)
     protected readonly metadata: MetadataScanner;
 
+    @inject(HostedPluginProcess)
+    protected readonly hostedPluginProcess: HostedPluginProcess;
+
     isRunning(): boolean {
         return this.isPluginRunning;
     }
@@ -156,13 +158,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
 
     terminate(): void {
         if (this.isPluginRunning) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            processTree(this.hostedInstanceProcess.pid, (err: Error, children: Array<any>) => {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const args = ['-SIGTERM', this.hostedInstanceProcess.pid.toString()].concat(children.map((p: any) => p.PID));
-                cp.spawn('kill', args);
-            });
+            this.hostedPluginProcess.killProcessTree(this.hostedInstanceProcess.pid);
             this.hostedPluginSupport.sendLog({ data: 'Hosted instance has been terminated', type: LogType.Info });
+            this.isPluginRunning = false;
         } else {
             throw new Error('Hosted plugin instance is not running.');
         }
@@ -303,7 +301,7 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
                 const line = data.toString();
                 const match = THEIA_INSTANCE_REGEX.exec(line);
                 if (match) {
-                    this.hostedInstanceProcess.stdout.removeListener('data', outputListener);
+                    this.hostedInstanceProcess.stdout!.removeListener('data', outputListener);
                     started = true;
                     resolve(new URI(match[1]));
                 }
@@ -312,12 +310,12 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
             this.hostedInstanceProcess = cp.spawn(command.shift()!, command, options);
             this.hostedInstanceProcess.on('error', () => { this.isPluginRunning = false; });
             this.hostedInstanceProcess.on('exit', () => { this.isPluginRunning = false; });
-            this.hostedInstanceProcess.stdout.addListener('data', outputListener);
+            this.hostedInstanceProcess.stdout!.addListener('data', outputListener);
 
-            this.hostedInstanceProcess.stdout.addListener('data', data => {
+            this.hostedInstanceProcess.stdout!.addListener('data', data => {
                 this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Info });
             });
-            this.hostedInstanceProcess.stderr.addListener('data', data => {
+            this.hostedInstanceProcess.stderr!.addListener('data', data => {
                 this.hostedPluginSupport.sendLog({ data: data.toString(), type: LogType.Error });
             });
 

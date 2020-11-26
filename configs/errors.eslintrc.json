@@ -50,12 +50,14 @@
     ],
     "no-new-wrappers": "error",
     "no-null/no-null": "error",
-    "no-shadow": [
+    "no-shadow": "off",
+    "@typescript-eslint/no-shadow": [
       "error",
       {
         "hoist": "all"
       }
     ],
+    "no-tabs": "error",
     "no-throw-literal": "error",
     "no-trailing-spaces": "error",
     "no-underscore-dangle": "off",

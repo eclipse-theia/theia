@@ -98,10 +98,10 @@ describe('Keybindings', function () {
         toTearDown.push(commands.registerCommand({ id }, {
             execute: () => { }
         }));
-        const keybiding = keybindings.getKeybindingsForCommand(CommonCommands.COPY.id)[0];
+        const keybinding = keybindings.getKeybindingsForCommand(CommonCommands.COPY.id)[0];
         toTearDown.push(keybindings.registerKeybinding({
             command: id,
-            keybinding: keybiding.keybinding
+            keybinding: keybinding.keybinding
         }));
         const waitForCommand = new Deferred();
         toTearDown.push(commands.onWillExecuteCommand(e => waitForCommand.resolve(e.commandId)));

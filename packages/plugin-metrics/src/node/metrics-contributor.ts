@@ -55,7 +55,7 @@ export class PluginMetricsContributor {
                                 newAnalytic.sumOfTimeForSuccess = newAnalytic.sumOfTimeForSuccess + currentAnalytic.sumOfTimeForSuccess;
                                 newAnalytic.sumOfTimeForFailure = newAnalytic.sumOfTimeForFailure + currentAnalytic.sumOfTimeForFailure;
                                 newAnalytic.totalRequests += currentAnalytic.totalRequests;
-                                newAnalytic.succesfulResponses += currentAnalytic.succesfulResponses;
+                                newAnalytic.successfulResponses += currentAnalytic.successfulResponses;
 
                                 reconciledMap[vscodeExtensionID][method] = newAnalytic;
                             }

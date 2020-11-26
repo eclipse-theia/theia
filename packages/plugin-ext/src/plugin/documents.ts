@@ -199,6 +199,14 @@ export class DocumentsExtImpl implements DocumentsExt {
         return undefined;
     }
 
+    public getDocument(resource: theia.Uri): theia.TextDocument {
+        const data = this.getDocumentData(resource);
+        if (!data?.document) {
+            throw new Error(`Unable to retrieve document from URI '${resource}'`);
+        }
+        return data.document;
+    }
+
     /**
      * Retrieve document and open it in the editor if need.
      *

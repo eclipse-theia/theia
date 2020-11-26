@@ -35,8 +35,8 @@ import { MonacoBulkEditService } from './monaco-bulk-edit-service';
 
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
-import { OS, ContributionProvider } from '@theia/core';
-import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { ContributionProvider } from '@theia/core';
+import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, FormatType } from '@theia/core/lib/browser';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
@@ -67,8 +67,6 @@ export class MonacoEditorProvider {
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
-    private isWindowsBackend: boolean = false;
-
     protected _current: MonacoEditor | undefined;
     /**
      * Returns the last focused MonacoEditor.
@@ -90,28 +88,39 @@ export class MonacoEditorProvider {
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService,
         @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
+        /** @deprecated since 1.6.0 */
         @inject(ApplicationServer) protected readonly applicationServer: ApplicationServer,
         @inject(monaco.contextKeyService.ContextKeyService) protected readonly contextKeyService: monaco.contextKeyService.ContextKeyService
     ) {
         const staticServices = monaco.services.StaticServices;
         const init = staticServices.init.bind(monaco.services.StaticServices);
-        this.applicationServer.getBackendOS().then(os => {
-            this.isWindowsBackend = os === OS.Type.Windows;
-        });
 
-        if (staticServices.resourcePropertiesService) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const original = staticServices.resourcePropertiesService.get() as any;
-            original.getEOL = () => {
-                const eol = this.editorPreferences['files.eol'];
-                if (eol) {
-                    if (eol !== 'auto') {
-                        return eol;
-                    }
-                }
-                return this.isWindowsBackend ? '\r\n' : '\n';
-            };
-        }
+        const themeService = staticServices.standaloneThemeService.get();
+        const originalGetTheme: (typeof themeService)['getTheme'] = themeService.getTheme.bind(themeService);
+        const patchedGetTokenStyleMetadataFlag = '__patched_getTokenStyleMetadata';
+        // based on https://github.com/microsoft/vscode/commit/4731a227e377da8cb14ed5697dd1ba8faea40538
+        // TODO remove after migrating to monaco 0.21
+        themeService.getTheme = () => {
+            const theme = originalGetTheme();
+            if (!(patchedGetTokenStyleMetadataFlag in theme)) {
+                Object.defineProperty(theme, patchedGetTokenStyleMetadataFlag, { enumerable: false, configurable: false, writable: false, value: true });
+                theme.getTokenStyleMetadata = (type, modifiers) => {
+                    // use theme rules match
+                    const style = theme.tokenTheme._match([type].concat(modifiers).join('.'));
+                    const metadata = style.metadata;
+                    const foreground = monaco.modes.TokenMetadata.getForeground(metadata);
+                    const fontStyle = monaco.modes.TokenMetadata.getFontStyle(metadata);
+                    return {
+                        foreground: foreground,
+                        italic: Boolean(fontStyle & monaco.modes.FontStyle.Italic),
+                        bold: Boolean(fontStyle & monaco.modes.FontStyle.Bold),
+                        underline: Boolean(fontStyle & monaco.modes.FontStyle.Underline)
+                    };
+                };
+            }
+            return theme;
+        };
+
         monaco.services.StaticServices.init = o => {
             const result = init(o);
             result[0].set(monaco.services.ICodeEditorService, codeEditorService);
@@ -289,8 +298,22 @@ export class MonacoEditorProvider {
         }
     }
 
-    protected async formatOnSave(editor: MonacoEditor, event: WillSaveMonacoModelEvent): Promise<monaco.editor.IIdentifiedSingleEditOperation[]> {
+    protected shouldFormat(editor: MonacoEditor, event: WillSaveMonacoModelEvent): boolean {
         if (event.reason !== TextDocumentSaveReason.Manual) {
+            return false;
+        }
+        if (event.options?.formatType) {
+            switch (event.options.formatType) {
+                case FormatType.ON: return true;
+                case FormatType.OFF: return false;
+                case FormatType.DIRTY: return editor.document.dirty;
+            }
+        }
+        return true;
+    }
+
+    protected async formatOnSave(editor: MonacoEditor, event: WillSaveMonacoModelEvent): Promise<monaco.editor.IIdentifiedSingleEditOperation[]> {
+        if (!this.shouldFormat(editor, event)) {
             return [];
         }
         const overrideIdentifier = editor.document.languageId;
@@ -302,7 +325,7 @@ export class MonacoEditorProvider {
         const formatOnSaveTimeout = this.editorPreferences.get({ preferenceName: 'editor.formatOnSaveTimeout', overrideIdentifier }, undefined, uri)!;
         await Promise.race([
             new Promise((_, reject) => setTimeout(() => reject(new Error(`Aborted format on save after ${formatOnSaveTimeout}ms`)), formatOnSaveTimeout)),
-            editor.commandService.executeCommand('editor.action.formatDocument')
+            editor.runAction('editor.action.formatDocument')
         ]);
         return [];
     }

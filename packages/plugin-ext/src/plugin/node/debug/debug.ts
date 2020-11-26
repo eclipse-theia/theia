@@ -189,7 +189,7 @@ export class DebugExtImpl implements DebugExt {
         providers.add(provider);
 
         return Disposable.create(() => {
-            // eslint-disable-next-line no-shadow
+            // eslint-disable-next-line @typescript-eslint/no-shadow
             const providers = this.configurationProviders.get(debugType);
             if (providers) {
                 providers.delete(provider);

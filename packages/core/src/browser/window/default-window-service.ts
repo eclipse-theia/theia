@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
+import { Event, Emitter } from '../../common';
 import { CorePreferences } from '../core-preferences';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
@@ -25,6 +26,11 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
 
     protected frontendApplication: FrontendApplication;
 
+    protected onUnloadEmitter = new Emitter<void>();
+    get onUnload(): Event<void> {
+        return this.onUnloadEmitter.event;
+    }
+
     @inject(CorePreferences)
     protected readonly corePreferences: CorePreferences;
 
@@ -34,11 +40,7 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
 
     onStart(app: FrontendApplication): void {
         this.frontendApplication = app;
-        window.addEventListener('beforeunload', event => {
-            if (!this.canUnload()) {
-                return this.preventUnload(event);
-            }
-        });
+        this.registerUnloadListeners();
     }
 
     openNewWindow(url: string): undefined {
@@ -59,6 +61,22 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
             }
         }
         return confirmExit !== 'always';
+    }
+
+    /**
+     * Implement the mechanism to detect unloading of the page.
+     */
+    protected registerUnloadListeners(): void {
+        window.addEventListener('beforeunload', event => {
+            if (!this.canUnload()) {
+                return this.preventUnload(event);
+            }
+        });
+        // In a browser, `unload` is correctly fired when the page unloads, unlike Electron.
+        // If `beforeunload` is cancelled, the user will be prompted to leave or stay.
+        // If the user stays, the page won't be unloaded, so `unload` is not fired.
+        // If the user leaves, the page will be unloaded, so `unload` is fired.
+        window.addEventListener('unload', () => this.onUnloadEmitter.fire());
     }
 
     /**

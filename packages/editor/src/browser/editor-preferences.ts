@@ -58,9 +58,11 @@ export const EDITOR_MODEL_DEFAULTS = {
     largeFileOptimizations: true
 };
 
-/* eslint-enable no-null/no-null */
+export const DEFAULT_WORD_SEPARATORS = '`~!@#$%^&*()-=+[{]}\\|;:\'",.<>/?';
 
 /* eslint-disable max-len */
+/* eslint-disable no-null/no-null */
+
 // should be in sync with:
 //        1. https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/config/commonEditorConfig.ts#L441
 //        2. https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/config/commonEditorConfig.ts#L530
@@ -76,6 +78,11 @@ const codeEditorPreferenceProperties = {
         'default': EDITOR_MODEL_DEFAULTS.tabSize,
         'minimum': 1,
         'markdownDescription': 'The number of spaces a tab is equal to. This setting is overridden based on the file contents when `#editor.detectIndentation#` is on.'
+    },
+    'editor.defaultFormatter': {
+        'type': 'string',
+        'default': null,
+        'description': 'Default formatter'
     },
     'editor.insertSpaces': {
         'type': 'boolean',
@@ -104,7 +111,7 @@ const codeEditorPreferenceProperties = {
     },
     'editor.semanticHighlighting.enabled': {
         'type': 'boolean',
-        'default': false,
+        'default': true,
         'description': 'Controls whether the semanticHighlighting is shown for the languages that support it.'
     },
     'editor.stablePeek': {
@@ -1166,7 +1173,7 @@ const codeEditorPreferenceProperties = {
     'editor.wordSeparators': {
         'description': 'Characters that will be used as word separators when doing word related navigations or operations.',
         'type': 'string',
-        'default': '`~!@#$%^&*()-=+[{]}\\|;:\'",.<>/?'
+        'default': DEFAULT_WORD_SEPARATORS
     },
     'editor.wordWrap': {
         'markdownEnumDescriptions': [

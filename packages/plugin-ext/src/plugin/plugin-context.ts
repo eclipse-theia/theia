@@ -62,8 +62,10 @@ import {
     CompletionTriggerKind,
     Diagnostic,
     DiagnosticRelatedInformation,
+    DebugConsoleMode,
     DiagnosticSeverity,
     DiagnosticTag,
+    CompletionItemTag,
     Location,
     LogLevel,
     Progress,
@@ -120,7 +122,14 @@ import {
     CallHierarchyItem,
     CallHierarchyIncomingCall,
     CallHierarchyOutgoingCall,
-    TimelineItem
+    TimelineItem,
+    EnvironmentVariableMutatorType,
+    SemanticTokensLegend,
+    SemanticTokensBuilder,
+    SemanticTokens,
+    SemanticTokensEdits,
+    SemanticTokensEdit,
+    ColorThemeKind
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -154,6 +163,7 @@ import { WebviewsExtImpl } from './webviews';
 import { ExtHostFileSystemEventService } from './file-system-event-service-ext-impl';
 import { LabelServiceExtImpl } from '../plugin/label-service';
 import { TimelineExtImpl } from './timeline';
+import { ThemingExtImpl } from './theming';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -189,6 +199,7 @@ export function createAPIFactory(
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     const labelServiceExt = rpc.set(MAIN_RPC_CONTEXT.LABEL_SERVICE_EXT, new LabelServiceExtImpl(rpc));
     const timelineExt = rpc.set(MAIN_RPC_CONTEXT.TIMELINE_EXT, new TimelineExtImpl(rpc, commandRegistry));
+    const themingExt = rpc.set(MAIN_RPC_CONTEXT.THEMING_EXT, new ThemingExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -418,6 +429,12 @@ export function createAPIFactory(
             },
             createInputBox(): theia.InputBox {
                 return quickOpenExt.createInputBox(plugin);
+            },
+            get activeColorTheme(): theia.ColorTheme {
+                return themingExt.activeColorTheme;
+            },
+            onDidChangeActiveColorTheme(listener, thisArg?, disposables?) {
+                return themingExt.onDidChangeActiveColorTheme(listener, thisArg, disposables);
             }
         };
 
@@ -669,6 +686,14 @@ export function createAPIFactory(
             registerRenameProvider(selector: theia.DocumentSelector, provider: theia.RenameProvider): theia.Disposable {
                 return languagesExt.registerRenameProvider(selector, provider, pluginToPluginInfo(plugin));
             },
+            registerDocumentSemanticTokensProvider(selector: theia.DocumentSelector, provider: theia.DocumentSemanticTokensProvider, legend: theia.SemanticTokensLegend):
+                theia.Disposable {
+                return languagesExt.registerDocumentSemanticTokensProvider(selector, provider, legend, pluginToPluginInfo(plugin));
+            },
+            registerDocumentRangeSemanticTokensProvider(selector: theia.DocumentSelector, provider: theia.DocumentRangeSemanticTokensProvider, legend: theia.SemanticTokensLegend):
+                theia.Disposable {
+                return languagesExt.registerDocumentRangeSemanticTokensProvider(selector, provider, legend, pluginToPluginInfo(plugin));
+            },
             registerCallHierarchyProvider(selector: theia.DocumentSelector, provider: theia.CallHierarchyProvider): theia.Disposable {
                 return languagesExt.registerCallHierarchyProvider(selector, provider);
             }
@@ -784,16 +809,16 @@ export function createAPIFactory(
             }
         };
 
-        const comment: typeof theia.comment = {
+        const comments: typeof theia.comments = {
             createCommentController(id: string, label: string): theia.CommentController {
+                // TODO replace the dummy implementation, see https://github.com/eclipse-theia/theia/issues/8492
                 return {
-                    id, label, inputBox: undefined,
-                    createCommentThread(commentId: string, resource: Uri, range: Range, comments: theia.Comment[]): theia.CommentThread {
+                    id, label,
+                    createCommentThread(uri: Uri, range: Range, commentsArray: theia.Comment[]): theia.CommentThread {
                         return {
-                            id: commentId,
-                            resource,
+                            uri,
                             range,
-                            comments,
+                            comments: commentsArray,
                             collapsibleState: 0,
                             dispose(): void {
                             }
@@ -809,7 +834,7 @@ export function createAPIFactory(
             version: require('../../package.json').version,
             authentication,
             commands,
-            comment,
+            comments,
             window,
             workspace,
             env,
@@ -845,11 +870,13 @@ export function createAPIFactory(
             CompletionItem,
             CompletionItemKind,
             CompletionList,
+            DebugConsoleMode,
             DiagnosticSeverity,
             DiagnosticRelatedInformation,
             Location,
             LogLevel,
             DiagnosticTag,
+            CompletionItemTag,
             Diagnostic,
             CompletionTriggerKind,
             TextEdit,
@@ -909,7 +936,14 @@ export function createAPIFactory(
             CallHierarchyItem,
             CallHierarchyIncomingCall,
             CallHierarchyOutgoingCall,
-            TimelineItem
+            TimelineItem,
+            EnvironmentVariableMutatorType,
+            SemanticTokensLegend,
+            SemanticTokensBuilder,
+            SemanticTokens,
+            SemanticTokensEdits,
+            SemanticTokensEdit,
+            ColorThemeKind
         };
     };
 }

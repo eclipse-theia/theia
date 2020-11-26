@@ -109,6 +109,11 @@ export class DebugSessionWidget extends BaseWidget implements StatefulWidget, Ap
         this.toolbar.focus();
     }
 
+    protected onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
+        this.getTrackableWidgets().forEach(w => w.update());
+    }
+
     getTrackableWidgets(): Widget[] {
         return this.viewContainer.getTrackableWidgets();
     }

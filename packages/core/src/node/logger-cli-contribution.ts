@@ -73,11 +73,11 @@ export class LogLevelCliContribution implements CliContribution {
         }
 
         if (args['log-level'] !== undefined) {
-            this._defaultLogLevel = this.readLogLevelString(args['log-level'], 'Unknown log level passed to --log-level');
+            this._defaultLogLevel = this.readLogLevelString(args['log-level'] as string, 'Unknown log level passed to --log-level');
         }
 
         if (args['log-config'] !== undefined) {
-            let filename = args['log-config'];
+            let filename: string = args['log-config'] as string;
             try {
                 filename = path.resolve(filename);
 

@@ -83,7 +83,7 @@ export function normalize(path: string, toOSPath?: boolean): string {
         return path;
     }
 
-    // eslint-disable-next-line no-shadow
+    // eslint-disable-next-line @typescript-eslint/no-shadow
     const sep = wantsBackslash ? '\\' : '/';
     const root = getRoot(path, sep);
 
@@ -133,7 +133,7 @@ function streql(value: string, start: number, end: number, other: string): boole
  * `getRoot('files:///files/path') === files:///`,
  * or `getRoot('\\server\shares\path') === \\server\shares\`
  */
-// eslint-disable-next-line no-shadow
+// eslint-disable-next-line @typescript-eslint/no-shadow
 export function getRoot(path: string, sep: string = '/'): string {
 
     if (!path) {
@@ -150,7 +150,7 @@ export function getRoot(path: string, sep: string = '/'): string {
             //               ^^^^^^^^^^^^^^^^^^^
             code = path.charCodeAt(2);
             if (code !== CharCode.Slash && code !== CharCode.Backslash) {
-                // eslint-disable-next-line no-shadow
+                // eslint-disable-next-line @typescript-eslint/no-shadow
                 let pos = 3;
                 const start = pos;
                 for (; pos < len; pos++) {

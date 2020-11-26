@@ -16,8 +16,9 @@
 
 import { inject, injectable } from 'inversify';
 import { Command, CommandRegistry, Disposable } from '../../common';
-import { Keybinding, KeybindingRegistry } from '../keybinding';
-import { QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenGroupItem, QuickOpenGroupItemOptions } from './quick-open-model';
+import { Keybinding } from '../../common/keybinding';
+import { KeybindingRegistry } from '../keybinding';
+import { QuickOpenModel, QuickOpenItem, QuickOpenGroupItemOptions, QuickOpenMode, QuickOpenGroupItem } from '../../common/quick-open-model';
 import { QuickOpenOptions } from './quick-open-service';
 import { QuickOpenContribution, QuickOpenHandlerRegistry, QuickOpenHandler } from './prefix-quick-open-service';
 import { ContextKeyService } from '../context-key-service';
@@ -70,10 +71,8 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
         const { recent, other } = this.getCommands();
         this.items.push(
             ...recent.map((command, index) =>
-                new CommandQuickOpenItem(
+                this.createCommandQuickOpenItem(
                     command,
-                    this.commands,
-                    this.keybindings,
                     {
                         groupLabel: index === 0 ? 'recently used' : '',
                         showBorder: false,
@@ -81,10 +80,8 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
                 )
             ),
             ...other.map((command, index) =>
-                new CommandQuickOpenItem(
+                this.createCommandQuickOpenItem(
                     command,
-                    this.commands,
-                    this.keybindings,
                     {
                         groupLabel: recent.length > 0 && index === 0 ? 'other commands' : '',
                         showBorder: recent.length > 0 && index === 0 ? true : false,
@@ -92,6 +89,10 @@ export class QuickCommandService implements QuickOpenModel, QuickOpenHandler {
                 )
             ),
         );
+    }
+
+    protected createCommandQuickOpenItem(command: Command, commandOptions?: QuickOpenGroupItemOptions | undefined): CommandQuickOpenItem {
+        return new CommandQuickOpenItem(command, this.commands, this.keybindings, commandOptions);
     }
 
     public onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {

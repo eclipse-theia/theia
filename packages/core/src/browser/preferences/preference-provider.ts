@@ -48,7 +48,11 @@ export interface PreferenceResolveResult<T> {
     configUri?: URI
     value?: T
 }
-
+/**
+ * The {@link PreferenceProvider} is used to store and retrieve preference values. A {@link PreferenceProvider} does not operate in a global scope but is
+ * configured for one or more {@link PreferenceScope}s. The (default implementation for the) {@link PreferenceService} aggregates all {@link PreferenceProvider}s and
+ * serves as a common facade for manipulating preference values.
+ */
 @injectable()
 export abstract class PreferenceProvider implements Disposable {
 
@@ -118,10 +122,29 @@ export abstract class PreferenceProvider implements Disposable {
         return false;
     }, 0);
 
+    /**
+     * Retrieve the stored value for the given preference and resource URI.
+     *
+     * @param preferenceName the preference identifier.
+     * @param resourceUri the uri of the resource for which the preference is stored. This is used to retrieve
+     * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     *
+     * @returns the value stored for the given preference and resourceUri if it exists, otherwise `undefined`.
+     */
     get<T>(preferenceName: string, resourceUri?: string): T | undefined {
         return this.resolve<T>(preferenceName, resourceUri).value;
     }
 
+    /**
+     * Resolve the value for the given preference and resource URI.
+     *
+     * @param preferenceName the preference identifier.
+     * @param resourceUri the URI of the resource for which this provider should resolve the preference. This is used to retrieve
+     * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     *
+     * @returns an object containing the value stored for the given preference and resourceUri if it exists,
+     * otherwise `undefined`.
+     */
     resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T> {
         const value = this.getPreferences(resourceUri)[preferenceName];
         if (value !== undefined) {
@@ -136,7 +159,12 @@ export abstract class PreferenceProvider implements Disposable {
     abstract getPreferences(resourceUri?: string): { [p: string]: any };
 
     /**
-     * Resolves only if all changes were delivered.
+     * Stores a new value for the given preference key in the provider.
+     * @param key the preference key (typically the name).
+     * @param value the new preference value.
+     * @param resourceUri the URI of the resource for which the preference is stored.
+     *
+     * @returns a promise that only resolves if all changes were delivered.
      * If changes were made then implementation must either
      * await on `this.emitPreferencesChangedEvent(...)` or
      * `this.pendingChanges` if changes are fired indirectly.
@@ -152,21 +180,30 @@ export abstract class PreferenceProvider implements Disposable {
     }
 
     /**
-     * undefined if all belongs
+     * Retrieve the domain for this provider.
+     *
+     * @returns the domain or `undefined` if this provider is suitable for all domains.
      */
     getDomain(): string[] | undefined {
         return undefined;
     }
 
     /**
-     * Returns undefined if there is no valid config URI for the given resource URI.
+     * Retrieve the configuration URI for the given resource URI.
+     * @param resourceUri the uri of the resource or `undefined`.
+     *
+     * @returns the corresponding resource URI or `undefined` if there is no valid URI.
      */
     getConfigUri(resourceUri?: string): URI | undefined {
         return undefined;
     }
 
     /**
-     * Returns undefined if there is config URI at all for the given resource URI.
+     * Retrieves the first valid configuration URI contained by the given resource.
+     * @param resourceUri the uri of the container resource or `undefined`.
+     *
+     * @returns the first valid configuration URI contained by the given resource `undefined`
+     * if there is no valid configuration URI at all.
      */
     getContainingConfigUri?(resourceUri?: string): URI | undefined;
 

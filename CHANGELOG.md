@@ -1,17 +1,145 @@
 # Change Log
 
-## v1.6.0
+## v1.8.0 - 26/11/2020
 
-- [core] added functionality for handling context menu for `tab-bars` without activating the shell tab-bar [#6965](https://github.com/eclipse-theia/theia/pull/6965)
+- [api-tests] fixed issue with `saveable` test suite [#8736](https://github.com/eclipse-theia/theia/pull/8736)
+- [application-manager] enabled `monaco-editor.*` sourcemaps when debugging [#8744](https://github.com/eclipse-theia/theia/pull/8744)
+- [console] updated the `anser` import workaround [#8741](https://github.com/eclipse-theia/theia/pull/8741)
+- [core] added ability to filter tree nodes [#8540](https://github.com/eclipse-theia/theia/pull/8540)
+- [debug] fixed issue where the debug-view is not properly updated when hidden [#8645](https://github.com/eclipse-theia/theia/pull/8645)
+- [documentation] improved documentation for `@theia/cli` electron configurations [#8699](https://github.com/eclipse-theia/theia/pull/8699)
+- [documentation] improved documentation for `BackendApplicationContribution` [#8686](https://github.com/eclipse-theia/theia/pull/8686)
+- [documentation] improved documentation for `MenuContribution` [#8715](https://github.com/eclipse-theia/theia/pull/8715)
+- [documentation] improved documentation for `MessageService` [#8688](https://github.com/eclipse-theia/theia/pull/8688)
+- [documentation] improved documentation for `PreferenceContribution` [#8677](https://github.com/eclipse-theia/theia/pull/8677)
+- [documentation] improved documentation for `Task` API [#8695](https://github.com/eclipse-theia/theia/pull/8695)
+- [documentation] improved documentation for `TreeDecorator` and `TreeDecoratorService` [#8698](https://github.com/eclipse-theia/theia/pull/8698)
+- [documentation] updated publishing documentation for the repository [#8719](https://github.com/eclipse-theia/theia/pull/8719)
+- [editor] enabled `editor.semanticHighlighting.enabled` by default [#8593](https://github.com/eclipse-theia/theia/pull/8593)
+- [electron] fixed issue with `application.confirmExit` preventing the app from closing [#8732](https://github.com/eclipse-theia/theia/pull/8732)
+- [file-search] fixed issue where file-search did not properly ignore the `.git` folder [#8721](https://github.com/eclipse-theia/theia/pull/8721)
+- [monaco] added ability to compare quick-open entries [#8185](https://github.com/eclipse-theia/theia/pull/8185)
+- [output] improved extensibility of output channel commands [#8733](https://github.com/eclipse-theia/theia/pull/8733)
+- [plugin] added ability to use `viewId` as a progress location [#8700](https://github.com/eclipse-theia/theia/pull/8700)
+- [plugin] added logic to only store webviews when they have a corresponding serializer [#8680](https://github.com/eclipse-theia/theia/pull8680)
+- [plugin] added support for `activeColorTheme` and `onDidChangeActiveColorTheme` API [#8710](https://github.com/eclipse-theia/theia/pull/8710)
+- [plugin] added support for semantic highlighting [#8593](https://github.com/eclipse-theia/theia/pull/8593)
+- [plugin] fixed issue where problem matchers specified by task providers are not respected [#8756](https://github.com/eclipse-theia/theia/pull/8756)
+- [plugin] fixed issues with the `Authentication` API [#8725](https://github.com/eclipse-theia/theia/pull/8725)
+- [plugin] fixed terminating hosted instance issue [#8674](https://github.com/eclipse-theia/theia/pull/8674)
+- [preview] fixed issue where empty document content was not properly rendered [#8729](https://github.com/eclipse-theia/theia/pull/8729)
+- [repo] updated `eslint` and peer-dependencies to latest versions [#8770](https://github.com/eclipse-theia/theia/pull/8770)
+- [search-in-workspace] added ability to perform searches in dirty editors [#8579](https://github.com/eclipse-theia/theia/pull/8579)
+- [search-in-workspace] added ability to search opened editors outside the workspace [#8646](https://github.com/eclipse-theia/theia/pull/8646)
+- [security] updated `yargs` dependency [#8711](https://github.com/eclipse-theia/theia/pull/8711)
+- [workspace] fixed missing binding of `WorkspaceFrontendContribution` [#8734](https://github.com/eclipse-theia/theia/pull/8734)
+
+<a name="breaking_changes_1.8.0">[Breaking Changes:](#breaking_changes_1.8.0)</a>
+
+- [electron] removed `attachWillPreventUnload` method from the Electron main application. The `confirmExit` logic is handled on the frontend [#8732](https://github.com/eclipse-theia/theia/pull/8732)
+- [file-search] deprecated dependency on `@theia/process` and replaced its usage by node's `child_process` API [#8721](https://github.com/eclipse-theia/theia/pull/8721)
+
+
+## v1.7.0 - 29/10/2020
+
+<a name="release_milestone_1.7.0">[1.7.0 Release Milestone](https://github.com/eclipse-theia/theia/milestone/12?closed=1)</a>
+
+- [core] added `Save without Formatting` command [#8543](https://github.com/eclipse-theia/theia/pull/8543)
+- [core] added ability to customize `CommandQuickOpenItem` [#8648](https://github.com/eclipse-theia/theia/pull/8648)
+- [core] added support for `isWeb` context when clause [#8530](https://github.com/eclipse-theia/theia/pull/8530)
+- [core] added support for the `keyboard.dispatch` preference [#8609](https://github.com/eclipse-theia/theia/pull/8609)
+- [core] fixed the `UriAwareCommandHandler` preventing the duplication of passed arguments [#8592](https://github.com/eclipse-theia/theia/pull/8592)
+- [core] fixed transparent widget backgrounds breaking branding [#8448](https://github.com/eclipse-theia/theia/pull/8448)
+- [core] improved extensibility of view containers for downstream extenders [#8619](https://github.com/eclipse-theia/theia/pull/8619)
+- [core] updated `Save All` to only format dirty editors [#8554](https://github.com/eclipse-theia/theia/pull/8544)
+- [debug] improved extensibility of debug event handlers [#8616](https://github.com/eclipse-theia/theia/pull/8616)
+- [debug] renamed the `Debug` main menu item to `Run` [#8653](https://github.com/eclipse-theia/theia/pull/8653)
+- [documentation] improved documentation for `FileService` and `FileSystemProvider` [#8596](https://github.com/eclipse-theia/theia/pull/8596)
+- [documentation] improved documentation for `Keybinding` and `KeybindingContribution` [#8637](https://github.com/eclipse-theia/theia/pull/8637)
+- [documentation] improved documentation for `LabelProvider` and `LabelProviderContribution` [#8569](https://github.com/eclipse-theia/theia/pull/8569)
+- [documentation] improved documentation for `PreferenceService` [#8612](https://github.com/eclipse-theia/theia/pull/8612)
+- [documentation] improved documentation for `WidgetManager` and `WidgetOpenHandler` [#8644](https://github.com/eclipse-theia/theia/pull/8644)
+- [documentation] improved documentation for the `@theia/preview` extension [#8625](https://github.com/eclipse-theia/theia/pull/8625)
+- [editor] fixed inconsistent `showTextDocument` behavior [#8588](https://github.com/eclipse-theia/theia/pull/8588)
+- [electron] added handling for `SIGPIPE` errors [#8661](https://github.com/eclipse-theia/theia/pull/8661)
+- [filesystem] refactored file watchers: [#8546](https://github.com/eclipse-theia/theia/pull/8546)
+  - Added `FileSystemWatcherService` component that should be a singleton centralizing watch requests for all clients.
+  - Added `FileSystemWatcherServiceDispatcher` to register yourself and listen to file change events.
+- [git] updated `commit details` and `diff view` rendering to respect `list` and `tree` modes [#8084] (https://github.com/eclipse-theia/theia/pull/8084)
+- [markers] updated and enhanced the 'problem-manager' tests [#8604](https://github.com/eclipse-theia/theia/pull/8604)
+- [mini-browser] updated deprecated `scrElement` usage to `target` [#8663](https://github.com/eclipse-theia/theia/pull/8663)
+- [monaco] fixed race condition on monaco editor initialization [#8563](https://github.com/eclipse-theia/theia/pull/8563)
+- [monaco] updated `Save All` command to format all open editors [#8551](https://github.com/eclipse-theia/theia/pull/8551)
+- [navigator] added additional handling for empty multi-root workspaces [#8608](https://github.com/eclipse-theia/theia/pull/8608)
+- [navigator] fixed the `doOpenNode` implementation for hidden nodes [#8659](https://github.com/eclipse-theia/theia/pull/8659)
+- [plugin] added `environmentVariableCollection` to `PluginContext` [#8523](https://github.com/eclipse-theia/theia/pull/8523)
+- [plugin] added `onStartupFinished` plugin activation event [#8525](https://github.com/eclipse-theia/theia/pull/8525)
+- [plugin] added logic to load plugin manifests on activation [#8485](https://github.com/eclipse-theia/theia/pull/8485)
+- [plugin] added support for `deprecated` strikethrough for completion items [#8553](https://github.com/eclipse-theia/theia/pull/8553)
+- [plugin] bumped the default supported VS Code version to `1.50.0` [#8617](https://github.com/eclipse-theia/theia/pull/8617)
+- [plugin] fixed XSS sink by sanitizing dialog `innerHTML` [#8388](https://github.com/eclipse-theia/theia/pull/8388)
+- [plugin] fixed constrain types of providers [#8617](https://github.com/eclipse-theia/theia/pull/8617)
+- [plugin] fixed issue related to calling the activation of an extension through another extension [#8542](https://github.com/eclipse-theia/theia/pull/8542)
+- [plugin] fixed prototype pollution vulnerability [#8675](https://github.com/eclipse-theia/theia/pull/8675)
+- [plugin] fixed the dismissal of menus when clicking within webviews [#8633](https://github.com/eclipse-theia/theia/pull/8633)
+- [plugin] improved extensibility of `CodeEditorWidget` [#8672](https://github.com/eclipse-theia/theia/pull/8672)
+- [plugin] updated `Comments` API to align with VS Code [#8539](https://github.com/eclipse-theia/theia/pull/8539)
+- [plugin] updated `workspaceFolders` API to return `undefined` when no folders are opened [#8641](https://github.com/eclipse-theia/theia/pull/8641)
+- [repo] added `no-tabs` rule [#8630](https://github.com/eclipse-theia/theia/pull/8630)
+- [repo] reduced verbosity during build [#8642](https://github.com/eclipse-theia/theia/pull/8642)
+- [repo] reduced verbosity when building individual extensions [#8642](https://github.com/eclipse-theia/theia/pull/8642)
+- [repo] updated use of deprecated APIs in unit tests [#8642](https://github.com/eclipse-theia/theia/pull/8642)
+- [repo] upgraded to `@types/node@12` typings [#8556](https://github.com/eclipse-theia/theia/pull/8556)
+- [scm] fixed 'circular structure to JSON' error for the accept input command [#8606](https://github.com/eclipse-theia/theia/pull/8606)
+- [scm] updated the commit textarea placeholder to include the current branch name [#6156](https://github.com/eclipse-theia/theia/pull/6156)
+- [vsx-registry] added support for the search parameter `includeAllVersions` [#8607](https://github.com/eclipse-theia/theia/pull/8607)
+- [vsx-registry] added support for the search parameter `sortBy` [#8607](https://github.com/eclipse-theia/theia/pull/8607)
+- [vsx-registry] added support for the search parameter `sortOrder` [#8607](https://github.com/eclipse-theia/theia/pull/8607)
+- [vsx-registry] fixed the `search` query when multiple search parameters are used [#8607](https://github.com/eclipse-theia/theia/pull/8607)
+- [vsx-registry] updated the `query` API endpoint [#8570](https://github.com/eclipse-theia/theia/pull/8570)
+
+<a name="breaking_changes_1.7.0">[Breaking Changes:](#breaking_changes_1.7.0)</a>
+
+- [core] change progress notification cancelable property default from `true` to `false` [#8479](https://github.com/eclipse-theia/theia/pull/8479)
+- [filesystem] `NsfwFileSystemWatcherServer` is deprecated and no longer used [#8546](https://github.com/eclipse-theia/theia/pull/8546)
+- [messages] updated handling of empty notifications and progress notifications so they will not be shown [#8479](https://github.com/eclipse-theia/theia/pull/8479)
+- [plugin-metrics] renamed `AnalyticsFromRequests.succesfulResponses` to `AnalyticsFromRequests.successfulResponses` [#8560](https://github.com/eclipse-theia/theia/pull/8560)
+- [plugin] `CodeEditorWidgetUti.getResourceUri` is no longer exportable [#8672](https://github.com/eclipse-theia/theia/pull/8672)
+
+
+## v1.6.0 - 24/09/2020
+
+- [core] added ability to un-register keybindings for a given command [#8269](https://github.com/eclipse-theia/theia/pull/8269)
+- [core] added handling to only execute command via keybinding if it has an active handler [#8420](https://github.com/eclipse-theia/theia/pull/8420)
+- [core] updated the triggering of `tab-bar` context-menus to open without the need to be activated beforehand [#6965](https://github.com/eclipse-theia/theia/pull/6965)
+- [editor] added ability to set the default formatter [#8446](https://github.com/eclipse-theia/theia/pull/8446)
+- [electron] fixed the `rebuild:electron` command for the `drivelist` native module [#8454](https://github.com/eclipse-theia/theia/pull/8454)
+- [filesystem] added handling to warn Linux users when they have exhausted `Inotify` handles, along with instructions on how to fix it [#8458](https://github.com/eclipse-theia/theia/pull/8458)
+- [filesystem] fixed the deprecated `FileSystem` binding to return an instantiated instance rather than the class [#8507](https://github.com/eclipse-theia/theia/pull/8507)
+- [keymaps] added handling to prevent URL hash changes when editing keybindings [#8502](https://github.com/eclipse-theia/theia/pull/8502)
+- [lint] added XSS sink detection eslint rules [#8481](https://github.com/eclipse-theia/theia/pull/8481)
+- [output] renamed `output-widget.tsx` to `output-widget.ts` [#8499](https://github.com/eclipse-theia/theia/pull/8499)
+- [output] updated logic to allow clients to customize channel creation [#8476](https://github.com/eclipse-theia/theia/pull/8476)
+- [plugin] added `CompletionItemTag` enum [#8517](https://github.com/eclipse-theia/theia/pull/8517)
+- [plugin] added `DebugConsoleMode` enum [#8513](https://github.com/eclipse-theia/theia/pull/8513)
+- [plugin] added `authentication` plugin API [#8402](https://github.com/eclipse-theia/theia/pull/8402)
+- [plugin] added `revealInExplorer` command [#8496](https://github.com/eclipse-theia/theia/pull/8496)
+- [plugin] fixed issue related to getting the default value from `globalState`/`workspaceState` [#8424](https://github.com/eclipse-theia/theia/pull/8424)
+- [plugin] removed superfluous channel caching for extensions [#8476](https://github.com/eclipse-theia/theia/pull/8476)
+- [plugin] updated `vscode.findFiles` API to handle ignored files [#8452](https://github.com/eclipse-theia/theia/pull/8452)
+- [plugin] updated plugin storage path to be FIPS-compliant [#8379](https://github.com/eclipse-theia/theia/pull/8379)
+- [plugin] updated task ID generation logic [#8379](https://github.com/eclipse-theia/theia/pull/8379)
+- [preferences] updated the rendering of preference category headers and leaves [#8512](https://github.com/eclipse-theia/theia/pull/8512)
+- [scm] fixed activation request of the scm-widget [#8508](https://github.com/eclipse-theia/theia/pull/8508)
+- [search-in-workspace] added handling to respect the `files.exclude` preference when searching [#8433](https://github.com/eclipse-theia/theia/pull/8433)
+- [timeline] added the `@theia/timeline` extension [#7997](https://github.com/eclipse-theia/theia/pull/7997)
 
 <a name="breaking_changes_1.6.0">[Breaking Changes:](#breaking_changes_1.6.0)</a>
 
-- [core] Context-menu for `tab-bars` requires an `Event` to be passed onto it to perform actions without activating the shell tab-bar [#6965](https://github.com/eclipse-theia/theia/pull/6965)
-  - Removed the logic from `handleContextMenuEvent()` that gives focus to the widget upon opening the context menu, instead functionality added to handle it without activating the widget
-  - This change triggers the context menu for a given shell tab-bar without the need to activate it
-  - While registering a command, `Event` should be passed down, if not passed, then the commands will not work correctly as they no longer rely on the activation of tab-bar
-- [core] Moved `findTitle()` and `findTabBar()` from `common-frontend-contribution.ts` to `application-shell.ts`  [#6965](https://github.com/eclipse-theia/theia/pull/6965)
-- [filesystem] show Linux users a warning when Inotify handles have been exhausted, with link to instructions on how to fix [#8458](https://github.com/eclipse-theia/theia/pull/8458)
+- [core] context-menus for `tab-bars` now require an `Event` to be passed to execute commands without activating the shell `tab-bar` [#6965](https://github.com/eclipse-theia/theia/pull/6965)
+  - Removed logic from `TabBarRenderer.handleContextMenuEvent()` to support triggering context-menus without the need to activate the widget.
+  - When registering a command, `Event` should be passed, else commands will not work correctly as they do no longer rely on the activation of `tab-bars`.
+- [core] refactored `findTitle()` and `findTabBar()` moving them from `common-frontend-contribution.ts` to `application-shell.ts` [#6965](https://github.com/eclipse-theia/theia/pull/6965)
 
 ## v1.5.0 - 27/08/2020
 

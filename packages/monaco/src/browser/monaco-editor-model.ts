@@ -16,13 +16,13 @@
 
 import { Position } from 'vscode-languageserver-types';
 import { TextDocumentSaveReason, TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
-import { TextEditorDocument, EncodingMode } from '@theia/editor/lib/browser';
+import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, EditorPreferences, DEFAULT_WORD_SEPARATORS } from '@theia/editor/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
 import { Resource, ResourceError, ResourceVersion } from '@theia/core/lib/common/resource';
 import { Range } from 'vscode-languageserver-types';
-import { Saveable } from '@theia/core/lib/browser/saveable';
+import { Saveable, SaveOptions } from '@theia/core/lib/browser/saveable';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger, Loggable, Log } from '@theia/core/lib/common/logger';
@@ -36,6 +36,7 @@ type ITextEditorModel = monaco.editor.ITextEditorModel;
 export interface WillSaveMonacoModelEvent {
     readonly model: MonacoEditorModel;
     readonly reason: TextDocumentSaveReason;
+    readonly options?: SaveOptions;
     waitUntil(thenable: Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>): void;
 }
 
@@ -82,7 +83,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         protected readonly resource: Resource,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
-        protected readonly logger?: ILogger
+        protected readonly logger?: ILogger,
+        protected readonly editorPreferences?: EditorPreferences
     ) {
         this.toDispose.push(resource);
         this.toDispose.push(this.toDisposeOnAutoSave);
@@ -278,13 +280,43 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.model;
     }
 
+    /**
+     * Find all matches in an editor for the given options.
+     * @param options the options for finding matches.
+     *
+     * @returns the list of matches.
+     */
+    findMatches(options: FindMatchesOptions): FindMatch[] {
+        const wordSeparators = this.editorPreferences ? this.editorPreferences['editor.wordSeparators'] : DEFAULT_WORD_SEPARATORS;
+        const results: monaco.editor.FindMatch[] = this.model.findMatches(
+            options.searchString,
+            false,
+            options.isRegex,
+            options.matchCase,
+            // eslint-disable-next-line no-null/no-null
+            options.matchWholeWord ? wordSeparators : null,
+            true,
+            options.limitResultCount
+        );
+        const extractedMatches: FindMatch[] = [];
+        results.forEach(r => {
+            if (r.matches) {
+                extractedMatches.push({
+                    matches: r.matches,
+                    range: Range.create(r.range.startLineNumber, r.range.startColumn, r.range.endLineNumber, r.range.endColumn)
+                });
+            }
+        });
+        return extractedMatches;
+    }
+
     async load(): Promise<MonacoEditorModel> {
         await this.resolveModel;
         return this;
     }
 
-    save(): Promise<void> {
-        return this.scheduleSave(TextDocumentSaveReason.Manual);
+    save(options?: SaveOptions): Promise<void> {
+        return this.scheduleSave(TextDocumentSaveReason.Manual, undefined, undefined, options);
     }
 
     protected pendingOperation = Promise.resolve();
@@ -397,8 +429,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.saveCancellationTokenSource.token;
     }
 
-    protected scheduleSave(reason: TextDocumentSaveReason, token: CancellationToken = this.cancelSave(), overwriteEncoding?: boolean): Promise<void> {
-        return this.run(() => this.doSave(reason, token, overwriteEncoding));
+    protected scheduleSave(reason: TextDocumentSaveReason, token: CancellationToken = this.cancelSave(), overwriteEncoding?: boolean, options?: SaveOptions): Promise<void> {
+        return this.run(() => this.doSave(reason, token, overwriteEncoding, options));
     }
 
     protected ignoreContentChanges = false;
@@ -457,12 +489,12 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
     }
 
-    protected async doSave(reason: TextDocumentSaveReason, token: CancellationToken, overwriteEncoding?: boolean): Promise<void> {
+    protected async doSave(reason: TextDocumentSaveReason, token: CancellationToken, overwriteEncoding?: boolean, options?: SaveOptions): Promise<void> {
         if (token.isCancellationRequested || !this.resource.saveContents) {
             return;
         }
 
-        await this.fireWillSaveModel(reason, token);
+        await this.fireWillSaveModel(reason, token, options);
         if (token.isCancellationRequested) {
             return;
         }
@@ -496,7 +528,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
     }
 
-    protected async fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
+    protected async fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken, options?: SaveOptions): Promise<void> {
         type EditContributor = Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>;
 
         const firing = this.onWillSaveModelEmitter.sequence(async listener => {
@@ -507,7 +539,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             const { version } = this;
 
             const event = {
-                model: this, reason,
+                model: this, reason, options,
                 waitUntil: (thenable: EditContributor) => {
                     if (Object.isFrozen(waitables)) {
                         throw new Error('waitUntil cannot be called asynchronously.');

@@ -165,11 +165,11 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
     }
 
     protected forceUpdate(): void {
-        this.previousContent = '';
+        this.previousContent = undefined;
         this.update();
     }
 
-    protected previousContent: string = '';
+    protected previousContent: string | undefined = undefined;
     protected async performUpdate(): Promise<void> {
         if (!this.resource) {
             return;

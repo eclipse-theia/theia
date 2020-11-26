@@ -49,7 +49,8 @@
 | Tabs in the center area (main and bottom)
 |----------------------------------------------------------------------------*/
 
-#theia-main-content-panel {
+#theia-main-content-panel,
+#theia-main-content-panel .p-Widget.p-DockPanel-widget {
     background: var(--theia-editor-background);
 }
 

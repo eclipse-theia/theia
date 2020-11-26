@@ -20,6 +20,7 @@ import { createTreeTestContainer } from './test/tree-test-container';
 import { TreeImpl, CompositeTreeNode, TreeNode } from './tree';
 import { TreeModel } from './tree-model';
 import { ExpandableTreeNode } from './tree-expansion';
+import { TreeLabelProvider } from './tree-label-provider';
 
 @injectable()
 class ConsistencyTestTree extends TreeImpl {
@@ -72,6 +73,9 @@ describe('Tree Consistency', () => {
 
     it('setting different tree roots should finish', async () => {
         const container = createTreeTestContainer();
+        container.bind(TreeLabelProvider).toSelf().inSingletonScope();
+        const labelProvider = container.get(TreeLabelProvider);
+
         container.bind(ConsistencyTestTree).toSelf();
         container.rebind(TreeImpl).toService(ConsistencyTestTree);
         const tree = container.get(ConsistencyTestTree);
@@ -90,7 +94,7 @@ describe('Tree Consistency', () => {
             await new Promise(resolve => setTimeout(resolve, 50));
             if (resolveCounter === tree.resolveCounter) {
                 assert.deepStrictEqual(tree.resolveCounter, 1);
-                assert.deepStrictEqual(model.root!.name, 'Bar');
+                assert.deepStrictEqual(labelProvider.getName(model.root)!, 'Bar');
                 return;
             }
             resolveCounter = tree.resolveCounter;

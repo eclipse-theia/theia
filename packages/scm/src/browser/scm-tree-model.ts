@@ -15,12 +15,10 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { TreeModelImpl, TreeNode, TreeProps, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser/tree';
 import URI from '@theia/core/lib/common/uri';
-import { ScmResourceGroup, ScmResource, ScmResourceDecorations } from './scm-provider';
-import { ScmRepository } from './scm-repository';
-import { ScmProvider } from './scm-provider';
+import { ScmProvider, ScmResourceGroup, ScmResource, ScmResourceDecorations } from './scm-provider';
+import { ScmContextKeyService } from './scm-context-key-service';
 
 export const ScmTreeModelProps = Symbol('ScmTreeModelProps');
 export interface ScmTreeModelProps {
@@ -80,23 +78,27 @@ export namespace ScmFileChangeNode {
 }
 
 @injectable()
-export class ScmTreeModel extends TreeModelImpl {
+export abstract class ScmTreeModel extends TreeModelImpl {
 
     private _languageId: string | undefined;
 
-    protected readonly toDisposeOnRepositoryChange = new DisposableCollection();
+    protected provider: ScmProvider | undefined;
 
     @inject(TreeProps) protected readonly props: ScmTreeModelProps;
+
+    @inject(ScmContextKeyService) protected readonly contextKeys: ScmContextKeyService;
 
     get languageId(): string | undefined {
         return this._languageId;
     }
 
+    abstract canTabToWidget(): boolean;
+
     protected _viewMode: 'tree' | 'list' = 'list';
     set viewMode(id: 'tree' | 'list') {
         const oldSelection = this.selectedNodes;
         this._viewMode = id;
-        if (this._provider) {
+        if (this.root) {
             this.root = this.createTree();
 
             for (const oldSelectedNode of oldSelection) {
@@ -111,36 +113,19 @@ export class ScmTreeModel extends TreeModelImpl {
         return this._viewMode;
     }
 
-    protected _provider: ScmProvider | undefined;
-    set repository(repository: ScmRepository | undefined) {
-        this.toDisposeOnRepositoryChange.dispose();
-        if (repository) {
-            this._provider = repository.provider;
-            if (this._provider) {
-                this.toDisposeOnRepositoryChange.push(this._provider.onDidChange(() => {
-                    this.root = this.createTree();
-                }));
-            }
-        } else {
-            this._provider = undefined;
-        }
-        this.root = this.createTree();
-    }
+    abstract get rootUri(): string | undefined;
+    abstract get groups(): ScmResourceGroup[];
 
-    protected createTree(): ScmFileChangeRootNode | undefined {
-        if (!this._provider) {
-            return;
-        }
+    protected createTree(): ScmFileChangeRootNode {
         const root = {
             id: 'file-change-tree-root',
             parent: undefined,
             visible: false,
-            rootUri: this._provider.rootUri,
+            rootUri: this.rootUri,
             children: []
         } as ScmFileChangeRootNode;
 
-        const { groups } = this._provider;
-        const groupNodes = groups
+        const groupNodes = this.groups
             .filter(group => !!group.resources.length || !group.hideWhenEmpty)
             .map(group => this.toGroupNode(group, root));
         root.children = groupNodes;
@@ -310,6 +295,101 @@ export class ScmTreeModel extends TreeModelImpl {
                 }
             }
         }
+    }
+
+    getResourceFromNode(node: ScmFileChangeNode): ScmResource | undefined {
+        const groupId = ScmFileChangeNode.getGroupId(node);
+        const group = this.findGroup(groupId);
+        if (group) {
+            return group.resources.find(r => String(r.sourceUri) === node.sourceUri)!;
+        }
+    }
+
+    getResourceGroupFromNode(node: ScmFileChangeGroupNode): ScmResourceGroup | undefined {
+        return this.findGroup(node.groupId);
+    }
+
+    getResourcesFromFolderNode(node: ScmFileChangeFolderNode): ScmResource[] {
+        const resources: ScmResource[] = [];
+        const group = this.findGroup(node.groupId);
+        if (group) {
+            this.collectResources(resources, node, group);
+        }
+        return resources;
+
+    }
+    getSelectionArgs(selectedNodes: Readonly<SelectableTreeNode[]>): ScmResource[] {
+        const resources: ScmResource[] = [];
+        for (const node of selectedNodes) {
+            if (ScmFileChangeNode.is(node)) {
+                const groupId = ScmFileChangeNode.getGroupId(node);
+                const group = this.findGroup(groupId);
+                if (group) {
+                    const selectedResource = group.resources.find(r => String(r.sourceUri) === node.sourceUri);
+                    if (selectedResource) {
+                        resources.push(selectedResource);
+                    }
+                }
+            }
+            if (ScmFileChangeFolderNode.is(node)) {
+                const group = this.findGroup(node.groupId);
+                if (group) {
+                    this.collectResources(resources, node, group);
+                }
+            }
+        }
+        // Remove duplicates which may occur if user selected folder and nested folder
+        return resources.filter((item1, index) => resources.findIndex(item2 => item1.sourceUri === item2.sourceUri) === index);
+    }
+
+    protected collectResources(resources: ScmResource[], node: TreeNode, group: ScmResourceGroup): void {
+        if (ScmFileChangeFolderNode.is(node)) {
+            for (const child of node.children) {
+                this.collectResources(resources, child, group);
+            }
+        } else if (ScmFileChangeNode.is(node)) {
+            const resource = group.resources.find(r => String(r.sourceUri) === node.sourceUri)!;
+            resources.push(resource);
+        }
+    }
+
+    execInNodeContext(node: TreeNode, callback: () => void): void {
+        if (!this.provider) {
+            return;
+        }
+
+        let groupId: string;
+        if (ScmFileChangeGroupNode.is(node) || ScmFileChangeFolderNode.is(node)) {
+            groupId = node.groupId;
+        } else if (ScmFileChangeNode.is(node)) {
+            groupId = ScmFileChangeNode.getGroupId(node);
+        } else {
+            return;
+        }
+
+        const currentScmProviderId = this.contextKeys.scmProvider.get();
+        const currentScmResourceGroup = this.contextKeys.scmResourceGroup.get();
+        this.contextKeys.scmProvider.set(this.provider.id);
+        this.contextKeys.scmResourceGroup.set(groupId);
+        try {
+            callback();
+        } finally {
+            this.contextKeys.scmProvider.set(currentScmProviderId);
+            this.contextKeys.scmResourceGroup.set(currentScmResourceGroup);
+        }
+    }
+
+    /*
+     * Normally the group would always be expected to be found.  However if the tree is restored
+     * in restoreState then the tree may be rendered before the groups have been created
+     * in the provider.  The provider's groups property will be empty in such a situation.
+     * We want to render the tree (as that is the point of restoreState, we can render
+     * the tree in the saved state before the provider has provided status).  We therefore must
+     * be prepared to render the tree without having the ScmResourceGroup or ScmResource
+     * objects.
+     */
+    findGroup(groupId: string): ScmResourceGroup | undefined {
+        return this.groups.find(g => g.id === groupId);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

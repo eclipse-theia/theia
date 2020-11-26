@@ -22,110 +22,110 @@ describe('Path', () => {
 
     it('new from /foo/bar/file.txt', () => {
         const path = new Path('/foo/bar/file.txt');
-        assert.deepEqual(path.isRoot, false);
-        assert.deepEqual(path.isAbsolute, true);
-        assert.deepEqual(path.root!.toString(), '/');
-        assert.deepEqual(path.dir.toString(), '/foo/bar');
-        assert.deepEqual(path.hasDir, true);
-        assert.deepEqual(path.base, 'file.txt');
-        assert.deepEqual(path.name, 'file');
-        assert.deepEqual(path.ext, '.txt');
+        assert.deepStrictEqual(path.isRoot, false);
+        assert.deepStrictEqual(path.isAbsolute, true);
+        assert.deepStrictEqual(path.root!.toString(), '/');
+        assert.deepStrictEqual(path.dir.toString(), '/foo/bar');
+        assert.deepStrictEqual(path.hasDir, true);
+        assert.deepStrictEqual(path.base, 'file.txt');
+        assert.deepStrictEqual(path.name, 'file');
+        assert.deepStrictEqual(path.ext, '.txt');
     });
 
     it('new from foo/bar/file.txt', () => {
         const path = new Path('foo/bar/file.txt');
-        assert.deepEqual(path.isRoot, false);
-        assert.deepEqual(path.isAbsolute, false);
-        assert.deepEqual(path.root, undefined);
-        assert.deepEqual(path.dir.toString(), 'foo/bar');
-        assert.deepEqual(path.hasDir, true);
-        assert.deepEqual(path.base, 'file.txt');
-        assert.deepEqual(path.name, 'file');
-        assert.deepEqual(path.ext, '.txt');
+        assert.deepStrictEqual(path.isRoot, false);
+        assert.deepStrictEqual(path.isAbsolute, false);
+        assert.deepStrictEqual(path.root, undefined);
+        assert.deepStrictEqual(path.dir.toString(), 'foo/bar');
+        assert.deepStrictEqual(path.hasDir, true);
+        assert.deepStrictEqual(path.base, 'file.txt');
+        assert.deepStrictEqual(path.name, 'file');
+        assert.deepStrictEqual(path.ext, '.txt');
     });
 
     it('new from /foo', () => {
         const path = new Path('/foo');
-        assert.deepEqual(path.isRoot, false);
-        assert.deepEqual(path.isAbsolute, true);
-        assert.deepEqual(path.root!.toString(), '/');
-        assert.deepEqual(path.dir.toString(), '/');
-        assert.deepEqual(path.hasDir, true);
-        assert.deepEqual(path.base, 'foo');
-        assert.deepEqual(path.name, 'foo');
-        assert.deepEqual(path.ext, '');
+        assert.deepStrictEqual(path.isRoot, false);
+        assert.deepStrictEqual(path.isAbsolute, true);
+        assert.deepStrictEqual(path.root!.toString(), '/');
+        assert.deepStrictEqual(path.dir.toString(), '/');
+        assert.deepStrictEqual(path.hasDir, true);
+        assert.deepStrictEqual(path.base, 'foo');
+        assert.deepStrictEqual(path.name, 'foo');
+        assert.deepStrictEqual(path.ext, '');
     });
 
     it('new from foo', () => {
         const path = new Path('foo');
-        assert.deepEqual(path.isRoot, false);
-        assert.deepEqual(path.isAbsolute, false);
-        assert.deepEqual(path.root, undefined);
-        assert.deepEqual(path.dir.toString(), 'foo');
-        assert.deepEqual(path.hasDir, false);
-        assert.deepEqual(path.base, 'foo');
-        assert.deepEqual(path.name, 'foo');
-        assert.deepEqual(path.ext, '');
+        assert.deepStrictEqual(path.isRoot, false);
+        assert.deepStrictEqual(path.isAbsolute, false);
+        assert.deepStrictEqual(path.root, undefined);
+        assert.deepStrictEqual(path.dir.toString(), 'foo');
+        assert.deepStrictEqual(path.hasDir, false);
+        assert.deepStrictEqual(path.base, 'foo');
+        assert.deepStrictEqual(path.name, 'foo');
+        assert.deepStrictEqual(path.ext, '');
     });
 
     it('new from /', () => {
         const path = new Path('/');
-        assert.deepEqual(path.isRoot, true);
-        assert.deepEqual(path.isAbsolute, true);
-        assert.deepEqual(path.root!.toString(), '/');
-        assert.deepEqual(path.dir.toString(), '/');
-        assert.deepEqual(path.hasDir, false);
-        assert.deepEqual(path.base, '');
-        assert.deepEqual(path.name, '');
-        assert.deepEqual(path.ext, '');
+        assert.deepStrictEqual(path.isRoot, true);
+        assert.deepStrictEqual(path.isAbsolute, true);
+        assert.deepStrictEqual(path.root!.toString(), '/');
+        assert.deepStrictEqual(path.dir.toString(), '/');
+        assert.deepStrictEqual(path.hasDir, false);
+        assert.deepStrictEqual(path.base, '');
+        assert.deepStrictEqual(path.name, '');
+        assert.deepStrictEqual(path.ext, '');
     });
 
     it('new from /c:/foo/bar/file.txt', () => {
         const path = new Path('/c:/foo/bar/file.txt');
-        assert.deepEqual(path.isRoot, false);
-        assert.deepEqual(path.isAbsolute, true);
-        assert.deepEqual(path.root!.toString(), '/c:');
-        assert.deepEqual(path.dir.toString(), '/c:/foo/bar');
-        assert.deepEqual(path.hasDir, true);
-        assert.deepEqual(path.base, 'file.txt');
-        assert.deepEqual(path.name, 'file');
-        assert.deepEqual(path.ext, '.txt');
+        assert.deepStrictEqual(path.isRoot, false);
+        assert.deepStrictEqual(path.isAbsolute, true);
+        assert.deepStrictEqual(path.root!.toString(), '/c:');
+        assert.deepStrictEqual(path.dir.toString(), '/c:/foo/bar');
+        assert.deepStrictEqual(path.hasDir, true);
+        assert.deepStrictEqual(path.base, 'file.txt');
+        assert.deepStrictEqual(path.name, 'file');
+        assert.deepStrictEqual(path.ext, '.txt');
     });
 
     it('new from /c:/foo', () => {
         const path = new Path('/c:/foo');
-        assert.deepEqual(path.isRoot, false);
-        assert.deepEqual(path.isAbsolute, true);
-        assert.deepEqual(path.root!.toString(), '/c:');
-        assert.deepEqual(path.dir.toString(), '/c:');
-        assert.deepEqual(path.hasDir, true);
-        assert.deepEqual(path.base, 'foo');
-        assert.deepEqual(path.name, 'foo');
-        assert.deepEqual(path.ext, '');
+        assert.deepStrictEqual(path.isRoot, false);
+        assert.deepStrictEqual(path.isAbsolute, true);
+        assert.deepStrictEqual(path.root!.toString(), '/c:');
+        assert.deepStrictEqual(path.dir.toString(), '/c:');
+        assert.deepStrictEqual(path.hasDir, true);
+        assert.deepStrictEqual(path.base, 'foo');
+        assert.deepStrictEqual(path.name, 'foo');
+        assert.deepStrictEqual(path.ext, '');
     });
 
     it('new from /c:/', () => {
         const path = new Path('/c:/');
-        assert.deepEqual(path.isRoot, false);
-        assert.deepEqual(path.isAbsolute, true);
-        assert.deepEqual(path.root!.toString(), '/c:');
-        assert.deepEqual(path.dir.toString(), '/c:');
-        assert.deepEqual(path.hasDir, true);
-        assert.deepEqual(path.base, '');
-        assert.deepEqual(path.name, '');
-        assert.deepEqual(path.ext, '');
+        assert.deepStrictEqual(path.isRoot, false);
+        assert.deepStrictEqual(path.isAbsolute, true);
+        assert.deepStrictEqual(path.root!.toString(), '/c:');
+        assert.deepStrictEqual(path.dir.toString(), '/c:');
+        assert.deepStrictEqual(path.hasDir, true);
+        assert.deepStrictEqual(path.base, '');
+        assert.deepStrictEqual(path.name, '');
+        assert.deepStrictEqual(path.ext, '');
     });
 
     it('new from /c:', () => {
         const path = new Path('/c:');
-        assert.deepEqual(path.isRoot, true);
-        assert.deepEqual(path.isAbsolute, true);
-        assert.deepEqual(path.root!.toString(), '/c:');
-        assert.deepEqual(path.dir.toString(), '/c:');
-        assert.deepEqual(path.hasDir, false);
-        assert.deepEqual(path.base, 'c:');
-        assert.deepEqual(path.name, 'c:');
-        assert.deepEqual(path.ext, '');
+        assert.deepStrictEqual(path.isRoot, true);
+        assert.deepStrictEqual(path.isAbsolute, true);
+        assert.deepStrictEqual(path.root!.toString(), '/c:');
+        assert.deepStrictEqual(path.dir.toString(), '/c:');
+        assert.deepStrictEqual(path.hasDir, false);
+        assert.deepStrictEqual(path.base, 'c:');
+        assert.deepStrictEqual(path.name, 'c:');
+        assert.deepStrictEqual(path.ext, '');
     });
 
     assertRelative({
@@ -159,7 +159,7 @@ describe('Path', () => {
     }): void {
         it(`the relative path from '${from}' to '${to}' should be '${expectation}'`, () => {
             const path = new Path(from).relative(new Path(to));
-            assert.deepEqual(expectation, path && path.toString());
+            assert.deepStrictEqual(expectation, path && path.toString());
         });
     }
 

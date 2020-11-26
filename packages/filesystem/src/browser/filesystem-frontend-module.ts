@@ -82,7 +82,7 @@ export default new ContainerModule(bind => {
             }
             throw error;
         };
-        return class implements FileSystem {
+        return new class implements FileSystem {
             async getFileStat(uri: string): Promise<FileStat | undefined> {
                 try {
                     const stat = await fileService.resolve(new URI(uri), { resolveMetadata: true });

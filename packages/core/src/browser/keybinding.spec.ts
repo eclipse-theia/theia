@@ -21,7 +21,8 @@ import { Container, injectable, ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../common/contribution-provider';
 import { KeyboardLayoutProvider, NativeKeyboardLayout, KeyboardLayoutChangeNotifier } from '../common/keyboard/keyboard-layout-provider';
 import { ILogger } from '../common/logger';
-import { KeybindingRegistry, KeybindingContext, Keybinding, KeybindingContribution, KeybindingScope } from './keybinding';
+import { KeybindingRegistry, KeybindingContext, KeybindingContribution, KeybindingScope } from './keybinding';
+import { Keybinding } from '../common/keybinding';
 import { KeyCode, Key, KeyModifier, KeySequence } from './keyboard/keys';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
 import { CommandRegistry, CommandService, CommandContribution, Command } from '../common/command';
@@ -30,6 +31,7 @@ import { MockLogger } from '../common/test/mock-logger';
 import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextKeyService } from './context-key-service';
+import { CorePreferences } from './core-preferences';
 import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -84,6 +86,7 @@ before(async () => {
         bind(LabelParser).toSelf().inSingletonScope();
         bind(ContextKeyService).toSelf().inSingletonScope();
         bind(FrontendApplicationStateService).toSelf().inSingletonScope();
+        bind(CorePreferences).toConstantValue(<CorePreferences>{});
     });
 
     testContainer.load(module);

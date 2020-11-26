@@ -343,11 +343,11 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
-        return new UriAwareCommandHandler(this.selectionService, handler);
+        return UriAwareCommandHandler.MonoSelect(this.selectionService, handler);
     }
 
     protected newMultiUriAwareCommandHandler(handler: UriCommandHandler<URI[]>): UriAwareCommandHandler<URI[]> {
-        return new UriAwareCommandHandler(this.selectionService, handler, { multi: true });
+        return UriAwareCommandHandler.MultiSelect(this.selectionService, handler);
     }
 
     protected newWorkspaceRootUriAwareCommandHandler(handler: UriCommandHandler<URI>): WorkspaceRootUriAwareCommandHandler {

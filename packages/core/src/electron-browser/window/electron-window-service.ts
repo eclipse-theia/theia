@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
+import { remote } from 'electron';
 import { NewWindowOptions } from '../../browser/window/window-service';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
@@ -30,9 +31,33 @@ export class ElectronWindowService extends DefaultWindowService {
         return undefined;
     }
 
-    protected preventUnload(event: BeforeUnloadEvent): string | void {
-        // The user will be shown a confirmation dialog by the will-prevent-unload handler in the Electron main script
-        event.returnValue = false;
+    registerUnloadListeners(): void {
+        window.addEventListener('beforeunload', event => {
+            // Either we can unload, or the user confirms that he wants to quit
+            if (this.canUnload() || this.shouldUnload()) {
+                // We are unloading
+                delete event.returnValue;
+                this.onUnloadEmitter.fire();
+            } else {
+                // The user wants to stay, let's prevent unloading
+                return this.preventUnload(event);
+            }
+        });
     }
 
+    /**
+     * When preventing `beforeunload` on Electron, no popup is shown.
+     * This method implements a modal to ask the user if he wants to quit the page.
+     */
+    protected shouldUnload(): boolean {
+        const electronWindow = remote.getCurrentWindow();
+        const response = remote.dialog.showMessageBoxSync(electronWindow, {
+            type: 'question',
+            buttons: ['Yes', 'No'],
+            title: 'Confirm',
+            message: 'Are you sure you want to quit?',
+            detail: 'Any unsaved changes will not be saved.'
+        });
+        return response === 0; // 'Yes', close the window.
+    }
 }

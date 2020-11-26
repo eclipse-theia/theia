@@ -43,7 +43,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from '@theia/monaco/lib/browser/monaco-languages';
 import CoreURI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import * as vst from 'vscode-languageserver-types';
 import * as theia from '@theia/plugin';
@@ -56,6 +56,7 @@ import { Position, DocumentUri } from 'vscode-languageserver-types';
 import { ObjectIdentifier } from '../../common/object-identifier';
 import { mixin } from '../../common/types';
 import { relative } from '../../common/paths-util';
+import { decodeSemanticTokensDto } from '../../common/semantic-tokens-dto';
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
@@ -562,14 +563,21 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     $registerDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         const languageSelector = this.toLanguageSelector(selector);
-        const documentFormattingEditSupport = this.createDocumentFormattingSupport(handle);
+        const documentFormattingEditSupport = this.createDocumentFormattingSupport(handle, pluginInfo);
         this.register(handle, monaco.languages.registerDocumentFormattingEditProvider(languageSelector, documentFormattingEditSupport));
     }
 
-    createDocumentFormattingSupport(handle: number): monaco.languages.DocumentFormattingEditProvider {
-        return {
-            provideDocumentFormattingEdits: (model, options, token) => this.provideDocumentFormattingEdits(handle, model, options, token)
+    createDocumentFormattingSupport(handle: number, pluginInfo: PluginInfo): monaco.languages.DocumentFormattingEditProvider {
+        const provider: monaco.languages.DocumentFormattingEditProvider = {
+            extensionId: {
+                value: pluginInfo.id
+            },
+            displayName: pluginInfo.name,
+            provideDocumentFormattingEdits: (model, options, token) =>
+                this.provideDocumentFormattingEdits(handle, model, options, token)
         };
+
+        return provider;
     }
 
     protected provideDocumentFormattingEdits(handle: number, model: monaco.editor.ITextModel,
@@ -577,16 +585,23 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         return this.proxy.$provideDocumentFormattingEdits(handle, model.uri, options, token);
     }
 
-    $registerRangeFormattingProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
+    $registerRangeFormattingSupport(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
         const languageSelector = this.toLanguageSelector(selector);
-        const rangeFormattingEditProvider = this.createRangeFormattingProvider(handle);
+        const rangeFormattingEditProvider = this.createRangeFormattingSupport(handle, pluginInfo);
         this.register(handle, monaco.languages.registerDocumentRangeFormattingEditProvider(languageSelector, rangeFormattingEditProvider));
     }
 
-    createRangeFormattingProvider(handle: number): monaco.languages.DocumentRangeFormattingEditProvider {
-        return {
-            provideDocumentRangeFormattingEdits: (model, range: Range, options, token) => this.provideDocumentRangeFormattingEdits(handle, model, range, options, token)
+    createRangeFormattingSupport(handle: number, pluginInfo: PluginInfo): monaco.languages.DocumentRangeFormattingEditProvider {
+        const provider: monaco.languages.DocumentRangeFormattingEditProvider = {
+            extensionId: {
+                value: pluginInfo.id
+            },
+            displayName: pluginInfo.name,
+            provideDocumentRangeFormattingEdits: (model, range: Range, options, token) =>
+                this.provideDocumentRangeFormattingEdits(handle, model, range, options, token)
         };
+
+        return provider;
     }
 
     protected provideDocumentRangeFormattingEdits(handle: number, model: monaco.editor.ITextModel,
@@ -782,6 +797,91 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         position: monaco.Position, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.RenameLocation> {
         return this.proxy.$resolveRenameLocation(handle, model.uri, position, token);
     }
+
+    // --- semantic tokens
+
+    $registerDocumentSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend,
+        eventHandle: number | undefined): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        let event: Event<void> | undefined = undefined;
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter<void>();
+            this.register(eventHandle, emitter);
+            event = emitter.event;
+        }
+        const provider = this.createDocumentSemanticTokensProvider(handle, legend, event);
+        this.register(handle, monaco.languages.registerDocumentSemanticTokensProvider(languageSelector, provider));
+    }
+
+    protected createDocumentSemanticTokensProvider(handle: number, legend: theia.SemanticTokensLegend, event?: Event<void>): monaco.languages.DocumentSemanticTokensProvider {
+        return {
+            releaseDocumentSemanticTokens: resultId => {
+                if (resultId) {
+                    this.proxy.$releaseDocumentSemanticTokens(handle, parseInt(resultId, 10));
+                }
+            },
+            getLegend: () => legend,
+            provideDocumentSemanticTokens: async (model, lastResultId, token) => {
+                const nLastResultId = lastResultId ? parseInt(lastResultId, 10) : 0;
+                const encodedDto = await this.proxy.$provideDocumentSemanticTokens(handle, model.uri, nLastResultId, token);
+                if (!encodedDto) {
+                    return null;
+                }
+                if (token.isCancellationRequested) {
+                    return null;
+                }
+                const dto = decodeSemanticTokensDto(encodedDto);
+                if (dto.type === 'full') {
+                    return {
+                        resultId: String(dto.id),
+                        data: dto.data
+                    };
+                }
+                return {
+                    resultId: String(dto.id),
+                    edits: dto.deltas
+                };
+            }
+        };
+    }
+
+    $emitDocumentSemanticTokensEvent(eventHandle: number): void {
+        const obj = this.services.get(eventHandle);
+        if (obj instanceof Emitter) {
+            obj.fire(undefined);
+        }
+    }
+
+    $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend): void {
+        const languageSelector = this.toLanguageSelector(selector);
+        const provider = this.createDocumentRangeSemanticTokensProvider(handle, legend);
+        this.register(handle, monaco.languages.registerDocumentRangeSemanticTokensProvider(languageSelector, provider));
+    }
+
+    protected createDocumentRangeSemanticTokensProvider(handle: number, legend: theia.SemanticTokensLegend): monaco.languages.DocumentRangeSemanticTokensProvider {
+        return {
+            getLegend: () => legend,
+            provideDocumentRangeSemanticTokens: async (model, range, token) => {
+                const encodedDto = await this.proxy.$provideDocumentRangeSemanticTokens(handle, model.uri, range, token);
+                if (!encodedDto) {
+                    return null;
+                }
+                if (token.isCancellationRequested) {
+                    return null;
+                }
+                const dto = decodeSemanticTokensDto(encodedDto);
+                if (dto.type === 'full') {
+                    return {
+                        resultId: String(dto.id),
+                        data: dto.data
+                    };
+                }
+                throw new Error('Unexpected');
+            }
+        };
+    }
+
+    // --- suggest
 
     protected toLanguageSelector(filters: SerializedDocumentFilter[]): monaco.modes.LanguageSelector & LanguageSelector {
         return filters.map(filter => {

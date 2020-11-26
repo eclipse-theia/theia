@@ -28,9 +28,21 @@ export enum MessageType {
 }
 
 export interface Message {
+    /**
+     * Type of the message, i.e. error, warning, info, etc.
+     */
     readonly type?: MessageType;
+    /**
+     * Message text.
+     */
     readonly text: string;
+    /**
+     * Actions offered to the user in the context of the message.
+     */
     readonly actions?: string[];
+    /**
+     * Additional options.
+     */
     readonly options?: MessageOptions;
     readonly source?: string;
 }
@@ -42,9 +54,7 @@ export interface ProgressMessage extends Message {
 export namespace ProgressMessage {
     export const Cancel = 'Cancel';
     export function isCancelable(message: ProgressMessage): boolean {
-        return !message.options
-            || message.options.cancelable === undefined
-            || message.options.cancelable === true;
+        return !!message.options?.cancelable;
     }
 }
 
@@ -68,14 +78,36 @@ export interface ProgressMessageOptions extends MessageOptions {
 }
 
 export interface Progress {
+    /**
+     * Unique progress id.
+     */
     readonly id: string;
+    /**
+     * Update the current progress.
+     *
+     * @param update the data to update.
+     */
     readonly report: (update: ProgressUpdate) => void;
+    /**
+     * Cancel or complete the current progress.
+     */
     readonly cancel: () => void;
+    /**
+     * Result of the progress.
+     *
+     * @returns a promise which resolves to either 'Cancel', an alternative action or `undefined`.
+     */
     readonly result: Promise<string | undefined>;
 }
 
 export interface ProgressUpdate {
+    /**
+     * Updated message for the progress.
+     */
     readonly message?: string;
+    /**
+     * Updated ratio between steps done so far and total number of steps.
+     */
     readonly work?: { done: number, total: number };
 }
 

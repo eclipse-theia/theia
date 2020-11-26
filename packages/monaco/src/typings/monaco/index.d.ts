@@ -15,7 +15,51 @@
  ********************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable max-len */
+
+// eslint-disable-next-line spaced-comment
 /// <reference types='@theia/monaco-editor-core/monaco'/>
+
+declare module monaco.languages {
+
+    export class ExtensionIdentifier {
+        public readonly value: string;
+    }
+
+    /**
+     * The document formatting provider interface defines the contract between extensions and
+     * the formatting-feature.
+     */
+    export interface DocumentFormattingEditProvider {
+        readonly extensionId?: ExtensionIdentifier;
+    }
+
+    /**
+     * The document formatting provider interface defines the contract between extensions and
+     * the formatting-feature.
+     */
+    export interface DocumentRangeFormattingEditProvider {
+        readonly extensionId?: ExtensionIdentifier;
+    }
+
+}
+
+declare module monaco.format {
+
+    export const enum FormattingMode {
+        Explicit = 1,
+        Silent = 2
+    }
+
+    export interface IFormattingEditProviderSelector {
+        <T extends (monaco.languages.DocumentFormattingEditProvider | monaco.languages.DocumentRangeFormattingEditProvider)>(formatter: T[], document: monaco.editor.ITextModel, mode: FormattingMode): Promise<T | undefined>;
+    }
+
+    export abstract class FormattingConflicts {
+        static setFormatterSelector(selector: IFormattingEditProviderSelector): monaco.IDisposable;
+    }
+
+}
 
 declare module monaco.instantiation {
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/platform/instantiation/common/instantiation.ts#L86
@@ -718,6 +762,14 @@ declare module monaco.services {
         get(overrides?: monaco.editor.IEditorOverrideServices): T;
     }
 
+    // https://github.com/microsoft/vscode/blob/0eb3a02ca2bcfab5faa3dc6e52d7c079efafcab0/src/vs/platform/theme/common/themeService.ts#L78
+    export interface ITokenStyle {
+        readonly foreground?: number;
+        readonly bold?: boolean;
+        readonly underline?: boolean;
+        readonly italic?: boolean;
+    }
+
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/standalone/common/standaloneThemeService.ts#L28
     export interface IStandaloneThemeService extends monaco.theme.IThemeService {
         // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/standalone/browser/standaloneThemeServiceImpl.ts#L178
@@ -735,11 +787,14 @@ declare module monaco.services {
 
         // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/platform/theme/common/themeService.ts#L98
         getColor(color: string, useDefault?: boolean): monaco.color.Color | undefined;
+
+        getTokenStyleMetadata(type: string, modifiers: string[], modelLanguage: string): ITokenStyle | undefined;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/modes/supports/tokenization.ts#L188
     export interface TokenTheme {
         match(languageId: LanguageId, scope: string): number;
+        _match(token: string): any;
         getColorMap(): monaco.color.Color[];
     }
 
@@ -1152,9 +1207,6 @@ declare module monaco.quickOpen {
         run(mode: Mode, context: IEntryRunContext): boolean;
     }
 
-    // todo https://github.com/eclipse-theia/theia/issues/7899
-    export function compareEntries(elementA: QuickOpenEntry, elementB: QuickOpenEntry, lookFor: string): number;
-
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/base/parts/quickopen/browser/quickOpenModel.ts#L197
     export class QuickOpenEntryGroup extends QuickOpenEntry {
         constructor(entry?: QuickOpenEntry, groupLabel?: string, withBorder?: boolean);
@@ -1256,6 +1308,15 @@ declare module monaco.modes {
         readonly onDidChange: monaco.IEvent<any>;
     }
     export const TokenizationRegistry: TokenizationRegistry;
+
+    // https://github.com/microsoft/vscode/blob/0eb3a02ca2bcfab5faa3dc6e52d7c079efafcab0/src/vs/editor/common/modes.ts#L66-L76
+    export const enum FontStyle {
+        NotSet = -1,
+        None = 0,
+        Italic = 1,
+        Bold = 2,
+        Underline = 4
+    }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/editor/common/modes.ts#L148
     export class TokenMetadata {
@@ -1455,12 +1516,28 @@ declare module monaco.error {
 
 declare module monaco.path {
     // https://github.com/microsoft/vscode/blob/320fbada86c113835aef4fb9d7c4bc5b74678166/src/vs/base/common/path.ts#L1494
-    export function normalize(path: string): string;
+    export function normalize(uriPath: string): string;
 }
 
 declare module monaco.wordHelper {
     // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/model/wordHelper.ts#L30
     export const DEFAULT_WORD_REGEXP: RegExp;
+}
+
+declare module monaco.strings {
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/common/strings.ts#L150
+    export function startsWith(haystack: string, needle: string): boolean;
+
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/common/strings.ts#L171
+    export function endsWith(haystack: string, needle: string): boolean;
+}
+
+declare module monaco.async {
+    // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/base/common/async.ts#L721
+    export class IdleValue<T> {
+        constructor(executor: () => T) { }
+        getValue(): T;
+    }
 }
 
 /**

@@ -350,7 +350,7 @@ export class ScmHistoryWidget extends ScmNavigableListWidget<ScmHistoryListNode>
                 </div>;
                 break;
         }
-        return <div className='scm-diff-container'>
+        return <div className='history-container'>
             {content}
         </div>;
     }

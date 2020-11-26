@@ -30,8 +30,9 @@ import { EditorWidget } from '@theia/editor/lib/browser';
 import { ScmProvider, ScmCommand, ScmResourceGroup, ScmAmendSupport, ScmCommit } from '@theia/scm/lib/browser/scm-provider';
 import { ScmHistoryCommit, ScmFileChange } from '@theia/scm-extra/lib/browser/scm-file-change-node';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { GitCommitDetailWidgetOptions } from './history/git-commit-detail-widget';
+import { GitCommitDetailWidgetOptions } from './history/git-commit-detail-widget-options';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { ScmInput } from '@theia/scm/lib/browser/scm-input';
 
 @injectable()
 export class GitScmProviderOptions {
@@ -40,6 +41,8 @@ export class GitScmProviderOptions {
 
 @injectable()
 export class GitScmProvider implements ScmProvider {
+
+    public input: ScmInput;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
@@ -156,6 +159,7 @@ export class GitScmProvider implements ScmProvider {
         state.groups.push(this.createGroup('index', 'Staged changes', state.stagedChanges, true));
         state.groups.push(this.createGroup('workingTree', 'Changes', state.unstagedChanges, false));
         this.state = state;
+        this.input.placeholder = `Message (press {0} to commit${status && status.branch ? ' on \'' + status.branch + '\'' : ''})`;
         this.fireDidChange();
     }
 
@@ -195,6 +199,7 @@ export class GitScmProvider implements ScmProvider {
 
     getUriToOpen(change: GitFileChange): URI {
         const changeUri: URI = new URI(change.uri);
+        const fromFileUri = change.oldUri ? new URI(change.oldUri) : changeUri; // set oldUri on renamed and copied
         if (change.status === GitFileStatus.Deleted) {
             if (change.staged) {
                 return changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD');
@@ -205,13 +210,13 @@ export class GitScmProvider implements ScmProvider {
         if (change.status !== GitFileStatus.New) {
             if (change.staged) {
                 return DiffUris.encode(
-                    changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
+                    fromFileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
                     changeUri.withScheme(GIT_RESOURCE_SCHEME),
                     this.labelProvider.getName(changeUri) + ' (Index)');
             }
             if (this.stagedChanges.find(c => c.uri === change.uri)) {
                 return DiffUris.encode(
-                    changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                    fromFileUri.withScheme(GIT_RESOURCE_SCHEME),
                     changeUri,
                     this.labelProvider.getName(changeUri) + ' (Working tree)');
             }
@@ -219,7 +224,7 @@ export class GitScmProvider implements ScmProvider {
                 return changeUri;
             }
             return DiffUris.encode(
-                changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
+                fromFileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
                 changeUri,
                 this.labelProvider.getName(changeUri) + ' (Working tree)');
         }
@@ -433,6 +438,7 @@ export class GitScmProvider implements ScmProvider {
             },
             get commitDetailOptions(): GitCommitDetailWidgetOptions {
                 return {
+                    rootUri: this.scmProvider.rootUri,
                     commitSha: gitCommit.sha,
                     commitMessage: gitCommit.summary,
                     messageBody: gitCommit.body,
@@ -574,10 +580,12 @@ export class GitScmFileChange implements ScmFileChange {
         if (!this.range) {
             return uri;
         }
-        const fromRevision = this.range.fromRevision || 'HEAD';
-        const toRevision = this.range.toRevision || 'HEAD';
-        const fromURI = fromFileURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(fromRevision.toString());
-        const toURI = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(toRevision.toString());
+        const fromURI = this.range.fromRevision
+            ? fromFileURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.range.fromRevision.toString())
+            : fromFileURI;
+        const toURI = this.range.toRevision
+            ? uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.range.toRevision.toString())
+            : uri;
         let uriToOpen = uri;
         if (this.fileChange.status === GitFileStatus.Deleted) {
             uriToOpen = fromURI;

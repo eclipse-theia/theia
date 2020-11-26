@@ -35,6 +35,8 @@ export class ShellTerminalServer extends BaseTerminalServer {
 
     create(options: IShellTerminalServerOptions): Promise<number> {
         try {
+            options.env = options.env ? options.env : {};
+            this.mergedCollection.applyToProcessEnvironment(options.env);
             const term = this.shellFactory(options);
             this.postCreate(term);
             return Promise.resolve(term.id);

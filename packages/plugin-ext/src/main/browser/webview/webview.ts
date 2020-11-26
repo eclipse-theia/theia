@@ -63,7 +63,9 @@ export const enum WebviewMessageChannels {
     loadResource = 'load-resource',
     loadLocalhost = 'load-localhost',
     webviewReady = 'webview-ready',
-    didKeydown = 'did-keydown'
+    didKeydown = 'did-keydown',
+    didMouseDown = 'did-mousedown',
+    didMouseUp = 'did-mouseup'
 }
 
 export interface WebviewContentOptions {
@@ -293,6 +295,14 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
             // keybinding service because these events do not bubble to the parent window anymore.
             this.keybindings.dispatchKeyDown(data, this.element);
         }));
+        this.toHide.push(this.on(WebviewMessageChannels.didMouseDown, (data: MouseEvent) => {
+            // We have to dispatch mousedown events so menus will be closed when clicking inside webviews.
+            // See: https://github.com/eclipse-theia/theia/issues/7752
+            this.dispatchMouseEvent('mousedown', data);
+        }));
+        this.toHide.push(this.on(WebviewMessageChannels.didMouseUp, (data: MouseEvent) => {
+            this.dispatchMouseEvent('mouseup', data);
+        }));
 
         this.style();
         this.toHide.push(this.themeDataProvider.onDidChangeThemeData(() => this.style()));
@@ -306,6 +316,15 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     protected async loadLocalhost(origin: string): Promise<void> {
         const redirect = await this.getRedirect(origin);
         return this.doSend('did-load-localhost', { origin, location: redirect });
+    }
+
+    protected dispatchMouseEvent(type: string, data: MouseEvent): void {
+        const domRect = this.node.getBoundingClientRect();
+        document.dispatchEvent(new MouseEvent(type, {
+            ...data,
+            clientX: domRect.x + data.clientX,
+            clientY: domRect.y + data.clientY
+        }));
     }
 
     protected async getRedirect(url: string): Promise<string | undefined> {

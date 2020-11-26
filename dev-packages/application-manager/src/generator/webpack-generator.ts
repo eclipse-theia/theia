@@ -155,7 +155,7 @@ module.exports = {
                 test: /\\.js$/,
                 enforce: 'pre',
                 loader: 'source-map-loader',
-                exclude: /jsonc-parser|fast-plist|onigasm|(monaco-editor.*)/
+                exclude: /jsonc-parser|fast-plist|onigasm/
             },
             {
                 test: /\\.woff(2)?(\\?v=[0-9]\\.[0-9]\\.[0-9])?$/,

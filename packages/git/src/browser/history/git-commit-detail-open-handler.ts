@@ -17,7 +17,8 @@
 import { injectable } from 'inversify';
 import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { GitCommitDetailWidgetOptions, GitCommitDetailWidget } from './git-commit-detail-widget';
+import { GitCommitDetailWidgetOptions } from './git-commit-detail-widget-options';
+import { GitCommitDetailWidget } from './git-commit-detail-widget';
 import { GitScmProvider } from '../git-scm-provider';
 
 export namespace GitCommitDetailUri {
@@ -46,12 +47,6 @@ export class GitCommitDetailOpenHandler extends WidgetOpenHandler<GitCommitDetai
     }
 
     protected async doOpen(widget: GitCommitDetailWidget, options: GitCommitDetailOpenerOptions): Promise<void> {
-        widget.setContent({
-            range: {
-                fromRevision: options.commitSha + '~1',
-                toRevision: options.commitSha
-            }
-        });
         await super.doOpen(widget, options);
     }
 

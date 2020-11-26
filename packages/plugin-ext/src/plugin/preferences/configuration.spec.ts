@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as chai from 'chai';
 import { Configuration, ConfigurationModel } from './configuration';
 import { PreferenceData } from '../../common';
@@ -243,6 +244,47 @@ describe('Configuration:', () => {
                 preferences[PreferenceScope.Folder][project][propertyName]
             );
             expect(inspect.value).to.equal(preferences[PreferenceScope.Folder][project][propertyName]);
+        });
+
+    });
+
+    describe('ConfigurationModel', () => {
+
+        it('check merge', () => {
+            defaultConfiguration = new ConfigurationModel(
+                preferences[PreferenceScope.Default],
+                Object.keys(preferences[PreferenceScope.Default])
+            );
+            userConfiguration = new ConfigurationModel(
+                preferences[PreferenceScope.User],
+                Object.keys(preferences[PreferenceScope.User])
+            );
+            workspaceConfiguration = new ConfigurationModel(
+                preferences[PreferenceScope.Workspace],
+                Object.keys(preferences[PreferenceScope.Workspace])
+            );
+            const mergedConfiguration = new ConfigurationModel().merge(defaultConfiguration, userConfiguration, workspaceConfiguration);
+            expect(mergedConfiguration.getValue('tabSize')).to.equal(4);
+        });
+
+        it('Prototype pollution check', () => {
+            const payload = JSON.parse('{"__proto__":{"injectedConfigurationPrototype": true}}');
+            const configurationModel = new ConfigurationModel();
+            configurationModel.merge(new ConfigurationModel(payload));
+            const prototypeObject = Object.prototype as any;
+            expect(prototypeObject.injectedConfigurationPrototype).to.be.an('undefined');
+            const rawObject = {} as any;
+            expect(rawObject.injectedConfigurationPrototype).to.be.an('undefined');
+        });
+
+        it('Prototype constructor pollution check', () => {
+            const payload = JSON.parse('{"constructor": {"prototype": {"injectedConfigurationConstructorPrototype": true}}}');
+            const configurationModel = new ConfigurationModel();
+            configurationModel.merge(new ConfigurationModel(payload));
+            const prototypeObject = Object.prototype as any;
+            expect(prototypeObject.injectedConfigurationConstructorPrototype).to.be.an('undefined');
+            const rawObject = {} as any;
+            expect(rawObject.injectedConfigurationConstructorPrototype).to.be.an('undefined');
         });
 
     });

@@ -30,14 +30,54 @@ import { AddressInfo } from 'net';
 import { ApplicationPackage } from '@theia/application-package';
 
 export const BackendApplicationContribution = Symbol('BackendApplicationContribution');
+
+/**
+ * Contribution for hooking into the backend lifecycle.
+ */
 export interface BackendApplicationContribution {
-    initialize?(): void;
-    configure?(app: express.Application): void;
+    /**
+     * Called during the initialization of the backend application.
+     * Use this for functionality which has to run as early as possible.
+     *
+     * The implementation may be async, however it will still block the
+     * initialization step until it's resolved.
+     *
+     * @returns either `undefined` or a Promise resolving to `undefined`.
+     */
+    initialize?(): MaybePromise<void>;
+
+    /**
+     * Called after the initialization of the backend application is complete.
+     * Use this to configure the Express app before it is started, for example
+     * to offer additional endpoints.
+     *
+     * The implementation may be async, however it will still block the
+     * configuration step until it's resolved.
+     *
+     * @param app the express application to configure.
+     *
+     * @returns either `undefined` or a Promise resolving to `undefined`.
+     */
+    configure?(app: express.Application): MaybePromise<void>;
+
+    /**
+     * Called right after the server for the Express app is started.
+     * Use this to additionally configure the server or as ready-signal for your service.
+     *
+     * The implementation may be async, however it will still block the
+     * startup step until it's resolved.
+     *
+     * @param server the backend server running the express app.
+     *
+     * @returns either `undefined` or a Promise resolving to `undefined`.
+     */
     onStart?(server: http.Server | https.Server): MaybePromise<void>;
 
     /**
      * Called when the backend application shuts down. Contributions must perform only synchronous operations.
      * Any kind of additional asynchronous work queued in the event loop will be ignored and abandoned.
+     *
+     * @param app the express application.
      */
     onStop?(app?: express.Application): void;
 }
@@ -70,12 +110,12 @@ export class BackendApplicationCliContribution implements CliContribution {
     }
 
     setArguments(args: yargs.Arguments): void {
-        this.port = args.port;
-        this.hostname = args.hostname;
-        this.ssl = args.ssl;
-        this.cert = args.cert;
-        this.certkey = args.certkey;
-        this.projectPath = args[appProjectPath];
+        this.port = args.port as number;
+        this.hostname = args.hostname as string;
+        this.ssl = args.ssl as boolean;
+        this.cert = args.cert as string;
+        this.certkey = args.certkey as string;
+        this.projectPath = args[appProjectPath] as string;
     }
 
     protected appProjectPath(): string {
@@ -115,6 +155,12 @@ export class BackendApplication {
                     console.error(error.stack);
                 }
             }
+        });
+
+        // Workaround for Electron not installing a handler to ignore SIGPIPE error
+        // (https://github.com/electron/electron/issues/13254)
+        process.on('SIGPIPE', () => {
+            console.error(new Error('Unexpected SIGPIPE'));
         });
 
         // Handles normal process termination.
