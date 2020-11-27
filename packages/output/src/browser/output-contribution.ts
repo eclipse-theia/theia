@@ -226,6 +226,10 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> i
             label: 'Copy All'
         });
         registry.registerMenuAction(OutputContextMenu.COMMAND_GROUP, {
+            commandId: CommonCommands.FIND.id,
+            label: 'Find'
+        });
+        registry.registerMenuAction(OutputContextMenu.COMMAND_GROUP, {
             commandId: quickCommand.id,
             label: 'Find Command...'
         });
