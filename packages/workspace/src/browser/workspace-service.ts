@@ -706,7 +706,7 @@ export namespace WorkspaceData {
         const folderUris: string[] = [];
         const workspaceFileUri = new URI(workspaceFile ? workspaceFile.resource.toString() : '').withScheme('file');
         for (const { path } of data.folders) {
-            const folderUri = new URI(path).withScheme('file');
+            const folderUri = new URI(path);
             const rel = workspaceFileUri.parent.relative(folderUri);
             if (rel) {
                 folderUris.push(rel.toString());
@@ -722,7 +722,7 @@ export namespace WorkspaceData {
             const folders: string[] = [];
             for (const folder of data.folders) {
                 const path = folder.path;
-                if (path.startsWith('file:///')) {
+                if (new URI(path).scheme.length !== 0) {
                     folders.push(path);
                 } else {
                     folders.push(workspaceFile.resource.withScheme('file').parent.resolve(path).toString());
