@@ -750,13 +750,17 @@ export class ViewContainerPart extends BaseWidget {
         this.collapsedEmitter.fire(collapsed);
     }
 
-    setHidden(hidden: boolean): void {
+    setHidden(hidden: boolean, refreshToolbar?: boolean): void {
         if (!this.canHide) {
             return;
         }
         super.setHidden(hidden);
         if (!this.isHidden) {
             this.collapsed = false;
+            if (refreshToolbar) {
+                this.hideToolbar();
+                this.showToolbar();
+            }
         }
     }
 

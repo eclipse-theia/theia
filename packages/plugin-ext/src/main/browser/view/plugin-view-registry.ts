@@ -169,7 +169,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             return;
         }
         widget.updateViewVisibility(() =>
-            part.setHidden(!this.isViewVisible(viewId))
+            part.setHidden(!this.isViewVisible(viewId), widget.parent?.node.matches(':hover'))
         );
     }
 
