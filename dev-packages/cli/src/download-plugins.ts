@@ -108,7 +108,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
     } else if (pluginUrl.endsWith('vsix')) {
         fileExt = '.vsix';
     } else {
-        console.error(red(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`));
+        failures.push(red(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`));
         return;
     }
     const targetPath = path.join(process.cwd(), pluginsDir, `${plugin}${packed === true ? fileExt : ''}`);
