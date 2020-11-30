@@ -83,7 +83,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     } finally {
         temp.cleanupSync();
     }
-    failures.forEach(console.error);
+    failures.forEach(e => { console.error(e); });
     if (!ignoreErrors && failures.length > 0) {
         throw new Error('Errors downloading some plugins. To make these errors non fatal, re-run with --ignore-errors');
     }
