@@ -400,9 +400,21 @@ export class ElectronMainApplication {
                     reject(error);
                 });
                 app.on('quit', () => {
-                    // If we forked the process for the clusters, we need to manually terminate it.
-                    // See: https://github.com/eclipse-theia/theia/issues/835
-                    process.kill(backendProcess.pid);
+                    // Only issue a kill signal if the backend process is running.
+                    // eslint-disable-next-line no-null/no-null
+                    if (backendProcess.exitCode === null && backendProcess.signalCode === null) {
+                        try {
+                            // If we forked the process for the clusters, we need to manually terminate it.
+                            // See: https://github.com/eclipse-theia/theia/issues/835
+                            process.kill(backendProcess.pid);
+                        } catch (error) {
+                            // See https://man7.org/linux/man-pages/man2/kill.2.html#ERRORS
+                            if (error.code === 'ESRCH') {
+                                return;
+                            }
+                            throw error;
+                        }
+                    }
                 });
             });
         }
