@@ -66,6 +66,7 @@ import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/co
 import { Mutable } from '@theia/core/lib/common/types';
 import { readFileIntoStream } from '../common/io';
 import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
+import { FileSystemUtils } from '../common/filesystem-utils';
 
 export interface FileOperationParticipant {
 
@@ -1116,6 +1117,13 @@ export class FileService {
         // validation
         const { exists, isSameResourceWithDifferentPathCase } = await this.doValidateMoveCopy(sourceProvider, source, targetProvider, target, mode, overwrite);
 
+        // if target exists get valid target
+        if (exists && !overwrite) {
+            const parent = await this.resolve(target.parent);
+            const name = target.path.name + '_copy';
+            target = FileSystemUtils.generateUniqueResourceURI(target.parent, parent, name, target.path.ext);
+        }
+
         // delete as needed (unless target is same resource with different path case)
         if (exists && !isSameResourceWithDifferentPathCase && overwrite) {
             await this.delete(target, { recursive: true });
@@ -1230,11 +1238,6 @@ export class FileService {
         // Extra checks if target exists and this is not a rename
         const exists = await this.exists(target);
         if (exists && !isSameResourceWithDifferentPathCase) {
-
-            // Bail out if target exists and we are not about to overwrite
-            if (!overwrite) {
-                throw new FileOperationError(`Unable to move/copy '${this.resourceForError(source)}' because target '${this.resourceForError(target)}' already exists at destination.`, FileOperationResult.FILE_MOVE_CONFLICT);
-            }
 
             // Special case: if the target is a parent of the source, we cannot delete
             // it as it would delete the source as well. In this case we have to throw
