@@ -17,6 +17,7 @@ jobs:
     name: ${{ matrix.os }}, Node.js v${{ matrix.node }}, Python ${{ matrix.python }}
 
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-2019, ubuntu-18.04, macos-10.15]
         node: ['12.x']
