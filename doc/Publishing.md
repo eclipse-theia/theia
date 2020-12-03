@@ -30,7 +30,11 @@ One easy way is to use the theia-apps repo CI:
 
 - Make sure that there is no pending build on Theia master, otherwise a new "next" version might be published while we validate the current "next".
 
-- Go in the theia-apps repo [here](https://github.com/theia-ide/theia-apps/commits/master) and identify the latest commit. There should be an icon next to it; either a red X or a green checkmark. Click on it to go the Travis page. There re-trigger the build. We need to make sure that at least the various "next" builds pass CI.If it doesn't, it needs to be fixed before continuing.
+- Go to the `theia-apps` [`actions`](https://github.com/theia-ide/theia-apps/actions?query=workflow%3Aci-cd) and manually trigger a workflow run:
+  - select `run workflow` dropdown
+  - select the `master` branch (should be the default)
+  - click `run workflow`
+- We need to make sure that at least the various "next" builds pass CI.If it doesn't, it needs to be fixed before continuing.
 
 - In case the theia-app images fail CI for reasons not related to the `next` Theia platform extensions (e.g. none of the images currently pass CI including `latest`), a fallback alternative is to build and briefly test one Theia app locally using the `next` version of a good subset of the platform extensions.
 
