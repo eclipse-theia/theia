@@ -26,8 +26,6 @@ import { environment } from '@theia/application-package/lib/environment';
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { MaybePromise } from '@theia/core/lib/common';
 
-const pluginPath = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + './theia/plugins/';
-
 @injectable()
 export class PluginApiContribution implements BackendApplicationContribution, WsRequestValidatorContribution {
 
@@ -41,10 +39,6 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
     }
 
     configure(app: express.Application): void {
-        app.get('/plugin/:path(*)', (req, res) => {
-            const filePath: string = req.params.path;
-            res.sendFile(pluginPath + filePath);
-        });
         const webviewApp = express();
         webviewApp.use('/webview', express.static(path.join(__dirname, '../../../src/main/browser/webview/pre')));
         app.use(vhost(this.webviewExternalEndpointRegExp, webviewApp));
