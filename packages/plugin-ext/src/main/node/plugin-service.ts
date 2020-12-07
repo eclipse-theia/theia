@@ -17,8 +17,6 @@
 import * as http from 'http';
 import * as path from 'path';
 import * as url from 'url';
-import connect = require('connect');
-import serveStatic = require('serve-static');
 const vhost = require('vhost');
 import * as express from 'express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
@@ -47,9 +45,8 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
             const filePath: string = req.params.path;
             res.sendFile(pluginPath + filePath);
         });
-
-        const webviewApp = connect();
-        webviewApp.use('/webview', serveStatic(path.join(__dirname, '../../../src/main/browser/webview/pre')));
+        const webviewApp = express();
+        webviewApp.use('/webview', express.static(path.join(__dirname, '../../../src/main/browser/webview/pre')));
         app.use(vhost(this.webviewExternalEndpointRegExp, webviewApp));
     }
 
