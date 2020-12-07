@@ -195,7 +195,7 @@ export class WebviewImpl implements theia.Webview {
         this.checkIsDisposed();
         if (this._html !== value) {
             this._html = value;
-            this.proxy.$setHtml(this.viewId, value);
+            this.proxy.$setHtml(this.viewId, this._html);
         }
     }
 
