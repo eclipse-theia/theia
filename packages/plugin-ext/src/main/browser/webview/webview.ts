@@ -487,7 +487,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
 
     protected normalizeRequestUri(requestPath: string): URI {
         const normalizedPath = decodeURIComponent(requestPath);
-        const requestUri = new URI(normalizedPath.replace(/^\/(\w+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
+        const requestUri = new URI(normalizedPath.replace(/^\/([a-zA-Z0-9.\-+]+)\/(.+)$/, (_, scheme, path) => scheme + ':/' + path));
         if (requestUri.scheme !== 'theia-resource' && requestUri.scheme !== 'vscode-resource') {
             return requestUri;
         }
