@@ -17,6 +17,7 @@
   - `{{uuid}}.mini-browser.{{hostname}}` by default.
   - Can be configured via `THEIA_MINI_BROWSER_HOST_PATTERN` environment variable.
   - Clients must setup this new hostname in their DNS resolvers.
+- [task] remove bash login shell when run from task to align with vscode.
 
 ## v1.8.0 - 26/11/2020
 
