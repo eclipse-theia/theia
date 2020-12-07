@@ -177,7 +177,7 @@ export class ProcessTaskRunner implements TaskRunner {
 
             if (/bash(.exe)?$/.test(command)) {
                 quotingFunctions = BashQuotingFunctions;
-                execArgs = ['-l', '-c'];
+                execArgs = ['-c'];
 
             } else if (/wsl(.exe)?$/.test(command)) {
                 quotingFunctions = BashQuotingFunctions;
