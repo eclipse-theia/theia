@@ -13,7 +13,7 @@
     "ext:build": "concurrently -n compile,lint -c blue,green \"theiaext compile\" \"theiaext lint\"",
     "ext:compile": "tsc -b compile.tsconfig.json",
     "ext:compile:clean": "rimraf lib *.tsbuildinfo",
-    "ext:lint": "eslint --cache=true --no-error-on-unmatched-pattern=true \"{src,test}/**/*.{ts,tsx}\"",
+    "ext:lint": "if-env SKIP_LINT=true && echo 'skip lint check' || eslint --cache=true --no-error-on-unmatched-pattern=true \"{src,test}/**/*.{ts,tsx}\"",
     "ext:lint:clean": "rimraf .eslintcache",
     "ext:watch": "tsc -p compile.tsconfig.json -w",
     "ext:watch:slow": "tsc -b compile.tsconfig.json -w",

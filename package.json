@@ -30,6 +30,7 @@
     "eslint-plugin-no-null": "^1.0.2",
     "eslint-plugin-no-unsanitized": "^3.1.4",
     "eslint-plugin-react": "^7.21.5",
+    "if-env": "^1.0.4",
     "ignore-styles": "^5.0.1",
     "jsdom": "^11.5.1",
     "lerna": "^2.2.0",
