@@ -153,6 +153,16 @@ You can download dependencies and build it using:
 This command downloads dev dependencies, links and builds all packages.
 To learn more and understand precisely what's going on, please look at scripts in [package.json](../package.json).
 
+### Skip lint
+
+Linter can be skipped by setting the `SKIP_LINT` environment variable to `true`.
+
+example:
+```
+cd $THEIA
+SKIP_LINT=true yarn
+```
+
 ## Build extension packages individually
 
 From the root:
