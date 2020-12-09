@@ -17,6 +17,7 @@
 import { interfaces } from 'inversify';
 import { PluginApiContribution } from './plugin-service';
 import { BackendApplicationContribution, CliContribution } from '@theia/core/lib/node';
+import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import { PluginsKeyValueStorage } from './plugins-key-value-storage';
 import { PluginDeployerContribution } from './plugin-deployer-contribution';
 import {
@@ -24,7 +25,8 @@ import {
     PluginDeployerDirectoryHandler, PluginServer, pluginServerJsonRpcPath, PluginDeployerParticipant
 } from '../../common/plugin-protocol';
 import { PluginDeployerImpl } from './plugin-deployer-impl';
-import { LocalDirectoryPluginDeployerResolver } from './resolvers/plugin-local-dir-resolver';
+import { LocalFilePluginDeployerResolver } from './resolvers/local-file-plugin-deployer-resolver';
+import { LocalDirectoryPluginDeployerResolver } from './resolvers/local-directory-plugin-deployer-resolver';
 import { PluginTheiaFileHandler } from './handlers/plugin-theia-file-handler';
 import { PluginTheiaDirectoryHandler } from './handlers/plugin-theia-directory-handler';
 import { GithubPluginDeployerResolver } from './plugin-github-resolver';
@@ -40,6 +42,7 @@ import { PluginTheiaDeployerParticipant } from './plugin-theia-deployer-particip
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(PluginApiContribution);
+    bind(WsRequestValidatorContribution).toService(PluginApiContribution);
 
     bindContributionProvider(bind, PluginDeployerParticipant);
     bind(PluginDeployer).to(PluginDeployerImpl).inSingletonScope();
@@ -47,6 +50,7 @@ export function bindMainBackend(bind: interfaces.Bind): void {
     bind(BackendApplicationContribution).toService(PluginDeployerContribution);
 
     bind(PluginDeployerResolver).to(LocalDirectoryPluginDeployerResolver).inSingletonScope();
+    bind(PluginDeployerResolver).to(LocalFilePluginDeployerResolver).inSingletonScope();
     bind(PluginDeployerResolver).to(GithubPluginDeployerResolver).inSingletonScope();
     bind(PluginDeployerResolver).to(HttpPluginDeployerResolver).inSingletonScope();
 

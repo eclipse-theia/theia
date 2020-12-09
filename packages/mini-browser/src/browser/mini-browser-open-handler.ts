@@ -91,10 +91,12 @@ export class MiniBrowserOpenHandler extends NavigatableWidgetOpenHandler<MiniBro
     protected readonly locationMapperService: LocationMapperService;
 
     onStart(): void {
-        (async () => (await this.miniBrowserService.supportedFileExtensions()).forEach(entry => {
-            const { extension, priority } = entry;
-            this.supportedExtensions.set(extension, priority);
-        }))();
+        this.miniBrowserService.supportedFileExtensions().then(entries => {
+            entries.forEach(entry => {
+                const { extension, priority } = entry;
+                this.supportedExtensions.set(extension, priority);
+            });
+        });
     }
 
     canHandle(uri: URI): number {

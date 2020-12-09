@@ -44,6 +44,12 @@ export interface DownloadPluginsOptions {
      * Defaults to `false`.
      */
     packed?: boolean;
+
+    /**
+     * Determines if failures while downloading plugins should be ignored.
+     * Defaults to `false`.
+     */
+    ignoreErrors?: boolean;
 }
 
 export default async function downloadPlugins(options: DownloadPluginsOptions = {}): Promise<void> {
@@ -53,6 +59,7 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
 
     const {
         packed = false,
+        ignoreErrors = false,
     } = options;
 
     console.warn('--- downloading plugins ---');
@@ -76,7 +83,10 @@ export default async function downloadPlugins(options: DownloadPluginsOptions = 
     } finally {
         temp.cleanupSync();
     }
-    failures.forEach(console.error);
+    failures.forEach(e => { console.error(e); });
+    if (!ignoreErrors && failures.length > 0) {
+        throw new Error('Errors downloading some plugins. To make these errors non fatal, re-run with --ignore-errors');
+    }
 }
 
 /**
@@ -98,7 +108,7 @@ async function downloadPluginAsync(failures: string[], plugin: string, pluginUrl
     } else if (pluginUrl.endsWith('vsix')) {
         fileExt = '.vsix';
     } else {
-        console.error(red(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`));
+        failures.push(red(`error: '${plugin}' has an unsupported file type: '${pluginUrl}'`));
         return;
     }
     const targetPath = path.join(process.cwd(), pluginsDir, `${plugin}${packed === true ? fileExt : ''}`);

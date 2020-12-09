@@ -359,26 +359,33 @@ export class TreeImpl implements Tree {
     async markAsBusy(raw: TreeNode, ms: number, token: CancellationToken): Promise<void> {
         const node = this.validateNode(raw);
         if (node) {
-            await this.markAsBusy(node, ms, token);
+            await this.doMarkAsBusy(node, ms, token);
         }
     }
     protected async doMarkAsBusy(node: Mutable<TreeNode>, ms: number, token: CancellationToken): Promise<void> {
         try {
             await timeout(ms, token);
-            this.doSetBusy(node, true);
-            token.onCancellationRequested(() => this.doSetBusy(node, false));
+            this.doSetBusy(node);
+            token.onCancellationRequested(() => this.doResetBusy(node));
         } catch {
             /* no-op */
         }
     }
-    protected doSetBusy(node: Mutable<TreeNode>, busy: boolean): void {
+    protected doSetBusy(node: Mutable<TreeNode>): void {
         const oldBusy = node.busy || 0;
-        const newBusy = oldBusy + (busy ? 1 : oldBusy ? -1 : 0);
-        if (!!oldBusy === !!newBusy) {
-            return;
+        node.busy = oldBusy + 1;
+        if (oldBusy === 0) {
+            this.onDidChangeBusyEmitter.fire(node);
         }
-        node.busy = newBusy;
-        this.onDidChangeBusyEmitter.fire(node);
+    }
+    protected doResetBusy(node: Mutable<TreeNode>): void {
+        const oldBusy = node.busy || 0;
+        if (oldBusy > 0) {
+            node.busy = oldBusy - 1;
+            if (node.busy === 0) {
+                this.onDidChangeBusyEmitter.fire(node);
+            }
+        }
     }
 
 }

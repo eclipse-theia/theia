@@ -109,7 +109,7 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
 
     // Start a search of the string "what" in the workspace.
     async search(what: string, callbacks: SearchInWorkspaceCallbacks, opts?: SearchInWorkspaceOptions): Promise<number> {
-        if (!this.workspaceService.open) {
+        if (!this.workspaceService.opened) {
             throw new Error('Search failed: no workspace root.');
         }
 

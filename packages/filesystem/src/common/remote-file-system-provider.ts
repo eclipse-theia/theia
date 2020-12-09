@@ -229,7 +229,7 @@ export class RemoteFileSystemProvider implements Required<FileSystemProvider>, D
 
     readFileStream(resource: URI, opts: FileReadStreamOptions, token: CancellationToken): ReadableStreamEvents<Uint8Array> {
         const capturedError = new Error();
-        // eslint-disable-next-line no-shadow
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         const stream = newWriteableStream<Uint8Array>(data => BinaryBuffer.concat(data.map(data => BinaryBuffer.wrap(data))).buffer);
         this.server.readFileStream(resource.toString(), opts, token).then(streamHandle => {
             if (token.isCancellationRequested) {

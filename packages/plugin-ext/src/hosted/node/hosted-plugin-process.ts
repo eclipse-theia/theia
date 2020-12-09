@@ -95,7 +95,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         }
 
         this.terminatingPluginServer = true;
-        // eslint-disable-next-line no-shadow
+        // eslint-disable-next-line @typescript-eslint/no-shadow
         const cp = this.childProcess;
         this.childProcess = undefined;
 
@@ -122,7 +122,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
         this.killProcessTree(cp.pid);
     }
 
-    private killProcessTree(parentPid: number): void {
+    killProcessTree(parentPid: number): void {
         psTree(parentPid, (_, childProcesses) => {
             childProcesses.forEach(childProcess =>
                 this.killProcess(parseInt(childProcess.PID))

@@ -1213,6 +1213,9 @@ export interface TaskDto {
     label: string;
     source?: string;
     scope: string | number;
+    // Provide a more specific type when necessary (see ProblemMatcherContribution)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    problemMatcher?: any;
     detail?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;

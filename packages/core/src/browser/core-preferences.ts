@@ -36,6 +36,12 @@ export const corePreferenceSchema: PreferenceSchema = {
             'description': 'Controls whether a top border is drawn on modified (dirty) editor tabs or not.',
             'default': false
         },
+        'workbench.editor.closeOnFileDelete': {
+            'type': 'boolean',
+            // eslint-disable-next-line max-len
+            'description': 'Controls whether editors showing a file that was opened during the session should close automatically when getting deleted or renamed by some other process. Disabling this will keep the editor open  on such an event. Note that deleting from within the application will always close the editor and that dirty files will never close to preserve your data.',
+            'default': true
+        },
         'application.confirmExit': {
             type: 'string',
             enum: [
@@ -100,6 +106,7 @@ export interface CoreConfiguration {
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;
+    'workbench.editor.closeOnFileDelete': boolean;
     'workbench.colorTheme': string;
     'workbench.iconTheme': string | null;
     'workbench.silentNotifications': boolean;

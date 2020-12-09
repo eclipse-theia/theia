@@ -22,13 +22,14 @@ import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/c
 import {
     FrontendApplicationContribution, ApplicationShell,
     NavigatableWidget, NavigatableWidgetOptions,
-    Saveable, WidgetManager, StatefulWidget, FrontendApplication, ExpandableTreeNode, waitForClosed
+    Saveable, WidgetManager, StatefulWidget, FrontendApplication, ExpandableTreeNode, waitForClosed,
+    CorePreferences
 } from '@theia/core/lib/browser';
 import { MimeService } from '@theia/core/lib/browser/mime-service';
 import { TreeWidgetSelection } from '@theia/core/lib/browser/tree/tree-widget-selection';
 import { FileSystemPreferences } from './filesystem-preferences';
 import { FileSelection } from './file-selection';
-import { FileUploadService } from './file-upload-service';
+import { FileUploadService, FileUploadResult } from './file-upload-service';
 import { FileService, UserFileOperationEvent } from './file-service';
 import { FileChangesEvent, FileChangeType, FileOperation } from '../common/files';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -62,6 +63,9 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
 
     @inject(FileSystemPreferences)
     protected readonly preferences: FileSystemPreferences;
+
+    @inject(CorePreferences)
+    protected readonly corePreferences: CorePreferences;
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
@@ -124,13 +128,14 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         return !environment.electron.is() && fileStat.isDirectory;
     }
 
-    protected async upload(selection: FileSelection): Promise<void> {
+    protected async upload(selection: FileSelection): Promise<FileUploadResult | undefined> {
         try {
             const source = TreeWidgetSelection.getSource(this.selectionService.selection);
-            await this.uploadService.upload(selection.fileStat.resource);
+            const fileUploadResult = await this.uploadService.upload(selection.fileStat.resource);
             if (ExpandableTreeNode.is(selection) && source) {
                 await source.model.expandNode(selection);
             }
+            return fileUploadResult;
         } catch (e) {
             if (!isCancelled(e)) {
                 console.error(e);
@@ -258,7 +263,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         return targetUri && widget.createMoveToUri(targetUri);
     }
 
-    protected readonly deletedSuffix = ' (deleted from disk)';
+    protected readonly deletedSuffix = ' (deleted)';
     protected async updateWidgets(event: FileChangesEvent): Promise<void> {
         if (!event.gotDeleted() && !event.gotAdded()) {
             return;
@@ -272,7 +277,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
             this.updateWidget(uri, widget, event, { dirty, toClose });
         }
         for (const [uriString, widgets] of toClose.entries()) {
-            if (!dirty.has(uriString)) {
+            if (!dirty.has(uriString) && this.corePreferences['workbench.editor.closeOnFileDelete']) {
                 for (const widget of widgets) {
                     widget.close();
                     pending.push(waitForClosed(widget));
@@ -291,10 +296,10 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         if (event.contains(uri, FileChangeType.DELETED)) {
             const uriString = uri.toString();
             if (Saveable.isDirty(widget)) {
-                if (!deleted) {
-                    widget.title.label += this.deletedSuffix;
-                }
                 dirty.add(uriString);
+            }
+            if (!deleted) {
+                widget.title.label += this.deletedSuffix;
             }
             const widgets = toClose.get(uriString) || [];
             widgets.push(widget);

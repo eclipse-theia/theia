@@ -271,9 +271,8 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
     async signOut(accountName: string): Promise<void> {
         const accountUsages = await readAccountUsages(this.storageService, this.id, accountName);
         const sessionsForAccount = this.accounts.get(accountName);
-
-        const result = await this.messageService.info(`The account ${accountName} has been used by: 
-        ${accountUsages.map(usage => usage.extensionName).join(', ')}. Sign out of these features?`, 'Yes');
+        const result = await this.messageService.info(accountUsages.length ? `The account ${accountName} has been used by: 
+        ${accountUsages.map(usage => usage.extensionName).join(', ')}. Sign out of these features?` : `Sign out of ${accountName}?`, 'Yes');
 
         if (result && result === 'Yes' && sessionsForAccount) {
             sessionsForAccount.forEach(sessionId => this.logout(sessionId));

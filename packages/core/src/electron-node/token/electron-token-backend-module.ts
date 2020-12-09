@@ -15,17 +15,14 @@
  ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
-import { BackendApplicationContribution, MessagingService } from '../../node';
-import { MessagingContribution } from '../../node/messaging/messaging-contribution';
+import { BackendApplicationContribution } from '../../node';
+import { WsRequestValidatorContribution } from '../../node/ws-request-validators';
 import { ElectronTokenBackendContribution } from './electron-token-backend-contribution';
-import { ElectronMessagingContribution } from './electron-token-messaging-contribution';
 import { ElectronTokenValidator } from './electron-token-validator';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind<ElectronTokenValidator>(ElectronTokenValidator).toSelf().inSingletonScope();
-
-    bind<ElectronTokenBackendContribution>(ElectronTokenBackendContribution).toSelf().inSingletonScope();
-    bind<BackendApplicationContribution>(BackendApplicationContribution).toService(ElectronTokenBackendContribution);
-
-    rebind<MessagingContribution>(MessagingService.Identifier).to(ElectronMessagingContribution).inSingletonScope();
+    bind(ElectronTokenBackendContribution).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(ElectronTokenBackendContribution);
+    bind(ElectronTokenValidator).toSelf().inSingletonScope();
+    bind(WsRequestValidatorContribution).toService(ElectronTokenValidator);
 });

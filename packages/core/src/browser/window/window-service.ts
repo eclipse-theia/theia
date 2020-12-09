@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { Event } from '../../common/event';
+
 export interface NewWindowOptions {
     readonly external?: boolean;
 }
@@ -37,5 +39,11 @@ export interface WindowService {
      * event will be canceled if the return value of this method is `false`.
      */
     canUnload(): boolean;
+
+    /**
+     * Fires when the `window` unloads. The unload event is inevitable. On this event, the frontend application can save its state and release resource.
+     * Saving the state and releasing any resources must be a synchronous call. Any asynchronous calls invoked after emitting this event might be ignored.
+     */
+    readonly onUnload: Event<void>;
 
 }

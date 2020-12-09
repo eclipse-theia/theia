@@ -22,6 +22,7 @@ import { ElectronTokenValidator } from './electron-token-validator';
 
 /**
  * Override the browser MessagingContribution class to refuse connections that do not include a specific token.
+ * @deprecated since 1.8.0
  */
 @injectable()
 export class ElectronMessagingContribution extends MessagingContribution {

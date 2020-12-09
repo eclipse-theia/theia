@@ -14,20 +14,23 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { MiniBrowserEndpoint } from '@theia/mini-browser/lib/browser/location-mapper-service';
+import { MiniBrowserEnvironment } from '@theia/mini-browser/lib/browser/environment/mini-browser-environment';
 
 @injectable()
 export class PreviewLinkNormalizer {
 
     protected urlScheme = new RegExp('^[a-z][a-z|0-9|\+|\-|\.]*:', 'i');
 
+    @inject(MiniBrowserEnvironment)
+    protected readonly miniBrowserEnvironment: MiniBrowserEnvironment;
+
     normalizeLink(documentUri: URI, link: string): string {
         try {
             if (!this.urlScheme.test(link)) {
                 const location = documentUri.parent.resolve(link).path.toString();
-                return new MiniBrowserEndpoint().getRestUrl().resolve(location).toString();
+                return this.miniBrowserEnvironment.getEndpoint('normalized-link').getRestUrl().resolve(location).toString();
             }
         } catch {
             // ignore
