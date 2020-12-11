@@ -20,7 +20,7 @@
     "@types/react-virtualized": "^9.18.3",
     "@types/route-parser": "^0.1.1",
     "@types/safer-buffer": "^2.1.0",
-    "@types/ws": "^5.1.2",
+    "@types/ws": "^7.4.0",
     "@types/yargs": "^15",
     "ajv": "^6.5.3",
     "body-parser": "^1.17.2",
