@@ -33,7 +33,7 @@
     "@theia/application-package": "^1.8.0",
     "@types/chai": "^4.2.7",
     "@types/mkdirp": "^0.5.2",
-    "@types/mocha": "^5.2.7",
+    "@types/mocha": "^8.2.0",
     "@types/node-fetch": "^2.5.7",
     "@types/puppeteer": "^2.0.0",
     "@types/requestretry": "^1.12.3",
