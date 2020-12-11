@@ -13797,10 +13797,10 @@ v8-to-istanbul@^1.2.1:
   resolved "https://registry.yarnpkg.com/v8-to-istanbul/-/v8-to-istanbul-1.2.1.tgz#8f63a94b7f91243f5dcc6a495540b5653beb1279"
   integrity sha512-NglPycIwSQeSJj7VJ6L8vTsPKC9MG5Lcx4n3SvYqNHzklbMI4dGcLJnkLPEPJ3uB8UyTdWviMhM0Ptq+xD5UFQ==
 
-valid-filename@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/valid-filename/-/valid-filename-2.0.1.tgz#0768d6f364b1ed3bdf68f0d15abffb0d9d6cecaf"
-  integrity sha1-B2jW82Sx7TvfaPDRWr/7DZ1s7K8=
+valid-filename@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/valid-filename/-/valid-filename-3.1.0.tgz#da8766b7714566c155cc36d985824a5e45db01f3"
+  integrity sha512-O99sdfhdGCiWoN4cv6Unq4eJ2EuXwRsOLCeSw+IJyMYgwVK0BPmaUnzhWQw5E8qknLTVrVExCr6xxTBnRBvtsQ==
   dependencies:
     filename-reserved-regex "^2.0.0"
 
