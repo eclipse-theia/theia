@@ -41,7 +41,7 @@
     "copy-webpack-plugin": "^4.5.0",
     "css-loader": "^0.28.1",
     "electron-rebuild": "^1.8.6",
-    "file-loader": "^1.1.11",
+    "file-loader": "^6.2.0",
     "font-awesome-webpack": "0.0.5-beta.2",
     "fs-extra": "^4.0.2",
     "ignore-loader": "^0.1.2",
