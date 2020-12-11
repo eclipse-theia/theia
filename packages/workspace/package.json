@@ -9,7 +9,7 @@
     "ajv": "^6.5.3",
     "jsonc-parser": "^2.2.0",
     "moment": "2.24.0",
-    "valid-filename": "^2.0.1"
+    "valid-filename": "^3.1.0"
   },
   "publishConfig": {
     "access": "public"
