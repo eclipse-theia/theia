@@ -6312,12 +6312,12 @@ find-git-exec@^0.0.3:
     "@types/which" "^1.3.2"
     which "^2.0.1"
 
-find-git-repositories@^0.1.1:
-  version "0.1.3"
-  resolved "https://registry.yarnpkg.com/find-git-repositories/-/find-git-repositories-0.1.3.tgz#4e83e085b20cb3e393c1e091adc3a3eec50b6dda"
-  integrity sha512-6q8ZIQ7loe0eWbz1O79J0gQ2wVpQ1ajsjV64HC2iJ7gOOqlEuDlG/T0xYr5gDYBFSHlS8dah1KGbndiWWdJ0PA==
+find-git-repositories@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/find-git-repositories/-/find-git-repositories-0.2.0.tgz#ea17451fb3b694398d23204212d97b0280e29f66"
+  integrity sha512-T09rHjIlr5NIds/DKoR5G/18J3GwaDuCj9IG+ZWfeDwhfhdyen0iksgSv2qEwpn6QqFwPNiWbRA3m02EEjUkNw==
   dependencies:
-    nan "^2.14.0"
+    node-addon-api "*"
 
 find-up@3.0.0, find-up@^3.0.0:
   version "3.0.0"
@@ -9580,6 +9580,11 @@ node-abi@^2.11.0, node-abi@^2.18.0, node-abi@^2.7.0:
   integrity sha512-9xZrlyfvKhWme2EXFKQhZRp1yNWT/uI1luYPr3sFl+H4keYY4xR+1jO7mvTTijIsHf1M+QDe9uWuKeEpLInIlg==
   dependencies:
     semver "^5.4.1"
+
+node-addon-api@*:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.0.2.tgz#04bc7b83fd845ba785bb6eae25bc857e1ef75681"
+  integrity sha512-+D4s2HCnxPd5PjjI0STKwncjXTUKKqm74MDMz9OPXavjsGmjkvwgLtA5yoxJUdmpj52+2u+RrXgPipahKczMKg==
 
 node-dir@0.1.8:
   version "0.1.8"
