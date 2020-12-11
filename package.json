@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "@types/chai-string": "^1.4.0",
-    "@types/jsdom": "^11.0.4",
+    "@types/jsdom": "^16.2.5",
     "@types/node": "12",
     "@types/sinon": "^2.3.5",
     "@types/temp": "^0.8.29",
