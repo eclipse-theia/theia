@@ -22,6 +22,7 @@
  * will be replace by a random uuid value.
  */
 export namespace MiniBrowserEndpoint {
+    export const PATH = '/mini-browser';
     export const HOST_PATTERN_ENV = 'THEIA_MINI_BROWSER_HOST_PATTERN';
     export const HOST_PATTERN_DEFAULT = '{{uuid}}.mini-browser.{{hostname}}';
 }

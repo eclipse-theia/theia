@@ -115,7 +115,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     protected async attachRequestHandler(app: Application): Promise<void> {
         const miniBrowserApp = express();
         miniBrowserApp.get('*', async (request, response) => this.response(await this.getUri(request), response));
-        app.use(vhost(await this.getVirtualHostRegExp(), miniBrowserApp));
+        app.use(MiniBrowserEndpointNS.PATH, vhost(await this.getVirtualHostRegExp(), miniBrowserApp));
     }
 
     protected async response(uri: string, response: Response): Promise<Response> {

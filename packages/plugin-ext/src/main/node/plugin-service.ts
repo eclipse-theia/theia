@@ -31,6 +31,8 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
 
     protected webviewExternalEndpointRegExp: RegExp;
 
+    protected serveSameOrigin: boolean = false;
+
     @postConstruct()
     protected postConstruct(): void {
         const webviewExternalEndpoint = this.webviewExternalEndpoint();
@@ -45,7 +47,7 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
     }
 
     allowWsUpgrade(request: http.IncomingMessage): MaybePromise<boolean> {
-        if (request.headers.origin) {
+        if (request.headers.origin && !this.serveSameOrigin) {
             const origin = url.parse(request.headers.origin);
             if (origin.host && this.webviewExternalEndpointRegExp.test(origin.host)) {
                 // If the origin comes from the WebViews, refuse:
@@ -55,17 +57,25 @@ export class PluginApiContribution implements BackendApplicationContribution, Ws
         return true;
     }
 
-    /**
-     * Returns a RegExp pattern matching the expected WebView endpoint's host.
-     */
-    protected webviewExternalEndpoint(): string {
+    protected webviewExternalEndpointPattern(): string {
         let endpointPattern;
         if (environment.electron.is()) {
             endpointPattern = WebviewExternalEndpoint.defaultPattern;
         } else {
             endpointPattern = process.env[WebviewExternalEndpoint.pattern] || WebviewExternalEndpoint.defaultPattern;
         }
-        return `^${endpointPattern
+        if (endpointPattern === '{{hostname}}') {
+            this.serveSameOrigin = true;
+        }
+        return endpointPattern;
+    }
+
+    /**
+     * Returns a RegExp pattern matching the expected WebView endpoint's host.
+     */
+    protected webviewExternalEndpoint(): string {
+        return `^${this.webviewExternalEndpointPattern()
+            .replace(/\./g, '\\.')
             .replace('{{uuid}}', '.+')
             .replace('{{hostname}}', '.+')}$`;
     }
