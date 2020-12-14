@@ -19,6 +19,8 @@
   - Clients must setup this new hostname in their DNS resolvers.
 - [task] remove bash login shell when run from task to align with vscode.
 - [plugin-ext] TreeViewsMain.$reveal second parameter changed from string element id to string array element parent chain
+- [core] `FrontendApplicationContribution.onWillStop` is now called for every contribution and will not bail early.
+  It will also be called when `application.confirmExit` is set to `never`.
 
 ## v1.8.0 - 26/11/2020
 
