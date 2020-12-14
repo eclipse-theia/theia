@@ -50,17 +50,13 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
 
     canUnload(): boolean {
         const confirmExit = this.corePreferences['application.confirmExit'];
-        if (confirmExit === 'never') {
-            return true;
-        }
+        let preventUnload = confirmExit === 'always';
         for (const contribution of this.contributions.getContributions()) {
-            if (contribution.onWillStop) {
-                if (!!contribution.onWillStop(this.frontendApplication)) {
-                    return false;
-                }
+            if (contribution.onWillStop?.(this.frontendApplication)) {
+                preventUnload = true;
             }
         }
-        return confirmExit !== 'always';
+        return confirmExit === 'never' || !preventUnload;
     }
 
     /**
