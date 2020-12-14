@@ -23,6 +23,16 @@ import { ElectronMainWindowService } from '../../electron-common/electron-main-w
 @injectable()
 export class ElectronWindowService extends DefaultWindowService {
 
+    /**
+     * Lock to prevent multiple parallel executions of the `beforeunload` listener.
+     */
+    protected isUnloading: boolean = false;
+
+    /**
+     * Close the window right away when `true`, else check if we can unload.
+     */
+    protected closeOnUnload: boolean = false;
+
     @inject(ElectronMainWindowService)
     protected readonly delegate: ElectronMainWindowService;
 
@@ -33,13 +43,27 @@ export class ElectronWindowService extends DefaultWindowService {
 
     registerUnloadListeners(): void {
         window.addEventListener('beforeunload', event => {
-            // Either we can unload, or the user confirms that he wants to quit
-            if (this.canUnload() || this.shouldUnload()) {
-                // We are unloading
+            if (this.isUnloading) {
+                // Unloading process ongoing, do nothing:
+                return this.preventUnload(event);
+            } else if (this.closeOnUnload || this.canUnload()) {
+                // Let the window close and notify clients:
                 delete event.returnValue;
                 this.onUnloadEmitter.fire();
+                return;
             } else {
-                // The user wants to stay, let's prevent unloading
+                this.isUnloading = true;
+                // Fix https://github.com/eclipse-theia/theia/issues/8186#issuecomment-742624480
+                // On Electron/Linux doing `showMessageBoxSync` does not seems to block the closing
+                // process long enough and closes the window no matter what you click on (yes/no).
+                // Instead we'll prevent closing right away, ask for confirmation and finally close.
+                setTimeout(() => {
+                    if (this.shouldUnload()) {
+                        this.closeOnUnload = true;
+                        window.close();
+                    }
+                    this.isUnloading = false;
+                });
                 return this.preventUnload(event);
             }
         });
@@ -47,6 +71,7 @@ export class ElectronWindowService extends DefaultWindowService {
 
     /**
      * When preventing `beforeunload` on Electron, no popup is shown.
+     *
      * This method implements a modal to ask the user if he wants to quit the page.
      */
     protected shouldUnload(): boolean {

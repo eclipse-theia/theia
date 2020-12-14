@@ -80,7 +80,12 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
     }
 
     /**
-     * Ask the user to confirm if they want to unload the window. Prevent it if they do not.
+     * Notify the browser that we do not want to unload.
+     *
+     * Notes:
+     *  - Shows a confirmation popup in browsers.
+     *  - Prevents the window from closing without confirmation in electron.
+     *
      * @param event The beforeunload event
      */
     protected preventUnload(event: BeforeUnloadEvent): string | void {
