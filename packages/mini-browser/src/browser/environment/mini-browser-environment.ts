@@ -44,6 +44,7 @@ export class MiniBrowserEnvironment implements FrontendApplicationContribution {
 
     getEndpoint(uuid: string, hostname?: string): Endpoint {
         return new Endpoint({
+            path: MiniBrowserEndpoint.PATH,
             host: this._hostPattern
                 .replace('{{uuid}}', uuid)
                 .replace('{{hostname}}', hostname || this.getDefaultHostname()),

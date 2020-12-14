@@ -28,18 +28,23 @@ export class MiniBrowserWsRequestValidator implements WsRequestValidatorContribu
 
     protected miniBrowserHostRe: RegExp;
 
+    protected serveSameOrigin: boolean = false;
+
     @postConstruct()
     protected postConstruct(): void {
         const pattern = process.env[MiniBrowserEndpoint.HOST_PATTERN_ENV] || MiniBrowserEndpoint.HOST_PATTERN_DEFAULT;
+        if (pattern === '{{hostname}}') {
+            this.serveSameOrigin = true;
+        }
         const vhostRe = pattern
-            .replace('.', '\\.')
+            .replace(/\./g, '\\.')
             .replace('{{uuid}}', '.+')
             .replace('{{hostname}}', '.+');
         this.miniBrowserHostRe = new RegExp(vhostRe, 'i');
     }
 
     async allowWsUpgrade(request: http.IncomingMessage): Promise<boolean> {
-        if (request.headers.origin) {
+        if (request.headers.origin && !this.serveSameOrigin) {
             const origin = url.parse(request.headers.origin);
             if (origin.host && this.miniBrowserHostRe.test(origin.host)) {
                 // If the origin comes from the WebViews, refuse:
