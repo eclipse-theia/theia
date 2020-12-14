@@ -963,7 +963,7 @@ export class TaskService implements TaskConfigurationClient {
         let resolver = undefined;
         let resolvedTask: TaskConfiguration;
         try {
-            resolver = await this.taskResolverRegistry.getResolver(task.type);
+            resolver = await this.taskResolverRegistry.getResolver(task.taskType || task.type);
             resolvedTask = resolver ? await resolver.resolveTask(task) : task;
         } catch (error) {
             const errMessage = `Error resolving task '${task.label}': ${error}`;
@@ -1022,11 +1022,11 @@ export class TaskService implements TaskConfigurationClient {
 
         const registeredProblemMatchers = this.problemMatcherRegistry.getAll();
         items.push(...registeredProblemMatchers.map(matcher =>
-            ({
-                label: matcher.label,
-                value: { problemMatchers: [matcher] },
-                description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
-            })
+        ({
+            label: matcher.label,
+            value: { problemMatchers: [matcher] },
+            description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
+        })
         ));
         return items;
     }

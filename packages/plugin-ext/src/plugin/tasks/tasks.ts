@@ -78,7 +78,7 @@ export class TasksExtImpl implements TasksExt {
         this.executions.delete(id);
 
         this.onDidTerminateTask.fire({
-            execution: taskExecution
+            execution: this.resetDefinition(taskExecution)
         });
     }
 
@@ -197,5 +197,10 @@ export class TasksExtImpl implements TasksExt {
         };
         this.executions.set(executionId, result);
         return result;
+    }
+
+    private resetDefinition(taskExecution: theia.TaskExecution): theia.TaskExecution {
+        taskExecution.task.definition = Object.assign(taskExecution.task.definition, { type: taskExecution.task.definition.taskType, taskType: undefined });
+        return taskExecution;
     }
 }
