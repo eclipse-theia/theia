@@ -180,7 +180,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     protected missingResourceHandler(): (uri: string, response: Response) => MaybePromise<Response> {
         return async (uri: string, response: Response) => {
             this.logger.error(`Cannot handle missing resource. URI: ${uri}.`);
-            return response.send();
+            return response.sendStatus(404);
         };
     }
 
