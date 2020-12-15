@@ -1,26 +1,48 @@
 # Change Log
 
-## v1.9.0
+## v1.9.0 - 16/12/2020
 
-- [plugin-ext-vscode] added support for the command `workbench.extensions.installExtension`. [#8745](https://github.com/eclipse-theia/theia/pull/8745)
-- [core] added `THEIA_HOSTS` environment variable (browser applications only).
+- [cli] updated error reporting for the `download-plugins` script [#8798](https://github.com/eclipse-theia/theia/pull/8798)
+- [cli] updated the `download-plugins` script to report errors in case of unsupported file types [#8797](https://github.com/eclipse-theia/theia/pull/8797)
+- [core] added support for the `workbench.editor.closeOnFileDelete` preference [#8731](https://github.com/eclipse-theia/theia/pull/8731)
+- [core] fixed issue when attempting to kill the electron backend [#8809](https://github.com/eclipse-theia/theia/pull/8809)
+- [core] updated tree expansion busy indicators [#8582](https://github.com/eclipse-theia/theia/pull/8582)
+- [filesystem] fixed issue with pasting files/folders with the same name [#8778](https://github.com/eclipse-theia/theia/pull/8778)
+- [filesystem] updated `upload` to return `FileUploadResult` [#8766](https://github.com/eclipse-theia/theia/pull/8766)
+- [mini-browser] fixed issue when serving `{{hostname}}` as a pattern for `THEIA_MINI_BROWSER_HOST_PATTERN` [#8865](https://github.com/eclipse-theia/theia/pull/8865)
+- [mini-browser] fixed missing resource response [#8866](https://github.com/eclipse-theia/theia/pull/8866)
+- [plugin] added support for the command `workbench.extensions.installExtension` [#8745](https://github.com/eclipse-theia/theia/pull/8745)
+- [plugin] corrected identification of uri schemes according to `rfc3986` [#8832](https://github.com/eclipse-theia/theia/pull/8832)
+- [plugin] fixed the `reveal()` method for tree-views [#8783](https://github.com/eclipse-theia/theia/pull/8783)
+- [plugin] removed unnecessary `plugin-ext` dependencies [#8831](https://github.com/eclipse-theia/theia/pull/8831)
+- [plugin] updated `set html` to pass the object field instead of method argument [#8833](https://github.com/eclipse-theia/theia/pull/8833)
+- [siw] added support for the `search.searchOnEditorModification` preference [#8765](https://github.com/eclipse-theia/theia/pull/8765)
+- [siw] added support for the `search.searchOnType` preference [#8773](https://github.com/eclipse-theia/theia/pull/8773)
+
+<a name="breaking_changes_1.9.0">[Breaking Changes:](#breaking_changes_1.9.0)</a>
+
+- [core] `FrontendApplicationContribution.onWillStop` is now called for every contribution and will not bail early [#8863](https://github.com/eclipse-theia/theia/pull/8863)
+  - It will also be called when `application.confirmExit` is set to `never`.
+- [`download:plugins`] errors when downloading plugins now result in build failures, unless the `--ignore-errors` flag is passed [#8788](https://github.com/eclipse-theia/theia/pull/8788)
+- [plugin] `LocalDirectoryPluginDeployerResolver` has moved from `packages/plugin-ext/src/main/node/resolvers/plugin-local-dir-resolver.ts` to `packages/plugin-ext/src/main/node/resolvers/local-file-plugin-deployer-resolver.ts` and now derives from `LocalPluginDeployerResolver` [#8745](https://github.com/eclipse-theia/theia/pull/8745)
+- [plugin] updated the `TreeViewsMain.$reveal` second parameter from string element id to string array element parent chain [#8783](https://github.com/eclipse-theia/theia/pull/8783)
+- [plugin] removed the unused `/plugin/:path(*)` endpoint [#8831](https://github.com/eclipse-theia/theia/pull/8831)
+- [task] remove bash login shell when run from task to align with vscode [#8834](https://github.com/eclipse-theia/theia/pull/8834)
+
+## v1.8.1 - 08/12/2020
+
+- [core] added `THEIA_HOSTS` environment variable (browser applications only) [#8759](https://github.com/eclipse-theia/theia/pull/8759)
   - Used to filter incoming WebSocket connections: if `Origin` header does not match the list of hosts it will be refused.
   - Value is a comma-separated list of domain names including the port if not `80` nor `443`.
   - Example: `app.some.domain.com,app.other.domain:12345`.
 
-<a name="breaking_changes_1.9.0">[Breaking Changes:](#breaking_changes_1.9.0)</a>
+<a name="breaking_changes_1.8.1">[Breaking Changes:](#breaking_changes_1.8.1)</a>
 
-- [plugin-ext] `LocalDirectoryPluginDeployerResolver` has moved from `packages/plugin-ext/src/main/node/resolvers/plugin-local-dir-resolver.ts` to `packages/plugin-ext/src/main/node/resolvers/local-file-plugin-deployer-resolver.ts` and now derives from `LocalPluginDeployerResolver`.
-- [`download:plugins`] errors when downloading plugins now result in build failures, unless `--ignore-errors` flag is passed [#8788](https://github.com/eclipse-theia/theia/pull/8788)
-- [core] Deprecated `ElectronMessagingContribution`, token validation is now done in `ElectronTokenValidator` as a `WsRequestValidatorContribution`.
-- [mini-browser] New unique endpoint.
+- [core] deprecated `ElectronMessagingContribution`, token validation is now done in `ElectronTokenValidator` as a `WsRequestValidatorContribution` [#8759](https://github.com/eclipse-theia/theia/pull/8759)
+- [mini-browser] added new unique endpoint [#8759](https://github.com/eclipse-theia/theia/pull/8759)
   - `{{uuid}}.mini-browser.{{hostname}}` by default.
   - Can be configured via `THEIA_MINI_BROWSER_HOST_PATTERN` environment variable.
   - Clients must setup this new hostname in their DNS resolvers.
-- [task] remove bash login shell when run from task to align with vscode.
-- [plugin-ext] TreeViewsMain.$reveal second parameter changed from string element id to string array element parent chain
-- [core] `FrontendApplicationContribution.onWillStop` is now called for every contribution and will not bail early.
-  It will also be called when `application.confirmExit` is set to `never`.
 
 ## v1.8.0 - 26/11/2020
 
