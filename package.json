@@ -68,7 +68,7 @@
     "rebuild:electron": "theia rebuild:electron",
     "rebuild:electron:debug": "DEBUG=electron-rebuild && yarn rebuild:electron",
     "publish": "yarn && yarn test && yarn publish:latest",
-    "publish:latest": "lerna publish && yarn publish:check",
+    "publish:latest": "lerna publish --exact && yarn publish:check",
     "publish:next": "yarn next:publish && yarn next:publish --skip-npm && yarn publish:check",
     "next:publish": "lerna publish --exact --canary=next --npm-tag=next --yes",
     "publish:check": "node scripts/check-publish.js",

@@ -3,6 +3,7 @@
 ## v1.10.0
 
 - [plugin] added `createDeployQuickOpenItem` method to create `DeployQuickOpenItem` in order to make extension deploy command extensible [#8919] (https://github.com/eclipse-theia/theia/pull/8919)
+- [dependencies] updated to use fixed versions when publishing, `"x.y.z"` instead of `"^x.y.z"` in dependencies [#8880](https://github.com/eclipse-theia/theia/pull/8880)
 
 ## v1.9.0 - 16/12/2020
 
