@@ -187,4 +187,46 @@ describe('uri', () => {
             expect(String(path)).equals('node_modules/typescript/lib');
         });
     });
+
+    describe('#isEqualOrParent()', () => {
+        it('should return `true` for `uris` which are equal', () => {
+            const a = new URI('file:///C:/projects/theia/foo/a.ts');
+            const b = new URI('file:///C:/projects/theia/foo/a.ts');
+            expect(a.isEqualOrParent(b)).equals(true);
+        });
+        it('should return `false` for `uris` which are not equal', () => {
+            const a = new URI('file:///C:/projects/theia/foo/a.ts');
+            const b = new URI('file:///C:/projects/theia/foo/b.ts');
+            expect(a.isEqualOrParent(b)).equals(false);
+        });
+
+        it('should return `false` for `uris` which are not the same scheme', () => {
+            const a = new URI('a:///C:/projects/theia/foo/a.ts');
+            const b = new URI('b:///C:/projects/theia/foo/a.ts');
+            expect(a.isEqualOrParent(b)).equals(false);
+        });
+
+        it('should return `true` for `uris` that are not case-sensitive equal, with case-sensitivity `off`', () => {
+            const a = new URI('file:///C:/projects/theia/foo/a.ts');
+            const b = new URI('file:///C:/projects/theia/foo/A.ts');
+            expect(a.isEqualOrParent(b, false)).equals(true);
+        });
+        it('should return `false` for `uris` that are not case-sensitive equal, with case-sensitivity `on`', () => {
+            const a = new URI('file:///C:/projects/theia/foo/a.ts');
+            const b = new URI('file:///C:/projects/theia/foo/A.ts');
+            expect(a.isEqualOrParent(b, true)).equals(false);
+        });
+
+        it('should return `true` for parent paths', () => {
+            const a = new URI('file:///C:/projects/'); // parent uri.
+            const b = new URI('file:///C:/projects/theia/foo');
+            expect(a.isEqualOrParent(b)).equals(true);
+        });
+        it('should return `false` for non-parent paths', () => {
+            const a = new URI('file:///C:/projects/a/'); // non-parent uri.
+            const b = new URI('file:///C:/projects/theia/foo');
+            expect(a.isEqualOrParent(b)).equals(false);
+        });
+    });
+
 });
