@@ -453,9 +453,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.SAVE.id
         });
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
-            commandId: CommonCommands.SAVE_WITHOUT_FORMATTING.id
-        });
-        registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE_ALL.id
         });
 
