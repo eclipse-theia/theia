@@ -65,7 +65,7 @@
 - [monaco] added ability to compare quick-open entries [#8185](https://github.com/eclipse-theia/theia/pull/8185)
 - [output] improved extensibility of output channel commands [#8733](https://github.com/eclipse-theia/theia/pull/8733)
 - [plugin] added ability to use `viewId` as a progress location [#8700](https://github.com/eclipse-theia/theia/pull/8700)
-- [plugin] added logic to only store webviews when they have a corresponding serializer [#8680](https://github.com/eclipse-theia/theia/pull8680)
+- [plugin] added logic to only store webviews when they have a corresponding serializer [#8680](https://github.com/eclipse-theia/theia/pull/8680)
 - [plugin] added support for `activeColorTheme` and `onDidChangeActiveColorTheme` API [#8710](https://github.com/eclipse-theia/theia/pull/8710)
 - [plugin] added support for semantic highlighting [#8593](https://github.com/eclipse-theia/theia/pull/8593)
 - [plugin] fixed issue where problem matchers specified by task providers are not respected [#8756](https://github.com/eclipse-theia/theia/pull/8756)
