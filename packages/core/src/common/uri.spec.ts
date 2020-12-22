@@ -229,4 +229,37 @@ describe('uri', () => {
         });
     });
 
+    describe('#isEqual', () => {
+        it('should return `true` for `uris` which are equal', () => {
+            const a = new URI('file:///C:/projects/theia/foo/a.ts');
+            const b = new URI('file:///C:/projects/theia/foo/a.ts');
+            expect(a.isEqual(b)).equals(true);
+        });
+        it('should return `false` for `uris` which are not equal', () => {
+            const a = new URI('file:///C:/projects/theia/foo/a.ts');
+            const b = new URI('file:///C:/projects/theia/foo/b.ts');
+            expect(a.isEqual(b)).equals(false);
+        });
+        it('should return `true` for `uris` that are not case-sensitive equal, with case-sensitivity `off`', () => {
+            const a = new URI('file:///C:/projects/theia/foo/a.ts');
+            const b = new URI('file:///C:/projects/theia/foo/A.ts');
+            expect(a.isEqual(b, false)).equals(true);
+        });
+        it('should return `false` for `uris` that are not case-sensitive equal, with case-sensitivity `on`', () => {
+            const a = new URI('file:///C:/projects/theia/foo/a.ts');
+            const b = new URI('file:///C:/projects/theia/foo/A.ts');
+            expect(a.isEqual(b, true)).equals(false);
+        });
+        it('should return `false` for parent paths', () => {
+            const a = new URI('file:///C:/projects/'); // parent uri.
+            const b = new URI('file:///C:/projects/theia/foo');
+            expect(a.isEqual(b)).equals(false);
+        });
+        it('should return `false` for different schemes', () => {
+            const a = new URI('a:///C:/projects/theia/foo/a.ts');
+            const b = new URI('b:///C:/projects/theia/foo/a.ts');
+            expect(a.isEqual(b)).equals(false);
+        });
+    });
+
 });

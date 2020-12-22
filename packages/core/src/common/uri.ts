@@ -199,8 +199,18 @@ export default class URI {
         return this.codeUri.toString(skipEncoding);
     }
 
+    isEqual(uri: URI, caseSensitive: boolean = true): boolean {
+        if (!this.hasSameOrigin(uri)) {
+            return false;
+        }
+
+        return caseSensitive
+            ? this.toString() === uri.toString()
+            : this.toString().toLowerCase() === uri.toString().toLowerCase();
+    }
+
     isEqualOrParent(uri: URI, caseSensitive: boolean = true): boolean {
-        if (this.authority !== uri.authority || this.scheme !== uri.scheme) {
+        if (!this.hasSameOrigin(uri)) {
             return false;
         }
         let left = this.path;
@@ -222,4 +232,7 @@ export default class URI {
         return result;
     }
 
+    private hasSameOrigin(uri: URI): boolean {
+        return (this.authority === uri.authority) && (this.scheme === uri.scheme);
+    }
 }
