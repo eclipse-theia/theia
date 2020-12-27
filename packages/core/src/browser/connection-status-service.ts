@@ -160,10 +160,13 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
         }
         this.scheduledPing = this.setTimeout(async () => {
             try {
+                const startTime = new Date().getTime();
                 await this.pingService.ping();
+                const endTime = new Date().getTime();
+                console.log('+++ this.pingService.ping time: ' + (endTime - startTime) + 'ms');
                 this.updateStatus(true);
             } catch (e) {
-                this.logger.trace(e);
+                this.logger.error(e);
             }
             this.schedulePing();
         }, this.options.offlineTimeout * 0.8);
