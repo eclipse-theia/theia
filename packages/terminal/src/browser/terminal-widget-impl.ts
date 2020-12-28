@@ -382,7 +382,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         if (IBaseTerminalServer.validateId(terminalId)) {
             return terminalId;
         }
-        this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
+        this.logger.warn(`Failed attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
         if (this.kind === 'user') {
             return this.createTerminal();
         } else {

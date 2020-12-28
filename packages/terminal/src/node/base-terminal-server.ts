@@ -63,7 +63,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         if (term && term instanceof TerminalProcess) {
             return term.id;
         } else {
-            this.logger.error(`Couldn't attach - can't find terminal with id: ${id} `);
+            this.logger.warn(`Couldn't attach - can't find terminal with id: ${id} `);
             return -1;
         }
     }
@@ -116,7 +116,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         if (term && term instanceof TerminalProcess) {
             term.resize(cols, rows);
         } else {
-            console.error("Couldn't resize terminal " + id + ", because it doesn't exist.");
+            console.warn("Couldn't resize terminal " + id + ", because it doesn't exist.");
         }
     }
 
