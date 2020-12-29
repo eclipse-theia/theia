@@ -491,7 +491,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     protected openNewWindow(workspacePath: string): void {
         const url = new URL(window.location.href);
-        url.hash = workspacePath;
+        url.hash = encodeURI(workspacePath);
         this.windowService.openNewWindow(url.toString());
     }
 
