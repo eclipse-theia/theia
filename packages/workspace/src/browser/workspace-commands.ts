@@ -129,6 +129,11 @@ export namespace WorkspaceCommands {
         category: WORKSPACE_CATEGORY,
         label: 'Save Workspace As...'
     };
+    export const OPEN_WORKSPACE_FILE: Command = {
+        id: 'workspace:openConfigFile',
+        category: WORKSPACE_CATEGORY,
+        label: 'Open Workspace Configuration File'
+    };
     export const SAVE_AS: Command = {
         id: 'file.saveAs',
         category: 'File',

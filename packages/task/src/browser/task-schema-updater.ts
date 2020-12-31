@@ -32,6 +32,7 @@ import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskServer } from '../common';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 export const taskSchemaId = 'vscode://schemas/tasks';
 
@@ -49,6 +50,9 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
 
     @inject(TaskServer)
     protected readonly taskServer: TaskServer;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     protected readonly onDidChangeTaskSchemaEmitter = new Emitter<void>();
     readonly onDidChangeTaskSchema = this.onDidChangeTaskSchemaEmitter.event;
@@ -77,6 +81,7 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
             fileMatch: ['tasks.json', UserStorageUri.resolve('tasks.json').toString()],
             url: this.uri.toString()
         });
+        this.workspaceService.updateSchema('tasks', { $ref: this.uri.toString() });
     }
 
     readonly update = debounce(() => this.doUpdate(), 0);
@@ -181,12 +186,14 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
     }
 
     /** Returns the task's JSON schema */
-    protected getTaskSchema(): IJSONSchema {
+    getTaskSchema(): IJSONSchema {
         return {
             type: 'object',
+            default: { version: '2.0.0', tasks: [] },
             properties: {
                 version: {
-                    type: 'string'
+                    type: 'string',
+                    default: '2.0.0'
                 },
                 tasks: {
                     type: 'array',

@@ -302,8 +302,8 @@ export class TaskConfigurations implements Disposable {
     /** Adds given task to a config file and opens the file to provide ability to edit task configuration. */
     async configure(token: number, task: TaskConfiguration): Promise<void> {
         const scope = task._scope;
-        if (scope === TaskScope.Global) {
-            return this.openUserTasks();
+        if (scope === TaskScope.Global || scope === TaskScope.Workspace) {
+            return this.taskConfigurationManager.openConfiguration(scope);
         } else if (typeof scope !== 'string') {
             console.error('Global task cannot be customized');
             // TODO detected tasks of scope workspace or user could be customized in those preferences.

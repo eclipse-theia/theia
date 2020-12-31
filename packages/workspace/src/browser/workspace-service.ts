@@ -31,6 +31,8 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { FileStat, BaseStat } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { workspaceSchema, WorkspaceSchemaUpdater } from './workspace-schema-updater';
+import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 
 /**
  * The workspace service.
@@ -75,6 +77,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @inject(FileSystemPreferences)
     protected readonly fsPreferences: FileSystemPreferences;
+
+    @inject(WorkspaceSchemaUpdater)
+    protected readonly schemaUpdater: WorkspaceSchemaUpdater;
 
     protected applicationName: string;
 
@@ -373,7 +378,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             this._workspace = await this.writeWorkspaceFile(this._workspace,
                 WorkspaceData.buildWorkspaceData(
                     this._roots.filter(root => uris.findIndex(u => u.toString() === root.resource.toString()) < 0),
-                    workspaceData!.settings
+                    workspaceData
                 )
             );
         }
@@ -402,7 +407,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             await this.save(untitledWorkspace);
         }
         const currentData = await this.getWorkspaceDataFromFile();
-        const newData = WorkspaceData.buildWorkspaceData(roots, currentData && currentData.settings);
+        const newData = WorkspaceData.buildWorkspaceData(roots, currentData);
         await this.writeWorkspaceFile(this._workspace, newData);
         return toRemove.map(root => new URI(root));
     }
@@ -547,7 +552,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
         let stat = await this.toFileStat(resource);
         Object.assign(workspaceData, await this.getWorkspaceDataFromFile());
-        stat = await this.writeWorkspaceFile(stat, WorkspaceData.buildWorkspaceData(this._roots, workspaceData ? workspaceData.settings : undefined));
+        stat = await this.writeWorkspaceFile(stat, WorkspaceData.buildWorkspaceData(this._roots, workspaceData));
         await this.server.setMostRecentlyUsedWorkspace(resource.toString());
         await this.setWorkspace(stat);
         this.onWorkspaceLocationChangedEmitter.fire(stat);
@@ -636,6 +641,14 @@ export class WorkspaceService implements FrontendApplicationContribution {
         return fileStat.resource.path.ext === `.${THEIA_EXT}` || fileStat.resource.path.ext === `.${VSCODE_EXT}`;
     }
 
+    /**
+     *
+     * @param key the property key under which to store the schema (e.g. tasks, launch)
+     * @param schema the schema for the property. If none is supplied, the update is treated as a deletion.
+     */
+    async updateSchema(key: string, schema?: IJSONSchema): Promise<boolean> {
+        return this.schemaUpdater.updateSchema({ key, schema });
+    }
 }
 
 export interface WorkspaceInput {
@@ -650,33 +663,11 @@ export interface WorkspaceInput {
 export interface WorkspaceData {
     folders: Array<{ path: string, name?: string }>;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    settings?: { [id: string]: any };
+    [key: string]: { [id: string]: any };
 }
 
 export namespace WorkspaceData {
-    const validateSchema = new Ajv().compile({
-        type: 'object',
-        properties: {
-            folders: {
-                description: 'Root folders in the workspace',
-                type: 'array',
-                items: {
-                    type: 'object',
-                    properties: {
-                        path: {
-                            type: 'string',
-                        }
-                    },
-                    required: ['path']
-                }
-            },
-            settings: {
-                description: 'Workspace preferences',
-                type: 'object'
-            }
-        },
-        required: ['folders']
-    });
+    const validateSchema = new Ajv().compile(workspaceSchema);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(data: any): data is WorkspaceData {
@@ -684,7 +675,7 @@ export namespace WorkspaceData {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function buildWorkspaceData(folders: string[] | FileStat[], settings: { [id: string]: any } | undefined): WorkspaceData {
+    export function buildWorkspaceData(folders: string[] | FileStat[], additionalFields?: Partial<WorkspaceData>): WorkspaceData {
         let roots: string[] = [];
         if (folders.length > 0) {
             if (typeof folders[0] !== 'string') {
@@ -696,8 +687,9 @@ export namespace WorkspaceData {
         const data: WorkspaceData = {
             folders: roots.map(folder => ({ path: folder }))
         };
-        if (settings) {
-            data.settings = settings;
+        if (additionalFields) {
+            delete additionalFields.folders;
+            Object.assign(data, additionalFields);
         }
         return data;
     }
@@ -714,7 +706,7 @@ export namespace WorkspaceData {
                 folderUris.push(folderUri.toString());
             }
         }
-        return buildWorkspaceData(folderUris, data.settings);
+        return buildWorkspaceData(folderUris, data);
     }
 
     export function transformToAbsolute(data: WorkspaceData, workspaceFile?: BaseStat): WorkspaceData {
@@ -729,7 +721,7 @@ export namespace WorkspaceData {
                 }
 
             }
-            return Object.assign(data, buildWorkspaceData(folders, data.settings));
+            return Object.assign(data, buildWorkspaceData(folders, data));
         }
         return data;
     }

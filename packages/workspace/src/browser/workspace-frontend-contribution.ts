@@ -153,6 +153,14 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
             UriAwareCommandHandler.MonoSelect(this.selectionService, {
                 execute: (uri: URI) => this.saveAs(uri),
             }));
+        commands.registerCommand(WorkspaceCommands.OPEN_WORKSPACE_FILE, {
+            isEnabled: () => this.workspaceService.saved,
+            execute: () => {
+                if (this.workspaceService.saved && this.workspaceService.workspace) {
+                    open(this.openerService, this.workspaceService.workspace.resource);
+                }
+            }
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {

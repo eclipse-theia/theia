@@ -77,20 +77,20 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
         }
     }
 
-    getConfigUri(resourceUri?: string): URI | undefined {
+    getConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
         for (const provider of this.getFolderProviders(resourceUri)) {
             const configUri = provider.getConfigUri(resourceUri);
-            if (this.configurations.isConfigUri(configUri)) {
+            if (configUri && this.configurations.getName(configUri) === sectionName) {
                 return configUri;
             }
         }
         return undefined;
     }
 
-    getContainingConfigUri(resourceUri?: string): URI | undefined {
+    getContainingConfigUri(resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
         for (const provider of this.getFolderProviders(resourceUri)) {
             const configUri = provider.getConfigUri();
-            if (this.configurations.isConfigUri(configUri) && provider.contains(resourceUri)) {
+            if (provider.contains(resourceUri) && this.configurations.getName(configUri) === sectionName) {
                 return configUri;
             }
         }

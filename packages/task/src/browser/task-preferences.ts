@@ -27,6 +27,7 @@ export const taskPreferencesSchema: PreferenceSchema = {
             $ref: taskSchemaId,
             description: 'Task definition file',
             defaultValue: {
+                version: '2.0.0',
                 tasks: []
             }
         }

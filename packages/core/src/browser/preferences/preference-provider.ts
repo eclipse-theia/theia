@@ -191,10 +191,11 @@ export abstract class PreferenceProvider implements Disposable {
     /**
      * Retrieve the configuration URI for the given resource URI.
      * @param resourceUri the uri of the resource or `undefined`.
+     * @param sectionName the section to return the URI for, e.g. `tasks` or `launch`. Defaults to settings.
      *
      * @returns the corresponding resource URI or `undefined` if there is no valid URI.
      */
-    getConfigUri(resourceUri?: string): URI | undefined {
+    getConfigUri(resourceUri?: string, sectionName?: string): URI | undefined {
         return undefined;
     }
 
@@ -205,7 +206,7 @@ export abstract class PreferenceProvider implements Disposable {
      * @returns the first valid configuration URI contained by the given resource `undefined`
      * if there is no valid configuration URI at all.
      */
-    getContainingConfigUri?(resourceUri?: string): URI | undefined;
+    getContainingConfigUri?(resourceUri?: string, sectionName?: string): URI | undefined;
 
     static merge(source: JSONValue | undefined, target: JSONValue): JSONValue {
         if (source === undefined || !JSONExt.isObject(source)) {
