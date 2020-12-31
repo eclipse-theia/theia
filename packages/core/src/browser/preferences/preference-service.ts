@@ -213,11 +213,12 @@ export interface PreferenceService extends Disposable {
      *
      * @param scope the PreferenceScope to query for.
      * @param resourceUri the optional uri of the resource-specific preference handling
+     * @param sectionName the optional preference section to query for.
      *
      * @returns the uri of the configuration resource for the given scope and optional resource uri it it exists,
      * `undefined` otherwise.
      */
-    getConfigUri(scope: PreferenceScope, resourceUri?: string): URI | undefined;
+    getConfigUri(scope: PreferenceScope, resourceUri?: string, sectionName?: string): URI | undefined;
 }
 
 /**
@@ -512,16 +513,15 @@ export class PreferenceServiceImpl implements PreferenceService {
         };
     }
 
-    getConfigUri(scope: PreferenceScope, resourceUri?: string): URI | undefined {
+    getConfigUri(scope: PreferenceScope, resourceUri?: string, sectionName: string = this.configurations.getConfigName()): URI | undefined {
         const provider = this.getProvider(scope);
-        if (!provider) {
+        if (!provider || !this.configurations.isAnyConfig(sectionName)) {
             return undefined;
         }
-        const configUri = provider.getConfigUri(resourceUri);
+        const configUri = provider.getConfigUri(resourceUri, sectionName);
         if (configUri) {
             return configUri;
         }
-        return provider.getContainingConfigUri && provider.getContainingConfigUri(resourceUri);
+        return provider.getContainingConfigUri && provider.getContainingConfigUri(resourceUri, sectionName);
     }
-
 }

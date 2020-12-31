@@ -390,30 +390,24 @@ export class PreferenceSchemaProvider extends PreferenceProvider {
         return PreferenceSchemaProperties.is(value) && OVERRIDE_PROPERTY_PATTERN.test(name);
     }
 
-    private updateSchemaProps(key: string, property: PreferenceDataProperty): void {
+    protected updateSchemaProps(key: string, property: PreferenceDataProperty): void {
         this.combinedSchema.properties[key] = property;
 
         switch (property.scope) {
-            case PreferenceScope.Workspace:
-                this.workspaceSchema.properties[key] = property;
-                break;
             case PreferenceScope.Folder:
                 this.folderSchema.properties[key] = property;
+            // Fall through. isValidInScope implies that User ⊃ Workspace ⊃ Folder,
+            // so anything we add to folder should be added to workspace, but not vice versa.
+            case PreferenceScope.Workspace:
+                this.workspaceSchema.properties[key] = property;
                 break;
         }
     }
 
-    private removePropFromSchemas(key: string): void {
-        const scope = this.combinedSchema.properties[key].scope;
-
+    protected removePropFromSchemas(key: string): void {
+        // If we remove a key from combined, it should also be removed from all narrower scopes.
         delete this.combinedSchema.properties[key];
-        switch (scope) {
-            case PreferenceScope.Workspace:
-                delete this.workspaceSchema.properties[key];
-                break;
-            case PreferenceScope.Folder:
-                delete this.folderSchema.properties[key];
-                break;
-        }
+        delete this.workspaceSchema.properties[key];
+        delete this.folderSchema.properties[key];
     }
 }

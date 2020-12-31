@@ -37,6 +37,8 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
     @inject(WorkspaceFilePreferenceProviderOptions)
     protected readonly options: WorkspaceFilePreferenceProviderOptions;
 
+    protected sectionsInsideSettings = new Set<string>();
+
     protected getUri(): URI {
         return this.options.workspaceUri;
     }
@@ -45,12 +47,38 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
     protected parse(content: string): any {
         const data = super.parse(content);
         if (WorkspaceData.is(data)) {
-            return data.settings || {};
+            const settings = { ...data.settings };
+            for (const key of this.configurations.getSectionNames().filter(name => name !== 'settings')) {
+                // If the user has written configuration inside the "settings" object, we will respect that.
+                if (settings[key]) {
+                    this.sectionsInsideSettings.add(key);
+                }
+                // Favor sections outside the "settings" object to agree with VSCode behavior
+                if (data[key]) {
+                    settings[key] = data[key];
+                    this.sectionsInsideSettings.delete(key);
+                }
+            }
+            return settings;
         }
         return {};
     }
 
     protected getPath(preferenceName: string): string[] {
+        const firstSegment = preferenceName.split('.')[0];
+        if (firstSegment && this.configurations.isSectionName(firstSegment)) {
+            // Default to writing sections outside the "settings" object.
+            const path = [firstSegment];
+            const pathRemainder = preferenceName.slice(firstSegment.length + 1);
+            if (pathRemainder) {
+                path.push(pathRemainder);
+            }
+            // If the user has already written this section inside the "settings" object, modify it there.
+            if (this.sectionsInsideSettings.has(firstSegment)) {
+                path.unshift('settings');
+            }
+            return path;
+        }
         return ['settings', preferenceName];
     }
 

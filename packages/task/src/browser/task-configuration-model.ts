@@ -36,7 +36,7 @@ export class TaskConfigurationModel implements Disposable {
     );
 
     constructor(
-        readonly scope: TaskConfigurationScope,
+        protected readonly scope: TaskConfigurationScope,
         readonly preferences: PreferenceProvider
     ) {
         this.reconcile();

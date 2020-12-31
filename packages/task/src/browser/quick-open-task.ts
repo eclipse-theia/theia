@@ -234,77 +234,41 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
     async configure(): Promise<void> {
         this.items = [];
         this.actionProvider = undefined;
-        const isMulti: boolean = this.workspaceService.isMultiRootWorkspaceOpened;
 
         const token: number = this.taskService.startUserAction();
 
         const configuredTasks = await this.taskService.getConfiguredTasks(token);
         const providedTasks = await this.taskService.getProvidedTasks(token);
-
-        // check if tasks.json exists. If not, display "Create tasks.json file from template"
-        // If tasks.json exists and empty, display 'Open tasks.json file'
-        let isFirstGroup = true;
         const { filteredConfiguredTasks, filteredProvidedTasks } = this.getFilteredTasks([], configuredTasks, providedTasks);
         const groupedTasks = this.getGroupedTasksByWorkspaceFolder([...filteredConfiguredTasks, ...filteredProvidedTasks]);
-        if (groupedTasks.has(TaskScope.Global.toString())) {
-            const configs = groupedTasks.get(TaskScope.Global.toString())!;
-            this.items.push(
-                ...configs.map(taskConfig => {
-                    const item = new TaskConfigureQuickOpenItem(
-                        token,
-                        taskConfig,
-                        this.taskService,
-                        this.taskNameResolver,
-                        this.workspaceService,
-                        isMulti,
-                        { showBorder: false }
-                    );
-                    item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
-                    return item;
-                })
-            );
-            isFirstGroup = false;
+
+        const scopes: TaskConfigurationScope[] = [TaskScope.Global];
+        if (this.workspaceService.opened) {
+            const roots = await this.workspaceService.roots;
+            scopes.push(...roots.map(rootStat => rootStat.resource.toString()));
+            if (this.workspaceService.saved) {
+                scopes.push(TaskScope.Workspace);
+            }
         }
 
-        const rootUris = (await this.workspaceService.roots).map(rootStat => rootStat.resource.toString());
-        for (const rootFolder of rootUris) {
-            const folderName = new URI(rootFolder).displayName;
-            if (groupedTasks.has(rootFolder)) {
-                const configs = groupedTasks.get(rootFolder.toString())!;
-                this.items.push(
-                    ...configs.map((taskConfig, index) => {
-                        const item = new TaskConfigureQuickOpenItem(
-                            token,
-                            taskConfig,
-                            this.taskService,
-                            this.taskNameResolver,
-                            this.workspaceService,
-                            isMulti,
-                            {
-                                groupLabel: index === 0 && isMulti ? folderName : '',
-                                showBorder: !isFirstGroup && index === 0
-                            }
-                        );
-                        item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
-                        return item;
-                    })
-                );
+        let isFirstGroup = true;
+        let groupLabel = '';
+        const optionsGenerator = (index: number): QuickOpenGroupItemOptions => ({
+            showBorder: !isFirstGroup && index === 0,
+            groupLabel: index === 0 ? groupLabel : '',
+            description: groupLabel,
+        });
+
+        for (const scope of scopes) {
+            groupLabel = typeof scope === 'string' ? this.labelProvider.getName(new URI(scope)) : TaskScope[scope];
+
+            const configs = groupedTasks.get(scope.toString());
+            if (configs?.length) {
+                this.items.push(...this.getTaskConfigureQuickOpenItems(configs, token, optionsGenerator));
             } else {
-                const { configUri } = this.preferences.resolve('tasks', [], rootFolder);
-                const existTaskConfigFile = !!configUri;
-                this.items.push(new QuickOpenGroupItem({
-                    label: existTaskConfigFile ? 'Open tasks.json file' : 'Create tasks.json file from template',
-                    run: (mode: QuickOpenMode): boolean => {
-                        if (mode !== QuickOpenMode.OPEN) {
-                            return false;
-                        }
-                        setTimeout(() => this.taskConfigurationManager.openConfiguration(rootFolder));
-                        return true;
-                    },
-                    showBorder: !isFirstGroup,
-                    groupLabel: isMulti ? folderName : ''
-                }));
+                this.items.push(this.getOpenFileItem(scope, optionsGenerator.bind(this, 0)));
             }
+
             isFirstGroup = false;
         }
 
@@ -319,6 +283,40 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
             placeholder: 'Select a task to configure',
             fuzzyMatchLabel: true,
             fuzzySort: false
+        });
+    }
+
+    protected getTaskConfigureQuickOpenItems(
+        configs: TaskConfiguration[],
+        token: number,
+        optionsGenerator: (index: number) => QuickOpenGroupItemOptions
+    ): TaskConfigureQuickOpenItem[] {
+        return configs.map((taskConfig, index) => {
+            const item = new TaskConfigureQuickOpenItem(
+                token,
+                taskConfig,
+                this.taskService,
+                this.taskNameResolver,
+                this.workspaceService,
+                this.workspaceService.isMultiRootWorkspaceOpened,
+                optionsGenerator(index),
+            );
+            item['taskDefinitionRegistry'] = this.taskDefinitionRegistry;
+            return item;
+        });
+    }
+
+    protected getOpenFileItem(scope: TaskConfigurationScope, optionsGenerator: () => QuickOpenGroupItemOptions): QuickOpenGroupItem {
+        return new QuickOpenGroupItem({
+            label: 'Configure new task.',
+            run: (mode: QuickOpenMode): boolean => {
+                if (mode !== QuickOpenMode.OPEN) {
+                    return false;
+                }
+                setTimeout(() => this.taskConfigurationManager.openConfiguration(scope));
+                return true;
+            },
+            ...optionsGenerator(),
         });
     }
 
@@ -502,7 +500,7 @@ export class TaskRunQuickOpenItem extends QuickOpenGroupItem {
     }
 
     getDescription(): string {
-        return renderScope(this.task._scope, this.isMulti);
+        return this.options.description || renderScope(this.task._scope, this.isMulti);
     }
 
     run(mode: QuickOpenMode): boolean {

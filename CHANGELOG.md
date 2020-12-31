@@ -4,10 +4,15 @@
 
 - [filesystem] add text input and navigate up icon to file dialog [#8748](https://github.com/eclipse-theia/theia/pull/8748)
 - [core] updated connection status service to prevent false positive alerts about offline mode [#9068](https://github.com/eclipse-theia/theia/pull/9068)
+- [tasks] add support for workspace-scoped task configurations. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
+- [workspace] add support for configurations outside the `settings` object and add `WorkspaceSchemaUpdater` to allow configurations sections to be contributed by extensions. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
 
 <a name="breaking_changes_1.12.0">[Breaking Changes:](#breaking_changes_1.12.0)</a>
 
 - [filesystem] `FileDialog` and `LocationListRenderer` now require `FileService` to be passed into constructor for text-based file dialog navigation in browser [#8748](https://github.com/eclipse-theia/theia/pull/8748)
+- [core] `PreferenceService` and `PreferenceProvider` `getConfigUri` and `getContainingConfigUri` methods accept `sectionName` argument to retrieve URI's for non-settings configurations. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
+- [tasks] `TaskConfigurationModel.scope` field now protected. `TaskConfigurationManager` setup changed to accommodate workspace-scoped tasks. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
+- [workspace] `WorkspaceData` interface modified and workspace file schema updated to allow for `tasks` outside of `settings` object. `WorkspaceData.buildWorkspaceData` `settings` argument now accepts an object with any of the keys of the workspace schema. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
 
 ## v1.11.0 - 2/25/2021
 

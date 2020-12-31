@@ -42,9 +42,9 @@ export class WorkspacePreferenceProvider extends PreferenceProvider {
         this.workspaceService.onWorkspaceLocationChanged(() => this.ensureDelegateUpToDate());
     }
 
-    getConfigUri(resourceUri: string | undefined = this.ensureResourceUri()): URI | undefined {
+    getConfigUri(resourceUri: string | undefined = this.ensureResourceUri(), sectionName?: string): URI | undefined {
         const delegate = this.delegate;
-        return delegate && delegate.getConfigUri(resourceUri);
+        return delegate && delegate.getConfigUri(resourceUri, sectionName);
     }
 
     protected _delegate: PreferenceProvider | undefined;

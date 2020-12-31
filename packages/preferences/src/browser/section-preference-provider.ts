@@ -75,8 +75,8 @@ export abstract class SectionPreferenceProvider extends AbstractResourcePreferen
         if (preferenceName === this.section) {
             return [];
         }
-        if (preferenceName.startsWith(this.section + '.')) {
-            return [preferenceName.substr(this.section!.length + 1)];
+        if (preferenceName.startsWith(`${this.section}.`)) {
+            return [preferenceName.slice(this.section.length + 1)];
         }
         return undefined;
     }

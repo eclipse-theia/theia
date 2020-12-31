@@ -22,6 +22,7 @@ import URI from '@theia/core/lib/common/uri';
 import { DebugService } from '../common/debug-service';
 import { debugPreferencesSchema } from './debug-preferences';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 @injectable()
 export class DebugSchemaUpdater implements JsonSchemaContribution {
@@ -29,6 +30,7 @@ export class DebugSchemaUpdater implements JsonSchemaContribution {
     protected readonly uri = new URI(launchSchemaId);
 
     @inject(InMemoryResources) protected readonly inmemoryResources: InMemoryResources;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(DebugService) protected readonly debug: DebugService;
 
     @postConstruct()
@@ -41,6 +43,7 @@ export class DebugSchemaUpdater implements JsonSchemaContribution {
             fileMatch: ['launch.json'],
             url: this.uri.toString()
         });
+        this.workspaceService.updateSchema('launch', { $ref: this.uri.toString() });
     }
 
     async update(): Promise<void> {
