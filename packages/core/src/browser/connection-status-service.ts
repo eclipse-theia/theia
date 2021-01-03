@@ -116,7 +116,7 @@ export abstract class AbstractConnectionStatusService implements ConnectionStatu
         }
         // schedule offline
         this.timer = this.setTimeout(() => {
-            this.logger.trace(`No activity for ${this.options.offlineTimeout} ms. We are offline.`);
+            console.log(`+++ No activity for ${this.options.offlineTimeout} ms. We are offline.`);
             this.updateStatus(false);
         }, this.options.offlineTimeout);
     }
@@ -163,10 +163,10 @@ export class FrontendConnectionStatusService extends AbstractConnectionStatusSer
                 const startTime = new Date().getTime();
                 await this.pingService.ping();
                 const endTime = new Date().getTime();
-                console.log('+++ this.pingService.ping time: ' + (endTime - startTime) + 'ms');
+                console.log('+++ ping time: ' + (endTime - startTime) + 'ms');
                 this.updateStatus(true);
             } catch (e) {
-                this.logger.error(e);
+                console.log('+++ ping exception: ' + e.toString());
             }
             this.schedulePing();
         }, this.options.offlineTimeout * 0.8);
