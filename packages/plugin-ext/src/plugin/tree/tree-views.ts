@@ -257,8 +257,11 @@ class TreeViewExtImpl<T> implements Disposable {
         if (treeItem.id) {
             return chain.concat(treeItem.id);
         }
-        // getChildren fills this.nodes and generate ids for them which are needed later
-        const children = await this.getChildren(parentId);
+        const cachedParentNode = this.nodes.get(parentId);
+        // first try to get children length from cache since getChildren disposes old nodes, which can cause a race
+        // condition if command is executed together with reveal.
+        // If not in cache, getChildren fills this.nodes and generate ids for them which are needed later
+        const children = cachedParentNode?.children || await this.getChildren(parentId);
         if (!children) {
             return undefined; // parent is inconsistent
         }
@@ -303,13 +306,17 @@ class TreeViewExtImpl<T> implements Disposable {
 
     async getChildren(parentId: string): Promise<TreeViewItem[] | undefined> {
         const parentNode = this.nodes.get(parentId);
-        const parent = parentNode && parentNode.value;
+        const parent = parentNode?.value;
         if (parentId && !parent) {
             console.error(`No tree item with id '${parentId}' found.`);
             return [];
         }
         this.clearChildren(parentNode);
 
+        // place root in the cache
+        if (parentId === '') {
+            this.nodes.set(parentId, { id: '', dispose: () => { } });
+        }
         // ask data provider for children for cached element
         const result = await this.treeDataProvider.getChildren(parent);
         if (result) {
