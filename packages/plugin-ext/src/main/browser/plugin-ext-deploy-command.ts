@@ -65,9 +65,13 @@ export class PluginExtDeployCommandService implements QuickOpenModel {
     public async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
         this.items = [];
         if (lookFor || lookFor.length > 0) {
-            this.items.push(new DeployQuickOpenItem(lookFor, this.pluginServer, 'Deploy this plugin'));
+            this.items.push(this.createDeployQuickOpenItem(lookFor, 'Deploy this plugin'));
         }
         acceptor(this.items);
+    }
+
+    protected createDeployQuickOpenItem(name: string, description: string): DeployQuickOpenItem {
+        return new DeployQuickOpenItem(name, this.pluginServer, description);
     }
 
 }
