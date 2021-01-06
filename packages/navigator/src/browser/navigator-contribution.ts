@@ -457,11 +457,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
         registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
             commandId: NavigatorDiffCommands.COMPARE_FIRST.id,
-            order: 'a'
+            order: 'za'
         });
         registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
             commandId: NavigatorDiffCommands.COMPARE_SECOND.id,
-            order: 'b'
+            order: 'zb'
         });
     }
 
