@@ -24,7 +24,7 @@ import { EditorCommands } from './editor-command';
 import { EditorWidget } from './editor-widget';
 import { EditorManager } from './editor-manager';
 import { TextEditor, Position, Range, TextDocumentChangeEvent } from './editor';
-import { NavigationLocation } from './navigation/navigation-location';
+import { NavigationLocation, RecentlyClosedEditor } from './navigation/navigation-location';
 import { NavigationLocationService } from './navigation/navigation-location-service';
 import { PreferenceService, PreferenceScope } from '@theia/core/lib/browser';
 
@@ -32,6 +32,7 @@ import { PreferenceService, PreferenceScope } from '@theia/core/lib/browser';
 export class EditorNavigationContribution implements Disposable, FrontendApplicationContribution {
 
     private static ID = 'editor-navigation-contribution';
+    private static CLOSED_EDITORS_KEY = 'recently-closed-editors';
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposePerCurrentEditor = new DisposableCollection();
@@ -59,7 +60,14 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         this.toDispose.pushAll([
             // TODO listen on file resource changes, if a file gets deleted, remove the corresponding navigation locations (if any).
             // This would require introducing the FS dependency in the editor extension.
-            this.editorManager.onCurrentEditorChanged(this.onCurrentEditorChanged.bind(this))
+            this.editorManager.onCurrentEditorChanged(this.onCurrentEditorChanged.bind(this)),
+            this.editorManager.onCreated(widget => {
+                this.locationStack.removeClosedEditor(widget.editor.uri);
+                widget.disposed.connect(() => this.locationStack.addClosedEditor({
+                    uri: widget.editor.uri,
+                    viewState: widget.editor.storeViewState()
+                }));
+            })
         ]);
         this.commandRegistry.registerHandler(EditorCommands.GO_BACK.id, {
             execute: () => this.locationStack.back(),
@@ -91,6 +99,28 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             execute: () => this.toggleWordWrap(),
             isEnabled: () => true,
         });
+        this.commandRegistry.registerHandler(EditorCommands.REOPEN_CLOSED_EDITOR.id, {
+            execute: () => this.reopenLastClosedEditor()
+        });
+    }
+
+    /**
+     * Reopens the last closed editor with its stored view state if possible from history.
+     * If the editor cannot be restored, continue to the next editor in history.
+     */
+    protected async reopenLastClosedEditor(): Promise<void> {
+        const lastClosedEditor = this.locationStack.getLastClosedEditor();
+        if (lastClosedEditor === undefined) {
+            return;
+        }
+
+        try {
+            const widget = await this.editorManager.open(lastClosedEditor.uri);
+            widget.editor.restoreViewState(lastClosedEditor.viewState);
+        } catch {
+            this.locationStack.removeClosedEditor(lastClosedEditor.uri);
+            this.reopenLastClosedEditor();
+        }
     }
 
     async onStart(): Promise<void> {
@@ -190,9 +220,17 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         this.storageService.setData(EditorNavigationContribution.ID, {
             locations: this.locationStack.locations().map(NavigationLocation.toObject)
         });
+        this.storageService.setData(EditorNavigationContribution.CLOSED_EDITORS_KEY, {
+            closedEditors: this.shouldStoreClosedEditors() ? this.locationStack.closedEditorsStack.map(RecentlyClosedEditor.toObject) : []
+        });
     }
 
     protected async restoreState(): Promise<void> {
+        await this.restoreNavigationLocations();
+        await this.restoreClosedEditors();
+    }
+
+    protected async restoreNavigationLocations(): Promise<void> {
         const raw: { locations?: ArrayLike<object> } | undefined = await this.storageService.getData(EditorNavigationContribution.ID);
         if (raw && raw.locations) {
             const locations: NavigationLocation[] = [];
@@ -209,6 +247,20 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         }
     }
 
+    protected async restoreClosedEditors(): Promise<void> {
+        const raw: { closedEditors?: ArrayLike<object> } | undefined = await this.storageService.getData(EditorNavigationContribution.CLOSED_EDITORS_KEY);
+        if (raw && raw.closedEditors) {
+            for (let i = 0; i < raw.closedEditors.length; i++) {
+                const editor = RecentlyClosedEditor.fromObject(raw.closedEditors[i]);
+                if (editor) {
+                    this.locationStack.addClosedEditor(editor);
+                } else {
+                    this.logger.warn('Could not restore the state of the closed editors stack.');
+                }
+            }
+        }
+    }
+
     private isMinimapEnabled(): boolean {
         return !!this.preferenceService.get('editor.minimap.enabled');
     }
@@ -216,6 +268,10 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
     private isRenderWhitespaceEnabled(): boolean {
         const renderWhitespace = this.preferenceService.get('editor.renderWhitespace');
         return renderWhitespace === 'none' ? false : true;
+    }
+
+    private shouldStoreClosedEditors(): boolean {
+        return !!this.preferenceService.get('editor.history.persistClosedEditors');
     }
 
 }

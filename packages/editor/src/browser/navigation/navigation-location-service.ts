@@ -20,15 +20,18 @@ import { OpenerService, OpenerOptions, open } from '@theia/core/lib/browser/open
 import { EditorOpenerOptions } from '../editor-manager';
 import { NavigationLocationUpdater } from './navigation-location-updater';
 import { NavigationLocationSimilarity } from './navigation-location-similarity';
-import { NavigationLocation, Range, ContentChangeLocation } from './navigation-location';
+import { NavigationLocation, Range, ContentChangeLocation, RecentlyClosedEditor } from './navigation-location';
+import URI from '@theia/core/lib/common/uri';
 
 /**
- * The navigation location service. Also, stores and manages navigation locations.
+ * The navigation location service.
+ * It also stores and manages navigation locations and recently closed editors.
  */
 @injectable()
 export class NavigationLocationService {
 
     private static MAX_STACK_ITEMS = 30;
+    private static readonly MAX_RECENTLY_CLOSED_EDITORS = 20;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -46,6 +49,8 @@ export class NavigationLocationService {
     protected stack: NavigationLocation[] = [];
     protected canRegister = true;
     protected _lastEditLocation: ContentChangeLocation | undefined;
+
+    protected recentlyClosedEditors: RecentlyClosedEditor[] = [];
 
     /**
      * Registers the give locations into the service.
@@ -165,12 +170,13 @@ export class NavigationLocationService {
     }
 
     /**
-     * Clears the navigation history.
+     * Clears the total history.
      */
     clearHistory(): void {
         this.stack = [];
         this.pointer = -1;
         this._lastEditLocation = undefined;
+        this.recentlyClosedEditors = [];
     }
 
     /**
@@ -231,6 +237,48 @@ export class NavigationLocationService {
 Pointer: ${this.pointer}
 ${this.stack.map((location, i) => `${i}: ${JSON.stringify(NavigationLocation.toObject(location))}`).join('\n')}
 ----- o -----`;
+    }
+
+    /**
+     * Get the recently closed editors stack in chronological order.
+     *
+     * @returns readonly closed editors stack.
+     */
+    get closedEditorsStack(): ReadonlyArray<RecentlyClosedEditor> {
+        return this.recentlyClosedEditors;
+    }
+
+    /**
+     * Get the last recently closed editor.
+     *
+     * @returns the recently closed editor if it exists.
+     */
+    getLastClosedEditor(): RecentlyClosedEditor | undefined {
+        return this.recentlyClosedEditors[this.recentlyClosedEditors.length - 1];
+    }
+
+    /**
+     * Add the recently closed editor to the history.
+     *
+     * @param editor the recently closed editor.
+     */
+    addClosedEditor(editor: RecentlyClosedEditor): void {
+        this.removeClosedEditor(editor.uri);
+        this.recentlyClosedEditors.push(editor);
+
+        // Removes the oldest entry from the history if the maximum size is reached.
+        if (this.recentlyClosedEditors.length > NavigationLocationService.MAX_RECENTLY_CLOSED_EDITORS) {
+            this.recentlyClosedEditors.shift();
+        }
+    }
+
+    /**
+     * Remove all occurrences of the given editor in the history if they exist.
+     *
+     * @param uri the uri of the editor that should be removed from the history.
+     */
+    removeClosedEditor(uri: URI): void {
+        this.recentlyClosedEditors = this.recentlyClosedEditors.filter(e => !uri.isEqual(e.uri));
     }
 
 }
