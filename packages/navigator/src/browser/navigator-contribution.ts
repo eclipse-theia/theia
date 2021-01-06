@@ -452,16 +452,16 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerMenuAction(NavigatorContextMenu.MODIFICATION, {
             commandId: FileNavigatorCommands.COLLAPSE_ALL.id,
             label: 'Collapse All',
-            order: 'z2'
+            order: 'z'
         });
 
         registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
             commandId: NavigatorDiffCommands.COMPARE_FIRST.id,
-            order: 'z'
+            order: 'za'
         });
         registry.registerMenuAction(NavigatorContextMenu.COMPARE, {
             commandId: NavigatorDiffCommands.COMPARE_SECOND.id,
-            order: 'z'
+            order: 'zb'
         });
     }
 
