@@ -133,6 +133,14 @@ export namespace EditorCommands {
         category: 'View',
         label: 'Toggle Word Wrap'
     };
+    /**
+     * Command that re-opens the last closed editor.
+     */
+    export const REOPEN_CLOSED_EDITOR: Command = {
+        id: 'editor.action.reopenClosedEditor',
+        category: 'View',
+        label: 'Reopen Closed Editor'
+    };
 }
 
 @injectable()
@@ -199,6 +207,7 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.TOGGLE_MINIMAP);
         registry.registerCommand(EditorCommands.TOGGLE_RENDER_WHITESPACE);
         registry.registerCommand(EditorCommands.TOGGLE_WORD_WRAP);
+        registry.registerCommand(EditorCommands.REOPEN_CLOSED_EDITOR);
 
         registry.registerCommand(CommonCommands.AUTO_SAVE, {
             isToggled: () => this.isAutoSaveOn(),

@@ -39,6 +39,10 @@ export class EditorKeybindingContribution implements KeybindingContribution {
             {
                 command: EditorCommands.TOGGLE_WORD_WRAP.id,
                 keybinding: 'alt+z'
+            },
+            {
+                command: EditorCommands.REOPEN_CLOSED_EDITOR.id,
+                keybinding: 'alt+shift+t'
             }
         );
     }
