@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.10.0
+
+- [plugin] added `createDeployQuickOpenItem` method to create `DeployQuickOpenItem` in order to make extension deploy command extensible [#8919] (https://github.com/eclipse-theia/theia/pull/8919)
+
 ## v1.9.0 - 16/12/2020
 
 - [cli] updated error reporting for the `download-plugins` script [#8798](https://github.com/eclipse-theia/theia/pull/8798)
