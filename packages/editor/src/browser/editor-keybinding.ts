@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { injectable } from '@theia/core/shared/inversify';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { isOSX, isWindows } from '@theia/core/lib/common/os';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { EditorCommands } from './editor-command';
@@ -39,8 +40,16 @@ export class EditorKeybindingContribution implements KeybindingContribution {
             {
                 command: EditorCommands.TOGGLE_WORD_WRAP.id,
                 keybinding: 'alt+z'
+            },
+            {
+                command: EditorCommands.REOPEN_CLOSED_EDITOR.id,
+                keybinding: this.isElectron() ? 'ctrlcmd+shift+t' : 'alt+shift+t'
             }
         );
+    }
+
+    private isElectron(): boolean {
+        return environment.electron.is();
     }
 
 }

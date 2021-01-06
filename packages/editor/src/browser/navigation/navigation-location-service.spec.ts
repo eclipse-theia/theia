@@ -19,6 +19,7 @@ let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
+import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
@@ -26,7 +27,7 @@ import { MockOpenerService } from '@theia/core/lib/browser/test/mock-opener-serv
 import { NavigationLocationUpdater } from './navigation-location-updater';
 import { NoopNavigationLocationUpdater } from './test/mock-navigation-location-updater';
 import { NavigationLocationSimilarity } from './navigation-location-similarity';
-import { CursorLocation, Position, NavigationLocation } from './navigation-location';
+import { CursorLocation, Position, NavigationLocation, RecentlyClosedEditor } from './navigation-location';
 import { NavigationLocationService } from './navigation-location-service';
 
 disableJSDOM();
@@ -79,8 +80,28 @@ describe('navigation-location-service', () => {
     });
 
     it('should not exceed the max stack item', () => {
-        stack.register(...[...Array(100).keys()].map(i => createCursorLocation({ line: i * 10, character: i }, `file://${i}`)));
-        expect(stack.locations().length).to.be.lessThan(100);
+        const max = NavigationLocationService['MAX_STACK_ITEMS'];
+        const locations: NavigationLocation[] = [...Array(max + 10).keys()].map(i => createCursorLocation({ line: i * 10, character: i }, `file://${i}`));
+        stack.register(...locations);
+        expect(stack.locations().length).to.not.be.greaterThan(max);
+    });
+
+    it('should successfully clear the history', () => {
+        expect(stack['recentlyClosedEditors'].length).equal(0);
+        const editor = createMockClosedEditor(new URI('file://foo/a.ts'));
+        stack.addClosedEditor(editor);
+        expect(stack['recentlyClosedEditors'].length).equal(1);
+
+        expect(stack['stack'].length).equal(0);
+        stack.register(
+            createCursorLocation(),
+        );
+        expect(stack['stack'].length).equal(1);
+
+        stack['clearHistory']();
+
+        expect(stack['recentlyClosedEditors'].length).equal(0);
+        expect(stack['stack'].length).equal(0);
     });
 
     describe('last-edit-location', async () => {
@@ -132,6 +153,76 @@ describe('navigation-location-service', () => {
 
     });
 
+    describe('recently-closed-editors', () => {
+
+        describe('#getLastClosedEditor', () => {
+
+            it('should return the last closed editor from the history', () => {
+                const uri = new URI('file://foo/a.ts');
+                stack.addClosedEditor(createMockClosedEditor(uri));
+                const editor = stack.getLastClosedEditor();
+                expect(editor?.uri).equal(uri);
+            });
+
+            it('should return `undefined` when no history is found', () => {
+                expect(stack['recentlyClosedEditors'].length).equal(0);
+                const editor = stack.getLastClosedEditor();
+                expect(editor).equal(undefined);
+            });
+
+            it('should not exceed the max history', () => {
+                expect(stack['recentlyClosedEditors'].length).equal(0);
+                const max = NavigationLocationService['MAX_RECENTLY_CLOSED_EDITORS'];
+                for (let i = 0; i < max + 10; i++) {
+                    const uri = new URI(`file://foo/bar-${i}.ts`);
+                    stack.addClosedEditor(createMockClosedEditor(uri));
+                }
+                expect(stack['recentlyClosedEditors'].length <= max).be.true;
+            });
+
+        });
+
+        describe('#addToRecentlyClosedEditors', () => {
+
+            it('should include unique recently closed editors in the history', () => {
+                expect(stack['recentlyClosedEditors'].length).equal(0);
+                const a = createMockClosedEditor(new URI('file://foo/a.ts'));
+                const b = createMockClosedEditor(new URI('file://foo/b.ts'));
+                stack.addClosedEditor(a);
+                stack.addClosedEditor(b);
+                expect(stack['recentlyClosedEditors'].length).equal(2);
+            });
+
+            it('should not include duplicate recently closed editors in the history', () => {
+                const uri = new URI('file://foo/a.ts');
+                [1, 2, 3].forEach(i => {
+                    stack.addClosedEditor(createMockClosedEditor(uri));
+                });
+                expect(stack['recentlyClosedEditors'].length).equal(1);
+            });
+
+        });
+
+        describe('#removeFromRecentlyClosedEditors', () => {
+
+            it('should successfully remove editors from the history that match the given editor uri', () => {
+                expect(stack['recentlyClosedEditors'].length).equal(0);
+                const editor = createMockClosedEditor(new URI('file://foo/a.ts'));
+
+                [1, 2, 3].forEach(() => {
+                    stack['recentlyClosedEditors'].push(editor);
+                });
+                expect(stack['recentlyClosedEditors'].length).equal(3);
+
+                // Remove the given editor from the recently closed history.
+                stack['removeClosedEditor'](editor.uri);
+                expect(stack['recentlyClosedEditors'].length).equal(0);
+            });
+
+        });
+
+    });
+
     function createCursorLocation(context: Position = { line: 0, character: 0, }, uri: string = 'file://path/to/file'): CursorLocation {
         return NavigationLocation.create(uri, context);
     }
@@ -147,6 +238,10 @@ describe('navigation-location-service', () => {
         container.bind(NavigationLocationUpdater).toService(NoopNavigationLocationUpdater);
         container.bind(OpenerService).toService(MockOpenerService);
         return container.get(NavigationLocationService);
+    }
+
+    function createMockClosedEditor(uri: URI): RecentlyClosedEditor {
+        return { uri, viewState: {} };
     }
 
 });

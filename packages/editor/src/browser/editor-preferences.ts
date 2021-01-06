@@ -1268,6 +1268,11 @@ export const editorPreferenceSchema: PreferenceSchema = {
             'default': 750,
             'description': 'Timeout in milliseconds after which the formatting that is run on file save is cancelled.'
         },
+        'editor.history.persistClosedEditors': {
+            'type': 'boolean',
+            'default': false,
+            'description': 'Controls whether to persist closed editor history for the workspace across window reloads.'
+        },
         'files.eol': {
             'type': 'string',
             'enum': [
@@ -1299,6 +1304,7 @@ export interface EditorConfiguration extends CodeEditorConfiguration {
     'editor.autoSaveDelay': number
     'editor.formatOnSave': boolean
     'editor.formatOnSaveTimeout': number
+    'editor.history.persistClosedEditors': boolean
     'files.eol': EndOfLinePreference
 }
 export type EndOfLinePreference = '\n' | '\r\n' | 'auto';
