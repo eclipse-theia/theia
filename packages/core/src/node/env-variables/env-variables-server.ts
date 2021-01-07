@@ -73,9 +73,9 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         const uris: string[] = [];
         const drives = await drivelist.list();
         for (const drive of drives) {
-            for (const mounpoint of drive.mountpoints) {
-                if (this.filterHiddenPartitions(mounpoint.path)) {
-                    uris.push(FileUri.create(mounpoint.path).toString());
+            for (const mountpoint of drive.mountpoints) {
+                if (this.filterHiddenPartitions(mountpoint.path)) {
+                    uris.push(FileUri.create(mountpoint.path).toString());
                 }
             }
         }
