@@ -25,8 +25,10 @@ import { PreferencesEventService } from '../util/preference-event-service';
 export class PreferencesSearchbarWidget extends ReactWidget {
     static readonly ID = 'settings.header';
     static readonly LABEL = 'Settings Header';
+    static readonly SEARCHBAR_ID = 'preference-searchbar';
 
     protected searchbarRef: React.RefObject<HTMLInputElement> = React.createRef<HTMLInputElement>();
+    protected searchCount: number = 0;
 
     @inject(PreferencesEventService) protected readonly preferencesEventService: PreferencesEventService;
 
@@ -44,6 +46,7 @@ export class PreferencesSearchbarWidget extends ReactWidget {
 
     protected search = debounce((value: string) => {
         this.preferencesEventService.onSearch.fire({ query: value });
+        this.preferencesEventService.onResultChanged.event(count => this.searchCount = count);
         this.update();
     }, 200);
 
@@ -53,19 +56,60 @@ export class PreferencesSearchbarWidget extends ReactWidget {
         }
     }
 
+    protected clearSearchResults = (e: React.MouseEvent): void => {
+        const search = document.getElementById(PreferencesSearchbarWidget.SEARCHBAR_ID) as HTMLInputElement;
+        if (search) {
+            search.value = '';
+            this.search(search.value);
+            this.update();
+        }
+    };
+
+    protected renderOptionContainer(): React.ReactNode {
+        const resultsCount = this.renderResultsCount();
+        const clearAllOption = this.renderOptionElement();
+        return <div className="option-buttons"> {resultsCount} {clearAllOption} </div>;
+    }
+
+    protected renderResultsCount(): React.ReactNode {
+        return this.searchTermExists() ?
+            (<span
+                className="results-found"
+                title={`${this.searchCount} Settings Found`}> {this.searchCount === 0 ? 'No' : this.searchCount} Settings Found
+            </span>)
+            : '';
+    }
+
+    protected renderOptionElement(): React.ReactNode {
+        return <span
+            className={`clear-all option ${(this.searchTermExists() ? 'enabled' : '')}`}
+            title="Clear Search Results"
+            onClick={e => this.clearSearchResults(e)}
+        />;
+    }
+
+    /**
+     * Determines whether the search input currently has a value.
+     * @returns `true` if the search input currently has a value.
+     */
+    protected searchTermExists(): boolean {
+        return (this.searchbarRef.current?.value !== '' && this.searchbarRef.current?.value !== undefined);
+    }
+
     render(): React.ReactNode {
+        const optionContainer = this.renderOptionContainer();
         return (
-            <div className='settings-header'>
-                <div className="settings-search-container">
-                    <input
-                        type="text"
-                        placeholder="Search Settings"
-                        className="settings-search-input theia-input"
-                        onChange={this.handleSearch}
-                        ref={this.searchbarRef}
-                    />
-                </div>
-            </div >
+            <div className="settings-search-container">
+                <input
+                    type="text"
+                    id={PreferencesSearchbarWidget.SEARCHBAR_ID}
+                    placeholder="Search Settings"
+                    className="settings-search-input theia-input"
+                    onChange={this.handleSearch}
+                    ref={this.searchbarRef}
+                />
+                {optionContainer}
+            </div>
         );
     }
 }

@@ -57,6 +57,7 @@ export class PreferencesTreeWidget extends TreeWidget {
         super.init();
         this.preferencesEventService.onDisplayChanged.event(didChangeTree => {
             if (didChangeTree) {
+                this.preferencesEventService.onResultChanged.fire(this.calculateCount());
                 this.updateDisplay();
             }
         });
@@ -64,6 +65,17 @@ export class PreferencesTreeWidget extends TreeWidget {
             this.handleEditorScroll(e.firstVisibleChildId);
         });
         this.id = PreferencesTreeWidget.ID;
+    }
+
+    protected calculateCount(): number {
+        let count: number = 0;
+        const root = this.model.root;
+        if (CompositeTreeNode.is(root)) {
+            for (const child of root.children) {
+                count += this.calculateVisibleLeaves(child);
+            }
+        }
+        return count;
     }
 
     protected handleEditorScroll(firstVisibleChildId: string): void {

@@ -24,4 +24,5 @@ export class PreferencesEventService {
     onEditorScroll = new Emitter<Preference.MouseScrollDetails>();
     onNavTreeSelection = new Emitter<Preference.SelectedTreeNode>();
     onDisplayChanged = new Emitter<boolean>();
+    onResultChanged = new Emitter<number>();
 }
