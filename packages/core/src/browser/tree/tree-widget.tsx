@@ -608,10 +608,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 backgroundColor: highlight.backgroundColor
             };
         }
-        const createChildren = (fragment: TreeDecoration.CaptionHighlight.Fragment) => {
+        const createChildren = (fragment: TreeDecoration.CaptionHighlight.Fragment, index: number) => {
             const { data } = fragment;
             if (fragment.highlight) {
-                return <mark className={TreeDecoration.Styles.CAPTION_HIGHLIGHT_CLASS} style={style}>{data}</mark>;
+                return <mark className={TreeDecoration.Styles.CAPTION_HIGHLIGHT_CLASS} style={style} key={index}>{data}</mark>;
             } else {
                 return data;
             }

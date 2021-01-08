@@ -18,7 +18,7 @@ import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { LabelProviderContribution, LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { TreeNode } from '@theia/core/lib/browser/tree';
-import { ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
+import { ScmFileChangeFolderNode, ScmFileChangeNode, ScmFileChangeGroupNode } from './scm-tree-model';
 
 @injectable()
 export class ScmTreeLabelProvider implements LabelProviderContribution {
@@ -26,10 +26,19 @@ export class ScmTreeLabelProvider implements LabelProviderContribution {
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
     canHandle(element: object): number {
-        return TreeNode.is(element) && (ScmFileChangeFolderNode.is(element) || ScmFileChangeNode.is(element)) ? 60 : 0;
+        return TreeNode.is(element) && (ScmFileChangeGroupNode.is(element) || ScmFileChangeFolderNode.is(element) || ScmFileChangeNode.is(element)) ? 60 : 0;
     }
 
     getName(node: ScmFileChangeFolderNode | ScmFileChangeNode): string {
-        return this.labelProvider.getName(new URI(node.sourceUri));
+        if (ScmFileChangeGroupNode.is(node)) {
+            return node.groupLabel;
+        }
+        if (ScmFileChangeFolderNode.is(node)) {
+            return node.path;
+        }
+        if (ScmFileChangeNode.is(node)) {
+            return this.labelProvider.getName(new URI(node.sourceUri));
+        }
+        return '';
     }
 }
