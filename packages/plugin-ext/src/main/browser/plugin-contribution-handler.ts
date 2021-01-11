@@ -117,6 +117,7 @@ export class PluginContributionHandler {
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
         /* eslint-disable @typescript-eslint/no-explicit-any */
         const logError = (message: string, ...args: any[]) => console.error(`[${clientId}][${plugin.metadata.model.id}]: ${message}`, ...args);
+        const logWarning = (message: string, ...args: any[]) => console.warn(`[${clientId}][${plugin.metadata.model.id}]: ${message}`, ...args);
         const pushContribution = (id: string, contribute: () => Disposable) => {
             if (toDispose.disposed) {
                 return;
@@ -210,7 +211,7 @@ export class PluginContributionHandler {
                     const language = grammar.language!;
                     pushContribution(`grammar.language.${language}.scope`, () => this.grammarsRegistry.mapLanguageIdToTextmateGrammar(language, grammar.scope));
                     pushContribution(`grammar.language.${language}.configuration`, () => this.grammarsRegistry.registerGrammarConfiguration(language, {
-                        embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages, logError),
+                        embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages, logWarning),
                         tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
                     }));
                 }
@@ -250,6 +251,14 @@ export class PluginContributionHandler {
                         () => this.viewRegistry.registerView(location, view)
                     );
                 }
+            }
+        }
+
+        if (contributions.viewsWelcome) {
+            for (const [index, viewWelcome] of contributions.viewsWelcome.entries()) {
+                pushContribution(`viewsWelcome.${viewWelcome.view}.${index}`,
+                    () => this.viewRegistry.registerViewWelcome(viewWelcome)
+                );
             }
         }
 
@@ -485,20 +494,26 @@ export class PluginContributionHandler {
         return result;
     }
 
-    private convertEmbeddedLanguages(languages: ScopeMap | undefined, logError: (error: string) => void): IEmbeddedLanguagesMap | undefined {
+    private convertEmbeddedLanguages(languages: ScopeMap | undefined, logWarning: (error: string) => void): IEmbeddedLanguagesMap | undefined {
         if (typeof languages === 'undefined' || languages === null) {
             return undefined;
         }
         const result = Object.create(null);
         const scopes = Object.keys(languages);
         const len = scopes.length;
+        const scopesArr = [];
         for (let i = 0; i < len; i++) {
             const scope = scopes[i];
             const langId = languages[scope];
             result[scope] = getEncodedLanguageId(langId);
             if (!result[scope]) {
-                logError(`Language for '${scope}' not found.`);
+                scopesArr.push(scope);
             }
+        }
+        if (scopesArr.length === 1) {
+            logWarning(`Language for '${scopesArr.join(', ')}' not found.`);
+        } else if (scopesArr.length > 1) {
+            logWarning(`Languages for '${scopesArr.join(', ')}' not found.`);
         }
         return result;
     }
