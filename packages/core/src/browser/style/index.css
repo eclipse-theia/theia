@@ -114,8 +114,8 @@ blockquote {
   margin-left: 8px;
 }
 
-.theia-mod-disabled {
-  opacity: var(--theia-mod-disabled-opacity);
+.theia-mod-disabled, .theia-mod-disabled:focus {
+  opacity: var(--theia-mod-disabled-opacity) !important;
 }
 
 .theia-header {
@@ -161,7 +161,7 @@ blockquote {
 
 button.theia-button, .theia-button {
     border: none;
-    color: var(--theia-button-foreground);
+    color: var(--theia-button-foreground) !important;
     background-color: var(--theia-button-background);
     min-width: 65px;
     outline: none;

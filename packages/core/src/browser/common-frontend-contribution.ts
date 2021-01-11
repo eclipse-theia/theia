@@ -1865,6 +1865,14 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     dark: Color.transparent('button.background', 0.5),
                     light: Color.transparent('button.background', 0.5)
                 }, description: 'Background color of secondary buttons.'
+            },
+            {
+                id: 'editorGutter.commentRangeForeground',
+                defaults: {
+                    dark: '#c5c5c5',
+                    light: '#c5c5c5',
+                    hc: '#c5c5c5'
+                }, description: 'Editor gutter decoration color for commenting ranges.'
             }
         );
     }

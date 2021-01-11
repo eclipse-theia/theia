@@ -49,10 +49,11 @@ import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-ser
 import { UntitledResourceResolver } from './editor/untitled-resource';
 import { FileResourceResolver } from '@theia/filesystem/lib/browser';
 import { MainFileSystemEventService } from './main-file-system-event-service';
-import { LabelServiceMainImpl } from '../browser/label-service-main';
+import { LabelServiceMainImpl } from './label-service-main';
 import { TimelineMainImpl } from './timeline-main';
 import { AuthenticationMainImpl } from './authentication-main';
 import { ThemingMainImpl } from './theming-main';
+import { CommentsMainImp } from './comments/comments-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
@@ -163,4 +164,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const themingMain = new ThemingMainImpl(rpc);
     rpc.set(PLUGIN_RPC_CONTEXT.THEMING_MAIN, themingMain);
+
+    const commentsMain = new CommentsMainImp(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.COMMENTS_MAIN, commentsMain);
 }

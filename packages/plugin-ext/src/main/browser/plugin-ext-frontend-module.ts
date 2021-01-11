@@ -16,6 +16,7 @@
 
 import '../../../src/main/style/status-bar.css';
 import '../../../src/main/browser/style/index.css';
+import '../../../src/main/browser/style/comments.css';
 
 import { ContainerModule } from 'inversify';
 import {
@@ -64,6 +65,10 @@ import { WebviewResourceCache } from './webview/webview-resource-cache';
 import { PluginIconThemeService, PluginIconThemeFactory, PluginIconThemeDefinition, PluginIconTheme } from './plugin-icon-theme-service';
 import { PluginTreeViewNodeLabelProvider } from './view/plugin-tree-view-node-label-provider';
 import { WebviewWidgetFactory } from './webview/webview-widget-factory';
+import { CommentsService, PluginCommentService } from './comments/comments-service';
+import { CommentingRangeDecorator } from './comments/comments-decorator';
+import { CommentsContribution } from './comments/comments-contribution';
+import { CommentsContextKeyService } from './comments/comments-context-key-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -199,4 +204,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(DebugSessionContributionRegistry).toService(PluginDebugSessionContributionRegistry);
 
     bind(ViewColumnService).toSelf().inSingletonScope();
+
+    bind(CommentsService).to(PluginCommentService).inSingletonScope();
+    bind(CommentingRangeDecorator).toSelf().inSingletonScope();
+    bind(CommentsContribution).toSelf().inSingletonScope();
+    bind(CommentsContextKeyService).toSelf().inSingletonScope();
 });
