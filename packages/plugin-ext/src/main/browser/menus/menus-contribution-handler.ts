@@ -43,6 +43,7 @@ import { Navigatable } from '@theia/core/lib/browser/navigatable';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TIMELINE_ITEM_CONTEXT_MENU } from '@theia/timeline/lib/browser/timeline-tree-widget';
 import { TimelineItem } from '@theia/timeline/lib/common/timeline-model';
+import { COMMENT_CONTEXT, COMMENT_THREAD_CONTEXT, COMMENT_TITLE } from '../comments/comment-thread-widget';
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;
 @injectable()
@@ -160,6 +161,45 @@ export class MenusContributionPointHandler {
                             execute: (...args) => this.commands.executeCommand(command, ...this.toTimelineArgs(...args)),
                             isEnabled: (...args) => this.commands.isEnabled(command, ...this.toTimelineArgs(...args)),
                             isVisible: (...args) => this.commands.isVisible(command, ...this.toTimelineArgs(...args))
+                        })
+                    ));
+                }
+            } else if (location === 'comments/commentThread/context') {
+                for (const menu of allMenus[location]) {
+                    toDispose.push(this.registerMenuAction(COMMENT_THREAD_CONTEXT, menu,
+                        command => ({
+                            execute: (...args) => this.commands.executeCommand(command, ...this.toCommentArgs(...args)),
+                            isEnabled: () => {
+                                const commandContributions = plugin.contributes?.commands;
+                                if (commandContributions) {
+                                    const commandContribution = commandContributions.find(c => c.command === command);
+                                    if (commandContribution && commandContribution.enablement) {
+                                        return this.contextKeyService.match(commandContribution.enablement);
+                                    }
+                                }
+                                return true;
+                            },
+                            isVisible: (...args) => this.commands.isVisible(command, ...this.toCommentArgs(...args))
+                        })
+                    ));
+                }
+            } else if (location === 'comments/comment/title') {
+                for (const menu of allMenus[location]) {
+                    toDispose.push(this.registerMenuAction(COMMENT_TITLE, menu,
+                        command => ({
+                            execute: (...args) => this.commands.executeCommand(command, ...this.toCommentArgs(...args)),
+                            isEnabled: (...args) => this.commands.isEnabled(command, ...this.toCommentArgs(...args)),
+                            isVisible: (...args) => this.commands.isVisible(command, ...this.toCommentArgs(...args))
+                        })
+                    ));
+                }
+            } else if (location === 'comments/comment/context') {
+                for (const menu of allMenus[location]) {
+                    toDispose.push(this.registerMenuAction(COMMENT_CONTEXT, menu,
+                        command => ({
+                            execute: (...args) => this.commands.executeCommand(command, ...this.toCommentArgs(...args)),
+                            isEnabled: () => true,
+                            isVisible: (...args) => this.commands.isVisible(command, ...this.toCommentArgs(...args))
                         })
                     ));
                 }
@@ -320,6 +360,30 @@ export class MenusContributionPointHandler {
             source: arg.source,
             uri: arg.uri
         };
+    }
+
+    protected toCommentArgs(...args: any[]): any[] {
+        const arg = args[0];
+        if ('text' in arg) {
+            if ('commentUniqueId' in arg) {
+                return [{
+                    commentControlHandle: arg.thread.controllerHandle,
+                    commentThreadHandle: arg.thread.commentThreadHandle,
+                    text: arg.text,
+                    commentUniqueId: arg.commentUniqueId
+                }];
+            }
+            return [{
+                commentControlHandle: arg.thread.controllerHandle,
+                commentThreadHandle: arg.thread.commentThreadHandle,
+                text: arg.text
+            }];
+        }
+        return [{
+            commentControlHandle: arg.thread.controllerHandle,
+            commentThreadHandle: arg.thread.commentThreadHandle,
+            commentUniqueId: arg.commentUniqueId
+        }];
     }
 
     protected registerGlobalMenuAction(menuPath: MenuPath, menu: Menu): Disposable {

@@ -164,6 +164,7 @@ import { ExtHostFileSystemEventService } from './file-system-event-service-ext-i
 import { LabelServiceExtImpl } from '../plugin/label-service';
 import { TimelineExtImpl } from './timeline';
 import { ThemingExtImpl } from './theming';
+import { CommentsExtImpl } from './comments';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -200,6 +201,7 @@ export function createAPIFactory(
     const labelServiceExt = rpc.set(MAIN_RPC_CONTEXT.LABEL_SERVICE_EXT, new LabelServiceExtImpl(rpc));
     const timelineExt = rpc.set(MAIN_RPC_CONTEXT.TIMELINE_EXT, new TimelineExtImpl(rpc, commandRegistry));
     const themingExt = rpc.set(MAIN_RPC_CONTEXT.THEMING_EXT, new ThemingExtImpl(rpc));
+    const commentsExt = rpc.set(MAIN_RPC_CONTEXT.COMMENTS_EXT, new CommentsExtImpl(rpc, commandRegistry, documents));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -811,22 +813,7 @@ export function createAPIFactory(
 
         const comments: typeof theia.comments = {
             createCommentController(id: string, label: string): theia.CommentController {
-                // TODO replace the dummy implementation, see https://github.com/eclipse-theia/theia/issues/8492
-                return {
-                    id, label,
-                    createCommentThread(uri: Uri, range: Range, commentsArray: theia.Comment[]): theia.CommentThread {
-                        return {
-                            uri,
-                            range,
-                            comments: commentsArray,
-                            collapsibleState: 0,
-                            dispose(): void {
-                            }
-                        };
-                    },
-                    dispose(): void {
-                    }
-                };
+                return commentsExt.createCommentController(plugin, id, label);
             }
         };
 

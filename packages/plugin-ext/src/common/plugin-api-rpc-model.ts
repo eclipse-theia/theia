@@ -17,6 +17,8 @@
 import * as theia from '@theia/plugin';
 import { UriComponents } from './uri-components';
 import { CompletionItemTag } from '../plugin/types-impl';
+import { Event as TheiaEvent } from '@theia/core/lib/common/event';
+import { URI } from 'vscode-uri';
 
 // Should contains internal Plugin API types
 
@@ -561,4 +563,99 @@ export interface AuthenticationSessionsChangeEvent {
 export interface AuthenticationProviderInformation {
     id: string;
     label: string;
+}
+
+export interface CommentOptions {
+    /**
+     * An optional string to show on the comment input box when it's collapsed.
+     */
+    prompt?: string;
+
+    /**
+     * An optional string to show as placeholder in the comment input box when it's focused.
+     */
+    placeHolder?: string;
+}
+
+export enum CommentMode {
+    Editing = 0,
+    Preview = 1
+}
+
+export interface Comment {
+    readonly uniqueIdInThread: number;
+    readonly body: MarkdownString;
+    readonly userName: string;
+    readonly userIconPath?: string;
+    readonly contextValue?: string;
+    readonly label?: string;
+    readonly mode?: CommentMode;
+}
+
+export enum CommentThreadCollapsibleState {
+    /**
+     * Determines an item is collapsed
+     */
+    Collapsed = 0,
+    /**
+     * Determines an item is expanded
+     */
+    Expanded = 1
+}
+
+export interface CommentInput {
+    value: string;
+    uri: URI;
+}
+
+export interface CommentThread {
+    commentThreadHandle: number;
+    controllerHandle: number;
+    extensionId?: string;
+    threadId: string;
+    resource: string | null;
+    range: Range;
+    label: string | undefined;
+    contextValue: string | undefined;
+    comments: Comment[] | undefined;
+    onDidChangeComments: TheiaEvent<Comment[] | undefined>;
+    collapsibleState?: CommentThreadCollapsibleState;
+    input?: CommentInput;
+    onDidChangeInput: TheiaEvent<CommentInput | undefined>;
+    onDidChangeRange: TheiaEvent<Range>;
+    onDidChangeLabel: TheiaEvent<string | undefined>;
+    onDidChangeCollapsibleState: TheiaEvent<CommentThreadCollapsibleState | undefined>;
+    isDisposed: boolean;
+}
+
+export interface CommentThreadChangedEventMain extends CommentThreadChangedEvent {
+    owner: string;
+}
+
+export interface CommentThreadChangedEvent {
+    /**
+     * Added comment threads.
+     */
+    readonly added: CommentThread[];
+
+    /**
+     * Removed comment threads.
+     */
+    readonly removed: CommentThread[];
+
+    /**
+     * Changed comment threads.
+     */
+    readonly changed: CommentThread[];
+}
+
+export interface CommentingRanges {
+    readonly resource: URI;
+    ranges: Range[];
+}
+
+export interface CommentInfo {
+    extensionId?: string;
+    threads: CommentThread[];
+    commentingRanges: CommentingRanges;
 }
