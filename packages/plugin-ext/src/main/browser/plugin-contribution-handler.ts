@@ -254,14 +254,6 @@ export class PluginContributionHandler {
             }
         }
 
-        if (contributions.viewsWelcome) {
-            for (const [index, viewWelcome] of contributions.viewsWelcome.entries()) {
-                pushContribution(`viewsWelcome.${viewWelcome.view}.${index}`,
-                    () => this.viewRegistry.registerViewWelcome(viewWelcome)
-                );
-            }
-        }
-
         if (contributions.snippets) {
             for (const snippet of contributions.snippets) {
                 pushContribution(`snippets.${snippet.uri}`, () => this.snippetSuggestProvider.fromURI(snippet.uri, {
