@@ -658,40 +658,28 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (fontData === undefined) {
             return original;
         }
-        let modified = original;
+        const modified = { ...original }; // make a copy to mutate
         const { color, style } = fontData;
         if (color) {
-            modified = {
-                ...modified,
-                color
-            };
+            modified.color = color;
         }
         if (style) {
             (Array.isArray(style) ? style : [style]).forEach(s => {
-                switch (style) {
+                switch (s) {
                     case 'bold':
-                        modified = {
-                            ...modified,
-                            fontWeight: style
-                        };
+                        modified.fontWeight = s;
                         break;
-                    case 'normal': // Fall through.
-                    case 'oblique': // Fall through.
+                    case 'normal':
+                    case 'oblique':
                     case 'italic':
-                        modified = {
-                            ...modified,
-                            fontStyle: style
-                        };
+                        modified.fontStyle = s;
                         break;
-                    case 'underline': // Fall through.
+                    case 'underline':
                     case 'line-through':
-                        modified = {
-                            ...modified,
-                            textDecoration: style
-                        };
+                        modified.textDecoration = s;
                         break;
                     default:
-                        throw new Error(`Unexpected font style: ${style}.`);
+                        throw new Error(`Unexpected font style: "${s}".`);
                 }
             });
         }
