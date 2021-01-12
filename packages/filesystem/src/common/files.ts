@@ -241,7 +241,7 @@ export interface FileStat extends BaseStat {
     children?: FileStat[];
 }
 export namespace FileStat {
-    export function is(arg: Object | undefined): arg is BaseStat {
+    export function is(arg: Object | undefined): arg is FileStat {
         return BaseStat.is(arg) &&
             ('isFile' in arg && typeof arg['isFile'] === 'boolean') &&
             ('isDirectory' in arg && typeof arg['isDirectory'] === 'boolean') &&
