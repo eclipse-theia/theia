@@ -83,7 +83,6 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
                 this.updateViewMode(e.newValue);
             }
         }));
-
     }
 
     get containerLayout(): PanelLayout {

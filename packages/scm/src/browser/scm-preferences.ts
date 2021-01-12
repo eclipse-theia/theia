@@ -35,12 +35,18 @@ export const scmPreferenceSchema: PreferenceSchema = {
             ],
             description: 'Controls the default source control view mode.',
             default: 'list'
+        },
+        'scm.countBadge': {
+            type: 'boolean',
+            description: 'Controls whether badges are enabled for the Source Control Manager.',
+            default: true
         }
     }
 };
 
 export interface ScmConfiguration {
-    'scm.defaultViewMode': 'tree' | 'list'
+    'scm.defaultViewMode': 'tree' | 'list';
+    'scm.countBadge': boolean;
 }
 
 export const ScmPreferences = Symbol('ScmPreferences');
