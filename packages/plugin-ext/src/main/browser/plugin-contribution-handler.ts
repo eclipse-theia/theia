@@ -117,6 +117,7 @@ export class PluginContributionHandler {
         const toDispose = new DisposableCollection(Disposable.create(() => { /* mark as not disposed */ }));
         /* eslint-disable @typescript-eslint/no-explicit-any */
         const logError = (message: string, ...args: any[]) => console.error(`[${clientId}][${plugin.metadata.model.id}]: ${message}`, ...args);
+        const logWarning = (message: string, ...args: any[]) => console.warn(`[${clientId}][${plugin.metadata.model.id}]: ${message}`, ...args);
         const pushContribution = (id: string, contribute: () => Disposable) => {
             if (toDispose.disposed) {
                 return;
@@ -210,7 +211,7 @@ export class PluginContributionHandler {
                     const language = grammar.language!;
                     pushContribution(`grammar.language.${language}.scope`, () => this.grammarsRegistry.mapLanguageIdToTextmateGrammar(language, grammar.scope));
                     pushContribution(`grammar.language.${language}.configuration`, () => this.grammarsRegistry.registerGrammarConfiguration(language, {
-                        embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages, logError),
+                        embeddedLanguages: this.convertEmbeddedLanguages(grammar.embeddedLanguages, logWarning),
                         tokenTypes: this.convertTokenTypes(grammar.tokenTypes)
                     }));
                 }
@@ -493,7 +494,7 @@ export class PluginContributionHandler {
         return result;
     }
 
-    private convertEmbeddedLanguages(languages: ScopeMap | undefined, logError: (error: string) => void): IEmbeddedLanguagesMap | undefined {
+    private convertEmbeddedLanguages(languages: ScopeMap | undefined, logWarning: (warning: string) => void): IEmbeddedLanguagesMap | undefined {
         if (typeof languages === 'undefined' || languages === null) {
             return undefined;
         }
@@ -505,7 +506,7 @@ export class PluginContributionHandler {
             const langId = languages[scope];
             result[scope] = getEncodedLanguageId(langId);
             if (!result[scope]) {
-                logError(`Language for '${scope}' not found.`);
+                logWarning(`Language for '${scope}' not found.`);
             }
         }
         return result;
