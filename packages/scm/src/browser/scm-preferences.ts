@@ -23,6 +23,8 @@ import {
     PreferenceContribution
 } from '@theia/core/lib/browser/preferences';
 
+export type ScmViewMode = 'tree' | 'list';
+
 export const scmPreferenceSchema: PreferenceSchema = {
     type: 'object',
     properties: {
@@ -45,7 +47,7 @@ export const scmPreferenceSchema: PreferenceSchema = {
 };
 
 export interface ScmConfiguration {
-    'scm.defaultViewMode': 'tree' | 'list';
+    'scm.defaultViewMode': ScmViewMode;
     'scm.countBadge': boolean;
 }
 
