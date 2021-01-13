@@ -23,7 +23,7 @@ import {
     MAIN_MENU_BAR, MenuModelRegistry, MenuPath, MenuNode
 } from '../../common';
 import { Keybinding } from '../../common/keybinding';
-import { PreferenceService, KeybindingRegistry } from '../../browser';
+import { PreferenceService, KeybindingRegistry, CommonCommands } from '../../browser';
 import { ContextKeyService } from '../../browser/context-key-service';
 import debounce = require('lodash.debounce');
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
@@ -38,6 +38,20 @@ export interface ElectronMenuOptions {
      */
     readonly showDisabled?: boolean;
 }
+
+/**
+ * Define the action of the menu item, when specified the `click` property will
+ * be ignored. See [roles](https://www.electronjs.org/docs/api/menu-item#roles).
+ */
+export type ElectronMenuItemRole = ('undo' | 'redo' | 'cut' | 'copy' | 'paste' |
+    'pasteAndMatchStyle' | 'delete' | 'selectAll' | 'reload' | 'forceReload' |
+    'toggleDevTools' | 'resetZoom' | 'zoomIn' | 'zoomOut' | 'togglefullscreen' |
+    'window' | 'minimize' | 'close' | 'help' | 'about' |
+    'services' | 'hide' | 'hideOthers' | 'unhide' | 'quit' |
+    'startSpeaking' | 'stopSpeaking' | 'zoom' | 'front' | 'appMenu' |
+    'fileMenu' | 'editMenu' | 'viewMenu' | 'recentDocuments' | 'toggleTabBar' |
+    'selectNextTab' | 'selectPreviousTab' | 'mergeAllWindows' | 'clearRecentDocuments' |
+    'moveTabToNewWindow' | 'windowMenu');
 
 @injectable()
 export class ElectronMainMenuFactory {
@@ -164,16 +178,26 @@ export class ElectronMainMenuFactory {
                     accelerator = this.acceleratorFor(binding);
                 }
 
-                items.push({
+                const menuItem = {
                     id: node.id,
                     label: node.label,
                     type: this.commandRegistry.getToggledHandler(commandId, ...args) ? 'checkbox' : 'normal',
                     checked: this.commandRegistry.isToggled(commandId, ...args),
                     enabled: true, // https://github.com/eclipse-theia/theia/issues/446
                     visible: true,
-                    click: () => this.execute(commandId, args),
-                    accelerator
-                });
+                    accelerator,
+                    click: () => this.execute(commandId, args)
+                } as Electron.MenuItemConstructorOptions;
+
+                if (isOSX) {
+                    const role = this.roleFor(node.id);
+                    if (role) {
+                        menuItem.role = role;
+                        delete menuItem.click;
+                    }
+                }
+                items.push(menuItem);
+
                 if (this.commandRegistry.getToggledHandler(commandId, ...args)) {
                     this._toggledCommands.add(commandId);
                 }
@@ -204,6 +228,33 @@ export class ElectronMainMenuFactory {
 
         const keyCode = bindingKeySequence[0];
         return this.keybindingRegistry.acceleratorForKeyCode(keyCode, '+');
+    }
+
+    protected roleFor(id: string): ElectronMenuItemRole | undefined {
+        let role: ElectronMenuItemRole | undefined;
+        switch (id) {
+            case CommonCommands.UNDO.id:
+                role = 'undo';
+                break;
+            case CommonCommands.REDO.id:
+                role = 'redo';
+                break;
+            case CommonCommands.CUT.id:
+                role = 'cut';
+                break;
+            case CommonCommands.COPY.id:
+                role = 'copy';
+                break;
+            case CommonCommands.PASTE.id:
+                role = 'paste';
+                break;
+            case CommonCommands.SELECT_ALL.id:
+                role = 'selectAll';
+                break;
+            default:
+                break;
+        }
+        return role;
     }
 
     protected async execute(command: string, args: any[]): Promise<void> {
