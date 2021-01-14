@@ -28,7 +28,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 import { CommandService } from '@theia/core/lib/common/command';
 import TheiaURI from '@theia/core/lib/common/uri';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorManager, EditorCommands } from '@theia/editor/lib/browser';
 import {
     CodeEditorWidgetUtil
 } from '@theia/plugin-ext/lib/main/browser/menus/menus-contribution-handler';
@@ -363,6 +363,15 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.previousEditor' }, {
             execute: () => this.shell.activatePreviousTab()
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateBack' }, {
+            execute: () => commands.executeCommand(EditorCommands.GO_BACK.id)
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateForward' }, {
+            execute: () => commands.executeCommand(EditorCommands.GO_FORWARD.id)
+        });
+        commands.registerCommand({ id: 'workbench.action.navigateToLastEditLocation' }, {
+            execute: () => commands.executeCommand(EditorCommands.GO_LAST_EDIT.id)
         });
 
         commands.registerCommand({ id: 'openInTerminal' }, {
