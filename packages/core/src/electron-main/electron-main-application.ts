@@ -428,6 +428,9 @@ export class ElectronMainApplication {
 
     protected async getForkOptions(): Promise<ForkOptions> {
         return {
+            // The backend must be a process group leader on UNIX in order to kill the tree later.
+            // See https://nodejs.org/api/child_process.html#child_process_options_detached
+            detached: process.platform !== 'win32',
             env: {
                 ...process.env,
                 [ElectronSecurityToken]: JSON.stringify(this.electronSecurityToken),

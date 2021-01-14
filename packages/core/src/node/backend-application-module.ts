@@ -34,6 +34,7 @@ import { KeytarService, keytarServicePath } from '../common/keytar-protocol';
 import { KeytarServiceImpl } from './keytar-server';
 import { ContributionFilterRegistry, ContributionFilterRegistryImpl } from '../common/contribution-filter';
 import { EnvironmentUtils } from './environment-utils';
+import { ProcessUtils } from './process-utils';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -107,4 +108,5 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(ContributionFilterRegistry).to(ContributionFilterRegistryImpl).inSingletonScope();
 
     bind(EnvironmentUtils).toSelf().inSingletonScope();
+    bind(ProcessUtils).toSelf().inSingletonScope();
 });

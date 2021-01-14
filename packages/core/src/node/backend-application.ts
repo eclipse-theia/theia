@@ -28,6 +28,7 @@ import { Deferred } from '../common/promise-util';
 import { environment } from '../common/index';
 import { AddressInfo } from 'net';
 import { ApplicationPackage } from '@theia/application-package';
+import { ProcessUtils } from './process-utils';
 
 const APP_PROJECT_PATH = 'app-project-path';
 
@@ -148,6 +149,9 @@ export class BackendApplication {
     @inject(ApplicationPackage)
     protected readonly applicationPackage: ApplicationPackage;
 
+    @inject(ProcessUtils)
+    protected readonly processUtils: ProcessUtils;
+
     private readonly _performanceObserver: PerformanceObserver;
 
     constructor(
@@ -169,13 +173,18 @@ export class BackendApplication {
         process.on('SIGPIPE', () => {
             console.error(new Error('Unexpected SIGPIPE'));
         });
-
+        /**
+         * Kill the current process tree on exit.
+         */
+        function signalHandler(signal: NodeJS.Signals): never {
+            process.exit(1);
+        }
         // Handles normal process termination.
         process.on('exit', () => this.onStop());
         // Handles `Ctrl+C`.
-        process.on('SIGINT', () => process.exit(0));
+        process.on('SIGINT', signalHandler);
         // Handles `kill pid`.
-        process.on('SIGTERM', () => process.exit(0));
+        process.on('SIGTERM', signalHandler);
 
         // Create performance observer
         this._performanceObserver = new PerformanceObserver(list => {
@@ -316,6 +325,7 @@ export class BackendApplication {
         }
         console.info('<<< All backend contributions have been stopped.');
         this._performanceObserver.disconnect();
+        this.processUtils.terminateProcessTree(process.pid);
     }
 
     protected async serveGzipped(contentType: string, req: express.Request, res: express.Response, next: express.NextFunction): Promise<void> {
