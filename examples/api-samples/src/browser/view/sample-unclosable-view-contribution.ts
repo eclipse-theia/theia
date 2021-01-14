@@ -78,8 +78,8 @@ export class SampleUnclosableViewContribution extends AbstractViewContribution<S
 
 export const bindSampleUnclosableView = (bind: interfaces.Bind) => {
     bindViewContribution(bind, SampleUnclosableViewContribution);
-    bind(SampleViewUnclosableView).toSelf();
     bind(TabBarToolbarContribution).to(SampleUnclosableViewContribution).inSingletonScope();
+    bind(SampleViewUnclosableView).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: SampleViewUnclosableView.ID,
         createWidget: () => ctx.container.get<SampleViewUnclosableView>(SampleViewUnclosableView)
