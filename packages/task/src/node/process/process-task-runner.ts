@@ -116,11 +116,6 @@ export class ProcessTaskRunner implements TaskRunner {
         }
 
         const options = systemSpecificCommand.options;
-        // sanity checks:
-        // - we expect the cwd to be set by the client.
-        if (!options || !options.cwd) {
-            throw new Error("Can't run a task when 'cwd' is not provided by the client");
-        }
 
         // Use task's cwd with spawned process and pass node env object to
         // new process, so e.g. we can re-use the system path
