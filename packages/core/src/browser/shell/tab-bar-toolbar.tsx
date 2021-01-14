@@ -129,7 +129,13 @@ export class TabBarToolbar extends ReactWidget {
             classNames.push(iconClass);
         }
         const tooltip = item.tooltip || (command && command.label);
+<<<<<<< Updated upstream
         return <div key={item.id} className={`${TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM}${command && this.commandIsEnabled(command.id) ? ' enabled' : ''}`}
+=======
+
+        return <div key={item.id} className={`${TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM}${command &&
+            (this.commandIsEnabled(command.id) ? (this.commandIsToggled(command.id) ? ' enabled toggled' : ' enabled') : '')}`}
+>>>>>>> Stashed changes
             onMouseDown={this.onMouseDownEvent} onMouseUp={this.onMouseUpEvent} onMouseOut={this.onMouseUpEvent} >
             <div id={item.id} className={classNames.join(' ')} onClick={this.executeCommand} title={tooltip}>{innerText}</div>
         </div>;
