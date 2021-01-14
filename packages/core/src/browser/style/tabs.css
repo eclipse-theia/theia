@@ -355,6 +355,11 @@ body.theia-editor-highlightModifiedTabs
     transform: scale(1.272019649);
 }
 
+.p-TabBar-toolbar .item.toggled {
+    border: var(--theia-border-width) var(--theia-inputOption-activeBorder) solid;
+    background-color: var(--theia-inputOption-activeBackground);
+}
+
 .p-TabBar-toolbar .item > div {
     height: 18px;
     width: 18px;

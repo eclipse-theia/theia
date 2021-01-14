@@ -129,16 +129,30 @@ export class TabBarToolbar extends ReactWidget {
             classNames.push(iconClass);
         }
         const tooltip = item.tooltip || (command && command.label);
-<<<<<<< Updated upstream
-        return <div key={item.id} className={`${TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM}${command && this.commandIsEnabled(command.id) ? ' enabled' : ''}`}
-=======
-
-        return <div key={item.id} className={`${TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM}${command &&
-            (this.commandIsEnabled(command.id) ? (this.commandIsToggled(command.id) ? ' enabled toggled' : ' enabled') : '')}`}
->>>>>>> Stashed changes
-            onMouseDown={this.onMouseDownEvent} onMouseUp={this.onMouseUpEvent} onMouseOut={this.onMouseUpEvent} >
-            <div id={item.id} className={classNames.join(' ')} onClick={this.executeCommand} title={tooltip}>{innerText}</div>
+        const toolbarItemClassNames = this.getToolbarItemClassNames(command?.id);
+        return <div key={item.id}
+            className={toolbarItemClassNames}
+            onMouseDown={this.onMouseDownEvent}
+            onMouseUp={this.onMouseUpEvent}
+            onMouseOut={this.onMouseUpEvent} >
+            <div id={item.id} className={classNames.join(' ')}
+                onClick={this.executeCommand}
+                title={tooltip}>{innerText}
+            </div>
         </div>;
+    }
+
+    protected getToolbarItemClassNames(commandId: string | undefined): string {
+        const classNames = [TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM];
+        if (commandId) {
+            if (this.commandIsEnabled(commandId)) {
+                classNames.push('enabled');
+            }
+            if (this.commandIsToggled(commandId)) {
+                classNames.push('toggled');
+            }
+        }
+        return classNames.join(' ');
     }
 
     protected renderMore(): React.ReactNode {
@@ -181,6 +195,10 @@ export class TabBarToolbar extends ReactWidget {
         return this.commands.isEnabled(command, this.current);
     }
 
+    protected commandIsToggled(command: string): boolean {
+        return this.commands.isToggled(command, this.current);
+    }
+
     protected executeCommand = (e: React.MouseEvent<HTMLElement>) => {
         e.preventDefault();
         e.stopPropagation();
@@ -189,6 +207,7 @@ export class TabBarToolbar extends ReactWidget {
         if (TabBarToolbarItem.is(item)) {
             this.commands.executeCommand(item.command, this.current);
         }
+        this.update();
     };
 
     protected onMouseDownEvent = (e: React.MouseEvent<HTMLElement>) => {
