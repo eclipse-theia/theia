@@ -86,16 +86,17 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
      * @returns promise of the widget that resolves when the widget has been opened.
      */
     async open(uri: URI, options?: WidgetOpenerOptions): Promise<W> {
-        const widget = await this.getOrCreateWidget(uri, options);
-        await this.doOpen(widget, options);
+        const widgetExists = this.widgetExists(uri, options);
+        const widget = widgetExists ? (await this.getWidget(uri, options))! : await this.createWidget(uri, options);
+        await this.doOpen(widget, widgetExists, options);
         return widget;
     }
-    protected async doOpen(widget: W, options?: WidgetOpenerOptions): Promise<void> {
+    protected async doOpen(widget: W, widgetExists: boolean, options?: WidgetOpenerOptions): Promise<void> {
         const op: WidgetOpenerOptions = {
             mode: 'activate',
             ...options
         };
-        if (!widget.isAttached) {
+        if (!widget.isAttached && !widgetExists) {
             this.shell.addWidget(widget, op.widgetOptions || { area: 'main' });
         }
         if (op.mode === 'activate') {
@@ -141,9 +142,19 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
         return this.widgetManager.getWidget(this.id, widgetOptions) as Promise<W | undefined>;
     }
 
+    protected createWidget(uri: URI, options?: WidgetOpenerOptions): Promise<W> {
+        const widgetOptions = this.createWidgetOptions(uri, options);
+        return this.widgetManager.createWidget(this.id, widgetOptions) as Promise<W>;
+    }
+
     protected getOrCreateWidget(uri: URI, options?: WidgetOpenerOptions): Promise<W> {
         const widgetOptions = this.createWidgetOptions(uri, options);
         return this.widgetManager.getOrCreateWidget(this.id, widgetOptions) as Promise<W>;
+    }
+
+    protected widgetExists(uri: URI, options?: WidgetOpenerOptions): boolean {
+        const widgetOptions = this.createWidgetOptions(uri, options);
+        return this.widgetManager.widgetExists(this.id, widgetOptions);
     }
 
     protected abstract createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): Object;

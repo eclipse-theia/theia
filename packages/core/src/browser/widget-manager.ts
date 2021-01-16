@@ -188,18 +188,14 @@ export class WidgetManager {
     }
 
     /**
-     * Creates a new widget or returns the existing widget for the given description.
+     * Creates a new widget for the given description.
      * @param factoryId the widget factory id.
      * @param options the widget factory specific information.
      *
      * @returns a promise resolving to the widget.
      */
-    async getOrCreateWidget<T extends Widget>(factoryId: string, options?: any): Promise<T> {
+    async createWidget<T extends Widget>(factoryId: string, options?: any): Promise<T> {
         const key = this.toKey({ factoryId, options });
-        const existingWidget = this.doGetWidget<T>(key);
-        if (existingWidget) {
-            return existingWidget;
-        }
         const factory = this.factories.get(factoryId);
         if (!factory) {
             throw Error("No widget factory '" + factoryId + "' has been registered.");
@@ -220,6 +216,34 @@ export class WidgetManager {
         } finally {
             this.pendingWidgetPromises.delete(key);
         }
+    }
+
+    /**
+     * Creates a new widget or returns the existing widget for the given description.
+     * @param factoryId the widget factory id.
+     * @param options the widget factory specific information.
+     *
+     * @returns a promise resolving to the widget.
+     */
+    async getOrCreateWidget<T extends Widget>(factoryId: string, options?: any): Promise<T> {
+        const key = this.toKey({ factoryId, options });
+        const existingWidget = this.doGetWidget<T>(key);
+        if (existingWidget) {
+            return existingWidget;
+        }
+        return this.createWidget(factoryId, options);
+    }
+
+    /**
+     * Returns whether the widget exists or not.
+     * @param factoryId The widget factory id.
+     * @param options The widget factory specific information.
+     *
+     * @returns Whether the widget exists or not.
+     */
+    widgetExists(factoryId: string, options?: any): boolean {
+        const key = this.toKey({ factoryId, options });
+        return this.widgetPromises.has(key) || this.pendingWidgetPromises.has(key);
     }
 
     /**

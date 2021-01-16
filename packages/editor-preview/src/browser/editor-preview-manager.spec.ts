@@ -48,7 +48,7 @@ mockEditorManager.getOrCreateByUri = sinon.stub().returns(mockEditorWidget);
 const mockWidgetManager = sinon.createStubInstance(WidgetManager);
 let onCreateListeners: Function[] = [];
 mockWidgetManager.onDidCreateWidget = sinon.stub().callsFake((fn: Function) => onCreateListeners.push(fn));
-(mockWidgetManager.getOrCreateWidget as sinon.SinonStub).returns(mockPreviewWidget);
+(mockWidgetManager.createWidget as sinon.SinonStub).returns(mockPreviewWidget);
 
 const mockShell = sinon.createStubInstance(ApplicationShell) as ApplicationShell;
 
