@@ -140,14 +140,13 @@ export class MonacoThemeRegistry {
             return undefined;
         }
         const normalized = String(color).replace(/^\#/, '').slice(0, 6);
-        if (normalized.length < 6) {
+        if (normalized.length < 6 || !(normalized).match(/^[0-9A-Fa-f]{6}$/)) {
             // ignoring not normalized colors to avoid breaking token color indexes between monaco and vscode-textmate
             console.error(`Color '${normalized}' is NOT normalized, it must have 6 positions.`);
             return undefined;
         }
         return '#' + normalized;
     }
-
 }
 
 export namespace MonacoThemeRegistry {
