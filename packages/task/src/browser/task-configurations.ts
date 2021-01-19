@@ -317,7 +317,7 @@ export class TaskConfigurations implements Disposable {
 
         const configuredAndCustomizedTasks = await this.getTasks(token);
         if (!configuredAndCustomizedTasks.some(t => this.taskDefinitionRegistry.compareTasks(t, task))) {
-            await this.saveTask(scope, { ...task, problemMatcher: [] });
+            await this.saveTask(scope, task);
         }
 
         try {
@@ -359,6 +359,9 @@ export class TaskConfigurations implements Disposable {
         if (task.group) {
             customization.group = task.group;
         }
+
+        customization.label = task.label;
+
         return { ...customization };
     }
 

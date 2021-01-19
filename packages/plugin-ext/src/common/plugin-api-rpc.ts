@@ -1255,6 +1255,7 @@ export interface TaskDto {
     // Provide a more specific type when necessary (see ProblemMatcherContribution)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     problemMatcher?: any;
+    group?: string;
     detail?: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;

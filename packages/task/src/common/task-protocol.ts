@@ -113,7 +113,7 @@ export namespace TaskOutputPresentation {
 
 export interface TaskCustomization {
     type: string;
-    group?: 'build' | 'test' | 'none' | { kind: 'build' | 'test' | 'none', isDefault: true };
+    group?: 'build' | 'test' | 'none' | { kind: 'build' | 'test', isDefault: true };
     problemMatcher?: string | ProblemMatcherContribution | (string | ProblemMatcherContribution)[];
     presentation?: TaskOutputPresentation;
     detail?: string;
