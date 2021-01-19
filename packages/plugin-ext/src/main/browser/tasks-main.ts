@@ -25,7 +25,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
 import { TaskProviderRegistry, TaskResolverRegistry, TaskProvider, TaskResolver } from '@theia/task/lib/browser/task-contribution';
 import { interfaces } from 'inversify';
-import { TaskInfo, TaskExitedEvent, TaskConfiguration } from '@theia/task/lib/common/task-protocol';
+import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskCustomization } from '@theia/task/lib/common/task-protocol';
 import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TaskDefinitionRegistry } from '@theia/task/lib/browser';
@@ -175,16 +175,30 @@ export class TasksMainImpl implements TasksMain, Disposable {
     }
 
     protected toTaskConfiguration(taskDto: TaskDto): TaskConfiguration {
-        return Object.assign(taskDto, {
-            _source: taskDto.source,
-            _scope: taskDto.scope
+        const { group, ...taskConfiguration } = taskDto;
+        if (group === 'build' || group === 'test') {
+            taskConfiguration.group = group;
+        }
+
+        return Object.assign(taskConfiguration, {
+            _source: taskConfiguration.source,
+            _scope: taskConfiguration.scope
         });
     }
 
     protected fromTaskConfiguration(task: TaskConfiguration): TaskDto {
-        return Object.assign(task, {
-            source: task._source,
-            scope: task._scope
+        const { group, ...taskDto } = task;
+        if (group) {
+            if (TaskCustomization.isBuildTask(task)) {
+                taskDto.group = 'build';
+            } else if (TaskCustomization.isTestTask(task)) {
+                taskDto.group = 'test';
+            }
+        }
+
+        return Object.assign(taskDto, {
+            source: taskDto._source,
+            scope: taskDto._scope
         });
     }
 

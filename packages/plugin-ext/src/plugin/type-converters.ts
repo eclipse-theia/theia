@@ -27,9 +27,12 @@ import { isMarkdownString, MarkdownString } from './markdown-string';
 import { Item } from './quick-open';
 import * as types from './types-impl';
 import { UriComponents } from '../common/uri-components';
+import { TaskGroup } from './types-impl';
 
 const SIDE_GROUP = -2;
 const ACTIVE_GROUP = -1;
+const BUILD_GROUP = 'build';
+const TEST_GROUP = 'test';
 
 export function toViewColumn(ep?: EditorPosition): theia.ViewColumn | undefined {
     if (typeof ep !== 'number') {
@@ -717,6 +720,13 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         taskDto.scope = task.scope;
     }
 
+    const group = task.group;
+    if (group === TaskGroup.Build) {
+        taskDto.group = BUILD_GROUP;
+    } else if (group === TaskGroup.Test) {
+        taskDto.group = TEST_GROUP;
+    }
+
     const taskDefinition = task.definition;
     if (!taskDefinition) {
         return taskDto;
@@ -751,7 +761,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, label, source, scope, problemMatcher, detail, command, args, options, windows, ...properties } = taskDto;
+    const { type, label, source, scope, problemMatcher, detail, command, args, options, windows, group, ...properties } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
@@ -783,6 +793,14 @@ export function toTask(taskDto: TaskDto): theia.Task {
     const execution = { command, args, options };
     if (taskType === 'shell' || types.ShellExecution.is(execution)) {
         result.execution = getShellExecution(taskDto);
+    }
+
+    if (group) {
+        if (group === BUILD_GROUP) {
+            result.group = TaskGroup.Build;
+        } else if (group === TEST_GROUP) {
+            result.group = TaskGroup.Test;
+        }
     }
 
     if (!properties) {
