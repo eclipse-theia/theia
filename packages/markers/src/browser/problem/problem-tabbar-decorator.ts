@@ -45,6 +45,9 @@ export class ProblemTabBarDecorator implements TabBarDecorator {
     }
 
     decorate(title: Title<Widget>): WidgetDecoration.Data[] {
+        if (!this.preferences['problems.decorations.tabbar.enabled']) {
+            return [];
+        }
         const widget = title.owner;
         if (Navigatable.is(widget)) {
             const resourceUri = widget.getResourceUri();
