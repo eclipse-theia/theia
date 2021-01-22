@@ -283,6 +283,7 @@ export function waitForHidden(widget: Widget): Promise<void> {
 }
 
 function waitForVisible(widget: Widget, visible: boolean, attached?: boolean): Promise<void> {
+    console.log(`--- wait for visible widget id: ${widget.id}`);
     if ((typeof attached !== 'boolean' || widget.isAttached === attached) &&
         (widget.isVisible === visible || (widget.node.style.visibility !== 'hidden') === visible)
     ) {

@@ -383,9 +383,12 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
     protected doRestoreState(state: ViewContainer.State): void {
         this.setTitleOptions(state.title);
+        console.log(`--- restore view container title: ${state.title}`);
         // restore widgets
         for (const part of state.parts) {
+            console.log(`--- iterate over part id: ${part.partId}, hidden: ${part.hidden}, collapsed: ${part.collapsed}, relSize: ${part.relativeSize}`);
             if (part.widget) {
+                console.log(`--- add widget for part id: ${part.partId}`);
                 this.addWidget(part.widget);
             }
         }
@@ -402,20 +405,25 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
         // Restore visibility and collapsed state
         const parts = this.getParts();
+        console.log('--- Restore visibility and collapsed state');
         for (let index = 0; index < parts.length; index++) {
             const part = parts[index];
+            console.log(`--- restore visibility for part id: ${part.partId}`);
             const partState = partStates.find(s => part.partId === s.partId);
             if (partState) {
+                console.log(`--- found state for part id: ${part.partId}, hidden: ${partState.hidden}, collapsed: ${partState.collapsed}, relSize: ${partState.relativeSize}`);
                 part.setHidden(partState.hidden);
                 part.collapsed = partState.collapsed || !partState.relativeSize;
             } else if (part.canHide) {
+                console.log(`--- hide part id: ${part.partId}`);
                 part.hide();
             }
             this.refreshMenu(part);
         }
-
+        console.log('--- Restore part sizes');
         // Restore part sizes
         waitForRevealed(this).then(() => {
+            console.log('--- set part sizes');
             this.containerLayout.setPartSizes(partStates.map(partState => partState.relativeSize));
         });
     }
