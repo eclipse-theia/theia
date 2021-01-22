@@ -54,3 +54,5 @@ export namespace FileSearchService {
         defaultIgnorePatterns?: string[]
     }
 }
+
+export const WHITESPACE_QUERY_SEPARATOR = /\s+/;

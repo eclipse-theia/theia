@@ -195,4 +195,34 @@ describe('search-service', function (): void {
         });
     });
 
+    describe('search with whitespaces', () => {
+        const rootUri = FileUri.create(path.resolve(__dirname, '../../test-resources')).toString();
+
+        it('should support file searches with whitespaces', async () => {
+            const matches = await service.find('foo sub', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+
+            expect(matches).to.be.length(2);
+            expect(matches[0].endsWith('subdir1/sub-bar/foo.txt'));
+            expect(matches[1].endsWith('subdir1/sub2/foo.txt'));
+        });
+
+        it('should support fuzzy file searches with whitespaces', async () => {
+            const matchesExact = await service.find('foo sbd2', { rootUris: [rootUri], fuzzyMatch: false, useGitIgnore: true, limit: 200 });
+            const matchesFuzzy = await service.find('foo sbd2', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+
+            expect(matchesExact).to.be.length(0);
+            expect(matchesFuzzy).to.be.length(1);
+            expect(matchesFuzzy[0].endsWith('subdir1/sub2/foo.txt'));
+        });
+
+        it('should support file searches with whitespaces regardless of order', async () => {
+            const matchesA = await service.find('foo sub', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+            const matchesB = await service.find('sub foo', { rootUris: [rootUri], fuzzyMatch: true, useGitIgnore: true, limit: 200 });
+
+            expect(matchesA).to.not.be.empty;
+            expect(matchesB).to.not.be.empty;
+            expect(matchesA).to.deep.eq(matchesB);
+        });
+    });
+
 });
