@@ -254,6 +254,7 @@ export class ShellLayoutRestorer implements CommandContribution {
 
         const context = { layout, layoutVersion, migrations };
         await this.fireWillInflateLayout(context);
+        console.log(`+++ perform inflate context layout: ${JSON.stringify(layout)}`);
         await parseContext.inflate(context);
         return layout;
     }
@@ -270,28 +271,38 @@ export class ShellLayoutRestorer implements CommandContribution {
     protected parse<T>(layoutData: string, parseContext: ShellLayoutRestorer.ParseContext): T {
         return JSON.parse(layoutData, (property: string, value) => {
             if (this.isWidgetsProperty(property)) {
+                console.log(`+++ 1 parsing widgets property: ${property}`);
                 const widgets = parseContext.filteredArray();
                 const descs = (value as WidgetDescription[]);
+                console.log(`+++ 1 widget description: ${descs}`);
                 for (let i = 0; i < descs.length; i++) {
                     parseContext.push(async context => {
+                        console.log(`+++ 1 convert description into widget: ${descs[i]}`);
                         widgets[i] = await this.convertToWidget(descs[i], context);
                     });
                 }
+                console.log(`+++ 1 return widgets: ${JSON.stringify(widgets)}`);
                 return widgets;
             } else if (value && typeof value === 'object' && !Array.isArray(value)) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const copy: any = {};
+                console.log(`+++ 2 parsing object value: ${JSON.stringify(value)}`);
                 for (const p in value) {
                     if (this.isWidgetProperty(p)) {
+                        console.log(`+++ 2 parsing widget property: ${JSON.stringify(p)}`);
                         parseContext.push(async context => {
+                            console.log(`+++ 2 convert description into widget: ${value[p]}`);
                             copy[p] = await this.convertToWidget(value[p], context);
                         });
                     } else {
+                        console.log(`+++ 2 simple copy value[p]: ${JSON.stringify(value[p])}`);
                         copy[p] = value[p];
                     }
                 }
+                console.log(`+++ 2 return objects: ${JSON.stringify(copy)}`);
                 return copy;
             }
+            console.log(`+++ 3 return value: ${JSON.stringify(value)}`);
             return value;
         });
     }
@@ -315,6 +326,7 @@ export class ShellLayoutRestorer implements CommandContribution {
 
     protected async convertToWidget(desc: WidgetDescription, context: ShellLayoutRestorer.InflateContext): Promise<Widget | undefined> {
         if (!desc.constructionOptions) {
+            console.log(`+++ !desc.constructionOptions for ${JSON.stringify(desc)}`);
             return undefined;
         }
         try {
@@ -323,13 +335,17 @@ export class ShellLayoutRestorer implements CommandContribution {
             if (StatefulWidget.is(widget) && desc.innerWidgetState !== undefined) {
                 try {
                     let oldState: object;
+                    console.log(`+++ widget ${desc.constructionOptions.factoryId} is stateful`);
                     if (typeof desc.innerWidgetState === 'string') {
+                        console.log(`+++ desc.innerWidgetState is string: ${desc.innerWidgetState}`);
                         const parseContext = new ShellLayoutRestorer.ParseContext();
                         oldState = this.parse(desc.innerWidgetState, parseContext);
                         await parseContext.inflate({ ...context, parent: widget });
                     } else {
+                        console.log(`+++ desc.innerWidgetState is an object: ${JSON.stringify(desc.innerWidgetState)}`);
                         oldState = desc.innerWidgetState;
                     }
+                    console.log(`+++ restore state for ${desc.constructionOptions.factoryId}, oldState: ${oldState}`);
                     widget.restoreState(oldState);
                 } catch (e) {
                     if (ApplicationShellLayoutMigrationError.is(e)) {
@@ -364,6 +380,7 @@ export namespace ShellLayoutRestorer {
          * after resolving promises, that create widgets.
          */
         filteredArray(): Widgets {
+            console.log(`+++ filteredArray() called, this.toFilter.length: ${this.toFilter.length}`);
             const array: Widgets = [];
             this.toFilter.push(array);
             return array;
