@@ -22,7 +22,7 @@ import {
 } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
-import { FileSearchService } from '../common/file-search-service';
+import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
 import { CancellationTokenSource } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { Command } from '@theia/core/lib/common';
@@ -73,6 +73,15 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
      * The current lookFor string input by the user.
      */
     protected currentLookFor: string = '';
+
+    /**
+     * The score constants when comparing file search results.
+     */
+    private static readonly Scores = {
+        max: 1000,  // represents the maximum score from fuzzy matching (Infinity).
+        exact: 500, // represents the score assigned to exact matching.
+        partial: 250 // represents the score assigned to partial matching.
+    };
 
     readonly prefix: string = '...';
 
@@ -254,9 +263,36 @@ export class QuickFileOpenService implements QuickOpenModel, QuickOpenHandler {
          * @returns the score.
          */
         function score(str: string): number {
-            const match = fuzzy.match(query, str);
+            // Adjust for whitespaces in the query.
+            const querySplit = query.split(WHITESPACE_QUERY_SEPARATOR);
+            const queryJoin = querySplit.join('');
+
+            // Check exact and partial exact matches.
+            let exactMatch = true;
+            let partialMatch = false;
+            querySplit.forEach(part => {
+                const partMatches = str.includes(part);
+                exactMatch = exactMatch && partMatches;
+                partialMatch = partialMatch || partMatches;
+            });
+
+            // Check fuzzy matches.
+            const fuzzyMatch = fuzzy.match(queryJoin, str);
+            let matchScore = 0;
             // eslint-disable-next-line no-null/no-null
-            return (match === null) ? 0 : match.score;
+            if (!!fuzzyMatch && matchScore !== null) {
+                matchScore = (fuzzyMatch.score === Infinity) ? QuickFileOpenService.Scores.max : fuzzyMatch.score;
+            }
+
+            // Prioritize exact matches, then partial exact matches, then fuzzy matches.
+            if (exactMatch) {
+                return matchScore + QuickFileOpenService.Scores.exact;
+            } else if (partialMatch) {
+                return matchScore + QuickFileOpenService.Scores.partial;
+            } else {
+                // eslint-disable-next-line no-null/no-null
+                return (fuzzyMatch === null) ? 0 : matchScore;
+            }
         }
 
         // Get the item's member values for comparison.
