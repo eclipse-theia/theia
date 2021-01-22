@@ -162,6 +162,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     async restoreLayout(app: FrontendApplication): Promise<boolean> {
         this.logger.info('>>> Restoring the layout state...');
         const serializedLayoutData = await this.storageService.getData<string>(this.storageKey);
+        console.log(`+++ serializedLayoutData: ${serializedLayoutData}, json: ${JSON.stringify(serializedLayoutData)}`);
         if (serializedLayoutData === undefined) {
             this.logger.info('<<< Nothing to restore.');
             return false;
@@ -226,7 +227,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     protected async inflate(layoutData: string): Promise<ApplicationShell.LayoutData> {
         const parseContext = new ShellLayoutRestorer.ParseContext();
         const layout = this.parse<ApplicationShell.LayoutData>(layoutData, parseContext);
-
+        console.log(`+++ inflated layout: ${layout}, json: ${JSON.stringify(layout)}`);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let layoutVersion: number | any;
         try {
