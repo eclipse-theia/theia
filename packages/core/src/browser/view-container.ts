@@ -358,16 +358,21 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         return this.doStoreState();
     }
     protected doStoreState(): ViewContainer.State {
+        console.log('$$$ doStoreState for view container started.');
         const parts = this.getParts();
+        console.log(`$$$ parts count: ${parts.length}`);
         const availableSize = this.containerLayout.getAvailableSize();
+        console.log(`$$$ availableSize: ${availableSize}`);
         const orientation = this.orientation;
+        console.log(`$$$ orientation: ${orientation}`);
         const partStates = parts.map(part => {
             let size = this.containerLayout.getPartSize(part);
+            console.log(`$$$ part id: ${part.partId}, size: ${size}`);
             if (size && size > ViewContainerPart.HEADER_HEIGHT && orientation === 'vertical') {
                 size -= ViewContainerPart.HEADER_HEIGHT;
             }
-            console.log(`### store view container, id: ${part.partId}, collapsed: ${part.collapsed}, hidden: ${part.isHidden}`);
-            console.log(`### size: ${size}, availableSize: ${availableSize}, relSize: ${size && availableSize ? size / availableSize : undefined}`);
+            console.log(`$$$ part id: ${part.partId}, collapsed: ${part.collapsed}, hidden: ${part.isHidden}`);
+            console.log(`$$$ calculated size: ${size}, availableSize: ${availableSize}, relSize: ${size && availableSize ? size / availableSize : undefined}`);
             return <ViewContainerPart.State>{
                 widget: part.wrapped,
                 partId: part.partId,
@@ -376,6 +381,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 relativeSize: size && availableSize ? size / availableSize : undefined
             };
         });
+        console.log('$$$ doStoreState for view container ended.');
         return { parts: partStates, title: this.titleOptions };
     }
 
@@ -1141,21 +1147,32 @@ export class ViewContainerLayout extends SplitLayout {
      */
     getAvailableSize(): number {
         if (!this.parent || !this.parent.isAttached) {
+            console.log(`$$$ getAvailableSize(): !this.parent: ${!this.parent} || !this.parent.isAttached: ${!this.parent?.isAttached}`);
             return 0;
         }
         const parts = this.widgets;
         const visiblePartCount = parts.filter(part => !part.isHidden).length;
+        console.log(`$$$ getAvailableSize(): visiblePartCount: ${visiblePartCount}`);
         let availableSize: number;
         if (this.orientation === 'horizontal') {
             availableSize = this.parent.node.offsetWidth;
+            console.log(`$$$ getAvailableSize(): 1: availableSize: ${availableSize}`);
+            console.log(`$$$ getAvailableSize(): 1: this.parent.node.offsetWidth: ${this.parent.node.offsetWidth}`);
         } else {
             availableSize = this.parent.node.offsetHeight;
+            console.log(`$$$ getAvailableSize(): 2: availableSize: ${availableSize}`);
+            console.log(`$$$ getAvailableSize(): 2: this.parent.node.offsetHeight: ${this.parent.node.offsetHeight}`);
             availableSize -= visiblePartCount * this.options.headerSize;
+            console.log(`$$$ getAvailableSize(): 3: availableSize: ${availableSize}`);
+            console.log(`$$$ getAvailableSize(): 3: this.options.headerSize: ${this.options.headerSize}`);
         }
         availableSize -= (visiblePartCount - 1) * this.spacing;
+        console.log(`$$$ getAvailableSize(): 4: availableSize: ${availableSize}`);
         if (availableSize < 0) {
+            console.log('$$$ getAvailableSize() availableSize < 0');
             return 0;
         }
+        console.log(`$$$ getAvailableSize(): final value for availableSize: ${availableSize}`);
         return availableSize;
     }
 
