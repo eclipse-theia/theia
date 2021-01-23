@@ -337,15 +337,15 @@ export class ShellLayoutRestorer implements CommandContribution {
                     let oldState: object;
                     console.log(`+++ widget ${desc.constructionOptions.factoryId} is stateful`);
                     if (typeof desc.innerWidgetState === 'string') {
-                        console.log(`+++ desc.innerWidgetState is string: ${desc.innerWidgetState}`);
+                        console.log(`+++ +++ desc.innerWidgetState is string: ${desc.innerWidgetState}`);
                         const parseContext = new ShellLayoutRestorer.ParseContext();
                         oldState = this.parse(desc.innerWidgetState, parseContext);
                         await parseContext.inflate({ ...context, parent: widget });
                     } else {
-                        console.log(`+++ desc.innerWidgetState is an object: ${JSON.stringify(desc.innerWidgetState)}`);
+                        console.log(`+++ +++ desc.innerWidgetState is an object: ${JSON.stringify(desc.innerWidgetState)}`);
                         oldState = desc.innerWidgetState;
                     }
-                    console.log(`+++ restore state for ${desc.constructionOptions.factoryId}, oldState: ${JSON.stringify(oldState)}`);
+                    console.log(`+++ +++ restore state for ${desc.constructionOptions.factoryId}`);
                     widget.restoreState(oldState);
                 } catch (e) {
                     if (ApplicationShellLayoutMigrationError.is(e)) {
