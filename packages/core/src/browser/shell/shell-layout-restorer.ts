@@ -345,7 +345,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                         console.log(`+++ desc.innerWidgetState is an object: ${JSON.stringify(desc.innerWidgetState)}`);
                         oldState = desc.innerWidgetState;
                     }
-                    console.log(`+++ restore state for ${desc.constructionOptions.factoryId}, oldState: ${oldState}`);
+                    console.log(`+++ restore state for ${desc.constructionOptions.factoryId}, oldState: ${JSON.stringify(oldState)}`);
                     widget.restoreState(oldState);
                 } catch (e) {
                     if (ApplicationShellLayoutMigrationError.is(e)) {

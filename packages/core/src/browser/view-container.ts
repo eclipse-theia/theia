@@ -366,6 +366,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             if (size && size > ViewContainerPart.HEADER_HEIGHT && orientation === 'vertical') {
                 size -= ViewContainerPart.HEADER_HEIGHT;
             }
+            console.log(`### store view container, id: ${part.partId}, collapsed: ${part.collapsed}, hidden: ${part.isHidden}`);
+            console.log(`### size: ${size}, availableSize: ${availableSize}, relSize: ${size && availableSize ? size / availableSize : undefined}`);
             return <ViewContainerPart.State>{
                 widget: part.wrapped,
                 partId: part.partId,
@@ -383,7 +385,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
     }
     protected doRestoreState(state: ViewContainer.State): void {
         this.setTitleOptions(state.title);
-        console.log(`--- restore view container title: ${state.title}`);
+        console.log(`--- restore view container title: ${JSON.stringify(state.title)}`);
         // restore widgets
         for (const part of state.parts) {
             console.log(`--- iterate over part id: ${part.partId}, hidden: ${part.hidden}, collapsed: ${part.collapsed}, relSize: ${part.relativeSize}`);
