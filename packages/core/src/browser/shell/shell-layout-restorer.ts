@@ -270,39 +270,37 @@ export class ShellLayoutRestorer implements CommandContribution {
 
     protected parse<T>(layoutData: string, parseContext: ShellLayoutRestorer.ParseContext): T {
         return JSON.parse(layoutData, (property: string, value) => {
+            console.log(`+++ --- parse property: ${property}, with value: ${JSON.stringify(value)}`);
             if (this.isWidgetsProperty(property)) {
-                console.log(`+++ 1 parsing widgets property: ${property}`);
                 const widgets = parseContext.filteredArray();
                 const descs = (value as WidgetDescription[]);
-                console.log(`+++ 1 widget description: ${descs}`);
+                console.log('+++ --- 1 property: ${property}');
                 for (let i = 0; i < descs.length; i++) {
                     parseContext.push(async context => {
-                        console.log(`+++ 1 convert description into widget: ${descs[i]}`);
+                        console.log(`+++ --- 1 convert to widget, property: ${property}, desc: ${descs[i]}`);
                         widgets[i] = await this.convertToWidget(descs[i], context);
                     });
                 }
-                console.log(`+++ 1 return widgets: ${JSON.stringify(widgets)}`);
                 return widgets;
             } else if (value && typeof value === 'object' && !Array.isArray(value)) {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const copy: any = {};
-                console.log(`+++ 2 parsing object value: ${JSON.stringify(value)}`);
                 for (const p in value) {
                     if (this.isWidgetProperty(p)) {
-                        console.log(`+++ 2 parsing widget property: ${JSON.stringify(p)}`);
+                        console.log(`+++ --- 2 property: ${property}, value property: ${JSON.stringify(p)}`);
                         parseContext.push(async context => {
-                            console.log(`+++ 2 convert description into widget: ${value[p]}`);
+                            console.log(`+++ --- 2 convert to widget, property: ${property}, desc: ${value[p]}`);
                             copy[p] = await this.convertToWidget(value[p], context);
                         });
                     } else {
-                        console.log(`+++ 2 simple copy value[p]: ${JSON.stringify(value[p])}`);
+                        console.log(`+++ --- 2 property: ${property}, copy value[p]: ${JSON.stringify(value[p])}`);
                         copy[p] = value[p];
                     }
                 }
-                console.log(`+++ 2 return objects: ${JSON.stringify(copy)}`);
+                console.log(`+++ --- 2 return copy objects for property: ${property}: ${JSON.stringify(copy)}`);
                 return copy;
             }
-            console.log(`+++ 3 return value: ${JSON.stringify(value)}`);
+            console.log(`+++ --- 3 return value for the property ${property}: ${JSON.stringify(value)}`);
             return value;
         });
     }
