@@ -17,7 +17,7 @@
 import { injectable } from 'inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
-import { EXPLORER_VIEW_CONTAINER_ID } from './navigator-widget';
+import { EXPLORER_VIEW_CONTAINER_ID } from './navigator-widget-factory';
 import { ApplicationShell, FrontendApplication, FrontendApplicationContribution, Saveable, Title, Widget } from '@theia/core/lib/browser';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';

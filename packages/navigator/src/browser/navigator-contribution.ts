@@ -49,7 +49,8 @@ import {
     WorkspacePreferences,
     WorkspaceService
 } from '@theia/workspace/lib/browser';
-import { EXPLORER_VIEW_CONTAINER_ID, FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
+import { EXPLORER_VIEW_CONTAINER_ID } from './navigator-widget-factory';
+import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from './navigator-preferences';
 import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
 import { FileNavigatorFilter } from './navigator-filter';

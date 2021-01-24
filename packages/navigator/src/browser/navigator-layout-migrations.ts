@@ -16,7 +16,8 @@
 
 import { injectable } from 'inversify';
 import { ApplicationShellLayoutMigration, WidgetDescription, ApplicationShellLayoutMigrationContext } from '@theia/core/lib/browser/shell/shell-layout-restorer';
-import { FILE_NAVIGATOR_ID, EXPLORER_VIEW_CONTAINER_ID, EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS } from './navigator-widget';
+import { EXPLORER_VIEW_CONTAINER_ID, EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS } from './navigator-widget-factory';
+import { FILE_NAVIGATOR_ID } from './navigator-widget';
 
 @injectable()
 export class NavigatorLayoutVersion3Migration implements ApplicationShellLayoutMigration {

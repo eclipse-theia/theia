@@ -30,7 +30,7 @@ describe('Menus', function () {
     const { ViewContainer } = require('@theia/core/lib/browser/view-container');
     const { waitForRevealed, waitForHidden } = require('@theia/core/lib/browser/widgets/widget');
     const { CallHierarchyContribution } = require('@theia/callhierarchy/lib/browser/callhierarchy-contribution');
-    const { EXPLORER_VIEW_CONTAINER_ID } = require('@theia/navigator/lib/browser/navigator-widget');
+    const { EXPLORER_VIEW_CONTAINER_ID } = require('@theia/navigator/lib/browser/navigator-widget-factory');
     const { FileNavigatorContribution } = require('@theia/navigator/lib/browser/navigator-contribution');
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
     const { ScmHistoryContribution } = require('@theia/scm-extra/lib/browser/history/scm-history-contribution');
