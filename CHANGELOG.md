@@ -1,14 +1,40 @@
 # Change Log
 
-## v1.10.0
+## v1.10.0 - 1/28/2021
 
-- [plugin] added `createDeployQuickOpenItem` method to create `DeployQuickOpenItem` in order to make extension deploy command extensible [#8919] (https://github.com/eclipse-theia/theia/pull/8919)
+- [api-samples] added example on how to contribute toggleable toolbar items [#8968](https://github.com/eclipse-theia/theia/pull/8968)
+- [api-tests] fixed the `Saveable#closeOnFileDelete` integration test [#8942](https://github.com/eclipse-theia/theia/pull/8942)
+- [core] added support for vscode settings schemas [#8761](https://github.com/eclipse-theia/theia/pull/8761)
+- [core] added unit tests for `uri.isEqualOrParent` [#8876](https://github.com/eclipse-theia/theia/pull/8876)
+- [core] fixed display issue with horizontal scrollbars in tab areas [#8898](https://github.com/eclipse-theia/theia/pull/8898)
+- [core] fixed error message when a command fails to execute [#8978](https://github.com/eclipse-theia/theia/pull/8978)
+- [core] fixed issue to allow late client registration [#8586](https://github.com/eclipse-theia/theia/pull/8686)
+- [core] fixed issue with `TreeWidget#applyFontStyles` [#8937](https://github.com/eclipse-theia/theia/pull/8937)
+- [core] fixed minor typo `mounpoint` to `mountpoint` [#8928](https://github.com/eclipse-theia/theia/pull/8928)
+- [core] removed the `save without formatting` menu entry under `file` [#8877](https://github.com/eclipse-theia/theia/pull/8877)
+- [core] updated rendering of toggleable toolbar items to highlight them when toggled [#8968](https://github.com/eclipse-theia/theia/pull/8968)
 - [dependencies] updated to use fixed versions when publishing, `"x.y.z"` instead of `"^x.y.z"` in dependencies [#8880](https://github.com/eclipse-theia/theia/pull/8880)
-- [scm] update code required to highlight nodes on search in the `ScmTreeWidget` [#8929](https://github.com/eclipse-theia/theia/pull/8929)
+- [documentation] updated `NOTICE.md` [#8957](https://github.com/eclipse-theia/theia/pull/8957)
+- [filesystem] added support for the `files.trimTrailingWhitespace` preference [#8742](https://github.com/eclipse-theia/theia/pull/8742)
+- [filesystem] fixed the type guard for `FileStat.is` [#8986](https://github.com/eclipse-theia/theia/pull/8986)
+- [navigator] update the navigator widget factory for extensibility [#8962](https://github.com/eclipse-theia/theia/pull/8962)
+- [navigator] updated the menu order for `select for compare` and `compare with selected` [#8926](https://github.com/eclipse-theia/theia/pull/8926)
+- [plugin] added `createDeployQuickOpenItem` method to create `DeployQuickOpenItem` in order to make extension deploy command extensible [#8919](https://github.com/eclipse-theia/theia/pull/8919)
+- [plugin] added support for `viewsWelcome` in `TreeViews` [#8678](https://github.com/eclipse-theia/theia/pull/8678)
+- [plugin] added support for the `CommentThread` Plugin API [#8870](https://github.com/eclipse-theia/theia/pull/8870)
+- [plugin] added support for the `workbench.action.navigateBack` command [#8958](https://github.com/eclipse-theia/theia/pull/8958)
+- [plugin] added support for the `workbench.action.navigateForward` command [#8958](https://github.com/eclipse-theia/theia/pull/8958)
+- [plugin] added support for the `workbench.action.navigateToLastEditLocation` command [#8958](https://github.com/eclipse-theia/theia/pull/8958)
+- [plugin] fixed tree-view reveal to not invalidate item command [#8922](https://github.com/eclipse-theia/theia/pull/8922)
+- [plugin] updated the logging of embedded languages [#8938](https://github.com/eclipse-theia/theia/pull/8938)
+- [preview] upgraded `highlight.js` from `^9.12.2` to `10.4.1` to resolve security vulnerability [#8881](https://github.com/eclipse-theia/theia/pull/8881)
+- [scm] updated code required to highlight nodes on search in the `ScmTreeWidget` [#8929](https://github.com/eclipse-theia/theia/pull/8929)
+- [task] fixed issue where tasks were not successfully executed without `cwd` explicitly set [#8949](https://github.com/eclipse-theia/theia/pull/8949)
+- [terminal] reduced the severity of certain terminal logs [#8908](https://github.com/eclipse-theia/theia/pull/8908)
 
 <a name="breaking_changes_1.10.0">[Breaking Changes:](#breaking_changes_1.10.0)</a>
 
-- [scm] add `caption` field to `ScmTreeWidget.Props` interface. Remove `name` from `ScmResourceComponent.Props`, `groupLabel` from `ScmResourceGroupComponent.Props`, and `path` from `ScmResourceFolderElement.Props` interfaces. [#8929](https://github.com/eclipse-theia/theia/pull/8929)
+- [scm] added the `caption` field to the `ScmTreeWidget.Props` interface. Removed `name` from `ScmResourceComponent.Props`, `groupLabel` from `ScmResourceGroupComponent.Props`, and `path` from `ScmResourceFolderElement.Props` interfaces. [#8929](https://github.com/eclipse-theia/theia/pull/8929)
 
 
 ## v1.9.0 - 16/12/2020
