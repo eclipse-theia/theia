@@ -58,6 +58,7 @@
     line-height: var(--theia-view-container-title-height);
     z-index: 10;
     color: var(--theia-sideBarSectionHeader-foreground);
+    font-weight: 700;
 }
 
 .theia-view-container .part > .header .theia-ExpansionToggle {
