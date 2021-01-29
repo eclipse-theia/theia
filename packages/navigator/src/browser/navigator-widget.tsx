@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { CommandService, SelectionService } from '@theia/core/lib/common';
-import { CorePreferences, Key, TreeModel } from '@theia/core/lib/browser';
+import { CorePreferences, Key, TreeModel, SelectableTreeNode } from '@theia/core/lib/browser';
 import {
     ContextMenuRenderer, ExpandableTreeNode,
     TreeProps, TreeNode
@@ -102,7 +102,12 @@ export class FileNavigatorWidget extends FileTreeWidget {
         const mainPanelNode = this.shell.mainPanel.node;
         this.addEventListener(mainPanelNode, 'drop', async ({ dataTransfer }) => {
             const treeNodes = dataTransfer && this.getSelectedTreeNodesFromData(dataTransfer) || [];
-            treeNodes.filter(FileNode.is).forEach(treeNode => this.commandService.executeCommand(FileNavigatorCommands.OPEN.id, treeNode.uri));
+            treeNodes.filter(FileNode.is).forEach(treeNode => {
+                if (!SelectableTreeNode.isSelected(treeNode)) {
+                    this.model.toggleNode(treeNode);
+                }
+            });
+            this.commandService.executeCommand(FileNavigatorCommands.OPEN.id);
         });
         const handler = (e: DragEvent) => {
             if (e.dataTransfer) {
