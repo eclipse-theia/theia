@@ -21,7 +21,7 @@ import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/
 import { EditorPreviewWidget } from './editor-preview-widget';
 import { EditorPreviewWidgetFactory, EditorPreviewWidgetOptions } from './editor-preview-factory';
 import { EditorPreviewPreferences } from './editor-preview-preferences';
-import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { WidgetOpenHandler } from '@theia/core/lib/browser';
 
 /**
  * Opener options containing an optional preview flag.
@@ -134,7 +134,7 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget 
     protected async replaceCurrentPreview(uri: URI, options: PreviewEditorOpenerOptions): Promise<EditorPreviewWidget | undefined> {
         const currentPreview = await this.currentEditorPreview;
         if (currentPreview) {
-            const editorWidget = await this.editorManager.getOrCreateByUri(uri);
+            const editorWidget = await this.editorManager.getOrCreateByUri(uri, options);
             currentPreview.replaceEditorWidget(editorWidget);
             return currentPreview;
         }
@@ -151,12 +151,13 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget 
         return result;
     }
 
-    protected createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): EditorPreviewWidgetOptions {
+    protected createWidgetOptions(uri: URI, options?: EditorOpenerOptions): EditorPreviewWidgetOptions {
         return {
             kind: 'editor-preview-widget',
             id: EditorPreviewWidgetFactory.generateUniqueId(),
             initialUri: uri.withoutFragment().toString(),
-            session: EditorPreviewWidgetFactory.sessionId
+            session: EditorPreviewWidgetFactory.sessionId,
+            selection: options?.selection,
         };
     }
 }

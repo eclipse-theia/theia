@@ -19,10 +19,10 @@ import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { EditorPreviewWidget } from './editor-preview-widget';
 import { inject, injectable } from 'inversify';
-import { EditorManager } from '@theia/editor/lib/browser';
+import { EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { UUID } from '@phosphor/coreutils';
 
-export interface EditorPreviewWidgetOptions {
+export interface EditorPreviewWidgetOptions extends EditorOpenerOptions {
     kind: 'editor-preview-widget',
     id: string,
     initialUri: string,
@@ -53,7 +53,7 @@ export class EditorPreviewWidgetFactory implements WidgetFactory {
 
     protected async doCreate(options: EditorPreviewWidgetOptions): Promise<EditorPreviewWidget> {
         const widget = (options.session === EditorPreviewWidgetFactory.sessionId)
-            ? await this.editorManager.getOrCreateByUri(new URI(options.initialUri))
+            ? await this.editorManager.getOrCreateByUri(new URI(options.initialUri), options)
             : undefined;
         const previewWidget = new EditorPreviewWidget(this.widgetManager, widget);
         previewWidget.id = options.id;
