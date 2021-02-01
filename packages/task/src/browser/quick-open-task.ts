@@ -741,7 +741,7 @@ export class TaskRunningQuickOpen implements QuickOpenModel {
                                 return false;
                             }
                             if (task.terminalId) {
-                                const terminal = this.terminalService.getById('terminal-' + task.terminalId);
+                                const terminal = this.terminalService.getByTerminalId(task.terminalId);
                                 if (terminal) {
                                     this.terminalService.open(terminal);
                                 }
