@@ -149,10 +149,14 @@ export namespace TaskCustomization {
 }
 
 export enum TaskScope {
-    Workspace,
-    Global
+    Global = 1,
+    Workspace = 2
 }
 
+/**
+ * The task configuration scopes.
+ * - `string` represents the associated workspace folder uri.
+ */
 export type TaskConfigurationScope = string | TaskScope.Workspace | TaskScope.Global;
 
 export interface TaskConfiguration extends TaskCustomization {

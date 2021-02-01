@@ -246,7 +246,7 @@ export class QuickOpenTask implements QuickOpenModel, QuickOpenHandler {
         if (this.workspaceService.opened) {
             const roots = await this.workspaceService.roots;
             scopes.push(...roots.map(rootStat => rootStat.resource.toString()));
-            if (this.workspaceService.saved) {
+            if (this.workspaceService.saved || groupedTasks.get(TaskScope.Workspace.toString())?.length) {
                 scopes.push(TaskScope.Workspace);
             }
         }
