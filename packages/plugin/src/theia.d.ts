@@ -9722,7 +9722,7 @@ declare module '@theia/plugin' {
     }
 
     export enum TaskScope {
-        /** The task is a global task */
+        /** The task is a global task. Global tasks are currently not supported. */
         Global = 1,
 
         /** The task is a workspace task */
