@@ -171,6 +171,9 @@
       ],
       "@theia/timeline/*": [
         "packages/timeline/*"
+      ],
+      "@theia/property-view/lib/*": [
+        "packages/property-view/src/*"
       ]
     }
   }

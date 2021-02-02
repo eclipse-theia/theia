@@ -25,6 +25,7 @@ describe('Views', function () {
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');
     const { OutlineViewContribution } = require('@theia/outline-view/lib/browser/outline-view-contribution');
     const { ProblemContribution } = require('@theia/markers/lib/browser/problem/problem-contribution');
+    const { PropertyViewContribution } = require('@theia/property-view/lib/browser/property-view-contribution');
     const { HostedPluginSupport } = require('@theia/plugin-ext/lib/hosted/browser/hosted-plugin');
 
     /** @type {import('inversify').Container} */
@@ -34,6 +35,7 @@ describe('Views', function () {
     const scmContribution = container.get(ScmContribution);
     const outlineContribution = container.get(OutlineViewContribution);
     const problemContribution = container.get(ProblemContribution);
+    const propertyViewContribution = container.get(PropertyViewContribution);
     const pluginService = container.get(HostedPluginSupport);
 
     before(() => Promise.all([
@@ -44,7 +46,7 @@ describe('Views', function () {
         })()
     ]));
 
-    for (const contribution of [navigatorContribution, scmContribution, outlineContribution, problemContribution]) {
+    for (const contribution of [navigatorContribution, scmContribution, outlineContribution, problemContribution, propertyViewContribution]) {
         it(`should toggle ${contribution.viewLabel}`, async function () {
             let view = await contribution.closeView();
             if (view) {
