@@ -352,16 +352,31 @@ export interface CodeActionProvider {
     providedCodeActionKinds?: string[];
 }
 
+// copied from https://github.com/microsoft/vscode/blob/b165e20587dd0797f37251515bc9e4dbe513ede8/src/vs/editor/common/modes.ts
+export interface WorkspaceEditMetadata {
+    needsConfirmation: boolean;
+    label: string;
+    description?: string;
+    iconPath?: {
+        id: string;
+    } | {
+        light: UriComponents;
+        dark: UriComponents;
+    };
+}
+
 export interface WorkspaceFileEdit {
     oldUri?: UriComponents;
     newUri?: UriComponents;
     options?: { overwrite?: boolean, ignoreIfNotExists?: boolean, ignoreIfExists?: boolean, recursive?: boolean };
+    metadata?: WorkspaceEditMetadata;
 }
 
 export interface WorkspaceTextEdit {
     resource: UriComponents;
     modelVersionId?: number;
     edit: TextEdit;
+    metadata?: WorkspaceEditMetadata;
 }
 
 export interface WorkspaceEdit {

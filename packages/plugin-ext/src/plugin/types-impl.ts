@@ -1050,45 +1050,61 @@ export interface FileOperationOptions {
     ignoreIfNotExists?: boolean;
     recursive?: boolean;
 }
+
+// copied from https://github.com/microsoft/vscode/blob/b165e20587dd0797f37251515bc9e4dbe513ede8/src/vs/editor/common/modes.ts
+export interface WorkspaceEditMetadata {
+    needsConfirmation: boolean;
+    label: string;
+    description?: string;
+    iconPath?: {
+        id: string;
+    } | {
+        light: URI;
+        dark: URI;
+    };
+}
+
 export interface FileOperation {
     _type: 1;
     from: URI | undefined;
     to: URI | undefined;
     options?: FileOperationOptions;
+    metadata?: WorkspaceEditMetadata;
 }
 
 export interface FileTextEdit {
     _type: 2;
     uri: URI;
     edit: TextEdit;
+    metadata?: WorkspaceEditMetadata;
 }
 
 export class WorkspaceEdit implements theia.WorkspaceEdit {
 
     private _edits = new Array<FileOperation | FileTextEdit | undefined>();
 
-    renameFile(from: theia.Uri, to: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }): void {
-        this._edits.push({ _type: 1, from, to, options });
+    renameFile(from: theia.Uri, to: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }, metadata?: WorkspaceEditMetadata): void {
+        this._edits.push({ _type: 1, from, to, options, metadata });
     }
 
-    createFile(uri: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }): void {
-        this._edits.push({ _type: 1, from: undefined, to: uri, options });
+    createFile(uri: theia.Uri, options?: { overwrite?: boolean, ignoreIfExists?: boolean }, metadata?: WorkspaceEditMetadata): void {
+        this._edits.push({ _type: 1, from: undefined, to: uri, options, metadata });
     }
 
-    deleteFile(uri: theia.Uri, options?: { recursive?: boolean, ignoreIfNotExists?: boolean }): void {
-        this._edits.push({ _type: 1, from: uri, to: undefined, options });
+    deleteFile(uri: theia.Uri, options?: { recursive?: boolean, ignoreIfNotExists?: boolean }, metadata?: WorkspaceEditMetadata): void {
+        this._edits.push({ _type: 1, from: uri, to: undefined, options, metadata });
     }
 
-    replace(uri: URI, range: Range, newText: string): void {
-        this._edits.push({ _type: 2, uri, edit: new TextEdit(range, newText) });
+    replace(uri: URI, range: Range, newText: string, metadata?: WorkspaceEditMetadata): void {
+        this._edits.push({ _type: 2, uri, edit: new TextEdit(range, newText), metadata });
     }
 
-    insert(resource: URI, position: Position, newText: string): void {
-        this.replace(resource, new Range(position, position), newText);
+    insert(resource: URI, position: Position, newText: string, metadata?: WorkspaceEditMetadata): void {
+        this.replace(resource, new Range(position, position), newText, metadata);
     }
 
-    delete(resource: URI, range: Range): void {
-        this.replace(resource, range, '');
+    delete(resource: URI, range: Range, metadata?: WorkspaceEditMetadata): void {
+        this.replace(resource, range, '', metadata);
     }
 
     has(uri: URI): boolean {
@@ -1150,16 +1166,16 @@ export class WorkspaceEdit implements theia.WorkspaceEdit {
         return result;
     }
 
-    _allEntries(): ([URI, TextEdit[]] | [URI, URI, FileOperationOptions])[] {
-        const res: ([URI, TextEdit[]] | [URI, URI, FileOperationOptions])[] = [];
+    _allEntries(): ([URI, TextEdit[], WorkspaceEditMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] {
+        const res: ([URI, TextEdit[], WorkspaceEditMetadata] | [URI, URI, FileOperationOptions, WorkspaceEditMetadata])[] = [];
         for (const edit of this._edits) {
             if (!edit) {
                 continue;
             }
             if (edit._type === 1) {
-                res.push([edit.from!, edit.to!, edit.options!]);
+                res.push([edit.from!, edit.to!, edit.options!, edit.metadata!]);
             } else {
-                res.push([edit.uri, [edit.edit]]);
+                res.push([edit.uri, [edit.edit], edit.metadata!]);
             }
         }
         return res;

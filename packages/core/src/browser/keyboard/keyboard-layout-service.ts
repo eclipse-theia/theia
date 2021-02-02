@@ -99,7 +99,7 @@ export class KeyboardLayoutService {
         const layout = this.currentLayout;
         if (layout) {
             const value = layout.code2Character[key.code];
-            if (value) {
+            if (value && value.replace(/[\n\r\t]/g, '')) {
                 return value;
             }
         }

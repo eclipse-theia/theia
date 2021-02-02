@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@theia/api-samples": "1.10.0",
+    "@theia/bulk-edit": "1.10.0",
     "@theia/callhierarchy": "1.10.0",
     "@theia/console": "1.10.0",
     "@theia/core": "1.10.0",

@@ -1213,16 +1213,31 @@ export interface CodeActionDto {
     disabled?: string;
 }
 
+export interface WorkspaceEditMetadataDto {
+    needsConfirmation: boolean;
+    label: string;
+    description?: string;
+    iconPath?: {
+        id: string;
+    } | {
+        light: UriComponents;
+        dark: UriComponents;
+    };
+}
+
 export interface WorkspaceFileEditDto {
     oldUri?: UriComponents;
     newUri?: UriComponents;
     options?: FileOperationOptions;
+    metadata?: WorkspaceEditMetadataDto;
 }
 
 export interface WorkspaceTextEditDto {
     resource: UriComponents;
     modelVersionId?: number;
     edit: TextEdit;
+    metadata?: WorkspaceEditMetadataDto;
+
 }
 export namespace WorkspaceTextEditDto {
     export function is(arg: WorkspaceTextEditDto | WorkspaceFileEditDto): arg is WorkspaceTextEditDto {

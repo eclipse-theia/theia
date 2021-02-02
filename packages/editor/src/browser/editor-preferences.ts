@@ -805,6 +805,11 @@ const codeEditorPreferenceProperties = {
         'minimum': 0,
         'maximum': 1073741824
     },
+    'editor.rename.enablePreview': {
+        'description': 'Controls whether the editor should display refactor preview pane for rename.',
+        'type': 'boolean',
+        'default': true
+    },
     'editor.renderControlCharacters': {
         'description': 'Controls whether the editor should render control characters.',
         'type': 'boolean',
