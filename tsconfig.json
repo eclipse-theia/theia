@@ -37,6 +37,9 @@
       "@theia/ext-scripts/*": [
         "dev-packages/ext-scripts/*"
       ],
+      "@theia/bulk-edit/lib/*": [
+        "packages/bulk-edit/src/*"
+      ],
       "@theia/callhierarchy/lib/*": [
         "packages/callhierarchy/src/*"
       ],

@@ -15,6 +15,9 @@
       "path": "../api-samples/compile.tsconfig.json"
     },
     {
+      "path": "../../packages/bulk-edit/compile.tsconfig.json"
+    },
+    {
       "path": "../../packages/callhierarchy/compile.tsconfig.json"
     },
     {

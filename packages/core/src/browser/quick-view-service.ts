@@ -15,9 +15,10 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { QuickOpenModel, QuickOpenHandler, QuickOpenOptions, QuickOpenItem, QuickOpenMode, QuickOpenContribution, QuickOpenHandlerRegistry } from './quick-open';
+import { QuickOpenHandler, QuickOpenOptions, QuickOpenItem, QuickOpenMode, QuickOpenContribution, QuickOpenHandlerRegistry } from './quick-open';
 import { Disposable } from '../common/disposable';
 import { ContextKeyService } from './context-key-service';
+import { QuickOpenModel } from '../common/quick-open-model';
 
 export interface QuickViewItem {
     readonly label: string;
@@ -28,11 +29,10 @@ export interface QuickViewItem {
 
 @injectable()
 export class QuickViewService implements QuickOpenModel, QuickOpenHandler, QuickOpenContribution {
-
+    // hiddenItemLabels contains item labels hidden from Quick View
+    private hiddenItemLabels = new Set<string | undefined>();
     readonly prefix: string = 'view ';
-
     readonly description: string = 'Open View';
-
     protected readonly items: (QuickOpenItem & { when?: string })[] = [];
 
     @inject(ContextKeyService)
@@ -51,12 +51,21 @@ export class QuickViewService implements QuickOpenModel, QuickOpenHandler, Quick
         }), { when: item.when });
         this.items.push(quickOpenItem);
         this.items.sort((a, b) => a.getLabel()!.localeCompare(b.getLabel()!));
+
         return Disposable.create(() => {
             const index = this.items.indexOf(quickOpenItem);
             if (index !== -1) {
                 this.items.splice(index, 1);
             }
         });
+    }
+
+    hideItem(label: string): void {
+        this.hiddenItemLabels.add(label);
+    }
+
+    showItem(label: string): void {
+        this.hiddenItemLabels.delete(label);
     }
 
     getModel(): QuickOpenModel {
@@ -72,7 +81,8 @@ export class QuickViewService implements QuickOpenModel, QuickOpenHandler, Quick
 
     onType(_: string, acceptor: (items: QuickOpenItem[]) => void): void {
         const items = this.items.filter(item =>
-            item.when === undefined || this.contextKexService.match(item.when)
+            (item.when === undefined || this.contextKexService.match(item.when)) &&
+            (!this.hiddenItemLabels.has(item.getLabel()))
         );
         acceptor(items);
     }
@@ -80,5 +90,4 @@ export class QuickViewService implements QuickOpenModel, QuickOpenHandler, Quick
     registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
         handlers.registerHandler(this);
     }
-
 }

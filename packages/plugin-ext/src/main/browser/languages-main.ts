@@ -1017,9 +1017,15 @@ export function toMonacoWorkspaceEdit(data: WorkspaceEditDto | undefined): monac
     return {
         edits: (data && data.edits || []).map(edit => {
             if (WorkspaceTextEditDto.is(edit)) {
-                return { resource: monaco.Uri.revive(edit.resource), edit: edit.edit };
+                return <monaco.languages.WorkspaceTextEdit>{
+                    resource: monaco.Uri.revive(edit.resource),
+                    edit: edit.edit, metadata: edit.metadata
+                };
             } else {
-                return { newUri: monaco.Uri.revive(edit.newUri), oldUri: monaco.Uri.revive(edit.oldUri), options: edit.options };
+                return <monaco.languages.WorkspaceFileEdit>{
+                    newUri: monaco.Uri.revive(edit.newUri), oldUri: monaco.Uri.revive(edit.oldUri),
+                    options: edit.options, metadata: edit.metadata
+                };
             }
         })
     };
