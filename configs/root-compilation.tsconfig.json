@@ -138,6 +138,9 @@
     },
     {
       "path": "../packages/timeline/compile.tsconfig.json"
+    },
+    {
+      "path": "../packages/property-view/compile.tsconfig.json"
     }
   ]
 }

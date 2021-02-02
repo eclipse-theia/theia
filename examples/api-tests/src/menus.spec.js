@@ -38,6 +38,7 @@ describe('Menus', function () {
     const { OutputContribution } = require('@theia/output/lib/browser/output-contribution');
     const { PluginFrontendViewContribution } = require('@theia/plugin-ext/lib/main/browser/plugin-frontend-view-contribution');
     const { ProblemContribution } = require('@theia/markers/lib/browser/problem/problem-contribution');
+    const { PropertyViewContribution } = require('@theia/property-view/lib/browser/property-view-contribution');
     const { SearchInWorkspaceFrontendContribution } = require('@theia/search-in-workspace/lib/browser/search-in-workspace-frontend-contribution');
     const { HostedPluginSupport } = require('@theia/plugin-ext/lib/hosted/browser/hosted-plugin');
 
@@ -67,6 +68,7 @@ describe('Menus', function () {
         container.get(OutputContribution),
         container.get(PluginFrontendViewContribution),
         container.get(ProblemContribution),
+        container.get(PropertyViewContribution),
         container.get(SearchInWorkspaceFrontendContribution)
     ]) {
         it(`should toggle '${contribution.viewLabel}' view`, async () => {

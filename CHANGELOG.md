@@ -6,6 +6,8 @@
 - [core] updated connection status service to prevent false positive alerts about offline mode [#9068](https://github.com/eclipse-theia/theia/pull/9068)
 - [tasks] add support for workspace-scoped task configurations. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
 - [workspace] add support for configurations outside the `settings` object and add `WorkspaceSchemaUpdater` to allow configurations sections to be contributed by extensions. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
+- [property-view] added initial version of a selection-based property-view [#8655](https://github.com/eclipse-theia/theia/pull/8655)
+  - A default implementation is available for file selections (via file navigator and default editors).
 
 <a name="breaking_changes_1.12.0">[Breaking Changes:](#breaking_changes_1.12.0)</a>
 
