@@ -115,7 +115,7 @@
     "vscode-builtin-lua": "https://open-vsx.org/api/vscode/lua/1.45.1/file/vscode.lua-1.45.1.vsix",
     "vscode-builtin-make": "https://open-vsx.org/api/vscode/make/1.45.1/file/vscode.make-1.45.1.vsix",
     "vscode-builtin-markdown": "https://open-vsx.org/api/vscode/markdown/1.45.1/file/vscode.markdown-1.45.1.vsix",
-    "vscode-builtin-markdown-language-features": "https://open-vsx.org/api/vscode/markdown-language-features/1.45.1/file/vscode.markdown-language-features-1.45.1.vsix",
+    "vscode-builtin-markdown-language-features": "https://open-vsx.org/api/vscode/markdown-language-features/1.39.2/file/vscode.markdown-language-features-1.39.2.vsix",
     "vscode-builtin-merge-conflict": "https://open-vsx.org/api/vscode/merge-conflict/1.45.1/file/vscode.merge-conflict-1.45.1.vsix",
     "vscode-builtin-npm": "https://open-vsx.org/api/vscode/npm/1.45.1/file/vscode.npm-1.45.1.vsix",
     "vscode-builtin-node-debug": "https://open-vsx.org/api/ms-vscode/node-debug/1.44.8/file/ms-vscode.node-debug-1.44.8.vsix",
