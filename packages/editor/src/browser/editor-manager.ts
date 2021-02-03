@@ -74,6 +74,24 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         this.updateCurrentEditor();
     }
 
+    async getByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+        const widget = await super.getByUri(uri);
+        if (widget) {
+            // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
+            this.revealSelection(widget, options, uri);
+        }
+        return widget;
+    }
+
+    async getOrCreateByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        const widget = await super.getOrCreateByUri(uri);
+        if (widget) {
+            // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
+            this.revealSelection(widget, options, uri);
+        }
+        return widget;
+    }
+
     protected readonly recentlyVisibleIds: string[] = [];
     protected get recentlyVisible(): EditorWidget | undefined {
         const id = this.recentlyVisibleIds[0];
@@ -137,8 +155,8 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
 
     async open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const editor = await super.open(uri, options);
-        this.revealSelection(editor, options, uri);
+        const editor = await this.getOrCreateByUri(uri, options);
+        await super.open(uri, options);
         return editor;
     }
 
