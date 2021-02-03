@@ -655,7 +655,7 @@ export class CommentAction extends React.Component<CommentAction.Props> {
         if (!isEnabled) {
             classNames.push(DISABLED_CLASS);
         }
-        return <a
+        return <button
             className={classNames.join(' ')}
             tabIndex={0}
             role={'button'}
@@ -664,6 +664,6 @@ export class CommentAction extends React.Component<CommentAction.Props> {
                     onClick();
                 }
             }}>{node.label}
-        </a>;
+        </button>;
     }
 }
