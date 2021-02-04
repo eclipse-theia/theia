@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2015-2018 Red Hat, Inc.
+ * Copyright (C) 2015-2021 Red Hat, Inc.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -59,7 +59,6 @@ import { CharacterPair } from '../../../common/plugin-api-rpc';
 import * as jsoncparser from 'jsonc-parser';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { deepClone } from '@theia/core/lib/common/objects';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { RecursivePartial } from '@theia/core/lib/common/types';
 import {
@@ -69,6 +68,7 @@ import {
 } from '@theia/task/lib/common/task-protocol';
 import { ColorDefinition } from '@theia/core/lib/browser/color-registry';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
+import { PluginUriFactory } from './plugin-uri-factory';
 
 namespace nls {
     export function localize(key: string, _default: string): string {
@@ -92,6 +92,9 @@ export class TheiaPluginScanner implements PluginScanner {
     @inject(GrammarsReader)
     private readonly grammarsReader: GrammarsReader;
 
+    @inject(PluginUriFactory)
+    protected readonly pluginUriFactory: PluginUriFactory;
+
     get apiType(): PluginEngine {
         return this._apiType;
     }
@@ -99,7 +102,7 @@ export class TheiaPluginScanner implements PluginScanner {
     getModel(plugin: PluginPackage): PluginModel {
         const result: PluginModel = {
             packagePath: plugin.packagePath,
-            packageUri: FileUri.create(plugin.packagePath).toString(),
+            packageUri: this.pluginUriFactory.createUri(plugin).toString(),
             // see id definition: https://github.com/microsoft/vscode/blob/15916055fe0cb9411a5f36119b3b012458fe0a1d/src/vs/platform/extensions/common/extensions.ts#L167-L169
             id: `${plugin.publisher.toLowerCase()}.${plugin.name.toLowerCase()}`,
             name: plugin.name,
@@ -400,7 +403,7 @@ export class TheiaPluginScanner implements PluginScanner {
             if (contribution.path) {
                 result.push({
                     id: contribution.id,
-                    uri: FileUri.create(path.join(pck.packagePath, contribution.path)).toString(),
+                    uri: this.pluginUriFactory.createUri(pck, contribution.path).toString(),
                     description: contribution.description,
                     label: contribution.label,
                     uiTheme: contribution.uiTheme
@@ -426,7 +429,7 @@ export class TheiaPluginScanner implements PluginScanner {
             }
             result.push({
                 id: contribution.id,
-                uri: FileUri.create(path.join(pck.packagePath, contribution.path)).toString(),
+                uri: this.pluginUriFactory.createUri(pck, contribution.path).toString(),
                 description: contribution.description,
                 label: contribution.label,
                 uiTheme: contribution.uiTheme
@@ -445,7 +448,7 @@ export class TheiaPluginScanner implements PluginScanner {
                 result.push({
                     language: contribution.language,
                     source: pck.displayName || pck.name,
-                    uri: FileUri.create(path.join(pck.packagePath, contribution.path)).toString()
+                    uri: this.pluginUriFactory.createUri(pck, contribution.path).toString()
                 });
             }
         }
