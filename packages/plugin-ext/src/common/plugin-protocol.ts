@@ -76,6 +76,7 @@ export interface PluginPackageContribution {
     viewsWelcome?: PluginPackageViewWelcome[];
     commands?: PluginPackageCommand | PluginPackageCommand[];
     menus?: { [location: string]: PluginPackageMenu[] };
+    submenus?: PluginPackageSubmenu[];
     keybindings?: PluginPackageKeybinding | PluginPackageKeybinding[];
     debuggers?: PluginPackageDebuggersContribution[];
     snippets?: PluginPackageSnippetsContribution[];
@@ -116,10 +117,16 @@ export interface PluginPackageCommand {
 }
 
 export interface PluginPackageMenu {
-    command: string;
+    command?: string;
+    submenu?: string;
     alt?: string;
     group?: string;
     when?: string;
+}
+
+export interface PluginPackageSubmenu {
+    id: string;
+    label: string;
 }
 
 export interface PluginPackageKeybinding {
@@ -487,6 +494,7 @@ export interface PluginContribution {
     viewsWelcome?: ViewWelcome[];
     commands?: PluginCommand[]
     menus?: { [location: string]: Menu[] };
+    submenus?: Submenu[];
     keybindings?: Keybinding[];
     debuggers?: DebuggerContribution[];
     snippets?: SnippetContribution[];
@@ -647,10 +655,16 @@ export type IconUrl = string | { light: string; dark: string; };
  * Menu contribution
  */
 export interface Menu {
-    command: string;
+    command?: string;
+    submenu?: string
     alt?: string;
     group?: string;
     when?: string;
+}
+
+export interface Submenu {
+    id: string;
+    label: string;
 }
 
 /**

@@ -47,6 +47,7 @@ export class ScmGroupsTreeModel extends ScmTreeModel {
 
     protected changeRepository(provider: ScmProvider | undefined): void {
         this.toDisposeOnRepositoryChange.dispose();
+        this.contextKeys.scmProvider.set(provider ? provider.id : undefined);
         this.provider = provider;
         if (provider) {
             this.toDisposeOnRepositoryChange.push(provider.onDidChange(() => {

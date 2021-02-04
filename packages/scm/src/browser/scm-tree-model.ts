@@ -367,15 +367,11 @@ export abstract class ScmTreeModel extends TreeModelImpl {
             return;
         }
 
-        const currentScmProviderId = this.contextKeys.scmProvider.get();
-        const currentScmResourceGroup = this.contextKeys.scmResourceGroup.get();
         this.contextKeys.scmProvider.set(this.provider.id);
         this.contextKeys.scmResourceGroup.set(groupId);
         try {
             callback();
         } finally {
-            this.contextKeys.scmProvider.set(currentScmProviderId);
-            this.contextKeys.scmResourceGroup.set(currentScmResourceGroup);
         }
     }
 
