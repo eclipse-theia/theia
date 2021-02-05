@@ -65,13 +65,13 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
     }
 
     protected getPath(preferenceName: string): string[] {
-        const firstSegment = preferenceName.split('.')[0];
-        if (firstSegment && this.configurations.isSectionName(firstSegment)) {
+        const firstSegment = preferenceName.split('.', 1)[0];
+        const remainder = preferenceName.slice(firstSegment.length + 1);
+        if (this.belongsInSection(firstSegment, remainder)) {
             // Default to writing sections outside the "settings" object.
             const path = [firstSegment];
-            const pathRemainder = preferenceName.slice(firstSegment.length + 1);
-            if (pathRemainder) {
-                path.push(pathRemainder);
+            if (remainder) {
+                path.push(remainder);
             }
             // If the user has already written this section inside the "settings" object, modify it there.
             if (this.sectionsInsideSettings.has(firstSegment)) {
@@ -80,6 +80,10 @@ export class WorkspaceFilePreferenceProvider extends AbstractResourcePreferenceP
             return path;
         }
         return ['settings', preferenceName];
+    }
+
+    protected belongsInSection(firstSegment: string, remainder: string): boolean {
+        return this.configurations.isSectionName(firstSegment);
     }
 
     protected getScope(): PreferenceScope {

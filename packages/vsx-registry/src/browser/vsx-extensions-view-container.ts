@@ -17,8 +17,10 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { ViewContainer, PanelLayout, ViewContainerPart, Message } from '@theia/core/lib/browser';
 import { VSXExtensionsSearchBar } from './vsx-extensions-search-bar';
-import { VSXExtensionsWidget, } from './vsx-extensions-widget';
 import { VSXExtensionsModel } from './vsx-extensions-model';
+import { VSXSearchMode } from './vsx-extensions-search-model';
+import { generateExtensionWidgetId } from './vsx-extensions-widget';
+import { VSXExtensionsSourceOptions } from './vsx-extensions-source';
 
 @injectable()
 export class VSXExtensionsViewContainer extends ViewContainer {
@@ -60,15 +62,15 @@ export class VSXExtensionsViewContainer extends ViewContainer {
         super.configureLayout(layout);
     }
 
-    protected currentMode: VSXExtensionsViewContainer.Mode = VSXExtensionsViewContainer.InitialMode;
-    protected readonly lastModeState = new Map<VSXExtensionsViewContainer.Mode, ViewContainer.State>();
+    protected currentMode: VSXSearchMode = VSXSearchMode.Initial;
+    protected readonly lastModeState = new Map<VSXSearchMode, ViewContainer.State>();
 
     protected updateMode(): void {
-        const currentMode: VSXExtensionsViewContainer.Mode = !this.model.search.query ? VSXExtensionsViewContainer.DefaultMode : VSXExtensionsViewContainer.SearchResultMode;
+        const currentMode = this.model.search.getModeForQuery();
         if (currentMode === this.currentMode) {
             return;
         }
-        if (this.currentMode !== VSXExtensionsViewContainer.InitialMode) {
+        if (this.currentMode !== VSXSearchMode.Initial) {
             this.lastModeState.set(this.currentMode, super.doStoreState());
         }
         this.currentMode = currentMode;
@@ -80,12 +82,15 @@ export class VSXExtensionsViewContainer extends ViewContainer {
                 this.applyModeToPart(part);
             }
         }
-        if (this.currentMode === VSXExtensionsViewContainer.SearchResultMode) {
-            const searchPart = this.getParts().find(part => part.wrapped.id === VSXExtensionsWidget.SEARCH_RESULT_ID);
-            if (searchPart) {
-                searchPart.collapsed = false;
-                searchPart.show();
-            }
+
+        const specialWidgets = this.getWidgetsForMode();
+        if (specialWidgets?.length) {
+            const widgetChecker = new Set(specialWidgets);
+            const relevantParts = this.getParts().filter(part => widgetChecker.has(part.wrapped.id));
+            relevantParts.forEach(part => {
+                part.collapsed = false;
+                part.show();
+            });
         }
     }
 
@@ -95,11 +100,29 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     }
 
     protected applyModeToPart(part: ViewContainerPart): void {
-        const partMode = (part.wrapped.id === VSXExtensionsWidget.SEARCH_RESULT_ID ? VSXExtensionsViewContainer.SearchResultMode : VSXExtensionsViewContainer.DefaultMode);
-        if (this.currentMode === partMode) {
+        if (this.shouldShowWidget(part)) {
             part.show();
         } else {
             part.hide();
+        }
+    }
+
+    protected shouldShowWidget(part: ViewContainerPart): boolean {
+        const widgetsToShow = this.getWidgetsForMode();
+        if (widgetsToShow.length) {
+            return widgetsToShow.includes(part.wrapped.id);
+        }
+        return part.wrapped.id !== generateExtensionWidgetId(VSXExtensionsSourceOptions.SEARCH_RESULT);
+    }
+
+    protected getWidgetsForMode(): string[] {
+        switch (this.currentMode) {
+            case VSXSearchMode.Recommended:
+                return [generateExtensionWidgetId(VSXExtensionsSourceOptions.RECOMMENDED)];
+            case VSXSearchMode.Search:
+                return [generateExtensionWidgetId(VSXExtensionsSourceOptions.SEARCH_RESULT)];
+            default:
+                return [];
         }
     }
 
@@ -119,7 +142,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     protected doRestoreState(state: any): void {
         // eslint-disable-next-line guard-for-in
         for (const key in state.modes) {
-            const mode = Number(key) as VSXExtensionsViewContainer.Mode;
+            const mode = Number(key) as VSXSearchMode;
             const modeState = state.modes[mode];
             if (modeState) {
                 this.lastModeState.set(mode, modeState);
@@ -130,10 +153,6 @@ export class VSXExtensionsViewContainer extends ViewContainer {
 
 }
 export namespace VSXExtensionsViewContainer {
-    export const InitialMode = 0;
-    export const DefaultMode = 1;
-    export const SearchResultMode = 2;
-    export type Mode = typeof InitialMode | typeof DefaultMode | typeof SearchResultMode;
     export interface State {
         query: string;
         modes: {

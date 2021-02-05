@@ -133,45 +133,59 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
     }
 
     async setPreference(preferenceName: string, value: any, resourceUri?: string): Promise<boolean> {
-        const sectionName = preferenceName.split('.', 1)[0];
-        const configName = this.configurations.isSectionName(sectionName) ? sectionName : this.configurations.getConfigName();
+        const firstPathFragment = preferenceName.split('.', 1)[0];
+        const defaultConfigName = this.configurations.getConfigName();
+        const configName = this.configurations.isSectionName(firstPathFragment) ? firstPathFragment : defaultConfigName;
 
         const providers = this.getFolderProviders(resourceUri);
         let configPath: string | undefined;
-
-        const iterator: (() => FolderPreferenceProvider | undefined)[] = [];
-        for (const provider of providers) {
-            if (configPath === undefined) {
-                const configUri = provider.getConfigUri(resourceUri);
-                if (configUri) {
-                    configPath = this.configurations.getPath(configUri);
-                }
+        const candidates = providers.filter(provider => {
+            // Attempt to figure out the settings folder (.vscode or .theia) we're interested in.
+            const containingConfigUri = provider.getConfigUri(resourceUri);
+            if (configPath === undefined && containingConfigUri) {
+                configPath = this.configurations.getPath(containingConfigUri);
             }
-            if (this.configurations.getName(provider.getConfigUri()) === configName) {
-                iterator.push(() => {
-                    if (provider.getConfigUri(resourceUri)) {
-                        return provider;
-                    }
-                    iterator.push(() => {
-                        if (this.configurations.getPath(provider.getConfigUri()) === configPath) {
-                            return provider;
-                        }
-                        iterator.push(() => provider);
-                    });
-                });
+            const providerName = this.configurations.getName(containingConfigUri ?? provider.getConfigUri());
+            return providerName === configName || providerName === defaultConfigName;
+        });
+
+        const configNameAndPathMatches = [];
+        const configNameOnlyMatches = [];
+        const configUriMatches = [];
+        const otherMatches = [];
+
+        for (const candidate of candidates) {
+            const domainMatches = candidate.getConfigUri(resourceUri);
+            const configUri = domainMatches ?? candidate.getConfigUri();
+            const nameMatches = this.configurations.getName(configUri) === configName;
+            const pathMatches = this.configurations.getPath(configUri) === configPath;
+
+            // Perfect match, run immediately in case we can bail out early.
+            if (nameMatches && domainMatches) {
+                if (await candidate.setPreference(preferenceName, value, resourceUri)) {
+                    return true;
+                }
+            } else if (nameMatches && pathMatches) { // Right file in the right folder.
+                configNameAndPathMatches.push(candidate);
+            } else if (nameMatches) { // Right file.
+                configNameOnlyMatches.push(candidate);
+            } else if (domainMatches) { // Currently valid and governs target URI
+                configUriMatches.push(candidate);
+            } else {
+                otherMatches.push(candidate);
             }
         }
 
-        let next = iterator.shift();
-        while (next) {
-            const provider = next();
-            if (provider) {
-                if (await provider.setPreference(preferenceName, value, resourceUri)) {
+        const candidateSets = [configNameAndPathMatches, configNameOnlyMatches, configUriMatches, otherMatches];
+
+        for (const candidateSet of candidateSets) {
+            for (const candidate of candidateSet) {
+                if (await candidate.setPreference(preferenceName, value, resourceUri)) {
                     return true;
                 }
             }
-            next = iterator.shift();
         }
+
         return false;
     }
 

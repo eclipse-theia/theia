@@ -20,15 +20,15 @@ import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extension
 
 @injectable()
 export class VSXExtensionsWidgetOptions extends VSXExtensionsSourceOptions {
+    title?: string;
 }
+
+export const generateExtensionWidgetId = (widgetId: string): string => VSXExtensionsWidget.ID + ':' + widgetId;
 
 @injectable()
 export class VSXExtensionsWidget extends SourceTreeWidget {
 
     static ID = 'vsx-extensions';
-    static INSTALLED_ID = VSXExtensionsWidget.ID + ':' + VSXExtensionsSourceOptions.INSTALLED;
-    static SEARCH_RESULT_ID = VSXExtensionsWidget.ID + ':' + VSXExtensionsSourceOptions.SEARCH_RESULT;
-    static BUILT_IN_ID = VSXExtensionsWidget.ID + ':' + VSXExtensionsSourceOptions.BUILT_IN;
 
     static createWidget(parent: interfaces.Container, options: VSXExtensionsWidgetOptions): VSXExtensionsWidget {
         const child = SourceTreeWidget.createContainer(parent, {
@@ -54,8 +54,8 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
         super.init();
         this.addClass('theia-vsx-extensions');
 
-        this.id = VSXExtensionsWidget.ID + ':' + this.options.id;
-        const title = this.computeTitle();
+        this.id = generateExtensionWidgetId(this.options.id);
+        const title = this.options.title ?? this.computeTitle();
         this.title.label = title;
         this.title.caption = title;
 
@@ -64,13 +64,17 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
     }
 
     protected computeTitle(): string {
-        if (this.id === VSXExtensionsWidget.INSTALLED_ID) {
-            return 'Installed';
+        switch (this.options.id) {
+            case VSXExtensionsSourceOptions.INSTALLED:
+                return 'Installed';
+            case VSXExtensionsSourceOptions.BUILT_IN:
+                return 'Built-in';
+            case VSXExtensionsSourceOptions.RECOMMENDED:
+                return 'Recommended';
+            case VSXExtensionsSourceOptions.SEARCH_RESULT:
+                return 'Open VSX Registry';
+            default:
+                return '';
         }
-        if (this.id === VSXExtensionsWidget.BUILT_IN_ID) {
-            return 'Built-in';
-        }
-        return 'Open VSX Registry';
     }
-
 }

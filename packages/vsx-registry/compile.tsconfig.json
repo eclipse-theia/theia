@@ -20,6 +20,12 @@
     },
     {
       "path": "../filesystem/compile.tsconfig.json"
+    },
+    {
+      "path": "../preferences/compile.tsconfig.json"
+    },
+    {
+      "path": "../workspace/compile.tsconfig.json"
     }
   ]
 }

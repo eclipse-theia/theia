@@ -34,8 +34,10 @@ import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { VSXApiVersionProviderImpl } from './vsx-api-version-provider-frontend-impl';
 import { VSXApiVersionProvider } from '../common/vsx-api-version-provider';
+import { bindExtensionPreferences } from './recommended-extensions/recommended-extensions-preference-contribution';
+import { bindPreferenceProviderOverrides } from './recommended-extensions/preference-provider-overrides';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, unbind) => {
     bind(VSXEnvironment).toSelf().inRequestScope();
     bind(VSXRegistryAPI).toSelf().inSingletonScope();
 
@@ -75,7 +77,12 @@ export default new ContainerModule(bind => {
             child.bind(VSXExtensionsViewContainer).toSelf();
             const viewContainer = child.get(VSXExtensionsViewContainer);
             const widgetManager = child.get(WidgetManager);
-            for (const id of [VSXExtensionsSourceOptions.SEARCH_RESULT, VSXExtensionsSourceOptions.INSTALLED, VSXExtensionsSourceOptions.BUILT_IN]) {
+            for (const id of [
+                VSXExtensionsSourceOptions.SEARCH_RESULT,
+                VSXExtensionsSourceOptions.RECOMMENDED,
+                VSXExtensionsSourceOptions.INSTALLED,
+                VSXExtensionsSourceOptions.BUILT_IN,
+            ]) {
                 const widget = await widgetManager.getOrCreateWidget(VSXExtensionsWidget.ID, { id });
                 viewContainer.addWidget(widget, {
                     initiallyCollapsed: id === VSXExtensionsSourceOptions.BUILT_IN
@@ -96,4 +103,6 @@ export default new ContainerModule(bind => {
     bind(VSXApiVersionProviderImpl).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(VSXApiVersionProviderImpl);
     bind(VSXApiVersionProvider).toService(VSXApiVersionProviderImpl);
+    bindExtensionPreferences(bind);
+    bindPreferenceProviderOverrides(bind, unbind);
 });

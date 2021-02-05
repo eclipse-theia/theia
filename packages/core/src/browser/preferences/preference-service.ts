@@ -265,6 +265,8 @@ export interface PreferenceInspection<T> {
     value: T | undefined;
 }
 
+export type PreferenceInspectionScope = keyof Omit<PreferenceInspection<unknown>, 'preferenceName'>;
+
 /**
  * We cannot load providers directly in the case if they depend on `PreferenceService` somehow.
  * It allows to load them lazily after DI is configured.
@@ -430,7 +432,7 @@ export class PreferenceServiceImpl implements PreferenceService {
         if (provider && await provider.setPreference(preferenceName, value, resourceUri)) {
             return;
         }
-        throw new Error(`Unable to write to ${PreferenceScope.getScopeNames(resolvedScope)[0]} Settings.`);
+        throw new Error(`Unable to write to ${PreferenceScope[resolvedScope]} Settings.`);
     }
 
     getBoolean(preferenceName: string): boolean | undefined;
