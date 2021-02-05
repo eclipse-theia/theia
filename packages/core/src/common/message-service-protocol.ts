@@ -68,7 +68,7 @@ export interface MessageOptions {
 
 export interface ProgressMessageOptions extends MessageOptions {
     /**
-     * Default: `true`
+     * Default: `false`
      */
     readonly cancelable?: boolean;
     /**
