@@ -7,6 +7,8 @@
     "@theia/filesystem": "1.14.0",
     "@theia/plugin-ext": "1.14.0",
     "@theia/plugin-ext-vscode": "1.14.0",
+    "@theia/preferences": "1.14.0",
+    "@theia/workspace": "1.14.0",
     "@types/bent": "^7.0.1",
     "@types/dompurify": "^2.0.2",
     "@types/sanitize-html": "^2.3.1",

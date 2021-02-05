@@ -27,6 +27,10 @@ import { VSXExtension, VSXExtensionFactory } from './vsx-extension';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { PreferenceInspectionScope, PreferenceService } from '@theia/core/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { RecommendedExtensions } from './recommended-extensions/recommended-extensions-preference-contribution';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class VSXExtensionsModel {
@@ -46,6 +50,12 @@ export class VSXExtensionsModel {
     @inject(ProgressService)
     protected readonly progressService: ProgressService;
 
+    @inject(PreferenceService)
+    protected readonly preferences: PreferenceService;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
     @inject(VSXExtensionsSearchModel)
     readonly search: VSXExtensionsSearchModel;
 
@@ -55,7 +65,8 @@ export class VSXExtensionsModel {
     protected async init(): Promise<void> {
         await Promise.all([
             this.initInstalled(),
-            this.initSearchResult()
+            this.initSearchResult(),
+            this.initRecommended(),
         ]);
         this.initialized.resolve();
     }
@@ -79,6 +90,20 @@ export class VSXExtensionsModel {
         }
     }
 
+    protected async initRecommended(): Promise<void> {
+        this.preferences.onPreferenceChanged(change => {
+            if (change.preferenceName === 'extensions') {
+                this.updateRecommended();
+            }
+        });
+        await this.preferences.ready;
+        try {
+            await this.updateRecommended();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
     /**
      * single source of all extensions
      */
@@ -89,9 +114,18 @@ export class VSXExtensionsModel {
         return this._installed.values();
     }
 
+    isInstalled(id: string): boolean {
+        return this._installed.has(id);
+    }
+
     protected _searchResult = new Set<string>();
     get searchResult(): IterableIterator<string> {
         return this._searchResult.values();
+    }
+
+    protected _recommended = new Set<string>();
+    get recommended(): IterableIterator<string> {
+        return this._recommended.values();
     }
 
     getExtension(id: string): VSXExtension | undefined {
@@ -180,6 +214,40 @@ export class VSXExtensionsModel {
             const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
             this._installed = new Set(installedSorted.values());
         });
+    }
+
+    protected updateRecommended(): Promise<Array<VSXExtension | undefined>> {
+        return this.doChange<Array<VSXExtension | undefined>>(async () => {
+            const allRecommendations = new Set<string>();
+            const allUnwantedRecommendations = new Set<string>();
+
+            const updateRecommendationsForScope = (scope: PreferenceInspectionScope, root?: URI) => {
+                const { recommendations, unwantedRecommendations } = this.getRecommendationsForScope(scope, root);
+                recommendations.forEach(recommendation => allRecommendations.add(recommendation));
+                unwantedRecommendations.forEach(unwantedRecommendation => allUnwantedRecommendations.add(unwantedRecommendation));
+            };
+
+            updateRecommendationsForScope('defaultValue'); // In case there are application-default recommendations.
+            const roots = await this.workspaceService.roots;
+            for (const root of roots) {
+                updateRecommendationsForScope('workspaceFolderValue', root.resource);
+            }
+            if (this.workspaceService.saved) {
+                updateRecommendationsForScope('workspaceValue');
+            }
+            const recommendedSorted = new Set(Array.from(allRecommendations).sort((a, b) => this.compareExtensions(a, b)).values());
+            allUnwantedRecommendations.forEach(unwantedRecommendation => recommendedSorted.delete(unwantedRecommendation));
+            this._recommended = recommendedSorted;
+            return Promise.all(Array.from(recommendedSorted, plugin => this.refresh(plugin)));
+        });
+    }
+
+    protected getRecommendationsForScope(scope: PreferenceInspectionScope, root?: URI): Required<RecommendedExtensions> {
+        const configuredValue = this.preferences.inspect<RecommendedExtensions>('extensions', root?.toString())?.[scope];
+        return {
+            recommendations: configuredValue?.recommendations ?? [],
+            unwantedRecommendations: configuredValue?.unwantedRecommendations ?? [],
+        };
     }
 
     resolve(id: string): Promise<VSXExtension> {
