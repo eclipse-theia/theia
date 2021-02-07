@@ -79,7 +79,7 @@ describe('WorkspaceUriLabelProviderContribution class', () => {
 
     describe('canHandle()', () => {
         it('should return 0 if the passed in argument is not a FileStat or URI with the "file" scheme', () => {
-            expect(labelProvider.canHandle(new URI('user_storage:settings.json'))).eq(0);
+            expect(labelProvider.canHandle(new URI('user-storage:settings.json'))).eq(0);
             expect(labelProvider.canHandle({ uri: 'file:///home/settings.json' })).eq(0);
         });
 

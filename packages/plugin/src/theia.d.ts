@@ -2872,6 +2872,71 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * Provides information on a line in a terminal in order to provide links for it.
+     */
+    // copied from https://github.com/microsoft/vscode/blob/bd20a720fba05f87ddb53c11c6af66936fd88a55/src/vs/vscode.d.ts#L5563-L5576
+    export interface TerminalLinkContext {
+        /**
+         * This is the text from the unwrapped line in the terminal.
+         */
+        line: string;
+
+        /**
+         * The terminal the link belongs to.
+         */
+        terminal: Terminal;
+    }
+
+    /**
+     * A provider that enables detection and handling of links within terminals.
+     */
+    // copied from https://github.com/microsoft/vscode/blob/bd20a720fba05f87ddb53c11c6af66936fd88a55/src/vs/vscode.d.ts#L5578-L5597
+
+    export interface TerminalLinkProvider<T extends TerminalLink = TerminalLink> {
+        /**
+         * Provide terminal links for the given context. Note that this can be called multiple times
+         * even before previous calls resolve, make sure to not share global objects (eg. `RegExp`)
+         * that could have problems when asynchronous usage may overlap.
+         * @param context Information about what links are being provided for.
+         * @param token A cancellation token.
+         * @return A list of terminal links for the given line.
+         */
+        provideTerminalLinks(context: TerminalLinkContext, token: CancellationToken): ProviderResult<T[]>;
+
+        /**
+         * Handle an activated terminal link.
+         * @param link The link to handle.
+         */
+        handleTerminalLink(link: T): ProviderResult<void>;
+    }
+
+    /**
+     * A link on a terminal line.
+     */
+    // copied from https://github.com/microsoft/vscode/blob/bd20a720fba05f87ddb53c11c6af66936fd88a55/src/vs/vscode.d.ts#L5599-L5621
+    export interface TerminalLink {
+        /**
+         * The start index of the link on [TerminalLinkContext.line](#TerminalLinkContext.line].
+         */
+        startIndex: number;
+
+        /**
+         * The length of the link on [TerminalLinkContext.line](#TerminalLinkContext.line]
+         */
+        length: number;
+
+        /**
+         * The tooltip text when you hover over this link.
+         *
+         * If a tooltip is provided, is will be displayed in a string that includes instructions on
+         * how to trigger the link, such as `{0} (ctrl + click)`. The specific instructions vary
+         * depending on OS, user settings, and localization.
+         */
+        tooltip?: string;
+    }
+
+
+    /**
      * A type of mutation that can be applied to an environment variable.
      */
     export enum EnvironmentVariableMutatorType {
@@ -3963,6 +4028,15 @@ declare module '@theia/plugin' {
          * @return A new [InputBox](#InputBox).
          */
         export function createInputBox(): InputBox;
+
+
+        /**
+         * Register provider that enables the detection and handling of links within the terminal.
+         * @param provider The provider that provides the terminal links.
+         * @return Disposable that unregisters the provider.
+         */
+        // copied from https://github.com/microsoft/vscode/blob/e790b931385d72cf5669fcefc51cdf65990efa5d/src/vs/vscode.d.ts#L8302-8307
+        export function registerTerminalLinkProvider(provider: TerminalLinkProvider): void;
 
         /**
          * The currently active color theme as configured in the settings. The active
