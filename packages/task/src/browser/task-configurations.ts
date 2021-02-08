@@ -480,7 +480,7 @@ export class TaskConfigurations implements Disposable {
             Object.keys(update).forEach(taskProperty => {
                 task[taskProperty] = update[taskProperty];
             });
-            this.saveTask(scope, task);
+            await this.saveTask(scope, task);
         }
     }
 
