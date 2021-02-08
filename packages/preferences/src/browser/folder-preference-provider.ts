@@ -14,6 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceScope } from '@theia/core/lib/browser';
