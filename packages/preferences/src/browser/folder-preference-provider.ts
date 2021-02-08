@@ -57,4 +57,13 @@ export class FolderPreferenceProvider extends SectionPreferenceProvider {
     getDomain(): string[] {
         return [this.folderUri.toString()];
     }
+
+    async setPreference(key: string, value: any, resourceUri?: string): Promise<boolean> {
+        const result = await super.setPreference(key, value, resourceUri);
+        if (result && this.model) {
+            // always try to save the preference file
+            await this.model.save();
+        }
+        return result;
+    }
 }
