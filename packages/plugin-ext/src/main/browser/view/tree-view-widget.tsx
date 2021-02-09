@@ -128,7 +128,7 @@ export class PluginTree extends TreeImpl {
         try {
             const children = await proxy.$getChildren(this.identifier.id, parent.id);
             const oldEmpty = this._isEmpty;
-            this._isEmpty = !children || children.length === 0;
+            this._isEmpty = !parent.id && (!children || children.length === 0);
             if (oldEmpty !== this._isEmpty) {
                 this.onDidChangeWelcomeStateEmitter.fire();
             }
