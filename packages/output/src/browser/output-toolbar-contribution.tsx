@@ -51,7 +51,7 @@ export class OutputToolbarContribution implements TabBarToolbarContribution {
         this.outputChannelManager.onChannelWasHidden(fireChannelsChanged);
     }
 
-    async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
+    registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): void {
         toolbarRegistry.registerItem({
             id: 'channels',
             render: () => this.renderChannelSelector(),
