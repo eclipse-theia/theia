@@ -432,6 +432,9 @@ export function createAPIFactory(
             createInputBox(): theia.InputBox {
                 return quickOpenExt.createInputBox(plugin);
             },
+            registerTerminalLinkProvider(provider: theia.TerminalLinkProvider): void {
+                /* NOOP. To be implemented at later stage */
+            },
             get activeColorTheme(): theia.ColorTheme {
                 return themingExt.activeColorTheme;
             },
