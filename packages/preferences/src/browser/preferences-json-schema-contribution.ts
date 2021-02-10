@@ -23,7 +23,7 @@ import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/pr
 import { PreferenceScope } from '@theia/core/lib/browser';
 
 const PREFERENCE_URI_PREFIX = 'vscode://schemas/settings/';
-const USER_STORAGE_PREFIX = 'user_storage:/';
+const USER_STORAGE_PREFIX = 'user-storage:/';
 
 @injectable()
 export class PreferencesJsonSchemaContribution implements JsonSchemaContribution {
