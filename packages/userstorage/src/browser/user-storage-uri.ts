@@ -16,4 +16,4 @@
 
 import URI from '@theia/core/lib/common/uri';
 
-export const UserStorageUri = new URI('user_storage:/user');
+export const UserStorageUri = new URI('user-storage:/user');

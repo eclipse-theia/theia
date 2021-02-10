@@ -1,4 +1,12 @@
 # Change Log
+## v1.11.0 - 2021
+
+<a name="breaking_changes_1.11.0">[Breaking Changes:](#breaking_changes_1.11.0)</a>
+
+<a name="1.11.0_user-storage_scheme_updated"></a>
+
+-   [[user-storage]](#1.11.0_user-storage_scheme_updated) `UserStorageUri` scheme was changed from 'user_storage' to 'user-storage' as '\_' is not a valid char in scheme (according to [RFC 3986](https://tools.ietf.org/html/rfc3986#page-17)) [#9049](https://github.com/eclipse-theia/theia/pull/9049)
+
 
 ## v1.10.0 - 1/28/2021
 
