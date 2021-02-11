@@ -103,7 +103,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
         this.tokenizerOption.lineLimit = this.preferences['editor.maxTokenizationLineLength'];
         this.preferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'editor.maxTokenizationLineLength') {
-                this.tokenizerOption.lineLimit = this.preferences['editor.maxTokenizationLineLength'];
+                this.tokenizerOption.lineLimit = e.newValue;
             }
         });
 

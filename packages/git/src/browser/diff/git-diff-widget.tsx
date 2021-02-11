@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import {
-    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, Message, MessageLoop, PreferenceChangeEvent
+    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, Message, MessageLoop
 } from '@theia/core/lib/browser';
 import { EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { GitDiffTreeModel } from './git-diff-tree-model';
@@ -25,7 +25,7 @@ import { GitDiffHeaderWidget } from './git-diff-header-widget';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { GitRepositoryProvider } from '../git-repository-provider';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
-import { ScmPreferences, ScmConfiguration } from '@theia/scm/lib/browser/scm-preferences';
+import { ScmPreferences } from '@theia/scm/lib/browser/scm-preferences';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -76,9 +76,9 @@ export class GitDiffWidget extends BaseWidget implements StatefulWidget {
         this.containerLayout.addWidget(this.resourceWidget);
 
         this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
-        this.toDispose.push(this.scmPreferences.onPreferenceChanged((e: PreferenceChangeEvent<ScmConfiguration>) => {
+        this.toDispose.push(this.scmPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'scm.defaultViewMode') {
-                this.updateViewMode(e.newValue!);
+                this.updateViewMode(e.newValue);
             }
         }));
     }

@@ -151,6 +151,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
 export interface TerminalConfiguration {
     'terminal.enableCopy': boolean
     'terminal.enablePaste': boolean
+    // xterm compatible, see https://xtermjs.org/docs/api/terminal/interfaces/iterminaloptions/
     'terminal.integrated.fontFamily': string
     'terminal.integrated.fontSize': number
     'terminal.integrated.fontWeight': FontWeight
@@ -165,9 +166,9 @@ export interface TerminalConfiguration {
     'terminal.integrated.cursorBlinking': boolean,
     'terminal.integrated.cursorStyle': CursorStyleVSCode,
     'terminal.integrated.cursorWidth': number,
-    'terminal.integrated.shell.windows': string | undefined,
-    'terminal.integrated.shell.osx': string | undefined,
-    'terminal.integrated.shell.linux': string | undefined,
+    'terminal.integrated.shell.windows': string | null | undefined,
+    'terminal.integrated.shell.osx': string | null | undefined,
+    'terminal.integrated.shell.linux': string | null | undefined,
     'terminal.integrated.shellArgs.windows': string[],
     'terminal.integrated.shellArgs.osx': string[],
     'terminal.integrated.shellArgs.linux': string[],

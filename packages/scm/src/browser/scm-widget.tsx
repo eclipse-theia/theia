@@ -20,14 +20,14 @@ import { Message } from '@phosphor/messaging';
 import { injectable, inject, postConstruct } from 'inversify';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
-    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, PreferenceChangeEvent, CompositeTreeNode, SelectableTreeNode,
+    BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, CompositeTreeNode, SelectableTreeNode,
 } from '@theia/core/lib/browser';
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmService } from './scm-service';
 import { ScmTreeWidget } from './scm-tree-widget';
-import { ScmPreferences, ScmConfiguration } from './scm-preferences';
+import { ScmPreferences } from './scm-preferences';
 
 @injectable()
 export class ScmWidget extends BaseWidget implements StatefulWidget {
@@ -78,9 +78,9 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.refresh();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refresh()));
         this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
-        this.toDispose.push(this.scmPreferences.onPreferenceChanged((e: PreferenceChangeEvent<ScmConfiguration>) => {
+        this.toDispose.push(this.scmPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'scm.defaultViewMode') {
-                this.updateViewMode(e.newValue!);
+                this.updateViewMode(e.newValue);
             }
         }));
 
