@@ -95,8 +95,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 this.updateWorkspace();
             }
         });
-        this.fsPreferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'files.watcherExclude') {
+        this.fsPreferences.onPreferenceChanged(event => {
+            if (event.preferenceName === 'files.watcherExclude') {
                 this.refreshRootWatchers();
             }
         });

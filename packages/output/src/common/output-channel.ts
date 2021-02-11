@@ -25,7 +25,6 @@ import { MonacoTextModelService, IReference } from '@theia/monaco/lib/browser/mo
 import { OutputUri } from './output-uri';
 import { OutputResource } from '../browser/output-resource';
 import { OutputPreferences } from './output-preferences';
-import { OutputConfigSchema } from './output-preferences';
 
 @injectable()
 export class OutputChannelManager implements Disposable, ResourceResolver {
@@ -221,9 +220,9 @@ export class OutputChannel implements Disposable {
         this._maxLineNumber = this.preferences['output.maxChannelHistory'];
         this.toDispose.push(resource);
         this.toDispose.push(Disposable.create(() => this.decorationIds.clear()));
-        this.toDispose.push(this.preferences.onPreferenceChanged(({ preferenceName, newValue }) => {
-            if (preferenceName === 'output.maxChannelHistory') {
-                const maxLineNumber = newValue ? newValue : OutputConfigSchema.properties['output.maxChannelHistory'].default;
+        this.toDispose.push(this.preferences.onPreferenceChanged(event => {
+            if (event.preferenceName === 'output.maxChannelHistory') {
+                const maxLineNumber = event.newValue;
                 if (this.maxLineNumber !== maxLineNumber) {
                     this.maxLineNumber = maxLineNumber;
                 }

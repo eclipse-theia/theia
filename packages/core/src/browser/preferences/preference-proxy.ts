@@ -21,12 +21,61 @@ import { PreferenceService } from './preference-service';
 import { PreferenceSchema, OverridePreferenceName } from './preference-contribution';
 import { PreferenceScope } from './preference-scope';
 
-export interface PreferenceChangeEvent<T> {
-    readonly preferenceName: keyof T;
-    readonly newValue?: T[keyof T];
-    readonly oldValue?: T[keyof T];
+/**
+ * It is worth explaining the type for `PreferenceChangeEvent`:
+ *
+ * // Given T:
+ * type T = { a: string, b: number }
+ *
+ * // We construct a new type such as:
+ * type U = {
+ *     a: {
+ *         preferenceName: 'a'
+ *         newValue: string
+ *         oldValue?: string
+ *     }
+ *     b: {
+ *        preferenceName: 'b'
+ *        newValue: number
+ *        oldValue?: number
+ *     }
+ * }
+ *
+ * // Then we get the union of all values of U by selecting by `keyof T`:
+ * type V = U[keyof T]
+ *
+ * // Implementation:
+ * type PreferenceChangeEvent<T> = {
+ *     // Create a mapping where each key is a key from T,
+ *     // -? normalizes optional typings to avoid getting
+ *     // `undefined` as part of the final union:
+ *     [K in keyof T]-?: {
+ *         // In this object, K will take the value of each
+ *         // independent key from T:
+ *         preferenceName: K
+ *         newValue: T[K]
+ *         oldValue?: T[K]
+ *     // Finally we create the union by doing so:
+ *     }[keyof T]
+ * }
+ */
+
+/**
+ * Union of all possible key/value pairs for a type `T`
+ */
+export type PreferenceChangeEvent<T> = {
     affects(resourceUri?: string, overrideIdentifier?: string): boolean;
-}
+} & {
+    [K in keyof T]-?: {
+        readonly preferenceName: K;
+        readonly newValue: T[K];
+        /**
+         * Undefined if the preference is set for the first time.
+         */
+        // TODO: Use the default value instead of undefined?
+        readonly oldValue?: T[K];
+    }
+}[keyof T];
 
 export interface PreferenceEventEmitter<T> {
     readonly onPreferenceChanged: Event<PreferenceChangeEvent<T>>;

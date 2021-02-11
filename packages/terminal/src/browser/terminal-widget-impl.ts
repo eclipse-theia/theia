@@ -148,18 +148,16 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             const lastSeparator = change.preferenceName.lastIndexOf('.');
             if (lastSeparator > 0) {
                 let preferenceName = change.preferenceName.substr(lastSeparator + 1);
-                let preferenceValue = this.preferences[change.preferenceName];
+                let preferenceValue = change.newValue;
 
                 if (preferenceName === 'rendererType') {
-                    const newRendererType: string = this.preferences[change.preferenceName] as string;
+                    const newRendererType = preferenceValue as string;
                     if (newRendererType !== this.getTerminalRendererType(newRendererType)) {
-                        // given terminal renderer type is not supported or invalid
+                        // Given terminal renderer type is not supported or invalid
                         preferenceValue = DEFAULT_TERMINAL_RENDERER_TYPE;
                     }
-                }
-
-                // Convert the terminal preference into a valid `xterm` option.
-                if (preferenceName === 'cursorBlinking') {
+                } else if (preferenceName === 'cursorBlinking') {
+                    // Convert the terminal preference into a valid `xterm` option
                     preferenceName = 'cursorBlink';
                 } else if (preferenceName === 'cursorStyle') {
                     preferenceValue = this.getCursorStyle();
@@ -635,9 +633,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected get shellPreferences(): IShellTerminalPreferences {
         return {
             shell: {
-                Windows: this.preferences['terminal.integrated.shell.windows'],
-                Linux: this.preferences['terminal.integrated.shell.linux'],
-                OSX: this.preferences['terminal.integrated.shell.osx'],
+                Windows: this.preferences['terminal.integrated.shell.windows'] ?? undefined,
+                Linux: this.preferences['terminal.integrated.shell.linux'] ?? undefined,
+                OSX: this.preferences['terminal.integrated.shell.osx'] ?? undefined,
             },
             shellArgs: {
                 Windows: this.preferences['terminal.integrated.shellArgs.windows'],
