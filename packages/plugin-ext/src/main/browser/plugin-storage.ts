@@ -43,13 +43,12 @@ export class StorageMainImpl implements StorageMain {
     }
 
     protected toKind(isGlobal: boolean): PluginStorageKind {
-        if (isGlobal) {
-            return undefined;
+        if (!isGlobal && this.workspaceService.workspace) {
+            return {
+                workspace: this.workspaceService.workspace.resource.toString(),
+                roots: this.workspaceService.tryGetRoots().map(root => root.resource.toString())
+            };
         }
-        return {
-            workspace: this.workspaceService.workspace?.resource.toString(),
-            roots: this.workspaceService.tryGetRoots().map(root => root.resource.toString())
-        };
+        return undefined;
     }
-
 }
