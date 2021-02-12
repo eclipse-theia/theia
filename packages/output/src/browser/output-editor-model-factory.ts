@@ -31,7 +31,7 @@ export class OutputEditorModelFactory implements MonacoEditorModelFactory {
     @inject(ProtocolToMonacoConverter)
     protected readonly p2m: ProtocolToMonacoConverter;
 
-    readonly scheme = OutputUri.SCHEME;
+    readonly scheme: string = OutputUri.SCHEME;
 
     createModel(
         resource: Resource

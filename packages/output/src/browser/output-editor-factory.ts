@@ -32,7 +32,7 @@ export class OutputEditorFactory implements MonacoEditorFactory {
     @inject(OutputContextMenuService)
     protected readonly contextMenuService: MonacoContextMenuService;
 
-    readonly scheme = OutputUri.SCHEME;
+    readonly scheme: string = OutputUri.SCHEME;
 
     create(model: MonacoEditorModel, defaultsOptions: MonacoEditor.IOptions, defaultOverrides: monaco.editor.IEditorOverrideServices): MonacoEditor {
         const uri = new URI(model.uri);
