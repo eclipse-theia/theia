@@ -49,7 +49,10 @@ import {
     ThemeContribution,
     View,
     ViewContainer,
-    ViewWelcome
+    ViewWelcome,
+    PluginPackageCustomEditor,
+    CustomEditor,
+    CustomEditorPriority
 } from '../../../common/plugin-protocol';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -192,6 +195,15 @@ export class TheiaPluginScanner implements PluginScanner {
             }
         } catch (err) {
             console.error(`Could not read '${rawPlugin.name}' contribution 'grammars'.`, rawPlugin.contributes!.grammars, err);
+        }
+
+        try {
+            if (rawPlugin.contributes?.customEditors) {
+                const customEditors = this.readCustomEditors(rawPlugin.contributes.customEditors!);
+                contributions.customEditors = customEditors;
+            }
+        } catch (err) {
+            console.error(`Could not read '${rawPlugin.name}' contribution 'customEditors'.`, rawPlugin.contributes!.customEditors, err);
         }
 
         try {
@@ -481,6 +493,19 @@ export class TheiaPluginScanner implements PluginScanner {
             mac: rawKeybinding.mac,
             linux: rawKeybinding.linux,
             win: rawKeybinding.win
+        };
+    }
+
+    private readCustomEditors(rawCustomEditors: PluginPackageCustomEditor[]): CustomEditor[] {
+        return rawCustomEditors.map(rawCustomEditor => this.readCustomEditor(rawCustomEditor));
+    }
+
+    private readCustomEditor(rawCustomEditor: PluginPackageCustomEditor): CustomEditor {
+        return {
+            viewType: rawCustomEditor.viewType,
+            displayName: rawCustomEditor.displayName,
+            selector: rawCustomEditor.selector || [],
+            priority: rawCustomEditor.priority || CustomEditorPriority.default
         };
     }
 

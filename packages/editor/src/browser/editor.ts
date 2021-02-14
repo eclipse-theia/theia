@@ -18,8 +18,9 @@ import { Position, Range, Location } from 'vscode-languageserver-types';
 import * as lsp from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { Event, Disposable, TextDocumentContentChangeDelta } from '@theia/core/lib/common';
-import { Saveable, Navigatable } from '@theia/core/lib/browser';
+import { Saveable, Navigatable, Widget } from '@theia/core/lib/browser';
 import { EditorDecoration } from './decorations';
+import { Reference } from '@theia/core/lib/common';
 
 export {
     Position, Range, Location
@@ -335,4 +336,15 @@ export namespace TextEditorSelection {
     export function is(e: any): e is TextEditorSelection {
         return e && e['uri'] instanceof URI;
     }
+}
+
+export namespace CustomEditorWidget {
+    export function is(arg: Widget | undefined): arg is CustomEditorWidget {
+        return !!arg && 'modelRef' in arg;
+    }
+}
+
+export interface CustomEditorWidget extends Widget {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly modelRef: Reference<any>;
 }

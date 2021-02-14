@@ -165,6 +165,7 @@ import { LabelServiceExtImpl } from '../plugin/label-service';
 import { TimelineExtImpl } from './timeline';
 import { ThemingExtImpl } from './theming';
 import { CommentsExtImpl } from './comments';
+import { CustomEditorsExtImpl } from './custom-editors';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -202,6 +203,7 @@ export function createAPIFactory(
     const timelineExt = rpc.set(MAIN_RPC_CONTEXT.TIMELINE_EXT, new TimelineExtImpl(rpc, commandRegistry));
     const themingExt = rpc.set(MAIN_RPC_CONTEXT.THEMING_EXT, new ThemingExtImpl(rpc));
     const commentsExt = rpc.set(MAIN_RPC_CONTEXT.COMMENTS_EXT, new CommentsExtImpl(rpc, commandRegistry, documents));
+    const customEditorExt = rpc.set(MAIN_RPC_CONTEXT.CUSTOM_EDITORS_EXT, new CustomEditorsExtImpl(rpc, documents, webviewExt, workspaceExt));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
@@ -395,6 +397,11 @@ export function createAPIFactory(
             },
             registerWebviewPanelSerializer(viewType: string, serializer: theia.WebviewPanelSerializer): theia.Disposable {
                 return webviewExt.registerWebviewPanelSerializer(viewType, serializer, plugin);
+            },
+            registerCustomEditorProvider(viewType: string,
+                provider: theia.CustomTextEditorProvider | theia.CustomReadonlyEditorProvider,
+                options: { webviewOptions?: theia.WebviewPanelOptions, supportsMultipleEditorsPerDocument?: boolean } = {}): theia.Disposable {
+                return customEditorExt.registerCustomEditorProvider(viewType, provider, options, plugin);
             },
             get state(): theia.WindowState {
                 return windowStateExt.getWindowState();

@@ -505,6 +505,30 @@ declare module '@theia/plugin' {
 
     // #endregion
 
+    // #region Custom editor move https://github.com/microsoft/vscode/issues/86146
+    // copied from https://github.com/microsoft/vscode/blob/53eac52308c4611000a171cc7bf1214293473c78/src/vs/vscode.proposed.d.ts#L986-L1007
+
+    // TODO: Also for custom editor
+
+    export interface CustomTextEditorProvider {
+
+        /**
+         * Handle when the underlying resource for a custom editor is renamed.
+         *
+         * This allows the webview for the editor be preserved throughout the rename. If this method is not implemented,
+         * Theia will destory the previous custom editor and create a replacement one.
+         *
+         * @param newDocument New text document to use for the custom editor.
+         * @param existingWebviewPanel Webview panel for the custom editor.
+         * @param token A cancellation token that indicates the result is no longer needed.
+         *
+         * @return Thenable indicating that the webview editor has been moved.
+         */
+        moveCustomTextEditor?(newDocument: TextDocument, existingWebviewPanel: WebviewPanel, token: CancellationToken): Thenable<void>;
+    }
+
+    // #endregion
+
     export interface ResourceLabelFormatter {
         scheme: string;
         authority?: string;

@@ -16,8 +16,10 @@
 
 import { ContainerModule } from 'inversify';
 import { WebviewWidgetFactory } from '../browser/webview/webview-widget-factory';
-import { ElectronWebviewWidgetFactory } from './webview/electron-webview-widget-factory';
+import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-editor-widget-factory';
+import { ElectronCustomEditorWidgetFactory, ElectronWebviewWidgetFactory } from './webview/electron-webview-widget-factory';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(WebviewWidgetFactory).toDynamicValue(ctx => new ElectronWebviewWidgetFactory(ctx.container)).inSingletonScope();
+    rebind(CustomEditorWidgetFactory).toDynamicValue(ctx => new ElectronCustomEditorWidgetFactory(ctx.container)).inSingletonScope();
 });

@@ -58,7 +58,7 @@ export namespace Saveable {
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function isSource(arg: any): arg is SaveableSource {
-        return !!arg && ('saveable' in arg);
+        return !!arg && ('saveable' in arg) && is(arg.saveable);
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function is(arg: any): arg is Saveable {
