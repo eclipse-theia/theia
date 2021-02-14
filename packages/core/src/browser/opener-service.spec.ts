@@ -17,6 +17,8 @@
 import { DefaultOpenerService, OpenHandler } from './opener-service';
 import * as assert from 'assert';
 import { MaybePromise } from '../common/types';
+import * as chai from 'chai';
+const expect = chai.expect;
 
 const id = 'my-opener';
 const openHandler: OpenHandler = {
@@ -34,9 +36,14 @@ const openerService = new DefaultOpenerService({
 });
 
 describe('opener-service', () => {
-
     it('getOpeners', () =>
         openerService.getOpeners().then(openers => {
             assert.deepStrictEqual([openHandler], openers);
         }));
+    it('addHandler', () => {
+        openerService.addHandler(openHandler);
+        openerService.getOpeners().then(openers => {
+            expect(openers.length).is.equal(2);
+        });
+    });
 });

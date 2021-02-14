@@ -47,6 +47,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileOperationError, FileOperationResult } from '@theia/filesystem/lib/common/files';
 import { BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
+import { ViewColumn } from '../../../plugin/types-impl';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
@@ -159,6 +160,7 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     viewType: string;
+    viewColumn: ViewColumn;
     options: WebviewPanelOptions = {};
 
     protected ready = new Deferred<void>();

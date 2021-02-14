@@ -62,6 +62,8 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { environment } from '@theia/application-package/lib/environment';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
+import { PluginCustomEditorRegistry } from '../../main/browser/custom-editors/plugin-custom-editor-registry';
+import { CustomEditorWidget } from '../../main/browser/custom-editors/custom-editor-widget';
 
 export type PluginHost = 'frontend' | string;
 export type DebugActivationEvent = 'onDebugResolve' | 'onDebugInitialConfigurations' | 'onDebugAdapterProtocolTracker';
@@ -151,6 +153,9 @@ export class HostedPluginSupport {
     @inject(JsonSchemaStore)
     protected readonly jsonSchemaStore: JsonSchemaStore;
 
+    @inject(PluginCustomEditorRegistry)
+    protected readonly customEditorRegistry: PluginCustomEditorRegistry;
+
     private theiaReadyPromise: Promise<any>;
 
     protected readonly managers = new Map<string, PluginManagerExt>();
@@ -197,9 +202,10 @@ export class HostedPluginSupport {
         this.taskProviderRegistry.onWillProvideTaskProvider(event => this.ensureTaskActivation(event));
         this.taskResolverRegistry.onWillProvideTaskResolver(event => this.ensureTaskActivation(event));
         this.fileService.onWillActivateFileSystemProvider(event => this.ensureFileSystemActivation(event));
+        this.customEditorRegistry.onWillOpenCustomEditor(event => this.activateByCustomEditor(event));
 
         this.widgets.onDidCreateWidget(({ factoryId, widget }) => {
-            if (factoryId === WebviewWidget.FACTORY_ID && widget instanceof WebviewWidget) {
+            if ((factoryId === WebviewWidget.FACTORY_ID || factoryId === CustomEditorWidget.FACTORY_ID) && widget instanceof WebviewWidget) {
                 const storeState = widget.storeState.bind(widget);
                 const restoreState = widget.restoreState.bind(widget);
 
@@ -556,6 +562,10 @@ export class HostedPluginSupport {
         await this.activateByEvent(`onCommand:${commandId}`);
     }
 
+    async activateByCustomEditor(viewType: string): Promise<void> {
+        await this.activateByEvent(`onCustomEditor:${viewType}`);
+    }
+
     activateByFileSystem(event: FileSystemProviderActivationEvent): Promise<void> {
         return this.activateByEvent(`onFileSystem:${event.scheme}`);
     }
@@ -713,9 +723,16 @@ export class HostedPluginSupport {
         this.webviewRevivers.delete(viewType);
     }
 
-    protected preserveWebviews(): void {
+    protected async preserveWebviews(): Promise<void> {
         for (const webview of this.widgets.getWidgets(WebviewWidget.FACTORY_ID)) {
             this.preserveWebview(webview as WebviewWidget);
+        }
+        for (const webview of this.widgets.getWidgets(CustomEditorWidget.FACTORY_ID)) {
+            (webview as CustomEditorWidget).modelRef.dispose();
+            if ((webview as any)['closeWithoutSaving']) {
+                delete (webview as any)['closeWithoutSaving'];
+            }
+            this.customEditorRegistry.resolveWidget(webview as CustomEditorWidget);
         }
     }
 

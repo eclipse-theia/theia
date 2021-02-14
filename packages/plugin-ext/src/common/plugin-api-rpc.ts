@@ -1442,6 +1442,40 @@ export interface WebviewsMain {
     $unregisterSerializer(viewType: string): void;
 }
 
+export interface CustomEditorsExt {
+    $resolveWebviewEditor(
+        resource: UriComponents,
+        newWebviewHandle: string,
+        viewType: string,
+        title: string,
+        position: number,
+        options: theia.WebviewPanelOptions,
+        cancellation: CancellationToken): Promise<void>;
+    $createCustomDocument(resource: UriComponents, viewType: string, backupId: string | undefined, cancellation: CancellationToken): Promise<{ editable: boolean }>;
+    $disposeCustomDocument(resource: UriComponents, viewType: string): Promise<void>;
+    $undo(resource: UriComponents, viewType: string, editId: number, isDirty: boolean): Promise<void>;
+    $redo(resource: UriComponents, viewType: string, editId: number, isDirty: boolean): Promise<void>;
+    $revert(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<void>;
+    $disposeEdits(resourceComponents: UriComponents, viewType: string, editIds: number[]): void;
+    $onSave(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<void>;
+    $onSaveAs(resource: UriComponents, viewType: string, targetResource: UriComponents, cancellation: CancellationToken): Promise<void>;
+    // $backup(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<string>;
+    $onMoveCustomEditor(handle: string, newResource: UriComponents, viewType: string): Promise<void>;
+}
+
+export interface CustomTextEditorCapabilities {
+    readonly supportsMove?: boolean;
+}
+
+export interface CustomEditorsMain {
+    $registerTextEditorProvider(viewType: string, options: theia.WebviewPanelOptions, capabilities: CustomTextEditorCapabilities): void;
+    $registerCustomEditorProvider(viewType: string, options: theia.WebviewPanelOptions, supportsMultipleEditorsPerDocument: boolean): void;
+    $unregisterEditorProvider(viewType: string): void;
+    $createCustomEditorPanel(handle: string, title: string, viewColumn: theia.ViewColumn | undefined, options: theia.WebviewPanelOptions & theia.WebviewOptions): Promise<void>;
+    $onDidEdit(resource: UriComponents, viewType: string, editId: number, label: string | undefined): void;
+    $onContentChange(resource: UriComponents, viewType: string): void;
+}
+
 export interface StorageMain {
     $set(key: string, value: KeysToAnyValues, isGlobal: boolean): Promise<boolean>;
     $get(key: string, isGlobal: boolean): Promise<KeysToAnyValues>;
@@ -1580,6 +1614,7 @@ export const PLUGIN_RPC_CONTEXT = {
     LANGUAGES_MAIN: createProxyIdentifier<LanguagesMain>('LanguagesMain'),
     CONNECTION_MAIN: createProxyIdentifier<ConnectionMain>('ConnectionMain'),
     WEBVIEWS_MAIN: createProxyIdentifier<WebviewsMain>('WebviewsMain'),
+    CUSTOM_EDITORS_MAIN: createProxyIdentifier<CustomEditorsMain>('CustomEditorsMain'),
     STORAGE_MAIN: createProxyIdentifier<StorageMain>('StorageMain'),
     TASKS_MAIN: createProxyIdentifier<TasksMain>('TasksMain'),
     DEBUG_MAIN: createProxyIdentifier<DebugMain>('DebugMain'),
@@ -1612,6 +1647,7 @@ export const MAIN_RPC_CONTEXT = {
     LANGUAGES_EXT: createProxyIdentifier<LanguagesExt>('LanguagesExt'),
     CONNECTION_EXT: createProxyIdentifier<ConnectionExt>('ConnectionExt'),
     WEBVIEWS_EXT: createProxyIdentifier<WebviewsExt>('WebviewsExt'),
+    CUSTOM_EDITORS_EXT: createProxyIdentifier<CustomEditorsExt>('CustomEditorsExt'),
     STORAGE_EXT: createProxyIdentifier<StorageExt>('StorageExt'),
     TASKS_EXT: createProxyIdentifier<TasksExt>('TasksExt'),
     DEBUG_EXT: createProxyIdentifier<DebugExt>('DebugExt'),
@@ -1622,7 +1658,8 @@ export const MAIN_RPC_CONTEXT = {
     LABEL_SERVICE_EXT: createProxyIdentifier<LabelServiceExt>('LabelServiceExt'),
     TIMELINE_EXT: createProxyIdentifier<TimelineExt>('TimeLineExt'),
     THEMING_EXT: createProxyIdentifier<ThemingExt>('ThemingExt'),
-    COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt')};
+    COMMENTS_EXT: createProxyIdentifier<CommentsExt>('CommentsExt')
+};
 
 export interface TasksExt {
     $provideTasks(handle: number, token?: CancellationToken): Promise<TaskDto[] | undefined>;

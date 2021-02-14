@@ -71,6 +71,7 @@ export interface PluginPackageContribution {
     configurationDefaults?: RecursivePartial<PreferenceSchemaProperties>;
     languages?: PluginPackageLanguageContribution[];
     grammars?: PluginPackageGrammarsContribution[];
+    customEditors?: PluginPackageCustomEditor[];
     viewsContainers?: { [location: string]: PluginPackageViewContainer[] };
     views?: { [location: string]: PluginPackageView[] };
     viewsWelcome?: PluginPackageViewWelcome[];
@@ -88,6 +89,23 @@ export interface PluginPackageContribution {
     problemPatterns?: PluginProblemPatternContribution[];
     jsonValidation?: PluginJsonValidationContribution[];
     resourceLabelFormatters?: ResourceLabelFormatter[];
+}
+
+export interface PluginPackageCustomEditor {
+    viewType: string;
+    displayName: string;
+    selector?: CustomEditorSelector[];
+    priority?: CustomEditorPriority;
+}
+
+export interface CustomEditorSelector {
+    readonly filenamePattern?: string;
+}
+
+export enum CustomEditorPriority {
+    default = 'default',
+    builtin = 'builtin',
+    option = 'option',
 }
 
 export interface PluginPackageViewContainer {
@@ -489,6 +507,7 @@ export interface PluginContribution {
     configurationDefaults?: PreferenceSchemaProperties;
     languages?: LanguageContribution[];
     grammars?: GrammarsContribution[];
+    customEditors?: CustomEditor[];
     viewsContainers?: { [location: string]: ViewContainer[] };
     views?: { [location: string]: View[] };
     viewsWelcome?: ViewWelcome[];
@@ -610,6 +629,16 @@ export interface FoldingMarkers {
 export interface FoldingRules {
     offSide?: boolean;
     markers?: FoldingMarkers;
+}
+
+/**
+ * Custom Editors contribution
+ */
+export interface CustomEditor {
+    viewType: string;
+    displayName: string;
+    selector: CustomEditorSelector[];
+    priority: CustomEditorPriority;
 }
 
 /**

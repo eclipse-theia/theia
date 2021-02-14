@@ -69,6 +69,12 @@ import { CommentsService, PluginCommentService } from './comments/comments-servi
 import { CommentingRangeDecorator } from './comments/comments-decorator';
 import { CommentsContribution } from './comments/comments-contribution';
 import { CommentsContextKeyService } from './comments/comments-context-key-service';
+import { CustomEditorContribution } from './custom-editors/custom-editor-contribution';
+import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
+import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-editor-widget-factory';
+import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
+import { CustomEditorService } from './custom-editors/custom-editor-service';
+import { UndoRedoService } from './custom-editors/undo-redo-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -160,6 +166,17 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(WebviewWidget).toSelf();
     bind(WebviewWidgetFactory).toDynamicValue(ctx => new WebviewWidgetFactory(ctx.container)).inSingletonScope();
     bind(WidgetFactory).toService(WebviewWidgetFactory);
+
+    bind(CustomEditorContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(CustomEditorContribution);
+
+    bind(PluginCustomEditorRegistry).toSelf().inSingletonScope();
+    bind(CustomEditorService).toSelf().inSingletonScope();
+    bind(CustomEditorWidget).toSelf();
+    bind(CustomEditorWidgetFactory).toDynamicValue(ctx => new CustomEditorWidgetFactory(ctx.container)).inSingletonScope();
+    bind(WidgetFactory).toService(CustomEditorWidgetFactory);
+
+    bind(UndoRedoService).toSelf().inSingletonScope();
 
     bind(PluginViewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(({ container }) => ({

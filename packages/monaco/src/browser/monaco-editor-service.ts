@@ -17,9 +17,10 @@
 import { injectable, inject, decorate } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { OpenerService, open, WidgetOpenMode, ApplicationShell, PreferenceService } from '@theia/core/lib/browser';
-import { EditorWidget, EditorOpenerOptions, EditorManager } from '@theia/editor/lib/browser';
+import { EditorWidget, EditorOpenerOptions, EditorManager, CustomEditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
+import { MonacoEditorModel } from './monaco-editor-model';
 
 import ICodeEditor = monaco.editor.ICodeEditor;
 import CommonCodeEditor = monaco.editor.CommonCodeEditor;
@@ -55,7 +56,13 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
      * Monaco active editor is either focused or last focused editor.
      */
     getActiveCodeEditor(): monaco.editor.IStandaloneCodeEditor | undefined {
-        const editor = MonacoEditor.getCurrent(this.editors);
+        let editor = MonacoEditor.getCurrent(this.editors);
+        if (!editor && CustomEditorWidget.is(this.shell.activeWidget)) {
+            const model = this.shell.activeWidget.modelRef.object;
+            if (model.editorTextModel instanceof MonacoEditorModel) {
+                editor = MonacoEditor.findByDocument(this.editors, model.editorTextModel)[0];
+            }
+        }
         return editor && editor.getControl();
     }
 

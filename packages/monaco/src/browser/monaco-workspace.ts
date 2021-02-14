@@ -159,7 +159,7 @@ export class MonacoWorkspace {
     protected readonly suppressedOpenIfDirty: MonacoEditorModel[] = [];
 
     protected openEditorIfDirty(model: MonacoEditorModel): void {
-        if (this.suppressedOpenIfDirty.indexOf(model) !== -1) {
+        if (model.suppressOpenEditorWhenDirty || this.suppressedOpenIfDirty.indexOf(model) !== -1) {
             return;
         }
         if (model.dirty && MonacoEditor.findByDocument(this.editorManager, model).length === 0) {
