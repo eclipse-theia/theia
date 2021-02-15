@@ -34,7 +34,7 @@ export interface MoveEntry extends SplitPositionOptions {
     targetSize?: number;
     targetPosition?: number;
     startPosition?: number;
-    startTime?: number
+    startTime?: number;
     resolve?: (position: number) => void;
     reject?: (reason: string) => void;
 }
