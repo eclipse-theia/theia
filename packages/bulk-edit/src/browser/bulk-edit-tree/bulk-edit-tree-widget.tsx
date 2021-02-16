@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import {
     TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, TreeModel,
-    CompositeTreeNode, NodeProps
+    CompositeTreeNode, NodeProps, QuickViewService
 } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { BulkEditInfoNode, BulkEditNode } from './bulk-edit-tree';
@@ -28,7 +28,6 @@ import { EditorWidget, EditorManager, EditorOpenerOptions } from '@theia/editor/
 import { DiffUris } from '@theia/core/lib/browser';
 import { MEMORY_TEXT } from '@theia/core/lib/common';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { QuickViewService } from '@theia/core/lib/browser/quick-view-service';
 
 export const BULK_EDIT_TREE_WIDGET_ID = 'bulkedit';
 export const BULK_EDIT_WIDGET_NAME = 'Refactor Preview';
@@ -43,7 +42,7 @@ export class BulkEditTreeWidget extends TreeWidget {
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
-    @inject(QuickViewService)
+    @inject(QuickViewService) @optional()
     protected readonly quickView: QuickViewService;
 
     constructor(
@@ -64,9 +63,9 @@ export class BulkEditTreeWidget extends TreeWidget {
         }));
     }
 
-    async initModel(workspaceEdit: monaco.languages.WorkspaceEdit): Promise<void> {
-        await this.model.initModel(workspaceEdit, await this.getFileContentsMap(workspaceEdit));
-        this.quickView.showItem(BULK_EDIT_WIDGET_NAME);
+    async initModel(edits: monaco.editor.ResourceEdit[]): Promise<void> {
+        await this.model.initModel(edits, await this.getFileContentsMap(edits));
+        this.quickView?.showItem(BULK_EDIT_WIDGET_NAME);
     }
 
     protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
@@ -109,17 +108,17 @@ export class BulkEditTreeWidget extends TreeWidget {
     }
 
     protected decorateBulkEditNode(node: BulkEditNode): React.ReactNode {
-        if (node?.parent && node?.bulkEdit && ('edit' in node?.bulkEdit)) {
+        if (node?.parent && node?.bulkEdit && ('textEdit' in node?.bulkEdit)) {
             const bulkEdit = node.bulkEdit;
             const parent = node.parent as BulkEditInfoNode;
 
             if (parent?.fileContents) {
                 const lines = parent.fileContents.split('\n');
-                const startLineNum = +bulkEdit.edit.range.startLineNumber;
+                const startLineNum = +bulkEdit.textEdit?.range?.startLineNumber;
 
                 if (lines.length > startLineNum) {
-                    const startColumn = +bulkEdit.edit.range.startColumn;
-                    const endColumn = +bulkEdit.edit.range.endColumn;
+                    const startColumn = +bulkEdit.textEdit.range.startColumn;
+                    const endColumn = +bulkEdit.textEdit.range.endColumn;
                     const lineText = lines[startLineNum - 1];
                     const beforeMatch = (startColumn > 26 ? '... ' : '') + lineText.substr(0, startColumn - 1).substr(-25);
                     const replacedText = lineText.substring(startColumn - 1, endColumn - 1);
@@ -129,7 +128,7 @@ export class BulkEditTreeWidget extends TreeWidget {
                         <div className='message'>
                             {beforeMatch}
                             <span className="replaced-text">{replacedText}</span>
-                            <span className="inserted-text">{bulkEdit.edit.text}</span>
+                            <span className="inserted-text">{bulkEdit.textEdit.text}</span>
                             {afterMatch}
                         </div>
                     </div>;
@@ -150,13 +149,14 @@ export class BulkEditTreeWidget extends TreeWidget {
         </div>;
     }
 
-    private async getFileContentsMap(workspaceEdit: monaco.languages.WorkspaceEdit): Promise<Map<string, string>> {
+    private async getFileContentsMap(edits: monaco.editor.ResourceEdit[]): Promise<Map<string, string>> {
         const fileContentMap = new Map<string, string>();
 
-        if (workspaceEdit?.edits) {
-            for (const element of workspaceEdit.edits) {
+        if (edits) {
+            for (const element of edits) {
                 if (element) {
-                    const filePath = (('newUri' in element) && element?.newUri?.path) || (('resource' in element) && element?.resource?.path);
+                    const filePath = (('newResource' in element) && (element as monaco.editor.ResourceFileEdit).newResource?.path) ||
+                        (('resource' in element) && (element as monaco.editor.ResourceTextEdit).resource.path);
 
                     if (filePath && !fileContentMap.has(filePath)) {
                         const fileUri = new URI(filePath).withScheme('file');
@@ -186,16 +186,16 @@ export class BulkEditTreeWidget extends TreeWidget {
         if (bulkEditInfoNode?.fileContents) {
             lines = bulkEditInfoNode.fileContents.split('\n');
             bulkEditInfoNode.children.map((node: BulkEditNode) => {
-                if (node.bulkEdit && ('edit' in node.bulkEdit)) {
-                    const startLineNum = node.bulkEdit.edit.range.startLineNumber;
+                if (node.bulkEdit && ('textEdit' in node.bulkEdit)) {
+                    const startLineNum = node.bulkEdit.textEdit.range.startLineNumber;
                     if (lines.length > startLineNum) {
-                        const startColumn = node.bulkEdit.edit.range.startColumn;
-                        const endColumn = node.bulkEdit.edit.range.endColumn;
+                        const startColumn = node.bulkEdit.textEdit.range.startColumn;
+                        const endColumn = node.bulkEdit.textEdit.range.endColumn;
                         const lineText = lines[startLineNum - 1];
                         const beforeMatch = lineText.substr(0, startColumn - 1);
                         const replacedText = lineText.substring(startColumn - 1, endColumn - 1);
                         const afterMatch = lineText.substr(startColumn - 1 + replacedText.length);
-                        lines[startLineNum - 1] = beforeMatch + node.bulkEdit.edit.text + afterMatch;
+                        lines[startLineNum - 1] = beforeMatch + node.bulkEdit.textEdit.text + afterMatch;
                     }
                 }
             });
@@ -206,16 +206,16 @@ export class BulkEditTreeWidget extends TreeWidget {
 
     private getEditorOptions(node: BulkEditNode): EditorOpenerOptions {
         let options = {};
-        if (('edit' in node.bulkEdit) && node?.bulkEdit?.edit?.range) {
+        if (('textEdit' in node.bulkEdit) && node?.bulkEdit?.textEdit?.range) {
             options = {
                 selection: {
                     start: {
-                        line: node.bulkEdit.edit.range.startLineNumber - 1,
-                        character: node.bulkEdit.edit.range.startColumn - 1
+                        line: node.bulkEdit.textEdit.range.startLineNumber - 1,
+                        character: node.bulkEdit.textEdit.range.startColumn - 1
                     },
                     end: {
-                        line: node.bulkEdit.edit.range.endLineNumber - 1,
-                        character: node.bulkEdit.edit.range.endColumn - 1
+                        line: node.bulkEdit.textEdit.range.endLineNumber - 1,
+                        character: node.bulkEdit.textEdit.range.endColumn - 1
                     }
                 }
             };
@@ -225,6 +225,6 @@ export class BulkEditTreeWidget extends TreeWidget {
 
     private disposeEditors(): void {
         this.editorWidgets.forEach(w => w.dispose());
-        this.quickView.hideItem(BULK_EDIT_WIDGET_NAME);
+        this.quickView?.hideItem(BULK_EDIT_WIDGET_NAME);
     }
 }

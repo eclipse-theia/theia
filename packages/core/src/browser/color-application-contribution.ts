@@ -47,10 +47,10 @@ export class ColorApplicationContribution implements FrontendApplicationContribu
         }
 
         this.updateThemeBackground();
-        ThemeService.get().onThemeChange(() => this.updateThemeBackground());
+        ThemeService.get().onDidColorThemeChange(() => this.updateThemeBackground());
 
         this.update();
-        ThemeService.get().onThemeChange(() => this.update());
+        ThemeService.get().onDidColorThemeChange(() => this.update());
         this.colors.onDidChange(() => this.update());
     }
 

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Red Hat, Inc. and others.
+ * Copyright (c) 2021 SAP SE or an SAP affiliate company and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -17,20 +17,17 @@
 import { injectable, inject, named } from 'inversify';
 import { ContributionProvider } from '../../common';
 import { FrontendApplicationContribution } from '../frontend-application';
-import { QuickOpenContribution, QuickOpenHandlerRegistry } from './prefix-quick-open-service';
+import { QuickAccessContribution } from './quick-access-contribution';
 
 @injectable()
-export class QuickOpenFrontendContribution implements FrontendApplicationContribution {
+export class QuickInputFrontendContribution implements FrontendApplicationContribution {
 
-    @inject(QuickOpenHandlerRegistry)
-    protected readonly quickOpenHandlerRegistry: QuickOpenHandlerRegistry;
-
-    @inject(ContributionProvider) @named(QuickOpenContribution)
-    protected readonly contributionProvider: ContributionProvider<QuickOpenContribution>;
+    @inject(ContributionProvider) @named(QuickAccessContribution)
+    protected readonly contributionProvider: ContributionProvider<QuickAccessContribution>;
 
     onStart(): void {
-        this.contributionProvider.getContributions().forEach(contrib =>
-            contrib.registerQuickOpenHandlers(this.quickOpenHandlerRegistry)
-        );
+        this.contributionProvider.getContributions().forEach(contrib => {
+            contrib.registerQuickAccessProvider();
+        });
     }
 }

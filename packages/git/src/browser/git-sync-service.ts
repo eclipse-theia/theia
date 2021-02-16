@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { MessageService, Emitter, Event } from '@theia/core';
-import { QuickPickService, ConfirmDialog } from '@theia/core/lib/browser';
+import { ConfirmDialog, QuickInputService } from '@theia/core/lib/browser';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { Git, Repository, WorkingDirectoryStatus } from '../common';
 import { GitErrorHandler } from './git-error-handler';
@@ -36,8 +36,8 @@ export class GitSyncService {
     @inject(GitErrorHandler)
     protected readonly gitErrorHandler: GitErrorHandler;
 
-    @inject(QuickPickService)
-    protected readonly quickPickService: QuickPickService;
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
@@ -107,27 +107,27 @@ export class GitSyncService {
         const methods: {
             label: string
             warning: string
-            value: GitSyncService.SyncMethod
+            detail: GitSyncService.SyncMethod
         }[] = [{
             label: `Pull and push commits from and to '${upstreamBranch}'`,
             warning: `This action will pull and push commits from and to '${upstreamBranch}'.`,
-            value: 'pull-push'
+            detail: 'pull-push'
         }, {
             label: `Fetch, rebase and push commits from and to '${upstreamBranch}'`,
             warning: `This action will fetch, rebase and push commits from and to '${upstreamBranch}'.`,
-            value: 'rebase-push'
+            detail: 'rebase-push'
         }, {
             label: `Force push commits to '${upstreamBranch}'`,
             warning: `This action will override commits in '${upstreamBranch}'.`,
-            value: 'force-push'
+            detail: 'force-push'
         }];
-        const method = await this.quickPickService.show(methods, {
-            placeholder: 'Pick how changes should be synchronized:'
-        });
-        if (method && await this.confirm('Synchronize Changes', methods.find(({ value }) => value === method)!.warning)) {
-            return method;
+
+        const selectedCWD = await this.quickInputService?.showQuickPick(methods, { placeholder: 'Select current working directory for new terminal' });
+        if (await this.confirm('Synchronize Changes', methods.find(({ detail }) => detail === selectedCWD.detail)!.warning)) {
+            return (selectedCWD.detail as GitSyncService.SyncMethod);
+        } else {
+            return (undefined);
         }
-        return undefined;
     }
 
     canPublish(): boolean {
@@ -162,9 +162,10 @@ export class GitSyncService {
         if (remotes.length === 0) {
             this.messageService.warn('Your repository has no remotes configured to publish to.');
         }
-        return this.quickPickService.show(remotes, {
-            placeholder: `Pick a remote to publish the branch ${branch} to:`
-        });
+
+        const selectedRemote = await this.quickInputService?.showQuickPick(remotes.map(remote => ({ label: remote })),
+            { placeholder: `Pick a remote to publish the branch ${branch} to:` });
+        return selectedRemote.label;
     }
 
     protected shouldPush(status: WorkingDirectoryStatus): boolean {

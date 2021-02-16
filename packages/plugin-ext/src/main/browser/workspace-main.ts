@@ -20,8 +20,6 @@ import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFol
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../common/uri-components';
-import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
-import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';
 import { FileSearchService } from '@theia/file-search/lib/common/file-search-service';
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -32,6 +30,7 @@ import { PluginServer } from '../../common/plugin-protocol';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 
 export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
@@ -39,7 +38,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     private storageProxy: StorageExt;
 
-    private quickOpenService: MonacoQuickOpenService;
+    private monacoQuickInputService: MonacoQuickInputService;
 
     private fileSearchService: FileSearchService;
 
@@ -62,7 +61,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WORKSPACE_EXT);
         this.storageProxy = rpc.getProxy(MAIN_RPC_CONTEXT.STORAGE_EXT);
-        this.quickOpenService = container.get(MonacoQuickOpenService);
+        this.monacoQuickInputService = container.get(MonacoQuickInputService);
         this.fileSearchService = container.get(FileSearchService);
         this.searchInWorkspaceService = container.get(SearchInWorkspaceService);
         this.resourceResolver = container.get(TextContentResourceResolver);
@@ -127,40 +126,25 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
             const items = this.roots.map(root => {
                 const rootUri = Uri.parse(root);
                 const rootPathName = rootUri.path.substring(rootUri.path.lastIndexOf('/') + 1);
-                return new QuickOpenItem({
+                return {
                     label: rootPathName,
                     detail: rootUri.path,
-                    run: mode => {
-                        if (mode === QuickOpenMode.OPEN) {
-                            returnValue = {
-                                uri: rootUri,
-                                name: rootPathName,
-                                index: 0
-                            } as theia.WorkspaceFolder;
-                        }
-                        return true;
+                    execute: () => {
+                        returnValue = {
+                            uri: rootUri,
+                            name: rootPathName,
+                            index: 0
+                        } as theia.WorkspaceFolder;
                     }
-                });
+                };
             });
 
-            // Create quick open model
-            const model = {
-                onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                    acceptor(items);
-                }
-            } as QuickOpenModel;
-
             // Show pick menu
-            this.quickOpenService.open(model, {
-                fuzzyMatchLabel: true,
-                fuzzyMatchDetail: true,
-                fuzzyMatchDescription: true,
-                placeholder: options.placeHolder,
-                onClose: () => {
+            this.monacoQuickInputService.showQuickPick(items, {
+                onDidHide: () => {
                     if (activeElement) {
                         activeElement.focus({ preventScroll: true });
                     }
-
                     resolve(returnValue);
                 }
             });

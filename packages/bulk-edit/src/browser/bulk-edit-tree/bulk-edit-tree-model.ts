@@ -35,7 +35,7 @@ export class BulkEditTreeModel extends TreeModelImpl {
         this.doOpenNode(node);
     }
 
-    async initModel(workspaceEdit: monaco.languages.WorkspaceEdit, fileContents: Map<string, string>): Promise<void> {
-        this.tree.initTree(workspaceEdit, fileContents);
+    async initModel(edits: monaco.editor.ResourceEdit[], fileContents: Map<string, string>): Promise<void> {
+        this.tree.initTree(edits, fileContents);
     }
 }

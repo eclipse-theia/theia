@@ -73,6 +73,10 @@ export class MonacoResolvedKeybinding extends monaco.keybindings.ResolvedKeybind
         return this.keySequence.map(keyCode => monaco.keybindings.USLayoutResolvedKeybinding.getDispatchStr(this.toKeybinding(keyCode)));
     }
 
+    public getSingleModifierDispatchParts(): (string | null)[] {
+        return []; /* NOOP */
+    }
+
     private toKeybinding(keyCode: KeyCode): monaco.keybindings.SimpleKeybinding {
         return new monaco.keybindings.SimpleKeybinding(
             keyCode.ctrl,

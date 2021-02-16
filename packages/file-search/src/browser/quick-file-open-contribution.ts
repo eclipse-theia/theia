@@ -18,10 +18,10 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { QuickFileOpenService, quickFileOpen } from './quick-file-open';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
-import { KeybindingRegistry, KeybindingContribution, QuickOpenContribution, QuickOpenHandlerRegistry } from '@theia/core/lib/browser';
+import { KeybindingRegistry, KeybindingContribution, QuickAccessContribution } from '@theia/core/lib/browser';
 
 @injectable()
-export class QuickFileOpenFrontendContribution implements CommandContribution, KeybindingContribution, QuickOpenContribution {
+export class QuickFileOpenFrontendContribution implements QuickAccessContribution, CommandContribution, KeybindingContribution {
 
     @inject(QuickFileOpenService)
     protected readonly quickFileOpenService: QuickFileOpenService;
@@ -50,7 +50,7 @@ export class QuickFileOpenFrontendContribution implements CommandContribution, K
         });
     }
 
-    registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
-        handlers.registerHandler(this.quickFileOpenService, true);
+    registerQuickAccessProvider(): void {
+        this.quickFileOpenService.registerQuickAccessProvider();
     }
 }

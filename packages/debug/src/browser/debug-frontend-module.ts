@@ -22,7 +22,7 @@ import { DebugWidget } from './view/debug-widget';
 import { DebugPath, DebugService } from '../common/debug-service';
 import {
     WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution,
-    bindViewContribution, KeybindingContext, QuickOpenContribution
+    bindViewContribution, KeybindingContext
 } from '@theia/core/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugResourceResolver } from './debug-resource';
@@ -59,6 +59,7 @@ import { DebugInlineValueDecorator } from './editor/debug-inline-value-decorator
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { DebugTabBarDecorator } from './debug-tab-bar-decorator';
+import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access-contribution';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugCallStackItemTypeKey).toDynamicValue(({ container }) =>
@@ -110,7 +111,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bind(DebugSessionContributionRegistry).toService(DebugSessionContributionRegistryImpl);
 
     bind(DebugPrefixConfiguration).toSelf().inSingletonScope();
-    for (const identifier of [CommandContribution, QuickOpenContribution]) {
+    for (const identifier of [CommandContribution, QuickAccessContribution]) {
         bind(identifier).toService(DebugPrefixConfiguration);
     }
 

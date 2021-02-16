@@ -17,21 +17,21 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import {
-    PrefixQuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService,
-    QuickOpenMode, KeybindingContribution, KeybindingRegistry, QuickOpenHandler, QuickOpenOptions, QuickOpenContribution, QuickOpenHandlerRegistry
+    KeybindingContribution, KeybindingRegistry, QuickAccessContribution, OpenerService, LabelProvider, findMatches
 } from '@theia/core/lib/browser';
-import { CancellationTokenSource, CommandRegistry, CommandHandler, Command, SelectionService, CancellationToken } from '@theia/core';
-import URI from '@theia/core/lib/common/uri';
+import {
+    CommandRegistry, CommandHandler, Command, SelectionService, CancellationToken
+} from '@theia/core';
 import { CommandContribution } from '@theia/core/lib/common';
 import { Range, Position, SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
 import { WorkspaceSymbolParams } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from './monaco-languages';
+import { MonacoQuickInputService } from './monaco-quick-input-service';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
-export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContribution, KeybindingContribution, CommandHandler, QuickOpenHandler, QuickOpenContribution {
-
+export class WorkspaceSymbolCommand implements monaco.quickInput.IQuickAccessDataService, CommandContribution, KeybindingContribution, CommandHandler, QuickAccessContribution {
     readonly prefix = '#';
-    readonly description = 'Go to Symbol in Workspace';
 
     private command: Command = {
         id: 'languages.workspace.symbol',
@@ -40,29 +40,16 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
 
     @inject(MonacoLanguages) protected readonly languages: MonacoLanguages;
     @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(PrefixQuickOpenService) protected quickOpenService: PrefixQuickOpenService;
+    @inject(MonacoQuickInputService) protected monacoQuickInputService: MonacoQuickInputService;
     @inject(SelectionService) protected selectionService: SelectionService;
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
     isEnabled(): boolean {
         return this.languages.workspaceSymbolProviders !== undefined;
     }
 
     execute(): void {
-        this.quickOpenService.open(this.prefix);
-    }
-
-    getModel(): QuickOpenModel {
-        return this;
-    }
-
-    getOptions(): QuickOpenOptions {
-        return {
-            fuzzyMatchLabel: true,
-            showItemsWithoutHighlight: true,
-            onClose: () => {
-                this.cancellationSource.cancel();
-            }
-        };
+        this.monacoQuickInputService.open(this.prefix);
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -80,134 +67,95 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         });
     }
 
-    registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
-        handlers.registerHandler(this);
+    registerQuickAccessProvider(): void {
+        monaco.platform.Registry.as<monaco.quickInput.IQuickAccessRegistry>('workbench.contributions.quickaccess').registerQuickAccessProvider({
+            ctor: SymbolsQuickAccessProvider,
+            prefix: SymbolsQuickAccessProvider.PREFIX,
+            placeholder: '',
+            helpEntries: [{ description: 'Go to Symbol in Workspace', needsEditor: false }]
+        });
+        SymbolsQuickAccessProvider.dataService = this as monaco.quickInput.IQuickAccessDataService;
     }
 
-    private cancellationSource = new CancellationTokenSource();
-
-    async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
+    async getPicks(filter: string, token: CancellationToken): Promise<monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>> {
+        const items: Array<monaco.quickInput.IAnythingQuickPickItem> = [];
         if (this.languages.workspaceSymbolProviders) {
-            this.cancellationSource.cancel();
-            const newCancellationSource = new CancellationTokenSource();
-            this.cancellationSource = newCancellationSource;
-
             const param: WorkspaceSymbolParams = {
-                query: lookFor
+                query: filter
             };
-
-            const items: QuickOpenItem[] = [];
 
             const workspaceProviderPromises = [];
             for (const provider of this.languages.workspaceSymbolProviders) {
                 workspaceProviderPromises.push((async () => {
-                    const symbols = await provider.provideWorkspaceSymbols(param, newCancellationSource.token);
-                    if (symbols && !newCancellationSource.token.isCancellationRequested) {
+                    const symbols = await provider.provideWorkspaceSymbols(param, token);
+                    if (symbols && !token.isCancellationRequested) {
                         for (const symbol of symbols) {
-                            items.push(this.createItem(symbol, provider, newCancellationSource.token));
+                            items.push(this.createItem(symbol, provider, filter, token));
                         }
-                        acceptor(items);
                     }
                     return symbols;
                 })());
             }
-            Promise.all(workspaceProviderPromises.map(p => p.then(sym => sym, _ => undefined))).then(symbols => {
-                const filteredSymbols = symbols.filter(el => el && el.length !== 0);
-                if (filteredSymbols.length === 0) {
-                    items.push(new QuickOpenItem({
-                        label: lookFor.length === 0 ? 'Type to search for symbols' : 'No symbols matching',
-                        run: () => false
-                    }));
-                    acceptor(items);
-                }
-            }).catch();
+            await Promise.all(workspaceProviderPromises.map(p => p.then(sym => sym, _ => undefined)))
+                .then(symbols => {
+                    const filteredSymbols = symbols.filter(el => el && el.length !== 0);
+                    if (filteredSymbols.length === 0) {
+                        items.push({
+                            label: filter.length === 0 ? 'Type to search for symbols' : 'No symbols matching',
+                        });
+                    }
+                }).catch();
         }
+        return items;
     }
 
-    protected createItem(sym: SymbolInformation, provider: WorkspaceSymbolProvider, token: CancellationToken): QuickOpenItem {
+    protected createItem(sym: SymbolInformation, provider: WorkspaceSymbolProvider, filter: string, token: CancellationToken): monaco.quickInput.IAnythingQuickPickItem {
         const uri = new URI(sym.location.uri);
-        const icon = this.toCssClassName(sym.kind) || 'unknown';
+        const iconClasses = this.toCssClassName(sym.kind);
         let parent = sym.containerName;
         if (parent) {
             parent += ' - ';
         }
-        parent = (parent || '') + uri.displayName;
-        return new SimpleOpenItem(sym.name, icon, parent, uri.toString(), () => {
-
-            if (provider.resolveWorkspaceSymbol) {
-                provider.resolveWorkspaceSymbol(sym, token).then(resolvedSymbol => {
-                    if (resolvedSymbol) {
-                        this.openURL(uri, resolvedSymbol.location.range.start, resolvedSymbol.location.range.end);
-                    } else {
-                        // the symbol didn't resolve -> use given symbol
-                        this.openURL(uri, sym.location.range.start, sym.location.range.end);
-                    }
-                });
-            } else {
-                // resolveWorkspaceSymbol wasn't specified
-                this.openURL(uri, sym.location.range.start, sym.location.range.end);
+        const description = (parent || '') + this.labelProvider.getName(uri);
+        return ({
+            label: sym.name,
+            description,
+            ariaLabel: uri.toString(),
+            iconClasses,
+            highlights: {
+                label: findMatches(sym.name, filter),
+                description: findMatches(description, filter)
+            },
+            accept: () => {
+                if (provider.resolveWorkspaceSymbol) {
+                    provider.resolveWorkspaceSymbol(sym, token).then(resolvedSymbol => {
+                        if (resolvedSymbol) {
+                            this.openURL(uri, resolvedSymbol.location.range.start, resolvedSymbol.location.range.end);
+                        } else {
+                            // the symbol didn't resolve -> use given symbol
+                            this.openURL(uri, sym.location.range.start, sym.location.range.end);
+                        }
+                    });
+                } else {
+                    // resolveWorkspaceSymbol wasn't specified
+                    this.openURL(uri, sym.location.range.start, sym.location.range.end);
+                }
             }
         });
     }
 
-    protected toCssClassName(symbolKind: SymbolKind, inline?: boolean): string | undefined {
+    protected toCssClassName(symbolKind: SymbolKind, inline?: boolean): string[] | undefined {
         const kind = SymbolKind[symbolKind];
         if (!kind) {
             return undefined;
         }
-        return `codicon ${inline ? 'inline' : 'block'} codicon-symbol-${kind.toLowerCase() || 'property'}`;
+        return [`codicon ${inline ? 'inline' : 'block'} codicon-symbol-${kind.toLowerCase() || 'property'}`];
     }
 
     private openURL(uri: URI, start: Position, end: Position): void {
         this.openerService.getOpener(uri).then(opener => opener.open(uri, {
             selection: Range.create(start, end)
         }));
-    }
-}
-
-class SimpleOpenItem extends QuickOpenItem {
-
-    constructor(
-        protected readonly label: string,
-        protected readonly icon: string,
-        protected readonly parent: string,
-        protected readonly toolTip: string,
-        protected readonly onOpen: () => void,
-        protected readonly onSelect?: () => void
-    ) {
-        super();
-    }
-
-    getLabel(): string {
-        return this.label;
-    }
-
-    isHidden(): boolean {
-        return false;
-    }
-
-    getTooltip(): string {
-        return this.toolTip;
-    }
-
-    getDescription(): string {
-        return this.parent;
-    }
-
-    getIconClass(): string {
-        return this.icon;
-    }
-
-    run(mode: QuickOpenMode): boolean {
-        if (mode !== QuickOpenMode.OPEN) {
-            if (!this.onSelect) {
-                return false;
-            }
-            this.onSelect();
-            return true;
-        }
-        this.onOpen();
-        return true;
     }
 }
 
@@ -238,4 +186,28 @@ enum SymbolKind {
     Event = 24,
     Operator = 25,
     TypeParameter = 26
+}
+
+export class SymbolsQuickAccessProvider extends monaco.quickInput.PickerQuickAccessProvider<monaco.quickInput.IQuickPickItem> {
+    static PREFIX = '#';
+    static dataService: monaco.quickInput.IQuickAccessDataService;
+
+    private static readonly NO_RESULTS_PICK: monaco.quickInput.IAnythingQuickPickItem = {
+        label: 'No matching results'
+    };
+
+    constructor() {
+        super(SymbolsQuickAccessProvider.PREFIX, {
+            canAcceptInBackground: true,
+            noResultsPick: SymbolsQuickAccessProvider.NO_RESULTS_PICK
+        });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getPicks(filter: string, disposables: any, token: monaco.CancellationToken): monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>
+        | Promise<monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>>
+        | monaco.quickInput.FastAndSlowPicks<monaco.quickInput.IAnythingQuickPickItem>
+        | null {
+        return SymbolsQuickAccessProvider.dataService?.getPicks(filter, token);
+    }
 }

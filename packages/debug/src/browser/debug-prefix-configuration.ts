@@ -14,12 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
-import {
-    QuickOpenContribution, QuickOpenHandler, QuickOpenModel,
-    PrefixQuickOpenService, QuickOpenOptions, QuickOpenHandlerRegistry, QuickOpenItem, QuickOpenMode
-} from '@theia/core/lib/browser/quick-open';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugConfigurationManager } from './debug-configuration-manager';
 import { DebugCommands } from './debug-frontend-application-contribution';
@@ -27,11 +23,12 @@ import { DebugSessionOptions } from './debug-session-options';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
-import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
+import { QuickAccessContribution, QuickInputService, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { DebugPreferences } from './debug-preferences';
+import { filterItems } from '@theia/core/lib/browser/quick-input/quick-input-service';
 
 @injectable()
-export class DebugPrefixConfiguration implements CommandContribution, CommandHandler, QuickOpenContribution, QuickOpenHandler, QuickOpenModel {
+export class DebugPrefixConfiguration implements CommandContribution, CommandHandler, QuickAccessContribution, monaco.quickInput.IQuickAccessDataService {
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
@@ -45,8 +42,8 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     @inject(DebugConfigurationManager)
     protected readonly debugConfigurationManager: DebugConfigurationManager;
 
-    @inject(PrefixQuickOpenService)
-    protected readonly prefixQuickOpenService: PrefixQuickOpenService;
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -57,8 +54,6 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
 
-    readonly prefix = 'debug ';
-    readonly description = 'Debug Configuration';
     readonly statusBarId = 'select-run-debug-statusbar-item';
 
     private readonly command: Command = {
@@ -83,7 +78,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
     }
 
     execute(): void {
-        this.prefixQuickOpenService.open(this.prefix);
+        this.quickInputService?.open(DebugQuickAccessProvider.PREFIX);
     }
 
     isEnabled(): boolean {
@@ -94,44 +89,33 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
         return true;
     }
 
-    getModel(): QuickOpenModel {
-        return this;
-    }
-
-    getOptions(): QuickOpenOptions {
-        return {
-            fuzzyMatchLabel: true,
-            fuzzySort: false,
-        };
-    }
-
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(this.command, this);
     }
 
-    registerQuickOpenHandlers(handlers: QuickOpenHandlerRegistry): void {
-        handlers.registerHandler(this);
+    registerQuickAccessProvider(): void {
+        monaco.platform.Registry.as<monaco.quickInput.IQuickAccessRegistry>('workbench.contributions.quickaccess').registerQuickAccessProvider({
+            ctor: DebugQuickAccessProvider,
+            prefix: DebugQuickAccessProvider.PREFIX,
+            placeholder: '',
+            helpEntries: [{ description: 'Debug Configuration', needsEditor: false }]
+        });
+        DebugQuickAccessProvider.dataService = this as monaco.quickInput.IQuickAccessDataService;
     }
 
-    async onType(_lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
-        const items: QuickOpenItem[] = [];
+    async getPicks(filter: string, token: monaco.CancellationToken): Promise<monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>> {
+        const items: Array<monaco.quickInput.IAnythingQuickPickItem> = [];
         const configurations = this.debugConfigurationManager.all;
         Array.from(configurations).forEach(config => {
-            items.push(new QuickOpenItem({
+            items.push({
                 label: config.configuration.name,
                 description: this.workspaceService.isMultiRootWorkspaceOpened
                     ? this.labelProvider.getName(new URI(config.workspaceFolderUri))
                     : '',
-                run: (mode: QuickOpenMode) => {
-                    if (mode !== QuickOpenMode.OPEN) {
-                        return false;
-                    }
-                    this.runConfiguration(config);
-                    return true;
-                }
-            }));
+                accept: () => this.runConfiguration(config)
+            });
         });
-        acceptor(items);
+        return filterItems(items, filter);
     }
 
     /**
@@ -178,5 +162,28 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
      */
     protected removeDebugStatusBar(): void {
         this.statusBar.removeElement(this.statusBarId);
+    }
+}
+export class DebugQuickAccessProvider extends monaco.quickInput.PickerQuickAccessProvider<monaco.quickInput.IQuickPickItem> {
+    static PREFIX = 'debug ';
+    static dataService: monaco.quickInput.IQuickAccessDataService;
+
+    private static readonly NO_RESULTS_PICK: monaco.quickInput.IAnythingQuickPickItem = {
+        label: 'No matching launch configurations'
+    };
+
+    constructor() {
+        super(DebugQuickAccessProvider.PREFIX, {
+            canAcceptInBackground: true,
+            noResultsPick: DebugQuickAccessProvider.NO_RESULTS_PICK
+        });
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    getPicks(filter: string, disposables: any, token: monaco.CancellationToken): monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>
+        | Promise<monaco.quickInput.Picks<monaco.quickInput.IAnythingQuickPickItem>>
+        | monaco.quickInput.FastAndSlowPicks<monaco.quickInput.IAnythingQuickPickItem>
+        | null {
+        return DebugQuickAccessProvider.dataService?.getPicks(filter, token);
     }
 }

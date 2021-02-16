@@ -17,7 +17,7 @@
 /* eslint-disable max-len, @typescript-eslint/indent */
 
 import debounce = require('lodash.debounce');
-import { injectable, inject } from 'inversify';
+import { injectable, inject, optional } from 'inversify';
 import { TabBar, Widget } from '@phosphor/widgets';
 import { MAIN_MENU_BAR, SETTINGS_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
@@ -38,8 +38,7 @@ import { ResourceContextKey } from './resource-context-key';
 import { UriSelection } from '../common/selection';
 import { StorageService } from './storage-service';
 import { Navigatable } from './navigatable';
-import { QuickViewService } from './quick-view-service';
-import { PrefixQuickOpenService, QuickOpenItem, QuickOpenMode, QuickOpenService, QuickOpenGroupItem } from './quick-open';
+import { QuickViewService } from './quick-input/quick-view-service';
 import { environment } from '@theia/application-package/lib/environment';
 import { IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
@@ -53,6 +52,7 @@ import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType } from './saveable';
+import { QuickInputService, QuickPick, QuickPickItem } from './quick-input';
 
 export namespace CommonMenus {
 
@@ -304,20 +304,17 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     @inject(StorageService)
     protected readonly storageService: StorageService;
 
-    @inject(QuickViewService)
+    @inject(QuickViewService) @optional()
     protected readonly quickView: QuickViewService;
 
-    @inject(PrefixQuickOpenService)
-    protected readonly quickOpen: PrefixQuickOpenService;
+    @inject(QuickInputService) @optional()
+    protected readonly quickInputService: QuickInputService;
 
     @inject(IconThemeService)
     protected readonly iconThemes: IconThemeService;
 
     @inject(ThemeService)
     protected readonly themeService: ThemeService;
-
-    @inject(QuickOpenService)
-    protected readonly quickOpenService: QuickOpenService;
 
     @inject(CorePreferences)
     protected readonly preferences: CorePreferences;
@@ -363,7 +360,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 this.updateThemeFromPreference(e.preferenceName);
             }
         });
-        this.themeService.onThemeChange(() => this.updateThemePreference('workbench.colorTheme'));
+        this.themeService.onDidColorThemeChange(() => this.updateThemePreference('workbench.colorTheme'));
         this.iconThemes.onDidChangeCurrent(() => this.updateThemePreference('workbench.iconTheme'));
 
         app.shell.leftPanelHandler.addMenu({
@@ -765,7 +762,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
 
         commandRegistry.registerCommand(CommonCommands.OPEN_VIEW, {
-            execute: () => this.quickOpen.open(this.quickView.prefix)
+            execute: () => this.quickInputService?.open(this.quickView?.prefix)
         });
 
         commandRegistry.registerCommand(CommonCommands.SELECT_COLOR_THEME, {
@@ -991,82 +988,79 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         let resetTo: string | undefined = this.iconThemes.current;
         const previewTheme = debounce((id: string) => this.iconThemes.current = id, 200);
 
-        let items: (QuickOpenItem & { id: string })[] = [];
+        let items: Array<QuickPickItem> = [];
         for (const iconTheme of this.iconThemes.definitions) {
-            const item = Object.assign(new QuickOpenItem({
+            items.push({
+                id: iconTheme.id,
                 label: iconTheme.label,
                 description: iconTheme.description,
-                run: (mode: QuickOpenMode) => {
-                    if (mode === QuickOpenMode.OPEN) {
-                        resetTo = undefined;
-                    }
-                    previewTheme(iconTheme.id);
-                    return true;
-                }
-            }), { id: iconTheme.id });
-            items.push(item);
+            });
         }
         items = items.sort((a, b) => {
             if (a.id === 'none') {
                 return -1;
             }
-            return a.getLabel()!.localeCompare(b.getLabel()!);
+            return a.label!.localeCompare(b.label!);
         });
-        this.quickOpenService.open({
-            onType: (_, accept) => accept(items)
-        }, {
-            placeholder: 'Select File Icon Theme',
-            fuzzyMatchLabel: true,
-            selectIndex: () => items.findIndex(item => item.id === this.iconThemes.current),
-            onClose: () => {
-                if (resetTo) {
-                    previewTheme.cancel();
-                    this.iconThemes.current = resetTo;
+
+        this.quickInputService?.showQuickPick(items,
+            {
+                placeholder: 'Select File Icon Theme',
+                activeItem: items.find(item => item.id === resetTo),
+                onDidChangeSelection: (quickPick: QuickPick<QuickPickItem>, selectedItems: Array<QuickPickItem>) => {
+                    resetTo = undefined;
+                    previewTheme(selectedItems[0].id!);
+                },
+                onDidChangeActive: (quickPick: QuickPick<QuickPickItem>, activeItems: Array<QuickPickItem>) => {
+                    previewTheme(activeItems[0].id!);
+                },
+                onDidHide: () => {
+                    if (resetTo) {
+                        this.iconThemes.current = resetTo;
+                    }
                 }
-            }
-        });
+            });
     }
 
     protected selectColorTheme(): void {
         let resetTo: string | undefined = this.themeService.getCurrentTheme().id;
         const previewTheme = debounce((id: string) => this.themeService.setCurrentTheme(id), 200);
 
-        type ThemeQuickOpenItem = QuickOpenItem & { id: string };
-        const itemsByTheme: { light: ThemeQuickOpenItem[], dark: ThemeQuickOpenItem[], hc: ThemeQuickOpenItem[] } = { light: [], dark: [], hc: [] };
+        const itemsByTheme: { light: Array<QuickPickItem>, dark: Array<QuickPickItem>, hc: Array<QuickPickItem> } = { light: [], dark: [], hc: [] };
         for (const theme of this.themeService.getThemes().sort((a, b) => a.label.localeCompare(b.label))) {
             const themeItems = itemsByTheme[theme.type];
-            const groupLabel = themeItems.length === 0 ? (theme.type === 'hc' ? 'high contrast' : theme.type) + ' themes' : undefined;
-            themeItems.push(Object.assign(new QuickOpenGroupItem({
+            if (themeItems.length === 0) {
+                themeItems.push({
+                    type: 'separator',
+                    label: (theme.type === 'hc' ? 'high contrast' : theme.type) + ' themes'
+                });
+            }
+            themeItems.push({
+                id: theme.id,
                 label: theme.label,
                 description: theme.description,
-                run: (mode: QuickOpenMode) => {
-                    if (mode === QuickOpenMode.OPEN) {
-                        resetTo = undefined;
-                    }
-                    previewTheme(theme.id);
-                    return true;
-                },
-                groupLabel,
-                showBorder: !!groupLabel && theme.type !== 'light'
-            }), { id: theme.id }));
+            });
         }
         const items = [...itemsByTheme.light, ...itemsByTheme.dark, ...itemsByTheme.hc];
-        this.quickOpenService.open({
-            onType: (_, accept) => accept(items)
-        }, {
-            placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
-            fuzzyMatchLabel: true,
-            selectIndex: () => {
-                const current = this.themeService.getCurrentTheme().id;
-                return items.findIndex(item => item.id === current);
-            },
-            onClose: () => {
-                if (resetTo) {
-                    previewTheme.cancel();
-                    this.themeService.setCurrentTheme(resetTo);
+        this.quickInputService?.showQuickPick(items,
+            {
+                placeholder: 'Select Color Theme (Up/Down Keys to Preview)',
+                activeItem: items.find((item: QuickPickItem) => item.id === resetTo),
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onDidChangeSelection: (quickPick: any, selectedItems: Array<QuickPickItem>) => {
+                    resetTo = undefined;
+                    previewTheme(selectedItems[0].id!);
+                },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onDidChangeActive: (quickPick: any, activeItems: Array<QuickPickItem>) => {
+                    previewTheme(activeItems[0].id!);
+                },
+                onDidHide: () => {
+                    if (resetTo) {
+                        this.themeService.setCurrentTheme(resetTo);
+                    }
                 }
-            }
-        });
+            });
     }
 
     registerColors(colors: ColorRegistry): void {

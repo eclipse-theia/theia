@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct, optional } from '@theia/core/shared/inversify';
 import {
     ApplicationShell, ViewContainer as ViewContainerWidget, WidgetManager,
     ViewContainerIdentifier, ViewContainerTitleOptions, Widget, FrontendApplicationContribution,
@@ -31,7 +31,7 @@ import { DebugFrontendApplicationContribution } from '@theia/debug/lib/browser/d
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuModelRegistry } from '@theia/core/lib/common/menu';
-import { QuickViewService } from '@theia/core/lib/browser/quick-view-service';
+import { QuickViewService } from '@theia/core/lib/browser';
 import { Emitter } from '@theia/core/lib/common/event';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { SearchInWorkspaceWidget } from '@theia/search-in-workspace/lib/browser/search-in-workspace-widget';
@@ -75,7 +75,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
 
-    @inject(QuickViewService)
+    @inject(QuickViewService) @optional()
     protected readonly quickView: QuickViewService;
 
     @inject(ContextKeyService)
@@ -256,7 +256,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             commandId: toggleCommandId,
             label: options.label
         }));
-        toDispose.push(this.quickView.registerItem({
+        toDispose.push(this.quickView?.registerItem({
             label: options.label,
             open: async () => {
                 const widget = await this.openViewContainer(id);
@@ -303,7 +303,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             this.viewClauseContexts.set(view.id, this.contextKeyService.parseKeys(view.when));
             toDispose.push(Disposable.create(() => this.viewClauseContexts.delete(view.id)));
         }
-        toDispose.push(this.quickView.registerItem({
+        toDispose.push(this.quickView?.registerItem({
             label: view.name,
             when: view.when,
             open: () => this.openView(view.id, { activate: true })

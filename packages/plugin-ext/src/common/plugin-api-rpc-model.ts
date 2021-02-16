@@ -102,6 +102,7 @@ export enum CompletionItemInsertTextRule {
 
 export interface Completion {
     label: string;
+    label2?: string;
     kind: CompletionItemKind;
     detail?: string;
     documentation?: string | MarkdownString;
@@ -313,7 +314,11 @@ export interface ReferenceContext {
     includeDeclaration: boolean;
 }
 
+export type CacheId = number;
+export type ChainedCacheId = [CacheId, CacheId];
+
 export interface DocumentLink {
+    cacheId?: ChainedCacheId,
     range: Range;
     url?: UriComponents | string;
     tooltip?: string;

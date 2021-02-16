@@ -138,7 +138,7 @@ export class MonacoThemingService {
 
     static init(): void {
         this.updateBodyUiTheme();
-        ThemeService.get().onThemeChange(() => this.updateBodyUiTheme());
+        ThemeService.get().onDidColorThemeChange(() => this.updateBodyUiTheme());
         this.restore();
     }
 

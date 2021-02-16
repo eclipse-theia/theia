@@ -50,6 +50,19 @@ export namespace WorkspaceTextEdit {
 
 export type Edit = monaco.languages.WorkspaceFileEdit | monaco.languages.WorkspaceTextEdit;
 
+export namespace ResourceFileEdit {
+    export function is(arg: monaco.editor.ResourceEdit): arg is monaco.editor.ResourceFileEdit {
+        return typeof arg === 'object' && (('oldResource' in arg) && monaco.Uri.isUri((arg as monaco.editor.ResourceFileEdit).oldResource)) ||
+            ('newResource' in arg && monaco.Uri.isUri((arg as monaco.editor.ResourceFileEdit).newResource));
+    }
+}
+
+export namespace ResourceTextEdit {
+    export function is(arg: monaco.editor.ResourceEdit): arg is monaco.editor.ResourceTextEdit {
+        return ('resource' in arg && monaco.Uri.isUri((arg as monaco.editor.ResourceTextEdit).resource));
+    }
+}
+
 export interface WorkspaceFoldersChangeEvent {
     readonly added: WorkspaceFolder[];
     readonly removed: WorkspaceFolder[];
@@ -205,41 +218,29 @@ export class MonacoWorkspace {
         });
     }
 
-    protected groupEdits(workspaceEdit: monaco.languages.WorkspaceEdit): Edit[][] {
-        const groups: Edit[][] = [];
-        let group: Edit[] | undefined;
-        for (const edit of workspaceEdit.edits) {
-            if (!group
-                || (WorkspaceFileEdit.is(group[0]) && !WorkspaceFileEdit.is(edit))
-                || (WorkspaceTextEdit.is(group[0]) && !WorkspaceTextEdit.is(edit))
-            ) {
-                group = [];
-                groups.push(group);
-            }
-            group.push(edit);
-        }
-        return groups;
-    }
-
-    async applyBulkEdit(workspaceEdit: monaco.languages.WorkspaceEdit): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
+    async applyBulkEdit(edits: monaco.editor.ResourceEdit[]): Promise<monaco.editor.IBulkEditResult & { success: boolean }> {
         try {
             let totalEdits = 0;
             let totalFiles = 0;
-            for (const group of this.groupEdits(workspaceEdit)) {
-                if (WorkspaceFileEdit.is(group[0])) {
-                    await this.performFileEdits(<monaco.languages.WorkspaceFileEdit[]>group);
-                } else {
-                    const result = await this.performTextEdits(<monaco.languages.WorkspaceTextEdit[]>group);
-                    totalEdits += result.totalEdits;
-                    totalFiles += result.totalFiles;
-                }
+            const fileEdits = edits.filter(edit => edit instanceof monaco.editor.ResourceFileEdit);
+            const textEdits = edits.filter(edit => edit instanceof monaco.editor.ResourceTextEdit);
+
+            if (fileEdits.length > 0) {
+                await this.performFileEdits(<monaco.editor.ResourceFileEdit[]>fileEdits);
             }
+
+            if (textEdits.length > 0) {
+                const result = await this.performTextEdits(<monaco.editor.ResourceTextEdit[]>textEdits);
+                totalEdits += result.totalEdits;
+                totalFiles += result.totalFiles;
+            }
+
             const ariaSummary = this.getAriaSummary(totalEdits, totalFiles);
             return { ariaSummary, success: true };
         } catch (e) {
-            console.error('Failed to apply workspace edits:', e);
+            console.error('Failed to apply Resource edits:', e);
             return {
-                ariaSummary: `Error applying workspace edits: ${e.toString()}`,
+                ariaSummary: `Error applying Resource edits: ${e.toString()}`,
                 success: false
             };
         }
@@ -255,17 +256,17 @@ export class MonacoWorkspace {
         return `Made ${totalEdits} text edits in one file`;
     }
 
-    protected async performTextEdits(edits: monaco.languages.WorkspaceTextEdit[]): Promise<{
+    protected async performTextEdits(edits: monaco.editor.ResourceTextEdit[]): Promise<{
         totalEdits: number,
         totalFiles: number
     }> {
         let totalEdits = 0;
         let totalFiles = 0;
-        const resourceEdits = new Map<string, monaco.languages.WorkspaceTextEdit[]>();
+        const resourceEdits = new Map<string, monaco.editor.ResourceTextEdit[]>();
         for (const edit of edits) {
-            if (typeof edit.modelVersionId === 'number') {
+            if (typeof edit.versionId === 'number') {
                 const model = this.textModelService.get(edit.resource.toString());
-                if (model && model.textEditorModel.getVersionId() !== edit.modelVersionId) {
+                if (model && model.textEditorModel.getVersionId() !== edit.versionId) {
                     throw new Error(`${model.uri} has changed in the meantime`);
                 }
             }
@@ -283,7 +284,7 @@ export class MonacoWorkspace {
                 const uri = monaco.Uri.parse(key);
                 let eol: monaco.editor.EndOfLineSequence | undefined;
                 const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                const minimalEdits = await monaco.services.StaticServices.editorWorkerService.get().computeMoreMinimalEdits(uri, value.map(v => v.edit));
+                const minimalEdits = await monaco.services.StaticServices.editorWorkerService.get().computeMoreMinimalEdits(uri, value.map(v => v.textEdit));
                 if (minimalEdits) {
                     for (const textEdit of minimalEdits) {
                         if (typeof textEdit.eol === 'number') {
@@ -329,32 +330,32 @@ export class MonacoWorkspace {
         return { totalEdits, totalFiles };
     }
 
-    protected async performFileEdits(edits: monaco.languages.WorkspaceFileEdit[]): Promise<void> {
+    protected async performFileEdits(edits: monaco.editor.ResourceFileEdit[]): Promise<void> {
         for (const edit of edits) {
             const options = edit.options || {};
-            if (edit.newUri && edit.oldUri) {
+            if (edit.newResource && edit.oldResource) {
                 // rename
-                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(new URI(edit.newUri))) {
+                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(new URI(edit.newResource))) {
                     return; // not overwriting, but ignoring, and the target file exists
                 }
-                await this.fileService.move(new URI(edit.oldUri), new URI(edit.newUri), { overwrite: options.overwrite });
-            } else if (!edit.newUri && edit.oldUri) {
+                await this.fileService.move(new URI(edit.oldResource), new URI(edit.newResource), { overwrite: options.overwrite });
+            } else if (!edit.newResource && edit.oldResource) {
                 // delete file
-                if (await this.fileService.exists(new URI(edit.oldUri))) {
+                if (await this.fileService.exists(new URI(edit.oldResource))) {
                     let useTrash = this.filePreferences['files.enableTrash'];
-                    if (useTrash && !(this.fileService.hasCapability(new URI(edit.oldUri), FileSystemProviderCapabilities.Trash))) {
+                    if (useTrash && !(this.fileService.hasCapability(new URI(edit.oldResource), FileSystemProviderCapabilities.Trash))) {
                         useTrash = false; // not supported by provider
                     }
-                    await this.fileService.delete(new URI(edit.oldUri), { useTrash, recursive: options.recursive });
+                    await this.fileService.delete(new URI(edit.oldResource), { useTrash, recursive: options.recursive });
                 } else if (!options.ignoreIfNotExists) {
-                    throw new Error(`${edit.oldUri} does not exist and can not be deleted`);
+                    throw new Error(`${edit.oldResource} does not exist and can not be deleted`);
                 }
-            } else if (edit.newUri && !edit.oldUri) {
+            } else if (edit.newResource && !edit.oldResource) {
                 // create file
-                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(new URI(edit.newUri))) {
+                if (options.overwrite === undefined && options.ignoreIfExists && await this.fileService.exists(new URI(edit.newResource))) {
                     return; // not overwriting, but ignoring, and the target file exists
                 }
-                await this.fileService.create(new URI(edit.newUri), undefined, { overwrite: options.overwrite });
+                await this.fileService.create(new URI(edit.newResource), undefined, { overwrite: options.overwrite });
             }
         }
     }

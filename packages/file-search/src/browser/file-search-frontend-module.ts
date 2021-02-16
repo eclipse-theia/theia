@@ -16,10 +16,11 @@
 
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { CommandContribution } from '@theia/core/lib/common';
-import { WebSocketConnectionProvider, KeybindingContribution, QuickOpenContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, KeybindingContribution } from '@theia/core/lib/browser';
 import { QuickFileOpenFrontendContribution } from './quick-file-open-contribution';
 import { QuickFileOpenService } from './quick-file-open';
 import { fileSearchServicePath, FileSearchService } from '../common/file-search-service';
+import { QuickAccessContribution } from '@theia/core/lib/browser/quick-input/quick-access-contribution';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bind(FileSearchService).toDynamicValue(ctx => {
@@ -28,7 +29,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     }).inSingletonScope();
 
     bind(QuickFileOpenFrontendContribution).toSelf().inSingletonScope();
-    [CommandContribution, KeybindingContribution, QuickOpenContribution].forEach(serviceIdentifier =>
+    [CommandContribution, KeybindingContribution, QuickAccessContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(QuickFileOpenFrontendContribution)
     );
 

@@ -31,7 +31,7 @@ export class MonacoColorRegistry extends ColorRegistry {
     }
 
     getCurrentColor(id: string): string | undefined {
-        const color = this.monacoThemeService.getTheme().getColor(id);
+        const color = this.monacoThemeService.getColorTheme().getColor(id);
         return color && color.toString();
     }
 

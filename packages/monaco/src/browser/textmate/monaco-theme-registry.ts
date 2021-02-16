@@ -43,7 +43,7 @@ export class MonacoThemeRegistry {
 
     protected doGetTheme(name: string | undefined): MixStandaloneTheme | undefined {
         const standaloneThemeService = monaco.services.StaticServices.standaloneThemeService.get();
-        const theme = !name ? standaloneThemeService.getTheme() : standaloneThemeService._knownThemes.get(name);
+        const theme = !name ? standaloneThemeService.getColorTheme() : standaloneThemeService._knownThemes.get(name);
         return theme as MixStandaloneTheme | undefined;
     }
 

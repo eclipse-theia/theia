@@ -24,7 +24,7 @@ import { MonacoEditorModel } from './monaco-editor-model';
 
 import ICodeEditor = monaco.editor.ICodeEditor;
 import CommonCodeEditor = monaco.editor.CommonCodeEditor;
-import IResourceInput = monaco.editor.IResourceInput;
+import IResourceEditorInput = monaco.editor.IResourceEditorInput;
 
 decorate(injectable(), monaco.services.CodeEditorServiceImpl);
 
@@ -49,7 +49,7 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
     protected readonly preferencesService: PreferenceService;
 
     constructor() {
-        super(monaco.services.StaticServices.standaloneThemeService.get());
+        super(undefined, monaco.services.StaticServices.standaloneThemeService.get());
     }
 
     /**
@@ -66,7 +66,7 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
         return editor && editor.getControl();
     }
 
-    async openCodeEditor(input: IResourceInput, source?: ICodeEditor, sideBySide?: boolean): Promise<CommonCodeEditor | undefined> {
+    async openCodeEditor(input: IResourceEditorInput, source?: ICodeEditor, sideBySide?: boolean): Promise<CommonCodeEditor | undefined> {
         const uri = new URI(input.resource.toString());
         const openerOptions = this.createEditorOpenerOptions(input, source, sideBySide);
         const widget = await open(this.openerService, uri, openerOptions);
@@ -95,14 +95,14 @@ export class MonacoEditorService extends monaco.services.CodeEditorServiceImpl {
         return undefined;
     }
 
-    protected createEditorOpenerOptions(input: IResourceInput, source?: ICodeEditor, sideBySide?: boolean): EditorOpenerOptions {
+    protected createEditorOpenerOptions(input: IResourceEditorInput, source?: ICodeEditor, sideBySide?: boolean): EditorOpenerOptions {
         const mode = this.getEditorOpenMode(input);
         const selection = input.options && this.m2p.asRange(input.options.selection);
         const widgetOptions = this.getWidgetOptions(source, sideBySide);
         const preview = !!this.preferencesService.get<boolean>(MonacoEditorService.ENABLE_PREVIEW_PREFERENCE, false);
         return { mode, selection, widgetOptions, preview };
     }
-    protected getEditorOpenMode(input: IResourceInput): WidgetOpenMode {
+    protected getEditorOpenMode(input: IResourceEditorInput): WidgetOpenMode {
         const options = {
             preserveFocus: false,
             revealIfVisible: true,

@@ -18,7 +18,7 @@ import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { SelectionCommandHandler } from '@theia/core/lib/common/selection-command-handler';
 
 export interface BulkEditNodeSelection {
-    bulkEdit: monaco.languages.WorkspaceTextEdit | monaco.languages.WorkspaceFileEdit;
+    bulkEdit: monaco.editor.ResourceFileEdit | monaco.editor.ResourceTextEdit;
 }
 export namespace BulkEditNodeSelection {
     export function is(arg: Object | undefined): arg is BulkEditNodeSelection {

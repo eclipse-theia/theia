@@ -59,7 +59,8 @@ import {
     FoldingRange,
     SelectionRange,
     CallHierarchyDefinition,
-    CallHierarchyReference
+    CallHierarchyReference,
+    ChainedCacheId
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -238,8 +239,8 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.withAdapter(handle, CompletionAdapter, adapter => adapter.provideCompletionItems(URI.revive(resource), position, context, token), undefined);
     }
 
-    $resolveCompletionItem(handle: number, parentId: number, id: number, token: theia.CancellationToken): Promise<Completion | undefined> {
-        return this.withAdapter(handle, CompletionAdapter, adapter => adapter.resolveCompletionItem(parentId, id, token), undefined);
+    $resolveCompletionItem(handle: number, chainedId: ChainedCacheId, token: theia.CancellationToken): Promise<Completion | undefined> {
+        return this.withAdapter(handle, CompletionAdapter, adapter => adapter.resolveCompletionItem(chainedId, token), undefined);
     }
 
     $releaseCompletionItems(handle: number, id: number): void {

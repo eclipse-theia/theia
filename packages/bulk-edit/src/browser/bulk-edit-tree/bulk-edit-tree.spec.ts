@@ -37,7 +37,7 @@ const expect = chai.expect;
 let bulkEditTree: BulkEditTree;
 let testContainer: Container;
 const fileContextsMap = new Map<string, string>();
-let workspaceEdit: monaco.languages.WorkspaceEdit;
+let resourceTextEdits: monaco.editor.ResourceTextEdit[];
 
 disableJSDOM();
 
@@ -51,15 +51,14 @@ before(() => {
     fileContextsMap.set('/c:/test1.ts', 'aaaaaaaaaaaaaaaaaaa');
     fileContextsMap.set('/c:/test2.ts', 'bbbbbbbbbbbbbbbbbbb');
 
-    workspaceEdit = <monaco.languages.WorkspaceEdit><unknown>{
-        'edits': [
+    resourceTextEdits = <monaco.editor.ResourceTextEdit[]><unknown>[
             {
                 'resource': {
                     '$mid': 1,
                     'path': '/c:/test1.ts',
                     'scheme': 'file'
                 },
-                'edit': {
+            'textEdit': {
                     'text': 'AAAAA', 'range': { 'startLineNumber': 1, 'startColumn': 5, 'endLineNumber': 1, 'endColumn': 10 }
                 }
             },
@@ -68,12 +67,11 @@ before(() => {
                     '$mid': 1,
                     'path': '/c:/test2.ts',
                     'scheme': 'file'
-                }, 'edit': {
+            }, 'textEdit': {
                     'text': 'BBBBBB', 'range': { 'startLineNumber': 1, 'startColumn': 3, 'endLineNumber': 1, 'endColumn': 8 }
                 }
             }
-        ]
-    };
+    ];
 });
 
 after(() => {
@@ -82,7 +80,7 @@ after(() => {
 
 describe('bulk-edit-tree', () => {
     it('initialize tree', () => {
-        bulkEditTree.initTree(workspaceEdit, fileContextsMap);
+        bulkEditTree.initTree(resourceTextEdits, fileContextsMap);
         expect((bulkEditTree.root as BulkEditInfoNode).children.length).is.equal(2);
     });
 });

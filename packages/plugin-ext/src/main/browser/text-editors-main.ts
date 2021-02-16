@@ -118,9 +118,9 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
     }
 
     async $tryApplyWorkspaceEdit(dto: WorkspaceEditDto): Promise<boolean> {
-        const edits = toMonacoWorkspaceEdit(dto);
+        const workspaceEdit = toMonacoWorkspaceEdit(dto);
         try {
-            const { success } = await this.bulkEditService.apply(edits);
+            const { success } = await this.bulkEditService.apply(workspaceEdit.edits);
             return success;
         } catch {
             return false;
