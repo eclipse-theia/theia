@@ -14,11 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { remote } from 'electron';
 import { NewWindowOptions } from '../../browser/window/window-service';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
+import { ElectronWindowPreferences } from './electron-window-preferences';
 
 @injectable()
 export class ElectronWindowService extends DefaultWindowService {
@@ -36,9 +37,22 @@ export class ElectronWindowService extends DefaultWindowService {
     @inject(ElectronMainWindowService)
     protected readonly delegate: ElectronMainWindowService;
 
+    @inject(ElectronWindowPreferences)
+    protected readonly electronWindowPreferences: ElectronWindowPreferences;
+
     openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
         this.delegate.openNewWindow(url, { external });
         return undefined;
+    }
+
+    @postConstruct()
+    protected init(): void {
+        // Update the default zoom level on startup when the preferences event is fired.
+        this.electronWindowPreferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'window.zoomLevel') {
+                this.updateWindowZoomLevel();
+            }
+        });
     }
 
     registerUnloadListeners(): void {
@@ -84,5 +98,16 @@ export class ElectronWindowService extends DefaultWindowService {
             detail: 'Any unsaved changes will not be saved.'
         });
         return response === 0; // 'Yes', close the window.
+    }
+
+    /**
+     * Updates the window zoom level based on the preference value.
+     */
+    protected updateWindowZoomLevel(): void {
+        const preferredZoomLevel = this.electronWindowPreferences['window.zoomLevel'];
+        const webContents = remote.getCurrentWindow().webContents;
+        if (webContents.getZoomLevel() !== preferredZoomLevel) {
+            webContents.setZoomLevel(preferredZoomLevel);
+        }
     }
 }
