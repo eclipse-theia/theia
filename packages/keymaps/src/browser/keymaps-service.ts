@@ -189,7 +189,7 @@ export class KeymapsService {
                 const textModel = model.textEditorModel;
                 const { insertSpaces, tabSize, defaultEOL } = textModel.getOptions();
                 const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                for (const edit of jsoncparser.modify(content, [], keybindings, {
+                for (const edit of jsoncparser.modify(content, [], keybindings.map(binding => Keybinding.apiObjectify(binding)), {
                     formattingOptions: {
                         insertSpaces,
                         tabSize,

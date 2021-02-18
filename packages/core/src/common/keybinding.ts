@@ -51,6 +51,22 @@ export interface Keybinding {
 export namespace Keybinding {
 
     /**
+     * Returns a new object only containing properties which
+     * are described on the `Keybinding` API.
+     *
+     * @param binding the binding to create an API object for.
+     */
+    export function apiObjectify(binding: Keybinding): Keybinding {
+        return {
+            command: binding.command,
+            keybinding: binding.keybinding,
+            context: binding.context,
+            when: binding.when,
+            args: binding.args
+        };
+    }
+
+    /**
      * Returns with the string representation of the binding.
      * Any additional properties which are not described on
      * the `Keybinding` API will be ignored.
@@ -58,14 +74,7 @@ export namespace Keybinding {
      * @param binding the binding to stringify.
      */
     export function stringify(binding: Keybinding): string {
-        const copy: Keybinding = {
-            command: binding.command,
-            keybinding: binding.keybinding,
-            context: binding.context,
-            when: binding.when,
-            args: binding.args
-        };
-        return JSON.stringify(copy);
+        return JSON.stringify(apiObjectify(binding));
     }
 
     /* Determine whether object is a KeyBinding */
