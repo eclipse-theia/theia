@@ -182,7 +182,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         Severity.toArray().forEach(s => severityElements.push(<option value={s} key={s}>{s}</option>));
         const selectedValue = Severity.toString(this.consoleSessionManager.severity || Severity.Ignore);
 
-        return <select
+        return <div><select
             className='theia-select'
             id={'debugConsoleSeverity'}
             key={'debugConsoleSeverity'}
@@ -190,7 +190,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             onChange={this.changeSeverity}
         >
             {severityElements}
-        </select>;
+        </select></div>;
     }
 
     protected renderDebugConsoleSelector(widget: Widget | undefined): React.ReactNode {
