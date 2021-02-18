@@ -85,8 +85,9 @@ export class ElectronContextMenuRenderer extends ContextMenuRenderer {
     protected doRender({ menuPath, anchor, args, onHide }: RenderContextMenuOptions): ElectronContextMenuAccess {
         const menu = this.menuFactory.createContextMenu(menuPath, args);
         const { x, y } = anchor instanceof MouseEvent ? { x: anchor.clientX, y: anchor.clientY } : anchor!;
+        const zoom = electron.webFrame.getZoomFactor();
         // x and y values must be Ints or else there is a conversion error
-        menu.popup({ x: Math.round(x), y: Math.round(y) });
+        menu.popup({ x: Math.round(x * zoom), y: Math.round(y * zoom) });
         // native context menu stops the event loop, so there is no keyboard events
         this.context.resetAltPressed();
         if (onHide) {
