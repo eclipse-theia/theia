@@ -27,7 +27,7 @@ export const PreferenceNumberInput: React.FC<PreferenceNumberInputProps> = ({ pr
     const { id } = preferenceDisplayNode;
     const { data, value } = preferenceDisplayNode.preference;
 
-    const externalValue = (value !== undefined ? value : data.defaultValue) || '';
+    const externalValue = (value !== undefined ? value : data.defaultValue) ?? '';
 
     const [currentTimeout, setCurrentTimetout] = React.useState<number>(0);
     const [currentValue, setCurrentValue] = React.useState<string>(externalValue);
@@ -46,34 +46,42 @@ export const PreferenceNumberInput: React.FC<PreferenceNumberInputProps> = ({ pr
         clearTimeout(currentTimeout);
         const { value: newValue } = e.target;
         setCurrentValue(newValue);
-        const preferenceValue: number = Number(newValue);
-        const { isValid, message } = getInputValidation(preferenceValue);
+        const { value: inputValue , message } = getInputValidation(newValue);
         setValidationMessage(message);
-        if (isValid) {
-            const newTimeout = setTimeout(() => setPreference(id, preferenceValue), 750);
+        if (!isNaN(inputValue)) {
+            const newTimeout = setTimeout(() => setPreference(id, inputValue), 750);
             setCurrentTimetout(Number(newTimeout));
         }
     }, [currentTimeout]);
 
     /**
-     * Validates the input.
+     * Validate the input value.
      * @param input the input value.
      */
-    const getInputValidation = (input: number | undefined): { isValid: boolean, message: string } => {
+    const getInputValidation = (input: string): {
+        value: number, // the numeric value of the input. `NaN` if there is an error.
+        message: string // the error message to display.
+    } => {
+        const inputValue = Number(input);
         const errorMessages: string[] = [];
-        if (!input) {
-            return { isValid: false, message: 'Value must be a number.' };
-        };
-        if (data.minimum && input < data.minimum) {
+
+        if (input === '' || isNaN(inputValue)) {
+            return { value: NaN, message: 'Value must be a number.' };
+        }
+        if (data.minimum && inputValue < data.minimum) {
             errorMessages.push(`Value must be greater than or equal to ${data.minimum}.`);
         };
-        if (data.maximum && input > data.maximum) {
+        if (data.maximum && inputValue > data.maximum) {
             errorMessages.push(`Value must be less than or equal to ${data.maximum}.`);
         };
-        if (data.type === 'integer' && input % 1 !== 0) {
+        if (data.type === 'integer' && inputValue % 1 !== 0) {
             errorMessages.push('Value must be an integer.');
         }
-        return { isValid: !errorMessages.length, message: errorMessages.join(' ') };
+
+        return {
+            value: errorMessages.length ? NaN : inputValue,
+            message: errorMessages.join(' ')
+        };
     };
 
     return (
