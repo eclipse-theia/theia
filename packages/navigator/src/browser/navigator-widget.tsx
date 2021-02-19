@@ -107,7 +107,9 @@ export class FileNavigatorWidget extends FileTreeWidget {
                     this.model.toggleNode(treeNode);
                 }
             });
-            this.commandService.executeCommand(FileNavigatorCommands.OPEN.id);
+            if (treeNodes.length > 0) {
+                this.commandService.executeCommand(FileNavigatorCommands.OPEN.id);
+            }
         });
         const handler = (e: DragEvent) => {
             if (e.dataTransfer) {
