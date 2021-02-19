@@ -53,7 +53,7 @@ For Windows instructions [click here](#building-on-windows).
 ## Prerequisites
 
  - Node.js `>= 12.14.1` **AND** `< 13`.
-   - Preferably, **use** Node version [`12.14.1`](https://nodejs.org/download/release/v12.14.1/),  as it is the the recommended minimum version according to the framework's supported `electron` version.
+   - Preferably, **use** Node version [`12.14.1`](https://nodejs.org/download/release/v12.14.1/), as it is the recommended minimum version according to the framework's supported `electron` version.
  - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.7.0
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 
