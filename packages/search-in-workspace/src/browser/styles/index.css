@@ -244,7 +244,7 @@
 
 .t-siw-search-container .resultLine .replace-term {
     background: var(--theia-diffEditor-insertedTextBackground);
-    border: 1p solid var(--theia-diffEditor-insertedTextBorder);
+    border: 1px solid var(--theia-diffEditor-insertedTextBorder);
 }
 .theia-hc
 .t-siw-search-container .resultLine .replace-term {
