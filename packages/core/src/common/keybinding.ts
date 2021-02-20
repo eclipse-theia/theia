@@ -51,6 +51,25 @@ export interface Keybinding {
 export namespace Keybinding {
 
     /**
+     * Compares two keybindings for equality.
+     * Can optionally ignore the keybinding and/or args property in the comparison.
+     * @param a The first Keybinding in the comparison
+     * @param b The second Keybinding in the comparison
+     * @param ignoreKeybinding Ignore the 'keybinding' property in the comparison
+     * @param ignoreArgs Ignore the 'args' property in the comparison
+     */
+    export function equals(a: Keybinding, b: Keybinding, ignoreKeybinding: boolean = false, ignoreArgs: boolean = false): boolean {
+        if (a.command === b.command &&
+            (a.context || '') === (b.context || '') &&
+            (a.when || '') === (b.when || '') &&
+            (ignoreKeybinding || a.keybinding === b.keybinding) &&
+            (ignoreArgs || (a.args || '') === (b.args || ''))) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Returns a new object only containing properties which
      * are described on the `Keybinding` API.
      *
