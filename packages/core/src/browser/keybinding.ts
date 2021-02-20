@@ -278,7 +278,7 @@ export class KeybindingRegistry {
      */
     containsKeybindingInScope(binding: common.Keybinding, scope = KeybindingScope.USER): boolean {
         const bindingKeySequence = this.resolveKeybinding(binding);
-        const collisions = this.getKeySequenceCollisions(this.keymaps[scope], bindingKeySequence)
+        const collisions = this.getKeySequenceCollisions(this.getUsableBindings(this.keymaps[scope]), bindingKeySequence)
             .filter(b => b.context === binding.context && !b.when && !binding.when);
         if (collisions.full.length > 0) {
             return true;
@@ -564,7 +564,7 @@ export class KeybindingRegistry {
                 return false;
             }
             const { command, context, when, keybinding } = binding;
-            if (binding.command.charAt(0) === '-') {
+            if (!this.isUsable(binding)) {
                 disabled = disabled || new Set<string>();
                 disabled.add(JSON.stringify({ command: command.substr(1), context, when, keybinding }));
                 return false;
@@ -585,6 +585,22 @@ export class KeybindingRegistry {
             }
         }
         return undefined;
+    }
+
+    /**
+     * Returns true if the binding is usable
+     * @param binding Binding to be checked
+     */
+    protected isUsable(binding: common.Keybinding): boolean {
+        return binding.command.charAt(0) !== '-';
+    }
+
+    /**
+     * Return a new filtered array containing only the usable bindings among the input bindings
+     * @param bindings Bindings to filter
+     */
+    protected getUsableBindings<T extends common.Keybinding>(bindings: T[]): T[] {
+        return bindings.filter(binding => this.isUsable(binding));
     }
 
     /**
