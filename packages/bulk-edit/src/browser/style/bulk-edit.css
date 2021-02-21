@@ -62,5 +62,5 @@
 
 .theia-bulk-edit-container .bulkEditNode .message .inserted-text {
   background: var(--theia-diffEditor-insertedTextBackground);
-  border: 1p solid var(--theia-diffEditor-insertedTextBorder);
+  border: 1px solid var(--theia-diffEditor-insertedTextBorder);
 }
