@@ -11,6 +11,17 @@
   --theia-toolbar-active-transform-scale: 1.272019649;
   --theia-horizontal-toolbar-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
   --theia-dragover-tab-border-width: 2px;
+
+  /* Most of these colors are overridden in CommonFrontendContribution.registerColors */
+  --theia-panelTitle-activeBorder: transparent;
+  --theia-tab-activeModifiedBorder: transparent;
+  --theia-tab-activeBorderTop: transparent;
+  --theia-tab-activeBorder: transparent;
+  --theia-tab-inactiveModifiedBorder: transparent;
+  --theia-tab-unfocusedActiveModifiedBorder: transparent;
+  --theia-tab-unfocusedActiveBorderTop: transparent;
+  --theia-tab-unfocusedActiveBorder: transparent;
+  --theia-tab-unfocusedInactiveModifiedBorder: transparent;
 }
 
 /*-----------------------------------------------------------------------------
