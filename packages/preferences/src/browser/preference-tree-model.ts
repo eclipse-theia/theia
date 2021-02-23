@@ -104,6 +104,9 @@ export class PreferenceTreeModel extends TreeModelImpl {
                 this._isFiltered = newSearchTerm.length > 2;
                 this.updateFilteredRows(wasFiltered && !this._isFiltered);
             }),
+            this.onFilterChanged(() => {
+                this.filterInput.updateResultsCount(this._totalVisibleLeaves);
+            }),
             this.onTreeFilterChangedEmitter,
         ]);
     }

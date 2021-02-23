@@ -91,7 +91,7 @@ export class PreferencesEditorWidget extends ReactWidget {
         return (
             <div className="settings-main">
                 <div ref={this.scrollContainerRef} className="settings-main-scroll-container" id="settings-main-scroll-container">
-                    {!visibleNodes.length ? this.renderNoResultMessage() : visibleNodes.map(nodeRow => {
+                    {!this.model.totalVisibleLeaves ? this.renderNoResultMessage() : visibleNodes.map(nodeRow => {
                         if (!CompositeTreeNode.is(nodeRow.node)) {
                             return this.renderSingleEntry(nodeRow.node);
                         } else {
