@@ -1,5 +1,9 @@
 # Change Log
 
+<a name="breaking_changes_1.13.0">[Breaking Changes:](#breaking_changes_1.13.0)</a>
+
+- [workspace] The `WorkspaceCommands.SAVE_AS` command no longer accepts an `URI` argument. It now uses the currently selected editor to determine the file to be saved [#9022](https://github.com/eclipse-theia/theia/pull/9022)
+
 ## v1.12.0 - 3/25/2020
 
 [1.12.0 Milestone](https://github.com/eclipse-theia/theia/milestone/17)
