@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { PluginMetricsCreator } from './plugin-metrics-creator';
 import { createRequestData } from '../common/plugin-metrics-types';
 

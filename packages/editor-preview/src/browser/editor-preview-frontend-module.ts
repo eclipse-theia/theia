@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
-import {ContainerModule} from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { EditorPreviewManager } from './editor-preview-manager';
 import { EditorPreviewWidgetFactory } from './editor-preview-factory';
 import { bindEditorPreviewPreferences } from './editor-preview-preferences';

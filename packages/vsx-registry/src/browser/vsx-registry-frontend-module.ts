@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory, bindViewContribution, FrontendApplicationContribution, ViewContainerIdentifier, OpenHandler, WidgetManager } from '@theia/core/lib/browser';
 import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
 import { VSXExtensionsContribution } from './vsx-extensions-contribution';

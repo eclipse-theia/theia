@@ -34,10 +34,10 @@ import {
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { CommentsService, CommentInfoMain } from './comments-service';
 import { UriComponents } from '../../../common/uri-components';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { CancellationToken } from '@theia/core/lib/common';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { v4 as uuidv4 } from 'uuid';
 import { CommentsContribution } from './comments-contribution';
 
@@ -209,10 +209,10 @@ export class CommentController {
     }
 
     createCommentThread(extensionId: string,
-                        commentThreadHandle: number,
-                        threadId: string,
-                        resource: UriComponents,
-                        range: Range,
+        commentThreadHandle: number,
+        threadId: string,
+        resource: UriComponents,
+        range: Range,
     ): CommentThread {
         const thread = new CommentThreadImpl(
             commentThreadHandle,
@@ -235,9 +235,9 @@ export class CommentController {
     }
 
     updateCommentThread(commentThreadHandle: number,
-                        threadId: string,
-                        resource: UriComponents,
-                        changes: CommentThreadChanges): void {
+        threadId: string,
+        resource: UriComponents,
+        changes: CommentThreadChanges): void {
         const thread = this.getKnownThread(commentThreadHandle);
         thread.batchUpdate(changes);
 
@@ -390,11 +390,11 @@ export class CommentsMainImp implements CommentsMain {
     }
 
     $createCommentThread(handle: number,
-                         commentThreadHandle: number,
-                         threadId: string,
-                         resource: UriComponents,
-                         range: Range,
-                         extensionId: string
+        commentThreadHandle: number,
+        threadId: string,
+        resource: UriComponents,
+        range: Range,
+        extensionId: string
     ): CommentThread | undefined {
         const provider = this.commentControllers.get(handle);
 
@@ -406,10 +406,10 @@ export class CommentsMainImp implements CommentsMain {
     }
 
     $updateCommentThread(handle: number,
-                         commentThreadHandle: number,
-                         threadId: string,
-                         resource: UriComponents,
-                         changes: CommentThreadChanges): void {
+        commentThreadHandle: number,
+        threadId: string,
+        resource: UriComponents,
+        changes: CommentThreadChanges): void {
         const provider = this.commentControllers.get(handle);
 
         if (!provider) {

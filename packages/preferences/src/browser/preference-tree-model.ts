@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
     TreeModelImpl,
     TreeWidget,
@@ -29,7 +29,7 @@ import {
 import { Emitter } from '@theia/core';
 import { PreferencesSearchbarWidget } from './views/preference-searchbar-widget';
 import { PreferenceTreeGenerator } from './util/preference-tree-generator';
-import * as fuzzy from 'fuzzy';
+import * as fuzzy from '@theia/core/shared/fuzzy';
 import { PreferencesScopeTabBar } from './views/preference-scope-tabbar-widget';
 import { Preference } from './util/preference-types';
 import { Event } from '@theia/core/src/common';

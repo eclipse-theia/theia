@@ -16,7 +16,7 @@
 
 import { MenuModelRegistry, CommandRegistry, Command, SelectionService } from '@theia/core';
 import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';

@@ -19,7 +19,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { injectable, postConstruct } from 'inversify';
+import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { NamedProblemPattern, ProblemLocationKind, ProblemPattern, ProblemPatternContribution } from '../common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 

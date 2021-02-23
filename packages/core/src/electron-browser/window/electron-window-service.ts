@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { remote } from 'electron';
+import { remote } from '../../../shared/electron';
 import { NewWindowOptions } from '../../browser/window/window-service';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';

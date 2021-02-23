@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import '../../src/browser/style/output.css';
-import { inject, injectable, postConstruct } from 'inversify';
-import { toArray } from '@phosphor/algorithm';
-import { IDragEvent } from '@phosphor/dragdrop';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { toArray } from '@theia/core/shared/@phosphor/algorithm';
+import { IDragEvent } from '@theia/core/shared/@phosphor/dragdrop';
 import { EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { SelectionService } from '@theia/core/lib/common/selection-service';

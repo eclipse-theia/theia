@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
-import { toArray } from '@phosphor/algorithm';
-import { TabBar, Widget } from '@phosphor/widgets';
+import { toArray } from '@theia/core/shared/@phosphor/algorithm';
+import { TabBar, Widget } from '@theia/core/shared/@phosphor/widgets';
 
 @injectable()
 export class ViewColumnService {

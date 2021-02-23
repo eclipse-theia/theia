@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { MarkerManager } from '../marker-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
-import { Diagnostic } from 'vscode-languageserver-types';
+import { Diagnostic } from '@theia/core/shared/vscode-languageserver-types';
 
 export interface ProblemStat {
     errors: number;

@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { notEmpty } from '@theia/core/lib/common/objects';
 import { Event, Emitter } from '@theia/core/lib/common/event';

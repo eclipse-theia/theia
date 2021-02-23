@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, multiInject } from 'inversify';
+import { injectable, multiInject } from '@theia/core/shared/inversify';
 import { PluginPackage, PluginScanner, PluginMetadata } from '../../common/plugin-protocol';
 
 @injectable()

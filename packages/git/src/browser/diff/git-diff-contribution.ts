@@ -18,7 +18,7 @@ import { CommandRegistry, Command, MenuModelRegistry, SelectionService, MessageS
 import { FrontendApplication, AbstractViewContribution } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
 import { GitCommitDetailWidget } from '../history/git-commit-detail-widget';
 import { GitDiffTreeModel } from './git-diff-tree-model';
@@ -227,7 +227,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
             command: GitDiffCommands.NEXT_CHANGE.id,
             tooltip: GitDiffCommands.NEXT_CHANGE.label,
         });
-}
+    }
 
     protected findGitRepository(uri: URI): Repository | undefined {
         const repo = this.scmService.findRepository(uri);

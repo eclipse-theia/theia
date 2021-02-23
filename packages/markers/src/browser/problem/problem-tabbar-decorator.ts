@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver-types';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Diagnostic, DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-types';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { Title, Widget } from '@phosphor/widgets';
+import { Title, Widget } from '@theia/core/shared/@phosphor/widgets';
 import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { Marker } from '../../common/marker';

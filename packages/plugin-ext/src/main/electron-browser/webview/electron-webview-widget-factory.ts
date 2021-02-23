@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { remote } from 'electron';
+import { remote } from '@theia/core/shared/electron';
 import { ElectronSecurityToken } from '@theia/core/lib/electron-common/electron-token';
 import { WebviewWidgetFactory } from '../../browser/webview/webview-widget-factory';
 import { WebviewWidgetIdentifier, WebviewWidget } from '../../browser/webview/webview';

@@ -3,7 +3,6 @@
   "version": "1.12.0",
   "description": "Theia - FileSystem Extension",
   "dependencies": {
-    "@theia/application-package": "1.12.0",
     "@theia/core": "1.12.0",
     "@types/body-parser": "^1.17.0",
     "@types/rimraf": "^2.0.2",

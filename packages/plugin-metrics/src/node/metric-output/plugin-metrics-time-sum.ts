@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { MetricOutput, AnalyticsFromRequests } from '../../common/plugin-metrics-types';
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
 export class PluginMetricTimeSum implements MetricOutput {

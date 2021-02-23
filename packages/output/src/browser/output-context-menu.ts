@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { MenuPath } from '@theia/core/lib/common';
 import { MonacoContextMenuService } from '@theia/monaco/lib/browser/monaco-context-menu';
 

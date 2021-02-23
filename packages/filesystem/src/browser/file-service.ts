@@ -29,7 +29,7 @@
 /* eslint-disable @typescript-eslint/tslint/config */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable, inject, named, postConstruct } from 'inversify';
+import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { timeout, Deferred } from '@theia/core/lib/common/promise-util';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
@@ -59,7 +59,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { FileSystemPreferences } from './filesystem-preferences';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { DelegatingFileSystemProvider } from '../common/delegating-file-system-provider';
-import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/core/lib/common/encoding-service';

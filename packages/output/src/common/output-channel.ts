@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as PQueue from 'p-queue';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Resource, ResourceResolver } from '@theia/core/lib/common/resource';

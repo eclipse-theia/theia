@@ -34,7 +34,7 @@ import { Path } from '@theia/core/lib/common/path';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { WorkspaceRootsChangeEvent, SearchInWorkspaceResult, Range } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { normalize } from '@theia/callhierarchy/lib/common/paths';
 import { relative } from '../common/paths-util';
 import { Schemes } from '../common/uri-components';

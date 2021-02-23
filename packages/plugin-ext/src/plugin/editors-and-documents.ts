@@ -22,7 +22,7 @@ import { DocumentDataExt } from './document-data';
 import { ok } from '../common/assert';
 import * as Converter from './type-converters';
 import { dispose } from '../common/disposable-util';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
     private activeEditorId: string | null = null;

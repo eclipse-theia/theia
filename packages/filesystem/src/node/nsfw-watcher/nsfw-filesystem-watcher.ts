@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as fs from 'fs';
-import * as nsfw from 'nsfw';
+import * as nsfw from '@theia/core/shared/nsfw';
 import * as paths from 'path';
 import { IMinimatch, Minimatch } from 'minimatch';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -29,7 +29,7 @@ import {
 import { FileChangeCollection } from '../file-change-collection';
 import { setInterval, clearInterval } from 'timers';
 
-const debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 

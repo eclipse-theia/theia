@@ -26,12 +26,12 @@ FrontendApplicationConfigProvider.set({
 
 import URI from '@theia/core/lib/common/uri';
 import { expect } from 'chai';
-import { Container } from 'inversify';
+import { Container } from '@theia/core/shared/inversify';
 import { ContributionProvider, Event } from '@theia/core/lib/common';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution, ApplicationShell, WidgetManager } from '@theia/core/lib/browser';
 import { MarkerInfoNode } from './marker-tree';
 import { MarkerTreeLabelProvider } from './marker-tree-label-provider';
-import { Signal } from '@phosphor/signaling';
+import { Signal } from '@theia/core/shared/@phosphor/signaling';
 import { TreeLabelProvider } from '@theia/core/lib/browser/tree/tree-label-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { WorkspaceUriLabelProviderContribution } from '@theia/workspace/lib/browser/workspace-uri-contribution';

@@ -22,8 +22,8 @@ import {
 } from '../../../common/plugin-api-rpc-model';
 import { CommentGlyphWidget } from './comment-glyph-widget';
 import { BaseWidget, DISABLED_CLASS } from '@theia/core/lib/browser';
-import * as ReactDOM from 'react-dom';
-import * as React from 'react';
+import * as ReactDOM from '@theia/core/shared/react-dom';
+import * as React from '@theia/core/shared/react';
 import { MouseTargetType } from '@theia/editor/lib/browser';
 import { CommentsService } from './comments-service';
 import {
@@ -34,7 +34,7 @@ import {
     MenuPath
 } from '@theia/core/lib/common';
 import { CommentsContextKeyService } from './comments-context-key-service';
-import { RefObject } from 'react';
+import { RefObject } from '@theia/core/shared/react';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.

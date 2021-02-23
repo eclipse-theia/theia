@@ -16,7 +16,7 @@
 
 import { Terminal, RendererType } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
-import { inject, injectable, named, postConstruct } from 'inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
 import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop, KeyCode } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
@@ -26,7 +26,7 @@ import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer, TerminalProcessInfo } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { TerminalWidgetOptions, TerminalWidget, TerminalDimensions } from './base/terminal-widget';
-import { MessageConnection } from 'vscode-jsonrpc';
+import { MessageConnection } from '@theia/core/shared/vscode-ws-jsonrpc';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences, TerminalRendererType, isTerminalRendererType, DEFAULT_TERMINAL_RENDERER_TYPE, CursorStyle } from './terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';

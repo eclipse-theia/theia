@@ -18,11 +18,11 @@ import { SELECTED_CLASS, Key, Widget } from '@theia/core/lib/browser';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import URI from '@theia/core/lib/common/uri';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { Message } from '@phosphor/messaging';
-import { ElementExt } from '@phosphor/domutils';
-import { inject, injectable } from 'inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { ScmFileChangeLabelProvider } from './scm-file-change-label-provider';
 import { ScmFileChangeNode } from './scm-file-change-node';
 

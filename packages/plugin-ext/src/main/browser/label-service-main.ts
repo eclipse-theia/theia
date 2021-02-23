@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { LabelServiceMain } from '../../common/plugin-api-rpc';
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { DefaultUriLabelProviderContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { ContributionProvider } from '@theia/core/lib/common';

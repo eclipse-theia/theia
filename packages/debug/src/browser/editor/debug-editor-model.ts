@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import debounce = require('p-debounce');
-import { injectable, inject, postConstruct, interfaces, Container } from 'inversify';
+import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';

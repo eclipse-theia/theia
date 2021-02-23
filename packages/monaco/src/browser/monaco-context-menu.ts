@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { MenuPath } from '@theia/core/lib/common/menu';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { ContextMenuRenderer, toAnchor } from '@theia/core/lib/browser';
 import IContextMenuService = monaco.editor.IContextMenuService;
 import IContextMenuDelegate = monaco.editor.IContextMenuDelegate;
-import { Menu } from '@phosphor/widgets';
-import { CommandRegistry } from '@phosphor/commands';
+import { Menu } from '@theia/core/shared/@phosphor/widgets';
+import { CommandRegistry } from '@theia/core/shared/@phosphor/commands';
 
 @injectable()
 export class MonacoContextMenuService implements IContextMenuService {

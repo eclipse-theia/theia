@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, postConstruct, inject, interfaces, Container } from 'inversify';
+import { injectable, postConstruct, inject, interfaces, Container } from '@theia/core/shared/inversify';
 import {
     BaseWidget, PanelLayout, Message, ApplicationShell, Widget, StatefulWidget, ViewContainer
 } from '@theia/core/lib/browser';

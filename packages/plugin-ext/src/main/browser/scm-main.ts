@@ -32,11 +32,11 @@ import { ScmProvider, ScmResource, ScmResourceDecorations, ScmResourceGroup, Scm
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import URI from '@theia/core/lib/common/uri';
-import { URI as vscodeURI } from 'vscode-uri';
+import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
 import { Splice } from '../../common/arrays';
 import { UriComponents } from '../../common/uri-components';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
@@ -167,7 +167,7 @@ export class PluginScmProvider implements ScmProvider {
     }
 
     registerGroups(resourceGroups: ScmRawResourceGroup[]): void {
-        const groups = resourceGroups.map( resourceGroup => {
+        const groups = resourceGroups.map(resourceGroup => {
             const { handle, id, label, features } = resourceGroup;
             const group = new PluginScmResourceGroup(
                 handle,
@@ -281,7 +281,7 @@ export class ScmMainImpl implements ScmMain {
     private readonly disposables = new DisposableCollection();
     private readonly colors: ColorRegistry;
 
-    constructor( rpc: RPCProtocol, container: interfaces.Container) {
+    constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.SCM_EXT);
         this.scmService = container.get(ScmService);
         this.colors = container.get(ColorRegistry);
@@ -300,13 +300,13 @@ export class ScmMainImpl implements ScmMain {
     async $registerSourceControl(handle: number, id: string, label: string, rootUri: UriComponents | undefined): Promise<void> {
         const provider = new PluginScmProvider(this.proxy, this.colors, handle, id, label, rootUri ? vscodeURI.revive(rootUri) : undefined);
         const repository = this.scmService.registerScmProvider(provider, {
-                input: {
-                    validator: async value => {
-                        const result = await this.proxy.$validateInput(handle, value, value.length);
-                        return result && { message: result[0], type: result[1] };
-                    }
+            input: {
+                validator: async value => {
+                    const result = await this.proxy.$validateInput(handle, value, value.length);
+                    return result && { message: result[0], type: result[1] };
                 }
             }
+        }
         );
         this.repositories.set(handle, repository);
 

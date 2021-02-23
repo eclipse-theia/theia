@@ -16,7 +16,7 @@
 
 import '../../../src/browser/style/index.css';
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { ProblemWidget, PROBLEMS_WIDGET_ID } from './problem-widget';
 import { ProblemContribution } from './problem-contribution';
 import { createProblemWidget } from './problem-container';

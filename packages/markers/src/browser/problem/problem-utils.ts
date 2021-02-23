@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Marker } from '../../common/marker';
-import { Diagnostic } from 'vscode-languageserver-types';
+import { Diagnostic } from '@theia/core/shared/vscode-languageserver-types';
 
 export namespace ProblemUtils {
 

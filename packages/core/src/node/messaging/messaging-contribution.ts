@@ -20,7 +20,7 @@ import * as net from 'net';
 import * as http from 'http';
 import * as https from 'https';
 import { injectable, inject, named, postConstruct, interfaces, Container } from 'inversify';
-import { MessageConnection } from 'vscode-jsonrpc';
+import { MessageConnection } from 'vscode-ws-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
 import * as launch from 'vscode-ws-jsonrpc/lib/server/launch';

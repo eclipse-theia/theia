@@ -16,7 +16,7 @@
 
 import { WsRequestValidatorContribution } from '@theia/core/lib/node/ws-request-validators';
 import * as http from 'http';
-import { injectable, postConstruct } from 'inversify';
+import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as url from 'url';
 import { MiniBrowserEndpoint } from '../common/mini-browser-endpoint';
 

@@ -27,7 +27,7 @@ FrontendApplicationConfigProvider.set({
     ...ApplicationProps.DEFAULT.frontend.config
 });
 
-import { Container } from 'inversify';
+import { Container } from '@theia/core/shared/inversify';
 import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser';
 import { EditorWidget, EditorManager } from '@theia/editor/lib/browser';
 import { EditorPreviewWidgetFactory, EditorPreviewWidgetOptions } from './editor-preview-factory';

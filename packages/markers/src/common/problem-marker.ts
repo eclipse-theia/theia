@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Marker } from './marker';
-import { Diagnostic } from 'vscode-languageserver-types';
+import { Diagnostic } from '@theia/core/shared/vscode-languageserver-types';
 
 export const PROBLEM_KIND = 'problem';
 

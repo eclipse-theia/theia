@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, unmanaged } from 'inversify';
-import { ElementExt } from '@phosphor/domutils';
+import { injectable, inject, unmanaged } from '@theia/core/shared/inversify';
+import { ElementExt } from '@theia/core/shared/@phosphor/domutils';
 import URI from '@theia/core/lib/common/uri';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { DisposableCollection, Disposable, Emitter, Event } from '@theia/core/lib/common';
@@ -39,7 +39,7 @@ import {
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
-import { TextEdit } from 'vscode-languageserver-types';
+import { TextEdit } from '@theia/core/shared/vscode-languageserver-types';
 import { UTF8 } from '@theia/core/lib/common/encodings';
 
 import IStandaloneEditorConstructionOptions = monaco.editor.IStandaloneEditorConstructionOptions;

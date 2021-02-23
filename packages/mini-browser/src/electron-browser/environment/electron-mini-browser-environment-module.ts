@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { MiniBrowserEnvironment } from '../../browser/environment/mini-browser-environment';
 import { ElectronMiniBrowserEnvironment } from './electron-mini-browser-environment';
 

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 
 export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
     type: 'object',

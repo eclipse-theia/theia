@@ -18,9 +18,9 @@
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { inject, injectable, named } from 'inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { DisposableCollection, deepClone, Disposable, } from '@theia/core/lib/common';
-import { TextDocumentSaveReason } from 'vscode-languageserver-protocol';
+import { TextDocumentSaveReason } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoDiffEditor } from './monaco-diff-editor';

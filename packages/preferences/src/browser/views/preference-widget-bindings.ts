@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { interfaces, Container } from 'inversify';
+import { interfaces, Container } from '@theia/core/shared/inversify';
 import { WidgetFactory, createTreeContainer, TreeWidget, TreeProps, defaultTreeProps, TreeDecoratorService, TreeModel } from '@theia/core/lib/browser';
 import { SinglePreferenceDisplayFactory } from './components/single-preference-display-factory';
 import { SinglePreferenceWrapper } from './components/single-preference-wrapper';

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import {
     ContextMenuRenderer,
     ExpandableTreeNode,
@@ -25,7 +25,7 @@ import {
     TREE_NODE_CONTENT_CLASS,
 } from '@theia/core/lib/browser';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
-import React = require('react');
+import React = require('@theia/core/shared/react');
 import { PreferenceTreeModel, PreferenceTreeNodeRow, PreferenceTreeNodeProps } from '../preference-tree-model';
 
 @injectable()

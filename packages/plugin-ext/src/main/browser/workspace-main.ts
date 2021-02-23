@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { interfaces, injectable } from 'inversify';
+import { interfaces, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { URI as Uri } from 'vscode-uri';
+import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../../common/uri-components';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { MonacoQuickOpenService } from '@theia/monaco/lib/browser/monaco-quick-open-service';

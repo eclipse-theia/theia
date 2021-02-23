@@ -19,7 +19,7 @@ import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/
 import URI from '@theia/core/lib/common/uri';
 import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 import { DebugSession } from '../debug-session';
-import { URI as Uri } from 'vscode-uri';
+import { URI as Uri } from '@theia/core/shared/vscode-uri';
 
 export class DebugSourceData {
     readonly raw: DebugProtocol.Source;

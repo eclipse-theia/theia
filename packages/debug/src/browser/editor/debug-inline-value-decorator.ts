@@ -20,7 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Based on https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/browser/debugEditorContribution.ts
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { ExpressionContainer, DebugVariable } from '../console/debug-console-items';

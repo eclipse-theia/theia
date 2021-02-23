@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { injectable, postConstruct, inject } from 'inversify';
-import { IKeyboardLayoutInfo } from 'native-keymap';
 import { isOSX } from '../../common/os';
 import { Emitter, Event } from '../../common/event';
 import { ILogger } from '../../common/logger';
@@ -238,7 +237,8 @@ export const DEFAULT_LAYOUT_DATA: KeyboardLayoutData = {
     hardware: isOSX ? 'mac' : 'pc',
     language: 'en',
     raw: {
-        info: {} as IKeyboardLayoutInfo,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        info: {} as any,
         mapping: {}
     }
 };

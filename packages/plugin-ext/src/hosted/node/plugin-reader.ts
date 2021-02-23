@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import * as path from 'path';
-import * as express from 'express';
+import * as express from '@theia/core/shared/express';
 import * as escape_html from 'escape-html';
 import { ILogger } from '@theia/core';
-import { inject, injectable, optional, multiInject } from 'inversify';
+import { inject, injectable, optional, multiInject } from '@theia/core/shared/inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { PluginMetadata, getPluginId, MetadataProcessor, PluginPackage, PluginContribution } from '../../common/plugin-protocol';
 import { MetadataScanner } from './metadata-scanner';

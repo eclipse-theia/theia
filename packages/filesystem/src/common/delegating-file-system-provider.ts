@@ -23,7 +23,7 @@ import {
     FileReadStreamOptions,
     hasFileReadStreamCapability
 } from './files';
-import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
 
 export class DelegatingFileSystemProvider implements Required<FileSystemProvider>, Disposable {

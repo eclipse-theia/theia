@@ -19,7 +19,7 @@ import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposa
 import { DebugConfiguration } from '@theia/debug/lib/common/debug-configuration';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
 import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebuggerContribution } from '../../../common/plugin-protocol';

@@ -53,7 +53,8 @@
     "url-loader": "^1.1.2",
     "webpack": "^4.0.0",
     "webpack-cli": "2.0.12",
-    "worker-loader": "^1.1.1"
+    "worker-loader": "^1.1.1",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@theia/ext-scripts": "1.12.0"

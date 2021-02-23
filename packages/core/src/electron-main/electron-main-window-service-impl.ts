@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { shell } from 'electron';
+import { shell } from '../../shared/electron';
 import { injectable, inject } from 'inversify';
 import { ElectronMainWindowService } from '../electron-common/electron-main-window-service';
 import { ElectronMainApplication } from './electron-main-application';

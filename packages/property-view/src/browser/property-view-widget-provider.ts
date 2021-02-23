@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContributionProvider, MaybePromise, Prioritizeable } from '@theia/core';
-import { inject, injectable, named, postConstruct } from 'inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { PropertyDataService } from './property-data-service';
 import { PropertyViewContentWidget } from './property-view-content-widget';
 

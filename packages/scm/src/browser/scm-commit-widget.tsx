@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { DisposableCollection } from '@theia/core';
-import { Message } from '@phosphor/messaging';
-import * as React from 'react';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import * as React from '@theia/core/shared/react';
 import TextareaAutosize from 'react-autosize-textarea';
 import { ScmInput, ScmInputIssueType } from './scm-input';
 import {

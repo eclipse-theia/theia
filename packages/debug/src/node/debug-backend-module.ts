@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { bindContributionProvider, ILogger } from '@theia/core/lib/common';
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     DebugPath,
     DebugService

@@ -17,7 +17,7 @@
 import { HostedInstanceManager, NodeHostedPluginRunner } from './hosted-instance-manager';
 import { HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
 import { HostedPluginsManager, HostedPluginsManagerImpl } from './hosted-plugins-manager';
-import { ContainerModule, interfaces } from 'inversify';
+import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { HostedPluginServerImpl } from './hosted-plugin-service';

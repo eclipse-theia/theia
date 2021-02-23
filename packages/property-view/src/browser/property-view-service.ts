@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { ContributionProvider, Prioritizeable } from '@theia/core';
-import { inject, injectable, named, postConstruct } from 'inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { EmptyPropertyViewWidgetProvider } from './empty-property-view-widget-provider';
 import { PropertyViewWidgetProvider } from './property-view-widget-provider';
 

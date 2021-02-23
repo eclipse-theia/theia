@@ -18,7 +18,7 @@
 
 import debounce = require('p-debounce');
 import { injectable } from 'inversify';
-import { JSONExt, JSONValue } from '@phosphor/coreutils/lib/json';
+import { JSONExt, JSONValue } from '@phosphor/coreutils';
 import URI from '../../common/uri';
 import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
 import { Deferred } from '../../common/promise-util';

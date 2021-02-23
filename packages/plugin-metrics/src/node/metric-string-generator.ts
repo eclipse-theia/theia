@@ -16,7 +16,7 @@
 import { PluginMetricTimeCount } from './metric-output/plugin-metrics-time-count';
 import { PluginMetricTimeSum } from './metric-output/plugin-metrics-time-sum';
 import { MetricsMap } from '../common/plugin-metrics-types';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 
 @injectable()
 export class PluginMetricStringGenerator {

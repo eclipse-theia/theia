@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     TreeWidget,
     TreeNode,
@@ -26,10 +26,10 @@ import {
     ExpandableTreeNode
 } from '@theia/core/lib/browser';
 import { OutlineViewTreeModel } from './outline-view-tree';
-import { Message } from '@phosphor/messaging';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { Emitter } from '@theia/core';
 import { CompositeTreeNode } from '@theia/core/lib/browser';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 
 /**
  * Representation of an outline symbol information node.

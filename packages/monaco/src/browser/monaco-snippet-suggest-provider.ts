@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as jsoncparser from 'jsonc-parser';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';

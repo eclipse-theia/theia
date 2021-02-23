@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     ContextMenuRenderer, TreeWidget, NodeProps, TreeProps, TreeNode,
     TreeModel, DockPanel
@@ -24,9 +24,9 @@ import { DefinitionNode, CallerNode } from './callhierarchy-tree';
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
 import { CALLHIERARCHY_ID, Definition, Caller } from '../callhierarchy';
 import URI from '@theia/core/lib/common/uri';
-import { Location, Range, SymbolKind, DocumentUri } from 'vscode-languageserver-types';
+import { Location, Range, SymbolKind, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
 import { EditorManager } from '@theia/editor/lib/browser';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 
 export const HIERARCHY_TREE_CLASS = 'theia-CallHierarchyTree';
 export const DEFINITION_NODE_CLASS = 'theia-CallHierarchyTreeNode';

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { HostedPluginServer, DebugConfiguration, HostedPluginClient } from '../common/plugin-dev-protocol';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { HostedInstanceManager } from './hosted-instance-manager';
 import { PluginMetadata } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import URI from '@theia/core/lib/common/uri';

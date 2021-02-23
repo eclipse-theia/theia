@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { GettingStartedContribution } from './getting-started-contribution';
-import { ContainerModule, interfaces } from 'inversify';
+import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { GettingStartedWidget } from './getting-started-widget';
 import { WidgetFactory, FrontendApplicationContribution, bindViewContribution } from '@theia/core/lib/browser';
 

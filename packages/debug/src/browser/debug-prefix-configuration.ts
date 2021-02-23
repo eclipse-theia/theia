@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import {
     QuickOpenContribution, QuickOpenHandler, QuickOpenModel,

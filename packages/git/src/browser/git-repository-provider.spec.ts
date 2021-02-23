@@ -23,7 +23,7 @@ FrontendApplicationConfigProvider.set({
     ...ApplicationProps.DEFAULT.frontend.config
 });
 
-import { Container } from 'inversify';
+import { Container } from '@theia/core/shared/inversify';
 import { Git, Repository } from '../common';
 import { DugiteGit } from '../node/dugite-git';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';

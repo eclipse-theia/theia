@@ -28,7 +28,7 @@
 /* eslint-disable @typescript-eslint/tslint/config */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { URI, UriComponents } from 'vscode-uri';
+import { URI, UriComponents } from '@theia/core/shared/vscode-uri';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { PLUGIN_RPC_CONTEXT, FileSystemExt, FileSystemMain, IFileChangeDto } from '../common/plugin-api-rpc';
 import * as vscode from '@theia/plugin';

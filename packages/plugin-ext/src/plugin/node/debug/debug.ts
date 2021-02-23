@@ -17,7 +17,7 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { Path } from '@theia/core/lib/common/path';
 import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
 import * as theia from '@theia/plugin';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Breakpoint } from '../../../common/plugin-api-rpc-model';
 import { DebugExt, DebugMain, PLUGIN_RPC_CONTEXT as Ext, TerminalOptionsExt } from '../../../common/plugin-api-rpc';
 import { PluginPackageDebuggersContribution } from '../../../common/plugin-protocol';

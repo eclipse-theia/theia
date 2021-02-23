@@ -18,7 +18,7 @@
 // TODO get rid of util files, replace with methods in a responsible class
 
 import URI from '@theia/core/lib/common/uri';
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceService } from './workspace-service';
 
 /**

@@ -20,7 +20,7 @@ import { PluginMetrics, metricsJsonRpcPath } from '../common/metrics-protocol';
 import { PluginMetricsImpl } from './plugin-metrics-impl';
 import { ConnectionHandler } from '@theia/core/lib/common/messaging/handler';
 import { JsonRpcConnectionHandler } from '@theia/core';
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { PluginMetricsContributor } from './metrics-contributor';
 import { PluginMetricTimeSum } from './metric-output/plugin-metrics-time-sum';
 import { PluginMetricTimeCount } from './metric-output/plugin-metrics-time-count';

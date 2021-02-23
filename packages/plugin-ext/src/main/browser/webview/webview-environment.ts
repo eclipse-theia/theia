@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { WebviewExternalEndpoint } from '../../common/webview-protocol';
-import { environment } from '@theia/application-package/lib/environment';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 
 @injectable()
 export class WebviewEnvironment {

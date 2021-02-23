@@ -35,7 +35,7 @@ import { Splice } from '../common/arrays';
 import { UriComponents } from '../common/uri-components';
 import { Command } from '../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ScmCommandArg } from '../common/plugin-api-rpc';
 import { sep } from '@theia/callhierarchy/lib/common/paths';
 type ProviderHandle = number;
@@ -451,9 +451,11 @@ class SsmResourceGroupImpl implements theia.SourceControlResourceGroup {
                 const contextValue = r.contextValue || '';
 
                 // TODO remove the letter and colorId fields when the FileDecorationProvider is applied, see https://github.com/eclipse-theia/theia/pull/8911
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const rawResource = { handle, sourceUri, letter: (r as any).letter, colorId: (r as any).color.id, icons,
-                    tooltip, strikeThrough, faded, contextValue, command } as ScmRawResource;
+                const rawResource = {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    handle, sourceUri, letter: (r as any).letter, colorId: (r as any).color.id, icons,
+                    tooltip, strikeThrough, faded, contextValue, command
+                } as ScmRawResource;
 
                 return { rawResource, handle };
             });
@@ -464,10 +466,10 @@ class SsmResourceGroupImpl implements theia.SourceControlResourceGroup {
 
         const rawResourceSplices = splices
             .map(({ start, deleteCount, toInsert }) => ({
-                    start: start,
-                    deleteCount: deleteCount,
-                    rawResources: toInsert.map(i => i.rawResource)
-                } as ScmRawResourceSplice));
+                start: start,
+                deleteCount: deleteCount,
+                rawResources: toInsert.map(i => i.rawResource)
+            } as ScmRawResourceSplice));
 
         const reverseSplices = splices.reverse();
 
@@ -643,13 +645,13 @@ class SourceControlImpl implements theia.SourceControl {
                 this.proxy.$unregisterGroup(this.handle, group.handle);
             });
 
-            const { handle , id, label, features } = group;
-            groups.push({ handle , id, label, features });
+            const { handle, id, label, features } = group;
+            groups.push({ handle, id, label, features });
 
             const snapshot = group.takeResourceStateSnapshot();
 
             if (snapshot.length > 0) {
-                splices.push( { handle: group.handle, splices: snapshot });
+                splices.push({ handle: group.handle, splices: snapshot });
             }
 
             this.groups.set(group.handle, group);
@@ -710,7 +712,7 @@ export class ScmExtImpl implements ScmExt {
 
     private selectedSourceControlHandle: number | undefined;
 
-    constructor( rpc: RPCProtocol, private commands: CommandRegistryImpl) {
+    constructor(rpc: RPCProtocol, private commands: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.SCM_MAIN);
 
         commands.registerArgumentProcessor({
@@ -827,9 +829,9 @@ export class ScmExtImpl implements ScmExt {
  * Diffs two *sorted* arrays and computes the splices which apply the diff.
  */
 function sortedDiff(before: ReadonlyArray<theia.SourceControlResourceState>,
-                    after: ReadonlyArray<theia.SourceControlResourceState>,
-                    compare: (a: theia.SourceControlResourceState,
-                              b: theia.SourceControlResourceState) => number): Splice<theia.SourceControlResourceState>[] {
+    after: ReadonlyArray<theia.SourceControlResourceState>,
+    compare: (a: theia.SourceControlResourceState,
+        b: theia.SourceControlResourceState) => number): Splice<theia.SourceControlResourceState>[] {
     const result: MutableSplice<theia.SourceControlResourceState>[] = [];
 
     function pushSplice(start: number, deleteCount: number, toInsert: theia.SourceControlResourceState[]): void {

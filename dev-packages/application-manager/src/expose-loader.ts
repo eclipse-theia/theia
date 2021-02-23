@@ -16,8 +16,8 @@
 
 import * as path from 'path';
 import * as webpack from 'webpack';
-// tslint:disable:no-implicit-dependencies
-import { RawSourceMap } from 'source-map';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import type { RawSourceMap } from 'source-map';
 import { ApplicationPackage } from '@theia/application-package/lib/application-package';
 
 const modulePackages: { dir: string, name?: string }[] = [];

@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/eslintrc",
   "rules": {
     "@typescript-eslint/consistent-type-definitions": "error",
     "@typescript-eslint/indent": "off",
@@ -34,7 +35,6 @@
     "guard-for-in": "error",
     "id-blacklist": "off",
     "id-match": "off",
-    "import/no-extraneous-dependencies": "off",
     "max-len": [
       "error",
       {
@@ -129,6 +129,20 @@
           ]
         }
       }
-    ]
-  }
+    ],
+    "@theia/shared-dependencies": "error",
+    "import/no-extraneous-dependencies": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "dev-packages",
+        "*.{spec,espec,slow-spec}.{js,ts}"
+      ],
+      "rules": {
+        "@theia/shared-dependencies": "off",
+        "import/no-extraneous-dependencies": "off"
+      }
+    }
+  ]
 }

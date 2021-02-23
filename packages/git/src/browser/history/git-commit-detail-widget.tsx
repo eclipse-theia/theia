@@ -16,8 +16,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Message } from '@phosphor/messaging';
-import { injectable, inject, postConstruct } from 'inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
     BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop
 } from '@theia/core/lib/browser';

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Selection } from '../../common/plugin-api-rpc';
 import { Range, CodeActionContext, CodeAction } from '../../common/plugin-api-rpc-model';
 import * as Converter from '../type-converters';

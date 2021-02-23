@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/common/quick-open-model';
 import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';

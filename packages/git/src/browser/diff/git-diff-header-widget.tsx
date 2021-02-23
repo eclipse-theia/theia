@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { ScmFileChangeLabelProvider } from '@theia/scm-extra/lib/browser/scm-file-change-label-provider';
 import { ReactWidget, StatefulWidget, KeybindingRegistry } from '@theia/core/lib/browser';
 import { Git } from '../../common';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 
 /* eslint-disable no-null/no-null */
 

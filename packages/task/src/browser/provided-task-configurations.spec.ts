@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { assert } from 'chai';
-import { Container } from 'inversify';
+import { Container } from '@theia/core/shared/inversify';
 import { ProvidedTaskConfigurations } from './provided-task-configurations';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskProviderRegistry } from './task-contribution';

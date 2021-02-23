@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { BulkEditTreeWidget, BULK_EDIT_TREE_WIDGET_ID, createBulkEditTreeWidget, InMemoryTextResourceResolver } from './bulk-edit-tree';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';

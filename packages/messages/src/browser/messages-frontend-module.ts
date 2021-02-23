@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { MessageClient } from '@theia/core/lib/common';
 import { NotificationManager } from './notifications-manager';
 import { bindNotificationPreferences } from './notification-preferences';

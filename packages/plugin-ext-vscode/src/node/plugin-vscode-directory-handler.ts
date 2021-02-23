@@ -16,7 +16,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { RecursivePartial } from '@theia/core';
 import {
     PluginDeployerDirectoryHandler,

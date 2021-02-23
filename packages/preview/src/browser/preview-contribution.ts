@@ -14,20 +14,20 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import { Widget } from '@phosphor/widgets';
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { Widget } from '@theia/core/shared/@phosphor/widgets';
 import { FrontendApplicationContribution, WidgetOpenerOptions, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser';
 import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
 import { DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, Disposable } from '@theia/core/lib/common';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import URI from '@theia/core/lib/common/uri';
-import { Position } from 'vscode-languageserver-types';
+import { Position } from '@theia/core/shared/vscode-languageserver-types';
 import { PreviewWidget } from './preview-widget';
 import { PreviewHandlerProvider, } from './preview-handler';
 import { PreviewUri } from './preview-uri';
 import { PreviewPreferences } from './preview-preferences';
 
-import debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 export namespace PreviewCommands {
     /**

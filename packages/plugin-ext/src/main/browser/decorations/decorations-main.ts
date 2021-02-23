@@ -21,7 +21,7 @@ import {
     MAIN_RPC_CONTEXT
 } from '../../../common/plugin-api-rpc';
 
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Tree, TreeDecoration } from '@theia/core/lib/browser';

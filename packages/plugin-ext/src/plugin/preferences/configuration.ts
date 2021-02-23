@@ -17,7 +17,7 @@
 import { WorkspaceExtImpl } from '../workspace';
 import { isObject } from '../../common/types';
 import cloneDeep = require('lodash.clonedeep');
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 

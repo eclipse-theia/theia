@@ -18,7 +18,7 @@ import '../../../src/main/style/status-bar.css';
 import '../../../src/main/browser/style/index.css';
 import '../../../src/main/browser/style/comments.css';
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import {
     FrontendApplicationContribution, WidgetFactory, bindViewContribution,
     ViewContainerIdentifier, ViewContainer, createTreeContainer, TreeImpl, TreeWidget, TreeModelImpl, LabelProviderContribution

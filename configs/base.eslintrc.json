@@ -8,6 +8,7 @@
     }
   },
   "plugins": [
+    "@theia",
     "@typescript-eslint",
     "@typescript-eslint/tslint",
     "import",

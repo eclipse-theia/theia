@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import * as types from '../../plugin/types-impl';
 import { StatusBarMessageRegistryMain } from '../../common/plugin-api-rpc';
@@ -45,7 +45,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         color: string | undefined,
         tooltip: string | undefined,
         command: string | undefined,
-         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         args: any[] | undefined): Promise<void> {
         const entry = {
             text: text || '',

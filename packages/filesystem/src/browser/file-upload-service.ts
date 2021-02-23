@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { CancellationTokenSource, CancellationToken, checkCancelled, cancelled } from '@theia/core/lib/common/cancellation';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -24,7 +24,7 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { Progress } from '@theia/core/lib/common/message-service-protocol';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 
-import throttle = require('lodash.throttle');
+import throttle = require('@theia/core/shared/lodash.throttle');
 
 const maxChunkSize = 64 * 1024;
 

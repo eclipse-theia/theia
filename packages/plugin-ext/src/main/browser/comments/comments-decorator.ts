@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { CommentInfoMain } from './comments-service';
 import { CommentingRanges, Range } from '../../../common/plugin-api-rpc-model';
 
@@ -72,8 +72,8 @@ class CommentingRangeDecoration {
     }
 
     constructor(private _editor: monaco.editor.ICodeEditor, private _ownerId: string, private _extensionId: string | undefined,
-                private _label: string | undefined, private _range: Range, commentingOptions: monaco.editor.IModelDecorationOptions,
-                private commentingRangesInfo: CommentingRanges) {
+        private _label: string | undefined, private _range: Range, commentingOptions: monaco.editor.IModelDecorationOptions,
+        private commentingRangesInfo: CommentingRanges) {
         const startLineNumber = _range.startLineNumber;
         const endLineNumber = _range.endLineNumber;
         const commentingRangeDecorations = [{

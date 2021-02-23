@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as markdownit from 'markdown-it';
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
 export class NotificationContentRenderer {

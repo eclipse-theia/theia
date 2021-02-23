@@ -23,7 +23,7 @@ import URI from '@theia/core/lib/common/uri';
 import { Event } from '@theia/core/lib/common/event';
 import { Disposable as IDisposable } from '@theia/core/lib/common/disposable';
 import { BinaryBuffer, BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
-import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ReadableStreamEvents } from '@theia/core/lib/common/stream';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 

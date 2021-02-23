@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import * as jsoncparser from 'jsonc-parser';
 import * as plistparser from 'fast-plist';
 import { ThemeService, BuiltinThemeProvider } from '@theia/core/lib/browser/theming';

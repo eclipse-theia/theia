@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, named, postConstruct } from 'inversify';
-import { Position, DocumentUri } from 'vscode-languageserver-types';
+import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
+import { Position, DocumentUri } from '@theia/core/shared/vscode-languageserver-types';
 import { Definition, Caller, Callee } from './callhierarchy';
 import { ContributionProvider } from '@theia/core/lib/common';
 import { LanguageSelector, score } from '../common/language-selector';

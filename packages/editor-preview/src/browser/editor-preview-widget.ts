@@ -21,8 +21,8 @@ import {
 import { Emitter, DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { EditorWidget } from '@theia/editor/lib/browser';
-import { Message, MessageLoop } from '@phosphor/messaging';
-import { find } from '@phosphor/algorithm';
+import { Message, MessageLoop } from '@theia/core/shared/@phosphor/messaging';
+import { find } from '@theia/core/shared/@phosphor/algorithm';
 
 export interface PreviewViewState {
     pinned: boolean,

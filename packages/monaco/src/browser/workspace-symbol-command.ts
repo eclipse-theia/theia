@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import { environment } from '@theia/application-package/lib/environment';
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import {
     PrefixQuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService,
     QuickOpenMode, KeybindingContribution, KeybindingRegistry, QuickOpenHandler, QuickOpenOptions, QuickOpenContribution, QuickOpenHandlerRegistry
@@ -23,8 +23,8 @@ import {
 import { CancellationTokenSource, CommandRegistry, CommandHandler, Command, SelectionService, CancellationToken } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { CommandContribution } from '@theia/core/lib/common';
-import { Range, Position, SymbolInformation } from 'vscode-languageserver-types';
-import { WorkspaceSymbolParams } from 'vscode-languageserver-protocol';
+import { Range, Position, SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
+import { WorkspaceSymbolParams } from '@theia/core/shared/vscode-languageserver-protocol';
 import { MonacoLanguages, WorkspaceSymbolProvider } from './monaco-languages';
 
 @injectable()

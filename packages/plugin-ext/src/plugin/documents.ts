@@ -21,7 +21,7 @@
  * based on https://github.com/Microsoft/vscode/blob/bf9a27ec01f2ef82fc45f69e0c946c7d74a57d3e/src/vs/workbench/api/node/extHostDocumentSaveParticipant.ts
  */
 import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain, SingleEditOperation } from '../common/plugin-api-rpc';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../common/uri-components';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
@@ -179,12 +179,12 @@ export class DocumentsExtImpl implements DocumentsExt {
         this._onDidChangeDocument.fire({
             document: data.document,
             contentChanges: e.changes.map(change =>
-                ({
-                    range: Converter.toRange(change.range),
-                    rangeOffset: change.rangeOffset,
-                    rangeLength: change.rangeLength,
-                    text: change.text
-                }))
+            ({
+                range: Converter.toRange(change.range),
+                rangeOffset: change.rangeOffset,
+                rangeLength: change.rangeLength,
+                text: change.text
+            }))
         });
     }
     getAllDocumentData(): DocumentDataExt[] {

@@ -17,8 +17,8 @@
 import URI from '@theia/core/lib/common/uri';
 import { LocationService } from './location-service';
 import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
+import * as React from '@theia/core/shared/react';
+import * as ReactDOM from '@theia/core/shared/react-dom';
 import { FileService } from '../file-service';
 import { DisposableCollection, Emitter } from '@theia/core/lib/common';
 

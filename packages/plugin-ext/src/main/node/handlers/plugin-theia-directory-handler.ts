@@ -19,7 +19,7 @@ import {
     PluginDeployerEntry, PluginPackage, PluginDeployerDirectoryHandlerContext,
     PluginDeployerEntryType
 } from '../../../common/plugin-protocol';
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import * as fs from 'fs';
 import * as path from 'path';
 

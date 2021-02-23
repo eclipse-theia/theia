@@ -16,7 +16,7 @@
 
 import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { EmptyPropertyViewWidgetProvider } from './empty-property-view-widget-provider';
 import { PropertyDataService } from './property-data-service';
 import { PropertyViewContribution } from './property-view-contribution';

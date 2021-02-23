@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
 import * as Converter from '../type-converters';
 import * as model from '../../common/plugin-api-rpc-model';

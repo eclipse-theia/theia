@@ -18,9 +18,9 @@ import URI from '@theia/core/lib/common/uri';
 import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { EditorPreviewWidget } from './editor-preview-widget';
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { UUID } from '@phosphor/coreutils';
+import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 
 export interface EditorPreviewWidgetOptions {
     kind: 'editor-preview-widget',

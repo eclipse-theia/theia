@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See https://github.com/Microsoft/vscode/blob/master/LICENSE.txt for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 
 /**
  * TODO: introduce a new request to LSP to look up an expression range: https://github.com/Microsoft/language-server-protocol/issues/462

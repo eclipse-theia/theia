@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, postConstruct } from 'inversify';
+import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { TaskConfiguration } from '../common/task-protocol';
 import { WaitUntilEvent, Emitter } from '@theia/core/lib/common/event';

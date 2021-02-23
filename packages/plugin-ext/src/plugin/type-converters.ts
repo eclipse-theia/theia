@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import * as theia from '@theia/plugin';
-import { Position as P, Range as R, SymbolInformation, SymbolKind as S } from 'vscode-languageserver-types';
-import { URI } from 'vscode-uri';
+import { Position as P, Range as R, SymbolInformation, SymbolKind as S } from '@theia/core/shared/vscode-languageserver-types';
+import { URI } from '@theia/core/shared/vscode-uri';
 import * as rpc from '../common/plugin-api-rpc';
 import {
     DecorationOptions, EditorPosition, PickOpenItem, Plugin, Position, WorkspaceTextEditDto, WorkspaceFileEditDto, Selection, TaskDto, WorkspaceEditDto
@@ -174,9 +174,9 @@ export function fromRangeOrRangeWithMessage(ranges: theia.Range[] | theia.Decora
         });
     } else {
         return ranges.map((r): DecorationOptions =>
-            ({
-                range: fromRange(r)!
-            }));
+        ({
+            range: fromRange(r)!
+        }));
     }
 }
 

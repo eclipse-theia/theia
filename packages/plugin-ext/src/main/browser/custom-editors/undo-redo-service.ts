@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // copied and modified from https://github.com/microsoft/vscode/blob/53eac52308c4611000a171cc7bf1214293473c78/src/vs/platform/undoRedo/common/undoRedoService.ts#
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 
 @injectable()

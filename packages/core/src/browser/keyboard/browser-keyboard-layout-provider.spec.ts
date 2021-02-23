@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { Container, injectable } from 'inversify';
-import { IMacKeyboardLayoutInfo } from 'native-keymap';
+import type { IMacKeyboardLayoutInfo } from 'native-keymap';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 import * as os from '../../common/os';

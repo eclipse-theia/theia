@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
-import { Message } from '@phosphor/messaging';
+import { injectable, inject } from '@theia/core/shared/inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
 import { Disposable, MaybeArray } from '@theia/core/lib/common';
 import { Key, LabelProvider } from '@theia/core/lib/browser';
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from '@theia/core/lib/browser';
@@ -25,7 +25,7 @@ import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 import { FileDialogTreeFiltersRenderer, FileDialogTreeFilters } from './file-dialog-tree-filters-renderer';
 import URI from '@theia/core/lib/common/uri';
-import { Panel } from '@phosphor/widgets';
+import { Panel } from '@theia/core/shared/@phosphor/widgets';
 import { FileService } from '../file-service';
 
 export const OpenFileDialogFactory = Symbol('OpenFileDialogFactory');

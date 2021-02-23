@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import * as path from 'path';
-import { URI as Uri } from 'vscode-uri';
+import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { IconUrl, PluginPackage } from '../common/plugin-protocol';
 import { Plugin } from '../common/plugin-api-rpc';
 

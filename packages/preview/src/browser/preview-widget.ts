@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import throttle = require('lodash.throttle');
-import { inject, injectable } from 'inversify';
+import throttle = require('@theia/core/shared/lodash.throttle');
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { Resource, MaybePromise } from '@theia/core';
 import { Navigatable } from '@theia/core/lib/browser/navigatable';
 import { BaseWidget, Message, addEventListener } from '@theia/core/lib/browser';
@@ -26,7 +26,7 @@ import { ThemeService } from '@theia/core/lib/browser/theming';
 import { EditorPreferences } from '@theia/editor/lib/browser';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import { Range, Location } from 'vscode-languageserver-types';
+import { Range, Location } from '@theia/core/shared/vscode-languageserver-types';
 
 export const PREVIEW_WIDGET_CLASS = 'theia-preview-widget';
 

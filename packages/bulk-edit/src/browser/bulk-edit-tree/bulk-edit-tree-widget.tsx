@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, TreeModel,
     CompositeTreeNode, NodeProps
 } from '@theia/core/lib/browser';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { BulkEditInfoNode, BulkEditNode } from './bulk-edit-tree';
 import { BulkEditTreeModel } from './bulk-edit-tree-model';
 import { FileResourceResolver } from '@theia/filesystem/lib/browser';

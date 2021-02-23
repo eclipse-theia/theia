@@ -14,13 +14,48 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { es5ClassCompat } from './types';
-import { AbstractMessageReader, DataCallback } from 'vscode-jsonrpc/lib/messageReader';
+import { DataCallback, Emitter, Event, PartialMessageInfo } from '@theia/core/shared/vscode-ws-jsonrpc';
+
+export abstract class AbstractMessageReader {
+    protected errorEmitter = new Emitter<Error>();
+    protected closeEmitter = new Emitter<void>();
+    protected partialMessageEmitter = new Emitter<PartialMessageInfo>();
+    dispose(): void {
+        this.errorEmitter.dispose();
+        this.closeEmitter.dispose();
+    }
+    get onError(): Event<Error> {
+        return this.errorEmitter.event;
+    }
+    fireError(error: Error): void {
+        this.errorEmitter.fire(this.asError(error));
+    }
+    get onClose(): Event<void> {
+        return this.closeEmitter.event;
+    }
+    fireClose(): void {
+        this.closeEmitter.fire(undefined);
+    }
+    get onPartialMessage(): Event<PartialMessageInfo> {
+        return this.partialMessageEmitter.event;
+    }
+    firePartialMessage(info: PartialMessageInfo): void {
+        this.partialMessageEmitter.fire(info);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    asError(error: any): Error {
+        if (error instanceof Error) {
+            return error;
+        } else {
+            return new Error(`Reader received error. Reason: ${typeof error.message === 'string' ? error.message : 'unknown'}`);
+        }
+    }
+}
 
 /**
  * Support for reading string message through RPC protocol.
  */
-export class PluginMessageReader extends es5ClassCompat(AbstractMessageReader) {
+export class PluginMessageReader extends AbstractMessageReader {
     protected state: 'initial' | 'listening' | 'closed' = 'initial';
     protected callback: DataCallback | undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

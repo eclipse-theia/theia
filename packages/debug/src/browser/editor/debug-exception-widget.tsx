@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import { injectable, inject, postConstruct } from 'inversify';
+import * as React from '@theia/core/shared/react';
+import * as ReactDOM from '@theia/core/shared/react-dom';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
 import { DebugEditor } from './debug-editor';

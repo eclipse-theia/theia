@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces, Container } from 'inversify';
+import { interfaces, Container } from '@theia/core/shared/inversify';
 import { GitDiffContribution } from './git-diff-contribution';
 import { WidgetFactory, bindViewContribution, TreeModel } from '@theia/core/lib/browser';
 import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
 import { GitDiffHeaderWidget } from './git-diff-header-widget';
 import { GitDiffTreeModel } from './git-diff-tree-model';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { createScmTreeContainer } from  '@theia/scm/lib/browser/scm-frontend-module';
+import { createScmTreeContainer } from '@theia/scm/lib/browser/scm-frontend-module';
 import { GitResourceOpener } from './git-resource-opener';
 import { GitOpenerInPrimaryArea } from './git-opener-in-primary-area';
 import '../../../src/browser/style/diff.css';

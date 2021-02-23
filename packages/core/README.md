@@ -49,6 +49,55 @@ An extension module should have a default export of `ContainerModule | Promise<C
 
 A Theia application is a node package listing [Theia extensions](#theia-extension) as dependencies and managed with [Theia CLI](../../dev-packages/cli/README.md).
 
+## Re-exports
+
+In order to make application builds more stable `@theia/core` re-exports some common dependencies for Theia extensions to re-use.
+
+### Usage example
+
+Let's take inversify as an example since you will most likely use this package, you can import it by prefixing with `@theia/core/shared/`:
+
+```ts
+import { injectable } from '@theia/core/shared/inversify';
+
+@injectable()
+export class SomeClass {
+    // ...
+}
+```
+
+### List of re-exported packages
+
+ - [`@phosphor/algorithm@1`](https://www.npmjs.com/package/@phosphor/algorithm)
+ - [`@phosphor/commands@1`](https://www.npmjs.com/package/@phosphor/commands)
+ - [`@phosphor/coreutils@1`](https://www.npmjs.com/package/@phosphor/coreutils)
+ - [`@phosphor/domutils@1`](https://www.npmjs.com/package/@phosphor/domutils)
+ - [`@phosphor/dragdrop@1`](https://www.npmjs.com/package/@phosphor/dragdrop)
+ - [`@phosphor/messaging@1`](https://www.npmjs.com/package/@phosphor/messaging)
+ - [`@phosphor/properties@1`](https://www.npmjs.com/package/@phosphor/properties)
+ - [`@phosphor/signaling@1`](https://www.npmjs.com/package/@phosphor/signaling)
+ - [`@phosphor/virtualdom@1`](https://www.npmjs.com/package/@phosphor/virtualdom)
+ - [`@phosphor/widgets@1`](https://www.npmjs.com/package/@phosphor/widgets)
+ - [`@theia/application-package@1.12.0`](https://www.npmjs.com/package/@theia/application-package)
+ - [`@theia/application-package/lib/environment@1.12.0`](https://www.npmjs.com/package/@theia/application-package)
+ - [`electron@^9.0.2`](https://www.npmjs.com/package/electron)
+ - [`express@^4.16.3`](https://www.npmjs.com/package/express)
+ - [`fs-extra@^4.0.2`](https://www.npmjs.com/package/fs-extra)
+ - [`fuzzy@^0.1.3`](https://www.npmjs.com/package/fuzzy)
+ - [`inversify@^5.0.1`](https://www.npmjs.com/package/inversify)
+ - [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce)
+ - [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle)
+ - [`nsfw@^2.1.2`](https://www.npmjs.com/package/nsfw)
+ - [`react@^16.8.0`](https://www.npmjs.com/package/react)
+ - [`react-dom@^16.8.0`](https://www.npmjs.com/package/react-dom)
+ - [`react-virtualized@^9.20.0`](https://www.npmjs.com/package/react-virtualized)
+ - [`vscode-languageserver-protocol@~3.15.3`](https://www.npmjs.com/package/vscode-languageserver-protocol)
+ - [`vscode-languageserver-types@^3.15.1`](https://www.npmjs.com/package/vscode-languageserver-types)
+ - [`vscode-uri@^2.1.1`](https://www.npmjs.com/package/vscode-uri)
+ - [`vscode-ws-jsonrpc@^0.2.0`](https://www.npmjs.com/package/vscode-ws-jsonrpc)
+ - [`ws@^7.1.2`](https://www.npmjs.com/package/ws)
+ - [`yargs@^15.3.1`](https://www.npmjs.com/package/yargs)
+
 ## Logging Configuration
 
 It's possible to change the log level for the entire Theia application by

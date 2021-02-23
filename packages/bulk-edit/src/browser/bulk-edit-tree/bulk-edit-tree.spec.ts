@@ -26,7 +26,7 @@ FrontendApplicationConfigProvider.set({
     ...ApplicationProps.DEFAULT.frontend.config
 });
 
-import { Container } from 'inversify';
+import { Container } from '@theia/core/shared/inversify';
 import { BulkEditInfoNode, BulkEditTree } from './bulk-edit-tree';
 
 global.monaco = sinon.stub() as unknown as typeof monaco;

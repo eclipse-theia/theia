@@ -14,11 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import * as path from 'path';
-import * as fs from 'fs-extra';
-import { readdir, remove } from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
+import { readdir, remove } from '@theia/core/shared/fs-extra';
 import * as crypto from 'crypto';
 import { ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
