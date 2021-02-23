@@ -4,7 +4,6 @@
   "description": "Theia - Messages Extension",
   "dependencies": {
     "@theia/core": "1.12.0",
-    "lodash.throttle": "^4.1.1",
     "markdown-it": "^8.4.0",
     "react-perfect-scrollbar": "^1.5.3",
     "ts-md5": "^1.2.2"

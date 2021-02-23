@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXApiVersionProvider } from '../common/vsx-api-version-provider';
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';

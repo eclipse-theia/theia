@@ -10,6 +10,7 @@
     "@theia/core": "1.12.0",
     "@theia/debug": "1.12.0",
     "@theia/editor": "1.12.0",
+    "@theia/editor-preview": "1.12.0",
     "@theia/file-search": "1.12.0",
     "@theia/filesystem": "1.12.0",
     "@theia/markers": "1.12.0",

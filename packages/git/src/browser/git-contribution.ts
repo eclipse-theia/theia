@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import {
     Command,
@@ -449,7 +449,7 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                 return provider && this.withProgress(() => provider.discard(resources));
             },
             isEnabled: (...arg: ScmResource[]) => !!this.repositoryProvider.selectedScmProvider
-                    && arg.some(r => r.sourceUri)
+                && arg.some(r => r.sourceUri)
         });
         registry.registerCommand(GIT_COMMANDS.OPEN_CHANGED_FILE, {
             execute: (...arg: ScmResource[]) => {

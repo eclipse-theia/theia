@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import findGit from 'find-git-exec';
 import { dirname } from 'path';
-import { pathExists } from 'fs-extra';
+import { pathExists } from '@theia/core/shared/fs-extra';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MessageService } from '@theia/core';

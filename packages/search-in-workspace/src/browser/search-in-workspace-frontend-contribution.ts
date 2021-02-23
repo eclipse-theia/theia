@@ -16,7 +16,7 @@
 
 import { AbstractViewContribution, KeybindingRegistry, LabelProvider, CommonMenus, FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { SearchInWorkspaceWidget } from './search-in-workspace-widget';
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, MenuModelRegistry, SelectionService, Command } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser/widgets';
 import { NavigatorContextMenu } from '@theia/navigator/lib/browser/navigator-contribution';
@@ -26,7 +26,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
-import { Range } from 'vscode-languageserver-types';
+import { Range } from '@theia/core/shared/vscode-languageserver-types';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export namespace SearchInWorkspaceCommands {

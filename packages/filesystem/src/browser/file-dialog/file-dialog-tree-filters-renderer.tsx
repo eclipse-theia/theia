@@ -16,7 +16,7 @@
 
 import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
 import { FileDialogTree } from './file-dialog-tree';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 
 export const FILE_TREE_FILTERS_LIST_CLASS = 'theia-FileTreeFiltersList';
 

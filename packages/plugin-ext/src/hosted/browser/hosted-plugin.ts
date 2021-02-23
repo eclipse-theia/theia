@@ -21,9 +21,9 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import debounce = require('lodash.debounce');
-import { UUID } from '@phosphor/coreutils';
-import { injectable, inject, interfaces, named, postConstruct } from 'inversify';
+import debounce = require('@theia/core/shared/lodash.debounce');
+import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { injectable, inject, interfaces, named, postConstruct } from '@theia/core/shared/inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
 import { PluginMetadata, getPluginId, HostedPluginServer, DeployedPlugin } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
@@ -59,7 +59,7 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import URI from '@theia/core/lib/common/uri';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { environment } from '@theia/application-package/lib/environment';
+import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { JsonSchemaStore } from '@theia/core/lib/browser/json-schema-store';
 import { FileService, FileSystemProviderActivationEvent } from '@theia/filesystem/lib/browser/file-service';
 import { PluginCustomEditorRegistry } from '../../main/browser/custom-editors/plugin-custom-editor-registry';

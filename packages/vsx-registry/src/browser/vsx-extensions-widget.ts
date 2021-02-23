@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, interfaces, postConstruct, inject } from 'inversify';
+import { injectable, interfaces, postConstruct, inject } from '@theia/core/shared/inversify';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsSource, VSXExtensionsSourceOptions } from './vsx-extensions-source';
 
@@ -74,4 +74,3 @@ export class VSXExtensionsWidget extends SourceTreeWidget {
     }
 
 }
-

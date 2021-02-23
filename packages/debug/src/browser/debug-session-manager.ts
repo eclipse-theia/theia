@@ -24,7 +24,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { QuickOpenTask } from '@theia/task/lib/browser/quick-open-task';
 import { TaskService, TaskEndedInfo, TaskEndedTypes } from '@theia/task/lib/browser/task-service';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { DebugConfiguration } from '../common/debug-common';
 import { DebugError, DebugService } from '../common/debug-service';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';

@@ -16,7 +16,7 @@
 
 import * as chai from 'chai';
 import URI from '@theia/core/lib/common/uri';
-import { Container } from 'inversify';
+import { Container } from '@theia/core/shared/inversify';
 import { VSXEnvironment } from './vsx-environment';
 import { VSXRegistryAPI } from './vsx-registry-api';
 import { VSXSearchParam } from './vsx-registry-types';

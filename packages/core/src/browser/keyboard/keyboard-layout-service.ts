@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject, optional } from 'inversify';
-import { IWindowsKeyMapping } from 'native-keymap';
+import type { IWindowsKeyMapping } from 'native-keymap';
 import { isWindows } from '../../common/os';
 import {
     NativeKeyboardLayout, KeyboardLayoutProvider, KeyboardLayoutChangeNotifier, KeyValidator

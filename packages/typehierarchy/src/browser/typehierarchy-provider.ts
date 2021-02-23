@@ -14,10 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { SymbolKind, Range } from 'vscode-languageserver-types';
-import { TextDocumentPositionParams } from 'vscode-languageserver-protocol';
+import { SymbolKind, Range } from '@theia/core/shared/vscode-languageserver-types';
+import { TextDocumentPositionParams } from '@theia/core/shared/vscode-languageserver-protocol';
 
 @injectable()
 export class TypeHierarchyRegistry {
@@ -162,4 +162,3 @@ export interface TypeHierarchyItem {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data?: any;
 }
-

@@ -20,8 +20,8 @@ import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-k
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import { Severity } from '@theia/core/lib/common/severity';
-import { inject, injectable, interfaces } from 'inversify';
-import * as React from 'react';
+import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import * as React from '@theia/core/shared/react';
 import { DebugConsoleSession } from './debug-console-session';
 
 export type InDebugReplContextKey = ContextKey<boolean>;

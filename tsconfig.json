@@ -177,6 +177,9 @@
       ],
       "@theia/property-view/lib/*": [
         "packages/property-view/src/*"
+      ],
+      "@theia/eslint-plugin/*": [
+        "dev-packages/eslint-plugin/*"
       ]
     }
   }

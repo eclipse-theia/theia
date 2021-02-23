@@ -17,7 +17,7 @@
 import * as theia from '@theia/plugin';
 import { ModelChangedEvent, DocumentsMain } from '../common/plugin-api-rpc';
 import { Range as ARange } from '../common/plugin-api-rpc-model';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ok } from '../common/assert';
 import { Range, Position, EndOfLine } from './types-impl';
 import { PrefixSumComputer } from './prefix-sum-computer';

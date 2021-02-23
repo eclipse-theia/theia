@@ -17,9 +17,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as url from 'url';
-import { injectable, inject, named } from 'inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { json } from 'body-parser';
-import { Application, Router } from 'express';
+import { Application, Router } from '@theia/core/shared/express';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileDownloadHandler } from './file-download-handler';

@@ -18,7 +18,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { QuickPickItem } from '@theia/core/lib/common/quick-pick-service';
 
 /** The representation of a task template used in the auto-generation of `tasks.json` */

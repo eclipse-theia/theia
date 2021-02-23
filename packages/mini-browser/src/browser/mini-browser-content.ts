@@ -15,8 +15,8 @@
  ********************************************************************************/
 
 import * as PDFObject from 'pdfobject';
-import { inject, injectable, postConstruct } from 'inversify';
-import { Message } from '@phosphor/messaging';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Emitter } from '@theia/core/lib/common/event';
@@ -28,7 +28,7 @@ import { BaseWidget, addEventListener } from '@theia/core/lib/browser/widgets/wi
 import { LocationMapperService } from './location-mapper-service';
 import { ApplicationShellMouseTracker } from '@theia/core/lib/browser/shell/application-shell-mouse-tracker';
 
-import debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 import { MiniBrowserContentStyle } from './mini-browser-content-style';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent, FileChangeType } from '@theia/filesystem/lib/common/files';

@@ -15,9 +15,9 @@
  ********************************************************************************/
 
 import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext, PluginType } from '../../../common/plugin-protocol';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { getTempDir } from '../temp-dir-util';
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import * as filenamify from 'filenamify';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { PluginTheiaEnvironment } from '../../common/plugin-theia-environment';

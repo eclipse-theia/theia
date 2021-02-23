@@ -26,7 +26,7 @@ FrontendApplicationConfigProvider.set({
 });
 
 import { expect } from 'chai';
-import { Container } from 'inversify';
+import { Container } from '@theia/core/shared/inversify';
 import { PreferenceTreeGenerator } from './preference-tree-generator';
 import { CompositeTreeNode, PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';

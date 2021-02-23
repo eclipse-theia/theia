@@ -16,7 +16,7 @@
 
 import 'reflect-metadata';
 import { ConsoleLogger } from 'vscode-ws-jsonrpc/lib/logger';
-import { createMessageConnection, IPCMessageReader, IPCMessageWriter, Trace } from 'vscode-jsonrpc';
+import { createMessageConnection, IPCMessageReader, IPCMessageWriter, Trace } from 'vscode-ws-jsonrpc';
 import { checkParentAlive, ipcEntryPoint, IPCEntryPoint } from './ipc-protocol';
 
 checkParentAlive();

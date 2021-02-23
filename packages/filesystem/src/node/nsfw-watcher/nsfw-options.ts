@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as nsfw from 'nsfw';
+import * as nsfw from '@theia/core/shared/nsfw';
 
 /**
  * Inversify service identifier allowing extensions to override options passed to nsfw by the file watcher.

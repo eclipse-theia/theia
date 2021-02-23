@@ -13,7 +13,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { Container } from 'inversify';
+import { Container } from '@theia/core/shared/inversify';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import { backendApplicationModule } from '@theia/core/lib/node/backend-application-module';
 import processBackendModule from '@theia/process/lib/node/process-backend-module';
@@ -22,7 +22,7 @@ import taskBackendModule from '../task-backend-module';
 import filesystemBackendModule from '@theia/filesystem/lib/node/filesystem-backend-module';
 import workspaceServer from '@theia/workspace/lib/node/workspace-backend-module';
 import { messagingBackendModule } from '@theia/core/lib/node/messaging/messaging-backend-module';
-import { ApplicationPackage } from '@theia/application-package/lib/application-package';
+import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { TerminalProcess } from '@theia/process/lib/node';
 
 export function createTaskTestContainer(): Container {

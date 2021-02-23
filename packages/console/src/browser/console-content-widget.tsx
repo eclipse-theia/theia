@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Message } from '@phosphor/messaging';
-import { interfaces, Container, injectable } from 'inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import { interfaces, Container, injectable } from '@theia/core/shared/inversify';
 import { MenuPath } from '@theia/core';
 import { TreeProps } from '@theia/core/lib/browser/tree';
 import { TreeSourceNode } from '@theia/core/lib/browser/source-tree';

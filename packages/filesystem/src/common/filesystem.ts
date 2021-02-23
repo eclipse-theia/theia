@@ -16,7 +16,7 @@
 
 /* eslint-disable max-len */
 
-import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ApplicationError } from '@theia/core/lib/common';
 
 /**

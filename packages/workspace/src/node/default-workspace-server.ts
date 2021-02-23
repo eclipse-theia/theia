@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 import * as path from 'path';
-import * as yargs from 'yargs';
-import * as fs from 'fs-extra';
+import * as yargs from '@theia/core/shared/yargs';
+import * as fs from '@theia/core/shared/fs-extra';
 import * as jsoncparser from 'jsonc-parser';
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { FileUri } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';

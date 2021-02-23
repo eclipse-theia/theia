@@ -26,7 +26,7 @@ import type {
     TimelineOptions,
     TimelineProvider
 } from '@theia/timeline/lib/common/timeline-model';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { UriComponents } from '../common/uri-components';

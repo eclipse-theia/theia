@@ -17,7 +17,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { IRawTheme, Registry, IRawThemeSetting } from 'vscode-textmate';
 
 export interface ThemeMix extends IRawTheme, monaco.editor.IStandaloneThemeData { }

@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, Container } from 'inversify';
+import { ContainerModule, Container } from '@theia/core/shared/inversify';
 import { RawProcess, RawProcessOptions, RawProcessFactory, RawForkOptions } from './raw-process';
 import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from './terminal-process';
 import { BackendApplicationContribution } from '@theia/core/lib/node';

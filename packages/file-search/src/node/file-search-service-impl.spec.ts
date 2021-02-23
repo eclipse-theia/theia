@@ -19,7 +19,7 @@ import * as assert from 'assert';
 import * as path from 'path';
 import { FileSearchServiceImpl } from './file-search-service-impl';
 import { FileUri } from '@theia/core/lib/node';
-import { Container, ContainerModule } from 'inversify';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { CancellationTokenSource } from '@theia/core';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import URI from '@theia/core/lib/common/uri';

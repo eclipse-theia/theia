@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import URI from '@theia/core/lib/common/uri';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { WorkspaceUtils } from './workspace-utils';
 import { WorkspaceService } from './workspace-service';
 import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';

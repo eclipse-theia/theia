@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject, postConstruct } from 'inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Event as TheiaEvent, DisposableCollection } from '@theia/core';
 import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell } from '@theia/core/lib/browser';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
-import { Message } from '@phosphor/messaging';
-import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams, CellMeasurerCache, CellMeasurer } from 'react-virtualized';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import { AutoSizer, List, ListRowRenderer, ListRowProps, InfiniteLoader, IndexRange, ScrollParams, CellMeasurerCache, CellMeasurer } from '@theia/core/shared/react-virtualized';
 import URI from '@theia/core/lib/common/uri';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { ScmHistoryProvider } from '.';
@@ -29,7 +29,7 @@ import { ScmAvatarService } from '@theia/scm/lib/browser/scm-avatar-service';
 import { ScmItemComponent } from '../scm-navigable-list-widget';
 import { ScmFileChangeNode } from '../scm-file-change-node';
 import { ScmNavigableListWidget } from '../scm-navigable-list-widget';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 

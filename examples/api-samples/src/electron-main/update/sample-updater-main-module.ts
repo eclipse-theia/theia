@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging/proxy-factory';
 import { ElectronMainApplicationContribution } from '@theia/core/lib/electron-main/electron-main-application';
 import { ElectronConnectionHandler } from '@theia/core/lib/electron-common/messaging/electron-connection-handler';

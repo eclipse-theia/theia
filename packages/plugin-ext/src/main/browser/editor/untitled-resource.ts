@@ -15,12 +15,12 @@
  ********************************************************************************/
 
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { Resource, ResourceResolver, ResourceVersion, ResourceSaveOptions } from '@theia/core/lib/common/resource';
 import URI from '@theia/core/lib/common/uri';
 import { Schemes } from '../../../common/uri-components';
 import { FileResource, FileResourceResolver } from '@theia/filesystem/lib/browser';
-import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 
 let index = 0;
 

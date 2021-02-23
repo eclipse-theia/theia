@@ -14,14 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandRegistry, MenuModelRegistry, MenuPath } from '@theia/core/lib/common';
 import { TreeWidget, TreeProps, NodeProps, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { TimelineNode, TimelineTreeModel } from './timeline-tree-model';
 import { TimelineService } from './timeline-service';
 import { TimelineContextKeyService } from './timeline-context-key-service';
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { TimelineItem } from '../common/timeline-model';
 
 export const TIMELINE_ITEM_CONTEXT_MENU: MenuPath = ['timeline-item-context-menu'];

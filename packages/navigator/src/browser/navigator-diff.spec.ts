@@ -26,7 +26,7 @@ FrontendApplicationConfigProvider.set({
 import { expect } from 'chai';
 import { NavigatorDiff } from './navigator-diff';
 import * as path from 'path';
-import { Container, ContainerModule } from 'inversify';
+import { Container, ContainerModule } from '@theia/core/shared/inversify';
 import { SelectionService, ILogger } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import URI from '@theia/core/lib/common/uri';

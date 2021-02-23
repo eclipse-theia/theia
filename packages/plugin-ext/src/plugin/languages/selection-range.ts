@@ -22,7 +22,7 @@
 
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from '../documents';
-import { URI } from 'vscode-uri/lib/umd';
+import { URI } from '@theia/core/shared/vscode-uri';
 import * as model from '../../common/plugin-api-rpc-model';
 import * as Converter from '../type-converters';
 import * as types from '../types-impl';

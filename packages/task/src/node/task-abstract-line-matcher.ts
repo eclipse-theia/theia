@@ -20,14 +20,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { isWindows } from '@theia/core/lib/common/os';
-import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { Diagnostic, DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageserver-types';
 import {
     FileLocationKind, ProblemMatcher, ProblemPattern,
     ProblemMatch, ProblemMatchData, ProblemLocationKind
 } from '../common/problem-matcher-protocol';
 import URI from '@theia/core/lib/common/uri';
 // TODO use only URI from '@theia/core'
-import { URI as vscodeURI } from 'vscode-uri';
+import { URI as vscodeURI } from '@theia/core/shared/vscode-uri';
 import { Severity } from '@theia/core/lib/common/severity';
 
 const endOfLine: string = isWindows ? '\r\n' : '\n';

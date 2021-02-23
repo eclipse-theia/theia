@@ -21,7 +21,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { QuickInputButtons, QuickInputButton, ThemeIcon } from './types-impl';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import * as path from 'path';
 import { quickPickItemToPickOpenItem } from './type-converters';
 import { PluginPackage } from '../common/plugin-protocol';

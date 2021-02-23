@@ -22,7 +22,7 @@
 
 import { injectable, inject } from 'inversify';
 import URI from '../common/uri';
-import { Disposable } from 'vscode-ws-jsonrpc';
+import { Disposable } from '../common/disposable';
 import { CorePreferences } from './core-preferences';
 import { EncodingService as EncodingService } from '../common/encoding-service';
 import { UTF8 } from '../common/encodings';

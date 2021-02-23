@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { setTimeout } from 'timers';
 import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, PreferenceServiceImpl, PreferenceChange } from '@theia/core/lib/browser';
 import { MessageService } from '@theia/core/lib/common';
-import { CommandRegistry } from '@phosphor/commands';
-import { Menu } from '@phosphor/widgets';
+import { CommandRegistry } from '@theia/core/shared/@phosphor/commands';
+import { Menu } from '@theia/core/shared/@phosphor/widgets';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import { HostedPluginServer } from '../common/plugin-dev-protocol';

@@ -38,6 +38,9 @@
     },
     {
       "path": "../workspace/compile.tsconfig.json"
+    },
+    {
+      "path": "../userstorage/compile.tsconfig.json"
     }
   ]
 }

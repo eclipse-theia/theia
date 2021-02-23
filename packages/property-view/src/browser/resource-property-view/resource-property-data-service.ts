@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { FileSelection } from '@theia/filesystem/lib/browser/file-selection';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { PropertyDataService } from '../property-data-service';
 
 @injectable()

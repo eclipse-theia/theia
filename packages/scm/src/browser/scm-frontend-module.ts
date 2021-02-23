@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 
-import { interfaces, ContainerModule, Container } from 'inversify';
+import { interfaces, ContainerModule, Container } from '@theia/core/shared/inversify';
 import {
     bindViewContribution, FrontendApplicationContribution,
     WidgetFactory, ViewContainer,

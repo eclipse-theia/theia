@@ -15,7 +15,7 @@
  ********************************************************************************/
 import { RPCProtocol } from './rpc-protocol';
 import { PluginManager, Plugin } from './plugin-api-rpc';
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 
 export const ExtPluginApiProvider = 'extPluginApi';
 /**

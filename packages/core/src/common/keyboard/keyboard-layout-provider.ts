@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { IKeyboardLayoutInfo, IKeyboardMapping } from 'native-keymap';
+import type { IKeyboardLayoutInfo, IKeyboardMapping } from 'native-keymap';
 import { Event } from '../event';
 
 export const keyboardPath = '/services/keyboard';

@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { postConstruct, injectable } from 'inversify';
-import { ipcRenderer } from 'electron';
+import { ipcRenderer } from '../../../shared/electron';
 import { KeyboardLayoutChangeNotifier, NativeKeyboardLayout } from '../../common/keyboard/keyboard-layout-provider';
 import { Emitter, Event } from '../../common/event';
 

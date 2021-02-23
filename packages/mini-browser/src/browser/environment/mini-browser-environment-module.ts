@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { MiniBrowserEnvironment } from './mini-browser-environment';
 
 export default new ContainerModule(bind => {

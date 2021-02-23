@@ -19,7 +19,7 @@ import { HostedPluginManagerClient } from './hosted-plugin-manager-client';
 import { HostedPluginInformer } from './hosted-plugin-informer';
 import { bindHostedPluginPreferences } from './hosted-plugin-preferences';
 import { HostedPluginController } from './hosted-plugin-controller';
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { HostedPluginFrontendContribution } from './hosted-plugin-frontend-contribution';
 import { CommandContribution } from '@theia/core/lib/common/command';

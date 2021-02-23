@@ -24,8 +24,8 @@ import {
     TreeWidget
 } from '@theia/core/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { inject, injectable, postConstruct } from 'inversify';
-import * as React from 'react';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import * as React from '@theia/core/shared/react';
 import { PropertyDataService } from '../property-data-service';
 import { PropertyViewContentWidget } from '../property-view-content-widget';
 import {

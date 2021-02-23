@@ -16,8 +16,8 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { URI as CodeUri } from 'vscode-uri';
-import { injectable, inject } from 'inversify';
+import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { MenuPath, ILogger, CommandRegistry, Command, Mutable, MenuAction, SelectionService, CommandHandler, Disposable, DisposableCollection } from '@theia/core';
 import { EDITOR_CONTEXT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { MenuModelRegistry } from '@theia/core/lib/common';

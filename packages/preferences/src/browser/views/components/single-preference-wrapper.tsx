@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { Menu, PreferenceScope, PreferenceItem, PreferenceService, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { PreferenceSelectInput, PreferenceBooleanInput, PreferenceStringInput, PreferenceNumberInput, PreferenceJSONInput, PreferenceArrayInput } from '.';
 import { Preference, PreferenceMenus } from '../../util/preference-types';

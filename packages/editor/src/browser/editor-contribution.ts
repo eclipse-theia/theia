@@ -16,7 +16,7 @@
 
 import { EditorManager } from './editor-manager';
 import { TextEditor } from './editor';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import { FrontendApplicationContribution, DiffUris } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';

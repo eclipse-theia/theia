@@ -16,7 +16,7 @@
 import { PLUGIN_RPC_CONTEXT as Ext, OpenDialogOptionsMain, DialogsMain, SaveDialogOptionsMain, UploadDialogOptionsMain } from '../common/plugin-api-rpc';
 import { OpenDialogOptions, SaveDialogOptions, UploadDialogOptions } from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { URI as Uri } from 'vscode-uri';
+import { URI as Uri } from '@theia/core/shared/vscode-uri';
 
 export class DialogsExtImpl {
     private proxy: DialogsMain;

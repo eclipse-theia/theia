@@ -16,8 +16,8 @@
 
 /* eslint-disable no-null/no-null, @typescript-eslint/no-explicit-any */
 
-import { Message } from '@phosphor/messaging';
-import { injectable, inject, postConstruct } from 'inversify';
+import { Message } from '@theia/core/shared/@phosphor/messaging';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
     BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, CompositeTreeNode, SelectableTreeNode,

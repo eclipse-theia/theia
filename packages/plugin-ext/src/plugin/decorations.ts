@@ -24,7 +24,7 @@ import {
 } from '../common/plugin-api-rpc';
 import { Event } from '@theia/core/lib/common/event';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { Disposable } from './types-impl';
 
 export class DecorationsExtImpl implements DecorationsExt {
@@ -39,7 +39,7 @@ export class DecorationsExtImpl implements DecorationsExt {
     }
 
     registerDecorationProvider(provider: theia.DecorationProvider): Disposable {
-        const id = DecorationsExtImpl.PROVIDER_ID ++;
+        const id = DecorationsExtImpl.PROVIDER_ID++;
         provider.onDidChangeDecorations(arg => {
             let argument;
             if (Array.isArray(arg)) {
@@ -72,7 +72,7 @@ export class DecorationsExtImpl implements DecorationsExt {
         };
         this.proxy.$registerDecorationProvider(id, providerMain);
         this.providersMap.set(id, providerMain);
-        return new Disposable( () => {
+        return new Disposable(() => {
             this.proxy.$dispose(id);
         });
     }

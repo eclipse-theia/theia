@@ -33,7 +33,7 @@ import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from './documents';
 import { PluginModel } from '../common/plugin-protocol';
 import { Disposable } from './types-impl';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { UriComponents } from '../common/uri-components';
 import {
     CompletionContext,
@@ -79,7 +79,7 @@ import { CodeLensAdapter } from './languages/lens';
 import { OutlineAdapter } from './languages/outline';
 import { ReferenceAdapter } from './languages/reference';
 import { WorkspaceSymbolAdapter } from './languages/workspace-symbol';
-import { SymbolInformation } from 'vscode-languageserver-types';
+import { SymbolInformation } from '@theia/core/shared/vscode-languageserver-types';
 import { FoldingProviderAdapter } from './languages/folding';
 import { SelectionRangeProviderAdapter } from './languages/selection-range';
 import { ColorProviderAdapter } from './languages/color';
@@ -640,11 +640,11 @@ function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule
     }
 
     return rules.map(r =>
-        ({
-            action: r.action,
-            beforeText: serializeRegExp(r.beforeText),
-            afterText: serializeRegExp(r.afterText)
-        } as SerializedOnEnterRule));
+    ({
+        action: r.action,
+        beforeText: serializeRegExp(r.beforeText),
+        afterText: serializeRegExp(r.afterText)
+    } as SerializedOnEnterRule));
 }
 
 function serializeRegExp(regexp?: RegExp): SerializedRegExp | undefined {

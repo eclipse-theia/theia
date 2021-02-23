@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces, Container } from 'inversify';
+import { interfaces, Container } from '@theia/core/shared/inversify';
 import { WidgetFactory, OpenHandler, TreeModel } from '@theia/core/lib/browser';
 import { GitCommitDetailWidgetOptions } from './git-commit-detail-widget-options';
 import { GitCommitDetailWidget } from './git-commit-detail-widget';

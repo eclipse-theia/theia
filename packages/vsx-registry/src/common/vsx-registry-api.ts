@@ -16,7 +16,7 @@
 
 import * as bent from 'bent';
 import * as semver from 'semver';
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { VSXExtensionRaw, VSXSearchParam, VSXSearchResult, VSXAllVersions } from './vsx-registry-types';
 import { VSXEnvironment } from './vsx-environment';
 import { VSXApiVersionProvider } from './vsx-api-version-provider';

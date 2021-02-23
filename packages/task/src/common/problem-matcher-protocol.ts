@@ -22,9 +22,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { Severity } from '@theia/core/lib/common/severity';
-import { Diagnostic } from 'vscode-languageserver-types';
+import { Diagnostic } from '@theia/core/shared/vscode-languageserver-types';
 // TODO use URI from `@theia/core` instead
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { ProblemPatternContribution, WatchingMatcherContribution } from './task-protocol';
 
 export enum ApplyToKind {

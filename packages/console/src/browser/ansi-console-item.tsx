@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { ConsoleItem } from './console-session';
 import { Severity } from '@theia/core/lib/common/severity';
 import Anser = require('anser');

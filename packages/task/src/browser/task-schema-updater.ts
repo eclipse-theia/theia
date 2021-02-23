@@ -22,7 +22,7 @@
 
 import * as Ajv from 'ajv';
 import debounce = require('p-debounce');
-import { postConstruct, injectable, inject } from 'inversify';
+import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
 import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
 import { InMemoryResources, deepClone, Emitter } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';

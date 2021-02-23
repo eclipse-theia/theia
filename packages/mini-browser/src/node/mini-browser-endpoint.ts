@@ -15,11 +15,11 @@
  ********************************************************************************/
 
 const vhost = require('vhost');
-import express = require('express');
-import * as fs from 'fs-extra';
+import express = require('@theia/core/shared/express');
+import * as fs from '@theia/core/shared/fs-extra';
 import { lookup } from 'mime-types';
-import { injectable, inject, named } from 'inversify';
-import { Application, Request, Response } from 'express';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
+import { Application, Request, Response } from '@theia/core/shared/express';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MaybePromise } from '@theia/core/lib/common/types';

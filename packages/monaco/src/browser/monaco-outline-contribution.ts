@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import DocumentSymbol = monaco.languages.DocumentSymbol;
 import SymbolKind = monaco.languages.SymbolKind;
 import { FrontendApplicationContribution, FrontendApplication, TreeNode } from '@theia/core/lib/browser';
@@ -28,7 +28,7 @@ import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/ou
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditor } from './monaco-editor';
 
-import debounce = require('lodash.debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 @injectable()
 export class MonacoOutlineContribution implements FrontendApplicationContribution {

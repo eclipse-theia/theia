@@ -17,6 +17,12 @@
     },
     {
       "path": "../../packages/vsx-registry/compile.tsconfig.json"
+    },
+    {
+      "path": "../../packages/filesystem/compile.tsconfig.json"
+    },
+    {
+      "path": "../../packages/workspace/compile.tsconfig.json"
     }
   ]
 }

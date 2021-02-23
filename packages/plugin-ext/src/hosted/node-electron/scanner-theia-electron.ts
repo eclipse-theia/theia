@@ -16,7 +16,7 @@
 
 import * as path from 'path';
 import { TheiaPluginScanner } from '../node/scanners/scanner-theia';
-import { injectable } from 'inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { PluginPackage, PluginModel } from '../../common/plugin-protocol';
 
 @injectable()

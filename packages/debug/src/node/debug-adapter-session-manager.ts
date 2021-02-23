@@ -14,8 +14,8 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { UUID } from '@phosphor/coreutils';
-import { injectable, inject } from 'inversify';
+import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
 import { DebugAdapterPath } from '../common/debug-service';

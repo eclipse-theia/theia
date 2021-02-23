@@ -29,8 +29,8 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { inject, injectable, named, postConstruct } from 'inversify';
-import { DiagnosticSeverity, Range } from 'vscode-languageserver-types';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageserver-types';
 import {
     ApplyToKind,
     BackgroundTaskEndedEvent,
@@ -1022,11 +1022,11 @@ export class TaskService implements TaskConfigurationClient {
 
         const registeredProblemMatchers = this.problemMatcherRegistry.getAll();
         items.push(...registeredProblemMatchers.map(matcher =>
-            ({
-                label: matcher.label,
-                value: { problemMatchers: [matcher] },
-                description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
-            })
+        ({
+            label: matcher.label,
+            value: { problemMatchers: [matcher] },
+            description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
+        })
         ));
         return items;
     }

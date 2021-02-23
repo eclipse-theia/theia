@@ -47,7 +47,7 @@
   "scripts": {
     "preinstall": "node-gyp install",
     "postinstall": "node scripts/post-install.js",
-    "prepare": "yarn prepare:references && yarn prepare:build && yarn prepare:hoisting && yarn download:plugins",
+    "prepare": "yarn prepare:references && yarn --cwd packages/core prepare && yarn prepare:build && yarn prepare:hoisting && yarn download:plugins",
     "prepare:references": "node scripts/compile-references.js",
     "prepare:build": "yarn build && run lint && run build \"@theia/example-*\" --stream --parallel",
     "prepare:hoisting": "theia check:hoisted -s",

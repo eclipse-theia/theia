@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 
-import { ContainerModule, interfaces } from 'inversify';
+import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ResourceResolver, CommandContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { FileResourceResolver } from './file-resource';
@@ -30,7 +30,7 @@ import { RemoteFileSystemProvider, RemoteFileSystemServer, remoteFileSystemPath,
 import { FileSystem, FileStat, FileMoveOptions, FileDeleteOptions, FileSystemError } from '../common/filesystem';
 import URI from '@theia/core/lib/common/uri';
 import { FileOperationError, FileOperationResult, BaseStatWithMetadata, FileStatWithMetadata, etag } from '../common/files';
-import { TextDocumentContentChangeEvent } from 'vscode-languageserver-protocol';
+import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { RemoteFileServiceContribution } from './remote-file-service-contribution';

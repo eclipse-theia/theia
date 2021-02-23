@@ -18,8 +18,8 @@
 /* eslint-disable no-null/no-null */
 
 import * as jsoncparser from 'jsonc-parser';
-import { JSONExt } from '@phosphor/coreutils/lib/json';
-import { inject, injectable, postConstruct } from 'inversify';
+import { JSONExt } from '@theia/core/shared/@phosphor/coreutils';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { PreferenceProvider, PreferenceSchemaProvider, PreferenceScope, PreferenceProviderDataChange, PreferenceService } from '@theia/core/lib/browser';
@@ -270,4 +270,3 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
 }
-

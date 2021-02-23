@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     ViewContainer,
     WidgetManager,
@@ -27,7 +27,7 @@ import { TimelineWidget } from './timeline-widget';
 import { TimelineService } from './timeline-service';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { toArray } from '@phosphor/algorithm';
+import { toArray } from '@theia/core/shared/@phosphor/algorithm';
 
 @injectable()
 export class TimelineContribution implements CommandContribution, TabBarToolbarContribution {
@@ -63,11 +63,11 @@ export class TimelineContribution implements CommandContribution, TabBarToolbarC
             }
         };
         this.widgetManager.onWillCreateWidget(async event => {
-           if (event.widget.id === EXPLORER_VIEW_CONTAINER_ID && this.timelineService.getSources().length > 0) {
-               event.waitUntil(attachTimeline(event.widget));
-           }
+            if (event.widget.id === EXPLORER_VIEW_CONTAINER_ID && this.timelineService.getSources().length > 0) {
+                event.waitUntil(attachTimeline(event.widget));
+            }
         });
-        this.timelineService.onDidChangeProviders( async event => {
+        this.timelineService.onDidChangeProviders(async event => {
             const explorer = await this.widgetManager.getWidget(EXPLORER_VIEW_CONTAINER_ID);
             if (explorer && event.added && event.added.length > 0) {
                 attachTimeline(explorer);

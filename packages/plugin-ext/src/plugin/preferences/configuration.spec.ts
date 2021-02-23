@@ -20,7 +20,7 @@ import { Configuration, ConfigurationModel } from './configuration';
 import { PreferenceData } from '../../common';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { WorkspaceExtImpl } from '../workspace';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 const expect = chai.expect;
 

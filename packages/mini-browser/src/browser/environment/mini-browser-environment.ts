@@ -16,7 +16,7 @@
 
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { Endpoint, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { MiniBrowserEndpoint } from '../../common/mini-browser-endpoint';
 import { v4 } from 'uuid';
 

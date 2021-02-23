@@ -21,7 +21,7 @@
 // some code copied and modified from https://github.com/microsoft/vscode/blob/3aab025eaebde6c9544293b6c7554f3f583e15d0/src/vs/workbench/contrib/timeline/common/timeline.ts
 
 import { Command, Disposable, Event } from '@theia/core/lib/common';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 
 export interface TimelineItem {
     source: string;

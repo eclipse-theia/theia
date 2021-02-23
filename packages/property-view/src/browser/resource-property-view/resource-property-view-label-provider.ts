@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { LabelProvider, LabelProviderContribution, TreeNode } from '@theia/core/lib/browser';
-import { inject, injectable } from 'inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ResourcePropertiesCategoryNode, ResourcePropertiesItemNode } from './resource-property-view-tree-items';
 
 const DEFAULT_INFO_ICON = 'fa fa-info-circle';

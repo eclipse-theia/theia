@@ -20,7 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.47.3/src/vs/workbench/api/browser/mainThreadAuthentication.ts
 
-import { interfaces } from 'inversify';
+import { interfaces } from '@theia/core/shared/inversify';
 import { AuthenticationExt, AuthenticationMain, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MessageService } from '@theia/core/lib/common/message-service';
@@ -85,7 +85,7 @@ export class AuthenticationMainImpl implements AuthenticationMain {
     }
 
     async $getSession(providerId: string, scopes: string[], extensionId: string, extensionName: string,
-                      options: { createIfNone: boolean, clearSessionPreference: boolean }): Promise<AuthenticationSession | undefined> {
+        options: { createIfNone: boolean, clearSessionPreference: boolean }): Promise<AuthenticationSession | undefined> {
         const orderedScopes = scopes.sort().join(' ');
         const sessions = (await this.authenticationService.getSessions(providerId)).filter(session => session.scopes.slice().sort().join(' ') === orderedScopes);
         const label = this.authenticationService.getLabel(providerId);
@@ -122,7 +122,7 @@ export class AuthenticationMainImpl implements AuthenticationMain {
     }
 
     protected async selectSession(providerId: string, providerName: string, extensionId: string, extensionName: string,
-                        potentialSessions: AuthenticationSession[], scopes: string[], clearSessionPreference: boolean): Promise<AuthenticationSession> {
+        potentialSessions: AuthenticationSession[], scopes: string[], clearSessionPreference: boolean): Promise<AuthenticationSession> {
         if (!potentialSessions.length) {
             throw new Error('No potential sessions found');
         }
@@ -144,9 +144,9 @@ export class AuthenticationMainImpl implements AuthenticationMain {
 
         return new Promise(async (resolve, reject) => {
             const items: QuickPickItem<{ session?: AuthenticationSession }>[] = potentialSessions.map(session => ({
-                    label: session.account.label,
-                    value: { session }
-                }));
+                label: session.account.label,
+                value: { session }
+            }));
             items.push({
                 label: 'Sign in to another account',
                 value: { session: undefined }
@@ -250,7 +250,7 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
         public readonly supportsMultipleAccounts: boolean,
         private readonly storageService: StorageService,
         private readonly messageService: MessageService
-    ) {}
+    ) { }
 
     public hasSessions(): boolean {
         return !!this.sessions.size;
@@ -271,7 +271,7 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
     async signOut(accountName: string): Promise<void> {
         const accountUsages = await readAccountUsages(this.storageService, this.id, accountName);
         const sessionsForAccount = this.accounts.get(accountName);
-        const result = await this.messageService.info(accountUsages.length ? `The account ${accountName} has been used by: 
+        const result = await this.messageService.info(accountUsages.length ? `The account ${accountName} has been used by:
         ${accountUsages.map(usage => usage.extensionName).join(', ')}. Sign out of these features?` : `Sign out of ${accountName}?`, 'Yes');
 
         if (result && result === 'Yes' && sessionsForAccount) {

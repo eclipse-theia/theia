@@ -22,10 +22,10 @@
 /* eslint-disable no-null/no-null */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { UUID } from '@phosphor/coreutils/lib/uuid';
+import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 import { illegalArgument } from '../common/errors';
 import * as theia from '@theia/plugin';
-import { URI } from 'vscode-uri';
+import { URI } from '@theia/core/shared/vscode-uri';
 import { relative } from '../common/paths-util';
 import { startsWithIgnoreCase } from '@theia/core/lib/common/strings';
 import { MarkdownString, isMarkdownString } from './markdown-string';

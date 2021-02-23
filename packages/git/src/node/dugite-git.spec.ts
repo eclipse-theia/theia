@@ -18,7 +18,7 @@ import * as upath from 'upath';
 
 import * as path from 'path';
 import * as temp from 'temp';
-import * as fs from 'fs-extra';
+import * as fs from '@theia/core/shared/fs-extra';
 import { expect } from 'chai';
 import { Git } from '../common/git';
 import { git as gitExec } from 'dugite-extra/lib/core/git';

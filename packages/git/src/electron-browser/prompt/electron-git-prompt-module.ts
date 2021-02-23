@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
 import { GitPrompt } from '../../common/git-prompt';
 import { bindPromptServer } from '../../browser/prompt/git-prompt-module';
 import { GitQuickOpenPrompt } from './git-quick-open-prompt';

@@ -13,9 +13,9 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { inject, injectable, postConstruct } from 'inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
-import { find } from '@phosphor/algorithm';
+import { find } from '@theia/core/shared/@phosphor/algorithm';
 import {
     AbstractViewContribution,
     FrontendApplicationContribution, LabelProvider,
@@ -231,7 +231,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         if (!repository) {
             return undefined;
         }
-        return  repository.provider.acceptInputCommand;
+        return repository.provider.acceptInputCommand;
     }
 
     protected readonly statusBarDisposable = new DisposableCollection();
