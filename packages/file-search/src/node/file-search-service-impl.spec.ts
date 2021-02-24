@@ -221,7 +221,10 @@ describe('search-service', function (): void {
 
             expect(matchesA).to.not.be.empty;
             expect(matchesB).to.not.be.empty;
-            expect(matchesA).to.deep.eq(matchesB);
+            expect(matchesA.length).to.equal(matchesB.length);
+
+            // Due to ripgrep parallelism we cannot deepEqual the matches since order is not guaranteed.
+            expect(matchesA).to.have.members(matchesB);
         });
     });
 
