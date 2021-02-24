@@ -84,6 +84,7 @@
     height: var(--theia-view-container-content-height);
     min-width: 50px;
     min-height: 50px;
+    position: relative;
 }
 
 .theia-view-container .part > .body .theia-tree-source-node-placeholder {
