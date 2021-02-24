@@ -16,6 +16,7 @@
 
 // @ts-check
 describe('Navigator', function () {
+    this.timeout(5000);
 
     const { assert } = chai;
 

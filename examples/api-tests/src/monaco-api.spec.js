@@ -44,6 +44,10 @@ describe('Monaco API', async function () {
         monacoEditor = /** @type {MonacoEditor} */ (MonacoEditor.get(editor));
     });
 
+    after(async () => {
+        await editorManager.closeAll({ save: false });
+    });
+
     it('KeybindingService.resolveKeybinding', () => {
         const simpleKeybinding = new monaco.keybindings.SimpleKeybinding(true, true, true, true, monaco.KeyCode.KEY_K);
         const chordKeybinding = simpleKeybinding.toChord();
