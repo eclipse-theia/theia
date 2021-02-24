@@ -279,7 +279,7 @@ export class ElectronMainApplication {
             if (workspacePath === undefined) {
                 await this.openDefaultWindow();
             } else {
-                await this.openWindowWithWorkspace(workspacePath);
+                await this.openWindowWithWorkspace(encodeURI(workspacePath));
             }
         }
     }

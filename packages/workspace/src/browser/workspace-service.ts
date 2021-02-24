@@ -150,7 +150,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
      * Set the URL fragment to the given workspace path.
      */
     protected setURLFragment(workspacePath: string): void {
-        window.location.hash = workspacePath;
+        window.location.hash = encodeURI(workspacePath);
     }
 
     get roots(): Promise<FileStat[]> {
