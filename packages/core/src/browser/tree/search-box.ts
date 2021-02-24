@@ -55,12 +55,14 @@ export class SearchBox extends BaseWidget {
         Key.BACKSPACE
     ];
 
+    protected static MAX_CONTENT_LENGTH = 15;
+
     protected readonly nextEmitter = new Emitter<void>();
     protected readonly previousEmitter = new Emitter<void>();
     protected readonly closeEmitter = new Emitter<void>();
     protected readonly textChangeEmitter = new Emitter<string | undefined>();
     protected readonly filterToggleEmitter = new Emitter<boolean>();
-    protected readonly input: HTMLInputElement;
+    protected readonly input: HTMLSpanElement;
     protected readonly filter: HTMLElement | undefined;
     protected _isFiltering: boolean = false;
 
@@ -149,7 +151,7 @@ export class SearchBox extends BaseWidget {
         event.preventDefault();
         const keyCode = KeyCode.createKeyCode(event);
         if (this.canHandle(keyCode)) {
-            if (Key.equals(Key.ESCAPE, keyCode)) {
+            if (Key.equals(Key.ESCAPE, keyCode) || this.isCtrlBackspace(keyCode)) {
                 this.hide();
             } else {
                 this.show();
@@ -167,6 +169,7 @@ export class SearchBox extends BaseWidget {
     }
 
     onBeforeHide(): void {
+        this.removeClass(SearchBox.Styles.NO_MATCH);
         this.doFireFilterToggle(false);
         this.debounce.append(undefined);
         this.fireClose();
@@ -176,11 +179,18 @@ export class SearchBox extends BaseWidget {
         const character = Key.equals(Key.BACKSPACE, keyCode) ? '\b' : keyCode.character;
         const data = this.debounce.append(character);
         if (data) {
-            this.input.value = data;
+            this.input.textContent = this.getTrimmedContent(data);
             this.update();
         } else {
             this.hide();
         }
+    }
+
+    protected getTrimmedContent(data: string): string {
+        if (data.length > SearchBox.MAX_CONTENT_LENGTH) {
+            return '...' + data.substring(data.length - SearchBox.MAX_CONTENT_LENGTH);
+        }
+        return data;
     }
 
     protected canHandle(keyCode: KeyCode | undefined): boolean {
@@ -188,7 +198,10 @@ export class SearchBox extends BaseWidget {
             return false;
         }
         const { ctrl, alt, meta } = keyCode;
-        if (ctrl || alt || meta) {
+        if (this.isCtrlBackspace(keyCode)) {
+            return true;
+        }
+        if (ctrl || alt || meta || keyCode.key === Key.SPACE) {
             return false;
         }
         if (keyCode.character || (this.isVisible && SearchBox.SPECIAL_KEYS.some(key => Key.equals(key, keyCode)))) {
@@ -197,26 +210,41 @@ export class SearchBox extends BaseWidget {
         return false;
     }
 
+    protected isCtrlBackspace(keyCode: KeyCode): boolean {
+        if (keyCode.ctrl && Key.equals(Key.BACKSPACE, keyCode)) {
+            return true;
+        }
+        return false;
+    }
+
+    updateHighlightInfo(info: SearchBox.HighlightInfo): void {
+        if (info.filterText && info.filterText.length > 0) {
+            if (info.matched === 0) {
+                this.addClass(SearchBox.Styles.NO_MATCH);
+            } else {
+                this.removeClass(SearchBox.Styles.NO_MATCH);
+            }
+        }
+    }
+
     protected createContent(): {
         container: HTMLElement,
-        input: HTMLInputElement,
+        input: HTMLSpanElement,
         filter: HTMLElement | undefined,
         previous: HTMLElement | undefined,
         next: HTMLElement | undefined,
         close: HTMLElement | undefined
     } {
-
+        this.node.setAttribute('tabIndex', '0');
         this.addClass(SearchBox.Styles.SEARCH_BOX);
 
-        const input = document.createElement('input');
-        input.readOnly = false;
-        input.type = 'text';
-        input.onkeydown = ev => this.handle.bind(this)(ev);
-        input.classList.add(
-            'theia-input',
-            SearchBox.Styles.SEARCH_INPUT
-        );
+        const input = document.createElement('span');
+        input.classList.add(SearchBox.Styles.SEARCH_INPUT);
         this.node.appendChild(input);
+
+        const buttons = document.createElement('div');
+        buttons.classList.add(SearchBox.Styles.SEARCH_BUTTONS_WRAPPER);
+        this.node.appendChild(buttons);
 
         let filter: HTMLElement | undefined;
         if (this.props.showFilter) {
@@ -226,7 +254,7 @@ export class SearchBox extends BaseWidget {
                 ...SearchBox.Styles.FILTER,
             );
             filter.title = 'Enable Filter on Type';
-            this.node.appendChild(filter);
+            buttons.appendChild(filter);
             filter.onclick = this.fireFilterToggle.bind(this);
         }
 
@@ -241,7 +269,7 @@ export class SearchBox extends BaseWidget {
                 SearchBox.Styles.BUTTON_PREVIOUS
             );
             previous.title = 'Previous (Up)';
-            this.node.appendChild(previous);
+            buttons.appendChild(previous);
             previous.onclick = () => this.firePrevious.bind(this)();
 
             next = document.createElement('div');
@@ -250,7 +278,7 @@ export class SearchBox extends BaseWidget {
                 SearchBox.Styles.BUTTON_NEXT
             );
             next.title = 'Next (Down)';
-            this.node.appendChild(next);
+            buttons.appendChild(next);
             next.onclick = () => this.fireNext.bind(this)();
         }
 
@@ -261,7 +289,7 @@ export class SearchBox extends BaseWidget {
                 SearchBox.Styles.BUTTON_CLOSE
             );
             close.title = 'Close (Escape)';
-            this.node.appendChild(close);
+            buttons.appendChild(close);
             close.onclick = () => this.hide.bind(this)();
         }
 
@@ -293,6 +321,7 @@ export namespace SearchBox {
 
         export const SEARCH_BOX = 'theia-search-box';
         export const SEARCH_INPUT = 'theia-search-input';
+        export const SEARCH_BUTTONS_WRAPPER = 'theia-search-buttons-wrapper';
         export const BUTTON = 'theia-search-button';
         export const FILTER = ['codicon', 'codicon-filter'];
         export const FILTER_ON = 'filter-active';
@@ -300,7 +329,13 @@ export namespace SearchBox {
         export const BUTTON_NEXT = 'theia-search-button-next';
         export const BUTTON_CLOSE = 'theia-search-button-close';
         export const NON_SELECTABLE = 'theia-non-selectable';
+        export const NO_MATCH = 'no-match';
+    }
 
+    export interface HighlightInfo {
+        filterText: string | undefined,
+        matched: number,
+        total: number
     }
 
 }

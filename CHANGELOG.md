@@ -1,8 +1,11 @@
 # Change Log
 ## v1.11.0 - 2021
 
+- [core] revamp of tree search-box ui to align with vscode [#9005](https://github.com/eclipse-theia/theia/pull/9005)
+
 <a name="breaking_changes_1.11.0">[Breaking Changes:](#breaking_changes_1.11.0)</a>
 
+- [core] updated `SearchBox.input` field type from `HTMLInputElement` to `HTMLSpanElement`. [#9005](https://github.com/eclipse-theia/theia/pull/9005)
 <a name="1.11.0_user-storage_scheme_updated"></a>
 
 -   [[user-storage]](#1.11.0_user-storage_scheme_updated) `UserStorageUri` scheme was changed from 'user_storage' to 'user-storage' as '\_' is not a valid char in scheme (according to [RFC 3986](https://tools.ietf.org/html/rfc3986#page-17)) [#9049](https://github.com/eclipse-theia/theia/pull/9049)
