@@ -197,7 +197,7 @@ export class TabBarToolbar extends ReactWidget {
     }
 
     shouldHandleMouseEvent(event: MouseEvent): boolean {
-        return event.target instanceof Element && (!!this.inline.get(event.target.id) || event.target.id === '__more__');
+        return event.target instanceof Element && this.node.contains(event.target);
     }
 
     protected commandIsEnabled(command: string): boolean {
