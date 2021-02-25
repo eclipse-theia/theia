@@ -5,6 +5,11 @@ on:
     branches:
       - master
   workflow_dispatch:
+    inputs:
+      minorRelease:
+        description: Publish a new minor version or not (yes/no).
+        required: true
+        default: 'no'
   pull_request:
     branches:
       - master
@@ -85,6 +90,9 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0 # To fetch all history for all branches and tags. (Will be required for caching with lerna: https://github.com/markuplint/markuplint/pull/111)
+      - run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
 
       - name: Use Node.js 12.x
         uses: actions/setup-node@v1
@@ -105,7 +113,8 @@ jobs:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
-      - name: Publish NPM
+      - name: Publish NPM (next)
+        if: github.event_name != 'workflow-dispatch' || github.event.inputs.minorRelease != 'yes'
         uses: nick-invision/retry@v2
         with:
           timeout_minutes: 5
@@ -115,6 +124,27 @@ jobs:
           command: yarn publish:next
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }} # The variable name comes from here: https://github.com/actions/setup-node/blob/70b9252472eee7495c93bb1588261539c3c2b98d/src/authutil.ts#L48
+
+      - name: Publish NPM (latest)
+        id: publish-latest
+        if: github.event_name == 'workflow-dispatch' && github.event.inputs.minorRelease == 'yes'
+        uses: nick-invision/retry@v2
+        with:
+          timeout_minutes: 5
+          retry_wait_seconds: 30
+          max_attempts: 3
+          retry_on: error
+          # command: yarn publish:latest:minor
+          command: touch a.txt && git add . && git commit -m test
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }} # The variable name comes from here: https://github.com/actions/setup-node/blob/70b9252472eee7495c93bb1588261539c3c2b98d/src/authutil.ts#L48
+
+      - name: Push minor version bump
+        if: steps.publish-latest.outcome == 'success'
+        run: |
+          git push -f origin v$(node -p "require('./packages/core/package.json').version")
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
       - name: Publish GH Pages
         uses: peaceiris/actions-gh-pages@v3
