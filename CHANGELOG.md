@@ -1,13 +1,51 @@
 # Change Log
-## v1.11.0 - 2021
+## v1.11.0 - 2/25/2021
 
-- [core] revamp of tree search-box ui to align with vscode [#9005](https://github.com/eclipse-theia/theia/pull/9005)
+- [api-samples] added example to echo the currently supported vscode API version [#8191](https://github.com/eclipse-theia/theia/pull/8191)
+- [bulk-edit] added support for previewing refactorings [#8589](https://github.com/eclipse-theia/theia/pull/8589)
+- [core] fixed context-menu position when the electron application is scaled (zoom in/zoom out) [#9082](https://github.com/eclipse-theia/theia/pull/9082)
+- [core] fixed keyboard shortcuts when working with devTools in the electron application [#8943](https://github.com/eclipse-theia/theia/pull/8943)
+- [core] fixed tabbar-toolbar mouse event handler [#9125](https://github.com/eclipse-theia/theia/pull/9125)
+- [core] fixed theming issue for secondary buttons when using light themes [#9008](https://github.com/eclipse-theia/theia/pull/9008)
+- [core] updated `ProgressMessageOptions.cancelable` documentation to reflect updated default [#9033](https://github.com/eclipse-theia/theia/pull/9033)
+- [core] updated the tree search-box to align with vscode [#9005](https://github.com/eclipse-theia/theia/pull/9005)
+- [core] updated tree-view parts header styling [#9128](https://github.com/eclipse-theia/theia/pull/9128)
+- [documentation] added documentation on how to debug plugin sources in 'developing.md' [#9018](https://github.com/eclipse-theia/theia/pull/9018)
+- [documentation] fixed typo in 'developing.md' [#9092](https://github.com/eclipse-theia/theia/pull/9092)
+- [editor] added `onFocusChanged` event in order to update the active editor when switching editors [#9013](https://github.com/eclipse-theia/theia/pull/9013)
+- [file-search] added support for performing file searches with whitespaces [#8989](https://github.com/eclipse-theia/theia/pull/8989)
+- [git] added handling to remove extraneous entries in the `scm` for nested git repositories [#7629](https://github.com/eclipse-theia/theia/pull/7629)
+- [keymaps] fixed keybinding disablement and remapping [#9088](https://github.com/eclipse-theia/theia/pull/9088)
+- [keymaps] fixed serialization for the `keymaps.json` file [#9088](https://github.com/eclipse-theia/theia/pull/9088)
+- [markers] fixed issue when enabling/disabling problem marker tabbar decorations [#9059](https://github.com/eclipse-theia/theia/pull/9059)
+- [monaco] fixed theming issue when using third-party themes [#8964](https://github.com/eclipse-theia/theia/pull/8964)
+- [monaco] fixed theming issues when registering themes with null or undefined properties [#9097](https://github.com/eclipse-theia/theia/pull/9097)
+- [navigator] fixed issue when dragging-and-dropping files into the main area [#8927](https://github.com/eclipse-theia/theia/pull/8927)
+- [navigator] fixed issue when performing a drag-and-drop without the proper selection [#9093](https://github.com/eclipse-theia/theia/pull/9093)
+- [output] generalized the `output` APIs for extensibility [#9060](https://github.com/eclipse-theia/theia/pull/9060)
+- [plugin] added API stub for terminal links [#9048](https://github.com/eclipse-theia/theia/pull/9048)
+- [plugin] added missing `group` property to the `TaskDTO` interface [#8971](https://github.com/eclipse-theia/theia/pull/8971)
+- [plugin] added support for submenu contributions [#8996](https://github.com/eclipse-theia/theia/pull/8996)
+- [plugin] extracted plugin URI generation into an injectable class [#9027](https://github.com/eclipse-theia/theia/pull/9027)
+- [plugin] fixed issue where `problemMatchers` were not properly set when configuring tasks [#8971](https://github.com/eclipse-theia/theia/pull/89771)
+- [plugin] fixed welcome-view empty condition [#9047](https://github.com/eclipse-theia/theia/pull/9047)
+- [preferences] added a `clear-all` button in the preferences-view input for clearing search results [#9113](https://github.com/eclipse-theia/theia/pull/9133)
+- [preferences] added a result count badge in the preferences-view input when performing a search [#9113](https://github.com/eclipse-theia/theia/pull/9133)
+- [preferences] fixed issue when attempting to validate numeric values from the preferences-view [#9089](https://github.com/eclipse-theia/theia/pull/9089)
+- [preferences] fixed the `PreferenceChangeEvent<T>` typing [#9057](https://github.com/eclipse-theia/theia/pull/9057)
+- [preferences] improved overall performance of the preferences-view, including filtering and switching scopes [#8263](https://github.com/eclipse-theia/theia/pull/8263)
+- [repo] updated list of builtin extensions when using the example applications [#9017](https://github.com/eclipse-theia/theia/pull/9017)
+- [repo] uplifted CI/CD to use Python3 exclusively [#9085](https://github.com/eclipse-theia/theia/pull/9085)
+- [search-in-workspace] fixed styling of the replace item border [#9090](https://github.com/eclipse-theia/theia/pull/9090)
+- [task] updated logic to activate corresponding terminal when using the `show running tasks` action [#9016](https://github.com/eclipse-theia/theia/pull/9016)
+- [vsx-registry] added API compatibility handling when installing extensions through the 'extensions-view' [#8191](https://github.com/eclipse-theia/theia/pull/8191)
+
 
 <a name="breaking_changes_1.11.0">[Breaking Changes:](#breaking_changes_1.11.0)</a>
 
-- [core] updated `SearchBox.input` field type from `HTMLInputElement` to `HTMLSpanElement`. [#9005](https://github.com/eclipse-theia/theia/pull/9005)
-<a name="1.11.0_user-storage_scheme_updated"></a>
+- [core] updated `SearchBox.input` field type from `HTMLInputElement` to `HTMLSpanElement` [#9005](https://github.com/eclipse-theia/theia/pull/9005)
 
+<a name="1.11.0_user-storage_scheme_updated"></a>
 -   [[user-storage]](#1.11.0_user-storage_scheme_updated) `UserStorageUri` scheme was changed from 'user_storage' to 'user-storage' as '\_' is not a valid char in scheme (according to [RFC 3986](https://tools.ietf.org/html/rfc3986#page-17)) [#9049](https://github.com/eclipse-theia/theia/pull/9049)
 
 
