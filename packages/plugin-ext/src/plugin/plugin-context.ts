@@ -455,6 +455,9 @@ export function createAPIFactory(
             get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
                 return workspaceExt.workspaceFolders;
             },
+            get workspaceFile(): Uri | undefined {
+                return workspaceExt.workspaceFile;
+            },
             get name(): string | undefined {
                 return workspaceExt.name;
             },
