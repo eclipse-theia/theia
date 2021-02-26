@@ -282,7 +282,13 @@ export class DebugExtImpl implements DebugExt {
             type: debugConfiguration.type,
             name: debugConfiguration.name,
             configuration: debugConfiguration,
-            customRequest: (command: string, args?: any) => this.proxy.$customRequest(sessionId, command, args)
+            customRequest: async (command: string, args?: any) => {
+                const response = await this.proxy.$customRequest(sessionId, command, args);
+                if (response && response.success) {
+                    return response.body;
+                }
+                return Promise.reject(new Error(response.message ?? 'custom request failed'));
+            }
         };
 
         const tracker = await this.createDebugAdapterTracker(theiaSession);
