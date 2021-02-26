@@ -552,10 +552,12 @@ export interface WorkspaceMain {
     $unregisterTextDocumentContentProvider(scheme: string): void;
     $onTextDocumentContentChange(uri: string, content: string): void;
     $updateWorkspaceFolders(start: number, deleteCount?: number, ...rootsToAdd: string[]): Promise<void>;
+    $getWorkspace(): Promise<files.FileStat | undefined>;
 }
 
 export interface WorkspaceExt {
     $onWorkspaceFoldersChanged(event: WorkspaceRootsChangeEvent): void;
+    $onWorkspaceLocationChanged(event: files.FileStat | undefined): void;
     $provideTextDocumentContent(uri: string): Promise<string | undefined>;
     $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void;
 }

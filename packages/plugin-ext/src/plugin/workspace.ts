@@ -41,6 +41,7 @@ import { Schemes } from '../common/uri-components';
 import { toWorkspaceFolder } from './type-converters';
 import { MessageRegistryExt } from './message-registry';
 import * as Converter from './type-converters';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 export class WorkspaceExtImpl implements WorkspaceExt {
 
@@ -50,6 +51,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     public readonly onDidChangeWorkspaceFolders: Event<theia.WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
 
     private folders: theia.WorkspaceFolder[] | undefined;
+    private workspaceFileUri: theia.Uri | undefined;
     private documentContentProviders = new Map<string, theia.TextDocumentContentProvider>();
     private searchInWorkspaceEmitter: Emitter<{ result?: theia.TextSearchResult, searchId: number }> = new Emitter<{ result?: theia.TextSearchResult, searchId: number }>();
     protected workspaceSearchSequence: number = 0;
@@ -72,6 +74,10 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return this.folders;
     }
 
+    get workspaceFile(): theia.Uri | undefined {
+        return this.workspaceFileUri;
+    }
+
     get name(): string | undefined {
         if (this.workspaceFolders && this.workspaceFolders.length > 0) {
             return new Path(this.workspaceFolders[0].uri.path).base;
@@ -87,7 +93,13 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
         this.folders = newFolders;
 
+        this.refreshWorkspaceFile();
+
         this.workspaceFoldersChangedEmitter.fire(delta);
+    }
+
+    $onWorkspaceLocationChanged(stat: FileStat | undefined): void {
+        this.updateWorkSpace(stat);
     }
 
     $onTextSearchResult(searchRequestId: number, done: boolean, result?: SearchInWorkspaceResult): void {
@@ -395,4 +407,15 @@ export class WorkspaceExtImpl implements WorkspaceExt {
         return true;
     }
 
+    private async refreshWorkspaceFile(): Promise<void> {
+        const workspace = await this.proxy.$getWorkspace();
+        this.updateWorkSpace(workspace);
+    }
+
+    private updateWorkSpace(workspace: FileStat | undefined): void {
+        // A workspace directory implies an undefined workspace file
+        if (workspace && !workspace.isDirectory) {
+            this.workspaceFileUri = URI.parse(workspace.resource.toString());
+        }
+    }
 }
