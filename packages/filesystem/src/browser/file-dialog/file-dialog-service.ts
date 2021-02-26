@@ -83,14 +83,12 @@ export class DefaultFileDialogService implements FileDialogService {
             resource: new URI(await this.environments.getHomeDirUri()),
             isDirectory: true
         };
-        if (folder) {
-            const folderUri = folder.resource;
-            const rootUri = folder.isDirectory ? folderUri : folderUri.parent;
-            try {
-                const rootStat = await this.fileService.resolve(rootUri);
-                return DirNode.createRoot(rootStat);
-            } catch { }
-        }
+        const folderUri = folder.resource;
+        const rootUri = folder.isDirectory ? folderUri : folderUri.parent;
+        try {
+            const rootStat = await this.fileService.resolve(rootUri);
+            return DirNode.createRoot(rootStat);
+        } catch { }
         return undefined;
     }
 }
