@@ -56,7 +56,8 @@ export class PluginsKeyValueStorage {
     async set(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean> {
         const dataPath = await this.getDataPath(kind);
         if (!dataPath) {
-            throw new Error('Cannot save data: no opened workspace');
+            console.warn('Cannot save data: no opened workspace');
+            return false;
         }
 
         const data = await this.readFromFile(dataPath);
