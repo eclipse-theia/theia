@@ -45,7 +45,7 @@ import {
 } from '@theia/plugin-ext/lib/common/plugin-api-rpc-model';
 import { DocumentsMainImpl } from '@theia/plugin-ext/lib/main/browser/documents-main';
 import { createUntitledURI } from '@theia/plugin-ext/lib/main/browser/editor/untitled-resource';
-import { toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
+import { isUriComponents, toDocumentSymbol } from '@theia/plugin-ext/lib/plugin/type-converters';
 import { ViewColumn } from '@theia/plugin-ext/lib/plugin/types-impl';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { WorkspaceService, WorkspaceInput } from '@theia/workspace/lib/browser/workspace-service';
@@ -65,6 +65,7 @@ import {
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from '@theia/navigator/lib/browser';
 import { SelectableTreeNode } from '@theia/core/lib/browser/tree/tree-selection';
 import { UriComponents } from '@theia/plugin-ext/lib/common/uri-components';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 export namespace VscodeCommands {
     export const OPEN: Command = {
@@ -77,6 +78,10 @@ export namespace VscodeCommands {
 
     export const DIFF: Command = {
         id: 'vscode.diff'
+    };
+
+    export const INSTALL_FROM_VSIX: Command = {
+        id: 'workbench.extensions.installExtension'
     };
 }
 
@@ -110,6 +115,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly codeEditorWidgetUtil: CodeEditorWidgetUtil;
     @inject(PluginServer)
     protected readonly pluginServer: PluginServer;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(VscodeCommands.OPEN, {
@@ -212,12 +219,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
             execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)
         });
-        commands.registerCommand({ id: 'workbench.extensions.installExtension' }, {
-            execute: async (vsixUriOrExtensionId: UriComponents | string) => {
+        commands.registerCommand({ id: VscodeCommands.INSTALL_FROM_VSIX.id }, {
+            execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
-                    this.pluginServer.deploy(`vscode:extension/${vsixUriOrExtensionId}`);
+                    await this.pluginServer.deploy(`vscode:extension/${vsixUriOrExtensionId}`);
                 } else {
-                    this.pluginServer.deploy(`local-file:${URI.revive(vsixUriOrExtensionId).fsPath}`);
+                    const uriPath = isUriComponents(vsixUriOrExtensionId) ? URI.revive(vsixUriOrExtensionId).fsPath : await this.fileService.fsPath(vsixUriOrExtensionId);
+                    await this.pluginServer.deploy(`local-file:${uriPath}`);
                 }
             }
         });
