@@ -2781,7 +2781,7 @@ declare module '@theia/plugin' {
         /**
          * Current working directory.
          */
-        cwd?: string;
+        cwd?: string | URI;
 
         /**
          * Environment variables for terminal in format key - value.

@@ -19,6 +19,7 @@ import { BaseWidget } from '@theia/core/lib/browser';
 import { CommandLineOptions } from '@theia/process/lib/common/shell-command-builder';
 import { TerminalSearchWidget } from '../search/terminal-search-widget';
 import { TerminalProcessInfo } from '../../common/base-terminal-protocol';
+import URI from '@theia/core/lib/common/uri';
 
 export interface TerminalDimensions {
     cols: number;
@@ -144,7 +145,7 @@ export interface TerminalWidgetOptions {
     /**
      * Current working directory.
      */
-    readonly cwd?: string;
+    readonly cwd?: string | URI;
 
     /**
      * Environment variables for terminal.
