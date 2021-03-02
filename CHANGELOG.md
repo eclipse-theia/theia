@@ -3,6 +3,7 @@
 ## v1.12.0
 
 - [filesystem] add text input and navigate up icon to file dialog [#8748](https://github.com/eclipse-theia/theia/pull/8748)
+- [core] updated connection status service to prevent false positive alerts about offline mode [#9068](https://github.com/eclipse-theia/theia/pull/9068)
 
 <a name="breaking_changes_1.12.0">[Breaking Changes:](#breaking_changes_1.12.0)</a>
 

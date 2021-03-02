@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { injectable, interfaces, decorate, unmanaged } from 'inversify';
-import { JsonRpcProxyFactory, JsonRpcProxy } from '../../common';
+import { JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event } from '../../common';
 import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { Endpoint } from '../endpoint';
 import ReconnectingWebSocket from 'reconnecting-websocket';
@@ -34,6 +34,12 @@ export interface WebSocketOptions {
 @injectable()
 export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebSocketOptions> {
 
+    protected readonly onSocketDidOpenEmitter: Emitter<void> = new Emitter();
+    readonly onSocketDidOpen: Event<void> = this.onSocketDidOpenEmitter.event;
+
+    protected readonly onSocketDidCloseEmitter: Emitter<void> = new Emitter();
+    readonly onSocketDidClose: Event<void> = this.onSocketDidCloseEmitter.event;
+
     static createProxy<T extends object>(container: interfaces.Container, path: string, arg?: object): JsonRpcProxy<T> {
         return container.get(WebSocketConnectionProvider).createProxy<T>(path, arg);
     }
@@ -45,10 +51,14 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
         const url = this.createWebSocketUrl(WebSocketChannel.wsPath);
         const socket = this.createWebSocket(url);
         socket.onerror = console.error;
+        socket.onopen = () => {
+            this.fireSocketDidOpen();
+        };
         socket.onclose = ({ code, reason }) => {
             for (const channel of [...this.channels.values()]) {
                 channel.close(code, reason);
             }
+            this.fireSocketDidClose();
         };
         socket.onmessage = ({ data }) => {
             this.handleIncomingRawMessage(data);
@@ -96,6 +106,14 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             maxRetries: Infinity,
             debug: false
         });
+    }
+
+    protected fireSocketDidOpen(): void {
+        this.onSocketDidOpenEmitter.fire(undefined);
+    }
+
+    protected fireSocketDidClose(): void {
+        this.onSocketDidCloseEmitter.fire(undefined);
     }
 
 }
