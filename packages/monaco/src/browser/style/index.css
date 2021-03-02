@@ -1,6 +1,6 @@
 .monaco-editor {
     padding-bottom: 5.6px;
-    font-family: var(--theia-ui-font-family);
+    font-family: var(--theia-code-font-family);
     font-size: inherit !important;
 }
 
