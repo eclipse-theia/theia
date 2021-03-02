@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Disposable, Event } from '../../common';
+import { Disposable, Event, MaybePromise } from '../../common';
 import { PreferenceService } from './preference-service';
 import { PreferenceSchema, OverridePreferenceName } from './preference-contribution';
 import { PreferenceScope } from './preference-scope';
@@ -151,7 +151,7 @@ export interface PreferenceProxyOptions {
  * Creates a preference proxy for typesafe preference handling.
  *
  * @param preferences the underlying preference service to use for preference handling.
- * @param schema the JSON Schema which describes which preferences are available including types and descriptions.
+ * @param promisedSchema the JSON Schema which describes which preferences are available including types and descriptions. Can be a promise.
  * @param options configuration options.
  *
  * @returns the created preference proxy.
@@ -163,32 +163,42 @@ export interface PreferenceProxyOptions {
  *  3. Bind the return value of `createPreferenceProxy` to make your preferences available wherever needed.
  *
  * See {@link CorePreferences} for an example.
+ *
+ * Note that if `schema` is a Promise, most actions will be no-ops until the promise is resolved.
  */
-export function createPreferenceProxy<T>(preferences: PreferenceService, schema: PreferenceSchema, options?: PreferenceProxyOptions): PreferenceProxy<T> {
+export function createPreferenceProxy<T>(preferences: PreferenceService, promisedSchema: MaybePromise<PreferenceSchema>, options?: PreferenceProxyOptions): PreferenceProxy<T> {
     const opts = options || {};
     const prefix = opts.prefix || '';
     const style = opts.style || 'flat';
     const isDeep = style === 'deep' || style === 'both';
     const isFlat = style === 'both' || style === 'flat';
+    let schema: PreferenceSchema | undefined;
+    if (PreferenceSchema.is(promisedSchema)) {
+        schema = promisedSchema;
+    } else {
+        promisedSchema.then(s => schema = s);
+    }
     const onPreferenceChanged = (listener: (e: PreferenceChangeEvent<T>) => any, thisArgs?: any, disposables?: Disposable[]) => preferences.onPreferencesChanged(changes => {
-        for (const key of Object.keys(changes)) {
-            const e = changes[key];
-            const overridden = preferences.overriddenPreferenceName(e.preferenceName);
-            const preferenceName: any = overridden ? overridden.preferenceName : e.preferenceName;
-            if (preferenceName.startsWith(prefix) && (!overridden || !opts.overrideIdentifier || overridden.overrideIdentifier === opts.overrideIdentifier)) {
-                if (schema.properties[preferenceName]) {
-                    const { newValue, oldValue } = e;
-                    listener({
-                        newValue, oldValue, preferenceName,
-                        affects: (resourceUri, overrideIdentifier) => {
-                            if (overrideIdentifier !== undefined) {
-                                if (overridden && overridden.overrideIdentifier !== overrideIdentifier) {
-                                    return false;
+        if (schema) {
+            for (const key of Object.keys(changes)) {
+                const e = changes[key];
+                const overridden = preferences.overriddenPreferenceName(e.preferenceName);
+                const preferenceName: any = overridden ? overridden.preferenceName : e.preferenceName;
+                if (preferenceName.startsWith(prefix) && (!overridden || !opts.overrideIdentifier || overridden.overrideIdentifier === opts.overrideIdentifier)) {
+                    if (schema.properties[preferenceName]) {
+                        const { newValue, oldValue } = e;
+                        listener({
+                            newValue, oldValue, preferenceName,
+                            affects: (resourceUri, overrideIdentifier) => {
+                                if (overrideIdentifier !== undefined) {
+                                    if (overridden && overridden.overrideIdentifier !== overrideIdentifier) {
+                                        return false;
+                                    }
                                 }
+                                return e.affects(resourceUri);
                             }
-                            return e.affects(resourceUri);
-                        }
-                    });
+                        });
+                    }
                 }
             }
         }
@@ -207,18 +217,20 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
 
     const ownKeys: () => string[] = () => {
         const properties = [];
-        for (const p of Object.keys(schema.properties)) {
-            if (p.startsWith(prefix)) {
-                const idx = p.indexOf('.', prefix.length);
-                if (idx !== -1 && isDeep) {
-                    const pre = p.substr(prefix.length, idx - prefix.length);
-                    if (properties.indexOf(pre) === -1) {
-                        properties.push(pre);
+        if (schema) {
+            for (const p of Object.keys(schema.properties)) {
+                if (p.startsWith(prefix)) {
+                    const idx = p.indexOf('.', prefix.length);
+                    if (idx !== -1 && isDeep) {
+                        const pre = p.substr(prefix.length, idx - prefix.length);
+                        if (properties.indexOf(pre) === -1) {
+                            properties.push(pre);
+                        }
                     }
-                }
-                const prop = p.substr(prefix.length);
-                if (isFlat || prop.indexOf('.') === -1) {
-                    properties.push(prop);
+                    const prop = p.substr(prefix.length);
+                    if (isFlat || prop.indexOf('.') === -1) {
+                        properties.push(prop);
+                    }
                 }
             }
         }
@@ -232,22 +244,24 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
         if (style === 'deep' && property.indexOf('.') !== -1) {
             return false;
         }
-        const fullProperty = prefix ? prefix + property : property;
-        if (schema.properties[fullProperty]) {
-            preferences.set(fullProperty, value, PreferenceScope.Default);
-            return true;
-        }
-        const newPrefix = fullProperty + '.';
-        for (const p of Object.keys(schema.properties)) {
-            if (p.startsWith(newPrefix)) {
-                const subProxy: { [k: string]: any } = createPreferenceProxy(preferences, schema, {
-                    prefix: newPrefix,
-                    resourceUri: opts.resourceUri,
-                    overrideIdentifier: opts.overrideIdentifier,
-                    style
-                });
-                for (const k of Object.keys(value)) {
-                    subProxy[k] = value[k];
+        if (schema) {
+            const fullProperty = prefix ? prefix + property : property;
+            if (schema.properties[fullProperty]) {
+                preferences.set(fullProperty, value, PreferenceScope.Default);
+                return true;
+            }
+            const newPrefix = fullProperty + '.';
+            for (const p of Object.keys(schema.properties)) {
+                if (p.startsWith(newPrefix)) {
+                    const subProxy: { [k: string]: any } = createPreferenceProxy(preferences, schema, {
+                        prefix: newPrefix,
+                        resourceUri: opts.resourceUri,
+                        overrideIdentifier: opts.overrideIdentifier,
+                        style
+                    });
+                    for (const k of Object.keys(value)) {
+                        subProxy[k] = value[k];
+                    }
                 }
             }
         }
@@ -259,19 +273,21 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
             throw new Error(`unexpected property: ${String(property)}`);
         }
         const fullProperty = prefix ? prefix + property : property;
-        if (isFlat || property.indexOf('.') === -1) {
-            if (schema.properties[fullProperty]) {
-                let value;
-                if (opts.overrideIdentifier) {
-                    value = preferences.get(preferences.overridePreferenceName({
-                        overrideIdentifier: opts.overrideIdentifier,
-                        preferenceName: fullProperty
-                    }), undefined, opts.resourceUri);
+        if (schema) {
+            if (isFlat || property.indexOf('.') === -1) {
+                if (schema.properties[fullProperty]) {
+                    let value;
+                    if (opts.overrideIdentifier) {
+                        value = preferences.get(preferences.overridePreferenceName({
+                            overrideIdentifier: opts.overrideIdentifier,
+                            preferenceName: fullProperty
+                        }), undefined, opts.resourceUri);
+                    }
+                    if (value === undefined) {
+                        value = preferences.get(fullProperty, undefined, opts.resourceUri);
+                    }
+                    return value;
                 }
-                if (value === undefined) {
-                    value = preferences.get(fullProperty, undefined, opts.resourceUri);
-                }
-                return value;
             }
         }
         if (property === 'onPreferenceChanged') {
@@ -289,7 +305,7 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, schema:
         if (property === 'toJSON') {
             return toJSON();
         }
-        if (isDeep) {
+        if (schema && isDeep) {
             const newPrefix = fullProperty + '.';
             for (const p of Object.keys(schema.properties)) {
                 if (p.startsWith(newPrefix)) {
