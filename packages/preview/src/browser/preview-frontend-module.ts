@@ -51,7 +51,7 @@ export default new ContainerModule(bind => {
     })).inSingletonScope();
 
     bind(PreviewContribution).toSelf().inSingletonScope();
-    [CommandContribution, MenuContribution, OpenHandler, FrontendApplicationContribution, TabBarToolbarContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toService(PreviewContribution)
-    );
+    for (const identifier of [CommandContribution, MenuContribution, OpenHandler, FrontendApplicationContribution, TabBarToolbarContribution]) {
+        bind(identifier).toService(PreviewContribution);
+    }
 });

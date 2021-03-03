@@ -28,9 +28,9 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     }).inSingletonScope();
 
     bind(QuickFileOpenFrontendContribution).toSelf().inSingletonScope();
-    [CommandContribution, KeybindingContribution, QuickOpenContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toService(QuickFileOpenFrontendContribution)
-    );
+    for (const identifier of [CommandContribution, KeybindingContribution, QuickOpenContribution]) {
+        bind(identifier).toService(QuickFileOpenFrontendContribution);
+    }
 
     bind(QuickFileOpenService).toSelf().inSingletonScope();
 });

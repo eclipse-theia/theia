@@ -68,9 +68,9 @@ export default new ContainerModule(bind => {
 
     bind(VariableContribution).to(EditorVariableContribution).inSingletonScope();
 
-    [CommandContribution, KeybindingContribution, QuickOpenContribution].forEach(serviceIdentifier => {
-        bind(serviceIdentifier).toService(EditorContribution);
-    });
+    for (const identifier of [CommandContribution, KeybindingContribution, QuickOpenContribution]) {
+        bind(identifier).toService(EditorContribution);
+    }
     bind(EditorQuickOpenService).toSelf().inSingletonScope();
 
     bind(CurrentEditorAccess).toSelf().inSingletonScope();

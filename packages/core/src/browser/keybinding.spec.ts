@@ -69,9 +69,9 @@ before(async () => {
         bindContributionProvider(bind, KeybindingContribution);
 
         bind(TestContribution).toSelf().inSingletonScope();
-        [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
-            bind(serviceIdentifier).toService(TestContribution)
-        );
+        for (const identifier of [CommandContribution, KeybindingContribution]) {
+            bind(identifier).toService(TestContribution);
+        }
 
         bind(KeybindingContext).toConstantValue({
             id: 'testContext',

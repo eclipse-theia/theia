@@ -224,18 +224,18 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(ResourceContextKey).toSelf().inSingletonScope();
     bind(CommonFrontendContribution).toSelf().inSingletonScope();
-    [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, ColorContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toService(CommonFrontendContribution)
-    );
+    for (const identifier of [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, ColorContribution]) {
+        bind(identifier).toService(CommonFrontendContribution);
+    }
 
     bind(QuickOpenService).toSelf().inSingletonScope();
     bind(QuickInputService).toSelf().inSingletonScope();
     bind(QuickTitleBar).toSelf().inSingletonScope();
     bind(QuickCommandService).toSelf().inSingletonScope();
     bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
-    [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toService(QuickCommandFrontendContribution)
-    );
+    for (const identifier of [CommandContribution, KeybindingContribution, MenuContribution]) {
+        bind(identifier).toService(QuickCommandFrontendContribution);
+    }
 
     bind(QuickPickService).to(QuickPickServiceImpl).inSingletonScope().onActivation(({ container }, quickPickService: QuickPickService) => {
         WebSocketConnectionProvider.createProxy(container, quickPickServicePath, quickPickService);
