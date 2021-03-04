@@ -207,7 +207,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             return false;
         }
         const [, view] = viewInfo;
-        return view.when === undefined || this.contextKeyService.match(view.when);
+        return view.when === undefined || view.when === 'true' || this.contextKeyService.match(view.when);
     }
 
     registerViewContainer(location: string, viewContainer: ViewContainer): Disposable {
@@ -285,6 +285,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
         const toDispose = new DisposableCollection();
 
+        view.when = view.when?.trim();
         this.views.set(view.id, [viewContainerId, view]);
         toDispose.push(Disposable.create(() => this.views.delete(view.id)));
 
@@ -298,7 +299,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         }));
 
-        if (view.when) {
+        if (view.when && view.when !== 'false' && view.when !== 'true') {
             this.viewClauseContexts.set(view.id, this.contextKeyService.parseKeys(view.when));
             toDispose.push(Disposable.create(() => this.viewClauseContexts.delete(view.id)));
         }
