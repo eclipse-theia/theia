@@ -91,7 +91,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     private readonly viewsWelcome = new Map<string, ViewWelcome[]>();
     private readonly viewContainers = new Map<string, [string, ViewContainerTitleOptions]>();
     private readonly containerViews = new Map<string, string[]>();
-    private readonly viewClauseContexts = new Map<string, Set<string>>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private readonly viewClauseContexts = new Map<string, any>();
 
     private readonly viewDataProviders = new Map<string, ViewDataProvider>();
     private readonly viewDataState = new Map<string, object>();
@@ -152,7 +153,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         this.contextKeyService.onDidChange(e => {
             for (const [, view] of this.views.values()) {
                 const clauseContext = this.viewClauseContexts.get(view.id);
-                if (clauseContext && e.affects(clauseContext)) {
+                if (this.shouldUpdateViewVisibility(clauseContext, e)) {
                     this.updateViewVisibility(view.id);
                 }
             }
@@ -160,7 +161,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 for (const [index] of viewWelcomes.entries()) {
                     const viewWelcomeId = this.toViewWelcomeId(index, viewId);
                     const clauseContext = this.viewClauseContexts.get(viewWelcomeId);
-                    if (clauseContext && e.affects(clauseContext)) {
+                    if (this.shouldUpdateViewVisibility(clauseContext, e)) {
                         this.updateViewWelcomeVisibility(viewId);
                     }
                 }
@@ -207,7 +208,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             return false;
         }
         const [, view] = viewInfo;
-        return view.when === undefined || this.contextKeyService.match(view.when);
+        return view.when === undefined || view.when === 'true' || this.contextKeyService.match(view.when);
     }
 
     registerViewContainer(location: string, viewContainer: ViewContainer): Disposable {
@@ -298,8 +299,8 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             }
         }));
 
-        if (view.when) {
-            this.viewClauseContexts.set(view.id, this.contextKeyService.parseKeys(view.when));
+        if (view.when && view.when !== 'false') {
+            this.viewClauseContexts.set(view.id, view.when === 'true' ? view.when : this.contextKeyService.parseKeys(view.when));
             toDispose.push(Disposable.create(() => this.viewClauseContexts.delete(view.id)));
         }
         toDispose.push(this.quickView.registerItem({
@@ -728,6 +729,10 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private shouldUpdateViewVisibility(clauseContext: any, e: any): boolean {
+        return clauseContext === undefined || clauseContext === 'true' || (clauseContext instanceof Set && e.affects(clauseContext));
+    }
 }
 export namespace PluginViewRegistry {
     export type VisibleView = ({ viewletId: string } | { panelId: string }) & {
