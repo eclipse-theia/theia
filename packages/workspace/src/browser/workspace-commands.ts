@@ -345,8 +345,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 this.openers = await this.openerService.getOpeners();
             });
         }
-        const openers = await this.openerService.getOpeners();
-        for (const opener of openers) {
+        this.openers = await this.openerService.getOpeners();
+        for (const opener of this.openers) {
             const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
             registry.registerCommand(openWithCommand, this.newUriAwareCommandHandler({
                 execute: uri => opener.open(uri),
