@@ -19,13 +19,15 @@ import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event } from '@theia/core/lib/common';
 import { WidgetOpenerOptions, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
-import { Range, Position, Location } from './editor';
+import { Range, Position, Location, RevealPositionOptions, RevealRangeOptions } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
 import { TextEditor } from './editor';
 
 export interface EditorOpenerOptions extends WidgetOpenerOptions {
     selection?: RecursivePartial<Range>;
     preview?: boolean;
+    revealPositionOptions?: RevealPositionOptions;
+    revealRangeOptions?: RevealRangeOptions;
 }
 
 @injectable()
@@ -180,11 +182,11 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             const selection = this.getSelection(widget, inputSelection);
             if (Position.is(selection)) {
                 editor.cursor = selection;
-                editor.revealPosition(selection);
+                editor.revealPosition(selection, input?.revealPositionOptions);
             } else if (Range.is(selection)) {
                 editor.cursor = selection.end;
                 editor.selection = selection;
-                editor.revealRange(selection);
+                editor.revealRange(selection, input?.revealRangeOptions);
             }
         }
     }
