@@ -27,6 +27,7 @@ import {
     PreferenceItem,
     TreeNode,
     ExpandableTreeNode,
+    StatefulWidget,
 } from '@theia/core/lib/browser';
 import { Message, } from '@theia/core/lib/browser/widgets/widget';
 import { SinglePreferenceDisplayFactory } from './components/single-preference-display-factory';
@@ -36,8 +37,12 @@ import { Emitter } from '@theia/core';
 const HEADER_CLASS = 'settings-section-category-title';
 const SUBHEADER_CLASS = 'settings-section-subcategory-title';
 
+export interface PreferencesEditorState {
+    firstVisibleChildID: string,
+}
+
 @injectable()
-export class PreferencesEditorWidget extends ReactWidget {
+export class PreferencesEditorWidget extends ReactWidget implements StatefulWidget {
     static readonly ID = 'settings.editor';
     static readonly LABEL = 'Settings Editor';
 
@@ -218,4 +223,16 @@ export class PreferencesEditorWidget extends ReactWidget {
             }
         }
     }
+
+    storeState(): PreferencesEditorState {
+        return {
+            firstVisibleChildID: this.firstVisibleChildID,
+        };
+    }
+
+    restoreState(oldState: PreferencesEditorState): void {
+        this.firstVisibleChildID = oldState.firstVisibleChildID;
+        this.handleDisplayChange();
+    }
+
 }
