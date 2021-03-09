@@ -15,17 +15,23 @@
  ********************************************************************************/
 
 import { postConstruct, injectable, inject } from 'inversify';
-import { Panel, Widget, Message, } from '@theia/core/lib/browser';
-import { PreferencesEditorWidget } from './preference-editor-widget';
+import { Panel, Widget, Message, StatefulWidget, } from '@theia/core/lib/browser';
+import { PreferencesEditorState, PreferencesEditorWidget } from './preference-editor-widget';
 import { PreferencesTreeWidget } from './preference-tree-widget';
-import { PreferencesSearchbarWidget } from './preference-searchbar-widget';
-import { PreferencesScopeTabBar } from './preference-scope-tabbar-widget';
+import { PreferencesSearchbarState, PreferencesSearchbarWidget } from './preference-searchbar-widget';
+import { PreferencesScopeTabBar, PreferencesScopeTabBarState } from './preference-scope-tabbar-widget';
 import { Preference } from '../util/preference-types';
 
 const SHADOW_CLASSNAME = 'with-shadow';
 
+interface PreferencesWidgetState {
+    scopeTabBarState: PreferencesScopeTabBarState,
+    editorState: PreferencesEditorState,
+    searchbarWidgetState: PreferencesSearchbarState,
+}
+
 @injectable()
-export class PreferencesWidget extends Panel {
+export class PreferencesWidget extends Panel implements StatefulWidget {
     /**
      * The widget `id`.
      */
@@ -88,5 +94,19 @@ export class PreferencesWidget extends Panel {
         });
 
         this.update();
+    }
+
+    storeState(): PreferencesWidgetState {
+        return {
+            scopeTabBarState: this.tabBarWidget.storeState(),
+            editorState: this.editorWidget.storeState(),
+            searchbarWidgetState: this.searchbarWidget.storeState(),
+        };
+    }
+
+    restoreState(state: PreferencesWidgetState): void {
+        this.tabBarWidget.restoreState(state.scopeTabBarState);
+        this.editorWidget.restoreState(state.editorState);
+        this.searchbarWidget.restoreState(state.searchbarWidgetState);
     }
 }
