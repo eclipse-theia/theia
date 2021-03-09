@@ -218,7 +218,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         const marker = selection.marker as ProblemMarker;
         const serializedProblem = JSON.stringify({
             resource: marker.uri,
-            owner: marker.uri,
+            owner: marker.owner,
             code: marker.data.code,
             severity: marker.data.severity,
             message: marker.data.message,
