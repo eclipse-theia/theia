@@ -287,6 +287,7 @@ export class MonacoEditorProvider {
         const options = this.createOptions(this.preferencePrefixes, model.uri, model.languageId);
         options.model = model.textEditorModel;
         options.readOnly = model.readOnly;
+        options.lineNumbersMinChars = model.lineNumbersMinChars;
         return options;
     }
     protected updateMonacoEditorOptions(editor: MonacoEditor, event?: EditorPreferenceChange): void {
