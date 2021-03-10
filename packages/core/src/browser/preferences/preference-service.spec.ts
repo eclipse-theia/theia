@@ -257,6 +257,107 @@ describe('Preference Service', () => {
         assert.strictEqual(prefService.get('[go].editor.insertSpaces'), undefined, 'get after overridden');
     });
 
+    function prepareServices(options?: { schema: PreferenceSchema }): {
+        preferences: PreferenceServiceImpl;
+        schema: PreferenceSchemaProvider;
+    } {
+        prefSchema.setSchema(options && options.schema || {
+            properties: {
+                'editor.tabSize': {
+                    type: 'number',
+                    description: '',
+                    overridable: true,
+                    default: 4
+                }
+            }
+        });
+
+        return { preferences: prefService, schema: prefSchema };
+    }
+
+    describe('PreferenceService.updateValues()', () => {
+        const TAB_SIZE = 'editor.tabSize';
+        const DUMMY_URI = 'dummy_uri';
+        async function generateAndCheckValues(
+            preferences: PreferenceService,
+            globalValue: number | undefined,
+            workspaceValue: number | undefined,
+            workspaceFolderValue: number | undefined
+        ): Promise<void> {
+            await preferences.set(TAB_SIZE, globalValue, PreferenceScope.User);
+            await preferences.set(TAB_SIZE, workspaceValue, PreferenceScope.Workspace);
+            await preferences.set(TAB_SIZE, workspaceFolderValue, PreferenceScope.Folder, DUMMY_URI);
+            const expectedValue = workspaceFolderValue ?? workspaceValue ?? globalValue ?? 4;
+            checkValues(preferences, globalValue, workspaceValue, workspaceFolderValue, expectedValue);
+        }
+
+        function checkValues(
+            preferences: PreferenceService,
+            globalValue: number | undefined,
+            workspaceValue: number | undefined,
+            workspaceFolderValue: number | undefined,
+            value: number = 4,
+        ): void {
+            const expected = {
+                preferenceName: 'editor.tabSize',
+                defaultValue: 4,
+                globalValue,
+                workspaceValue,
+                workspaceFolderValue,
+                value,
+            };
+            const inspection = preferences.inspect(TAB_SIZE, DUMMY_URI);
+            assert.deepStrictEqual(inspection, expected);
+        }
+
+        it('should modify the narrowest scope.', async () => {
+            const { preferences } = prepareServices();
+
+            await generateAndCheckValues(preferences, 1, 2, 3);
+            await preferences.updateValue(TAB_SIZE, 8, DUMMY_URI);
+            checkValues(preferences, 1, 2, 8, 8);
+
+            await generateAndCheckValues(preferences, 1, 2, undefined);
+            await preferences.updateValue(TAB_SIZE, 8, DUMMY_URI);
+            checkValues(preferences, 1, 8, undefined, 8);
+
+            await generateAndCheckValues(preferences, 1, undefined, undefined);
+            await preferences.updateValue(TAB_SIZE, 8, DUMMY_URI);
+            checkValues(preferences, 8, undefined, undefined, 8);
+        });
+
+        it('defaults to user scope.', async () => {
+            const { preferences } = prepareServices();
+            checkValues(preferences, undefined, undefined, undefined);
+            await preferences.updateValue(TAB_SIZE, 8, DUMMY_URI);
+            checkValues(preferences, 8, undefined, undefined, 8);
+        });
+
+        it('clears all settings when input is undefined.', async () => {
+            const { preferences } = prepareServices();
+
+            await generateAndCheckValues(preferences, 1, 2, 3);
+            await preferences.updateValue(TAB_SIZE, undefined, DUMMY_URI);
+            checkValues(preferences, undefined, undefined, undefined);
+        });
+
+        it('deletes user setting if user is only defined scope and target is default value', async () => {
+            const { preferences } = prepareServices();
+
+            await generateAndCheckValues(preferences, 8, undefined, undefined);
+            await preferences.updateValue(TAB_SIZE, 4, DUMMY_URI);
+            checkValues(preferences, undefined, undefined, undefined);
+        });
+
+        it('does not delete setting in lower scopes, even if target is default', async () => {
+            const { preferences } = prepareServices();
+
+            await generateAndCheckValues(preferences, undefined, 2, undefined);
+            await preferences.updateValue(TAB_SIZE, 4, DUMMY_URI);
+            checkValues(preferences, undefined, 4, undefined);
+        });
+    });
+
     describe('overridden preferences', () => {
 
         it('get #0', () => {
@@ -320,6 +421,7 @@ describe('Preference Service', () => {
                 globalValue: undefined,
                 workspaceValue: undefined,
                 workspaceFolderValue: undefined,
+                value: 4,
             };
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
             assert.ok(!preferences.has('[json].editor.tabSize'));
@@ -342,6 +444,7 @@ describe('Preference Service', () => {
                 globalValue: 2,
                 workspaceValue: undefined,
                 workspaceFolderValue: undefined,
+                value: 2
             };
             preferences.set('editor.tabSize', 2, PreferenceScope.User);
 
@@ -366,6 +469,7 @@ describe('Preference Service', () => {
                 globalValue: undefined,
                 workspaceValue: undefined,
                 workspaceFolderValue: undefined,
+                value: 4
             };
             assert.deepStrictEqual(expected, preferences.inspect('editor.tabSize'));
             assert.ok(!preferences.has('[json].editor.tabSize'));
@@ -377,7 +481,8 @@ describe('Preference Service', () => {
             assert.deepStrictEqual({
                 ...expected,
                 preferenceName: '[json].editor.tabSize',
-                globalValue: 2
+                globalValue: 2,
+                value: 2,
             }, preferences.inspect('[json].editor.tabSize'));
         });
 
@@ -511,25 +616,6 @@ describe('Preference Service', () => {
             assert.strictEqual(false, preferences.get('editor.formatOnSave'));
             assert.strictEqual(true, preferences.get('[go].editor.formatOnSave'));
         });
-
-        function prepareServices(options?: { schema: PreferenceSchema }): {
-            preferences: PreferenceServiceImpl;
-            schema: PreferenceSchemaProvider;
-        } {
-            prefSchema.setSchema(options && options.schema || {
-                properties: {
-                    'editor.tabSize': {
-                        type: 'number',
-                        description: '',
-                        overridable: true,
-                        default: 4
-                    }
-                }
-            });
-
-            return { preferences: prefService, schema: prefSchema };
-        }
-
     });
 
 });
