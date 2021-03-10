@@ -153,7 +153,11 @@ export namespace electron {
          */
         export function toDialogProperties(props: OpenFileDialogProps): Array<DialogProperties> {
             if (!isOSX && props.canSelectFiles !== false && props.canSelectFolders === true) {
-                throw new Error(`Illegal props. Cannot have 'canSelectFiles' and 'canSelectFolders' at the same times. Props was: ${JSON.stringify(props)}.`);
+                console.warn(`Cannot have 'canSelectFiles' and 'canSelectFolders' at the same time. Fallback to 'folder' dialog. \nProps was: ${JSON.stringify(props)}.`);
+
+                // Given that both props are set, fallback to using a `folder` dialog.
+                props.canSelectFiles = false;
+                props.canSelectFolders = true;
             }
             const properties: Array<DialogProperties> = [];
             if (!isOSX) {

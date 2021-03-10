@@ -401,6 +401,13 @@ export interface QuickOpenExt {
  * Options to configure the behaviour of a file open dialog.
  */
 export interface OpenDialogOptionsMain {
+
+    /**
+     * Dialog title.
+     * This parameter might be ignored, as not all operating systems display a title on open dialogs.
+     */
+    title?: string;
+
     /**
      * The resource the dialog shows when opened.
      */
@@ -443,6 +450,13 @@ export interface OpenDialogOptionsMain {
  * Options to configure the behaviour of a file save dialog.
  */
 export interface SaveDialogOptionsMain {
+
+    /**
+     * Dialog title.
+     * This parameter might be ignored, as not all operating systems display a title on save dialogs.
+     */
+    title?: string;
+
     /**
      * The resource the dialog shows when opened.
      */
