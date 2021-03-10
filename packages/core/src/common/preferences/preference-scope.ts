@@ -28,12 +28,18 @@ export namespace PreferenceScope {
         return typeof scope === 'number' && getScopes().findIndex(s => s === scope) >= 0;
     }
 
+    /**
+     * @returns preference scopes from broadest to narrowest: Default -> Folder.
+     */
     export function getScopes(): PreferenceScope[] {
         return Object.keys(PreferenceScope)
             .filter(k => typeof PreferenceScope[k as any] === 'string')
             .map(v => <PreferenceScope>Number(v));
     }
 
+    /**
+     * @returns preference scopes from narrowest to broadest. Folder -> Default.
+     */
     export function getReversedScopes(): PreferenceScope[] {
         return getScopes().reverse();
     }
