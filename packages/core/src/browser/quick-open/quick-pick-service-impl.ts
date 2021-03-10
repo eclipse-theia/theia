@@ -139,6 +139,7 @@ export class QuickPickServiceImpl implements QuickPickService {
                     return false;
                 }
                 this.onDidChangeSelectionEmitter.fire([element]);
+                this.onDidChangeActiveEmitter.fire([element]);
                 this.onDidAcceptEmitter.fire(undefined);
                 resolve(value);
                 return true;
