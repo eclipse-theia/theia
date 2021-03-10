@@ -181,10 +181,12 @@ export class HostedPluginManagerClient {
 
     async startDebugSessionManager(): Promise<void> {
         let outFiles: string[] | undefined = undefined;
-        if (this.pluginLocation) {
+        if (this.pluginLocation && this.hostedPluginPreferences['hosted-plugin.launchOutFiles'].length > 0) {
             const fsPath = await this.fileService.fsPath(this.pluginLocation);
             if (fsPath) {
-                outFiles = [new Path(fsPath).join('**', '*.js').toString()];
+                outFiles = this.hostedPluginPreferences['hosted-plugin.launchOutFiles'].map(outFile =>
+                    outFile.replace('${pluginPath}', new Path(fsPath).toString())
+                );
             }
         }
         await this.debugSessionManager.start({
