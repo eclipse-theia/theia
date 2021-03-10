@@ -2649,6 +2649,13 @@ declare module '@theia/plugin' {
      * and the editor then silently adjusts the options to select files.
      */
     export interface OpenDialogOptions {
+
+        /**
+         * Dialog title.
+         * This parameter might be ignored, as not all operating systems display a title on open dialogs.
+         */
+        title?: string;
+
         /**
          * The resource the dialog shows when opened.
          */
@@ -2691,6 +2698,13 @@ declare module '@theia/plugin' {
      * Options to configure the behaviour of a file save dialog.
      */
     export interface SaveDialogOptions {
+
+        /**
+         * Dialog title.
+         * This parameter might be ignored, as not all operating systems display a title on save dialogs.
+         */
+        title?: string;
+
         /**
          * The resource the dialog shows when opened.
          */

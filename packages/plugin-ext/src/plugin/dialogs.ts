@@ -27,6 +27,7 @@ export class DialogsExtImpl {
 
     showOpenDialog(options: OpenDialogOptions): PromiseLike<Uri[] | undefined> {
         const optionsMain = {
+            title: options.title,
             openLabel: options.openLabel,
             defaultUri: options.defaultUri ? options.defaultUri.path : undefined,
             canSelectFiles: options.canSelectFiles ? options.canSelectFiles : true,
@@ -55,6 +56,7 @@ export class DialogsExtImpl {
 
     showSaveDialog(options: SaveDialogOptions): PromiseLike<Uri | undefined> {
         const optionsMain = {
+            title: options.title,
             saveLabel: options.saveLabel,
             defaultUri: options.defaultUri ? options.defaultUri.path : undefined,
             filters: options.filters
