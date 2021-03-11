@@ -553,10 +553,27 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 id={kind + '-glob-field'}
                 onKeyUp={e => {
                     if (e.target) {
-                        if (Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
+                        const targetValue = (e.target as HTMLInputElement).value || '';
+                        let shouldSearch = Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode;
+                        const currentOptions = (this.searchInWorkspaceOptions[kind] || []).slice().map(s => s.trim()).sort();
+                        const candidateOptions = this.splitOnComma(targetValue).map(s => s.trim()).sort();
+                        const sameAs = (left: string[], right: string[]) => {
+                            if (left.length !== right.length) {
+                                return false;
+                            }
+                            for (let i = 0; i < left.length; i++) {
+                                if (left[i] !== right[i]) {
+                                    return false;
+                                }
+                            }
+                            return true;
+                        };
+                        if (!sameAs(currentOptions, candidateOptions)) {
+                            this.searchInWorkspaceOptions[kind] = this.splitOnComma(targetValue);
+                            shouldSearch = true;
+                        }
+                        if (shouldSearch) {
                             this.resultTreeWidget.search(this.searchTerm, this.searchInWorkspaceOptions);
-                        } else {
-                            this.searchInWorkspaceOptions[kind] = this.splitOnComma((e.target as HTMLInputElement).value);
                         }
                     }
                 }}
