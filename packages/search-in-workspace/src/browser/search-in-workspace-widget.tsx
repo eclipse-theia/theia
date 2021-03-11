@@ -359,10 +359,22 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.searchFieldContainerIsFocused = true;
         this.update();
     }
-    protected readonly unfocusSearchFieldContainer = () => this.doUnfocusSearchFieldContainer();
-    protected doUnfocusSearchFieldContainer(): void {
+
+    protected readonly blurSearchFieldContainer = () => this.doBlurSearchFieldContainer();
+    protected doBlurSearchFieldContainer(): void {
         this.searchFieldContainerIsFocused = false;
         this.update();
+    }
+
+    /**
+     * @deprecated use `blurSearchFieldContainer` instead.
+     */
+    protected readonly unfocusSearchFieldContainer = this.blurSearchFieldContainer;
+    /**
+     * @deprecated use `doBlurSearchFieldContainer` instead.
+     */
+    protected doUnfocusSearchFieldContainer(): void {
+        this.doBlurSearchFieldContainer();
     }
 
     protected readonly search = (e: React.KeyboardEvent) => {
@@ -415,7 +427,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const tooMany = this.searchInWorkspaceOptions.maxResults && this.resultNumber >= this.searchInWorkspaceOptions.maxResults ? 'tooManyResults' : '';
         const className = `search-field-container ${tooMany} ${this.searchFieldContainerIsFocused ? 'focused' : ''}`;
         return <div className={className}>
-            <div className='search-field' tabIndex={-1} onFocus={this.focusSearchFieldContainer} onBlur={this.unfocusSearchFieldContainer}>
+            <div className='search-field' tabIndex={-1} onFocus={this.focusSearchFieldContainer} onBlur={this.blurSearchFieldContainer}>
                 {input}
                 {optionContainer}
             </div>
