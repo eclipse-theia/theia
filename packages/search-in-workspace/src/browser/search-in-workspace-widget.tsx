@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop } from '@theia/core/lib/browser';
+import { Widget, Message, BaseWidget, Key, StatefulWidget, MessageLoop, KeyCode } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from 'inversify';
 import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-tree-widget';
 import { SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
@@ -387,7 +387,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     };
 
     protected readonly onKeyDownSearch = (e: React.KeyboardEvent) => {
-        if (e.keyCode === Key.ENTER.keyCode) {
+        if (Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
             this.searchTerm = (e.target as HTMLInputElement).value;
             this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
         }
@@ -396,9 +396,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected doSearch(e: React.KeyboardEvent): void {
         if (e.target) {
             const searchValue = (e.target as HTMLInputElement).value;
-            if (Key.ARROW_DOWN.keyCode === e.keyCode) {
+            if (Key.ARROW_DOWN.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
                 this.resultTreeWidget.focusFirstResult();
-            } else if (this.searchTerm === searchValue && Key.ENTER.keyCode !== e.keyCode) {
+            } else if (this.searchTerm === searchValue && Key.ENTER.keyCode !== KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
                 return;
             } else {
                 this.searchTerm = searchValue;
@@ -553,7 +553,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
                 id={kind + '-glob-field'}
                 onKeyUp={e => {
                     if (e.target) {
-                        if (Key.ENTER.keyCode === e.keyCode) {
+                        if (Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
                             this.resultTreeWidget.search(this.searchTerm, this.searchInWorkspaceOptions);
                         } else {
                             this.searchInWorkspaceOptions[kind] = this.splitOnComma((e.target as HTMLInputElement).value);
