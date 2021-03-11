@@ -339,7 +339,7 @@ export interface PluginDeployerResolver {
 
     accept(pluginSourceId: string): boolean;
 
-    resolve(pluginResolverContext: PluginDeployerResolverContext): Promise<void>;
+    resolve(pluginResolverContext: PluginDeployerResolverContext, options?: PluginDeployOptions): Promise<void>;
 
 }
 
@@ -862,6 +862,10 @@ export interface WorkspaceStorageKind {
 export type GlobalStorageKind = undefined;
 export type PluginStorageKind = GlobalStorageKind | WorkspaceStorageKind;
 
+export interface PluginDeployOptions {
+    version: string;
+}
+
 /**
  * The JSON-RPC workspace interface.
  */
@@ -874,7 +878,7 @@ export interface PluginServer {
      *
      * @param type whether a plugin is installed by a system or a user, defaults to a user
      */
-    deploy(pluginEntry: string, type?: PluginType): Promise<void>;
+    deploy(pluginEntry: string, type?: PluginType, options?: PluginDeployOptions): Promise<void>;
 
     undeploy(pluginId: string): Promise<void>;
 

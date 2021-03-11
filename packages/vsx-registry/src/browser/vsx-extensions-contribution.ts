@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as moment from 'moment';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { CommandRegistry } from '@theia/core/lib/common/command';
@@ -25,13 +26,15 @@ import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 import { MenuModelRegistry, MessageService } from '@theia/core/lib/common';
 import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
-import { LabelProvider, PreferenceService } from '@theia/core/lib/browser';
+import { LabelProvider, PreferenceService, QuickPickItem, QuickInputService } from '@theia/core/lib/browser';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
 import { VSXExtensionsContextMenu, VSXExtension } from './vsx-extension';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { BUILTIN_QUERY, INSTALLED_QUERY, RECOMMENDED_QUERY } from './vsx-extensions-search-model';
 import { IGNORE_RECOMMENDATIONS_ID } from './recommended-extensions/recommended-extensions-preference-contribution';
 import { VSXExtensionsCommands } from './vsx-extension-commands';
+import { VSXExtensionRaw, OVSXClient } from '@theia/ovsx-client';
+import { PluginServer } from '@theia/plugin-ext';
 
 /**
  * @deprecated since 1.17.0. - Moved to `vsx-extension-commands.ts` to avoid circular dependencies. Import from there, instead.
@@ -49,6 +52,9 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
+    @inject(OVSXClient) protected readonly client: OVSXClient;
+    @inject(PluginServer) protected readonly pluginServer: PluginServer;
+    @inject(QuickInputService) protected readonly quickInput: QuickInputService
 
     constructor() {
         super({
@@ -87,6 +93,11 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             execute: () => this.installFromVSIX()
         });
 
+        commands.registerCommand({ id: VSXExtensionsCommands.INSTALL_ANOTHER_VERSION.id }, {
+            execute: async (extension: VSXExtension) => this.installAnotherVersion(extension),
+            isEnabled: (extension: VSXExtension) => !extension.builtin && !!extension.downloadUrl
+        });
+
         commands.registerCommand(VSXExtensionsCommands.COPY, {
             execute: (extension: VSXExtension) => this.copy(extension)
         });
@@ -119,6 +130,10 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             commandId: VSXExtensionsCommands.COPY_EXTENSION_ID.id,
             label: 'Copy Extension Id',
             order: '1'
+        });
+        menus.registerMenuAction(VSXExtensionsContextMenu.INSTALL, {
+            commandId: VSXExtensionsCommands.INSTALL_ANOTHER_VERSION.id,
+            label: 'Install Another Version...'
         });
     }
 
@@ -173,12 +188,66 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         }
     }
 
+    /**
+ * Given an extension, displays a quick pick of other compatible versions and installs the selected version.
+ *
+ * @param extension a VSX extension.
+ */
+    protected async installAnotherVersion(extension: VSXExtension): Promise<void> {
+        const extensionId = extension.id;
+        const currentVersion = extension.version;
+        const extensions = await this.client.getAllVersions(extensionId);
+        const latestCompatible = await this.client.getLatestCompatibleExtensionVersion(extensionId);
+        let compatibleExtensions: VSXExtensionRaw[] = [];
+        if (latestCompatible) {
+            compatibleExtensions = extensions.slice(extensions.findIndex(ext => ext.version === latestCompatible.version));
+        }
+        const items: QuickPickItem[] = [];
+        compatibleExtensions.forEach(ext => {
+            let publishedDate = moment(ext.timestamp).fromNow();
+            if (currentVersion === ext.version) {
+                publishedDate += ' (Current)';
+            }
+            items.push({
+                label: ext.version,
+                description: publishedDate
+            });
+        });
+        const selectedItem = await this.quickInput.showQuickPick(items, { placeholder: 'Select Version to Install', runIfSingle: false });
+        if (selectedItem && currentVersion && selectedItem.label !== currentVersion) {
+            const selectedExtension = this.model.getExtension(extensionId);
+            if (selectedExtension) {
+                await this.updateVersion(selectedExtension, selectedItem.label, currentVersion);
+            }
+        }
+    }
+
     protected async copy(extension: VSXExtension): Promise<void> {
         this.clipboardService.writeText(await extension.serialize());
     }
 
     protected copyExtensionId(extension: VSXExtension): void {
         this.clipboardService.writeText(extension.id);
+    }
+
+    /**
+     * Updates an extension to a specific version.
+     *
+     * @param extension the extension to update.
+     * @param updateToVersion the version to update to.
+     * @param revertToVersion the version to revert to (in case of failure).
+     */
+    private async updateVersion(extension: VSXExtension, updateToVersion: string, revertToVersion: string): Promise<void> {
+        try {
+            await extension.uninstall();
+        } catch {
+            return;
+        }
+        try {
+            await extension.install({ version: updateToVersion });
+        } catch {
+            await extension.install({ version: revertToVersion });
+        }
     }
 
     protected async showRecommendedToast(): Promise<void> {

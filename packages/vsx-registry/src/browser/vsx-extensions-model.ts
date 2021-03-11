@@ -199,16 +199,19 @@ export class VSXExtensionsModel {
             const currInstalled = new Set<string>();
             const refreshing = [];
             for (const plugin of plugins) {
+                const version = plugin.model.version;
                 if (plugin.model.engine.type === 'vscode') {
                     const id = plugin.model.id;
                     this._installed.delete(id);
                     const extension = this.setExtension(id);
                     currInstalled.add(extension.id);
-                    refreshing.push(this.refresh(id));
+                    refreshing.push(this.refresh(id, version));
                 }
             }
             for (const id of this._installed) {
-                refreshing.push(this.refresh(id));
+                const extension = this.getExtension(id);
+                if (!extension) continue;
+                refreshing.push(this.refresh(id, extension.version));
             }
             Promise.all(refreshing);
             const installed = new Set([...prevInstalled, ...currInstalled]);
@@ -287,14 +290,16 @@ export class VSXExtensionsModel {
         return DOMPurify.sanitize(readmeHtml);
     }
 
-    protected async refresh(id: string): Promise<VSXExtension | undefined> {
+    protected async refresh(id: string, version?: string): Promise<VSXExtension | undefined> {
         try {
             let extension = this.getExtension(id);
             if (!this.shouldRefresh(extension)) {
                 return extension;
             }
+
             const client = await this.clientProvider();
-            const data = await client.getLatestCompatibleExtensionVersion(id);
+            const data = version !== undefined ? await client.getExtension(id, { extensionVersion: version }) : await client.getLatestCompatibleExtensionVersion(id);
+
             if (!data) {
                 return;
             }

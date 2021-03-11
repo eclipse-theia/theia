@@ -15,6 +15,7 @@
     "@types/showdown": "^1.7.1",
     "bent": "^7.1.0",
     "markdown-it": "^8.4.0",
+    "moment": "2.24.0",
     "p-debounce": "^2.1.0",
     "requestretry": "^3.1.0",
     "semver": "^5.4.1",
