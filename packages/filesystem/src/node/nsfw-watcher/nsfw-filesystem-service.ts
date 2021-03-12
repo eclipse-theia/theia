@@ -35,7 +35,7 @@ export interface NsfwFileSystemWatcherServerOptions {
     info: (message: string, ...args: any[]) => void;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error: (message: string, ...args: any[]) => void;
-    nsfwOptions: nsfw.Options;
+    nsfwOptions: Partial<nsfw.Options>;
 }
 
 /**
@@ -241,7 +241,7 @@ export class NsfwWatcher {
         });
     }
 
-    protected handleNsfwEvents(events: nsfw.ChangeEvent[]): void {
+    protected handleNsfwEvents(events: nsfw.FileChangeEvent[]): void {
         // Only process events if someone is listening.
         if (this.isInUse()) {
             // This callback is async, but nsfw won't wait for it to finish before firing the next one.

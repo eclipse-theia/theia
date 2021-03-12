@@ -20,4 +20,4 @@ import * as nsfw from 'nsfw';
  * Inversify service identifier allowing extensions to override options passed to nsfw by the file watcher.
  */
 export const NsfwOptions = Symbol('NsfwOptions');
-export type NsfwOptions = nsfw.Options;
+export type NsfwOptions = Partial<nsfw.Options>;

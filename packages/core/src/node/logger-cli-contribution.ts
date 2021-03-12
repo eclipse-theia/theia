@@ -90,7 +90,7 @@ export class LogLevelCliContribution implements CliContribution {
     }
 
     protected watchLogConfigFile(filename: string): Promise<void> {
-        return nsfw(filename, async (events: nsfw.ChangeEvent[]) => {
+        return nsfw(filename, async (events: nsfw.FileChangeEvent[]) => {
             try {
                 for (const event of events) {
                     switch (event.action) {

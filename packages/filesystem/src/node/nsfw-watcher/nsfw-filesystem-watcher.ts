@@ -61,12 +61,12 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         verbose: boolean
         info: (message: string, ...args: any[]) => void
         error: (message: string, ...args: any[]) => void,
-        nsfwOptions: nsfw.Options
+        nsfwOptions: Partial<nsfw.Options>
     };
 
     constructor(options?: {
         verbose?: boolean,
-        nsfwOptions?: nsfw.Options,
+        nsfwOptions?: Partial<nsfw.Options>,
         info?: (message: string, ...args: any[]) => void
         error?: (message: string, ...args: any[]) => void
     }) {
@@ -117,7 +117,7 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
             this.debug('Files ignored for watching', options.ignored);
         }
 
-        let watcher: nsfw.NSFW | undefined = await nsfw(fs.realpathSync(basePath), (events: nsfw.ChangeEvent[]) => {
+        let watcher: nsfw.NSFW | undefined = await nsfw(fs.realpathSync(basePath), (events: nsfw.FileChangeEvent[]) => {
             for (const event of events) {
                 if (event.action === nsfw.actions.CREATED) {
                     this.pushAdded(watcherId, this.resolvePath(event.directory, event.file!));
