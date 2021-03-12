@@ -989,8 +989,14 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected async createReplacePreview(node: SearchInWorkspaceFileNode): Promise<URI> {
         const fileUri = new URI(node.fileUri).withScheme('file');
-        const resource = await this.fileResourceResolver.resolve(fileUri);
-        const content = await resource.readContents();
+        const openedEditor = this.editorManager.all.find(({ editor }) => editor.uri.toString() === fileUri.toString());
+        let content: string;
+        if (openedEditor) {
+            content = openedEditor.editor.document.getText();
+        } else {
+            const resource = await this.fileResourceResolver.resolve(fileUri);
+            content = await resource.readContents();
+        }
 
         const lines = content.split('\n');
         node.children.map(l => {
