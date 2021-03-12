@@ -16,6 +16,7 @@
 
 import * as temp from 'temp';
 import * as chai from 'chai';
+import * as cp from 'child_process';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
 import URI from '@theia/core/lib/common/uri';
@@ -36,7 +37,16 @@ describe('nsfw-filesystem-watcher', function (): void {
     this.timeout(10000);
 
     beforeEach(async () => {
-        root = FileUri.create(fs.realpathSync(temp.mkdirSync('node-fs-root')));
+        let tempPath = temp.mkdirSync('node-fs-root');
+        // Sometimes tempPath will use some Windows 8.3 short name in its path. This is a problem
+        // since NSFW always returns paths with long names. We need to convert here.
+        // See: https://stackoverflow.com/a/34473971/7983255
+        if (process.platform === 'win32') {
+            tempPath = cp.execSync(`powershell "(Get-Item -LiteralPath '${tempPath}').FullName"`, {
+                encoding: 'utf8',
+            }).trim();
+        }
+        root = FileUri.create(fs.realpathSync(tempPath));
         watcherService = createNsfwFileSystemWatcherService();
         watcherId = await watcherService.watchFileChanges(0, root.toString());
         await sleep(2000);
@@ -48,9 +58,6 @@ describe('nsfw-filesystem-watcher', function (): void {
     });
 
     it('Should receive file changes events from in the workspace by default.', async function (): Promise<void> {
-        if (process.platform === 'win32') {
-            this.skip();
-        }
         const actualUris = new Set<string>();
 
         const watcherClient = {
@@ -80,13 +87,10 @@ describe('nsfw-filesystem-watcher', function (): void {
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
         await sleep(2000);
 
-        assert.deepStrictEqual(expectedUris, [...actualUris]);
+        assert.deepStrictEqual([...actualUris], expectedUris);
     });
 
     it('Should not receive file changes events from in the workspace by default if unwatched', async function (): Promise<void> {
-        if (process.platform === 'win32') {
-            this.skip();
-        }
         const actualUris = new Set<string>();
 
         const watcherClient = {
@@ -113,7 +117,7 @@ describe('nsfw-filesystem-watcher', function (): void {
         expect(fs.readFileSync(FileUri.fsPath(root.resolve('foo').resolve('bar').resolve('baz.txt')), 'utf8')).to.be.equal('baz');
         await sleep(2000);
 
-        assert.deepStrictEqual(0, actualUris.size);
+        assert.deepStrictEqual(actualUris.size, 0);
     });
 
     function createNsfwFileSystemWatcherService(): NsfwFileSystemWatcherService {
