@@ -543,6 +543,7 @@ export function createAPIFactory(
                 return workspaceExt.registerTextDocumentContentProvider(scheme, provider);
             },
             registerFileSystemProvider(scheme: string, provider: theia.FileSystemProvider): theia.Disposable {
+                console.log('### registerFileSystemProvider for scheme: ' + scheme);
                 return fileSystemExt.registerFileSystemProvider(scheme, provider);
             },
             getWorkspaceFolder(uri: theia.Uri): theia.WorkspaceFolder | undefined {

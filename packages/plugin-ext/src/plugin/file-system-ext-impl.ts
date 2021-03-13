@@ -140,6 +140,7 @@ class ConsumerFileSystem implements vscode.FileSystem {
     constructor(private _proxy: FileSystemMain) { }
 
     stat(uri: vscode.Uri): Promise<vscode.FileStat> {
+        console.log('### ConsumerFileSystem stat uri: ' + JSON.stringify(uri));
         return this._proxy.$stat(uri).catch(ConsumerFileSystem._handleError);
     }
     readDirectory(uri: vscode.Uri): Promise<[string, vscode.FileType][]> {
@@ -300,6 +301,8 @@ export class FileSystemExtImpl implements FileSystemExt {
     }
 
     $stat(handle: number, resource: UriComponents): Promise<files.Stat> {
+        console.log('### FileSystemExtImpl resource: ' + JSON.stringify(resource));
+        console.log('### FileSystemExtImpl fs provider found: ' + this._fsProvider.get(handle) !== undefined);
         return Promise.resolve(this._getFsProvider(handle).stat(URI.revive(resource))).then(FileSystemExtImpl._asIStat);
     }
 
