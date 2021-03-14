@@ -19,7 +19,7 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
-import debounce = require('p-debounce');
+import debounce = require('lodash.debounce');
 import { visit } from 'jsonc-parser';
 import { inject, injectable, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
