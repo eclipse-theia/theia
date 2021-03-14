@@ -146,7 +146,7 @@
 }
 
 .monaco-editor .review-widget .body .review-comment .review-comment-contents .author {
-    line-height: 22px;
+    line-height: var(--theia-content-line-height);
 }
 
 .monaco-editor .review-widget .body .review-comment .review-comment-contents .isPending {
