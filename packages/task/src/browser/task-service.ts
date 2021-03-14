@@ -450,6 +450,10 @@ export class TaskService implements TaskConfigurationClient {
         return this.taskServer.getTasks(this.getContext());
     }
 
+    async customExecutionComplete(id: number, exitCode: number | undefined): Promise<void> {
+        return this.taskServer.customExecutionComplete(id, exitCode);
+    }
+
     /** Returns an array of task types that are registered, including the default types */
     getRegisteredTaskTypes(): Promise<string[]> {
         return this.taskSchemaUpdater.getRegisteredTaskTypes();
@@ -1022,11 +1026,11 @@ export class TaskService implements TaskConfigurationClient {
 
         const registeredProblemMatchers = this.problemMatcherRegistry.getAll();
         items.push(...registeredProblemMatchers.map(matcher =>
-            ({
-                label: matcher.label,
-                value: { problemMatchers: [matcher] },
-                description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
-            })
+        ({
+            label: matcher.label,
+            value: { problemMatchers: [matcher] },
+            description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
+        })
         ));
         return items;
     }

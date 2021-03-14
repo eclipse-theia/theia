@@ -19,6 +19,7 @@ import { bindContributionProvider } from '@theia/core';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { bindProcessTaskRunnerModule } from './process/process-task-runner-backend-module';
+import { bindCustomTaskRunnerModule } from './custom/custom-task-runner-backend-module';
 import { TaskBackendApplicationContribution } from './task-backend-application-contribution';
 import { TaskManager } from './task-manager';
 import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner';
@@ -52,4 +53,5 @@ export default new ContainerModule(bind => {
     bind(BackendApplicationContribution).toService(TaskBackendApplicationContribution);
 
     bindProcessTaskRunnerModule(bind);
+    bindCustomTaskRunnerModule(bind);
 });
