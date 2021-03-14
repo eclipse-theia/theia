@@ -213,6 +213,8 @@ export interface TaskServer extends JsonRpcServer<TaskClient> {
     /** Returns the list of default and registered task runners */
     getRegisteredTaskTypes(): Promise<string[]>
 
+    /** plugin callback task complete */
+    customExecutionComplete(id: number, exitCode: number | undefined): Promise<void>
 }
 
 export interface TaskCustomizationData {

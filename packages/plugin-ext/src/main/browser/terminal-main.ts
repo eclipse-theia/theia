@@ -85,7 +85,7 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
         this.toDispose.push(Disposable.create(() => terminal.title.changed.disconnect(updateTitle)));
 
         const updateProcessId = () => terminal.processId.then(
-            processId => this.extProxy.$terminalOpened(terminal.id, processId, terminal.dimensions.cols, terminal.dimensions.rows),
+            processId => this.extProxy.$terminalOpened(terminal.id, processId, terminal.terminalId, terminal.dimensions.cols, terminal.dimensions.rows),
             () => {/* no-op */ }
         );
         updateProcessId();
@@ -171,6 +171,60 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, Disposable 
     $dispose(id: string): void {
         const terminal = this.terminals.getById(id);
         if (terminal) {
+            terminal.dispose();
+        }
+    }
+
+    $sendTextByTerminalId(id: number, text: string, addNewLine?: boolean): void {
+        const terminal = this.terminals.getByTerminalId(id);
+        if (terminal) {
+            text = text.replace(/\r?\n/g, '\r');
+            if (addNewLine && text.charAt(text.length - 1) !== '\r') {
+                text += '\r';
+            }
+            terminal.sendText(text);
+        }
+    }
+    $writeByTerminalId(id: number, data: string): void {
+        const terminal = this.terminals.getByTerminalId(id);
+        if (!terminal) {
+            return;
+        }
+        terminal.write(data);
+    }
+    $resizeByTerminalId(id: number, cols: number, rows: number): void {
+        const terminal = this.terminals.getByTerminalId(id);
+        if (!terminal) {
+            return;
+        }
+        terminal.resize(cols, rows);
+    }
+    $showByTerminalId(id: number, preserveFocus?: boolean): void {
+        const terminal = this.terminals.getByTerminalId(id);
+        if (terminal) {
+            const options: WidgetOpenerOptions = {};
+            if (preserveFocus) {
+                options.mode = 'reveal';
+            }
+            this.terminals.open(terminal, options);
+        }
+    }
+    $hideByTerminalId(id: number): void {
+        const terminal = this.terminals.getByTerminalId(id);
+        if (terminal && terminal.isVisible) {
+            const area = this.shell.getAreaFor(terminal);
+            if (area) {
+                this.shell.collapsePanel(area);
+            }
+        }
+    }
+    $disposeByTerminalId(id: number, waitOnExit?: boolean | string): void {
+        const terminal = this.terminals.getByTerminalId(id);
+        if (terminal) {
+            if (waitOnExit) {
+                terminal.waitOnExit(waitOnExit);
+                return;
+            }
             terminal.dispose();
         }
     }

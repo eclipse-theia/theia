@@ -758,6 +758,10 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         return fromProcessExecution(<theia.ProcessExecution>execution, taskDto);
     }
 
+    if (taskDefinition.type === 'customExecution' || types.CustomExecution.is(execution)) {
+        return fromCustomExecution(<theia.CustomExecution>execution, taskDto);
+    }
+
     return taskDto;
 }
 
@@ -798,6 +802,10 @@ export function toTask(taskDto: TaskDto): theia.Task {
     const execution = { command, args, options };
     if (taskType === 'shell' || types.ShellExecution.is(execution)) {
         result.execution = getShellExecution(taskDto);
+    }
+
+    if (taskType === 'customExecution' || types.CustomExecution.is(execution)) {
+        result.execution = getCustomExecution(taskDto);
     }
 
     if (group) {
@@ -858,6 +866,16 @@ export function fromShellExecution(execution: theia.ShellExecution, taskDto: Tas
     }
 }
 
+export function fromCustomExecution(execution: theia.CustomExecution, taskDto: TaskDto): TaskDto {
+    const callback = execution.callback;
+    if (callback) {
+        taskDto.callback = callback;
+        return taskDto;
+    } else {
+        throw new Error('Converting CustomExecution callback is not implemented');
+    }
+}
+
 export function getProcessExecution(taskDto: TaskDto): theia.ProcessExecution {
     return new types.ProcessExecution(
         taskDto.command,
@@ -875,6 +893,10 @@ export function getShellExecution(taskDto: TaskDto): theia.ShellExecution {
     return new types.ShellExecution(
         taskDto.command || taskDto.commandLine,
         taskDto.options || {});
+}
+
+export function getCustomExecution(taskDto: TaskDto): theia.CustomExecution {
+    return new types.CustomExecution(taskDto.callback);
 }
 
 export function getShellArgs(args: undefined | (string | theia.ShellQuotedString)[]): string[] {

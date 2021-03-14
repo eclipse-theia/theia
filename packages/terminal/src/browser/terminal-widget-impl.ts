@@ -36,7 +36,7 @@ import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/term
 import { TerminalCopyOnSelectionHandler } from './terminal-copy-on-selection-handler';
 import { TerminalThemeService } from './terminal-theme-service';
 import { CommandLineOptions, ShellCommandBuilder } from '@theia/process/lib/common/shell-command-builder';
-
+import { Key } from '@theia/core/lib/browser/keys';
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
 export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
@@ -669,5 +669,31 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     setTitle(title: string): void {
         this.title.caption = title;
         this.title.label = title;
+    }
+
+    waitOnExit(waitOnExit?: boolean | string): void {
+        if (waitOnExit) {
+            if (typeof waitOnExit === 'string') {
+                let message = waitOnExit;
+                // Bold the message and add an extra new line to make it stand out from the rest of the output
+                message = `\r\n\x1b[1m${message}\x1b[0m`;
+                this.write(message);
+            }
+            if (this.closeOnDispose === true && typeof this.terminalId === 'number') {
+                this.shellTerminalServer.close(this.terminalId);
+                this.onTermDidClose.fire(this);
+            }
+            this.attachPressAnyKeyToCloseListener(this.term);
+            return;
+        }
+        return this.dispose();
+    }
+
+    private attachPressAnyKeyToCloseListener(term: Terminal): void {
+        if (term.textarea) {
+            this.addKeyListener(term.textarea, Key.ENTER, (event: KeyboardEvent) => {
+                this.dispose();
+            });
+        }
     }
 }

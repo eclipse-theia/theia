@@ -1543,7 +1543,7 @@ export class ProcessExecution {
         return computeTaskExecutionId(props);
     }
 
-    public static is(value: theia.ShellExecution | theia.ProcessExecution): boolean {
+    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): boolean {
         const candidate = value as ProcessExecution;
         return candidate && !!candidate.process;
     }
@@ -1651,9 +1651,32 @@ export class ShellExecution {
         return computeTaskExecutionId(props);
     }
 
-    public static is(value: theia.ShellExecution | theia.ProcessExecution): boolean {
+    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): boolean {
         const candidate = value as ShellExecution;
         return candidate && (!!candidate.commandLine || !!candidate.command);
+    }
+}
+
+export class CustomExecution {
+    private _callback: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>;
+    constructor(callback: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+        this._callback = callback;
+    }
+    public computeId(): string {
+        return 'customExecution' + UUID.uuid4();
+    }
+
+    public set callback(value: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+        this._callback = value;
+    }
+
+    public get callback(): ((resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
+        return this._callback;
+    }
+
+    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): boolean {
+        const candidate = value as CustomExecution;
+        return candidate && (!!candidate._callback);
     }
 }
 
@@ -1704,7 +1727,7 @@ export class Task {
     private taskDefinition: theia.TaskDefinition;
     private taskScope: theia.TaskScope.Global | theia.TaskScope.Workspace | theia.WorkspaceFolder | undefined;
     private taskName: string;
-    private taskExecution: ProcessExecution | ShellExecution | undefined;
+    private taskExecution: ProcessExecution | ShellExecution | CustomExecution | undefined;
     private taskProblemMatchers: string[];
     private hasTaskProblemMatchers: boolean;
     private isTaskBackground: boolean;
@@ -1716,7 +1739,7 @@ export class Task {
         scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace,
         name: string,
         source: string,
-        execution?: ProcessExecution | ShellExecution,
+        execution?: ProcessExecution | ShellExecution | CustomExecution,
         problemMatchers?: string | string[]
     );
 
@@ -1725,7 +1748,7 @@ export class Task {
         taskDefinition: theia.TaskDefinition,
         name: string,
         source: string,
-        execution?: ProcessExecution | ShellExecution,
+        execution?: ProcessExecution | ShellExecution | CustomExecution,
         problemMatchers?: string | string[],
     );
 
@@ -1735,7 +1758,7 @@ export class Task {
         let scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace | undefined;
         let name: string;
         let source: string;
-        let execution: ProcessExecution | ShellExecution | undefined;
+        let execution: ProcessExecution | ShellExecution | CustomExecution | undefined;
         let problemMatchers: string | string[] | undefined;
 
         if (typeof args[1] === 'string') {
@@ -1810,11 +1833,11 @@ export class Task {
         this.taskName = value;
     }
 
-    get execution(): ProcessExecution | ShellExecution | undefined {
+    get execution(): ProcessExecution | ShellExecution | CustomExecution | undefined {
         return this.taskExecution;
     }
 
-    set execution(value: ProcessExecution | ShellExecution | undefined) {
+    set execution(value: ProcessExecution | ShellExecution | CustomExecution | undefined) {
         if (value === null) {
             value = undefined;
         }
@@ -1896,6 +1919,18 @@ export class Task {
             Object.assign(this.taskDefinition, {
                 type: 'shell',
                 id: this.taskExecution.computeId(),
+                taskType: this.taskDefinition!.type
+            });
+        } else if (this.taskExecution instanceof CustomExecution) {
+            Object.assign(this.taskDefinition, {
+                type: 'customExecution',
+                id: this.taskExecution.computeId(),
+                taskType: this.taskDefinition!.type
+            });
+        } else {
+            Object.assign(this.taskDefinition, {
+                type: '$empty',
+                id: UUID.uuid4(),
                 taskType: this.taskDefinition!.type
             });
         }
