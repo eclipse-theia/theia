@@ -23,10 +23,11 @@ import {
 } from '../../common/plugin-api-rpc';
 import * as theia from '@theia/plugin';
 import * as converter from '../type-converters';
-import { Disposable } from '../types-impl';
+import { CustomExecution, Disposable } from '../types-impl';
 import { RPCProtocol, ConnectionClosedError } from '../../common/rpc-protocol';
 import { TaskProviderAdapter } from './task-provider';
 import { Emitter, Event } from '@theia/core/lib/common/event';
+import { TerminalServiceExtImpl } from '../terminal-ext';
 
 export class TasksExtImpl implements TasksExt {
     private proxy: TasksMain;
@@ -34,6 +35,8 @@ export class TasksExtImpl implements TasksExt {
     private callId = 0;
     private adaptersMap = new Map<number, TaskProviderAdapter>();
     private executions = new Map<number, theia.TaskExecution>();
+    protected providedCustomExecutions: Map<string, CustomExecution>;
+    protected activeCustomExecutions: Map<number, CustomExecution>;
 
     private readonly onDidExecuteTask: Emitter<theia.TaskStartEvent> = new Emitter<theia.TaskStartEvent>();
     private readonly onDidTerminateTask: Emitter<theia.TaskEndEvent> = new Emitter<theia.TaskEndEvent>();
@@ -42,8 +45,10 @@ export class TasksExtImpl implements TasksExt {
 
     private disposed = false;
 
-    constructor(rpc: RPCProtocol) {
+    constructor(rpc: RPCProtocol, readonly terminalExt: TerminalServiceExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TASKS_MAIN);
+        this.providedCustomExecutions = new Map<string, CustomExecution>();
+        this.activeCustomExecutions = new Map<number, CustomExecution>();
         this.fetchTaskExecutions();
     }
 
@@ -59,7 +64,24 @@ export class TasksExtImpl implements TasksExt {
         return this.onDidExecuteTask.event;
     }
 
-    $onDidStartTask(execution: TaskExecutionDto): void {
+    async $onDidStartTask(execution: TaskExecutionDto, terminalId: number, resolvedDefinition: theia.TaskDefinition): Promise<void> {
+        const customExecution: CustomExecution | undefined = this.providedCustomExecutions.get(execution.task.id);
+        if (customExecution) {
+            if (this.activeCustomExecutions.get(execution.id) !== undefined) {
+                throw new Error('We should not be trying to start the same custom task executions twice.');
+            }
+
+            // Clone the custom execution to keep the original untouched. This is important for multiple runs of the same task.
+            this.activeCustomExecutions.set(execution.id, customExecution);
+            const pty = await customExecution.callback(resolvedDefinition);
+            this.terminalExt.attachPtyToTerminal(terminalId, pty);
+            if (pty.onDidClose) {
+                pty.onDidClose((e: number | void = undefined) => {
+                    // eslint-disable-next-line no-void
+                    this.proxy.$customExecutionComplete(execution.id, e === void 0 ? undefined : e);
+                });
+            }
+        }
         this.onDidExecuteTask.fire({
             execution: this.getTaskExecution(execution)
         });
@@ -76,6 +98,7 @@ export class TasksExtImpl implements TasksExt {
         }
 
         this.executions.delete(id);
+        this.customExecutionComplete(id);
 
         this.onDidTerminateTask.fire({
             execution: taskExecution
@@ -138,7 +161,16 @@ export class TasksExtImpl implements TasksExt {
     $provideTasks(handle: number, token: theia.CancellationToken): Promise<TaskDto[] | undefined> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
-            return adapter.provideTasks(token);
+            return adapter.provideTasks(token).then(tasks => {
+                if (tasks) {
+                    for (const task of tasks) {
+                        if (task.type === 'customExecution') {
+                            this.providedCustomExecutions.set(task.id, new CustomExecution(task.callback));
+                        }
+                    }
+                }
+                return tasks;
+            });
         } else {
             return Promise.reject(new Error('No adapter found to provide tasks'));
         }
@@ -197,5 +229,12 @@ export class TasksExtImpl implements TasksExt {
         };
         this.executions.set(executionId, result);
         return result;
+    }
+
+    private customExecutionComplete(id: number): void {
+        const extensionCallback2: CustomExecution | undefined = this.activeCustomExecutions.get(id);
+        if (extensionCallback2) {
+            this.activeCustomExecutions.delete(id);
+        }
     }
 }

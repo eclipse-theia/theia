@@ -31,6 +31,7 @@ import { TaskRunnerRegistry } from './task-runner';
 import { Task } from './task';
 import { ProcessTask } from './process/process-task';
 import { ProblemCollector } from './task-problem-collector';
+import { CustomTask } from './custom/custom-task';
 
 @injectable()
 export class TaskServerImpl implements TaskServer, Disposable {
@@ -166,6 +167,12 @@ export class TaskServerImpl implements TaskServer, Disposable {
 
     async getRegisteredTaskTypes(): Promise<string[]> {
         return this.runnerRegistry.getRunnerTypes();
+    }
+
+    async customExecutionComplete(id: number, exitCode: number | undefined): Promise<void> {
+        const task = this.taskManager.get(id) as CustomTask;
+        await task.callbackTaskComplete(exitCode);
+        return;
     }
 
     protected fireTaskExitedEvent(event: TaskExitedEvent, task?: Task): void {

@@ -248,7 +248,7 @@ export interface CommandRegistryExt {
 export interface TerminalServiceExt {
     $terminalCreated(id: string, name: string): void;
     $terminalNameChanged(id: string, name: string): void;
-    $terminalOpened(id: string, processId: number, cols: number, rows: number): void;
+    $terminalOpened(id: string, processId: number, terminalId: number, cols: number, rows: number): void;
     $terminalClosed(id: string): void;
     $terminalOnInput(id: string, data: string): void;
     $terminalSizeChanged(id: string, cols: number, rows: number): void;
@@ -283,7 +283,7 @@ export interface TerminalServiceMain {
 
     /**
      * Send text to the terminal by id.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      * @param text - text content.
      * @param addNewLine - in case true - add new line after the text, otherwise - don't apply new line.
      */
@@ -291,14 +291,14 @@ export interface TerminalServiceMain {
 
     /**
      * Write data to the terminal by id.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      * @param data - data.
      */
     $write(id: string, data: string): void;
 
     /**
      * Resize the terminal by id.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      * @param cols - columns.
      * @param rows - rows.
      */
@@ -306,22 +306,65 @@ export interface TerminalServiceMain {
 
     /**
      * Show terminal on the UI panel.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      * @param preserveFocus - set terminal focus in case true value, and don't set focus otherwise.
      */
     $show(id: string, preserveFocus?: boolean): void;
 
     /**
      * Hide UI panel where is located terminal widget.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      */
     $hide(id: string): void;
 
     /**
      * Destroy terminal.
-     * @param id - terminal id.
+     * @param id - terminal widget id.
      */
     $dispose(id: string): void;
+
+    /**
+     * Send text to the terminal by id.
+     * @param id - terminal id.
+     * @param text - text content.
+     * @param addNewLine - in case true - add new line after the text, otherwise - don't apply new line.
+     */
+    $sendTextByTerminalId(id: number, text: string, addNewLine?: boolean): void;
+
+    /**
+     * Write data to the terminal by id.
+     * @param id - terminal id.
+     * @param data - data.
+     */
+    $writeByTerminalId(id: number, data: string): void;
+
+    /**
+     * Resize the terminal by id.
+     * @param id - terminal id.
+     * @param cols - columns.
+     * @param rows - rows.
+     */
+    $resizeByTerminalId(id: number, cols: number, rows: number): void;
+
+    /**
+     * Show terminal on the UI panel.
+     * @param id - terminal id.
+     * @param preserveFocus - set terminal focus in case true value, and don't set focus otherwise.
+     */
+    $showByTerminalId(id: number, preserveFocus?: boolean): void;
+
+    /**
+     * Hide UI panel where is located terminal widget.
+     * @param id - terminal id.
+     */
+    $hideByTerminalId(id: number): void;
+
+    /**
+     * Destroy terminal.
+     * @param id - terminal id.
+     * @param waitOnExit - Whether to wait for a key press before closing the terminal.
+     */
+    $disposeByTerminalId(id: number, waitOnExit?: boolean | string): void;
 
     $setEnvironmentVariableCollection(extensionIdentifier: string, persistent: boolean, collection: SerializableEnvironmentVariableCollection | undefined): void;
 }
@@ -1718,7 +1761,7 @@ export const MAIN_RPC_CONTEXT = {
 export interface TasksExt {
     $provideTasks(handle: number, token?: CancellationToken): Promise<TaskDto[] | undefined>;
     $resolveTask(handle: number, task: TaskDto, token?: CancellationToken): Promise<TaskDto | undefined>;
-    $onDidStartTask(execution: TaskExecutionDto): void;
+    $onDidStartTask(execution: TaskExecutionDto, terminalId: number, resolvedDefinition: theia.TaskDefinition): void;
     $onDidEndTask(id: number): void;
     $onDidStartTaskProcess(processId: number | undefined, execution: TaskExecutionDto): void;
     $onDidEndTaskProcess(exitCode: number | undefined, taskId: number): void;
@@ -1731,6 +1774,7 @@ export interface TasksMain {
     $taskExecutions(): Promise<TaskExecutionDto[]>;
     $unregister(handle: number): void;
     $terminateTask(id: number): void;
+    $customExecutionComplete(id: number, exitCode: number | undefined): void;
 }
 
 export interface AuthenticationExt {
