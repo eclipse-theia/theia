@@ -22,7 +22,13 @@ import { JSONExt, JSONObject } from '@phosphor/coreutils/lib/json';
 
 export interface ScmInputIssue {
     message: string;
-    type: 'info' | 'success' | 'warning' | 'error';
+    type: ScmInputIssueType;
+}
+
+export enum ScmInputIssueType {
+    Error = 0,
+    Warning = 1,
+    Information = 2
 }
 
 export interface ScmInputValidator {
