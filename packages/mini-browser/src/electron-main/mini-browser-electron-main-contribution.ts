@@ -36,7 +36,7 @@ export class MiniBrowserElectronMainContribution implements ElectronMainApplicat
     }
 
     protected getMiniBrowserEndpoint(port: number): string {
-        const pattern = process.env[MiniBrowserEndpoint.HOST_PATTERN_ENV] ?? MiniBrowserEndpoint.HOST_PATTERN_DEFAULT;
+        const pattern = process.env[MiniBrowserEndpoint.HOST_PATTERN_ENV] || MiniBrowserEndpoint.HOST_PATTERN_DEFAULT;
         return 'http://' + pattern.replace('{{hostname}}', `localhost:${port}`);
     }
 }
