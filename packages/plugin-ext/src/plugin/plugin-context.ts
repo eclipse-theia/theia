@@ -129,7 +129,8 @@ import {
     SemanticTokens,
     SemanticTokensEdits,
     SemanticTokensEdit,
-    ColorThemeKind
+    ColorThemeKind,
+    SourceControlInputBoxValidationType
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -943,7 +944,8 @@ export function createAPIFactory(
             SemanticTokens,
             SemanticTokensEdits,
             SemanticTokensEdit,
-            ColorThemeKind
+            ColorThemeKind,
+            SourceControlInputBoxValidationType
         };
     };
 }

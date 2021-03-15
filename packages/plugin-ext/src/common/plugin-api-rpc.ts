@@ -690,10 +690,11 @@ export namespace ScmCommandArg {
 export interface ScmExt {
     createSourceControl(plugin: Plugin, id: string, label: string, rootUri?: theia.Uri): theia.SourceControl;
     getLastInputBox(plugin: Plugin): theia.SourceControlInputBox | undefined;
-    $updateInputBox(sourceControlHandle: number, message: string): Promise<void>;
+    $onInputBoxValueChange(sourceControlHandle: number, message: string): Promise<void>;
     $executeResourceCommand(sourceControlHandle: number, groupHandle: number, resourceHandle: number): Promise<void>;
-    $provideOriginalResource(sourceControlHandle: number, uri: string, token: CancellationToken): Promise<UriComponents | undefined>;
-    $setSourceControlSelection(sourceControlHandle: number, selected: boolean): Promise<void>;
+    $validateInput(sourceControlHandle: number, value: string, cursorPosition: number): Promise<[string, number] | undefined>;
+    $setSelectedSourceControl(selectedSourceControlHandle: number | undefined): Promise<void>;
+    $provideOriginalResource(sourceControlHandle: number, uri: string, token: theia.CancellationToken): Promise<UriComponents | undefined>;
 }
 
 export namespace TimelineCommandArg {
@@ -762,18 +763,19 @@ export interface DecorationData {
 }
 
 export interface ScmMain {
-    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: string): Promise<void>
+    $registerSourceControl(sourceControlHandle: number, id: string, label: string, rootUri?: UriComponents): Promise<void>;
     $updateSourceControl(sourceControlHandle: number, features: SourceControlProviderFeatures): Promise<void>;
     $unregisterSourceControl(sourceControlHandle: number): Promise<void>;
 
-    $registerGroup(sourceControlHandle: number, groupHandle: number, id: string, label: string): Promise<void>;
-    $updateGroup(sourceControlHandle: number, groupHandle: number, features: SourceControlGroupFeatures): Promise<void>;
-    $updateGroupLabel(sourceControlHandle: number, groupHandle: number, label: string): Promise<void>;
-    $updateResourceState(sourceControlHandle: number, groupHandle: number, resources: SourceControlResourceState[]): Promise<void>;
-    $unregisterGroup(sourceControlHandle: number, groupHandle: number): Promise<void>;
+    $registerGroups(sourceControlHandle: number, groups: ScmRawResourceGroup[], splices: ScmRawResourceSplices[]): void;
+    $updateGroup(sourceControlHandle: number, groupHandle: number, features: SourceControlGroupFeatures): void;
+    $updateGroupLabel(sourceControlHandle: number, groupHandle: number, label: string): void;
+    $unregisterGroup(sourceControlHandle: number, groupHandle: number): void;
 
-    $setInputBoxValue(sourceControlHandle: number, value: string): Promise<void>;
-    $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): Promise<void>;
+    $spliceResourceStates(sourceControlHandle: number, splices: ScmRawResourceSplices[]): void;
+
+    $setInputBoxValue(sourceControlHandle: number, value: string): void;
+    $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): void;
 }
 
 export interface SourceControlProviderFeatures {
@@ -786,6 +788,35 @@ export interface SourceControlProviderFeatures {
 
 export interface SourceControlGroupFeatures {
     hideWhenEmpty: boolean | undefined;
+}
+
+export interface ScmRawResource {
+    handle: number,
+    sourceUri: UriComponents,
+    icons: UriComponents[],
+    tooltip: string,
+    strikeThrough: boolean,
+    faded: boolean,
+    contextValue: string,
+    command: Command | undefined
+}
+
+export interface ScmRawResourceGroup {
+    handle: number,
+    id: string,
+    label: string,
+    features: SourceControlGroupFeatures
+}
+
+export interface ScmRawResourceSplice {
+    start: number,
+    deleteCount: number,
+    rawResources: ScmRawResource[]
+}
+
+export interface ScmRawResourceSplices {
+    handle: number,
+    splices: ScmRawResourceSplice[]
 }
 
 export interface SourceControlResourceState {
