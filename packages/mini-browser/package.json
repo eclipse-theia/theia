@@ -17,8 +17,7 @@
   "theiaExtensions": [
     {
       "backend": "lib/node/mini-browser-backend-module",
-      "frontend": "lib/browser/mini-browser-frontend-module",
-      "electronMain": "lib/electron-main/mini-browser-electron-main-module"
+      "frontend": "lib/browser/mini-browser-frontend-module"
     },
     {
       "frontend": "lib/browser/environment/mini-browser-environment-module",
