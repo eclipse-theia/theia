@@ -15,6 +15,7 @@
 - [core] `PreferenceService` and `PreferenceProvider` `getConfigUri` and `getContainingConfigUri` methods accept `sectionName` argument to retrieve URI's for non-settings configurations. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
 - [tasks] `TaskConfigurationModel.scope` field now protected. `TaskConfigurationManager` setup changed to accommodate workspace-scoped tasks. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
 - [workspace] `WorkspaceData` interface modified and workspace file schema updated to allow for `tasks` outside of `settings` object. `WorkspaceData.buildWorkspaceData` `settings` argument now accepts an object with any of the keys of the workspace schema. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
+- [mini-browser] Removed `@theia/mini-browser/lib/electron-main/` and its bindings in the `electron-main` context.
 
 ## v1.11.0 - 2/25/2021
 
