@@ -190,16 +190,6 @@ export namespace NavigationLocation {
         return JSON.stringify(toObject(location));
     }
 
-    function toUri(arg: URI | { uri: URI } | string): URI {
-        if (arg instanceof URI) {
-            return arg;
-        }
-        if (typeof arg === 'string') {
-            return new URI(arg);
-        }
-        return arg.uri;
-    }
-
 }
 
 /**
@@ -367,4 +357,14 @@ export namespace ContentChangeLocation {
         }
     }
 
+}
+
+function toUri(arg: URI | { uri: URI } | string): URI {
+    if (arg instanceof URI) {
+        return arg;
+    }
+    if (typeof arg === 'string') {
+        return new URI(arg);
+    }
+    return arg.uri;
 }
