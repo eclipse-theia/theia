@@ -64,7 +64,7 @@ export class TasksExtImpl implements TasksExt {
         return this.onDidExecuteTask.event;
     }
 
-    async $onDidStartTask(execution: TaskExecutionDto, terminalId: number, resolvedDefinition: theia.TaskDefinition): Promise<void> {
+    async $onDidStartTask(execution: TaskExecutionDto, terminalId: number): Promise<void> {
         const customExecution: CustomExecution | undefined = this.providedCustomExecutions.get(execution.task.id);
         if (customExecution) {
             if (this.activeCustomExecutions.get(execution.id) !== undefined) {
@@ -73,10 +73,12 @@ export class TasksExtImpl implements TasksExt {
 
             // Clone the custom execution to keep the original untouched. This is important for multiple runs of the same task.
             this.activeCustomExecutions.set(execution.id, customExecution);
-            const pty = await customExecution.callback(resolvedDefinition);
+            const taskDefinition = converter.toTask(execution.task).definition;
+            const pty = await customExecution.callback(taskDefinition);
             this.terminalExt.attachPtyToTerminal(terminalId, pty);
             if (pty.onDidClose) {
-                pty.onDidClose((e: number | void = undefined) => {
+                const disposable = pty.onDidClose((e: number | void = undefined) => {
+                    disposable.dispose();
                     // eslint-disable-next-line no-void
                     this.proxy.$customExecutionComplete(execution.id, e === void 0 ? undefined : e);
                 });

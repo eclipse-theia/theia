@@ -172,7 +172,6 @@ export class TaskServerImpl implements TaskServer, Disposable {
     async customExecutionComplete(id: number, exitCode: number | undefined): Promise<void> {
         const task = this.taskManager.get(id) as CustomTask;
         await task.callbackTaskComplete(exitCode);
-        return;
     }
 
     protected fireTaskExitedEvent(event: TaskExitedEvent, task?: Task): void {

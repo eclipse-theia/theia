@@ -79,7 +79,7 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         return this.obtainTerminal(id, options.name || 'Terminal');
     }
 
-    public attachPtyToTerminal(terminalId: number, pty: theia.Pseudoterminal): void {
+    attachPtyToTerminal(terminalId: number, pty: theia.Pseudoterminal): void {
         this._pseudoTerminals.set(terminalId.toString(), new PseudoTerminal(terminalId, this.proxy, pty, true));
     }
 

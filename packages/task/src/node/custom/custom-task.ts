@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2021 ByteDance and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,11 +13,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-
-/*---------------------------------------------------------------------------------------------
-*  Copyright (c) Microsoft Corporation. All rights reserved.
-*  Licensed under the MIT License. See License.txt in the project root for license information.
-*--------------------------------------------------------------------------------------------*/
 
 import { injectable, inject, named } from 'inversify';
 import { ILogger, MaybePromise } from '@theia/core/lib/common/';
@@ -57,7 +52,7 @@ export class CustomTask extends Task {
             ctx: this.context,
             config: this.options.config,
             terminalId: this.process.id,
-            processId: this.process.id,
+            processId: this.process.id
         };
     }
 
@@ -68,7 +63,7 @@ export class CustomTask extends Task {
             config: this.options.config,
             terminalId: this.process.id,
             processId: this.process.id,
-            code: exitCode,
+            code: exitCode || 0
         });
     }
 

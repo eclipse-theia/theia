@@ -30,7 +30,6 @@ import { TaskInfo, TaskExitedEvent, TaskConfiguration, TaskCustomization, TaskOu
 import { TaskWatcher } from '@theia/task/lib/common/task-watcher';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TaskDefinitionRegistry } from '@theia/task/lib/browser';
-import * as theia from '@theia/plugin';
 
 const revealKindMap = new Map<number | RevealKind, RevealKind | number>(
     [
@@ -74,19 +73,10 @@ export class TasksMainImpl implements TasksMain, Disposable {
         this.taskDefinitionRegistry = container.get(TaskDefinitionRegistry);
 
         this.toDispose.push(this.taskWatcher.onTaskCreated((event: TaskInfo) => {
-            const taskDefinition = {
-                type: event.config.type
-            } as theia.TaskDefinition;
-            const { type, ...properties } = event.config;
-            for (const key in properties) {
-                if (properties.hasOwnProperty(key)) {
-                    taskDefinition[key] = properties[key];
-                }
-            }
             this.proxy.$onDidStartTask({
                 id: event.taskId,
                 task: this.fromTaskConfiguration(event.config)
-            }, event.terminalId!!, taskDefinition);
+            }, event.terminalId!);
         }));
 
         this.toDispose.push(this.taskWatcher.onTaskExit((event: TaskExitedEvent) => {
