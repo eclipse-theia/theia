@@ -37,9 +37,7 @@
         "--plugins=local-dir:../../plugins"
       ],
       "env": {
-        "NODE_ENV": "development",
-        "THEIA_WEBVIEW_EXTERNAL_ENDPOINT": "${env:THEIA_WEBVIEW_EXTERNAL_ENDPOINT}",
-        "THEIA_MINI_BROWSER_HOST_PATTERN": "${env:THEIA_MINI_BROWSER_HOST_PATTERN}"
+        "NODE_ENV": "development"
       },
       "sourceMaps": true,
       "outFiles": [
@@ -67,9 +65,7 @@
         "--hosted-plugin-inspect=9339"
       ],
       "env": {
-        "NODE_ENV": "development",
-        "THEIA_WEBVIEW_EXTERNAL_ENDPOINT": "${env:THEIA_WEBVIEW_EXTERNAL_ENDPOINT}",
-        "THEIA_MINI_BROWSER_HOST_PATTERN": "${env:THEIA_MINI_BROWSER_HOST_PATTERN}"
+        "NODE_ENV": "development"
       },
       "sourceMaps": true,
       "outFiles": [
@@ -110,9 +106,7 @@
         "--no-app-auto-install"
       ],
       "env": {
-        "NODE_ENV": "development",
-        "THEIA_WEBVIEW_EXTERNAL_ENDPOINT": "${env:THEIA_WEBVIEW_EXTERNAL_ENDPOINT}",
-        "THEIA_MINI_BROWSER_HOST_PATTERN": "${env:THEIA_MINI_BROWSER_HOST_PATTERN}"
+        "NODE_ENV": "development"
       },
       "sourceMaps": true,
       "outFiles": [
@@ -174,9 +168,7 @@
         "--hosted-plugin-inspect=9339"
       ],
       "env": {
-        "THEIA_DEFAULT_PLUGINS": "local-dir:${workspaceFolder}/plugins",
-        "THEIA_WEBVIEW_EXTERNAL_ENDPOINT": "${env:THEIA_WEBVIEW_EXTERNAL_ENDPOINT}",
-        "THEIA_MINI_BROWSER_HOST_PATTERN": "${env:THEIA_MINI_BROWSER_HOST_PATTERN}"
+        "THEIA_DEFAULT_PLUGINS": "local-dir:${workspaceFolder}/plugins"
       },
       "stopOnEntry": false,
       "sourceMaps": true,
