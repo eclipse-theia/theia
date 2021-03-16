@@ -38,6 +38,7 @@ import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
 import { WebviewsExtImpl } from './webviews';
+import { URI } from 'vscode-uri';
 
 export interface PluginHost {
 
@@ -346,6 +347,7 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         const globalStoragePath = join(configStorage.hostGlobalStoragePath, plugin.model.id);
         const pluginContext: theia.PluginContext = {
             extensionPath: plugin.pluginFolder,
+            extensionUri: URI.file(plugin.pluginFolder),
             globalState: new Memento(plugin.model.id, true, this.storageProxy),
             workspaceState: new Memento(plugin.model.id, false, this.storageProxy),
             subscriptions: subscriptions,

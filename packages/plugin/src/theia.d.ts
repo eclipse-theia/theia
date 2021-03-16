@@ -1333,6 +1333,15 @@ declare module '@theia/plugin' {
         with(change: { scheme?: string; authority?: string; path?: string; query?: string; fragment?: string }): Uri;
 
         /**
+        * Joins one or more input paths to the path of URI.
+        * '/' is used as the directory separation character.
+        * @param uri The input URI.
+        * @param paths The paths to be joined with the path of URI.
+        * @returns A URI with the joined path. All other properties of the URI (scheme, authority, query, fragments, ...) will be taken from the input URI.
+        */
+        static joinPath(uri: Uri, ...paths: string[]): Uri;
+
+        /**
          * Returns a string representation of this Uri. The representation and normalization
          * of a URI depends on the scheme. The resulting string can be safely used with
          * [Uri.parse](#Uri.parse).
@@ -3070,6 +3079,11 @@ declare module '@theia/plugin' {
          * The absolute file path of the directory containing the extension.
          */
         extensionPath: string;
+
+        /**
+		 * The uri of the directory containing the extension.
+		 */
+		extensionUri: Uri;
 
         /**
          * Gets the extension's environment variable collection for this workspace, enabling changes
