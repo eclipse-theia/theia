@@ -750,6 +750,15 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        //resolve problemMatchers
+        if (!option && task.problemMatcher) {
+            const customizationObject: TaskCustomization = { type: task.taskType, problemMatcher: task.problemMatcher };
+            const resolvedMatchers = await this.resolveProblemMatchers(task, customizationObject);
+            option = {
+                customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
+            };
+        }
+
         const runningTasksInfo: TaskInfo[] = await this.getRunningTasks();
 
         // check if the task is active
@@ -1022,11 +1031,11 @@ export class TaskService implements TaskConfigurationClient {
 
         const registeredProblemMatchers = this.problemMatcherRegistry.getAll();
         items.push(...registeredProblemMatchers.map(matcher =>
-            ({
-                label: matcher.label,
-                value: { problemMatchers: [matcher] },
-                description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
-            })
+        ({
+            label: matcher.label,
+            value: { problemMatchers: [matcher] },
+            description: matcher.name.startsWith('$') ? matcher.name : `$${matcher.name}`
+        })
         ));
         return items;
     }
