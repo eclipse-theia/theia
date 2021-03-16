@@ -199,9 +199,9 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     }
 
     protected async getVirtualHostRegExp(): Promise<RegExp> {
-        const pattern = process.env[MiniBrowserEndpointNS.HOST_PATTERN_ENV] ?? MiniBrowserEndpointNS.HOST_PATTERN_DEFAULT;
+        const pattern = process.env[MiniBrowserEndpointNS.HOST_PATTERN_ENV] || MiniBrowserEndpointNS.HOST_PATTERN_DEFAULT;
         const vhostRe = pattern
-            .replace('.', '\\.')
+            .replace(/\./g, '\\.')
             .replace('{{uuid}}', '.+')
             .replace('{{hostname}}', '.+');
         return new RegExp(vhostRe, 'i');
