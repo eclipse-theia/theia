@@ -125,6 +125,15 @@ describe('Problem Tree', () => {
             expect(problemTree['sortMarkers'](nodeB, nodeA)).equals(10);
         });
 
+        it('should sort markers based on owner if their severities, line numbers and columns are equal', () => {
+            const markerA = createMockMarker({ start: { line: 1, character: 10 }, end: { line: 1, character: 10 } }, DiagnosticSeverity.Error, 'A');
+            const markerB = createMockMarker({ start: { line: 1, character: 10 }, end: { line: 1, character: 10 } }, DiagnosticSeverity.Error, 'B');
+            const nodeA = createMockMarkerNode(markerA);
+            const nodeB = createMockMarkerNode(markerB);
+            expect(problemTree['sortMarkers'](nodeA, nodeB)).equals(-1);
+            expect(problemTree['sortMarkers'](nodeB, nodeA)).equals(1);
+        });
+
         it('should not sort if markers are equal', () => {
             const markerA = createMockMarker({ start: { line: 0, character: 10 }, end: { line: 0, character: 10 } }, DiagnosticSeverity.Error);
             const markerB = createMockMarker({ start: { line: 0, character: 10 }, end: { line: 0, character: 10 } }, DiagnosticSeverity.Error);
@@ -158,19 +167,20 @@ function createMockMarkerNode(marker: Marker<Diagnostic>): MarkerNode {
  * Create a mock diagnostic marker.
  * @param range the diagnostic range.
  * @param severity the diagnostic severity.
+ * @param owner the optional owner of the diagnostic
  *
  * @returns a mock diagnostic marker.
  */
-function createMockMarker(range: Range, severity: DiagnosticSeverity): Readonly<Marker<Diagnostic>> {
+function createMockMarker(range: Range, severity: DiagnosticSeverity, owner?: string): Readonly<Marker<Diagnostic>> {
     const data: Diagnostic = {
         range: range,
         severity: severity,
         message: 'message'
     };
     return Object.freeze({
-        uri: name,
+        uri: 'uri',
         kind: 'marker',
-        owner: 'owner',
+        owner: owner ?? 'owner',
         data
     });
 }
