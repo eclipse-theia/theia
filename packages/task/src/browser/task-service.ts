@@ -750,7 +750,7 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
-        //resolve problemMatchers
+        // resolve problemMatchers
         if (!option && task.problemMatcher) {
             const customizationObject: TaskCustomization = { type: task.taskType, problemMatcher: task.problemMatcher };
             const resolvedMatchers = await this.resolveProblemMatchers(task, customizationObject);
