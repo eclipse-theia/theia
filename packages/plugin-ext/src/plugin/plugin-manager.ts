@@ -83,7 +83,8 @@ export class PluginManagerExtImpl implements PluginManagerExt, PluginManager {
         'onUri',
         'onWebviewPanel',
         'onFileSystem',
-        'onCustomEditor'
+        'onCustomEditor',
+        'onStartupFinished'
     ]);
 
     private configStorage: ConfigStorage | undefined;
