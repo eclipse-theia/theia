@@ -37,6 +37,7 @@ import {
 } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileResourceResolver, FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions, SearchMatch } from '../common/search-in-workspace-interface';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
 import { MEMORY_TEXT } from './in-memory-text-resource';
@@ -140,6 +141,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     @inject(ProgressService) protected readonly progressService: ProgressService;
     @inject(ColorRegistry) protected readonly colorRegistry: ColorRegistry;
     @inject(FileSystemPreferences) protected readonly filesystemPreferences: FileSystemPreferences;
+    @inject(FileService) protected readonly fileService: FileService;
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -189,6 +191,16 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
         this.toDispose.push(this.searchInWorkspacePreferences.onPreferenceChanged(() => {
             this.update();
+        }));
+
+        this.toDispose.push(this.fileService.onDidFilesChange(event => {
+            if (event.gotDeleted()) {
+                event.getDeleted().forEach(deletedFile => {
+                    const fileNodes = this.getFileNodesByUri(deletedFile.resource);
+                    fileNodes.forEach(node => this.removeFileNode(node));
+                });
+                this.model.refresh();
+            }
         }));
     }
 
