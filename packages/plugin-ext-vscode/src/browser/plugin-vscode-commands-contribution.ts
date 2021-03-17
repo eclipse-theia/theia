@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Command, CommandContribution, CommandRegistry } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
@@ -194,6 +194,13 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.action.files.newUntitledFile' }, {
             execute: () => open(this.openerService, createUntitledURI())
         });
+
+        if (!environment.electron.is() || isOSX) {
+            commands.registerCommand({ id: 'workbench.action.files.openFileFolder' }, {
+                execute: () => commands.executeCommand(WorkspaceCommands.OPEN.id)
+            });
+        }
+
         commands.registerCommand({ id: 'workbench.action.files.openFile' }, {
             execute: () => commands.executeCommand(WorkspaceCommands.OPEN_FILE.id)
         });
