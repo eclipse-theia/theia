@@ -552,7 +552,7 @@ export class KeybindingWidget extends ReactWidget {
         const command = item.command.id;
         const oldKeybinding = item.keybinding && item.keybinding.keybinding;
         const dialog = new EditKeybindingDialog({
-            title: `Edit Keybinding For ${command}`,
+            title: `Edit Keybinding for ${command}`,
             initialValue: oldKeybinding,
             validate: newKeybinding => this.validateKeybinding(command, oldKeybinding, newKeybinding),
         }, this.keymapsService, item);
