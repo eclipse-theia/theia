@@ -137,6 +137,7 @@ import { SymbolKind } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
 import { DocumentsExtImpl } from './documents';
+import { URI as Uri } from 'vscode-uri';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import { OutputChannelRegistryExtImpl } from './output-channel-registry';
@@ -166,7 +167,6 @@ import { TimelineExtImpl } from './timeline';
 import { ThemingExtImpl } from './theming';
 import { CommentsExtImpl } from './comments';
 import { CustomEditorsExtImpl } from './custom-editors';
-import { URI as Uri} from './uri';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
