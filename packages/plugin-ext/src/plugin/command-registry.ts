@@ -129,7 +129,7 @@ export class CommandRegistryImpl implements CommandRegistryExt {
         if (handler) {
             return handler<T>(...args.map(arg => this.argumentProcessors.reduce((r, p) => p.processArgument(r), arg)));
         } else {
-            throw new Error(`Command ${id} doesn't exist`);
+            throw new Error(`No handler exists for command '${id}'`);
         }
     }
 
@@ -171,6 +171,7 @@ export class CommandsConverter {
         if (!command) {
             return undefined;
         }
+
         const result = this.toInternalCommand(command);
         if (KnownCommands.mapped(result.id)) {
             return result;
@@ -181,7 +182,7 @@ export class CommandsConverter {
             this.isSafeCommandRegistered = true;
         }
 
-        if (command.command && command.arguments && command.arguments.length > 0) {
+        if (command.arguments && command.arguments.length > 0) {
             const id = this.handle++;
             this.commandsMap.set(id, command);
             disposables.push(new Disposable(() => this.commandsMap.delete(id)));
@@ -197,19 +198,19 @@ export class CommandsConverter {
         // Existing code will have compiled against a non - optional version of the field, so asserting it to exist is ok
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return KnownCommands.map((external.command || external.id)!, external.arguments, (mappedId: string, mappedArgs: any[]) =>
-            ({
-                id: mappedId,
-                title: external.title || external.label || ' ',
-                tooltip: external.tooltip,
-                arguments: mappedArgs
-            }));
+        ({
+            id: mappedId,
+            title: external.title || external.label || ' ',
+            tooltip: external.tooltip,
+            arguments: mappedArgs
+        }));
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private executeSafeCommand<R>(...args: any[]): PromiseLike<R | undefined> {
         const command = this.commandsMap.get(args[0]);
         if (!command || !command.command) {
-            return Promise.reject('command NOT FOUND');
+            return Promise.reject(`command ${args[0]} not found`);
         }
         return this.commands.executeCommand(command.command, ...(command.arguments || []));
     }
