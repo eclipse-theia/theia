@@ -1,0 +1,62 @@
+/********************************************************************************
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-CallHierarchyTree {
+    font-size: var(--theia-ui-font-size1);
+}
+
+.theia-CallHierarchyTree .theia-TreeNode {
+    width: 100%;
+}
+
+.theia-CallHierarchyTree .theia-ExpansionToggle {
+    min-width: 9px;
+    padding-right: 4px;
+}
+
+.theia-CallHierarchyTree .definitionNode {
+    display: flex;
+}
+
+.theia-CallHierarchyTree .definitionNode {
+    width: calc(100% - 32px);
+}
+
+.theia-CallHierarchyTree .definitionNode div {
+    margin-right: 5px;
+}
+
+.theia-CallHierarchyTree .definitionNode .symbol {
+    padding-right: 4px;
+}
+
+.theia-CallHierarchyTree .definitionNode .referenceCount {
+    color: var(--theia-badge-background);
+}
+
+.theia-CallHierarchyTree .definitionNode .container {
+    color: var(--theia-descriptionForeground);
+}
+
+.call-hierarchy-tab-icon::before {
+    content: "\f0ab"
+}
+
+.theia-CallHierarchyTree .definitionNode-content {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

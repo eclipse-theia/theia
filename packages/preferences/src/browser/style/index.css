@@ -1,0 +1,384 @@
+/********************************************************************************
+ * Copyright (C) 2019 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+#preferences_container_widget .p-SplitPanel-handle {
+    border-right: var(--theia-border-width) solid var(--theia-editorGroup-border);
+}
+
+#preferences_container_widget .p-TabBar-tabIcon {
+    align-items: center;
+    display: flex;
+    line-height: var(--theia-content-line-height) !important;
+}
+
+/* UI View */
+
+@import url("./preference-context-menu.css");
+@import url("./preference-array.css");
+@import url("./preference-object.css");
+@import url("./search-input.css");
+
+.theia-settings-container {
+    max-width: 1000px;
+    padding-top: 11px;
+    display: grid;
+    grid-template-areas:
+        "header header"
+        "tabbar tabbar"
+        "navbar editor";
+    grid-template-columns: minmax(150px, 280px) 1fr;
+    grid-template-rows: 45px 45px 1fr;
+}
+
+.theia-settings-container .settings-no-results-announcement {
+    font-weight: bold;
+    font-size: var(--theia-ui-font-size3);
+    padding-left: var(--theia-ui-padding);
+    margin: calc(2*var(--theia-ui-padding)) 0px;
+}
+
+.theia-settings-container .preferences-searchbar-widget {
+    grid-area: header;
+    margin: 3px 24px 0px 24px;
+}
+
+.theia-settings-container .preferences-tabbar-widget {
+    grid-area: tabbar;
+    margin: 3px 24px 0px 24px;
+}
+
+.theia-settings-container .preferences-tabbar-widget.with-shadow {
+    box-shadow: 0px 6px 5px -5px var(--theia-widget-shadow);
+}
+
+.theia-settings-container .preferences-tabbar-widget .preferences-scope-tab .p-TabBar-tabIcon:not(.preferences-folder-dropdown-icon) {
+    display: none;
+}
+
+#theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab {
+    background: var(--theia-editor-background);
+    border-right: unset;
+    border-bottom: var(--theia-border-width) solid var(--theia-tab-unfocusedInactiveForeground);
+}
+
+#theia-main-content-panel .theia-settings-container .tabbar-underline {
+    width: 100%;
+    position:absolute;
+    top: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2 - 1px);
+    border-top: 1px solid var(--theia-tab-unfocusedInactiveForeground);
+    z-index: -1;
+}
+
+#theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab.p-mod-current {
+    color: var(--theia-panelTitle-activeForeground);
+    border-bottom: var(--theia-border-width) solid var(--theia-panelTitle-activeBorder);
+}
+
+#theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab.p-mod-current:not(.theia-mod-active) {
+    border-top: unset;
+}
+
+#theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab.preferences-folder-tab .p-TabBar-tabLabel::after {
+    content: 'Folder';
+    padding-left: 4px;
+    font-size: 0.8em;
+    color: var(--theia-tab-inactiveForeground);
+}
+
+#theia-main-content-panel .theia-settings-container #preferences-scope-tab-bar .preferences-scope-tab.preferences-folder-dropdown {
+    position: relative;
+    padding-right: 23px;
+}
+
+.preferences-folder-dropdown-icon {
+    background: var(--theia-icon-chevron-right) center center no-repeat;
+    transform: rotate(90deg);
+    width: 15px;
+    height: 15px;
+    position: absolute;
+    right: var(--theia-ui-padding);
+}
+
+.theia-settings-container .preferences-editor-widget {
+    grid-area: editor;
+    padding: 0 24px;
+}
+
+.theia-settings-container .preferences-editor-widget.full-pane {
+    grid-column-start: 1;
+    grid-column-end: 3;
+}
+
+.theia-settings-container .preferences-tree-widget {
+    grid-area: navbar;
+    padding-left: 31px;
+}
+
+.theia-settings-container .preferences-tree-widget .theia-mod-selected {
+    font-weight: bold;
+}
+
+.theia-settings-container .preferences-tree-widget .theia-TreeNodeSegment {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    max-width: 90%;
+}
+
+.theia-settings-container .settings-main {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.theia-settings-container .settings-main-scroll-container {
+    position: relative;
+    width: 100%;
+    flex: 1 1 auto;
+}
+
+.theia-settings-container .settings-main-sticky-misc {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 0 1 50px;
+}
+
+.theia-settings-container .settings-main-sticky-misc .json-button>i {
+    display: inline-block;
+    background: var(--theia-icon-open-json) no-repeat;
+    background-position-y: 1px;
+    -webkit-filter: invert(1);
+    filter: invert(1);
+    height: var(--theia-icon-size);
+    width: var(--theia-icon-size);
+}
+
+.theia-settings-container .settings-scope>label {
+    margin-right: 12px;
+}
+
+.theia-settings-container .settings-section {
+    padding-left: 0;
+    padding-top: var(--theia-ui-padding);
+    margin-top: calc(var(--theia-ui-padding) * -1);
+}
+
+.theia-settings-container .settings-section a {
+    border: none;
+    color: var(--theia-foreground);
+    font-weight: 500;
+    outline: 0;
+    text-decoration: none;
+}
+
+.theia-settings-container .settings-section a:hover {
+    text-decoration: underline;
+}
+
+.theia-settings-container .settings-section-category-title {
+    font-weight: bold;
+    font-size: var(--theia-ui-font-size3);
+    padding-left: calc(2 * var(--theia-ui-padding));
+  }
+  
+.theia-settings-container .settings-section-subcategory-title {
+    font-weight: bold;
+    font-size: var(--theia-ui-font-size2);
+    padding-left: calc(2 * var(--theia-ui-padding));
+  }
+
+.theia-settings-container .settings-section>li {
+    list-style-type: none;
+    margin: var(--theia-ui-padding) 0px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    -webkit-box-align: start;
+    -ms-flex-align: start;
+    align-items: start;
+}
+
+.theia-settings-container li.single-pref {
+    list-style-type: none;
+    margin: 12px 0 18px 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    padding-left: calc(2 * var(--theia-ui-padding));
+    position: relative;
+}
+
+.theia-settings-container li.single-pref .pref-context-gutter {
+    position: absolute;
+    height: 100%;
+    left: -16px;
+    padding-right: 4px;
+    border-right: 2px hidden;
+}
+
+.theia-settings-container li.single-pref .pref-context-gutter .settings-context-menu-btn {
+    opacity: 0;
+    transition: opacity .5s;
+}
+
+.theia-settings-container li.single-pref .pref-context-gutter .settings-context-menu-btn.show-cog {
+    opacity: 1;
+}
+
+.theia-settings-container li.single-pref .pref-context-gutter.theia-mod-item-modified {
+    border-right: 2px solid var(--theia-settings-modifiedItemIndicator);
+}
+
+.theia-settings-container li.single-pref input[type="text"] {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.theia-settings-container .settings-main {
+    margin: 0;
+}
+
+.theia-settings-container .settings-main-sticky {
+    top: 0;
+    padding-top: calc(var(--theia-ui-padding));
+    margin-top: calc(var(--theia-ui-padding) * -1);
+    background-color: var(--theia-editor-background);
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+}
+
+.theia-settings-container .pref-name {
+    padding: 0;
+    font-weight: bold;
+}
+
+.preferences-tree-spacer {
+    padding-left: calc(var(--theia-ui-padding)/2);
+    padding-right: calc(var(--theia-ui-padding)/2);
+    min-width: var(--theia-icon-size);
+    min-height: var(--theia-icon-size);
+}
+
+.theia-settings-container .pref-description {
+    padding: var(--theia-ui-padding) 0;
+    color: var(--theia-descriptionForeground);
+    line-height: 18px;
+}
+
+.theia-settings-container .theia-select:focus {
+    outline-width: 1px;
+    outline-style: solid;
+    outline-offset: -1px;
+    opacity: 1 !important;
+    outline-color: var(--theia-focusBorder);
+}
+
+.theia-settings-container .theia-input[type="text"] {
+    border: 1px solid var(--theia-dropdown-border);
+}
+
+.theia-settings-container .theia-input[type="checkbox"]:focus, 
+.theia-settings-container .theia-input[type="number"]:focus {
+    outline-width: 2px;
+}
+
+/* Remove the spinners from input[type = number] on Firefox. */
+.theia-settings-container .theia-input[type="number"] {
+    -webkit-appearance: textfield;
+    border: 1px solid var(--theia-dropdown-border);
+}
+
+/* Remove the webkit spinners from input[type = number] on all browsers except Firefox. */
+.theia-settings-container input::-webkit-outer-spin-button,
+.theia-settings-container input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.theia-settings-container .pref-content-container .pref-input .pref-input-container .pref-error-notification {
+    border-style: solid;
+    border-color: var(--theia-inputValidation-errorBorder);
+    background-color: var(--theia-inputValidation-errorBackground);
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--theia-ui-padding);
+}
+
+.theia-settings-container .pref-content-container .pref-input .pref-input-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.theia-settings-container .pref-content-container a.theia-json-input {
+    text-decoration: underline;
+}
+
+.theia-settings-container .pref-content-container a.theia-json-input:hover {
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.theia-settings-container .pref-content-container {
+    width: 100%;
+}
+
+.theia-settings-container .pref-content-container .pref-input {
+    padding: var(--theia-ui-padding) 0;
+    width: 100%;
+    max-width: 320px;
+}
+
+.theia-settings-container .pref-content-container .pref-input>select,
+.theia-settings-container .pref-content-container .pref-input>input {
+    width: 100%;
+}
+
+
+/* These specifications for the boolean class ensure that the
+    checkbox is rendered to the left of the description.
+*/
+.theia-settings-container .pref-content-container.boolean {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+}
+
+.theia-settings-container .pref-content-container.boolean .pref-description {
+    grid-column-start: 2;
+    grid-row-start: 1;
+}
+
+.theia-settings-container .pref-content-container.boolean .pref-input {
+    grid-column-start: 1;
+    grid-row-start: 1;
+    margin: 0;
+}
+
+.theia-settings-container .settings-section>li:last-child {
+    margin-bottom: 20px;
+}
+
+.theia-settings-container .settings-scope-underlined {
+    text-decoration: underline;
+}

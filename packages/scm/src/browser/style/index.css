@@ -1,0 +1,286 @@
+/********************************************************************************
+ * Copyright (C) 2019 Red Hat, Inc. and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-scm-commit {
+    overflow: hidden;
+    font-size: var(--theia-ui-font-size1);
+    max-height: calc(100% - var(--theia-border-width));
+    position: relative;
+}
+
+.theia-scm {
+    padding: 5px;
+    box-sizing: border-box;
+    height: 100%;
+}
+
+.theia-side-panel .theia-scm {
+    padding-left: 19px;
+}
+
+.groups-outer-container:focus {
+    outline: 0;
+    box-shadow: none;
+    border: none;
+}
+
+.theia-scm .noWrapInfo {
+    width: 100%;
+    align-items: center;
+}
+
+.theia-scm:focus, .theia-scm :focus {
+    outline: 0;
+    box-shadow: none;
+    border: none;
+}
+
+.theia-scm .space-between {
+    justify-content: space-between;
+}
+
+.theia-scm .changesHeader {
+    font-weight: bold;
+}
+
+.theia-scm .theia-scm-amend {
+    margin: 5px 0;
+}
+
+.theia-scm #messageInputContainer {
+    position: relative;
+}
+
+.theia-scm #repositoryListContainer {
+    display: flex;
+    margin-bottom: 5px;
+    flex: 1;
+}
+
+.theia-scm .groups-outer-container {
+    overflow-y: auto;
+    width: 100%;
+    flex-grow: 1;
+}
+
+.theia-scm .warn {
+    background-color: var(--theia-inputValidation-warningBackground) !important;
+}
+
+.theia-scm-main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.theia-scm-input-message-container {
+    display: flex;
+    flex-direction: column;
+    margin: 0px 0px 7px 0px;
+    max-height: 400px;
+}
+
+.theia-scm-input-message-container textarea {
+    line-height: var(--theia-content-line-height);
+    resize: none;
+    box-sizing: border-box;
+    min-height: 32px;
+    padding: 4px;
+    border: none;
+}
+
+.theia-scm-input-message-container textarea:placeholder-shown {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.theia-scm-input-message-container textarea:not(:focus) {
+    border: var(--theia-border-width) solid var(--theia-input-background);
+}
+
+.theia-scm-input-message-container textarea:focus {
+    border: var(--theia-border-width) solid var(--theia-focusBorder);
+}
+
+.theia-scm-input-message {
+    width: 100%;
+}
+
+.theia-scm-input-message-idle:not(:focus) {
+    border-color: var(--theia-input-border);
+}
+
+.theia-scm-input-message-info {
+    border-color: var(--theia-inputValidation-infoBorder) !important;
+}
+
+.theia-scm-input-message-success {
+    border-color: var(--theia-successBackground) !important;
+}
+
+.theia-scm-input-message-warning {
+    border-color: var(--theia-inputValidation-warningBorder) !important;
+}
+
+.theia-scm-input-message-error {
+    border-color: var(--theia-inputValidation-errorBorder) !important;
+}
+
+.theia-scm-message,
+.theia-scm-input-validation-message {
+    padding: 4px 4px 4px 4px;
+}
+
+.theia-scm-validation-message-info {
+    background-color: var(--theia-inputValidation-infoBackground) !important;
+    color: var(--theia-inputValidation-infoForeground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-infoBorder);
+    border-top: none; /* remove top border since the input declares it already */
+}
+
+.theia-scm-validation-message-success {
+    background-color: var(--theia-successBackground) !important;
+    color: var(--theia-inputValidation-warningBackground);
+}
+
+.theia-scm-message-warning,
+.theia-scm-validation-message-warning {
+    background-color: var(--theia-inputValidation-warningBackground) !important;
+    color: var(--theia-inputValidation-warningForeground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-warningBorder);
+    border-top: none; /* remove top border since the input declares it already */
+}
+
+.theia-scm-validation-message-error {
+    background-color: var(--theia-inputValidation-errorBackground) !important;
+    color: var(--theia-inputValidation-errorForeground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-errorBorder);
+    border-top: none; /* remove top border since the input declares it already */
+}
+
+.no-select {
+    cursor: default;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+}
+
+.no-select:focus {
+    outline: none;
+}
+
+.theia-scm .scmItem {
+    font-size: var(--theia-ui-font-size1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--theia-content-line-height);
+    line-height: var(--theia-content-line-height);
+    padding: 0px calc(var(--theia-ui-padding)/2);
+}
+
+.theia-scm .scmItem:hover {
+    cursor: pointer;
+}
+
+.theia-scm:focus-within .scmItem:focus {
+    background: var(--theia-list-focusBackground);
+    color: var(--theia-list-focusForeground);
+}
+
+.theia-scm:not(:focus-within) .scmItem:not(:focus) {
+    background: var(--theia-list-inactiveFocusBackground);
+}
+
+.theia-scm:focus-within .scmItem.theia-mod-selected {
+    background: var(--theia-list-activeSelectionBackground);
+    color: var(--theia-list-activeSelectionForeground);
+}
+
+.theia-scm:not(:focus-within) .scmItem.theia-mod-selected {
+    background: var(--theia-list-inactiveSelectionBackground);
+    color: var(--theia-list-inactiveSelectionForeground);
+}
+
+.theia-scm .scmItem .path {
+    font-size: var(--theia-ui-font-size0);
+    margin-left: var(--theia-ui-padding);
+    opacity: .7;
+}
+
+.theia-scm .scmItem .status {
+    width: 16px;
+    text-align: center;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    font-size: var(--theia-ui-font-size0);
+}
+
+.scm-change-count {
+    float: right;
+}
+
+.scm-theia-header {
+    display: flex;
+}
+
+.scm-theia-header:hover {
+    cursor: pointer;
+}
+
+.scm-tab-icon {
+    -webkit-mask: url('scm.svg');
+    mask: url('scm.svg');
+}
+
+.theia-scm-inline-actions-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: 3px;
+    min-height: 16px;
+}
+
+.theia-scm-inline-actions {
+    display: flex;
+    margin: 0 3px;
+}
+
+.theia-scm-inline-actions a {
+    color: var(--theia-icon-foreground);
+}
+
+.theia-scm-inline-action {
+    padding: 0px 3px;
+    font-size: var(--theia-ui-font-size1);
+    margin: 0 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.theia-scm-inline-action .open-file {
+    height: var(--theia-icon-size);
+    width: 12px;
+    background: var(--theia-icon-open-file) no-repeat center center;
+}
+
+.theia-scm-panel {
+    overflow: visible;
+}

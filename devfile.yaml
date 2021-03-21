@@ -1,0 +1,67 @@
+# A devfile to setup Theia project in Che.
+# For developers who work on Theia core.
+
+apiVersion: 1.0.0
+metadata:
+  name: theia-dev
+projects:
+  - name: theia
+    source:
+      type: git
+      location: "https://github.com/eclipse-theia/theia.git"
+components:
+  - alias: che-dev
+    type: dockerimage
+    image: "quay.io/eclipse/che-theia-dev:next"
+    mountSources: true
+    endpoints:
+      - name: "theia-dev-flow"
+        port: 3000
+        attributes:
+          protocol: http
+          public: "true"
+    memoryLimit: "3Gi"
+  - id: che-incubator/typescript/latest
+    type: chePlugin
+    memoryLimit: 2048M
+  - type: cheEditor
+    alias: theia-editor
+    id: eclipse/che-theia/next
+    memoryLimit: "1Gi"
+commands:
+  - name: >
+      theia: Build Sources
+    actions:
+      - type: exec
+        component: che-dev
+        command: >
+          killall node;
+          yarn
+        workdir: ${workspaceRoot}/theia
+  - name: >
+      theia: Launch Browser Backend
+    actions:
+      - type: exec
+        component: che-dev
+        command: >
+          test -f /tmp/node_theiadev.pid && kill `cat /tmp/node_theiadev.pid`;
+          mkdir -p /tmp/theiadev_projects &&
+          export NODE_ENV=development &&
+          node src-gen/backend/main.js /tmp/theiadev_projects --hostname=0.0.0.0 --port=3000 --no-cluster --plugins=${workspaceRoot}/theia/plugins --hosted-plugin-inspect=9339 & echo $!> /tmp/node_theiadev.pid ; wait `cat /tmp/node_theiadev.pid`
+        workdir: ${workspaceRoot}/theia/examples/browser
+  - name: >
+      theia: Watch Core Packages
+    actions:
+      - type: exec
+        component: che-dev
+        command: >
+          yarn watch
+        workdir: ${workspaceRoot}/theia
+  - name: >
+      theia: Watch Browser Example
+    actions:
+      - type: exec
+        component: che-dev
+        command: >
+          yarn watch
+        workdir: ${workspaceRoot}/theia/examples/browser

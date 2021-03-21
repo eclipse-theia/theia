@@ -1,0 +1,57 @@
+{
+  "name": "@theia/cli",
+  "version": "1.11.0",
+  "description": "Theia CLI.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "bin",
+    "lib",
+    "src"
+  ],
+  "bin": {
+    "theia": "./bin/theia"
+  },
+  "scripts": {
+    "lint": "theiaext lint",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "clean": "theiaext clean"
+  },
+  "dependencies": {
+    "@theia/application-manager": "1.11.0",
+    "@theia/application-package": "1.11.0",
+    "@types/chai": "^4.2.7",
+    "@types/mkdirp": "^0.5.2",
+    "@types/mocha": "^5.2.7",
+    "@types/node-fetch": "^2.5.7",
+    "@types/puppeteer": "^2.0.0",
+    "@types/requestretry": "^1.12.3",
+    "@types/tar": "^4.0.3",
+    "chai": "^4.2.0",
+    "colors": "^1.4.0",
+    "decompress": "^4.2.1",
+    "https-proxy-agent": "^5.0.0",
+    "mkdirp": "^0.5.0",
+    "mocha": "^7.0.0",
+    "node-fetch": "^2.6.0",
+    "proxy-from-env": "^1.1.0",
+    "puppeteer": "^2.0.0",
+    "puppeteer-to-istanbul": "^1.2.2",
+    "temp": "^0.9.1",
+    "yargs": "^15.3.1"
+  },
+  "devDependencies": {
+    "@types/proxy-from-env": "^1.0.1"
+  }
+}

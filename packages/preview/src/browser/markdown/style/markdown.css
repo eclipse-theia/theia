@@ -1,0 +1,201 @@
+/********************************************************************************
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.markdown-preview {
+	font-family: var(--theia-ui-font-family);
+	font-size: 14px;
+	padding: 0 26px;
+	line-height: var(--theia-content-line-height);
+	word-wrap: break-word;
+}
+
+.markdown-preview:focus {
+    outline: 0;
+    box-shadow: none;
+}
+
+.markdown-preview .line {
+	position: relative;
+}
+
+.markdown-preview .line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+.markdown-preview li.line:hover:before {
+	left: -30px;
+}
+
+.markdown-preview .line:hover:before {
+	border-left: 3px solid var(--theia-editor-foreground);
+}
+
+.markdown-preview .line .line:hover:before {
+	border-left: none;
+}
+
+.markdown-preview img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+.markdown-preview a {
+	text-decoration: none;
+}
+
+.markdown-preview a:hover {
+	text-decoration: underline;
+}
+
+.markdown-preview a:focus,
+.markdown-preview input:focus,
+.markdown-preview select:focus,
+.markdown-preview textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+.markdown-preview hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+.markdown-preview h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+.markdown-preview h1, h2, h3 {
+	font-weight: normal;
+}
+
+.markdown-preview h1 code,
+.markdown-preview h2 code,
+.markdown-preview h3 code,
+.markdown-preview h4 code,
+.markdown-preview h5 code,
+.markdown-preview h6 code {
+	font-size: inherit;
+	line-height: auto;
+}
+
+.markdown-preview table {
+	border-collapse: collapse;
+}
+
+.markdown-preview table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+    border-color: rgba(255, 255, 255, 0.69);
+}
+
+.theia-light .markdown-preview table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.markdown-preview table > thead > tr > th,
+.markdown-preview table > thead > tr > td,
+.markdown-preview table > tbody > tr > th,
+.markdown-preview table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+.markdown-preview table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+.markdown-preview blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left: 5px solid;
+	background: var(--theia-textBlockQuote-background);
+	border-color: var(--theia-textBlockQuote-border);
+}
+
+.markdown-preview code {
+	font-family: var(--theia-code-font-family);
+	font-size: var(--theia-code-font-size);
+	line-height: var(--theia-code-line-height);
+	color: var(--md-orange-800);
+}
+
+.markdown-preview.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+.markdown-preview pre:not(.hljs),
+.markdown-preview pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+.markdown-preview,
+.markdown-preview pre code {
+	color: var(--theia-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.theia-light .markdown-preview pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.theia-dark .markdown-preview pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.theia-high-contrast .markdown-preview pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast .markdown-preview h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.theia-light .markdown-preview table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.theia-dark .markdown-preview table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.theia-light .markdown-preview h1,
+.theia-light .markdown-preview hr,
+.theia-light .markdown-preview table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.theia-dark .markdown-preview h1,
+.theia-dark .markdown-preview hr,
+.theia-dark .markdown-preview table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}

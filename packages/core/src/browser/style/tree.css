@@ -1,0 +1,191 @@
+/********************************************************************************
+ * Copyright (C) 2017, 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+:root {
+    --theia-welcomeView-horizontal-padding: 20px;
+    --theia-welcomeView-elements-margin: 13px;
+    --theia-welcomeView-button-maxWidth: 260px;
+}
+
+.theia-Tree {
+    overflow: hidden;
+    font-size: var(--theia-ui-font-size1);
+    max-height: calc(100% - var(--theia-border-width));
+    position: relative;
+}
+
+.theia-Tree:focus .theia-TreeContainer.empty {
+    outline-width: 1px;
+    outline-style: solid;
+    outline-offset: -1px;
+    opacity: 1 !important;
+    outline-color: var(--theia-focusBorder);
+}
+
+.theia-Tree:focus,
+.theia-TreeContainer .ReactVirtualized__List:focus {
+    outline: 0;
+    box-shadow: none;
+    border: none;
+}
+
+.theia-TreeContainer {
+    height: 100%;
+}
+
+.theia-TreeNode {
+    line-height: var(--theia-content-line-height);
+    display: flex;
+}
+
+.theia-TreeNode:hover {
+    background: var(--theia-list-hoverBackground);
+    color: var(--theia-list-hoverForeground);
+    cursor: pointer;
+}
+
+.theia-TreeNodeContent {
+    display: flex;
+    align-items: center;
+    width: calc(100% - var(--theia-scrollbar-rail-width));
+}
+
+.theia-ExpansionToggle {
+    display: flex;
+    justify-content: center;
+    padding-left: calc(var(--theia-ui-padding)/2);
+    padding-right: calc(var(--theia-ui-padding)/2);
+    min-width: var(--theia-icon-size);
+    min-height: var(--theia-icon-size);
+    background-size: var(--theia-icon-size);
+    background: var(--theia-icon-chevron-right) center center no-repeat;
+}
+
+.theia-ExpansionToggle.theia-mod-busy {
+    background: var(--theia-icon-loading) center center no-repeat;
+    animation: theia-spin 1.25s linear infinite;
+}
+
+.theia-ExpansionToggle:not(.theia-mod-busy):hover {
+    cursor: pointer;
+}
+
+.theia-ExpansionToggle:not(.theia-mod-busy):not(.theia-mod-collapsed) {
+    transform: rotate(90deg);
+}
+
+.theia-Tree:focus .theia-TreeNode.theia-mod-selected,
+.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected {
+    background: var(--theia-list-activeSelectionBackground);
+    color: var(--theia-list-activeSelectionForeground) !important;
+}
+
+.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
+.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-TreeNodeTail,
+.theia-Tree:focus .theia-TreeNode.theia-mod-selected .theia-caption-suffix,
+.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-selected .theia-caption-suffix {
+    color: var(--theia-list-activeSelectionForeground) !important;
+}
+
+.theia-Tree .theia-TreeNode.theia-mod-selected {
+    background: var(--theia-list-inactiveSelectionBackground);
+    color: var(--theia-list-inactiveSelectionForeground);
+}
+
+.theia-TreeNode.theia-mod-not-selectable {
+    color: var(--theia-descriptionForeground);
+}
+.theia-TreeNode.theia-mod-not-selectable:hover {
+    background: none;
+    cursor: default;
+}
+
+.theia-TreeNodeSegment {
+    flex-grow: 0;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.theia-TreeNodeSegmentGrow {
+    flex-grow: 1 !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.theia-TreeNodeTail {
+    min-width: 1rem;
+    text-align: center;
+}
+
+.theia-TreeNodeSegment mark {
+    background-color: var(--theia-list-filterMatchBackground);
+    color: var(--theia-list-inactiveSelectionForeground);
+}
+
+.theia-tree-source-node-placeholder {
+    text-align: center;
+    font-style: italic;
+    opacity: var(--theia-mod-disabled-opacity);
+}
+
+.theia-tree-element-node {
+    width: 100%
+}
+
+.theia-tree-node-indent {
+    position: absolute;
+    height: var(--theia-content-line-height);
+    border-right: var(--theia-border-width) solid transparent;
+}
+.theia-tree-node-indent.always,
+.theia-TreeContainer:hover .theia-tree-node-indent.hover {
+    border-color: var(--theia-tree-inactiveIndentGuidesStroke);
+}
+.theia-tree-node-indent.active {
+    border-color: var(--theia-tree-indentGuidesStroke);
+}
+
+.theia-TreeContainer .theia-WelcomeView {
+    padding-top: var(--theia-ui-padding);
+    padding-right: var(--theia-welcomeView-horizontal-padding);
+    padding-left: var(--theia-welcomeView-horizontal-padding);
+}
+
+.theia-TreeContainer .theia-WelcomeView > * {
+    margin: var(--theia-welcomeView-elements-margin) 0;
+}
+
+.theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewButtonWrapper {
+    display: flex;
+    padding: 0 var(--theia-ui-padding);
+}
+
+.theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewButton {
+    width: 100%;
+    max-width: var(--theia-welcomeView-button-maxWidth);
+    margin: auto;
+}
+
+.theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewCommandLink {
+    cursor: pointer;
+}
+
+.theia-TreeContainer .theia-WelcomeView .theia-WelcomeViewCommandLink.disabled {
+    pointer-events: none;
+    cursor: default;
+    opacity: var(--theia-mod-disabled-opacity);
+}

@@ -1,0 +1,53 @@
+/********************************************************************************
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+ .theia-file-icons-js {
+    /*
+    Here, the `line-height` ensures that FontAwesome and `file-icons-js` container has the same height.
+    Ideally, it would be 1 em, but since we set the max height above (and other places too) with 0.8
+    multiplier, we use 0.8 em here too.
+     */
+    line-height: 0.8em;
+}
+
+.theia-file-icons-js:before {
+    font-size: calc(var(--theia-content-font-size) * 0.8);
+}
+
+.theia-file-icons-js.file-icon {
+    min-width: var(--theia-icon-size);
+    height: var(--theia-icon-size);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.fa-file:before,
+.fa-folder:before,
+.theia-file-icons-js:before {
+    text-align: center;
+    margin-right: 4px;
+}
+
+.theia-app-sides .theia-file-icons-js {
+    max-height: none;
+    line-height: inherit;
+}
+
+.theia-app-sides .theia-file-icons-js:before {
+    font-size: var(--theia-private-sidebar-icon-size);
+    margin-right: 0px;
+}

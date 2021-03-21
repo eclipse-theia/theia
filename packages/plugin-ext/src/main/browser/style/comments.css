@@ -1,0 +1,339 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+/* some code copied and modified from https://github.com/microsoft/vscode/blob/1.49.3/src/vs/workbench/contrib/comments/browser/media/review.css */
+
+.comment-range-glyph {
+    margin-left: 5px;
+    cursor: pointer;
+}
+.comment-range-glyph:before {
+    position: absolute;
+    content: '';
+    height: 100%;
+    width: 0;
+    left: -2px;
+    transition: width 80ms linear, left 80ms linear;
+}
+
+.monaco-editor .margin-view-overlays > div:hover > .comment-range-glyph.comment-diff-added:before,
+.monaco-editor .comment-range-glyph.comment-thread:before {
+    position: absolute;
+    height: 100%;
+    width: 9px;
+    left: -6px;
+    z-index: 10;
+    color: black;
+    text-align: center;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.monaco-editor .comment-diff-added {
+    border-left: 3px solid var(--theia-editorGutter-commentRangeForeground);
+    transition: opacity 0.5s;
+}
+.monaco-editor .comment-diff-added:before {
+    background: var(--theia-editorGutter-commentRangeForeground);
+}
+
+.monaco-editor .margin-view-overlays > div:hover > .comment-range-glyph.comment-diff-added:before {
+    content: "+";
+}
+
+.monaco-editor .comment-range-glyph.comment-thread {
+    z-index: 20;
+    border-left: 3px solid #000;
+}
+
+.monaco-editor .comment-thread:before {
+    background: var(--theia-editorGutter-commentRangeForeground);
+}
+
+.monaco-editor .comment-range-glyph.comment-thread:before {
+    content: "◆";
+    font-size: 10px;
+    line-height: 100%;
+    z-index: 20;
+}
+
+.monaco-editor .review-widget .body {
+    overflow: hidden;
+}
+
+.monaco-editor .review-widget .head {
+    box-sizing: border-box;
+    display: flex;
+    height: 100%;
+}
+
+.monaco-editor .review-widget .head .review-title {
+    display: inline-block;
+    font-size: 13px;
+    margin-left: 20px;
+    cursor: default;
+}
+
+.monaco-editor .review-widget .head .review-actions {
+    flex: 1;
+    text-align: right;
+    padding-right: 2px;
+}
+
+.monaco-editor .review-widget .head .review-actions > .monaco-action-bar {
+    display: inline-block;
+}
+
+.monaco-editor .review-widget .head .review-actions > .monaco-action-bar,
+.monaco-editor .review-widget .head .review-actions > .monaco-action-bar > .actions-container {
+    height: 100%;
+}
+
+.monaco-editor .review-widget .action-item {
+    min-width: 18px;
+    min-height: 20px;
+    margin-left: 4px;
+}
+
+.monaco-editor .review-widget .head .review-actions > .monaco-action-bar .action-label {
+    width: 16px;
+    height: 100%;
+    margin: 0;
+    color: var(--theia-editorWidget-foreground);
+    line-height: inherit;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+.monaco-editor .review-widget>.body {
+    border-top: 1px solid;
+    position: relative;
+}
+
+.monaco-editor .review-widget .body .comment-form {
+    margin: 8px 20px;
+}
+
+.monaco-editor .review-widget .body .review-comment {
+    padding: 8px 16px 8px 20px;
+    display: flex;
+}
+
+.monaco-editor .review-widget .body .review-comment .avatar-container {
+    margin-top: 4px !important;
+}
+
+.monaco-editor .review-widget .body .review-comment .avatar-container img.avatar {
+    height: 28px;
+    width: 28px;
+    display: inline-block;
+    overflow: hidden;
+    line-height: 1;
+    vertical-align: middle;
+    border-radius: 3px;
+    border-style: none;
+}
+
+.monaco-editor .review-widget .body .review-comment .review-comment-contents {
+    padding-left: 20px;
+    user-select: text;
+    -webkit-user-select: text;
+    width: 100%;
+    overflow: hidden;
+}
+
+.monaco-editor .review-widget .body .review-comment .review-comment-contents .author {
+    line-height: var(--theia-content-line-height);
+}
+
+.monaco-editor .review-widget .body .review-comment .review-comment-contents .isPending {
+    margin: 0 5px 0 5px;
+    padding: 0 2px 0 2px;
+    font-style: italic;
+}
+
+.monaco-editor .review-widget .body .review-comment .review-comment-contents .comment-body {
+    padding-top: 4px;
+}
+
+.monaco-editor .review-widget .body .review-comment .comment-title {
+    display: flex;
+    width: 100%;
+}
+
+.monaco-editor .review-widget .body .comment-form .theia-comments-input-message-container {
+    display: none;
+}
+
+.monaco-editor .review-widget .body .comment-form.expand .theia-comments-input-message-container,
+.edit-textarea .theia-comments-input-message-container {
+    display: flex;
+    flex-direction: column;
+    margin: 0px 0px 7px 0px;
+    max-height: 400px;
+}
+
+.monaco-editor .review-widget .body .comment-form.expand .theia-comments-input-message-container textarea,
+.edit-textarea .theia-comments-input-message-container textarea {
+    line-height: var(--theia-content-line-height);
+    background: var(--theia-editor-background);
+    resize: none;
+    height: 90px;
+    box-sizing: border-box;
+    min-height: 32px;
+    padding: 4px;
+    border: none;
+}
+
+.monaco-editor .review-widget .body .comment-form.expand .theia-comments-input-message-container textarea:placeholder-shown,
+.edit-textarea .theia-comments-input-message-container textarea:placeholder-shown {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.monaco-editor .review-widget .body .comment-form.expand .theia-comments-input-message-container textarea:not(:focus),
+.edit-textarea .theia-comments-input-message-container textarea:not(:focus) {
+    border: var(--theia-border-width) solid var(--theia-editor-background);
+}
+
+.monaco-editor .review-widget .body .comment-form.expand .theia-comments-input-message-container textarea:focus,
+.edit-textarea .theia-comments-input-message-container textarea:focus {
+    border: var(--theia-border-width) solid var(--theia-focusBorder);
+}
+
+.theia-comments-input-message {
+    width: 100%;
+}
+
+.monaco-editor .review-widget .body .comment-body p,
+.monaco-editor .review-widget .body .comment-body ul {
+    margin: 8px 0;
+}
+
+.monaco-editor .review-widget .body .comment-body p:first-child,
+.monaco-editor .review-widget .body .comment-body ul:first-child {
+    margin-top: 0;
+}
+
+.monaco-editor .review-widget .body .comment-body p:last-child,
+.monaco-editor .review-widget .body.comment-body ul:last-child {
+    margin-bottom: 0;
+}
+
+.monaco-editor .review-widget .body .comment-body ul {
+    padding-left: 20px;
+}
+
+.monaco-editor .review-widget .body .comment-body li > p {
+    margin-bottom: 0;
+}
+
+.monaco-editor .review-widget .body .comment-body li > ul {
+    margin-top: 0;
+}
+
+.monaco-editor .review-widget .body .comment-body code {
+    border-radius: 3px;
+    padding: 0 0.4em;
+}
+
+.monaco-editor .review-widget .body .comment-body span {
+    white-space: pre;
+}
+
+.monaco-editor .review-widget .body .comment-body img {
+    max-width: 100%;
+}
+
+.monaco-editor .review-widget .body .comment-form .form-actions {
+    display: none;
+}
+
+.monaco-editor .review-widget .body .comment-form.expand .form-actions {
+    display: block;
+    box-sizing: content-box;
+}
+
+.monaco-editor .review-widget .body .comment-form.expand .review-thread-reply-button {
+    display: none;
+}
+
+.monaco-editor .review-widget .body .comment-form .review-thread-reply-button {
+    text-align: left;
+    display: block;
+    width: 100%;
+    resize: vertical;
+    background: var(--theia-editor-background);
+    color: var(--theia-input-foreground);
+    cursor: text;
+    font-size: var(--theia-ui-font-size1);
+    border-radius: 0;
+    box-sizing: border-box;
+    padding: 6px 12px;
+    font-weight: 600;
+    line-height: 20px;
+    white-space: nowrap;
+    border: 0px;
+    outline: 1px solid transparent;
+}
+
+.monaco-editor .review-widget .body .comment-form .review-thread-reply-button:focus {
+    outline-style: solid;
+    outline-width: 1px;
+}
+
+.monaco-editor .review-widget .body .comment-form.expand .form-actions,
+.monaco-editor .review-widget .body .edit-container .form-actions {
+    overflow: auto;
+    padding: 10px 0;
+}
+
+.monaco-editor .review-widget .body .edit-container .form-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.monaco-editor .review-widget .body .edit-textarea {
+    margin: 5px 0 10px 0;
+}
+
+.monaco-editor .review-widget .body .comment-form.expand .comments-text-button,
+.monaco-editor .review-widget .body .edit-container .comments-text-button {
+    width: auto;
+    padding: 4px 10px;
+    margin-left: 5px;
+    margin-bottom: 5px;
+}
+
+.monaco-editor .review-widget .body .comment-form.expand .comments-text-button {
+    float: right;
+}
+
+.theia-comments-inline-actions-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: auto;
+    min-height: 16px;
+}
+
+.theia-comments-inline-actions {
+    display: flex;
+    margin: 0 3px;
+}
+
+.theia-comments-inline-actions a {
+    color: var(--theia-icon-foreground);
+}
+
+.theia-comments-inline-action {
+    padding: 0px 3px;
+    font-size: var(--theia-ui-font-size1);
+    margin: 0 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}

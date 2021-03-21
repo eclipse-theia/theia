@@ -1,0 +1,49 @@
+/********************************************************************************
+ * Copyright (C) 2018 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+ /* message container */
+.theia-alert-message-container {
+    flex: 1;
+    padding: 10px;
+}
+
+.theia-alert-message-container i {
+    padding-right: 3px;
+}
+
+/* information message */
+.theia-info-alert {
+    background-color: var(--theia-inputValidation-infoBackground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-infoBorder);
+    color: var(--theia-inputValidation-infoForeground);
+    padding: 10px;
+}
+
+/* warning message */
+.theia-warning-alert {
+    background-color: var(--theia-inputValidation-warningBackground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-warningBorder);
+    color: var(--theia-inputValidation-warningForeground);
+    padding: 10px;
+}
+
+/* error message */
+.theia-error-alert {
+    background-color: var(--theia-inputValidation-errorBackground);
+    border: var(--theia-border-width) solid var(--theia-inputValidation-errorBorder);
+    color: var(--theia-inputValidation-errorForeground);
+    padding: 10px;
+}

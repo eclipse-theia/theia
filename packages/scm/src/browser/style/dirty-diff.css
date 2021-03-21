@@ -1,0 +1,50 @@
+/********************************************************************************
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+@import 'dirty-diff-decorator.css';
+
+.monaco-editor .dirty-diff-added-line {
+	border-left: 3px solid var(--theia-editorGutter-addedBackground);
+	transition: opacity 0.5s;
+}
+.monaco-editor .dirty-diff-added-line:before {
+	background: var(--theia-editorGutter-addedBackground);
+}
+.monaco-editor .margin:hover .dirty-diff-added-line {
+    opacity: 1;
+}
+
+.monaco-editor .dirty-diff-removed-line:after {
+	border-left: 4px solid var(--theia-editorGutter-deletedBackground);
+	transition: opacity 0.5s;
+}
+.monaco-editor .dirty-diff-removed-line:before {
+	background: var(--theia-editorGutter-deletedBackground);
+}
+.monaco-editor .margin:hover .dirty-diff-removed-line {
+    opacity: 1;
+}
+
+.monaco-editor .dirty-diff-modified-line {
+	border-left: 3px solid var(--theia-editorGutter-modifiedBackground);
+	transition: opacity 0.5s;
+}
+.monaco-editor .dirty-diff-modified-line:before {
+	background: var(--theia-editorGutter-modifiedBackground);
+}
+.monaco-editor .margin:hover .dirty-diff-modified-line {
+    opacity: 1;
+}

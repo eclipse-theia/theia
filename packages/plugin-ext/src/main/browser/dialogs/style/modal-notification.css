@@ -1,0 +1,108 @@
+/********************************************************************************
+ * Copyright (C) 2018 Red Hat, Inc. and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+.modal-Notification {
+    pointer-events: all;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    display: flex;
+    flex-direction: row;
+    -webkit-justify-content: center;
+    justify-content: center;
+    clear: both;
+    box-sizing: border-box;
+    position: relative;
+    min-width: 200px;
+    max-width: min(66vw, 800px);
+    background-color: var(--theia-editorWidget-background);
+    min-height: 35px;
+    margin-bottom: 1px;
+    color: var(--theia-editorWidget-foreground);
+}
+
+.modal-Notification .icon {
+    display: inline-block;
+    font-size: 20px;
+    padding: 5px 0;
+    width: 35px;
+    order: 1;
+}
+
+.modal-Notification .icon .fa {
+    line-height: inherit;
+    vertical-align: middle;
+    font-size: 120%;
+    color: var(--theia-editorInfo-foreground);
+}
+
+.modal-Notification .icon .error {
+    color: var(--theia-editorError-foreground);
+}
+
+.modal-Notification .icon .warning {
+    color: var(--theia-editorWarning-foreground);
+}
+
+.modal-Notification .text {
+    order: 2;
+    display: inline-block;
+    max-height: min(66vh, 600px);
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+    align-self: center;
+    flex: 1 100%;
+    padding: 10px;
+    overflow: auto;
+    white-space: pre-wrap;
+}
+
+.modal-Notification .text > p {
+    margin: 0;
+    font-size: var(--theia-ui-font-size1);
+    font-family: var(--theia-ui-font-family);
+    vertical-align: middle;
+}
+
+.modal-Notification .buttons {
+    display: flex;
+    flex-direction: row;
+    order: 3;
+    white-space: nowrap;
+    align-self: flex-end;
+    height: 40px;
+}
+
+.modal-Notification .buttons > button {
+    background-color: var(--theia-button-background);
+    color: var(--theia-button-foreground);
+    border: none;
+    border-radius: 0;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    padding: 0 10px;
+    margin: 0;
+    font-size: var(--theia-ui-font-size1);
+    outline: none;
+    cursor: pointer;
+}
+
+.modal-Notification .buttons > button:hover {
+    background-color: var(--theia-button-hoverBackground);
+}

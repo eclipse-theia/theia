@@ -1,0 +1,84 @@
+/********************************************************************************
+ * Copyright (C) 2018 Red Hat, Inc. and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.spinnerContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flexcontainer {
+    display: flex;
+}
+
+.row {
+    width: 100%;
+}
+
+.column {
+    flex-direction: column;
+}
+
+.theia-plugin-view-container {
+    -webkit-mask: url('');
+    mask: url('');
+}
+
+.theia-plugin-test-tab-icon {
+    -webkit-mask: url('test.svg');
+    mask: url('test.svg');
+}
+
+.theia-plugin-file-icon,
+.theia-plugin-file-icon::before,
+.theia-plugin-folder-icon,
+.theia-plugin-folder-icon::before,
+.theia-plugin-folder-expanded-icon,
+.theia-plugin-folder-expanded-icon::before,
+.theia-plugin-root-folder-icon,
+.theia-plugin-root-folder-icon::before,
+.theia-plugin-root-folder-expanded-icon,
+.theia-plugin-root-folder-expanded-icon::before {
+    padding-right: var(--theia-ui-padding);
+	width: var(--theia-icon-size);
+	height: var(--theia-content-line-height);
+	line-height: inherit !important;
+	display: inline-block;
+}
+
+.p-TabBar.theia-app-sides .theia-plugin-file-icon,
+.p-TabBar.theia-app-sides .theia-plugin-file-icon::before,
+.p-TabBar.theia-app-sides .theia-plugin-folder-icon,
+.p-TabBar.theia-app-sides .theia-plugin-folder-icon::before,
+.p-TabBar.theia-app-sides .theia-plugin-folder-expanded-icon,
+.p-TabBar.theia-app-sides .theia-plugin-folder-expanded-icon::before,
+.p-TabBar.theia-app-sides .theia-plugin-root-folder-icon,
+.p-TabBar.theia-app-sides .theia-plugin-root-folder-icon::before,
+.p-TabBar.theia-app-sides .theia-plugin-root-folder-expanded-icon,
+.p-TabBar.theia-app-sides .theia-plugin-root-folder-expanded-icon::before {
+    padding: 0px !important;
+    width: var(--theia-private-sidebar-icon-size) !important;
+    height: var(--theia-private-sidebar-icon-size) !important;
+    background-size: var(--theia-private-sidebar-icon-size) !important;
+    font-size: var(--theia-private-sidebar-icon-size) !important;
+}
+
+
+@import './plugin-sidebar.css';
+@import './webview.css';
+@import './tree.css';

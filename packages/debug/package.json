@@ -1,0 +1,72 @@
+{
+  "name": "@theia/debug",
+  "version": "1.11.0",
+  "description": "Theia - Debug Extension",
+  "dependencies": {
+    "@theia/application-package": "1.11.0",
+    "@theia/console": "1.11.0",
+    "@theia/core": "1.11.0",
+    "@theia/editor": "1.11.0",
+    "@theia/filesystem": "1.11.0",
+    "@theia/markers": "1.11.0",
+    "@theia/monaco": "1.11.0",
+    "@theia/output": "1.11.0",
+    "@theia/preferences": "1.11.0",
+    "@theia/process": "1.11.0",
+    "@theia/task": "1.11.0",
+    "@theia/terminal": "1.11.0",
+    "@theia/userstorage": "1.11.0",
+    "@theia/variable-resolver": "1.11.0",
+    "@theia/workspace": "1.11.0",
+    "jsonc-parser": "^2.2.0",
+    "mkdirp": "^0.5.0",
+    "p-debounce": "^2.1.0",
+    "requestretry": "^3.1.0",
+    "tar": "^4.0.0",
+    "unzip-stream": "^0.3.0",
+    "vscode-debugprotocol": "^1.32.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/debug-frontend-module",
+      "backend": "lib/node/debug-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension",
+    "debug"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "bin": {
+    "download-debug-adapters": "./bin/download-adapters.js"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "lint": "theiaext lint",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "clean": "theiaext clean",
+    "test": "theiaext test"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.11.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

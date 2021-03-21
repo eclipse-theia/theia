@@ -1,0 +1,6 @@
+<!--Copyright (c) Microsoft Corporation. All rights reserved.-->
+<!--Copyright (C) 2020 TypeFox and others.-->
+<!--Copied from https://raw.githubusercontent.com/microsoft/vscode-icons/9c90ce81b1f3c309000b80da0763aa09975a85f0/icons/dark/chevron-right.svg -->
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5.7 13.7L5 13L9.6 8.4L5 3.7L5.7 3L10.7 8V8.7L5.7 13.7Z" fill="#C5C5C5" />
+</svg>

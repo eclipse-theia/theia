@@ -1,0 +1,112 @@
+/********************************************************************************
+ * Copyright (C) 2019 Red Hat, Inc. and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-search-terminal-widget-parent {
+    background: var(--theia-sideBar-background);
+    position: absolute;
+    margin: 0px;
+    border: var(--theia-border-width) solid transparent;
+    padding: 0px;
+    top: 1px;
+    right: 19px;
+
+    z-index: 10;
+}
+
+.theia-search-terminal-widget-parent .theia-search-elem-box {
+    display: flex;
+    margin: 0px;
+    border: var(--theia-border-width) solid transparent;
+    padding: 0px;
+    align-items: center;
+    color: var(--theia-input-foreground);
+    background: var(--theia-input-background);
+}
+
+.theia-search-terminal-widget-parent .theia-search-elem-box input {
+    margin-left: 5px;
+    padding: 0px;
+    width: 100px;
+    height: 18px;
+    color: inherit;
+    background-color: inherit;
+    border: var(--theia-border-width) solid transparent;
+    outline: none;
+}
+
+.theia-search-terminal-widget-parent .search-elem {
+    border: var(--theia-border-width) solid transparent;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 18px;
+    width: 18px;
+    margin: 1px;
+    opacity: 0.7;
+    outline: none;
+}
+
+.theia-search-terminal-widget-parent .search-elem:hover {
+    opacity: 1;
+}
+
+.theia-search-terminal-widget-parent .theia-search-elem-box.focused {
+    border: var(--theia-border-width) solid var(--theia-focusBorder);
+}
+
+.theia-search-terminal-widget-parent .theia-search-elem-box .search-elem.option-enabled {
+    border: var(--theia-border-width) solid var(--theia-inputOption-activeBorder);
+    background-color: var(--theia-inputOption-activeBackground);
+}
+
+.theia-search-terminal-widget-parent .theia-search-elem-box .whole-word {
+    background-image: var(--theia-icon-whole-word);
+}
+
+.theia-search-terminal-widget-parent .theia-search-elem-box .match-case {
+    background-image: var(--theia-icon-case-sensitive);
+}
+
+.theia-search-terminal-widget-parent .theia-search-elem-box .use-regexp {
+    background-image: var(--theia-icon-regex);
+}
+
+.theia-search-terminal-widget-parent .theia-search-terminal-widget {
+    margin: 2px;
+    display: flex;
+    align-items: center;
+    font: var(--theia-content-font-size);
+    color: var(--theia-input-foreground);
+}
+
+.theia-search-terminal-widget-parent .theia-search-terminal-widget button {
+    background-color: transparent;
+}
+
+.theia-search-terminal-widget-parent .theia-search-terminal-widget button:focus {
+    border: var(--theia-border-width) var(--theia-focusBorder) solid;
+}
+
+.theia-search-terminal-widget-parent .theia-search-terminal-widget .search-elem.close {
+    background-image: var(--theia-icon-close);
+}
+
+.theia-search-terminal-widget-parent .theia-search-terminal-widget .search-elem.arrow-up {
+    background-image: var(--theia-icon-arrow-up);
+}
+
+.theia-search-terminal-widget-parent .theia-search-terminal-widget .search-elem.arrow-down {
+    background-image: var(--theia-icon-arrow-down);
+}

@@ -1,0 +1,213 @@
+/********************************************************************************
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+:root {
+    --theia-private-file-dialog-input-height: 21px;
+    --theia-private-location-list-panel-left: 82px;
+    --theia-private-location-list-panel-width: 417px;
+    --theia-private-navigation-panel-icon-size: 21px;
+    --theia-private-navigation-panel-line-height: 23px;
+}
+
+ /*
+  * Open and Save file dialogs
+  */
+
+.dialogContent .theia-FileDialog,
+.dialogContent .theia-SaveFileDialog,
+.dialogContent .theia-ResponsiveFileDialog {
+    height: 500px;
+    width: 500px;
+    border: 1px solid var(--theia-editorWidget-border);
+    background: var(--theia-dropdown-background);
+}
+
+
+@media only screen and (max-height: 700px) {
+    .dialogContent .theia-FileDialog,
+    .dialogContent .theia-SaveFileDialog,
+    .dialogContent .theia-ResponsiveFileDialog {
+        height: 300px;
+    }
+}
+
+.dialogContent .theia-NavigationPanel,
+.dialogContent .theia-FiltersPanel,
+.dialogContent .theia-FileNamePanel {
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.dialogContent .theia-NavigationPanel,
+.dialogContent .theia-FiltersPanel {
+    min-height: 27px;
+}
+
+.dialogContent .theia-FileNamePanel {
+    height: 31px;
+}
+
+/*
+ * Navigation panel items
+ */
+ 
+.dialogContent .theia-NavigationPanel span
+ {
+    position: absolute;
+    top: 0px;
+    line-height: var(--theia-private-navigation-panel-line-height);
+    cursor: pointer;
+    width: var(--theia-private-navigation-panel-icon-size);
+    text-align: center;
+}
+
+.dialogContent .theia-NavigationPanel span:not(.theia-mod-disabled) i.active 
+{
+    transform: scale(var(--theia-toolbar-active-transform-scale));
+}
+
+.dialogContent .theia-NavigationPanel span:focus 
+{
+    outline: none;
+    box-shadow: none;
+}
+
+.dialogContent .theia-NavigationPanel span:focus-visible
+{
+    outline-width: 1px;
+    outline-style: solid;
+    outline-offset: -1px;
+    opacity: 1 !important;
+    outline-color: var(--theia-focusBorder);
+}
+
+.dialogContent .theia-NavigationBack.theia-mod-disabled:focus,
+.dialogContent .theia-NavigationForward.theia-mod-disabled:focus,
+.dialogContent .theia-NavigationHome.theia-mod-disabled:focus,
+.dialogContent .theia-NavigationUp.theia-mod-disabled:focus
+{
+    outline: none;
+    border: none;
+    opacity: var(--theia-mod-disabled-opacity) !important;
+}
+
+.dialogContent .theia-NavigationBack {
+    left: auto;
+}
+
+.dialogContent .theia-NavigationForward {
+    left: 21px;
+}
+
+.dialogContent .theia-NavigationHome {
+    left: 41px;
+}
+
+.dialogContent .theia-NavigationUp {
+    left: 61px;
+}
+
+.dialogContent .theia-LocationListPanel {
+    position: absolute;
+    display: flex;
+    top: 1px;
+    left: var(--theia-private-location-list-panel-left);
+    width: var(--theia-private-location-list-panel-width);
+    height: var(--theia-private-file-dialog-input-height);
+}
+
+.dialogContent .theia-LocationInputToggle {
+    text-align: center;
+    left: 0;
+    width: var(--theia-private-navigation-panel-icon-size);
+    height: var(--theia-private-navigation-panel-icon-size);
+    z-index: 1;
+}
+
+.dialogContent .theia-LocationList,
+.dialogContent .theia-LocationTextInput
+{
+    box-sizing: content-box;
+    padding: unset;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: var(--theia-private-file-dialog-input-height);
+    border: var(--theia-border-width) solid var(--theia-input-border);
+}
+
+.dialogContent .theia-LocationList,
+.dialogContent .theia-LocationTextInput
+{
+    padding-left: var(--theia-private-navigation-panel-icon-size);
+    width: calc(100% - var(--theia-private-navigation-panel-icon-size));
+}
+
+/*
+ * Filters panel items
+ */
+
+.dialogContent .theia-FiltersLabel {
+    position: absolute;
+    left: 1px;
+    top: 0px;
+    line-height: 27px;
+}
+
+.dialogContent .theia-FiltersListPanel {
+    position: absolute;
+    left: 72px;
+    top: 3px;
+}
+
+.dialogContent .theia-FileTreeFiltersList {
+    width: 427px;
+    height: var(--theia-private-file-dialog-input-height);
+}
+
+/*
+ * File name panel items
+ */
+
+.dialogContent .theia-FileNameLabel {
+    position: absolute;
+    left: 1px;
+    top: 0px;
+    line-height: 23px;
+}
+
+.dialogContent .theia-FileNameTextField {
+    position: absolute;
+    left: 72px;
+    top: 0px;
+    width: 420px;
+}
+
+/*
+ * Control panel items
+ */
+
+.dialogContent .theia-ControlPanel {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-bottom: 0px;
+}
+
+.dialogContent .theia-ControlPanel > * {
+    margin-left: 4px;
+}

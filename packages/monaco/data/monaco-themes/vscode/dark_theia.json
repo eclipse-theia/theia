@@ -1,0 +1,5 @@
+{
+  "$schema": "vscode://schemas/color-theme",
+  "name": "Dark (Theia)",
+  "include": "./dark_plus.json"
+}

@@ -1,0 +1,35 @@
+/********************************************************************************
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+@import './file-dialog.css';
+@import './file-icons.css';
+
+.theia-file-tree-drag-image {
+  position: absolute;
+  /*
+    make sure you don't see it flashing
+     */
+  top: -1000px;
+  font-size: var(--theia-ui-font-size1);
+  display: inline-block;
+  padding: 1px calc(var(--theia-ui-padding)*2);
+  border-radius: 10px;
+
+  background: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+  outline: 1px solid var(--theia-contrastActiveBorder);
+  outline-offset: -1px;
+}

@@ -1,0 +1,56 @@
+{
+  "name": "@theia/preview",
+  "version": "1.11.0",
+  "description": "Theia - Preview Extension",
+  "dependencies": {
+    "@theia/core": "1.11.0",
+    "@theia/editor": "1.11.0",
+    "@theia/mini-browser": "1.11.0",
+    "@theia/monaco": "1.11.0",
+    "@types/dompurify": "^2.0.2",
+    "@types/highlight.js": "^10.1.0",
+    "@types/markdown-it": "*",
+    "@types/markdown-it-anchor": "^4.0.1",
+    "dompurify": "^2.0.11",
+    "highlight.js": "10.4.1",
+    "markdown-it": "^8.4.0",
+    "markdown-it-anchor": "~5.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/preview-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "lint": "theiaext lint",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "clean": "theiaext clean",
+    "test": "theiaext test"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.11.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

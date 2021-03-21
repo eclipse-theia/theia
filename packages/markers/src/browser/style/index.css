@@ -1,0 +1,104 @@
+/********************************************************************************
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-marker-container {
+    font-size: var(--theia-ui-font-size1);
+}
+
+.theia-side-panel .theia-marker-container .noMarkers {
+    padding-left: 19px;
+}
+
+.theia-marker-container .markerNode,
+.theia-marker-container .markerFileNode {
+    display: flex;
+    align-items: center;
+}
+
+.theia-marker-container .markerNode,
+.theia-marker-container .markerFileNode {
+    width: calc(100% - 32px);
+}
+
+.theia-marker-container .markerNode div,
+.theia-marker-container .markerFileNode div {
+    margin-right: 5px;
+}
+
+.theia-marker-container .markerFileNode .name,
+.theia-marker-container .markerFileNode .path {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.theia-marker-container .markerFileNode .path {
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-descriptionForeground);
+    align-self: flex-end;
+    white-space: nowrap;
+}
+
+.theia-marker-container .error {
+    color: var(--theia-editorError-foreground);
+}
+
+.theia-marker-container .warning {
+    color: var(--theia-editorWarning-foreground);
+}
+
+.theia-marker-container .information {
+    color: var(--theia-editorInfo-foreground);
+}
+
+.theia-marker-container .hint {
+    color: var(--theia-successBackground);
+}
+
+.theia-marker-container .markerNode .position,
+.theia-marker-container .markerNode .owner {
+    color: var(--theia-descriptionForeground);
+    white-space: nowrap;
+    margin-left: 5px;
+}
+
+.theia-marker-container .markerNode .message {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.problem-tab-icon::before {
+    content: "\f06a"
+}
+
+.theia-marker-container .row-button-container {
+    display: none;
+}
+
+.theia-marker-container .theia-TreeNodeContent:hover .row-button-container {
+    display: flex;
+    justify-content: flex-end;
+    flex: 1;
+    align-items: center;
+    align-self: center;
+}
+
+.theia-marker-container .row-button-container .remove-node {
+    background-image: var(--theia-icon-close);
+    width: 15px;
+    height: 15px;
+}

@@ -1,0 +1,11 @@
+{
+    "Copyright-JS/JSX/TS/TSX/CSS": {
+        "prefix": [
+            "header",
+            "copyright"
+        ],
+        "body": "/********************************************************************************\n * Copyright (C) $CURRENT_YEAR ${YourCompany} and others.\n *\n * This program and the accompanying materials are made available under the\n * terms of the Eclipse Public License v. 2.0 which is available at\n * http://www.eclipse.org/legal/epl-2.0.\n *\n * This Source Code may also be made available under the following Secondary\n * Licenses when the conditions for such availability set forth in the Eclipse\n * Public License v. 2.0 are satisfied: GNU General Public License, version 2\n * with the GNU Classpath Exception which is available at\n * https://www.gnu.org/software/classpath/license.html.\n *\n * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0\n ********************************************************************************/\n\n$0",
+        "description": "Adds the copyright...",
+        "scope": "javascript,javascriptreact,typescript,typescriptreact,css"
+    }
+}

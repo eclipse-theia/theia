@@ -1,0 +1,134 @@
+{
+  "rules": {
+    "@typescript-eslint/consistent-type-definitions": "error",
+    "@typescript-eslint/indent": "off",
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/quotes": [
+      "error",
+      "single",
+      {
+        "avoidEscape": true
+      }
+    ],
+    "@typescript-eslint/semi": [
+      "error",
+      "always"
+    ],
+    "@typescript-eslint/type-annotation-spacing": "error",
+    "arrow-body-style": [
+      "error",
+      "as-needed"
+    ],
+    "arrow-parens": [
+      "error",
+      "as-needed"
+    ],
+    "camelcase": "off",
+    "comma-dangle": "off",
+    "curly": "error",
+    "eol-last": "error",
+    "eqeqeq": [
+      "error",
+      "smart"
+    ],
+    "guard-for-in": "error",
+    "id-blacklist": "off",
+    "id-match": "off",
+    "import/no-extraneous-dependencies": "off",
+    "max-len": [
+      "error",
+      {
+        "code": 180
+      }
+    ],
+    "no-magic-numbers": "off",
+    "no-multiple-empty-lines": [
+      "error",
+      {
+        "max": 1
+      }
+    ],
+    "no-new-wrappers": "error",
+    "no-null/no-null": "error",
+    "no-shadow": "off",
+    "@typescript-eslint/no-shadow": [
+      "error",
+      {
+        "hoist": "all"
+      }
+    ],
+    "no-tabs": "error",
+    "no-throw-literal": "error",
+    "no-trailing-spaces": "error",
+    "no-underscore-dangle": "off",
+    "no-unused-expressions": "error",
+    "no-var": "error",
+    "no-void": "error",
+    "one-var": [
+      "error",
+      "never"
+    ],
+    "prefer-const": [
+      "error",
+      {
+        "destructuring": "all"
+      }
+    ],
+    "radix": "off",
+    "space-before-function-paren": [
+      "error",
+      {
+        "anonymous": "always",
+        "named": "never",
+        "asyncArrow": "always"
+      }
+    ],
+    "spaced-comment": [
+      "error",
+      "always",
+      {
+        "exceptions": [
+          "*",
+          "+",
+          "-",
+          "/"
+        ]
+      }
+    ],
+    "@typescript-eslint/tslint/config": [
+      "error",
+      {
+        "rules": {
+          "file-header": [
+            true,
+            "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0 WITH Classpath-exception-2\\.0"
+          ],
+          "jsdoc-format": [
+            true,
+            "check-multiline-start"
+          ],
+          "one-line": [
+            true,
+            "check-open-brace",
+            "check-catch",
+            "check-else",
+            "check-whitespace"
+          ],
+          "typedef": [
+            true,
+            "call-signature",
+            "property-declaration"
+          ],
+          "whitespace": [
+            true,
+            "check-branch",
+            "check-decl",
+            "check-operator",
+            "check-separator",
+            "check-type"
+          ]
+        }
+      }
+    ]
+  }
+}

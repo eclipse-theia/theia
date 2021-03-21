@@ -1,0 +1,108 @@
+/********************************************************************************
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+:root {
+    --theia-statusBar-height: 19px;
+}
+
+#theia-statusBar {
+    background: var(--theia-statusBar-background);
+    display: flex;
+    min-height: var(--theia-statusBar-height);
+    white-space: nowrap;
+    border-top: var(--theia-border-width) solid var(--theia-statusBar-border);
+}
+
+body.theia-no-open-workspace #theia-statusBar {
+    background: var(--theia-statusBar-noFolderBackground);
+    color: var(--theia-statusBar-noFolderForeground);
+    border-top: var(--theia-border-width) solid var(--theia-statusBar-noFolderBorder);
+}
+
+#theia-statusBar .area {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+}
+
+#theia-statusBar .area.left {
+    justify-content: flex-start;
+    padding-left: calc(var(--theia-ui-padding)*2);
+}
+
+#theia-statusBar .area.right {
+    justify-content: flex-end;
+    padding-right: calc(var(--theia-ui-padding)*2);
+}
+
+#theia-statusBar .area .element {
+    color: var(--theia-statusBar-foreground);
+    display: flex;
+    align-items: center;
+    font-size: var(--theia-statusBar-font-size);
+}
+
+#theia-statusBar .area .element > * {
+    margin-left: calc(var(--theia-ui-padding)/2);
+}
+
+#theia-statusBar .area .element > *:last-child {
+    margin-right: calc(var(--theia-ui-padding)/2);
+}
+
+#theia-statusBar .area .element.hasCommand:hover {
+    background-color: var(--theia-statusBarItem-hoverBackground);
+    cursor: pointer;
+}
+
+#theia-statusBar .area .element.hasCommand:active {
+    background-color: var(--theia-statusBarItem-activeBackground);
+}
+
+.theia-mod-offline #theia-statusBar {
+    background-color: var(--theia-statusBar-offlineBackground) !important;
+}
+
+.theia-mod-offline #theia-statusBar .area .element {
+    color: var(--theia-statusBar-offlineForeground) !important;
+}
+
+.theia-mod-offline #theia-statusBar .area .element.hasCommand:hover {
+    background-color: var(--theia-statusBarItem-offlineHoverBackground) !important;
+}
+
+.theia-mod-offline #theia-statusBar .area .element.hasCommand:active {
+    background-color: var(--theia-statusBarItem-offlineActiveBackground) !important;
+}
+
+#theia-statusBar .area.left .element {
+    margin-right: var(--theia-ui-padding);
+}
+
+#theia-statusBar .area.right .element {
+    margin-left: var(--theia-ui-padding);
+}
+
+#theia-statusBar .element {
+    /* https://css-tricks.com/os-specific-fonts-css/#article-header-id-0 */
+    /* https://github.com/Microsoft/vscode/blob/5dbdc8d19c8cf6dd10d558eabcc48bba962ea45f/src/vs/workbench/browser/media/style.css#L8-L24 */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif;
+    font-size: 12px;
+    text-rendering: auto;
+    text-decoration: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}

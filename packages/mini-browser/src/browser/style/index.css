@@ -1,0 +1,160 @@
+/********************************************************************************
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+:root {
+    --theia-private-mini-browser-height: var(--theia-content-line-height);
+}
+
+.theia-mini-browser {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.theia-mini-browser-icon {
+    mask: url('mini-browser.svg');
+    -webkit-mask: url('mini-browser.svg');
+}
+
+.theia-mini-browser-toolbar {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: 0 10px;
+}
+
+.theia-mini-browser-toolbar-read-only {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    padding: 0 10px;
+}
+
+.theia-mini-browser-toolbar .theia-input {
+    width: 100%;
+    line-height: var(--theia-private-mini-browser-height);
+    margin-left: 4px;
+    margin-right: 4px;
+}
+
+.theia-mini-browser-toolbar-read-only .theia-input {
+    width: 100%;
+    line-height: var(--theia-private-mini-browser-height);
+    margin-left: 4px;
+    margin-right: 4px;
+    cursor: pointer;
+    background: var(--theia-input-background);
+    border: none;
+    text-decoration: underline;
+    outline: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--theia-input-foreground);
+}
+
+.theia-mini-browser-toolbar-read-only .theia-input:hover {
+    color: var(--theia-button-hoverBackground);
+}
+
+.theia-mini-browser-button {
+    min-width: 1rem;
+    text-align: center;
+    flex-grow: 0;
+    font-family: FontAwesome;
+    font-size: calc(var(--theia-content-font-size) * 0.8);
+    color: var(--theia-icon-foreground);
+    margin: 0px 4px 0px 4px;
+}
+
+.theia-mini-browser-button:not(.theia-mini-browser-button-disabled):hover {
+    cursor: pointer;
+}
+
+.theia-mini-browser-button-disabled {
+    opacity: var(--theia-mod-disabled-opacity);
+}
+
+.theia-mini-browser-previous::before {
+    content: "\f053";
+}
+
+.theia-mini-browser-next::before {
+    content: "\f054";
+}
+
+.theia-mini-browser-refresh::before {
+    content: "\f021";
+}
+
+.theia-mini-browser-open::before {
+    content: "\f08e";
+}
+
+.theia-mini-browser-content-area {
+    position: relative;
+    display: flex;
+    height: 100%;
+    width: 100%;
+    flex-direction: column;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.theia-mini-browser-pdf-container {
+    width: 100%;
+    height: 100%;
+}
+
+.theia-mini-browser-load-indicator {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 10;
+    background: var(--theia-editor-background);
+    background-image: var(--theia-preloader);
+    background-size: 60px 60px;
+    background-repeat: no-repeat;
+    background-position: center;
+    transition: opacity 0.8s;
+}
+
+.theia-mini-browser-load-indicator.theia-fade-out {
+    opacity: 0;
+}
+
+.theia-mini-browser-error-bar {
+    height: 19px;
+    padding-left: var(--theia-ui-padding);
+    background-color: var(--theia-inputValidation-errorBorder);
+    color: var(--theia-editor-foreground);
+    font-size: var(--theia-statusBar-font-size);
+    z-index: 1000; /* Above the transparent overlay (`z-index: 999;`). */
+}
+
+.theia-mini-browser-error-bar span {
+    margin-top: 3px;
+    margin-left: var(--theia-ui-padding);
+}
+
+.theia-mini-browser-content-area iframe {
+    flex-grow: 1;
+    border: none; margin: 0; padding: 0;
+}

@@ -1,0 +1,111 @@
+.monaco-editor {
+    padding-bottom: 5.6px;
+    font-family: var(--theia-code-font-family);
+    font-size: inherit !important;
+}
+
+/*
+ * set z-index to 0, so tabs are not above overlay widgets
+ */
+.p-TabBar.theia-app-centers {
+    z-index: 0;
+    display: flex;
+}
+
+/*
+ * we need to disable the background image when using font awesome icons and file-icons
+ */
+.monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.fa,
+.monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.file-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: none;
+    margin-right: 0px;
+}
+
+.monaco-quick-open-widget .quick-open-tree .quick-open-entry .codicon {
+	vertical-align: sub;
+}
+
+.monaco-quick-open-widget {
+    background-color: var(--theia-quickInput-background) !important;
+    color: var(--theia-quickInput-foreground) !important;
+}
+
+.quick-open-entry .quick-open-row .monaco-icon-label .monaco-icon-label-description-container .label-description {
+    font-size: calc(var(--theia-ui-font-size0) * 0.95);
+}
+
+.monaco-editor .zone-widget {
+	position: absolute;
+	z-index: 10;
+    background-color: var(--theia-editorWidget-background);
+}
+
+.monaco-editor .zone-widget .zone-widget-container {
+	border-top-style: solid;
+	border-bottom-style: solid;
+	border-top-width: 0;
+	border-bottom-width: 0;
+    border-top-color: var(--theia-peekView-border);
+    border-bottom-color: var(--theia-peekView-border);
+	position: relative;
+}
+
+.monaco-editor .parameter-hints-widget > .wrapper {
+    overflow: hidden;
+}
+
+/* List highlight, see https://github.com/microsoft/vscode/blob/ff5f581425da6230b6f9216ecf19abf6c9d285a6/src/vs/workbench/browser/style.ts#L50 */
+.monaco-tree .monaco-tree-row .monaco-highlighted-label .highlight,
+.monaco-list .monaco-list-row .monaco-highlighted-label .highlight {
+	color: var(--theia-list-highlightForeground) !important;
+}
+
+/* Scrollbars, see https://github.com/microsoft/vscode/blob/ff5f581425da6230b6f9216ecf19abf6c9d285a6/src/vs/workbench/browser/style.ts#L65 */
+.monaco-scrollable-element > .shadow.top {
+    box-shadow: var(--theia-scrollbar-shadow) 0 6px 6px -6px inset !important;
+}
+
+.monaco-scrollable-element > .shadow.left {
+    box-shadow: var(--theia-scrollbar-shadow) 6px 0 6px -6px inset !important;
+}
+
+.monaco-scrollable-element > .shadow.top.left {
+    box-shadow: var(--theia-scrollbar-shadow) 6px 6px 6px -6px inset !important;
+}
+
+.monaco-scrollable-element > .scrollbar > .slider {
+    background: var(--theia-scrollbarSlider-background) !important;
+}
+
+.monaco-scrollable-element > .scrollbar > .slider:hover {
+    background: var(--theia-scrollbarSlider-hoverBackground) !important;
+}
+
+.monaco-scrollable-element > .scrollbar > .slider.active {
+    background: var(--theia-scrollbarSlider-activeBackground) !important;
+}
+
+.monaco-scrollable-element > .scrollbar.vertical > .slider {
+    width: var(--theia-scrollbar-width) !important;
+}
+
+.monaco-scrollable-element > .scrollbar.horizontal > .slider {
+    height: var(--theia-scrollbar-width) !important;
+}
+
+.monaco-editor .reference-zone-widget .ref-tree .referenceMatch .highlight {
+    color: unset !important;
+}
+
+.monaco-editor .find-widget .monaco-inputbox.synthetic-focus {
+    outline: var(--theia-border-width) solid;
+    outline-offset: calc(-1*var(--theia-border-width));
+    outline-color: var(--theia-focusBorder);
+}
+
+.monaco-editor .rename-box input {
+    color: var(--theia-editor-foreground);
+}

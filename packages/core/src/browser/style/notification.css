@@ -1,0 +1,39 @@
+/********************************************************************************
+ * Copyright (C) 2018 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+:root {
+    --theia-notification-count-height: 15.5px;
+    --theia-notification-count-width: 15.5px;
+}
+
+.notification-count-container {
+    align-self: center;
+    background-color: var(--theia-badge-background);
+    border-radius: 20px;
+    color: var(--theia-badge-foreground);
+    display: flex;
+    font-size: calc(var(--theia-ui-font-size0) * 0.8);
+    font-weight: 500;
+    height: var(--theia-notification-count-height);
+    justify-content: center;
+    min-width: 6px;
+    padding: 0 5px;
+    text-align: center;
+}
+
+.notification-count-container > .notification-count {
+    align-self: center;
+}

@@ -1,0 +1,93 @@
+/*
+The following CSS variables define the main public API for styling Theia.
+These variables should be used by all extensions wherever possible. In other
+words, extensions should not define custom colors, sizes, etc. unless
+absolutely necessary. This enables users to adapt the visual theme of Theia
+by changing these variables.
+
+Many variables appear in ordered sequences (0,1,2,...). For most of these
+sequences, colors go from dark to bright for dark themes, and from bright to
+dark for bright themes. A few sequences are used to create contrast against
+the others, e.g. font and accent colors, and thus their brightness goes the
+other way around.
+
+Throughout Theia, we are mostly following principles from Google's Material
+Design when selecting colors. We are not, however, following all of MD as it
+is not optimized for dense, information rich UIs.
+*/
+
+
+:root {
+
+  /* Borders */
+
+  --theia-border-width: 1px;
+  --theia-panel-border-width: 2px;
+
+
+  /* UI fonts
+    ---------------------------------------------------
+     The UI font CSS variables are used for the typography all of the Theia
+     user interface elements that are not directly user-generated content.
+  */
+
+  --theia-ui-font-scale-factor: 1.2;
+  --theia-ui-font-size0: calc(var(--theia-ui-font-size1) / var(--theia-ui-font-scale-factor));
+  --theia-ui-font-size1: 13px; /* Base font size */
+  --theia-ui-font-size2: calc(var(--theia-ui-font-size1) * var(--theia-ui-font-scale-factor));
+  --theia-ui-font-size3: calc(var(--theia-ui-font-size2) * var(--theia-ui-font-scale-factor));
+  --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
+  --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Content fonts
+     Content font variables are used for typography of user-generated content.
+  */
+
+  --theia-content-font-size: 13px;
+  --theia-content-line-height: 22px;
+
+  --theia-code-font-size: 13px;
+  --theia-code-line-height: 17px;
+  --theia-code-padding: 5px;
+  --theia-code-font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+  --theia-monospace-font-family: monospace;
+  --theia-ui-padding: 6px;
+
+  /* Icons */
+  --theia-icon-chevron-right: url(../icons/chevron-right-light.svg);
+  --theia-icon-loading: url(../icons/loading-light.svg);
+  --theia-icon-close: url(../icons/close-bright.svg);
+  --theia-icon-arrow-up: url(../icons/arrow-up-bright.svg);
+  --theia-icon-arrow-down: url(../icons/arrow-down-bright.svg);
+  --theia-sprite-y-offset: 0px;
+  --theia-icon-circle: url(../icons/circle-bright.svg);
+  --theia-preloader: url(../icons/spinner.gif);
+  --theia-icon-case-sensitive: url(../icons/case-sensitive.svg);
+  --theia-icon-regex: url(../icons/regex.svg);
+  --theia-icon-whole-word: url(../icons/whole-word.svg);
+  --theia-icon-refresh: url(../icons/Refresh.svg);
+  --theia-icon-expand: url(../icons/expand.svg);
+  --theia-icon-close-all: url(../icons/close-all-bright.svg);
+  --theia-icon-collapse: url(../icons/collapse.svg);
+  --theia-icon-collapse-all: url(../icons/CollapseAll.svg);
+  --theia-icon-remove-all: url(../icons/remove-all.svg);
+  --theia-icon-add: url(../icons/add.svg);
+  --theia-icon-clear: url(../icons/clear-search-results.svg);
+  --theia-icon-replace: url(../icons/replace.svg);
+  --theia-icon-replace-all: url(../icons/replace-all.svg);
+  --theia-icon-open-file: url(../icons/open-file-bright.svg);
+  --theia-icon-open-change: url(../icons/open-change-bright.svg);
+  --theia-icon-preview: url(../icons/preview-bright.svg);
+  --theia-icon-open-json: url(../icons/edit-json.svg);
+  --theia-icon-size: 16px;
+
+  /* Scrollbars */
+  --theia-scrollbar-width: 10px;
+  --theia-scrollbar-rail-width: 10px;
+
+  /* Statusbar */
+  --theia-statusBar-font-size: 12px;
+
+  /* Opacity for disabled mod  */
+  --theia-mod-disabled-opacity: 0.4;
+}

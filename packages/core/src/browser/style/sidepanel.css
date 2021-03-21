@@ -1,0 +1,340 @@
+/********************************************************************************
+ * Copyright (C) 2017, 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/*-----------------------------------------------------------------------------
+| Variables
+|----------------------------------------------------------------------------*/
+
+:root {
+  --theia-private-sidebar-tab-width: 50px;
+  --theia-private-sidebar-tab-height: 32px;
+  --theia-private-sidebar-tab-padding-top-and-bottom: 11px;
+  --theia-private-sidebar-tab-padding-left-and-right: 10px;
+  --theia-private-sidebar-scrollbar-rail-width: 7px;
+  --theia-private-sidebar-scrollbar-width: 5px;
+  --theia-private-sidebar-icon-size: 28px;
+}
+
+
+/*-----------------------------------------------------------------------------
+| SideBars (left and right)
+|----------------------------------------------------------------------------*/
+
+.p-TabBar.theia-app-sides {
+  display: block;
+  color: var(--theia-activityBar-inactiveForeground);
+  background: var(--theia-activityBar-background);
+  font-size: var(--theia-ui-font-size1);
+  min-width: var(--theia-private-sidebar-tab-width);
+  max-width: var(--theia-private-sidebar-tab-width);
+}
+
+.p-TabBar.theia-app-sides .p-TabBar-content {
+  z-index: 1;
+}
+
+.p-TabBar.theia-app-sides .p-TabBar-tab {
+  position: relative;
+  background: var(--theia-activityBar-background);
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: var(--theia-private-sidebar-tab-height);
+  cursor: pointer;
+}
+
+.p-TabBar.theia-app-left .p-TabBar-tab {
+    border-left: var(--theia-panel-border-width) solid transparent;
+}
+
+.p-TabBar.theia-app-left.theia-app-sides {
+    border-right: var(--theia-panel-border-width) solid var(--theia-activityBar-border);
+}
+
+.p-TabBar.theia-app-right .p-TabBar-tab {
+    border-right: var(--theia-panel-border-width) solid transparent;
+}
+
+.p-Widget.p-TabBar.theia-app-right.theia-app-sides {
+    border-left: var(--theia-panel-border-width) solid var(--theia-activityBar-border);
+}
+
+.p-TabBar.theia-app-sides .p-TabBar-tab.p-mod-current,
+.p-TabBar.theia-app-sides .p-TabBar-tab:hover {
+  color: var(--theia-activityBar-foreground);
+  background-color: var(--theia-activityBar-activeBackground);
+  min-height: var(--theia-private-sidebar-tab-height);
+  height: var(--theia-private-sidebar-tab-height);
+  border-top: none;
+}
+
+.p-TabBar.theia-app-left .p-TabBar-tab.p-mod-current {
+  border-left: var(--theia-panel-border-width) solid var(--theia-activityBar-activeBorder);
+  border-top-color: transparent;
+}
+
+.p-TabBar.theia-app-left .p-TabBar-tab.p-mod-current.theia-mod-active {
+    border-left: var(--theia-panel-border-width) solid var(--theia-focusBorder);
+}
+
+.p-TabBar.theia-app-right .p-TabBar-tab.p-mod-current {
+    border-right: var(--theia-panel-border-width) solid var(--theia-activityBar-activeBorder);
+    border-top-color: transparent;
+}
+
+.p-TabBar.theia-app-right .p-TabBar-tab.p-mod-current.theia-mod-active {
+    border-right: var(--theia-panel-border-width) solid var(--theia-focusBorder);
+}
+
+.p-TabBar.theia-app-sides .p-TabBar-tabLabel,
+.p-TabBar.theia-app-sides .p-TabBar-tabCloseIcon {
+  display: none;
+}
+
+/* inactive common icons */
+.p-TabBar.theia-app-sides .p-TabBar-tabIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 23px;
+  text-align: center;
+  color: inherit;
+  background-color: var(--theia-activityBar-inactiveForeground);
+
+  /* svg */
+  width: var(--theia-private-sidebar-tab-width);
+  height: var(--theia-private-sidebar-tab-width);
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-size: var(--theia-private-sidebar-icon-size);
+  -webkit-mask-size: var(--theia-private-sidebar-icon-size);
+  mask-position: 50% 50%;
+  -webkit-mask-position: 50% 50%;
+}
+
+/* inactive file icons */
+.p-TabBar.theia-app-sides .file-icon.p-TabBar-tabIcon {
+  background: inherit !important;
+}
+
+/* inactive font-awesome icons */
+.p-TabBar.theia-app-sides .fa.p-TabBar-tabIcon {
+  background: none !important;
+}
+
+/* active icons */
+.p-TabBar.theia-app-sides .p-TabBar-tabIcon:hover,
+.p-TabBar.theia-app-sides .p-mod-current .p-TabBar-tabIcon {
+  color: var(--theia-activityBar-foreground);
+  background-color: var(--theia-activityBar-foreground);
+}
+
+.p-TabBar.theia-app-left .p-TabBar-tabLabel {
+  transform-origin: top left 0;
+  transform: rotate(-90deg) translateX(-100%);
+}
+
+.p-TabBar.theia-app-right .p-TabBar-tabLabel {
+  transform-origin: top left 0;
+  transform: rotate(90deg) translateY(-50%);
+}
+
+#theia-left-content-panel.theia-mod-collapsed,
+#theia-right-content-panel.theia-mod-collapsed {
+  max-width: var(--theia-private-sidebar-tab-width);
+}
+
+#theia-left-content-panel > .p-Panel {
+    border-right: var(--theia-panel-border-width) solid var(--theia-activityBar-border);
+}
+
+#theia-right-content-panel > .p-Panel {
+    border-left: var(--theia-panel-border-width) solid var(--theia-activityBar-border);
+}
+
+.theia-side-panel {
+  background-color: var(--theia-sideBar-background);
+}
+
+.p-Widget.theia-side-panel .p-Widget,
+.p-Widget .theia-sidepanel-toolbar {
+    color: var(--theia-sideBar-foreground);
+}
+
+.theia-app-sidebar-container {
+  min-width: var(--theia-private-sidebar-tab-width);
+  max-width: var(--theia-private-sidebar-tab-width);
+  background: var(--theia-activityBar-background);
+  display: flex;
+  flex-direction: column;
+}
+
+.theia-app-sidebar-container .theia-app-sides {
+  flex-grow: 1;
+}
+
+.theia-app-sidebar-container .theia-sidebar-bottom-menu {
+  flex-shrink: 0;
+}
+
+.p-Widget.theia-sidebar-bottom-menu {
+  background-color: var(--theia-activityBar-background);
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.p-Widget.theia-sidebar-bottom-menu i {
+  padding: var(--theia-private-sidebar-tab-padding-top-and-bottom) var(--theia-private-sidebar-tab-padding-left-and-right);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: var(--theia-activityBar-inactiveForeground);
+  background-color: var(--theia-activityBar-background);
+  font-size: var(--theia-private-sidebar-icon-size);
+}
+
+.theia-sidebar-bottom-menu i:hover {
+  color: var(--theia-activityBar-foreground);
+}
+
+/*-----------------------------------------------------------------------------
+| Perfect scrollbar
+|----------------------------------------------------------------------------*/
+
+.p-TabBar.theia-app-sides > .ps__rail-y {
+  width: var(--theia-private-sidebar-scrollbar-rail-width);
+  z-index: 1000;
+}
+
+#theia-app-shell .p-TabBar.theia-app-sides > .ps__rail-y  >.ps__thumb-y {
+  width: var(--theia-private-sidebar-scrollbar-width);
+  right: calc((var(--theia-private-sidebar-scrollbar-rail-width) - var(--theia-private-sidebar-scrollbar-width)) / 2);
+}
+
+.p-TabBar.theia-app-sides > .ps__rail-y:hover,
+.p-TabBar.theia-app-sides > .ps__rail-y:focus {
+  width: var(--theia-private-sidebar-scrollbar-rail-width);
+}
+
+.p-TabBar.theia-app-sides > .ps__rail-y:hover > .ps__thumb-y,
+.p-TabBar.theia-app-sides > .ps__rail-y:focus > .ps__thumb-y {
+  width: var(--theia-private-sidebar-scrollbar-width);
+  right: calc((var(--theia-private-sidebar-scrollbar-rail-width) - var(--theia-private-sidebar-scrollbar-width)) / 2);
+}
+
+
+/*-----------------------------------------------------------------------------
+| Bottom content panel
+|----------------------------------------------------------------------------*/
+
+#theia-bottom-content-panel {
+    background: var(--theia-panel-background);
+}
+
+#theia-bottom-content-panel .theia-input {
+    border-color: var(--theia-panelInput-border);
+}
+
+#theia-bottom-content-panel .p-DockPanel-handle[data-orientation='horizontal'] {
+    border-left: var(--theia-border-width) solid var(--theia-panel-border);
+}
+
+#theia-bottom-content-panel .p-TabBar {
+    border-top: var(--theia-border-width) solid var(--theia-panel-border);
+    background: inherit;
+}
+
+#theia-bottom-content-panel .p-TabBar-tab {
+    background: inherit;
+}
+
+#theia-bottom-content-panel .p-TabBar-tab:not(.p-mod-current) {
+    color: var(--theia-panelTitle-inactiveForeground);
+}
+
+#theia-bottom-content-panel .p-TabBar-tab.p-mod-current {
+    color: var(--theia-panelTitle-activeForeground);
+    border-top: var(--theia-border-width) solid var(--theia-panelTitle-activeBorder);
+}
+
+#theia-bottom-content-panel .p-TabBar-tab.p-mod-current.theia-mod-active {
+    border-top-color: var(--theia-focusBorder);
+}
+
+/*-----------------------------------------------------------------------------
+| Hidden tab bars used for rendering vertical side bars
+|----------------------------------------------------------------------------*/
+
+.theia-TabBar-hidden-content {
+  display: flex;
+  position: absolute;
+  visibility: hidden;
+}
+
+.p-TabBar.theia-app-sides > .theia-TabBar-hidden-content .p-TabBar-tab {
+  line-height: var(--theia-private-sidebar-tab-width);
+}
+
+.p-TabBar.theia-app-left > .theia-TabBar-hidden-content .p-TabBar-tabLabel {
+  transform: none;
+}
+
+.p-TabBar.theia-app-right > .theia-TabBar-hidden-content .p-TabBar-tabLabel {
+  transform: none;
+}
+
+/*-----------------------------------------------------------------------------
+| Sidepanel Toolbar
+|----------------------------------------------------------------------------*/
+
+.theia-sidepanel-toolbar {
+    min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
+    display: flex;
+    padding-left: 5px;
+    align-items: center;
+    background-color: var(--theia-sideBar-background);
+}
+
+.theia-sidepanel-toolbar .theia-sidepanel-title {
+    color: var(--theia-settings-headerForeground);
+    flex: 1;
+    margin-left: 14px;
+    text-transform: uppercase;
+    font-size: var(--theia-ui-font-size0);
+}
+
+.theia-sidepanel-toolbar .p-TabBar-toolbar .item {
+    color: var(--theia-icon-foreground);
+}
+
+.theia-sidepanel-toolbar .p-TabBar-toolbar .item > div{
+    height: 18px;
+    width: 18px;
+    background-repeat: no-repeat;
+}
+
+.noWrapInfo {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.noWrapInfoTree {
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,61 @@
+// If one would like to add/remove/modify user preferences without modifying the content of the
+// workspace settings file, then one would need to modify the `settings.json` under here:
+// - Windows: %APPDATA%\Code\User\settings.json
+// - Linux: $HOME/.config/Code/User/settings.json
+// - Mac: $HOME/Library/Application Support/Code/User/settings.json
+{
+  "tslint.enable": true,
+  "editor.formatOnSave": true,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/lib": true,
+    "**/coverage": true
+  },
+  "lcov.path": [
+    "packages/core/coverage/lcov.info",
+    "packages/editor/coverage/lcov.info",
+    "packages/filesystem/coverage/lcov.info",
+    "packages/go/coverage/lcov.info",
+    "packages/java/coverage/lcov.info",
+    "packages/languages/coverage/lcov.info",
+    "packages/monaco/coverage/lcov.info",
+    "packages/navigator/coverage/lcov.info",
+    "packages/keymaps/coverage/lcov.info",
+    "packages/preferences/coverage/lcov.info",
+    "packages/process/coverage/lcov.info",
+    "packages/python/coverage/lcov.info",
+    "packages/terminal/coverage/lcov.info",
+    "packages/workspace/coverage/lcov.info",
+    "packages/task/coverage/lcov.info",
+    "packages/monaco-textmate/coverage/lcov.info"
+  ],
+  "lcov.watch": [
+    {
+      "pattern": "**/*.spec.ts",
+      "command": "yarn test:theia"
+    }
+  ],
+  "editor.insertSpaces": true,
+  "[typescript]": {
+    "editor.tabSize": 4,
+    "editor.defaultFormatter": "vscode.typescript-language-features",
+  },
+  "[javascript]": {
+    "editor.tabSize": 4,
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[json]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "vscode.json-language-features",
+  },
+  "[jsonc]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "vscode.json-language-features",
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.insertFinalNewline": true,
+  "clang-format.language.typescript.enable": false,
+  "editor.rulers": [
+    180
+  ], // ESLint `max-len` rule.
+}

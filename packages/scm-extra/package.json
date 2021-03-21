@@ -1,0 +1,49 @@
+{
+  "name": "@theia/scm-extra",
+  "version": "1.11.0",
+  "description": "Theia - Source control extras Extension",
+  "dependencies": {
+    "@theia/core": "1.11.0",
+    "@theia/editor": "1.11.0",
+    "@theia/filesystem": "1.11.0",
+    "@theia/navigator": "1.11.0",
+    "@theia/scm": "1.11.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/scm-extra-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "lint": "theiaext lint",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.11.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

@@ -1,0 +1,84 @@
+/********************************************************************************
+ * Copyright (C) 2018 Ericsson and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+html, body {
+    font-family: var(--theia-ui-font-family);
+}
+
+.col {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-grid {
+    display: flex;
+}
+
+.gs-action-container {
+    line-height: 20px;
+}
+
+.gs-action-details {
+    padding-left: 5px;
+    color: var(--theia-descriptionForeground);
+}
+
+.gs-container {
+    padding: 20px;
+}
+
+.gs-header h1 {
+    flex: 1;
+    font-weight: 600;
+}
+
+.gs-hr {
+    background-color: var(--theia-contrastBorder);
+    height: 1px;
+    border: 0;
+    margin: 0px;
+}
+
+.gs-no-recent {
+    color: var(--theia-descriptionForeground);
+}
+
+.gs-section a {
+    border: none;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.gs-section a:hover {
+    text-decoration: underline;
+}
+
+.gs-section-header {
+    font-size: var(--theia-ui-font-size2);
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.gs-section-header i {
+    padding-right: 5px;
+}
+
+.gs-sub-header {
+    color: var(--theia-descriptionForeground);
+    text-transform: capitalize;
+    font-weight: 400;
+}

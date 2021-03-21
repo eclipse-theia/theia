@@ -1,0 +1,127 @@
+/********************************************************************************
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+.theia-scm-history .history-container {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: 100%;
+}
+
+.theia-scm-history .listContainer {
+    flex: 1;
+    position: relative;
+}
+
+.theia-scm-history .commitList {
+    height: 100%;
+}
+
+.theia-scm-history .history-container .noWrapInfo {
+    width: 100%;
+}
+
+
+.theia-scm-history .commitList .commitListElement {
+    margin: 3px 0;
+}
+
+.theia-scm-history .commitListElement.first .containerHead {
+    border: none;
+}
+
+.theia-scm-history .commitListElement .containerHead {
+    width: calc(100% - 5px);
+    height: 50px;
+    display: flex;
+    align-items: center;
+    border-top: 1px solid var(--theia-contrastBorder);
+}
+
+.theia-scm-history .commitListElement .containerHead:hover {
+    background-color: var(--theia-list-hoverBackground);
+    color: var(--theia-list-hoverForeground);
+    cursor: pointer;
+}
+
+.theia-scm-history:focus-within .commitListElement .containerHead.theia-mod-selected {
+    background: var(--theia-list-focusBackground);
+    color: var(--theia-list-focusForeground);
+}
+
+.theia-scm-history:not(:focus-within) .commitListElement .containerHead.theia-mod-selected {
+    background: var(--theia-list-inactiveFocusBackground);
+}
+
+.theia-scm-history .commitListElement .containerHead .headContent {
+    display: flex;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 8px 0 2px;
+}
+
+.theia-scm-history .commitListElement .containerHead .headContent .image-container{
+    margin-right: 5px;
+}
+
+.theia-scm-history .commitListElement .containerHead .headContent .image-container img{
+    width: 27px;
+}
+
+.theia-scm-history .commitListElement .containerHead .headContent .headLabelContainer{
+    min-width: calc(100% - 93px);
+}
+
+.theia-scm-history .commitListElement .containerHead .headContent .headLabelContainer.singleFileMode{
+    width: 100%;
+}
+
+.theia-scm-history .commitListElement .containerHead .headContent .expansionToggle{
+    display: flex;
+    align-items: center;
+}
+
+.theia-scm-history .commitListElement .containerHead .headContent .detailButton{
+    display: flex;
+    align-items: center;
+    visibility: hidden;
+    margin: 0 5px;
+}
+
+.theia-scm-history .commitListElement .containerHead:hover .headContent .detailButton {
+    visibility: visible;
+}
+
+.theia-scm-history .commitListElement .containerHead .headContent .expansionToggle > .toggle {
+    display: flex;
+    background: var(--theia-list-focusBackground);
+    padding: 5px;
+    border-radius: 7px;
+    margin-left: 5px;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 30px;
+    color: var(--theia-theia-list-focusForeground);
+}
+
+.theia-scm-history .commitTime {
+    color: var(--theia-descriptionForeground);
+    font-size: smaller;
+}
+
+.scm-history-tab-icon::before {
+    content: "\f1da"
+}
