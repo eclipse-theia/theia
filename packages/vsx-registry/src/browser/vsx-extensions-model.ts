@@ -158,16 +158,17 @@ export class VSXExtensionsModel {
     }
 
     protected async updateInstalled(): Promise<void> {
+        const prevInstalled = this._installed;
         return this.doChange(async () => {
             const plugins = this.pluginSupport.plugins;
-            const installed = new Set<string>();
+            const currInstalled = new Set<string>();
             const refreshing = [];
             for (const plugin of plugins) {
                 if (plugin.model.engine.type === 'vscode') {
                     const id = plugin.model.id;
                     this._installed.delete(id);
                     const extension = this.setExtension(id);
-                    installed.add(extension.id);
+                    currInstalled.add(extension.id);
                     refreshing.push(this.refresh(id));
                 }
             }
@@ -175,6 +176,7 @@ export class VSXExtensionsModel {
                 refreshing.push(this.refresh(id));
             }
             Promise.all(refreshing);
+            const installed = new Set([...prevInstalled, ...currInstalled]);
             const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
             this._installed = new Set(installedSorted.values());
         });
