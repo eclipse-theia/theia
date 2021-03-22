@@ -770,7 +770,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, label, source, scope, problemMatcher, detail, command, args, options, windows, group, presentation, ...properties } = taskDto;
+    const { type, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, ...properties } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
@@ -806,6 +806,12 @@ export function toTask(taskDto: TaskDto): theia.Task {
 
     if (taskType === 'customExecution' || types.CustomExecution.is(execution)) {
         result.execution = getCustomExecution(taskDto);
+        // if taskType is customExecution, we need to put all the information into taskDefinition,
+        // because some parameters may be in taskDefinition.
+        taskDefinition.label = label;
+        taskDefinition.command = command;
+        taskDefinition.args = args;
+        taskDefinition.options = options;
     }
 
     if (group) {
