@@ -142,3 +142,8 @@ Updating the `yarn.lock` helps identify potential problems with our dependency v
 To successfully complete a `yarn upgrade`, one must:
 - perform `yarn upgrade` at the root of the repository.
 - fix any compilation errors, typing issues, and failing tests that may be introduced.
+
+### Update Milestones
+
+* Close current release [milestone](https://github.com/eclipse-theia/theia/milestones).
+* Create the next two milestones in the case they do not already exist. Generally, the release is performed on the last Thursday of the month, but there may be exceptions (bug fix release, holidays, etc.)
