@@ -33,8 +33,8 @@ import { IPCConnectionProvider } from '@theia/core/lib/node';
 import { JsonRpcProxyFactory, ConnectionErrorHandler } from '@theia/core';
 import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher';
 
-export const NSFW_SINGLE_THREADED = process.argv.includes('--no-cluster');
-export const NSFW_WATCHER_VERBOSE = process.argv.includes('--nsfw-watcher-verbose');
+export const NSFW_SINGLE_THREADED = process.argv.indexOf('--no-cluster') !== -1;
+export const NSFW_WATCHER_VERBOSE = process.argv.indexOf('--nsfw-watcher-verbose') !== -1;
 
 export const NsfwFileSystemWatcherServiceProcessOptions = Symbol('NsfwFileSystemWatcherServiceProcessOptions');
 /**
