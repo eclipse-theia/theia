@@ -9873,7 +9873,7 @@ declare module '@theia/plugin' {
          * @param scope Specifies the task's scope.
          * @param name The task's name. Is presented in the user interface.
          * @param source The task's source (e.g. 'gulp', 'npm', ...). Is presented in the user interface.
-         * @param execution The process or shell execution.
+         * @param execution The process, shell or custom execution.
          * @param problemMatchers the names of problem matchers to use, like '$tsc'
          *  or '$eslint'. Problem matchers can be contributed by an extension using
          *  the `problemMatchers` extension point.
@@ -9883,7 +9883,7 @@ declare module '@theia/plugin' {
             scope: WorkspaceFolder | TaskScope.Global | TaskScope.Workspace,
             name: string,
             source?: string,
-            execution?: ProcessExecution | ShellExecution,
+            execution?: ProcessExecution | ShellExecution | CustomExecution,
             problemMatchers?: string | string[]);
 
         /**
@@ -9894,7 +9894,7 @@ declare module '@theia/plugin' {
          * @param definition The task definition as defined in the taskDefinitions extension point.
          * @param name The task's name. Is presented in the user interface.
          * @param source The task's source (e.g. 'gulp', 'npm', ...). Is presented in the user interface.
-         * @param execution The process or shell execution.
+         * @param execution The process, shell or custom execution.
          * @param problemMatchers the names of problem matchers to use, like '$tsc'
          *  or '$eslint'. Problem matchers can be contributed by an extension using
          *  the `problemMatchers` extension point.
@@ -9903,7 +9903,7 @@ declare module '@theia/plugin' {
             taskDefinition: TaskDefinition,
             name: string,
             source: string,
-            execution?: ProcessExecution | ShellExecution,
+            execution?: ProcessExecution | ShellExecution | CustomExecution,
             problemMatchers?: string | string[]);
 
         /** The task's name */

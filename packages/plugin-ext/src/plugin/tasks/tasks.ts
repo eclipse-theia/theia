@@ -35,8 +35,10 @@ export class TasksExtImpl implements TasksExt {
     private callId = 0;
     private adaptersMap = new Map<number, TaskProviderAdapter>();
     private executions = new Map<number, theia.TaskExecution>();
-    protected providedCustomExecutions: Map<string, CustomExecution>;
+    protected providedCustomExecutions: Map<number, CustomExecution>;
+    protected notProvidedCustomExecutions: Set<number>;
     protected activeCustomExecutions: Map<number, CustomExecution>;
+    protected lastStartedTask: number | undefined;
 
     private readonly onDidExecuteTask: Emitter<theia.TaskStartEvent> = new Emitter<theia.TaskStartEvent>();
     private readonly onDidTerminateTask: Emitter<theia.TaskEndEvent> = new Emitter<theia.TaskEndEvent>();
@@ -47,7 +49,8 @@ export class TasksExtImpl implements TasksExt {
 
     constructor(rpc: RPCProtocol, readonly terminalExt: TerminalServiceExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TASKS_MAIN);
-        this.providedCustomExecutions = new Map<string, CustomExecution>();
+        this.providedCustomExecutions = new Map<number, CustomExecution>();
+        this.notProvidedCustomExecutions = new Set<number>();
         this.activeCustomExecutions = new Map<number, CustomExecution>();
         this.fetchTaskExecutions();
     }
@@ -84,6 +87,8 @@ export class TasksExtImpl implements TasksExt {
                 });
             }
         }
+        this.lastStartedTask = execution.id;
+
         this.onDidExecuteTask.fire({
             execution: this.getTaskExecution(execution)
         });
@@ -150,6 +155,12 @@ export class TasksExtImpl implements TasksExt {
     async executeTask(task: theia.Task): Promise<theia.TaskExecution> {
         const taskDto = converter.fromTask(task);
         if (taskDto) {
+            // If this task is a custom execution, then we need to save it away
+            // in the provided custom execution map that is cleaned up after the
+            // task is executed.
+            if (taskDto.type === 'customExecution') {
+                this.addCustomExecution(taskDto, false);
+            }
             const executionDto = await this.proxy.$executeTask(taskDto);
             if (executionDto) {
                 const taskExecution = this.getTaskExecution(executionDto);
@@ -167,7 +178,7 @@ export class TasksExtImpl implements TasksExt {
                 if (tasks) {
                     for (const task of tasks) {
                         if (task.type === 'customExecution') {
-                            this.providedCustomExecutions.set(task.id, new CustomExecution(task.callback));
+                            this.addCustomExecution(task, true);
                         }
                     }
                 }
@@ -233,10 +244,36 @@ export class TasksExtImpl implements TasksExt {
         return result;
     }
 
+    private addCustomExecution(taskDto: TaskDto, isProvided: boolean): void {
+        const taskId = taskDto.id;
+        if (!isProvided && !this.providedCustomExecutions.has(taskId)) {
+            this.notProvidedCustomExecutions.add(taskId);
+        }
+        this.providedCustomExecutions.set(taskDto.id, new CustomExecution(taskDto.callback));
+    }
+
     private customExecutionComplete(id: number): void {
         const extensionCallback2: CustomExecution | undefined = this.activeCustomExecutions.get(id);
         if (extensionCallback2) {
             this.activeCustomExecutions.delete(id);
+        }
+
+        // Technically we don't really need to do this, however, if an extension
+        // is executing a task through "executeTask" over and over again
+        // with different properties in the task definition, then the map of executions
+        // could grow indefinitely, something we don't want.
+        if (this.notProvidedCustomExecutions.has(id) && (this.lastStartedTask !== id)) {
+            this.providedCustomExecutions.delete(id);
+            this.notProvidedCustomExecutions.delete(id);
+        }
+        const iterator = this.notProvidedCustomExecutions.values();
+        let iteratorResult = iterator.next();
+        while (!iteratorResult.done) {
+            if (!this.activeCustomExecutions.has(iteratorResult.value) && (this.lastStartedTask !== iteratorResult.value)) {
+                this.providedCustomExecutions.delete(iteratorResult.value);
+                this.notProvidedCustomExecutions.delete(iteratorResult.value);
+            }
+            iteratorResult = iterator.next();
         }
     }
 }
