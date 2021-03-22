@@ -470,15 +470,19 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
                 part.onDidChangeVisibility(() => widget.suppressUpdateViewVisibility = part.isHidden);
 
                 const tryFireOnDidExpandView = () => {
-                    if (!part.collapsed && part.isVisible) {
+                    if (widget.widgets.length === 0) {
+                        if (!part.collapsed && part.isVisible) {
+                            this.onDidExpandViewEmitter.fire(viewId);
+                        }
+                    } else {
                         toFire.dispose();
                     }
                 };
                 const toFire = new DisposableCollection(
-                    Disposable.create(() => this.onDidExpandViewEmitter.fire(viewId)),
                     part.onCollapsed(tryFireOnDidExpandView),
                     part.onDidChangeVisibility(tryFireOnDidExpandView)
                 );
+
                 tryFireOnDidExpandView();
             }
         }
