@@ -1710,7 +1710,7 @@ export class Task {
     private isTaskBackground: boolean;
     private taskSource: string;
     private taskGroup: TaskGroup | undefined;
-    private taskPresentationOptions: theia.TaskPresentationOptions | undefined;
+    private taskPresentationOptions: theia.TaskPresentationOptions;
     constructor(
         taskDefinition: theia.TaskDefinition,
         scope: theia.WorkspaceFolder | theia.TaskScope.Global | theia.TaskScope.Workspace,
@@ -1774,6 +1774,7 @@ export class Task {
             this.hasTaskProblemMatchers = false;
         }
         this.isTaskBackground = false;
+        this.presentationOptions = Object.create(null);
     }
 
     get definition(): theia.TaskDefinition {
@@ -1873,13 +1874,13 @@ export class Task {
         this.taskGroup = value;
     }
 
-    get presentationOptions(): theia.TaskPresentationOptions | undefined {
+    get presentationOptions(): theia.TaskPresentationOptions {
         return this.taskPresentationOptions;
     }
 
-    set presentationOptions(value: theia.TaskPresentationOptions | undefined) {
-        if (value === null) {
-            value = undefined;
+    set presentationOptions(value: theia.TaskPresentationOptions) {
+        if (value === null || value === undefined) {
+            value = Object.create(null);
         }
         this.taskPresentationOptions = value;
     }

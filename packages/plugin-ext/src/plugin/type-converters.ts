@@ -708,6 +708,7 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
     const taskDto = {} as TaskDto;
     taskDto.label = task.name;
     taskDto.source = task.source;
+
     if ((task as types.Task).hasProblemMatchers) {
         taskDto.problemMatcher = task.problemMatchers;
     }
@@ -718,6 +719,10 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         taskDto.scope = task.scope.uri.toString();
     } else if (typeof task.scope === 'number') {
         taskDto.scope = task.scope;
+    }
+
+    if (task.presentationOptions) {
+        taskDto.presentation = task.presentationOptions;
     }
 
     const group = task.group;
@@ -761,7 +766,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, label, source, scope, problemMatcher, detail, command, args, options, windows, group, ...properties } = taskDto;
+    const { type, label, source, scope, problemMatcher, detail, command, args, options, windows, group, presentation, ...properties } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
@@ -801,6 +806,10 @@ export function toTask(taskDto: TaskDto): theia.Task {
         } else if (group === TEST_GROUP) {
             result.group = TaskGroup.Test;
         }
+    }
+
+    if (presentation) {
+        result.presentationOptions = presentation;
     }
 
     if (!properties) {
