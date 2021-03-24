@@ -1319,8 +1319,17 @@ export interface TaskDto {
     problemMatcher?: any;
     group?: string;
     detail?: string;
+    presentation?: TaskPresentationOptionsDTO;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
+}
+
+export interface TaskPresentationOptionsDTO {
+    reveal?: number;
+    focus?: boolean;
+    echo?: boolean;
+    panel?: number;
+    showReuseMessage?: boolean;
 }
 
 export interface TaskExecutionDto {
