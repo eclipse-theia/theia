@@ -53,7 +53,7 @@ import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 import { inject, injectable } from 'inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from 'vscode-uri';
-import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { PluginServer, PluginType } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
@@ -232,7 +232,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     await this.pluginServer.deploy(`vscode:extension/${vsixUriOrExtensionId}`);
                 } else {
                     const uriPath = isUriComponents(vsixUriOrExtensionId) ? URI.revive(vsixUriOrExtensionId).fsPath : await this.fileService.fsPath(vsixUriOrExtensionId);
-                    await this.pluginServer.deploy(`local-file:${uriPath}`);
+                    await this.pluginServer.deploy(`local-file:${uriPath}`, PluginType.Local);
                 }
             }
         });

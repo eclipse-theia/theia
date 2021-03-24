@@ -126,6 +126,12 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
         return type === PluginType.System;
     }
 
+    get local(): boolean {
+        const plugin = this.plugin;
+        const type = plugin && plugin.type;
+        return type === PluginType.Local;
+    }
+
     update(data: Partial<VSXExtensionData>): void {
         for (const key of VSXExtensionData.KEYS) {
             if (key in data) {

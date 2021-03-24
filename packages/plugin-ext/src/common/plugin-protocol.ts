@@ -382,11 +382,21 @@ export enum PluginDeployerEntryType {
 }
 
 /**
- * Whether a plugin installed by a user or system.
+ * Represents the different plugin installation types.
  */
 export enum PluginType {
+    /**
+     * Plugin installed by the system.
+     */
     System,
-    User
+    /**
+     * Plugin installed by the user.
+     */
+    User,
+    /**
+     * Plugin installed locally (upload).
+     */
+    Local
 };
 
 export interface PluginDeployerEntry {
