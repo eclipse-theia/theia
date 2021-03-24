@@ -987,7 +987,8 @@ declare module monaco.referenceSearch {
         focusOnReferenceTree(): void;
         focusOnPreviewEditor(): void;
         isPreviewEditorFocused(): boolean;
-        _tree: ReferenceTree
+        _tree: ReferenceTree;
+        _preview: ICodeEditor;
     }
 
     // it's used as return value for referenceWidget._tree
