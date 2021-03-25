@@ -19,6 +19,7 @@ import { injectable, inject, postConstruct, interfaces, Container } from '@theia
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { MonacoConfigurationService } from '@theia/monaco/lib/browser/monaco-frontend-module';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugSessionManager } from '../debug-session-manager';
@@ -50,6 +51,7 @@ export class DebugEditorModel implements Disposable {
     static CONTEXT_MENU: MenuPath = ['debug-editor-context-menu'];
 
     protected readonly toDispose = new DisposableCollection();
+    protected readonly toDisposeOnUpdate = new DisposableCollection();
 
     protected uri: URI;
 
@@ -58,7 +60,7 @@ export class DebugEditorModel implements Disposable {
 
     protected currentBreakpointDecorations: string[] = [];
 
-    protected frameDecorations: string[] = [];
+    protected editorDecorations: string[] = [];
     protected topFrameRange: monaco.Range | undefined;
 
     protected updatingDecorations = false;
@@ -87,6 +89,9 @@ export class DebugEditorModel implements Disposable {
     @inject(DebugInlineValueDecorator)
     readonly inlineValueDecorator: DebugInlineValueDecorator;
 
+    @inject(MonacoConfigurationService)
+    readonly configurationService: monaco.services.IConfigurationService;
+
     @postConstruct()
     protected init(): void {
         this.uri = new URI(this.editor.getControl().getModel()!.uri.toString());
@@ -98,11 +103,12 @@ export class DebugEditorModel implements Disposable {
             this.editor.getControl().onMouseMove(event => this.handleMouseMove(event)),
             this.editor.getControl().onMouseLeave(event => this.handleMouseLeave(event)),
             this.editor.getControl().onKeyDown(() => this.hover.hide({ immediate: false })),
-            this.editor.getControl().onDidChangeModelContent(() => this.renderFrames()),
+            this.editor.getControl().onDidChangeModelContent(() => this.update()),
             this.editor.getControl().getModel()!.onDidChangeDecorations(() => this.updateBreakpoints()),
-            this.sessions.onDidChange(() => this.renderFrames())
+            this.sessions.onDidChange(() => this.update()),
+            this.toDisposeOnUpdate
         ]);
-        this.renderFrames();
+        this.update();
         this.render();
     }
 
@@ -110,11 +116,44 @@ export class DebugEditorModel implements Disposable {
         this.toDispose.dispose();
     }
 
-    protected readonly renderFrames = debounce(async () => {
+    protected readonly update = debounce(async () => {
         if (this.toDispose.disposed) {
             return;
         }
+        this.toDisposeOnUpdate.dispose();
         this.toggleExceptionWidget();
+        await this.updateEditorDecorations();
+        this.updateEditorHover();
+    }, 100);
+
+    /**
+     * To disable the default editor-contribution hover from Code when
+     * the editor has the `currentFrame`. Otherwise, both `textdocument/hover`
+     * and the debug hovers are visible at the same time when hovering over a symbol.
+     */
+    protected async updateEditorHover(): Promise<void> {
+        if (this.sessions.isCurrentEditorFrame(this.uri)) {
+            const codeEditor = this.editor.getControl();
+            codeEditor.updateOptions({ hover: { enabled: false } });
+            this.toDisposeOnUpdate.push(Disposable.create(() => {
+                const model = codeEditor.getModel()!;
+                const overrides = {
+                    resource: model.uri,
+                    overrideIdentifier: model.getLanguageIdentifier().language,
+                };
+                const { enabled, delay, sticky } = this.configurationService._configuration.getValue('editor.hover', overrides, undefined);
+                codeEditor.updateOptions({
+                    hover: {
+                        enabled,
+                        delay,
+                        sticky
+                    }
+                });
+            }));
+        }
+    }
+
+    protected async updateEditorDecorations(): Promise<void> {
         const [newFrameDecorations, inlineValueDecorations] = await Promise.all([
             this.createFrameDecorations(),
             this.createInlineValueDecorations()
@@ -122,24 +161,28 @@ export class DebugEditorModel implements Disposable {
         const codeEditor = this.editor.getControl();
         codeEditor.removeDecorations(INLINE_VALUE_DECORATION_KEY);
         codeEditor.setDecorations(INLINE_VALUE_DECORATION_KEY, inlineValueDecorations);
-        this.frameDecorations = this.deltaDecorations(this.frameDecorations, newFrameDecorations);
-    }, 100);
+        this.editorDecorations = this.deltaDecorations(this.editorDecorations, newFrameDecorations);
+    }
 
     protected async createInlineValueDecorations(): Promise<monaco.editor.IDecorationOptions[]> {
-        const { currentFrame } = this.sessions;
-        if (!currentFrame || !currentFrame.source || currentFrame.source.uri.toString() !== this.uri.toString()) {
+        if (!this.sessions.isCurrentEditorFrame(this.uri)) {
             return [];
         }
+        const { currentFrame } = this.sessions;
         return this.inlineValueDecorator.calculateDecorations(this, currentFrame);
     }
 
     protected createFrameDecorations(): monaco.editor.IModelDeltaDecoration[] {
-        const decorations: monaco.editor.IModelDeltaDecoration[] = [];
         const { currentFrame, topFrame } = this.sessions;
-        if (!currentFrame || !currentFrame.source || currentFrame.source.uri.toString() !== this.uri.toString()) {
-            return decorations;
+        if (!currentFrame) {
+            return [];
         }
 
+        if (!this.sessions.isCurrentEditorFrame(this.uri)) {
+            return [];
+        }
+
+        const decorations: monaco.editor.IModelDeltaDecoration[] = [];
         const columnUntilEOLRange = new monaco.Range(currentFrame.raw.line, currentFrame.raw.column, currentFrame.raw.line, 1 << 30);
         const range = new monaco.Range(currentFrame.raw.line, currentFrame.raw.column, currentFrame.raw.line, currentFrame.raw.column + 1);
 
@@ -175,7 +218,10 @@ export class DebugEditorModel implements Disposable {
 
     protected async toggleExceptionWidget(): Promise<void> {
         const { currentFrame } = this.sessions;
-        if (!currentFrame || !currentFrame.source || currentFrame.source.uri.toString() !== this.uri.toString()) {
+        if (!currentFrame) {
+            return;
+        }
+        if (!this.sessions.isCurrentEditorFrame(this.uri)) {
             this.exceptionWidget.hide();
             return;
         }

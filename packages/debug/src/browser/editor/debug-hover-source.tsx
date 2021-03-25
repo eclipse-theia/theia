@@ -46,13 +46,13 @@ export class DebugHoverSource extends TreeSource {
         this.fireDidChange();
     }
 
-    async evaluate(expression: string): Promise<boolean> {
+    async evaluate(expression: string): Promise<ExpressionItem | DebugVariable | undefined> {
         const evaluated = await this.doEvaluate(expression);
         const elements = evaluated && await evaluated.getElements();
         this._expression = evaluated;
         this.elements = elements ? [...elements] : [];
         this.fireDidChange();
-        return !!evaluated;
+        return evaluated;
     }
     protected async doEvaluate(expression: string): Promise<ExpressionItem | DebugVariable | undefined> {
         const { currentSession } = this.sessions;

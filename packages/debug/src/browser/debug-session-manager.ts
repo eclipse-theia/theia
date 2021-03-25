@@ -166,10 +166,29 @@ export class DebugSessionManager {
         return this.state > DebugState.Inactive;
     }
 
+    isCurrentEditorFrame(uri: URI | string | monaco.Uri): boolean {
+        return this.currentFrame?.source?.uri.toString() === (uri instanceof URI ? uri : new URI(uri)).toString();
+    }
+
+    protected async saveAll(): Promise<boolean> {
+        if (!this.shell.canSaveAll()) {
+            return true; // Nothing to save.
+        }
+        try {
+            await this.shell.saveAll();
+            return true;
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
+    }
+
     async start(options: DebugSessionOptions): Promise<DebugSession | undefined> {
         return this.progressService.withProgress('Start...', 'debug', async () => {
             try {
-                await this.shell.saveAll();
+                if (!await this.saveAll()) {
+                    return undefined;
+                }
                 await this.fireWillStartDebugSession();
                 const resolved = await this.resolveConfiguration(options);
 

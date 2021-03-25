@@ -449,6 +449,14 @@ declare module monaco.editor {
 
         // https://github.com/microsoft/vscode/blob/e683ace9e5acadba0e8bde72d793cb2cb83e58a7/src/vs/editor/common/model.ts#L623
         createSnapshot(): ITextSnapshot | null;
+
+        /**
+         * Get the language associated with this model.
+         * @internal
+         */
+        // https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/editor/common/model.ts#L833-L837
+        getLanguageIdentifier(): monaco.services.LanguageIdentifier;
+
     }
 
 }

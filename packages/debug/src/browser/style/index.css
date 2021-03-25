@@ -185,16 +185,19 @@
     color: var(--theia-variable-value-color);
 }
 
+.theia-debug-hover-title.number,
 .theia-debug-console-variable.number {
-    color: var(--theia-number-variable-color);
+    color: var(--theia-variable-number-variable-color);
 }
 
+.theia-debug-hover-title.boolean,
 .theia-debug-console-variable.boolean {
-    color: var(--theia-boolean-variable-color);
+    color: var(--theia-variable-boolean-variable-color);
 }
 
+.theia-debug-hover-title.string,
 .theia-debug-console-variable.string {
-    color: var(--theia-string-variable-color);
+    color: var(--theia-variable-string-variable-color);
 }
 
 .theia-debug-console-variable .name {
@@ -342,14 +345,17 @@
 .theia-debug-hover {
     display: flex;
     flex-direction: column;
-    min-width: 324px;
-    min-height: 324px;
-    width: 324px;
-    height: 324px;
     border: 1px solid var(--theia-editorHoverWidget-border);
     background: var(--theia-editorHoverWidget-background);
     /* TODO color: var(--theia-editorHoverWidget-foreground); with a newer Monaco version */
     color: var(--theia-editorWidget-foreground);
+}
+
+.theia-debug-hover.complex-value {
+    min-width: 324px;
+    min-height: 324px;
+    width: 324px;
+    height: 324px;
 }
 
 .theia-debug-hover .theia-source-tree {
@@ -362,7 +368,6 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     padding: var(--theia-ui-padding);
-    padding-left: calc(var(--theia-ui-padding)*2);
     border-bottom: 1px solid var(--theia-editorHoverWidget-border);
 }
 

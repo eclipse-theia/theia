@@ -26,6 +26,7 @@ import { DebugSessionManager } from '../debug-session-manager';
 import { DebugEditor } from './debug-editor';
 import { DebugExpressionProvider } from './debug-expression-provider';
 import { DebugHoverSource } from './debug-hover-source';
+import { DebugVariable } from '../console/debug-console-items';
 
 export interface ShowDebugHoverOptions {
     selection: monaco.Range
@@ -113,9 +114,12 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
     show(options?: ShowDebugHoverOptions): void {
         this.schedule(() => this.doShow(options), options && options.immediate);
     }
+
     hide(options?: HideDebugHoverOptions): void {
         this.schedule(() => this.doHide(), options && options.immediate);
     }
+
+    protected readonly doSchedule = debounce((fn: () => void) => fn(), 300);
     protected schedule(fn: () => void, immediate: boolean = true): void {
         if (immediate) {
             this.doSchedule.cancel();
@@ -124,7 +128,6 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
             this.doSchedule(fn);
         }
     }
-    protected readonly doSchedule = debounce((fn: () => void) => fn(), 300);
 
     protected options: ShowDebugHoverOptions | undefined;
     protected doHide(): void {
@@ -142,6 +145,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         this.options = undefined;
         this.editor.getControl().layoutContentWidget(this);
     }
+
     protected async doShow(options: ShowDebugHoverOptions | undefined = this.options): Promise<void> {
         if (!this.isEditorFrame()) {
             this.hide();
@@ -157,10 +161,10 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         if (!this.isAttached) {
             Widget.attach(this, this.contentNode);
         }
-        super.show();
+
         this.options = options;
-        const expression = this.expressionProvider.get(this.editor.getControl().getModel()!, options.selection);
-        if (!expression) {
+        const matchingExpression = this.expressionProvider.get(this.editor.getControl().getModel()!, options.selection);
+        if (!matchingExpression) {
             this.hide();
             return;
         }
@@ -171,17 +175,42 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
                 this.activate();
             }));
         }
-        if (!await this.hoverSource.evaluate(expression)) {
+        const expression = await this.hoverSource.evaluate(matchingExpression);
+        if (!expression) {
             toFocus.dispose();
             this.hide();
             return;
         }
-        this.editor.getControl().layoutContentWidget(this);
+
+        this.contentNode.hidden = false;
+        ['number', 'boolean', 'string'].forEach(token => this.titleNode.classList.remove(token));
+        this.domNode.classList.remove('complex-value');
+        if (expression.hasElements) {
+            this.domNode.classList.add('complex-value');
+        } else {
+            this.contentNode.hidden = true;
+            if (expression.type === 'number' || expression.type === 'boolean' || expression.type === 'string') {
+                this.titleNode.classList.add(expression.type);
+            } else if (!isNaN(+expression.value)) {
+                this.titleNode.classList.add('number');
+            } else if (DebugVariable.booleanRegex.test(expression.value)) {
+                this.titleNode.classList.add('boolean');
+            } else if (DebugVariable.stringRegex.test(expression.value)) {
+                this.titleNode.classList.add('string');
+            }
+        }
+
+        super.show();
+        await new Promise<void>(resolve => {
+            setTimeout(() => window.requestAnimationFrame(() => {
+                this.editor.getControl().layoutContentWidget(this);
+                resolve();
+            }), 0);
+        });
     }
+
     protected isEditorFrame(): boolean {
-        const { currentFrame } = this.sessions;
-        return !!currentFrame && !!currentFrame.source &&
-            this.editor.getControl().getModel()!.uri.toString() === currentFrame.source.uri.toString();
+        return this.sessions.isCurrentEditorFrame(this.editor.getControl().getModel()!.uri);
     }
 
     getPosition(): monaco.editor.IContentWidgetPosition {
