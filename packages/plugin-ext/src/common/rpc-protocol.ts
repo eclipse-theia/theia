@@ -552,10 +552,7 @@ function safeStringify(obj: any, replacer?: JSONStringifyReplacer): string {
     try {
         return JSON.stringify(obj, replacer);
     } catch (err) {
-        console.warn('error stringifying response: ' + err);
-        if (err && err.stack) {
-            console.error(err.stack);
-        }
+        console.error('error stringifying response: ', err);
         return 'null';
     }
 }
