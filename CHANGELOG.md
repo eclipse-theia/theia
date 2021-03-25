@@ -1,23 +1,71 @@
 # Change Log
 
-## v1.12.0
+## v1.12.0 - 3/25/2020
 
-- [filesystem] add text input and navigate up icon to file dialog [#8748](https://github.com/eclipse-theia/theia/pull/8748)
+[1.12.0 Milestone](https://github.com/eclipse-theia/theia/milestone/17)
+
+- [core] added API to remove toolbar items [#9044](https://github.com/eclipse-theia/theia/pull/9044)
+- [core] added `onDidChangeActiveEmitter` when a quick-pick is accepted [#9175](https://github.com/eclipse-theia/theia/pull/9175)
+- [core] added support for creating lazy preference proxies [#9169](https://github.com/eclipse-theia/theia/pull/9169)
+- [core] fixed `when` clause for commands registered to the command-palette [#9188](https://github.com/eclipse-theia/theia/pull/9188)
 - [core] updated connection status service to prevent false positive alerts about offline mode [#9068](https://github.com/eclipse-theia/theia/pull/9068)
-- [tasks] add support for workspace-scoped task configurations. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
-- [workspace] add support for configurations outside the `settings` object and add `WorkspaceSchemaUpdater` to allow configurations sections to be contributed by extensions. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
+- [editor] fixed issue with revealing selection when opening editors [#9004](https://github.com/eclipse-theia/theia/pull/9004)
+- [electron] added `folder` dialog fallback when setting `canSelectFiles` and `canSelectFolders` dialog props simultaneously on non-OSX machines [#9179](https://github.com/eclipse-theia/theia/pull/9179)
+- [electron] added support for the `window.zoomLevel` preference [#9121](https://github.com/eclipse-theia/theia/pull/9121)
+- [external-terminal] added new extension to spawn external terminals in electron applications [#9186](https://github.com/eclipse-theia/theia/pull/9186)
+- [filesystem] added file dialog enhancements including text input and a navigate up icon [#8748](https://github.com/eclipse-theia/theia/pull/8748)
+- [filesystem] added ability for downstream applications to control file-watching [#9163](https://github.com/eclipse-theia/theia/pull/9163)
+- [filesystem] fixed `electron` dialogs to set the proper `defaultPath` (cwd) [#9135](https://github.com/eclipse-theia/theia/pull/9135)
+- [filesystem] fixed logic when performing copy and paste in a duplicate file/folder [#9037](https://github.com/eclipse-theia/theia/pull/9037)
+- [markers] added fallback `owner` sort when sorting markers for an individual resource [#9211](https://github.com/eclipse-theia/theia/pull/9211)
+- [markers] fixed the marker `copy` command to correctly set the `owner` [#9160](https://github.com/eclipse-theia/theia/pull/9160)
+- [mini-browser] fixed host pattern logic for `HOST_PATTERN_ENV` [#9201](https://github.com/eclipse-theia/theia/pull/9201)
+- [mini-browser] fixed virtual host env logic [#9209](https://github.com/eclipse-theia/theia/pull/9209)
+- [mini-browser] removed dead/unused electron-specific code for quality [#9209](https://github.com/eclipse-theia/theia/pull/9209)
+- [monaco] exposed `_preview` editor from the references widget [#9245](https://github.com/eclipse-theia/theia/pull/9245)
+- [monaco] fixed editor gutter size by updating `lineNumberMinChars` [#9168](https://github.com/eclipse-theia/theia/pull/9168)
+- [monaco] update fallback `font-family` for the editor [#9147](https://github.com/eclipse-theia/theia/pull/9147)
+- [output] fixed `registerToolbarItems` to allow async registration [#9044](https://github.com/eclipse-theia/theia/pull/9044)
+- [plugin] added support for `CustomEditor` APIs [#8910](https://github.com/eclipse-theia/theia/pull/8910)
+- [plugin] added support for `TaskScope.Workspace` [#9032](https://github.com/eclipse-theia/theia/pull/9032)
+- [plugin] added support for `onStartupFinished` activation event [#9212](https://github.com/eclipse-theia/theia/pull/9212)
+- [plugin] added support for `workbench.files.openFileFolder` command [#9213](https://github.com/eclipse-theia/theia/pull/9213)
+- [plugin] added support for the `workspace.workspaceFile` API [#9132](https://github.com/eclipse-theia/theia/pull/9132)
+- [plugin] fixed `when` clause for views [#9156](https://github.com/eclipse-theia/theia/pull/9156)
+- [plugin] fixed custom debug request handling to pass the `body` instead of `response` object [#9131](https://github.com/eclipse-theia/theia/pull/9131)
+- [plugin] fixed dialog implementation to open appropriate dialogs on browser or electron [#9179](https://github.com/eclipse-theia/theia/pull/9179)
+- [plugin] fixed issue where `onDidExpandViewEmitter` was not properly fired [#9229](https://github.com/eclipse-theia/theia/pull/9229)
+- [plugin] update error handling when setting storage without a workspace [#9137](https://github.com/eclipse-theia/theia/pull/9137)
+- [plugin] updated `SCM` API to latest version [#9045](https://github.com/eclipse-theia/theia/pull/9045)
+- [plugin] updated `vscode.window.createTerminal` to accept URI current working directories [#9140](https://github.com/eclipse-theia/theia/pull/9140)
+- [preferences] added `updateValue` API for the `PreferenceService` [#9178](https://github.com/eclipse-theia/theia/pull/9178)
+- [preferences] added functionality to restore the preference state including search term, preference scope, and editor location [#9166](https://github.com/eclipse-theia/theia/pull/9166)
 - [property-view] added initial version of a selection-based property-view [#8655](https://github.com/eclipse-theia/theia/pull/8655)
   - A default implementation is available for file selections (via file navigator and default editors).
+- [repo] enabled eslint checks for `theia.d.ts` [#9200](https://github.com/eclipse-theia/theia/pull/9200)
+- [repo] updated readme 'new issue' link to point to issue templates [#9180](https://github.com/eclipse-theia/theia/pull/9180)
+- [search-in-workspace] added ability to perform search when glob fields (include and exclude) are updated [#9183](https://github.com/eclipse-theia/theia/pull/9183)
+- [search-in-workspace] added logic to remove search results for deleted files [#9218](https://github.com/eclipse-theia/theia/pull/9218)
+- [search-in-workspace] fixed the comparison of editors when working with dirty files [#9192](https://github.com/eclipse-theia/theia/pull/9192)
+- [search-in-workspace] removed usage of the deprecated `keyCode` API [#9183](https://github.com/eclipse-theia/theia/pull/9183)
+- [tasks] added support for workspace-scoped task configurations. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
+- [terminal] fixed `xterm` addon versions which broke searching [#9167](https://github.com/eclipse-theia/theia/pull/9167)
+- [variable-resolver] added support for `pathSeparator` variable substitution [#9054](https://github.com/eclipse-theia/theia/pull/9054)
+- [vsx-registry] added `Install from VSIX...` command to install a local extension [#9184](https://github.com/eclipse-theia/theia/pull/9184)
+- [vsx-registry] added toolbar menu support for the extensions-view [#9184](https://github.com/eclipse-theia/theia/pull/9184)
+- [workspace] add support for configurations outside the `settings` object and add `WorkspaceSchemaUpdater` to allow configurations sections to be contributed by extensions [#8917](https://github.com/eclipse-theia/theia/pull/8917)
 
 <a name="breaking_changes_1.12.0">[Breaking Changes:](#breaking_changes_1.12.0)</a>
 
+- [core] `PreferenceService` and `PreferenceProvider` `getConfigUri` and `getContainingConfigUri` methods accept `sectionName` argument to retrieve URI's for non-settings configurations [#8917](https://github.com/eclipse-theia/theia/pull/8917)
 - [filesystem] `FileDialog` and `LocationListRenderer` now require `FileService` to be passed into constructor for text-based file dialog navigation in browser [#8748](https://github.com/eclipse-theia/theia/pull/8748)
-- [core] `PreferenceService` and `PreferenceProvider` `getConfigUri` and `getContainingConfigUri` methods accept `sectionName` argument to retrieve URI's for non-settings configurations. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
-- [tasks] `TaskConfigurationModel.scope` field now protected. `TaskConfigurationManager` setup changed to accommodate workspace-scoped tasks. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
-- [workspace] `WorkspaceData` interface modified and workspace file schema updated to allow for `tasks` outside of `settings` object. `WorkspaceData.buildWorkspaceData` `settings` argument now accepts an object with any of the keys of the workspace schema. [#8917](https://github.com/eclipse-theia/theia/pull/8917)
-- [mini-browser] Removed `@theia/mini-browser/lib/electron-main/` and its bindings in the `electron-main` context.
+- [mini-browser] Removed `@theia/mini-browser/lib/electron-main/` and its bindings in the `electron-main` context [#9209](https://github.com/eclipse-theia/theia/pull/9209)
+- [tasks] `TaskConfigurationModel.scope` field now protected. `TaskConfigurationManager` setup changed to accommodate workspace-scoped tasks [#8917](https://github.com/eclipse-theia/theia/pull/8917)
+- [workspace] `WorkspaceData` interface modified and workspace file schema updated to allow for `tasks` outside of `settings` object. `WorkspaceData.buildWorkspaceData` `settings` argument now accepts an object with any of the keys of the workspace schema [#8917](https://github.com/eclipse-theia/theia/pull/8917)
 
 ## v1.11.0 - 2/25/2021
+
+[1.11.0 Milestone](https://github.com/eclipse-theia/theia/milestone/16)
 
 - [api-samples] added example to echo the currently supported vscode API version [#8191](https://github.com/eclipse-theia/theia/pull/8191)
 - [bulk-edit] added support for previewing refactorings [#8589](https://github.com/eclipse-theia/theia/pull/8589)
