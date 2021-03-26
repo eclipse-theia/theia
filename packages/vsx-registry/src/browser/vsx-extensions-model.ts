@@ -219,6 +219,10 @@ export class VSXExtensionsModel {
 
     protected async refresh(id: string): Promise<VSXExtension | undefined> {
         try {
+            let extension = this.getExtension(id);
+            if (!this.shouldRefresh(extension)) {
+                return extension;
+            }
             const data = await this.api.getLatestCompatibleExtensionVersion(id);
             if (!data) {
                 return;
@@ -226,7 +230,7 @@ export class VSXExtensionsModel {
             if (data.error) {
                 return this.onDidFailRefresh(id, data.error);
             }
-            const extension = this.setExtension(id);
+            extension = this.setExtension(id);
             extension.update(Object.assign(data, {
                 publisher: data.namespace,
                 downloadUrl: data.files.download,
@@ -239,6 +243,17 @@ export class VSXExtensionsModel {
         } catch (e) {
             return this.onDidFailRefresh(id, e);
         }
+    }
+
+    /**
+     * Determines if the given extension should be refreshed.
+     * @param extension the extension to refresh.
+     */
+    protected shouldRefresh(extension?: VSXExtension): boolean {
+        if (extension === undefined) {
+            return true;
+        }
+        return !extension.builtin;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
