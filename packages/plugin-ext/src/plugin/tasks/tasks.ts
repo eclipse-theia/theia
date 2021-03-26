@@ -158,7 +158,7 @@ export class TasksExtImpl implements TasksExt {
             // If this task is a custom execution, then we need to save it away
             // in the provided custom execution map that is cleaned up after the
             // task is executed.
-            if (taskDto.type === 'customExecution') {
+            if (CustomExecution.is(task.execution!)) {
                 this.addCustomExecution(taskDto, false);
             }
             const executionDto = await this.proxy.$executeTask(taskDto);
@@ -177,7 +177,7 @@ export class TasksExtImpl implements TasksExt {
             return adapter.provideTasks(token).then(tasks => {
                 if (tasks) {
                     for (const task of tasks) {
-                        if (task.type === 'customExecution') {
+                        if (task.type === 'customExecution' || task.taskType === 'customExecution') {
                             this.addCustomExecution(task, true);
                         }
                     }

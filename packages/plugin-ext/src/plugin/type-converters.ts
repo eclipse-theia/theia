@@ -750,15 +750,15 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         return taskDto;
     }
 
-    if (taskDefinition.type === 'shell' || types.ShellExecution.is(execution)) {
+    if (taskDefinition.taskType === 'shell' || types.ShellExecution.is(execution)) {
         return fromShellExecution(<theia.ShellExecution>execution, taskDto);
     }
 
-    if (taskDefinition.type === 'process' || types.ProcessExecution.is(execution)) {
+    if (taskDefinition.taskType === 'process' || types.ProcessExecution.is(execution)) {
         return fromProcessExecution(<theia.ProcessExecution>execution, taskDto);
     }
 
-    if (taskDefinition.type === 'customExecution' || types.CustomExecution.is(execution)) {
+    if (taskDefinition.taskType === 'customExecution' || types.CustomExecution.is(execution)) {
         return fromCustomExecution(<theia.CustomExecution>execution, taskDto);
     }
 
@@ -770,7 +770,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, ...properties } = taskDto;
+    const { type, taskType, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, ...properties } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
@@ -788,9 +788,8 @@ export function toTask(taskDto: TaskDto): theia.Task {
         result.scope = scope;
     }
 
-    const taskType = type;
     const taskDefinition: theia.TaskDefinition = {
-        type: taskType
+        type: type
     };
 
     result.definition = taskDefinition;
