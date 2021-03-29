@@ -29,7 +29,7 @@
   -webkit-box-align: center;
   -ms-flex-align   : center;
   align-items      : center;
-  padding          : calc(var(--thiea-ui-padding) / 2) var(--thiea-ui-padding);
+  padding          : calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
   border-bottom    : var(--theia-panel-border) 2px solid;
 }
 
@@ -91,6 +91,6 @@
 }
 
 .theia-settings-container .preference-array-input {
-  padding-right: calc(var(--theia-icon-size) + var(--thiea-ui-padding));
+  padding-right: calc(var(--theia-icon-size) + var(--theia-ui-padding));
   width        : 100%;
 }
