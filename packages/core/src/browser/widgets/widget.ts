@@ -203,7 +203,7 @@ export function addEventListener<K extends keyof HTMLElementEventMap>(
 ): Disposable {
     element.addEventListener(type, listener, useCapture);
     return Disposable.create(() =>
-        element.removeEventListener(type, listener)
+        element.removeEventListener(type, listener, useCapture)
     );
 }
 
