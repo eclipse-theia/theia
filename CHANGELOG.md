@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.12.1 - 3/29/2020
+
+- [core][filesystem] Use `nsfw@^2.1.2` to fix an issue on Windows where file watching did not work at all.
+
 ## v1.12.0 - 3/25/2020
 
 [1.12.0 Milestone](https://github.com/eclipse-theia/theia/milestone/17)
