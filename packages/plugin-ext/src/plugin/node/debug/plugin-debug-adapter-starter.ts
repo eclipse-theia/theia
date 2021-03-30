@@ -18,6 +18,7 @@ import * as net from 'net';
 import * as theia from '@theia/plugin';
 import { CommunicationProvider } from '@theia/debug/lib/common/debug-model';
 import { ChildProcess, spawn, fork, ForkOptions } from 'child_process';
+import isElectron from 'is-electron';
 
 /**
  * Starts debug adapter process.
@@ -40,10 +41,13 @@ export function startDebugAdapter(executable: theia.DebugAdapterExecutable): Com
     const { command, args } = executable;
     if (command === 'node') {
         if (Array.isArray(args) && args.length > 0) {
-            const isElectron = !!process.env['ELECTRON_RUN_AS_NODE'];
             const forkOptions: ForkOptions = {
                 env: options.env,
-                execArgv: isElectron ? ['-e', 'delete process.env.ELECTRON_RUN_AS_NODE;require(process.argv[1])'] : [],
+                // When running in Electron, fork will automatically add ELECTRON_RUN_AS_NODE=1 to the env,
+                // but this will cause issues when debugging Electron apps, so we'll remove it.
+                execArgv: isElectron()
+                    ? ['-e', 'delete process.env.ELECTRON_RUN_AS_NODE;require(process.argv[1])']
+                    : [],
                 silent: true
             };
             if (options.cwd) {
