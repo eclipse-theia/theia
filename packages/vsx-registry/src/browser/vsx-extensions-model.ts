@@ -21,7 +21,7 @@ import * as sanitize from 'sanitize-html';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { VSXRegistryAPI, VSXResponseError } from '../common/vsx-registry-api';
-import { VSXSearchParam } from '../common/vsx-registry-types';
+import { VSXSearchParam, VSXExtensionRaw } from '../common/vsx-registry-types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
 import { VSXExtension, VSXExtensionFactory } from './vsx-extension';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
@@ -216,6 +216,10 @@ export class VSXExtensionsModel {
     }
 
     protected async refresh(id: string): Promise<VSXExtension | undefined> {
+        // Local extensions should not be refreshed with the registry.
+        if (this.isLocal(id)) {
+            return this.getExtension(id);
+        }
         try {
             const data = await this.api.getLatestCompatibleExtensionVersion(id);
             if (!data) {
@@ -267,6 +271,30 @@ export class VSXExtensionsModel {
             return extensionA.publisher.localeCompare(extensionB.publisher);
         }
         return 0;
+    }
+
+    /**
+     * Get the extension data if it exists.
+     * - If the extension is a builtin, no compatibility check is performed.
+     * - If the extension is not a builtin, the latest compatible version should be fetched.
+     * @param id the extension id.
+     *
+     * @returns the extension data if it exists.
+     */
+    protected async getExtensionData(id: string): Promise<VSXExtensionRaw | undefined> {
+        return this.isBuiltin(id)
+            ? this.api.getExtension(id)
+            : this.api.getLatestCompatibleExtensionVersion(id);
+    }
+
+    protected isBuiltin(id: string): boolean {
+        const extension = this.getExtension(id);
+        return !!extension?.builtin;
+    }
+
+    protected isLocal(id: string): boolean {
+        const extension = this.getExtension(id);
+        return (!extension?.builtin && !!extension?.downloadCount);
     }
 
 }

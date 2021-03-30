@@ -41,11 +41,6 @@ export namespace VSXResponseError {
     }
 }
 
-/**
- * Namespace reserved for vscode builtin extensions.
- */
-const VSCODE_NAMESPACE = 'vscode';
-
 @injectable()
 export class VSXRegistryAPI {
 
@@ -145,10 +140,7 @@ export class VSXRegistryAPI {
         const extensions = await this.getAllVersions(id);
         for (let i = 0; i < extensions.length; i++) {
             const extension: VSXExtensionRaw = extensions[i];
-            // Skip vscode builtin extensions.
-            if (extension.namespace === VSCODE_NAMESPACE) {
-                return extension;
-            } else if (extension.engines && this.isEngineSupported(extension.engines.vscode)) {
+            if (extension.engines && this.isEngineSupported(extension.engines.vscode)) {
                 return extension;
             }
         }
