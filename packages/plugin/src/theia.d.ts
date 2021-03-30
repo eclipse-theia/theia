@@ -3089,6 +3089,11 @@ declare module '@theia/plugin' {
         extensionPath: string;
 
         /**
+         * The uri of the directory containing the extension.
+         */
+        readonly extensionUri: Uri;
+
+        /**
          * Gets the extension's environment variable collection for this workspace, enabling changes
          * to be applied to terminal environment variables.
          */
@@ -3107,19 +3112,49 @@ declare module '@theia/plugin' {
          * can store private state. The directory might not exist on disk and creation is
          * up to the extension. However, the parent directory is guaranteed to be existent.
          *
-         * Use [`workspaceState`](#ExtensionContext.workspaceState) or
-         * [`globalState`](#ExtensionContext.globalState) to store key value data.
+         * Use [`workspaceState`](#PluginContext.workspaceState) or
+         * [`globalState`](#PluginContext.globalState) to store key value data.
+         *
+         * @deprecated Use [storageUri](#PluginContext.storageUri) instead.
          */
         storagePath: string | undefined;
+
+        /**
+         * The uri of a workspace specific directory in which the extension
+         * can store private state. The directory might not exist and creation is
+         * up to the extension. However, the parent directory is guaranteed to be existent.
+         * The value is `undefined` when no workspace nor folder has been opened.
+         *
+         * Use [`workspaceState`](#PluginContext.workspaceState) or
+         * [`globalState`](#PluginContext.globalState) to store key value data.
+         *
+         * @see [`workspace.fs`](#FileSystem) for how to read and write files and folders from
+         *  an uri.
+         */
+        readonly storageUri: Uri | undefined;
 
         /**
          * An absolute file path in which the extension can store global state.
          * The directory might not exist on disk and creation is
          * up to the extension. However, the parent directory is guaranteed to be existent.
          *
-         * Use [`globalState`](#ExtensionContext.globalState) to store key value data.
+         * Use [`globalState`](#PluginContext.globalState) to store key value data.
+         *
+         * @deprecated Use [globalStorageUri](#PluginContext.globalStorageUri) instead.
          */
         readonly globalStoragePath: string;
+
+        /**
+         * The uri of a directory in which the extension can store global state.
+         * The directory might not exist on disk and creation is
+         * up to the extension. However, the parent directory is guaranteed to be existent.
+         *
+         * Use [`globalState`](#PluginContext.globalState) to store key value data.
+         *
+         * @see [`workspace.fs`](#FileSystem) for how to read and write files and folders from
+         *  an uri.
+         */
+        readonly globalStorageUri: Uri;
 
         /**
          * An absolute file path of a directory in which the extension can create log files.
