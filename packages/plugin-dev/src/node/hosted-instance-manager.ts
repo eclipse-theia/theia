@@ -92,7 +92,6 @@ const PROCESS_OPTIONS = {
     cwd: process.cwd(),
     env: { ...process.env }
 };
-delete PROCESS_OPTIONS.env.ELECTRON_RUN_AS_NODE;
 
 @injectable()
 export abstract class AbstractHostedInstanceManager implements HostedInstanceManager {

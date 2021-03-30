@@ -29,6 +29,7 @@
     "decompress": "^4.2.1",
     "escape-html": "^1.0.3",
     "filenamify": "^4.1.0",
+    "is-electron": "^2.2.0",
     "jsonc-parser": "^2.2.0",
     "lodash.clonedeep": "^4.5.0",
     "macaddress": "^0.2.9",
