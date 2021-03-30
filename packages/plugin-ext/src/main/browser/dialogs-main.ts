@@ -116,7 +116,11 @@ export class DialogsMainImpl implements DialogsMain {
             } as OpenFileDialogProps;
 
             const result = await this.fileDialogService.showOpenDialog(dialogProps, rootStat);
-            return result ? [result].map(uri => uri.path.toString()) : undefined;
+            if (Array.isArray(result)) {
+                return result.map(uri => uri.path.toString());
+            } else {
+                return result ? [result].map(uri => uri.path.toString()) : undefined;
+            }
         } catch (error) {
             console.error(error);
         }
