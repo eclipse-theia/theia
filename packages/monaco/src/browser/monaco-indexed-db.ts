@@ -16,6 +16,7 @@
 
 import * as idb from 'idb';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { BuiltinThemeProvider, Theme, ThemeService, ThemeServiceSymbol } from '@theia/core/lib/browser/theming';
 type ThemeMix = import('./textmate/monaco-theme-registry').ThemeMix;
 
 let _monacoDB: Promise<idb.IDBPDatabase> | undefined;
@@ -82,3 +83,52 @@ export async function deleteTheme(id: string): Promise<void> {
     const db = await monacoDB;
     await db.transaction('themes', 'readwrite').objectStore('themes').delete(id);
 }
+
+export function stateToTheme(state: MonacoThemeState): Theme {
+    const { id, label, description, uiTheme, data } = state;
+    const type = uiTheme === 'vs' ? 'light' : uiTheme === 'vs-dark' ? 'dark' : 'hc';
+    const builtInTheme = uiTheme === 'vs' ? BuiltinThemeProvider.lightCss : BuiltinThemeProvider.darkCss;
+    return {
+        type,
+        id,
+        label,
+        description,
+        editorTheme: data.name!,
+        activate(): void {
+            builtInTheme.use();
+        },
+        deactivate(): void {
+            builtInTheme.unuse();
+        }
+    };
+}
+
+async function getThemeFromDB(id: string): Promise<Theme | undefined> {
+    const matchingState = (await getThemes()).find(theme => theme.id === id);
+    return matchingState && stateToTheme(matchingState);
+}
+
+export class ThemeServiceWithDB extends ThemeService {
+    static get(): ThemeService {
+        const global = window as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+        if (!global[ThemeServiceSymbol]) {
+            const themeService = new ThemeServiceWithDB();
+            themeService.register(...BuiltinThemeProvider.themes);
+            themeService.startupTheme();
+            global[ThemeServiceSymbol] = themeService;
+        }
+        return global[ThemeServiceSymbol];
+    }
+
+    loadUserTheme(): void {
+        this.loadUserThemeWithDB();
+    }
+
+    protected async loadUserThemeWithDB(): Promise<void> {
+        const themeId = window.localStorage.getItem('theme') || this.defaultTheme.id;
+        const theme = this.themes[themeId] ?? await getThemeFromDB(themeId) ?? this.defaultTheme;
+        this.setCurrentTheme(theme.id);
+    }
+}
+
+ThemeService.get = ThemeServiceWithDB.get;
