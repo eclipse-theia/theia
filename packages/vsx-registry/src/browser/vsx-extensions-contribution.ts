@@ -24,23 +24,34 @@ import { ColorContribution } from '@theia/core/lib/browser/color-application-con
 import { ColorRegistry, Color } from '@theia/core/lib/browser/color-registry';
 import { TabBarToolbarContribution, TabBarToolbarItem, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser/frontend-application';
-import { MessageService, Mutable } from '@theia/core/lib/common';
+import { MenuModelRegistry, MessageService, Mutable } from '@theia/core/lib/common';
 import { FileDialogService, OpenFileDialogProps } from '@theia/filesystem/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
+import { VSXExtensionsContextMenu, VSXExtension } from './vsx-extension';
+import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 export namespace VSXExtensionsCommands {
+
+    const EXTENSIONS_CATEGORY = 'Extensions';
+
     export const CLEAR_ALL: Command = {
         id: 'vsxExtensions.clearAll',
-        category: 'Extensions',
+        category: EXTENSIONS_CATEGORY,
         label: 'Clear Search Results',
         iconClass: 'clear-all'
     };
     export const INSTALL_FROM_VSIX: Command & { dialogLabel: string } = {
         id: 'vsxExtensions.installFromVSIX',
-        category: 'Extensions',
+        category: EXTENSIONS_CATEGORY,
         label: 'Install from VSIX...',
         dialogLabel: 'Install from VSIX'
+    };
+    export const COPY: Command = {
+        id: 'vsxExtensions.copy'
+    };
+    export const COPY_EXTENSION_ID: Command = {
+        id: 'vsxExtensions.copyExtensionId'
     };
 }
 
@@ -54,6 +65,7 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     @inject(FileDialogService) protected readonly fileDialogService: FileDialogService;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(ClipboardService) protected readonly clipboardService: ClipboardService;
 
     constructor() {
         super({
@@ -82,6 +94,14 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
 
         commands.registerCommand(VSXExtensionsCommands.INSTALL_FROM_VSIX, {
             execute: () => this.installFromVSIX()
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.COPY, {
+            execute: (extension: VSXExtension) => this.copy(extension)
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.COPY_EXTENSION_ID, {
+            execute: (extension: VSXExtension) => this.copyExtensionId(extension)
         });
     }
 
@@ -122,6 +142,20 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
         item.command = id;
         this.tabbarToolbarRegistry.registerItem(item);
     };
+
+    registerMenus(menus: MenuModelRegistry): void {
+        super.registerMenus(menus);
+        menus.registerMenuAction(VSXExtensionsContextMenu.COPY, {
+            commandId: VSXExtensionsCommands.COPY.id,
+            label: 'Copy',
+            order: '0'
+        });
+        menus.registerMenuAction(VSXExtensionsContextMenu.COPY, {
+            commandId: VSXExtensionsCommands.COPY_EXTENSION_ID.id,
+            label: 'Copy Extension Id',
+            order: '1'
+        });
+    }
 
     registerColors(colors: ColorRegistry): void {
         // VS Code colors should be aligned with https://code.visualstudio.com/api/references/theme-color#extensions
@@ -179,5 +213,13 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
                 this.messageService.error('The selected file is not a valid "*.vsix" plugin.');
             }
         }
+    }
+
+    protected async copy(extension: VSXExtension): Promise<void> {
+        this.clipboardService.writeText(await extension.serialize());
+    }
+
+    protected copyExtensionId(extension: VSXExtension): void {
+        this.clipboardService.writeText(extension.id);
     }
 }

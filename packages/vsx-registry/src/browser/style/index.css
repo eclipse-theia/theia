@@ -121,13 +121,15 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+    white-space: nowrap;
 }
 
 .theia-vsx-extension-action-bar .action {
-    font-size: 80%;
+    font-size: 90%;
     min-width: auto !important;
     padding: 2px var(--theia-ui-padding) !important;
     margin-top: 2px;
+    vertical-align: middle;
 }
 
 /* Editor Section */
@@ -303,6 +305,7 @@
     margin-top: calc(var(--theia-ui-padding)*5/3);
     margin-left: 0px;
     padding: 1px var(--theia-ui-padding);
+    vertical-align: middle;
 }
 
 /** Theming */
