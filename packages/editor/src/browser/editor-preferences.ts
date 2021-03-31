@@ -1282,6 +1282,11 @@ export const editorPreferenceSchema: PreferenceSchema = {
             ],
             'default': 'auto',
             'description': 'The default end of line character.'
+        },
+        'editor.persistClosedEditors': {
+            'type': 'boolean',
+            'default': 'false',
+            'description': 'Controls whether to persist closed editors in storage.'
         }
     }
 };
@@ -1299,7 +1304,8 @@ export interface EditorConfiguration extends CodeEditorConfiguration {
     'editor.autoSaveDelay': number
     'editor.formatOnSave': boolean
     'editor.formatOnSaveTimeout': number
-    'files.eol': EndOfLinePreference
+    'files.eol': EndOfLinePreference,
+    'editor.persistClosedEditors': boolean,
 }
 export type EndOfLinePreference = '\n' | '\r\n' | 'auto';
 

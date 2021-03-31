@@ -159,6 +159,12 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         this.preferenceService.set('editor.minimap.enabled', !value, PreferenceScope.User);
     }
 
+    protected shouldRestoreClosedEditors(): boolean {
+        const value = this.preferenceService.get('editor.persistClosedEditors');
+        console.log(`persistClosedEditors value: ${value}`);
+        return !!value;
+    }
+
     /**
      * Toggle the rendering of whitespace in the editor.
      */
@@ -218,7 +224,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             locations: this.locationStack.locations().map(NavigationLocation.toObject)
         });
         this.storageService.setData(EditorNavigationContribution.CLOSED_EDITORS_KEY, {
-            closedEditors: this.locationStack.closedEditorsStack.map(RecentlyClosedEditor.toObject)
+            closedEditors: this.shouldRestoreClosedEditors() ? this.locationStack.closedEditorsStack.map(RecentlyClosedEditor.toObject) : []
         });
     }
 
