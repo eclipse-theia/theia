@@ -89,7 +89,11 @@ const getRootPathFromName = (name: string) => {
         glob: rootDirA,
         'lots-of-matches': rootDirA,
         orange: rootDirB,
-        folderSubfolder: rootSubdirA
+        folderSubfolder: rootSubdirA,
+        'orange/navel': `${rootDirA}`,
+        'orange/hamlin': `${rootDirA}`,
+        'test/test-spec.ts': `${rootDirA}`,
+        'small/test/test-spec.ts': `${rootDirA}`
     };
     return names[name];
 };
@@ -128,8 +132,24 @@ aaa hello. x h3lo y hell0h3lllo
 hello1
 `);
 
-    fs.mkdirSync(rootDirA + '/small');
+    const smallDirPath = rootDirA + '/small';
+    fs.mkdirSync(smallDirPath);
     createTestFile('small', 'A small file.\n');
+
+    const copyrightLine = '\
+    Copyright (C) 2021 <Company> and others.';
+    fs.mkdirSync(smallDirPath + '/test');
+    createTestFile('small/test/test-spec.ts', copyrightLine);
+
+    fs.mkdirSync(rootDirA + '/test');
+    createTestFile('test/test-spec.ts', copyrightLine);
+
+    fs.mkdirSync(rootDirA + '/orange');
+    createTestFile('orange/hamlin', '\
+    Hamlin orange is one of our most cold-hardy sweet oranges. Grown since 1885');
+
+    createTestFile('orange/navel', '\
+    Most well known orange type');
 
     if (!isWindows) {
         createTestFile('file:with:some:colons', `\
@@ -222,7 +242,7 @@ interface SearchInWorkspaceExpectation {
 
 function compareSearchResults(expected: SearchInWorkspaceExpectation[], actual: SearchInWorkspaceResult[]): void {
     const allMatches = actual.reduceRight((p, v) => p + v.matches.length, 0);
-    expect(allMatches).eq(expected.length);
+    expect(allMatches).eq(expected.length, 'mismatching number of matches across results');
 
     if (actual.length !== expected.length) {
         return;
@@ -241,9 +261,9 @@ function compareSearchResults(expected: SearchInWorkspaceExpectation[], actual: 
             if (!match) {
                 console.log(a);
             }
-            expect(match.length).eq(e.length);
+            expect(match.length).eq(e.length, `match[${i}].length != expected[${i}].length`);
             if (typeof match.lineText === 'string') {
-                expect(match.lineText).eq(e.lineText);
+                expect(match.lineText).eq(e.lineText, `match[${i}].lineText != expected[${i}].lineText`);
             }
         } else {
             // We don't know this file...
@@ -681,6 +701,85 @@ describe('ripgrep-search-in-workspace-server', function (): void {
         ripgrepServer.search(pattern, [rootDirAUri], { include: ['*.txt'], matchWholeWord: true });
     });
 
+    it('should search in a given file by relative path', done => {
+        const pattern = 'carrots';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceExpectation[] = [
+                { root: rootDirAUri, fileUri: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, [rootDirAUri], { include: ['./potatoes'], matchWholeWord: true });
+    });
+
+    it('should only apply to sub-folders of given include', done => {
+        const pattern = 'Copyright';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceExpectation[] = [
+                { root: rootDirAUri, fileUri: 'test/test-spec.ts', line: 1, character: 5, length: pattern.length, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        // Matching only the top 'test' folder and not any other 'test' subfolder
+        ripgrepServer.search(pattern, [rootDirAUri], { include: ['./test'], matchWholeWord: true });
+    });
+
+    it('should apply to all sub-folders of not relative pattern', done => {
+        const pattern = 'Copyright';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceExpectation[] = [
+                { root: rootDirAUri, fileUri: 'small/test/test-spec.ts', line: 1, character: 5, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'test/test-spec.ts', line: 1, character: 5, length: pattern.length, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        // Matching only the top 'test' folder and not any other 'test' subfolder
+        ripgrepServer.search(pattern, [rootDirAUri], { include: ['test'], matchWholeWord: true });
+    });
+
+    it('should consider "include" string as a file', done => {
+        const pattern = 'slightly';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceExpectation[] = [
+                { root: rootDirAUri, fileUri: 'orange', line: 1, character: 27, length: pattern.length, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, [rootDirBUri], { include: ['orange'], matchWholeWord: true });
+    });
+
+    it('should consider "include" string as a folder', done => {
+        const pattern = 'Most';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceExpectation[] = [
+                { root: rootDirAUri, fileUri: 'orange/navel', line: 1, character: 5, length: pattern.length, lineText: '' },
+                { root: rootDirAUri, fileUri: 'orange/hamlin', line: 1, character: 33, length: pattern.length, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, [rootDirAUri], { include: ['orange'], matchWholeWord: true });
+    });
+
     it('should return 1 result when searching for "test" while ignoring all ".txt" files', done => {
         const pattern = 'test';
 
@@ -848,3 +947,120 @@ describe('ripgrep-search-in-workspace-server', function (): void {
         }
     });
 });
+
+describe('#extractSearchPathsFromIncludes', function (): void {
+    this.timeout(10000);
+    it('should not resolve paths from a not absolute / relative pattern', function (): void {
+        const pattern = 'carrots';
+        const options = { include: [pattern] };
+        const searchPaths = ripgrepServer['extractSearchPathsFromIncludes']([rootDirA], options);
+        // Same root directory
+        expect(searchPaths.length).equal(1);
+        expect(searchPaths[0]).equal(rootDirA);
+
+        // Pattern is unchanged
+        expect(options.include.length).equal(1);
+        expect(options.include[0]).equals(pattern);
+    });
+
+    it('should resolve pattern to path for relative filename', function (): void {
+        const filename = 'carrots';
+        const pattern = `./${filename}`;
+        checkResolvedPathForPattern(pattern, path.join(rootDirA, filename));
+    });
+
+    it('should resolve relative pattern with sub-folders glob', function (): void {
+        const filename = 'carrots';
+        const pattern = `./${filename}/**`;
+        checkResolvedPathForPattern(pattern, path.join(rootDirA, filename));
+    });
+
+    it('should resolve absolute path pattern', function (): void {
+        const pattern = `${rootDirA}/carrots`;
+        checkResolvedPathForPattern(pattern, pattern);
+    });
+});
+
+describe('#addGlobArgs', function (): void {
+    this.timeout(10000);
+
+    it('should resolve path to glob - filename', function (): void {
+        [true, false].forEach(excludeFlag => {
+            const excludePrefix = excludeFlag ? '!' : '';
+            const filename = 'carrots';
+            const expected = [
+                `--glob=${excludePrefix}**/${filename}`,
+                `--glob=${excludePrefix}**/${filename}/*`
+            ];
+            const actual = new Set<string>();
+            ripgrepServer['addGlobArgs'](actual, [filename], excludeFlag);
+            expect(expected).to.have.deep.members([...actual]);
+        });
+    });
+
+    it('should resolve path to glob - glob prefixed folder', function (): void {
+        [true, false].forEach(excludeFlag => {
+            const excludePrefix = excludeFlag ? '!' : '';
+            const filename = 'carrots';
+            const inputPath = `**/${filename}/`;
+            const expected = [
+                `--glob=${excludePrefix}**/${filename}/`,
+                `--glob=${excludePrefix}**/${filename}/*`
+            ];
+            const actual = new Set<string>();
+            ripgrepServer['addGlobArgs'](actual, [inputPath], excludeFlag);
+            expect(expected).to.have.deep.members([...actual]);
+        });
+    });
+
+    it('should resolve path to glob - path segment', function (): void {
+        [true, false].forEach(excludeFlag => {
+            const excludePrefix = excludeFlag ? '!' : '';
+            const filename = 'carrots';
+            const inputPath = `/${filename}`;
+            const expected = [
+                `--glob=${excludePrefix}**/${filename}`,
+                `--glob=${excludePrefix}**/${filename}/*`
+            ];
+            const actual = new Set<string>();
+            ripgrepServer['addGlobArgs'](actual, [inputPath], excludeFlag);
+            expect(expected).to.have.deep.members([...actual]);
+        });
+    });
+
+    it('should resolve path to glob - already a glob', function (): void {
+        [true, false].forEach(excludeFlag => {
+            const excludePrefix = excludeFlag ? '!' : '';
+            const filename = 'carrots';
+            const inputPath = `${filename}/**/*`;
+            const expected = [
+                `--glob=${excludePrefix}**/${filename}/**/*`,
+            ];
+            const actual = new Set<string>();
+            ripgrepServer['addGlobArgs'](actual, [inputPath], excludeFlag);
+            expect(expected).to.have.deep.members([...actual]);
+        });
+    });
+
+    it('should resolve path to glob - path segment glob suffixed', function (): void {
+        [true, false].forEach(excludeFlag => {
+            const excludePrefix = excludeFlag ? '!' : '';
+            const filename = 'carrots';
+            const inputPath = `/${filename}/**/*`;
+            const expected = [
+                `--glob=${excludePrefix}**/${filename}/**/*`,
+            ];
+            const actual = new Set<string>();
+            ripgrepServer['addGlobArgs'](actual, [inputPath], excludeFlag);
+            expect(expected).to.have.deep.members([...actual]);
+        });
+    });
+});
+
+function checkResolvedPathForPattern(pattern: string, expectedPath: string): void {
+    const options = { include: [pattern] };
+    const searchPaths = ripgrepServer['extractSearchPathsFromIncludes']([rootDirA], options);
+    expect(searchPaths.length).equal(1, 'searchPath result should contain exactly one element');
+    expect(options.include.length).equals(0, 'options.include should be empty');
+    expect(searchPaths[0]).equal(path.normalize(expectedPath));
+}
