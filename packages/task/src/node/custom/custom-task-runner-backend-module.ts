@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces, Container } from 'inversify';
+import { interfaces, Container } from '@theia/core/shared/inversify';
 import { CustomTask, TaskFactory, TaskCustomOptions } from './custom-task';
 import { CustomTaskRunner } from './custom-task-runner';
 import { CustomTaskRunnerContribution } from './custom-task-runner-contribution';
