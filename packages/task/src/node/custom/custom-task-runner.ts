@@ -17,7 +17,7 @@
 import { TaskConfiguration } from '../../common';
 import { Task } from '../task';
 import { TaskRunner } from '../task-runner';
-import { injectable, inject, named } from 'inversify';
+import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core';
 import { TaskFactory } from './custom-task';
 import {
