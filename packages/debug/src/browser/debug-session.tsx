@@ -173,7 +173,7 @@ export class DebugSession implements CompositeTreeElement {
                 try {
                     await thread.pause();
                 } catch (e) {
-                    console.error('<Method> failed:', e); //Descriptive error
+                    console.error('<Method> failed:', e); //Descriptive error update
                 }
             })());
         }
