@@ -118,7 +118,7 @@ export class QuickInputService {
         const result = new Deferred<string | undefined>();
         const prompt = this.createPrompt(options.prompt);
         let label = prompt;
-        let currentText = '';
+        const currentText = '';
         const validateInput = options && options.validateInput;
         let initial: boolean = true;
 
@@ -148,28 +148,43 @@ export class QuickInputService {
                 acceptor([new QuickOpenItem({
                     label,
                     run: mode => {
+                        let accepted = false;
                         if (!error && mode === QuickOpenMode.OPEN) {
+                            if (validateInput && lookFor !== undefined) {
+                                Promise.resolve(validateInput(lookFor))
+                                    .then(err => {
+                                        if (err) {
+                                            label = err;
+                                            this.quickOpenService.showDecoration(MessageType.Error);
+                                        } else {
+                                            accepted = true;
+                                        }
+                                    });
+                            } else {
+                                accepted = true;
+                            }
+                        }
+                        if (accepted) {
+                            this.quickOpenService.hideDecoration();
                             this.onDidAcceptEmitter.fire(undefined);
                             resolve(currentText);
-                            return true;
                         }
-                        return false;
+                        return accepted;
                     }
                 })]);
-                currentText = lookFor;
             }
         }, {
-                prefix: options.value,
-                placeholder: options.placeHolder,
-                password: options.password,
-                ignoreFocusOut: options.ignoreFocusOut,
-                enabled: options.enabled,
-                valueSelection: options.valueSelection,
-                onClose: () => {
-                    result.resolve(undefined);
-                    this.quickTitleBar.hide();
-                }
-            });
+            prefix: options.value,
+            placeholder: options.placeHolder,
+            password: options.password,
+            ignoreFocusOut: options.ignoreFocusOut,
+            enabled: options.enabled,
+            valueSelection: options.valueSelection,
+            onClose: () => {
+                result.resolve(undefined);
+                this.quickTitleBar.hide();
+            }
+        });
 
         if (options && this.quickTitleBar.shouldShowTitleBar(options.title, options.step)) {
             this.quickTitleBar.attachTitleBar(this.quickOpenService.widgetNode, options.title, options.step, options.totalSteps, options.buttons);
