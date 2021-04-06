@@ -22,11 +22,11 @@ import { existsSync, readFileSync } from 'fs';
 export class FrontendGenerator extends AbstractGenerator {
 
     async generate(): Promise<void> {
-        const frontendModules = this.pck.targetFrontendModules;
+        const frontendModules = this.pck.targetFrontendModulesFiltered;
         await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(frontendModules));
         await this.write(this.pck.frontend('index.js'), this.compileIndexJs(frontendModules));
         if (this.pck.isElectron()) {
-            const electronMainModules = this.pck.targetElectronMainModules;
+            const electronMainModules = this.pck.targetElectronMainModulesFiltered;
             await this.write(this.pck.frontend('electron-main.js'), this.compileElectronMain(electronMainModules));
         }
     }

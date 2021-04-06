@@ -240,15 +240,76 @@ export class ApplicationPackage {
     }
 
     get targetBackendModules(): Map<string, string> {
-        return this.ifBrowser(this.backendModules, this.backendElectronModules);
+        return this.isBrowser() ? this.backendModules : this.backendElectronModules;
     }
 
     get targetFrontendModules(): Map<string, string> {
-        return this.ifBrowser(this.frontendModules, this.frontendElectronModules);
+        return this.isBrowser() ? this.frontendModules : this.frontendElectronModules;
     }
 
     get targetElectronMainModules(): Map<string, string> {
-        return this.ifElectron(this.electronMainModules, new Map());
+        return this.isElectron() ? this.electronMainModules : new Map();
+    }
+
+    protected _targetBackendModulesFiltered: Map<string, string>;
+    get targetBackendModulesFiltered(): Map<string, string> {
+        if (!this._targetBackendModulesFiltered) {
+            this._targetBackendModulesFiltered = this.filterModules(this.targetBackendModules);
+        }
+        return this._targetBackendModulesFiltered;
+    }
+
+    protected _targetFrontendModulesFiltered: Map<string, string>;
+    get targetFrontendModulesFiltered(): Map<string, string> {
+        if (!this._targetFrontendModulesFiltered) {
+            this._targetFrontendModulesFiltered = this.filterModules(this.targetFrontendModules);
+        }
+        return this._targetFrontendModulesFiltered;
+    }
+
+    protected _targetElectronMainModulesFiltered: Map<string, string>;
+    get targetElectronMainModulesFiltered(): Map<string, string> {
+        if (!this._targetElectronMainModulesFiltered) {
+            this._targetElectronMainModulesFiltered = this.filterModules(this.electronMainModules);
+        }
+        return this._targetElectronMainModulesFiltered;
+    }
+
+    protected filterModules(modules: Map<string, string>): Map<string, string> {
+        const { strategy, includes = [], excludes = [] } = this.props.extensions.loading;
+        const { dependencies = {} } = this.pck;
+        const all = strategy === 'all';
+        const explicitDependenciesOnly = strategy === 'explicitDependenciesOnly';
+        if (!all && !explicitDependenciesOnly) {
+            throw new Error(`unknown theia.extensions.loading.strategy: ${strategy}`);
+        }
+        const filtered = new Map<string, string>();
+        for (const [name, path] of modules.entries()) {
+            if (excludes.some(exclude => new RegExp(exclude).test(path))) {
+                continue;
+            } else if (
+                // When using 'all' the include list has precedent:
+                all && (includes.length === 0 || includes.some(include => new RegExp(include).test(path)))
+                // Using 'explicitDependenciesOnly' is complementary to the include list, else
+                // setting 'explicitDependenciesOnly' would be nulled by the include list.
+                || explicitDependenciesOnly && (this.getPackageName(path) in dependencies || includes.length > 0 && includes.some(include => new RegExp(include).test(path)))
+            ) {
+                filtered.set(name, path);
+            }
+        }
+        return filtered;
+    }
+
+    /**
+     * Only keep the first two parts of the package name e.g.,
+     * - `@a/b/c/...` => `@a/b`
+     * - `a/b/c/...` => `a`
+     */
+    protected getPackageName(mod: string): string {
+        const slice = mod.startsWith('@') ? 2 : 1;
+        return mod.split('/', slice + 1)
+            .slice(0, slice)
+            .join('/');
     }
 
     setDependency(name: string, version: string | undefined): boolean {

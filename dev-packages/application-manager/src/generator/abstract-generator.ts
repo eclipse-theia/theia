@@ -54,13 +54,13 @@ export abstract class AbstractGenerator {
         if (modules.size === 0) {
             return '';
         }
-        const lines = Array.from(modules.keys()).map(moduleName => {
-            const invocation = `${fn}('${modules.get(moduleName)}')`;
-            if (fn === 'require') {
-                return `Promise.resolve(${invocation})`;
-            }
-            return invocation;
-        }).map(statement => `    .then(function () { return ${statement}.then(load) })`);
+        const lines = Array.from(modules.values(), modulePath => {
+            const invocation = `${fn}('${modulePath}')`;
+            const promiseStatement = fn === 'require'
+                ? `Promise.resolve(${invocation})`
+                : invocation; // the `import` function already returns a Promise
+            return `    .then(function () { return ${promiseStatement}.then(load); })`;
+        });
         return os.EOL + lines.join(os.EOL);
     }
 

@@ -50,6 +50,11 @@ export interface ApplicationProps extends NpmRegistryProps {
     readonly target: ApplicationProps.Target;
 
     /**
+     * Theia extensions related properties.
+     */
+    readonly extensions: Readonly<ExtensionsConfig>;
+
+    /**
      * Frontend related properties.
      */
     readonly frontend: Readonly<{ config: FrontendApplicationConfig }>;
@@ -75,6 +80,11 @@ export namespace ApplicationProps {
     export const DEFAULT: ApplicationProps = {
         ...NpmRegistryProps.DEFAULT,
         target: 'browser',
+        extensions: {
+            loading: {
+                strategy: 'all'
+            }
+        },
         backend: {
             config: {}
         },
@@ -92,6 +102,41 @@ export namespace ApplicationProps {
         }
     };
 
+}
+
+/**
+ * Configure how Theia handles extensions.
+ */
+export interface ExtensionsConfig {
+
+    /**
+     * Specify which inversify modules to mount in your application.
+     *
+     * Note that the `loadingStrategy` only affects which inversify module will be mounted
+     * to your application, but an ignored extension might still end up in your bundles.
+     */
+    loading: ExtensionLoadingStrategy;
+}
+
+export interface ExtensionLoadingStrategy {
+
+    /**
+     * - `all`: Use all Theia extensions found installed under `node_modules`.
+     * - `explicitDependenciesOnly`: Only use what's defined as your application dependencies.
+     */
+    strategy: 'all' | 'explicitDependenciesOnly';
+
+    /**
+     * List of regexes to filter in Theia extensions, will be matched against the modules file path.
+     *
+     * Note that matched files will be added to what's matched by `explicitDependenciesOnly`.
+     */
+    includes?: string[]
+
+    /**
+     * List of regexes to filter out Theia extensions, will be matched against the modules file path.
+     */
+    excludes?: string[]
 }
 
 /**

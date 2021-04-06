@@ -19,7 +19,7 @@ import { AbstractGenerator } from './abstract-generator';
 export class BackendGenerator extends AbstractGenerator {
 
     async generate(): Promise<void> {
-        const backendModules = this.pck.targetBackendModules;
+        const backendModules = this.pck.targetBackendModulesFiltered;
         await this.write(this.pck.backend('server.js'), this.compileServer(backendModules));
         await this.write(this.pck.backend('main.js'), this.compileMain(backendModules));
     }
