@@ -64,6 +64,8 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
             this.handleIncomingRawMessage(data);
         };
         this.socket = socket;
+        window.addEventListener('offline', () => this.tryReconnect());
+        window.addEventListener('online', () => this.tryReconnect());
     }
 
     openChannel(path: string, handler: (channel: WebSocketChannel) => void, options?: WebSocketOptions): void {
@@ -114,6 +116,12 @@ export class WebSocketConnectionProvider extends AbstractConnectionProvider<WebS
 
     protected fireSocketDidClose(): void {
         this.onSocketDidCloseEmitter.fire(undefined);
+    }
+
+    protected tryReconnect(): void {
+        if (this.socket.readyState !== WebSocket.CONNECTING) {
+            this.socket.reconnect();
+        }
     }
 
 }
