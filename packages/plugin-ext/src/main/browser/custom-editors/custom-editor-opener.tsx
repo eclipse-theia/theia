@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { inject } from '@theia/core/shared/inversify';
-import { PreviewEditorOpenerOptions } from '@theia/editor-preview/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { ApplicationShell, OpenerOptions, OpenHandler, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { CustomEditorPriority, CustomEditorSelector } from '../../../common';
@@ -42,7 +41,7 @@ export class CustomEditorOpener implements OpenHandler {
         this.label = this.editor.displayName;
     }
 
-    canHandle(uri: URI, options?: PreviewEditorOpenerOptions): number {
+    canHandle(uri: URI): number {
         if (this.matches(this.editor.selector, uri)) {
             return this.getPriority();
         }

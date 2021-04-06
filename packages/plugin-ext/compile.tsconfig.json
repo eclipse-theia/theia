@@ -73,9 +73,6 @@
     },
     {
       "path": "../workspace/compile.tsconfig.json"
-    },
-    {
-      "path": "../editor-preview/compile.tsconfig.json"
     }
   ]
 }
