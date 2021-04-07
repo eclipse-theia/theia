@@ -185,8 +185,12 @@ export class PreferencesEditorWidget extends ReactWidget implements StatefulWidg
 
     protected renderSingleEntry(node: TreeNode): React.ReactNode {
         const values = this.preferenceValueRetrievalService.inspect<PreferenceItem>(node.id, this.model.currentScope.uri);
-        const preferenceNodeWithValueInAllScopes = { ...node, preference: { data: this.model.propertyList[node.id], values } };
-        return this.singlePreferenceFactory.render(preferenceNodeWithValueInAllScopes);
+        const data = this.model.propertyList[node.id];
+        if (data && values) {
+            const preferenceNodeWithValueInAllScopes = { ...node, preference: { data, values } };
+            return this.singlePreferenceFactory.render(preferenceNodeWithValueInAllScopes);
+        }
+        return undefined;
     }
 
     protected renderCategoryHeader({ node, visibleChildren }: PreferenceTreeNodeRow): React.ReactNode {
