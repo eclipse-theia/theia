@@ -21,7 +21,7 @@ import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { CommandRegistry, isOSX, environment, Path } from '@theia/core/lib/common';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
-import { CommonCommands, LabelProvider } from '@theia/core/lib/browser';
+import { CommonCommands, LabelProvider, Key, KeyCode } from '@theia/core/lib/browser';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -156,10 +156,47 @@ export class GettingStartedWidget extends ReactWidget {
      */
     protected renderOpen(): React.ReactNode {
         const requireSingleOpen = isOSX || !environment.electron.is();
-        const open = requireSingleOpen && <div className='gs-action-container'><a href='#' onClick={this.doOpen}>Open</a></div>;
-        const openFile = !requireSingleOpen && <div className='gs-action-container'><a href='#' onClick={this.doOpenFile}>Open File</a></div>;
-        const openFolder = !requireSingleOpen && <div className='gs-action-container'><a href='#' onClick={this.doOpenFolder}>Open Folder</a></div>;
-        const openWorkspace = <a href='#' onClick={this.doOpenWorkspace}>Open Workspace</a>;
+
+        const open = requireSingleOpen && <div className='gs-action-container'>
+            <a
+                role={'button'}
+                tabIndex={0}
+                onClick={this.doOpen}
+                onKeyDown={this.doOpenEnter}>
+                Open
+            </a>
+        </div>;
+
+        const openFile = !requireSingleOpen && <div className='gs-action-container'>
+            <a
+                role={'button'}
+                tabIndex={0}
+                onClick={this.doOpenFile}
+                onKeyDown={this.doOpenFileEnter}>
+                Open File
+            </a>
+        </div>;
+
+        const openFolder = !requireSingleOpen && <div className='gs-action-container'>
+            <a
+                role={'button'}
+                tabIndex={0}
+                onClick={this.doOpenFolder}
+                onKeyDown={this.doOpenFolderEnter}>
+                Open Folder
+            </a>
+        </div>;
+
+        const openWorkspace = (
+            <a
+                role={'button'}
+                tabIndex={0}
+                onClick={this.doOpenWorkspace}
+                onKeyDown={this.doOpenWorkspaceEnter}>
+                Open Workspace
+            </a>
+        );
+
         return <div className='gs-section'>
             <h3 className='gs-section-header'><i className='fa fa-folder-open'></i>Open</h3>
             {open}
@@ -177,14 +214,28 @@ export class GettingStartedWidget extends ReactWidget {
         const paths = this.buildPaths(items);
         const content = paths.slice(0, this.recentLimit).map((item, index) =>
             <div className='gs-action-container' key={index}>
-                <a href='#' onClick={a => this.open(new URI(items[index]))}>{new URI(items[index]).path.base}</a>
+                <a
+                    role={'button'}
+                    tabIndex={0}
+                    onClick={() => this.open(new URI(items[index]))}
+                    onKeyDown={(e: React.KeyboardEvent) => this.openEnter(e, new URI(items[index]))}>
+                    {new URI(items[index]).path.base}
+                </a>
                 <span className='gs-action-details'>
                     {item}
                 </span>
             </div>
         );
         // If the recently used workspaces list exceeds the limit, display `More...` which triggers the recently used workspaces quick-open menu upon selection.
-        const more = paths.length > this.recentLimit && <div className='gs-action-container'><a href='#' onClick={this.doOpenRecentWorkspace}>More...</a></div>;
+        const more = paths.length > this.recentLimit && <div className='gs-action-container'>
+            <a
+                role={'button'}
+                tabIndex={0}
+                onClick={this.doOpenRecentWorkspace}
+                onKeyDown={this.doOpenRecentWorkspaceEnter}>
+                More...
+            </a>
+        </div>;
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
                 <i className='fa fa-clock-o'></i>Recent Workspaces
@@ -205,10 +256,22 @@ export class GettingStartedWidget extends ReactWidget {
                 Settings
             </h3>
             <div className='gs-action-container'>
-                <a href='#' onClick={this.doOpenPreferences}>Open Preferences</a>
+                <a
+                    role={'button'}
+                    tabIndex={0}
+                    onClick={this.doOpenPreferences}
+                    onKeyDown={this.doOpenPreferencesEnter}>
+                    Open Preferences
+                </a>
             </div>
             <div className='gs-action-container'>
-                <a href='#' onClick={this.doOpenKeyboardShortcuts}>Open Keyboard Shortcuts</a>
+                <a
+                    role={'button'}
+                    tabIndex={0}
+                    onClick={this.doOpenKeyboardShortcuts}
+                    onKeyDown={this.doOpenKeyboardShortcutsEnter}>
+                    Open Keyboard Shortcuts
+                </a>
             </div>
         </div>;
     }
@@ -267,35 +330,86 @@ export class GettingStartedWidget extends ReactWidget {
      * Trigger the open command.
      */
     protected doOpen = () => this.commandRegistry.executeCommand(WorkspaceCommands.OPEN.id);
+    protected doOpenEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpen();
+        }
+    };
+
     /**
      * Trigger the open file command.
      */
     protected doOpenFile = () => this.commandRegistry.executeCommand(WorkspaceCommands.OPEN_FILE.id);
+    protected doOpenFileEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenFile();
+        }
+    };
+
     /**
      * Trigger the open folder command.
      */
     protected doOpenFolder = () => this.commandRegistry.executeCommand(WorkspaceCommands.OPEN_FOLDER.id);
+    protected doOpenFolderEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenFolder();
+        }
+    };
+
     /**
      * Trigger the open workspace command.
      */
     protected doOpenWorkspace = () => this.commandRegistry.executeCommand(WorkspaceCommands.OPEN_WORKSPACE.id);
+    protected doOpenWorkspaceEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenWorkspace();
+        }
+    };
+
     /**
      * Trigger the open recent workspace command.
      */
     protected doOpenRecentWorkspace = () => this.commandRegistry.executeCommand(WorkspaceCommands.OPEN_RECENT_WORKSPACE.id);
+    protected doOpenRecentWorkspaceEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenRecentWorkspace();
+        }
+    };
+
     /**
      * Trigger the open preferences command.
      * Used to open the preferences widget.
      */
     protected doOpenPreferences = () => this.commandRegistry.executeCommand(CommonCommands.OPEN_PREFERENCES.id);
+    protected doOpenPreferencesEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenPreferences();
+        }
+    };
+
     /**
      * Trigger the open keyboard shortcuts command.
      * Used to open the keyboard shortcuts widget.
      */
     protected doOpenKeyboardShortcuts = () => this.commandRegistry.executeCommand(KeymapsCommands.OPEN_KEYMAPS.id);
+    protected doOpenKeyboardShortcutsEnter = (e: React.KeyboardEvent) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenKeyboardShortcuts();
+        }
+    };
+
     /**
      * Open a workspace given its uri.
      * @param uri {URI} the workspace uri.
      */
     protected open = (uri: URI) => this.workspaceService.open(uri);
+    protected openEnter = (e: React.KeyboardEvent, uri: URI) => {
+        if (this.isEnterKey(e)) {
+            this.open(uri);
+        }
+    };
+
+    protected isEnterKey(e: React.KeyboardEvent): boolean {
+        return Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode;
+    }
 }
