@@ -156,10 +156,10 @@ export class GettingStartedWidget extends ReactWidget {
      */
     protected renderOpen(): React.ReactNode {
         const requireSingleOpen = isOSX || !environment.electron.is();
-        const open = requireSingleOpen && <div className='gs-action-container'><a href='#' onClick={this.doOpen}>Open</a></div>;
-        const openFile = !requireSingleOpen && <div className='gs-action-container'><a href='#' onClick={this.doOpenFile}>Open File</a></div>;
-        const openFolder = !requireSingleOpen && <div className='gs-action-container'><a href='#' onClick={this.doOpenFolder}>Open Folder</a></div>;
-        const openWorkspace = <a href='#' onClick={this.doOpenWorkspace}>Open Workspace</a>;
+        const open = requireSingleOpen && <div className='gs-action-container'><a onClick={this.doOpen}>Open</a></div>;
+        const openFile = !requireSingleOpen && <div className='gs-action-container'><a onClick={this.doOpenFile}>Open File</a></div>;
+        const openFolder = !requireSingleOpen && <div className='gs-action-container'><a onClick={this.doOpenFolder}>Open Folder</a></div>;
+        const openWorkspace = <a onClick={this.doOpenWorkspace}>Open Workspace</a>;
         return <div className='gs-section'>
             <h3 className='gs-section-header'><i className='fa fa-folder-open'></i>Open</h3>
             {open}
@@ -177,14 +177,14 @@ export class GettingStartedWidget extends ReactWidget {
         const paths = this.buildPaths(items);
         const content = paths.slice(0, this.recentLimit).map((item, index) =>
             <div className='gs-action-container' key={index}>
-                <a href='#' onClick={a => this.open(new URI(items[index]))}>{new URI(items[index]).path.base}</a>
+                <a onClick={a => this.open(new URI(items[index]))}>{new URI(items[index]).path.base}</a>
                 <span className='gs-action-details'>
                     {item}
                 </span>
             </div>
         );
         // If the recently used workspaces list exceeds the limit, display `More...` which triggers the recently used workspaces quick-open menu upon selection.
-        const more = paths.length > this.recentLimit && <div className='gs-action-container'><a href='#' onClick={this.doOpenRecentWorkspace}>More...</a></div>;
+        const more = paths.length > this.recentLimit && <div className='gs-action-container'><a onClick={this.doOpenRecentWorkspace}>More...</a></div>;
         return <div className='gs-section'>
             <h3 className='gs-section-header'>
                 <i className='fa fa-clock-o'></i>Recent Workspaces
@@ -205,10 +205,10 @@ export class GettingStartedWidget extends ReactWidget {
                 Settings
             </h3>
             <div className='gs-action-container'>
-                <a href='#' onClick={this.doOpenPreferences}>Open Preferences</a>
+                <a onClick={this.doOpenPreferences}>Open Preferences</a>
             </div>
             <div className='gs-action-container'>
-                <a href='#' onClick={this.doOpenKeyboardShortcuts}>Open Keyboard Shortcuts</a>
+                <a onClick={this.doOpenKeyboardShortcuts}>Open Keyboard Shortcuts</a>
             </div>
         </div>;
     }
