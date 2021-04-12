@@ -146,7 +146,7 @@ export class TaskConfigurations implements Disposable {
     }
 
     getRawTaskConfigurations(scope?: TaskConfigurationScope): (TaskCustomization | TaskConfiguration)[] {
-        if (!scope) {
+        if (scope === undefined) {
             const tasks: (TaskCustomization | TaskConfiguration)[] = [];
             for (const configs of this.rawTaskConfigurations.values()) {
                 tasks.push(...configs);
