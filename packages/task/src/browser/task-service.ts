@@ -841,7 +841,7 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
-     * Runs a task identified by the given identifier, but only if found in the give workspace folder
+     * Runs a task identified by the given identifier, but only if found in the given workspace folder
      *
      * @param token  The cache token for the user interaction in progress
      * @param workspaceFolderUri  The folder to restrict the search to

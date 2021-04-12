@@ -97,6 +97,9 @@ export class TaskConfigurationManager {
         this.workspaceService.onWorkspaceChanged(() => {
             this.updateModels();
         });
+        this.workspaceService.onWorkspaceLocationChanged(() => {
+            this.updateModels();
+        });
     }
 
     protected createModels(): void {
@@ -237,6 +240,7 @@ export class TaskConfigurationManager {
                 }));
             }
             this.models.set(TaskScope.Workspace, workspaceModel);
+            this.onDidChangeTaskConfigEmitter.fire({ scope: TaskScope.Workspace, type: FileChangeType.UPDATED });
         }
     }
 }
