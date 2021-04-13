@@ -82,15 +82,17 @@ export class EditorPreviewManager extends WidgetOpenHandler<EditorPreviewWidget 
         widget.disposed.connect(() => this.currentEditorPreview = Promise.resolve(undefined));
 
         widget.onPinned(({ preview, editorWidget }) => {
-            // TODO(caseyflynn): I don't believe there is ever a case where
-            // this will not hold true.
+            const wasActive = this.shell.activeWidget === preview || this.shell.activeWidget === editorWidget;
+            // TODO(caseyflynn): I don't believe there is ever a case where the parent will not be a DockPanel.
             if (preview.parent && preview.parent instanceof DockPanel) {
                 preview.parent.addWidget(editorWidget, { ref: preview });
             } else {
                 this.shell.addWidget(editorWidget, { area: 'main' });
             }
             preview.dispose();
-            this.shell.activateWidget(editorWidget.id);
+            if (wasActive) {
+                this.shell.activateWidget(editorWidget.id);
+            }
             this.currentEditorPreview = Promise.resolve(undefined);
         });
     }
