@@ -5,7 +5,9 @@
   "dependencies": {
     "@theia/core": "1.12.0",
     "@theia/monaco": "1.12.0",
-    "anser": "^2.0.1"
+    "@types/dompurify": "^2.0.2",
+    "anser": "^2.0.1",
+    "dompurify": "^2.0.11"
   },
   "publishConfig": {
     "access": "public"
