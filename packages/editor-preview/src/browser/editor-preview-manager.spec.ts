@@ -62,6 +62,7 @@ before(() => {
     // Mock out injected dependencies.
     testContainer.bind(EditorManager).toDynamicValue(ctx => mockEditorManager);
     testContainer.bind(WidgetManager).toDynamicValue(ctx => mockWidgetManager);
+    (<any>mockShell)['tracker'] = { activeWidget: undefined };
     testContainer.bind(ApplicationShell).toConstantValue(mockShell);
     testContainer.bind(PreferenceService).toDynamicValue(ctx => mockPreference);
 
