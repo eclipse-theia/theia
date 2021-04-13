@@ -857,7 +857,14 @@ export function fromShellExecution(execution: theia.ShellExecution, taskDto: Tas
 
     const commandLine = execution.commandLine;
     if (commandLine) {
-        taskDto.command = commandLine;
+        const args = commandLine.split(' ');
+        const taskCommand = args.shift();
+
+        if (taskCommand) {
+            taskDto.command = taskCommand;
+        }
+
+        taskDto.args = args;
         return taskDto;
     }
 
