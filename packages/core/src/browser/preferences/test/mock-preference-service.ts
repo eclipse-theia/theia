@@ -15,9 +15,8 @@
  ********************************************************************************/
 
 import { injectable } from 'inversify';
-import { PreferenceService, PreferenceChange } from '../';
+import { PreferenceService, PreferenceChange, OverridePreferenceName } from '../';
 import { Emitter, Event } from '../../../common';
-import { OverridePreferenceName } from '../preference-contribution';
 import URI from '../../../common/uri';
 import { PreferenceChanges, PreferenceInspection } from '../preference-service';
 import { PreferenceScope } from '../preference-scope';
