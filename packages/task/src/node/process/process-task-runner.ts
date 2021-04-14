@@ -141,7 +141,7 @@ export class ProcessTaskRunner implements TaskRunner {
          */
         let commandLine: string | undefined;
 
-        if (taskConfig.type === 'shell') {
+        if ((taskConfig.taskType || taskConfig.type) === 'shell') {
             // When running a shell task, we have to spawn a shell process somehow,
             // and tell it to run the command the user wants to run inside of it.
             //
