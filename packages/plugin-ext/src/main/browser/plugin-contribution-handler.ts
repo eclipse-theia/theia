@@ -26,7 +26,7 @@ import {
     LabelProviderContribution,
     PreferenceSchemaProvider
 } from '@theia/core/lib/browser';
-import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser/preferences';
+import { PreferenceLanguageOverrideService, PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser/preferences';
 import { KeybindingsContributionPointHandler } from './keybindings/keybindings-contribution-handler';
 import { MonacoSnippetSuggestProvider } from '@theia/monaco/lib/browser/monaco-snippet-suggest-provider';
 import { PluginSharedStyle } from './plugin-shared-style';
@@ -60,6 +60,9 @@ export class PluginContributionHandler {
 
     @inject(PreferenceSchemaProvider)
     private readonly preferenceSchemaProvider: PreferenceSchemaProvider;
+
+    @inject(PreferenceLanguageOverrideService)
+    private readonly preferenceOverrideService: PreferenceLanguageOverrideService;
 
     @inject(MonacoTextmateService)
     private readonly monacoTextmateService: MonacoTextmateService;
@@ -429,7 +432,7 @@ export class PluginContributionHandler {
         // eslint-disable-next-line guard-for-in
         for (const key in configurationDefaults) {
             const defaultValue = configurationDefaults[key];
-            if (this.preferenceSchemaProvider.testOverrideValue(key, defaultValue)) {
+            if (this.preferenceOverrideService.testOverrideValue(key, defaultValue)) {
                 defaultOverrides.properties[key] = {
                     type: 'object',
                     default: defaultValue,

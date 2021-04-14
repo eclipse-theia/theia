@@ -18,8 +18,9 @@
 
 import { Disposable, Event, MaybePromise } from '../../common';
 import { PreferenceService } from './preference-service';
-import { PreferenceSchema, OverridePreferenceName } from './preference-contribution';
+import { PreferenceSchema } from './preference-contribution';
 import { PreferenceScope } from './preference-scope';
+import { OverridePreferenceName } from './preference-language-override-service';
 
 /**
  * It is worth explaining the type for `PreferenceChangeEvent`:

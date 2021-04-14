@@ -178,7 +178,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             let preferences;
             if (model.valid) {
                 const content = model.getText();
-                preferences = this.getParsedContent(content);
+                const jsonContent = this.parse(content);
+                preferences = this.getParsedContent(jsonContent);
             } else {
                 preferences = {};
             }
@@ -186,29 +187,6 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         } catch (e) {
             console.error(`Failed to load preferences from '${this.getUri()}'.`, e);
         }
-    }
-
-    protected getParsedContent(content: string): { [key: string]: any } {
-        const jsonData = this.parse(content);
-
-        const preferences: { [key: string]: any } = {};
-        if (typeof jsonData !== 'object') {
-            return preferences;
-        }
-        // eslint-disable-next-line guard-for-in
-        for (const preferenceName in jsonData) {
-            const preferenceValue = jsonData[preferenceName];
-            if (this.schemaProvider.testOverrideValue(preferenceName, preferenceValue)) {
-                // eslint-disable-next-line guard-for-in
-                for (const overriddenPreferenceName in preferenceValue) {
-                    const overriddenValue = preferenceValue[overriddenPreferenceName];
-                    preferences[`${preferenceName}.${overriddenPreferenceName}`] = overriddenValue;
-                }
-            } else {
-                preferences[preferenceName] = preferenceValue;
-            }
-        }
-        return preferences;
     }
 
     protected parse(content: string): any {

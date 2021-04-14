@@ -20,11 +20,12 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { Event, Emitter, DisposableCollection, Disposable, deepFreeze } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
-import { PreferenceSchemaProvider, OverridePreferenceName } from './preference-contribution';
+import { PreferenceSchemaProvider } from './preference-contribution';
 import URI from '../../common/uri';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceConfigurations } from './preference-configurations';
 import { JSONExt } from '@phosphor/coreutils/lib/json';
+import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
 
 export { PreferenceScope };
 
@@ -291,6 +292,9 @@ export class PreferenceServiceImpl implements PreferenceService {
     @inject(PreferenceConfigurations)
     protected readonly configurations: PreferenceConfigurations;
 
+    @inject(PreferenceLanguageOverrideService)
+    protected readonly preferenceOverrideService: PreferenceLanguageOverrideService;
+
     protected readonly preferenceProviders = new Map<PreferenceScope, PreferenceProvider>();
 
     protected async initializeProviders(): Promise<void> {
@@ -532,10 +536,10 @@ export class PreferenceServiceImpl implements PreferenceService {
     }
 
     overridePreferenceName(options: OverridePreferenceName): string {
-        return this.schema.overridePreferenceName(options);
+        return this.preferenceOverrideService.overridePreferenceName(options);
     }
     overriddenPreferenceName(preferenceName: string): OverridePreferenceName | undefined {
-        return this.schema.overriddenPreferenceName(preferenceName);
+        return this.preferenceOverrideService.overriddenPreferenceName(preferenceName);
     }
 
     protected doHas(preferenceName: string, resourceUri?: string): boolean {
