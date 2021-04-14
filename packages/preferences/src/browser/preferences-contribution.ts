@@ -59,7 +59,7 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CommonCommands.OPEN_PREFERENCES, {
-            execute: () => this.openView({ reveal: true }),
+            execute: () => this.openView({ activate: true }),
         });
         commands.registerCommand(PreferencesCommands.OPEN_PREFERENCES_JSON_TOOLBAR, {
             isEnabled: () => true,
