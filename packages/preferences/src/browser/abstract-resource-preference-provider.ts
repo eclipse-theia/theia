@@ -22,13 +22,14 @@ import { JSONExt } from '@theia/core/shared/@phosphor/coreutils';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { PreferenceProvider, PreferenceSchemaProvider, PreferenceScope, PreferenceProviderDataChange, PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceProvider, PreferenceSchemaProvider, PreferenceScope, PreferenceProviderDataChange } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
@@ -36,10 +37,11 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected preferences: { [key: string]: any } = {};
     protected model: MonacoEditorModel | undefined;
     protected readonly loading = new Deferred();
+    protected modelInitialized = false;
 
-    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(FileService) protected readonly fileService: FileService;
 
     @inject(PreferenceConfigurations)
     protected readonly configurations: PreferenceConfigurations;
@@ -54,6 +56,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected async init(): Promise<void> {
         const uri = this.getUri();
         this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`preference provider for '${uri}' was disposed`))));
+        await this.readPreferencesFromFile();
         this._ready.resolve();
 
         const reference = await this.textModelService.createModelReference(uri);
@@ -64,11 +67,11 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
         this.model = reference.object;
         this.loading.resolve();
+        this.modelInitialized = true;
 
         this.toDispose.push(reference);
         this.toDispose.push(Disposable.create(() => this.model = undefined));
 
-        this.readPreferences();
         this.toDispose.push(this.model.onDidChangeContent(() => this.readPreferences()));
         this.toDispose.push(this.model.onDirtyChanged(() => this.readPreferences()));
         this.toDispose.push(this.model.onDidChangeValid(() => this.readPreferences()));
@@ -80,7 +83,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected abstract getScope(): PreferenceScope;
 
     protected get valid(): boolean {
-        return this.model && this.model.valid || false;
+        return this.modelInitialized ? !!this.model?.valid : Object.keys(this.preferences).length > 0;
     }
 
     getConfigUri(): URI;
@@ -165,6 +168,11 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         return [preferenceName];
     }
 
+    protected async readPreferencesFromFile(): Promise<void> {
+        const content = await this.fileService.read(this.getUri()).catch(() => ({ value: '' }));
+        this.readPreferencesFromContent(content.value);
+    }
+
     /**
      * It HAS to be sync to ensure that `setPreference` returns only when values are updated
      * or any other operation modifying the monaco model content.
@@ -175,18 +183,22 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             return;
         }
         try {
-            let preferences;
-            if (model.valid) {
-                const content = model.getText();
-                const jsonContent = this.parse(content);
-                preferences = this.getParsedContent(jsonContent);
-            } else {
-                preferences = {};
-            }
-            this.handlePreferenceChanges(preferences);
+            const content = model.valid ? model.getText() : '';
+            this.readPreferencesFromContent(content);
         } catch (e) {
             console.error(`Failed to load preferences from '${this.getUri()}'.`, e);
         }
+    }
+
+    protected readPreferencesFromContent(content: string): void {
+        let preferencesInJson;
+        try {
+            preferencesInJson = this.parse(content);
+        } catch {
+            preferencesInJson = {};
+        }
+        const parsedPreferences = this.getParsedContent(preferencesInJson);
+        this.handlePreferenceChanges(parsedPreferences);
     }
 
     protected parse(content: string): any {
