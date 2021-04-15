@@ -136,6 +136,11 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
         return this.widgetManager.getWidgets(this.id) as W[];
     }
 
+    protected tryGetPendingWidget(uri: URI, options?: WidgetOpenerOptions): MaybePromise<W> | undefined {
+        const factoryOptions = this.createWidgetOptions(uri, options);
+        return this.widgetManager.tryGetPendingWidget(this.id, factoryOptions);
+    }
+
     protected getWidget(uri: URI, options?: WidgetOpenerOptions): Promise<W | undefined> {
         const widgetOptions = this.createWidgetOptions(uri, options);
         return this.widgetManager.getWidget<W>(this.id, widgetOptions);

@@ -16,8 +16,8 @@
 
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { RecursivePartial, Emitter, Event } from '@theia/core/lib/common';
-import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions } from '@theia/core/lib/browser';
+import { RecursivePartial, Emitter, Event, MaybePromise } from '@theia/core/lib/common';
+import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, Widget } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
@@ -82,7 +82,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         this.updateCurrentEditor();
     }
 
-    async getByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+    getByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         return this.getWidget(uri, options);
     }
 
@@ -90,20 +90,30 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this.getOrCreateWidget(uri, options);
     }
 
+    protected tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
+        const editorPromise = super.tryGetPendingWidget(uri, options);
+        if (editorPromise) {
+            // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
+            if (!(editorPromise instanceof Widget)) {
+                editorPromise.then(editor => this.revealSelection(editor, options, uri));
+            } else {
+                this.revealSelection(editorPromise, options);
+            }
+        }
+        return editorPromise;
+    }
+
     protected async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
-        const optionsWithCounter: EditorOpenerOptions = { counter: this.getCounterForUri(uri), ...options };
-        const editor = await super.getWidget(uri, optionsWithCounter);
+        const editor = await super.getWidget(uri, options);
         if (editor) {
             // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-            this.revealSelection(editor, optionsWithCounter, uri);
+            this.revealSelection(editor, options, uri);
         }
         return editor;
     }
 
     protected async getOrCreateWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const counter = options?.counter === undefined ? this.getOrCreateCounterForUri(uri) : options.counter;
-        const optionsWithCounter: EditorOpenerOptions = { ...options, counter };
-        const editor = await super.getOrCreateWidget(uri, optionsWithCounter);
+        const editor = await super.getOrCreateWidget(uri, options);
         // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
         this.revealSelection(editor, options, uri);
         return editor;
@@ -292,9 +302,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
 
     protected createWidgetOptions(uri: URI, options?: EditorOpenerOptions): NavigatableWidgetOptions {
         const navigatableOptions = super.createWidgetOptions(uri, options);
-        if (options?.counter !== undefined) {
-            navigatableOptions.counter = options.counter;
-        }
+        navigatableOptions.counter = options?.counter ?? this.getOrCreateCounterForUri(uri);
         return navigatableOptions;
     }
 }

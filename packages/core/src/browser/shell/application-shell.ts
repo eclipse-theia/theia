@@ -851,6 +851,17 @@ export class ApplicationShell extends Widget {
     }
 
     /**
+     *  @returns the widget whose title has been targeted by a DOM event on a tabbar, or undefined if none can be found.
+     */
+    findTargetedWidget(event?: Event): Widget | undefined {
+        if (event) {
+            const tab = this.findTabBar(event);
+            const title = tab && this.findTitle(tab, event);
+            return title && title.owner;
+        }
+    }
+
+    /**
      * The current widget in the application shell. The current widget is the last widget that
      * was active and not yet closed. See the remarks to `activeWidget` on what _active_ means.
      */

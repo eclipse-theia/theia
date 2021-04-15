@@ -418,7 +418,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
         /**
          * TODO:
-         * Keep Open: workbench.action.keepEditor
          * Open Next: workbench.action.openNextRecentlyUsedEditorInGroup
          * Open Previous: workbench.action.openPreviousRecentlyUsedEditorInGroup
          * Copy Path of Active File: workbench.action.files.copyPathOfActiveFile
