@@ -309,7 +309,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             open: () => this.openView(view.id, { activate: true })
         }));
         toDispose.push(this.commands.registerCommand({ id: `${view.id}.focus` }, {
-            execute: () => this.openView(view.id, { activate: true })
+            execute: async () => { await this.openView(view.id, { activate: true }); }
         }));
         return toDispose;
     }
