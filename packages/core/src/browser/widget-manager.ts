@@ -166,6 +166,18 @@ export class WidgetManager {
     }
 
     /**
+     * Try to get the existing widget for the given description.
+     * @param factoryId The widget factory id.
+     * @param options The widget factory specific information.
+     *
+     * @returns A promise that resolves to the widget, if any exists. The promise may be pending, so be cautious when assuming that it will not reject.
+     */
+    tryGetPendingWidget<T extends Widget>(factoryId: string, options?: any): MaybePromise<T> | undefined {
+        const key = this.toKey({ factoryId, options });
+        return this.doGetWidget(key);
+    }
+
+    /**
      * Get the widget for the given description.
      * @param factoryId The widget factory id.
      * @param options The widget factory specific information.
@@ -180,7 +192,7 @@ export class WidgetManager {
     }
 
     protected doGetWidget<T extends Widget>(key: string): MaybePromise<T> | undefined {
-        const pendingWidget = this.widgetPromises.get(key) || this.pendingWidgetPromises.get(key);
+        const pendingWidget = this.widgetPromises.get(key) ?? this.pendingWidgetPromises.get(key);
         if (pendingWidget) {
             return pendingWidget as MaybePromise<T>;
         }

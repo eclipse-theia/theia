@@ -1,5 +1,15 @@
 # Change Log
 
+## v1.15.0 - 6/24/2021
+
+[1.15.0 Milestone](https://github.com/eclipse-theia/theia/milestone/21)
+
+- [editor-preview] rewrote `editor-preview`-package classes as extensions of `editor`-package classes [#9518](https://github.com/eclipse-theia/theia/pull/9517)
+
+<a name="breaking_changes_1.15.0">[Breaking Changes:](#breaking_changes_1.15.0)</a>
+
+- [editor-preview] `EditorPreviewWidget` now extends `EditorWidget` and `EditorPreviewManager` extends and overrides `EditorManager`. `instanceof` checks can no longer distinguish between preview and non-preview editors; use `.isPreview` field instead. [#9518](https://github.com/eclipse-theia/theia/pull/9517)
+
 ## v1.14.0 - 5/27/2021
 
 [1.14.0 Milestone](https://github.com/eclipse-theia/theia/milestone/20)

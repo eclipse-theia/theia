@@ -93,7 +93,7 @@ describe('Keybindings', function () {
         assert.notEqual(executedCommand, id);
     });
 
-    it('later registered keybinding should has higher priority', async () => {
+    it('later registered keybinding should have higher priority', async () => {
         const id = '__test:keybindings.copy';
         toTearDown.push(commands.registerCommand({ id }, {
             execute: () => { }

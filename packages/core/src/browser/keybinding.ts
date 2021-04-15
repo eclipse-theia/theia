@@ -232,7 +232,7 @@ export class KeybindingRegistry {
         try {
             this.resolveKeybinding(binding);
             const scoped = Object.assign(binding, { scope });
-            this.keymaps[scope].unshift(scoped);
+            this.insertBindingIntoScope(scoped, scope);
             return Disposable.create(() => {
                 const index = this.keymaps[scope].indexOf(scoped);
                 if (index !== -1) {
@@ -242,6 +242,22 @@ export class KeybindingRegistry {
         } catch (error) {
             this.logger.warn(`Could not register keybinding:\n  ${common.Keybinding.stringify(binding)}\n${error}`);
             return Disposable.NULL;
+        }
+    }
+
+    /**
+     * Ensures that keybindings are inserted in order of increasing length of binding to ensure that if a
+     * user triggers a short keybinding (e.g. ctrl+k), the UI won't wait for a longer one (e.g. ctrl+k enter)
+     */
+    protected insertBindingIntoScope(item: common.Keybinding & { scope: KeybindingScope; }, scope: KeybindingScope): void {
+        const scopedKeymap = this.keymaps[scope];
+        const getNumberOfKeystrokes = (binding: common.Keybinding): number => (binding.keybinding.trim().match(/\s/g)?.length ?? 0) + 1;
+        const numberOfKeystrokesInBinding = getNumberOfKeystrokes(item);
+        const indexOfFirstItemWithEqualStrokes = scopedKeymap.findIndex(existingBinding => getNumberOfKeystrokes(existingBinding) === numberOfKeystrokesInBinding);
+        if (indexOfFirstItemWithEqualStrokes > -1) {
+            scopedKeymap.splice(indexOfFirstItemWithEqualStrokes, 0, item);
+        } else {
+            scopedKeymap.push(item);
         }
     }
 
