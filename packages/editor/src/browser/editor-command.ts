@@ -28,6 +28,7 @@ import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings
 export namespace EditorCommands {
 
     const EDITOR_CATEGORY = 'Editor';
+    const VIEW_CATEGORY = 'View';
 
     /**
      * Show editor references
@@ -106,7 +107,7 @@ export namespace EditorCommands {
      */
     export const SHOW_ALL_OPENED_EDITORS: Command = {
         id: 'workbench.action.showAllEditors',
-        category: 'View',
+        category: VIEW_CATEGORY,
         label: 'Show All Opened Editors'
     };
     /**
@@ -114,7 +115,7 @@ export namespace EditorCommands {
      */
     export const TOGGLE_MINIMAP: Command = {
         id: 'editor.action.toggleMinimap',
-        category: 'View',
+        category: VIEW_CATEGORY,
         label: 'Toggle Minimap'
     };
     /**
@@ -122,7 +123,7 @@ export namespace EditorCommands {
      */
     export const TOGGLE_RENDER_WHITESPACE: Command = {
         id: 'editor.action.toggleRenderWhitespace',
-        category: 'View',
+        category: VIEW_CATEGORY,
         label: 'Toggle Render Whitespace'
     };
     /**
@@ -130,7 +131,7 @@ export namespace EditorCommands {
      */
     export const TOGGLE_WORD_WRAP: Command = {
         id: 'editor.action.toggleWordWrap',
-        category: 'View',
+        category: VIEW_CATEGORY,
         label: 'Toggle Word Wrap'
     };
     /**
@@ -138,8 +139,47 @@ export namespace EditorCommands {
      */
     export const REOPEN_CLOSED_EDITOR: Command = {
         id: 'workbench.action.reopenClosedEditor',
-        category: 'View',
+        category: VIEW_CATEGORY,
         label: 'Reopen Closed Editor'
+    };
+    /**
+     * Opens a second instance of the current editor, splitting the view in the direction specified.
+     */
+    export const SPLIT_EDITOR_RIGHT: Command = {
+        id: 'workbench.action.splitEditorRight',
+        category: VIEW_CATEGORY,
+        label: 'Split Editor Right'
+    };
+    export const SPLIT_EDITOR_DOWN: Command = {
+        id: 'workbench.action.splitEditorDown',
+        category: VIEW_CATEGORY,
+        label: 'Split Editor Down'
+    };
+    export const SPLIT_EDITOR_UP: Command = {
+        id: 'workbench.action.splitEditorUp',
+        category: VIEW_CATEGORY,
+        label: 'Split Editor Up'
+    };
+    export const SPLIT_EDITOR_LEFT: Command = {
+        id: 'workbench.action.splitEditorLeft',
+        category: VIEW_CATEGORY,
+        label: 'Split Editor Left'
+    };
+    /**
+     * Default horizontal split: right.
+     */
+    export const SPLIT_EDITOR_HORIZONTAL: Command = {
+        id: 'workbench.action.splitEditor',
+        category: VIEW_CATEGORY,
+        label: 'Split Editor'
+    };
+    /**
+     * Default vertical split: down.
+     */
+    export const SPLIT_EDITOR_VERTICAL: Command = {
+        id: 'workbench.action.splitEditorOrthogonal',
+        category: VIEW_CATEGORY,
+        label: 'Split Editor Orthogonal'
     };
 }
 

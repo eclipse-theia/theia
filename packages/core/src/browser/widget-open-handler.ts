@@ -138,12 +138,12 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
 
     protected getWidget(uri: URI, options?: WidgetOpenerOptions): Promise<W | undefined> {
         const widgetOptions = this.createWidgetOptions(uri, options);
-        return this.widgetManager.getWidget(this.id, widgetOptions) as Promise<W | undefined>;
+        return this.widgetManager.getWidget<W>(this.id, widgetOptions);
     }
 
     protected getOrCreateWidget(uri: URI, options?: WidgetOpenerOptions): Promise<W> {
         const widgetOptions = this.createWidgetOptions(uri, options);
-        return this.widgetManager.getOrCreateWidget(this.id, widgetOptions) as Promise<W>;
+        return this.widgetManager.getOrCreateWidget<W>(this.id, widgetOptions);
     }
 
     protected abstract createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): Object;
