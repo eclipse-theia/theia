@@ -17,15 +17,21 @@
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event } from '@theia/core/lib/common';
-import { WidgetOpenerOptions, NavigatableWidgetOpenHandler } from '@theia/core/lib/browser';
+import { WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
 import { TextEditor } from './editor';
 
+export interface WidgetId {
+    id: number;
+    uri: string;
+}
+
 export interface EditorOpenerOptions extends WidgetOpenerOptions {
     selection?: RecursivePartial<Range>;
     preview?: boolean;
+    counter?: number
 }
 
 @injectable()
@@ -34,6 +40,8 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     readonly id = EditorWidgetFactory.ID;
 
     readonly label = 'Code Editor';
+
+    protected readonly editorCounters = new Map<string, number>();
 
     protected readonly onActiveEditorChangedEmitter = new Emitter<EditorWidget | undefined>();
     /**
@@ -50,8 +58,8 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     @postConstruct()
     protected init(): void {
         super.init();
-        this.shell.activeChanged.connect(() => this.updateActiveEditor());
-        this.shell.currentChanged.connect(() => this.updateCurrentEditor());
+        this.shell.onDidChangeActiveWidget(() => this.updateActiveEditor());
+        this.shell.onDidChangeCurrentWidget(() => this.updateCurrentEditor());
         this.onCreated(widget => {
             widget.onDidChangeVisibility(() => {
                 if (widget.isVisible) {
@@ -61,7 +69,9 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
                 }
                 this.updateCurrentEditor();
             });
+            this.checkCounterForWidget(widget);
             widget.disposed.connect(() => {
+                this.removeFromCounter(widget);
                 this.removeRecentlyVisible(widget);
                 this.updateCurrentEditor();
             });
@@ -75,21 +85,30 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
 
     async getByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
-        const widget = await super.getByUri(uri);
-        if (widget) {
-            // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-            this.revealSelection(widget, options, uri);
-        }
-        return widget;
+        return this.getWidget(uri, options);
     }
 
-    async getOrCreateByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const widget = await super.getOrCreateByUri(uri);
-        if (widget) {
+    getOrCreateByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        return this.getOrCreateWidget(uri, options);
+    }
+
+    protected async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+        const optionsWithCounter: EditorOpenerOptions = { counter: this.getCounterForUri(uri), ...options };
+        const editor = await super.getWidget(uri, optionsWithCounter);
+        if (editor) {
             // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
-            this.revealSelection(widget, options, uri);
+            this.revealSelection(editor, optionsWithCounter, uri);
         }
-        return widget;
+        return editor;
+    }
+
+    protected async getOrCreateWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        const counter = options?.counter === undefined ? this.getOrCreateCounterForUri(uri) : options.counter;
+        const optionsWithCounter: EditorOpenerOptions = { ...options, counter };
+        const editor = await super.getOrCreateWidget(uri, optionsWithCounter);
+        // Reveal selection before attachment to manage nav stack. (https://github.com/eclipse-theia/theia/issues/8955)
+        this.revealSelection(editor, options, uri);
+        return editor;
     }
 
     protected readonly recentlyVisibleIds: string[] = [];
@@ -154,14 +173,23 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return 100;
     }
 
-    async open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const editor = await this.getOrCreateByUri(uri, options);
-        await super.open(uri, options);
-        return editor;
+    // This override only serves to inform external callers that they can use EditorOpenerOptions.
+    open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        return super.open(uri, options);
+    }
+
+    /**
+     * Opens an editor to the side of the current editor. Defaults to opening to the right.
+     * To modify direction, pass options with `{widgetOptions: {mode: ...}}`
+     */
+    openToSide(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        const counter = this.createCounterForUri(uri);
+        const splitOptions: EditorOpenerOptions = { widgetOptions: { mode: 'split-right' }, ...options, counter };
+        return this.open(uri, splitOptions);
     }
 
     protected revealSelection(widget: EditorWidget, input?: EditorOpenerOptions, uri?: URI): void {
-        let inputSelection = input && input.selection;
+        let inputSelection = input?.selection;
         if (!inputSelection && uri) {
             const match = /^L?(\d+)(?:,(\d+))?/.exec(uri.fragment);
             if (match) {
@@ -207,6 +235,63 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         };
     }
 
+    protected removeFromCounter(widget: EditorWidget): void {
+        const { id, uri } = this.extractIdFromWidget(widget);
+        if (uri && !Number.isNaN(id)) {
+            let max = -Infinity;
+            this.all.forEach(editor => {
+                const candidateID = this.extractIdFromWidget(editor);
+                if ((candidateID.uri === uri) && (candidateID.id > max)) {
+                    max = candidateID.id!;
+                }
+            });
+
+            if (max > -Infinity) {
+                this.editorCounters.set(uri, max);
+            } else {
+                this.editorCounters.delete(uri);
+            }
+        }
+    }
+
+    protected extractIdFromWidget(widget: EditorWidget): WidgetId {
+        const uri = widget.editor.uri.toString();
+        const id = Number(widget.id.slice(widget.id.lastIndexOf(':') + 1));
+        return { id, uri };
+    }
+
+    protected checkCounterForWidget(widget: EditorWidget): void {
+        const { id, uri } = this.extractIdFromWidget(widget);
+        const numericalId = Number(id);
+        if (uri && !Number.isNaN(numericalId)) {
+            const highestKnownId = this.editorCounters.get(uri) ?? -Infinity;
+            if (numericalId > highestKnownId) {
+                this.editorCounters.set(uri, numericalId);
+            }
+        }
+    }
+
+    protected createCounterForUri(uri: URI): number {
+        const identifier = uri.toString();
+        const next = (this.editorCounters.get(identifier) ?? 0) + 1;
+        return next;
+    }
+
+    protected getCounterForUri(uri: URI): number | undefined {
+        return this.editorCounters.get(uri.toString());
+    }
+
+    protected getOrCreateCounterForUri(uri: URI): number {
+        return this.getCounterForUri(uri) ?? this.createCounterForUri(uri);
+    }
+
+    protected createWidgetOptions(uri: URI, options?: EditorOpenerOptions): NavigatableWidgetOptions {
+        const navigatableOptions = super.createWidgetOptions(uri, options);
+        if (options?.counter !== undefined) {
+            navigatableOptions.counter = options.counter;
+        }
+        return navigatableOptions;
+    }
 }
 
 /**
