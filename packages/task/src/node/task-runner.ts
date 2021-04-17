@@ -84,20 +84,14 @@ export class TaskRunnerRegistry {
     }
 
     /**
-     * Looks for a registered {@link TaskRunner} for each of the task types in sequence and returns the first that is found
-     * If no task runner is registered for any of the types, the default runner is returned.
-     * @param types the task types.
+     * Retrieves the {@link TaskRunner} registered for the specified Task type.
+     * @param type the task type.
      *
-     * @returns the registered {@link TaskRunner} or a default runner if none is registered for the specified types.
+     * @returns the registered {@link TaskRunner} or a default runner if none is registered for the specified type.
      */
-    getRunner(...types: string[]): TaskRunner {
-        for (const type of types) {
-            const runner = this.runners.get(type);
-            if (runner) {
-                return runner;
-            }
-        }
-        return this.defaultRunner;
+    getRunner(type: string): TaskRunner {
+        const runner = this.runners.get(type);
+        return runner ? runner : this.defaultRunner;
     }
 
     /**
