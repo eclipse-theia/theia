@@ -1911,18 +1911,21 @@ export class Task {
     private updateDefinitionBasedOnExecution(): void {
         if (this.taskExecution instanceof ProcessExecution) {
             Object.assign(this.taskDefinition, {
+                type: 'process',
                 id: this.taskExecution.computeId(),
-                taskType: 'process'
+                taskType: this.taskDefinition!.type
             });
         } else if (this.taskExecution instanceof ShellExecution) {
             Object.assign(this.taskDefinition, {
+                type: 'shell',
                 id: this.taskExecution.computeId(),
-                taskType: 'shell'
+                taskType: this.taskDefinition!.type
             });
         } else if (this.taskExecution instanceof CustomExecution) {
             Object.assign(this.taskDefinition, {
-                id: this.taskDefinition.id ? this.taskDefinition.id : this.taskExecution.computeId(),
-                taskType: 'customExecution'
+                type: 'customExecution',
+                id: this.taskExecution.computeId(),
+                taskType: this.taskDefinition!.type
             });
         } else {
             Object.assign(this.taskDefinition, {
