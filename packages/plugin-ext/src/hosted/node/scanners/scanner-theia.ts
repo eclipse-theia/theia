@@ -492,7 +492,8 @@ export class TheiaPluginScanner implements PluginScanner {
             when: rawKeybinding.when,
             mac: rawKeybinding.mac,
             linux: rawKeybinding.linux,
-            win: rawKeybinding.win
+            win: rawKeybinding.win,
+            args: rawKeybinding.args
         };
     }
 

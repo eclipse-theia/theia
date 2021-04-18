@@ -154,6 +154,8 @@ export interface PluginPackageKeybinding {
     mac?: string;
     linux?: string;
     win?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args?: any;
 }
 
 export interface PluginPackageGrammarsContribution {
@@ -706,6 +708,8 @@ export interface Keybinding {
     mac?: string;
     linux?: string;
     win?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args?: any;
 }
 
 /**
