@@ -47,8 +47,8 @@ export class KeybindingsContributionPointHandler {
         if (!keybinding) {
             return undefined;
         }
-        const { command, when } = pluginKeybinding;
-        return { keybinding, command, when };
+        const { command, when, args } = pluginKeybinding;
+        return { keybinding, command, when, args };
     }
 
     protected toOSKeybinding(pluginKeybinding: PluginKeybinding): string | undefined {
