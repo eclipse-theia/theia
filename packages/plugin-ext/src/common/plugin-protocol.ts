@@ -709,18 +709,6 @@ export interface Keybinding {
 }
 
 /**
- * Keybinding contribution
- */
-export interface Keybinding {
-    keybinding?: string;
-    command: string;
-    when?: string;
-    mac?: string;
-    linux?: string;
-    win?: string;
-}
-
-/**
  * This interface describes a plugin lifecycle object.
  */
 export interface PluginLifecycle {
