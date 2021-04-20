@@ -1354,6 +1354,8 @@ export interface CommandProperties {
 
 export interface TaskDto {
     type: string;
+    taskType?: 'shell' | 'process' | 'customExecution'; // the task execution type
+    executionId?: string,
     label: string;
     source?: string;
     scope: string | number;

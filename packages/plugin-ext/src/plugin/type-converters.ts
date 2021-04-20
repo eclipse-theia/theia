@@ -750,16 +750,16 @@ export function fromTask(task: theia.Task): TaskDto | undefined {
         return taskDto;
     }
 
-    if (taskDefinition.taskType === 'shell' || types.ShellExecution.is(execution)) {
-        return fromShellExecution(<theia.ShellExecution>execution, taskDto);
+    if (types.ShellExecution.is(execution)) {
+        return fromShellExecution(execution, taskDto);
     }
 
-    if (taskDefinition.taskType === 'process' || types.ProcessExecution.is(execution)) {
-        return fromProcessExecution(<theia.ProcessExecution>execution, taskDto);
+    if (types.ProcessExecution.is(execution)) {
+        return fromProcessExecution(execution, taskDto);
     }
 
-    if (taskDefinition.taskType === 'customExecution' || types.CustomExecution.is(execution)) {
-        return fromCustomExecution(<theia.CustomExecution>execution, taskDto);
+    if (types.CustomExecution.is(execution)) {
+        return fromCustomExecution(execution, taskDto);
     }
 
     return taskDto;
@@ -839,6 +839,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
 }
 
 export function fromProcessExecution(execution: theia.ProcessExecution, taskDto: TaskDto): TaskDto {
+    taskDto.taskType = 'process';
     taskDto.command = execution.process;
     taskDto.args = execution.args;
 
@@ -850,6 +851,7 @@ export function fromProcessExecution(execution: theia.ProcessExecution, taskDto:
 }
 
 export function fromShellExecution(execution: theia.ShellExecution, taskDto: TaskDto): TaskDto {
+    taskDto.taskType = 'shell';
     const options = execution.options;
     if (options) {
         taskDto.options = getShellExecutionOptions(options);
@@ -872,6 +874,7 @@ export function fromShellExecution(execution: theia.ShellExecution, taskDto: Tas
 }
 
 export function fromCustomExecution(execution: theia.CustomExecution, taskDto: TaskDto): TaskDto {
+    taskDto.taskType = 'customExecution';
     const callback = execution.callback;
     if (callback) {
         taskDto.callback = callback;

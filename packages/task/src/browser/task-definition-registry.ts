@@ -66,7 +66,7 @@ export class TaskDefinitionRegistry {
      * @return the task definition for the task configuration. If the task definition is not found, `undefined` is returned.
      */
     getDefinition(taskConfiguration: TaskConfiguration | TaskCustomization): TaskDefinition | undefined {
-        const definitions = this.getDefinitions(taskConfiguration.taskType || taskConfiguration.type);
+        const definitions = this.getDefinitions(taskConfiguration.type);
         let matchedDefinition: TaskDefinition | undefined;
         let highest = -1;
         for (const def of definitions) {
@@ -107,8 +107,8 @@ export class TaskDefinitionRegistry {
     }
 
     compareTasks(one: TaskConfiguration | TaskCustomization, other: TaskConfiguration | TaskCustomization): boolean {
-        const oneType = one.taskType || one.type;
-        const otherType = other.taskType || other.type;
+        const oneType = one.type;
+        const otherType = other.type;
         if (oneType !== otherType) {
             return false;
         }
