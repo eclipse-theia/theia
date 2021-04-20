@@ -28,16 +28,19 @@ import { RPCProtocol, ConnectionClosedError } from '../../common/rpc-protocol';
 import { TaskProviderAdapter } from './task-provider';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { TerminalServiceExtImpl } from '../terminal-ext';
+import { UUID } from '@theia/core/shared/@phosphor/coreutils';
 
+type ExecutionCallback = (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>;
 export class TasksExtImpl implements TasksExt {
     private proxy: TasksMain;
 
     private callId = 0;
     private adaptersMap = new Map<number, TaskProviderAdapter>();
     private executions = new Map<number, theia.TaskExecution>();
-    protected providedCustomExecutions: Map<number, CustomExecution>;
-    protected notProvidedCustomExecutions: Set<number>;
-    protected activeCustomExecutions: Map<number, CustomExecution>;
+    protected callbackIdBase: string = UUID.uuid4();
+    protected callbackId: number;
+    protected customExecutionIds: Map<ExecutionCallback, string> = new Map();
+    protected customExecutionFunctions: Map<string, ExecutionCallback> = new Map();
     protected lastStartedTask: number | undefined;
 
     private readonly onDidExecuteTask: Emitter<theia.TaskStartEvent> = new Emitter<theia.TaskStartEvent>();
@@ -49,9 +52,6 @@ export class TasksExtImpl implements TasksExt {
 
     constructor(rpc: RPCProtocol, readonly terminalExt: TerminalServiceExtImpl) {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.TASKS_MAIN);
-        this.providedCustomExecutions = new Map<number, CustomExecution>();
-        this.notProvidedCustomExecutions = new Set<number>();
-        this.activeCustomExecutions = new Map<number, CustomExecution>();
         this.fetchTaskExecutions();
     }
 
@@ -68,16 +68,10 @@ export class TasksExtImpl implements TasksExt {
     }
 
     async $onDidStartTask(execution: TaskExecutionDto, terminalId: number): Promise<void> {
-        const customExecution: CustomExecution | undefined = this.providedCustomExecutions.get(execution.task.id);
+        const customExecution = this.customExecutionFunctions.get(execution.task.executionId || '');
         if (customExecution) {
-            if (this.activeCustomExecutions.get(execution.id) !== undefined) {
-                throw new Error('We should not be trying to start the same custom task executions twice.');
-            }
-
-            // Clone the custom execution to keep the original untouched. This is important for multiple runs of the same task.
-            this.activeCustomExecutions.set(execution.id, customExecution);
             const taskDefinition = converter.toTask(execution.task).definition;
-            const pty = await customExecution.callback(taskDefinition);
+            const pty = await customExecution(taskDefinition);
             this.terminalExt.attachPtyToTerminal(terminalId, pty);
             if (pty.onDidClose) {
                 const disposable = pty.onDidClose((e: number | void = undefined) => {
@@ -105,7 +99,6 @@ export class TasksExtImpl implements TasksExt {
         }
 
         this.executions.delete(id);
-        this.customExecutionComplete(id);
 
         this.onDidTerminateTask.fire({
             execution: taskExecution
@@ -159,7 +152,7 @@ export class TasksExtImpl implements TasksExt {
             // in the provided custom execution map that is cleaned up after the
             // task is executed.
             if (CustomExecution.is(task.execution!)) {
-                this.addCustomExecution(taskDto, false);
+                taskDto.executionId = this.addCustomExecution(task.execution!.callback);
             }
             const executionDto = await this.proxy.$executeTask(taskDto);
             if (executionDto) {
@@ -177,8 +170,9 @@ export class TasksExtImpl implements TasksExt {
             return adapter.provideTasks(token).then(tasks => {
                 if (tasks) {
                     for (const task of tasks) {
-                        if (task.type === 'customExecution' || task.taskType === 'customExecution') {
-                            this.addCustomExecution(task, true);
+                        if (task.taskType === 'customExecution') {
+                            task.executionId = this.addCustomExecution(task.callback);
+                            task.callback = undefined;
                         }
                     }
                 }
@@ -192,7 +186,13 @@ export class TasksExtImpl implements TasksExt {
     $resolveTask(handle: number, task: TaskDto, token: theia.CancellationToken): Promise<TaskDto | undefined> {
         const adapter = this.adaptersMap.get(handle);
         if (adapter) {
-            return adapter.resolveTask(task, token);
+            return adapter.resolveTask(task, token).then(resolvedTask => {
+                if (resolvedTask && resolvedTask.taskType === 'customExecution') {
+                    resolvedTask.executionId = this.addCustomExecution(resolvedTask.callback);
+                    resolvedTask.callback = undefined;
+                }
+                return resolvedTask;
+            });
         } else {
             return Promise.reject(new Error('No adapter found to resolve task'));
         }
@@ -244,36 +244,17 @@ export class TasksExtImpl implements TasksExt {
         return result;
     }
 
-    private addCustomExecution(taskDto: TaskDto, isProvided: boolean): void {
-        const taskId = taskDto.id;
-        if (!isProvided && !this.providedCustomExecutions.has(taskId)) {
-            this.notProvidedCustomExecutions.add(taskId);
+    private addCustomExecution(callback: ExecutionCallback): string {
+        let id = this.customExecutionIds.get(callback);
+        if (!id) {
+            id = this.nextCallbackId();
+            this.customExecutionIds.set(callback, id);
+            this.customExecutionFunctions.set(id, callback);
         }
-        this.providedCustomExecutions.set(taskDto.id, new CustomExecution(taskDto.callback));
+        return id;
     }
 
-    private customExecutionComplete(id: number): void {
-        const extensionCallback2: CustomExecution | undefined = this.activeCustomExecutions.get(id);
-        if (extensionCallback2) {
-            this.activeCustomExecutions.delete(id);
-        }
-
-        // Technically we don't really need to do this, however, if an extension
-        // is executing a task through "executeTask" over and over again
-        // with different properties in the task definition, then the map of executions
-        // could grow indefinitely, something we don't want.
-        if (this.notProvidedCustomExecutions.has(id) && (this.lastStartedTask !== id)) {
-            this.providedCustomExecutions.delete(id);
-            this.notProvidedCustomExecutions.delete(id);
-        }
-        const iterator = this.notProvidedCustomExecutions.values();
-        let iteratorResult = iterator.next();
-        while (!iteratorResult.done) {
-            if (!this.activeCustomExecutions.has(iteratorResult.value) && (this.lastStartedTask !== iteratorResult.value)) {
-                this.providedCustomExecutions.delete(iteratorResult.value);
-                this.notProvidedCustomExecutions.delete(iteratorResult.value);
-            }
-            iteratorResult = iterator.next();
-        }
+    private nextCallbackId(): string {
+        return this.callbackIdBase + this.callbackId++;
     }
 }

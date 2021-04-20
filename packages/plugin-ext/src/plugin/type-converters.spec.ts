@@ -187,6 +187,7 @@ describe('Type converters:', () => {
 
         const shellTaskDto: TaskDto = {
             type: shellType,
+            taskType: shellType,
             label,
             source,
             scope: 1,
@@ -203,6 +204,7 @@ describe('Type converters:', () => {
 
         const shellTaskDtoWithCommandLine: TaskDto = {
             type: shellType,
+            taskType: shellType,
             label,
             source,
             scope: 2,

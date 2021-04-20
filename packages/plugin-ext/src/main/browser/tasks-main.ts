@@ -109,7 +109,7 @@ export class TasksMainImpl implements TasksMain, Disposable {
 
         const toDispose = new DisposableCollection(
             this.taskProviderRegistry.register(type, taskProvider, handle),
-            this.taskResolverRegistry.register(type, taskResolver),
+            this.taskResolverRegistry.registerTaskResolver(type, taskResolver),
             Disposable.create(() => this.taskProviders.delete(handle))
         );
         this.taskProviders.set(handle, toDispose);
