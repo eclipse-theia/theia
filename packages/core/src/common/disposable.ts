@@ -93,6 +93,7 @@ export class DisposableCollection implements Disposable {
         });
         disposable.dispose = () => {
             toRemove.dispose();
+            disposable.dispose = originalDispose;
             originalDispose();
         };
         return toRemove;
