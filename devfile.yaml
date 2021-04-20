@@ -26,7 +26,7 @@ components:
     memoryLimit: 2048M
   - type: cheEditor
     alias: theia-editor
-    id: eclipse/che-theia/next
+    id: eclipse/che-theia/latest
     memoryLimit: "1Gi"
 commands:
   - name: >
