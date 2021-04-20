@@ -24,6 +24,7 @@ import { bindSampleFileWatching } from './file-watching/sample-file-watching-con
 import { bindVSXCommand } from './vsx/sample-vsx-command-contribution';
 
 import '../../src/browser/style/branding.css';
+import { bindSampleViewContainerPart } from './view/sample-view-container-part-contribution';
 
 export default new ContainerModule(bind => {
     bindDynamicLabelProvider(bind);
@@ -33,4 +34,5 @@ export default new ContainerModule(bind => {
     bindSampleFileWatching(bind);
     bindVSXCommand(bind);
     bindSampleFilteredCommandContribution(bind);
+    bindSampleViewContainerPart(bind);
 });
