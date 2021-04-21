@@ -53,7 +53,37 @@ describe('preference-tree-generator', () => {
 
     it('PreferenceTreeGenerator.format', () => {
         const testString = 'aaaBbbCcc Dddd eee';
-        expect(preferenceTreeGenerator['formatString'](testString)).eq('Aaa Bbb Ccc Dddd Eee');
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Aaa Bbb Ccc Dddd eee');
+    });
+
+    it('PreferenceTreeGenerator.format.chinese', () => {
+        const testString = '某個設定/某个设定';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('某個設定/某个设定');
+    });
+
+    it('PreferenceTreeGenerator.format.Danish', () => {
+        const testString = 'indstillingPåEnØ';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Indstilling På En Ø');
+    });
+
+    it('PreferenceTreeGenerator.format.Greek', () => {
+        const testString = 'κάποιαΡύθμιση';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Κάποια Ρύθμιση');
+    });
+
+    it('PreferenceTreeGenerator.format.Russian', () => {
+        const testString = 'некоторыеНастройки';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Некоторые Настройки');
+    });
+
+    it('PreferenceTreeGenerator.format.Armenian', () => {
+        const testString = 'ինչ-որՊարամետր';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Ինչ-որ Պարամետր');
+    });
+
+    it('PreferenceTreeGenerator.format.specialCharacters', () => {
+        const testString = 'hyphenated-wordC++Setting';
+        expect(preferenceTreeGenerator['formatString'](testString)).eq('Hyphenated-word C++ Setting');
     });
 
     describe('PreferenceTreeGenerator.createLeafNode', () => {
