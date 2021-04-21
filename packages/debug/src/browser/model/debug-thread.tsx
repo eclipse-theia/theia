@@ -155,7 +155,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
                 }
                 return this.doUpdateFrames(frames);
             } catch (e) {
-                console.error(e);
+                console.error('fetchFrames failed:', e);
                 return [];
             } finally {
                 if (!cancel.isCancellationRequested) {

@@ -173,7 +173,7 @@ export class DebugSession implements CompositeTreeElement {
                 try {
                     await thread.pause();
                 } catch (e) {
-                    console.error(e);
+                    console.error('pauseAll failed:', e);
                 }
             })());
         }
@@ -187,7 +187,7 @@ export class DebugSession implements CompositeTreeElement {
                 try {
                     await thread.continue();
                 } catch (e) {
-                    console.error(e);
+                    console.error('continueAll failed:', e);
                 }
             })());
         }
@@ -416,7 +416,7 @@ export class DebugSession implements CompositeTreeElement {
                 const threads = response && response.body && response.body.threads || [];
                 this.doUpdateThreads(threads, stoppedDetails);
             } catch (e) {
-                console.error(e);
+                console.error('updateThreads failed:', e);
             }
         });
     }

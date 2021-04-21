@@ -201,7 +201,7 @@ export class DebugVariable extends ExpressionContainer {
             this.elements = undefined;
             this.session['fireDidChange']();
         } catch (error) {
-            console.error(error);
+            console.error('setValue failed:', error);
         }
     }
 

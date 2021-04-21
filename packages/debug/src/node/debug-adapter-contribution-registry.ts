@@ -83,7 +83,7 @@ export class DebugAdapterContributionRegistry {
                     const result = await contribution.provideDebugConfigurations(workspaceFolderUri);
                     configurations.push(...result);
                 } catch (e) {
-                    console.error(e);
+                    console.error('provideDebugConfigurations failed:', e);
                 }
             }
         }
@@ -108,7 +108,7 @@ export class DebugAdapterContributionRegistry {
                         return current;
                     }
                 } catch (e) {
-                    console.error(e);
+                    console.error('resolveDebugConfiguration failed:', e);
                 }
             }
         }
@@ -133,7 +133,7 @@ export class DebugAdapterContributionRegistry {
                         return current;
                     }
                 } catch (e) {
-                    console.error(e);
+                    console.error('resolveDebugConfigurationWithSubstitutedVariables failed:', e);
                 }
             }
         }
@@ -152,7 +152,7 @@ export class DebugAdapterContributionRegistry {
                 try {
                     schemas.push(...await contribution.getSchemaAttributes());
                 } catch (e) {
-                    console.error(e);
+                    console.error('getSchemaAttributes failed:', e);
                 }
             }
         }
@@ -165,7 +165,7 @@ export class DebugAdapterContributionRegistry {
                 try {
                     schemas.push(...await contribution.getConfigurationSnippets());
                 } catch (e) {
-                    console.error(e);
+                    console.error('getConfigurationSnippets failed:', e);
                 }
             }
         }
