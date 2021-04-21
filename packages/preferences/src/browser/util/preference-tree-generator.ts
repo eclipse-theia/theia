@@ -101,7 +101,7 @@ export class PreferenceTreeGenerator {
         const label = isSubgroup ? subgroupname : groupname;
         const newNode = {
             id: group,
-            name: this.toTitleCase(label),
+            name: this.formatString(label),
             visible: true,
             parent: root,
             children: [],
@@ -136,8 +136,18 @@ export class PreferenceTreeGenerator {
         return split;
     }
 
-    private formatString(string: string): string {
-        const specifier = this.split(string);
-        return specifier.map(word => word.slice(0, 1).toLocaleUpperCase() + word.slice(1)).join(' ').trim();
+    protected formatString(string: string): string {
+        let formatedString = string[0].toLocaleUpperCase();
+        for (let i = 1; i < string.length; i++) {
+            if (this.isUpperCase(string[i]) && !/\s/.test(string[i - 1]) && !this.isUpperCase(string[i - 1])) {
+                formatedString += ' ';
+            }
+            formatedString += string[i];
+        }
+        return formatedString.trim();
+    }
+
+    protected isUpperCase(char: string): boolean {
+        return char === char.toLocaleUpperCase() && char.toLocaleLowerCase() !== char.toLocaleUpperCase();
     }
 }
