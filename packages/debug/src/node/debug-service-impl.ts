@@ -83,7 +83,7 @@ export class DebugServiceImpl implements DebugService {
                     try {
                         await this.doStop(session);
                     } catch (e) {
-                        console.error(e);
+                        console.error('terminateDebugSession failed:', e);
                     }
                 })());
             }

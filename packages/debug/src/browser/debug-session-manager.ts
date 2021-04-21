@@ -178,7 +178,7 @@ export class DebugSessionManager {
             await this.shell.saveAll();
             return true;
         } catch (error) {
-            console.error(error);
+            console.error('saveAll failed:', error);
             return false;
         }
     }
