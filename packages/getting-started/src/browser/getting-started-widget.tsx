@@ -25,6 +25,7 @@ import { CommonCommands, LabelProvider, Key, KeyCode } from '@theia/core/lib/bro
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 
 /**
  * Default implementation of the `GettingStartedWidget`.
@@ -88,6 +89,9 @@ export class GettingStartedWidget extends ReactWidget {
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -286,13 +290,31 @@ export class GettingStartedWidget extends ReactWidget {
                 Help
             </h3>
             <div className='gs-action-container'>
-                <a href={this.documentationUrl} target='_blank'>Documentation</a>
+                <a
+                    role={'button'}
+                    tabIndex={0}
+                    onClick={() => this.doOpenExternalLink(this.documentationUrl)}
+                    onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.documentationUrl)}>
+                    Documentation
+                </a>
             </div>
             <div className='gs-action-container'>
-                <a href={this.extensionUrl} target='_blank'>Building a New Extension</a>
+                <a
+                    role={'button'}
+                    tabIndex={0}
+                    onClick={() => this.doOpenExternalLink(this.extensionUrl)}
+                    onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.extensionUrl)}>
+                    Building a New Extension
+                </a>
             </div>
             <div className='gs-action-container'>
-                <a href={this.pluginUrl} target='_blank'>Building a New Plugin</a>
+                <a
+                    role={'button'}
+                    tabIndex={0}
+                    onClick={() => this.doOpenExternalLink(this.pluginUrl)}
+                    onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.pluginUrl)}>
+                    Building a New Plugin
+                </a>
             </div>
         </div>;
     }
@@ -406,6 +428,17 @@ export class GettingStartedWidget extends ReactWidget {
     protected openEnter = (e: React.KeyboardEvent, uri: URI) => {
         if (this.isEnterKey(e)) {
             this.open(uri);
+        }
+    };
+
+    /**
+     * Open a link in an external window.
+     * @param url the link.
+     */
+    protected doOpenExternalLink = (url: string) => this.windowService.openNewWindow(url, { external: true });
+    protected doOpenExternalLinkEnter = (e: React.KeyboardEvent, url: string) => {
+        if (this.isEnterKey(e)) {
+            this.doOpenExternalLink(url);
         }
     };
 
