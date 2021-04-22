@@ -30,7 +30,7 @@ import {
     EnvironmentVariableCollectionWithPersistence,
     SerializableExtensionEnvironmentVariableCollection
 } from '../common/base-terminal-protocol';
-import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
+import { TerminalProcess, ProcessManager, TaskTerminalProcess } from '@theia/process/lib/node';
 import { ShellProcess } from './shell-process';
 
 @injectable()
@@ -65,6 +65,18 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         } else {
             this.logger.warn(`Couldn't attach - can't find terminal with id: ${id} `);
             return -1;
+        }
+    }
+
+    async onAttachAttempted(id: number): Promise<void> {
+        const terminal = this.processManager.get(id);
+        if (terminal instanceof TaskTerminalProcess) {
+            terminal.attachmentAttempted = true;
+            if (terminal.exited) {
+                // Didn't execute `unregisterProcess` on terminal `exit` event to enable attaching task output to terminal,
+                // Fixes https://github.com/eclipse-theia/theia/issues/2961
+                terminal.unregisterProcess();
+            }
         }
     }
 

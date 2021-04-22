@@ -102,9 +102,9 @@ export class TerminalProcess extends Process {
                 // signal parameter will hold the signal number and code should
                 // be ignored.
                 if (signal === undefined || signal === 0) {
-                    this.emitOnExit(code, undefined);
+                    this.onTerminalExit(code, undefined);
                 } else {
-                    this.emitOnExit(undefined, signame(signal));
+                    this.onTerminalExit(undefined, signame(signal));
                 }
                 process.nextTick(() => {
                     if (signal === undefined || signal === 0) {
@@ -160,6 +160,15 @@ export class TerminalProcess extends Process {
 
     get arguments(): string[] {
         return this.options.args || [];
+    }
+
+    protected onTerminalExit(code: number | undefined, signal: string | undefined): void {
+        this.emitOnExit(code, signal);
+        this.unregisterProcess();
+    }
+
+    unregisterProcess(): void {
+        this.processManager.unregister(this);
     }
 
     kill(signal?: string): void {

@@ -42,7 +42,6 @@ export class ProcessManager implements BackendApplicationContribution {
     register(process: Process): number {
         const id = this.id;
         this.processes.set(id, process);
-        process.onExit(() => this.unregister(process));
         process.onError(() => this.unregister(process));
         this.id++;
         return id;
@@ -54,7 +53,7 @@ export class ProcessManager implements BackendApplicationContribution {
      *
      * @param process the process to unregister from this process manager.
      */
-    protected unregister(process: Process): void {
+    unregister(process: Process): void {
         const processLabel = this.getProcessLabel(process);
         this.logger.debug(`Unregistering process. ${processLabel}`);
         if (!process.killed) {

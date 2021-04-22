@@ -371,6 +371,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.connectTerminalProcess();
         if (IBaseTerminalServer.validateId(this.terminalId)) {
             this.onDidOpenEmitter.fire(undefined);
+            await this.shellTerminalServer.onAttachAttempted(this._terminalId);
             return this.terminalId;
         }
         this.onDidOpenFailureEmitter.fire(undefined);

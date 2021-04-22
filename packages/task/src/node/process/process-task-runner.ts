@@ -24,10 +24,10 @@ import { isWindows, isOSX, ILogger } from '@theia/core';
 import { FileUri } from '@theia/core/lib/node';
 import {
     RawProcessFactory,
-    TerminalProcessFactory,
     ProcessErrorEvent,
     Process,
     TerminalProcessOptions,
+    TaskTerminalProcessFactory,
 } from '@theia/process/lib/node';
 import {
     ShellQuotedString, ShellQuotingFunctions, BashQuotingFunctions, CmdQuotingFunctions, PowershellQuotingFunctions, createShellCommandLine, ShellQuoting,
@@ -53,8 +53,8 @@ export class ProcessTaskRunner implements TaskRunner {
     @inject(RawProcessFactory)
     protected readonly rawProcessFactory: RawProcessFactory;
 
-    @inject(TerminalProcessFactory)
-    protected readonly terminalProcessFactory: TerminalProcessFactory;
+    @inject(TaskTerminalProcessFactory)
+    protected readonly taskTerminalProcessFactory: TaskTerminalProcessFactory;
 
     @inject(TaskFactory)
     protected readonly taskFactory: TaskFactory;
@@ -73,7 +73,7 @@ export class ProcessTaskRunner implements TaskRunner {
             // - process: directly look for an executable and pass a specific set of arguments/options.
             // - shell: defer the spawning to a shell that will evaluate a command line with our executable.
             const terminalProcessOptions = this.getResolvedCommand(taskConfig);
-            const terminal: Process = this.terminalProcessFactory(terminalProcessOptions);
+            const terminal: Process = this.taskTerminalProcessFactory(terminalProcessOptions);
 
             // Wait for the confirmation that the process is successfully started, or has failed to start.
             await new Promise((resolve, reject) => {
