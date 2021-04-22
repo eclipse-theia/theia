@@ -139,13 +139,43 @@ export class MonacoThemeRegistry {
         if (!color) {
             return undefined;
         }
-        const normalized = String(color).replace(/^\#/, '').slice(0, 6);
-        if (normalized.length < 6 || !(normalized).match(/^[0-9A-Fa-f]{6}$/)) {
-            // ignoring not normalized colors to avoid breaking token color indexes between monaco and vscode-textmate
-            console.error(`Color '${normalized}' is NOT normalized, it must have 6 positions.`);
-            return undefined;
+
+        const hex = String(color).toUpperCase();
+        const length = hex.length;
+
+        // #RRGGBB notation.
+        if (length === 7 && hex.match(/#[A-Fa-f0-9]{6}/)) {
+            return hex;
         }
-        return '#' + normalized;
+
+        // #RRGGBBAA notation.
+        if (length === 9 && hex.match(/#[A-Fa-f0-9]{8}/)) {
+            const r = hex.charAt(1);
+            const g = hex.charAt(3);
+            const b = hex.charAt(5);
+            return '#' + r + r + g + g + b + b;
+        }
+
+        // #RGB notation.
+        if (length === 4 && hex.match(/#[A-Fa-f0-9]{3}/)) {
+            const r = hex.charAt(1);
+            const g = hex.charAt(2);
+            const b = hex.charAt(3);
+            return '#' + r + r + g + g + b + b;
+        }
+
+        // #RGBA notation.
+        if (length === 5 && hex.match(/#[A-Fa-f0-9]{4}/)) {
+            const r = hex.charAt(1);
+            const g = hex.charAt(2);
+            const b = hex.charAt(3);
+            const a = hex.charAt(4);
+            return '#' + r + r + g + g + b + b + a + a;
+        }
+
+        console.error(`Color '${hex}' cannot be normalized.`);
+        return undefined;
+
     }
 }
 

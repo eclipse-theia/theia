@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 // @ts-check
-describe('Monaco API', async function () {
+describe.only('Monaco API', async function () {
     this.timeout(5000);
 
     const { assert } = chai;
@@ -25,12 +25,14 @@ describe('Monaco API', async function () {
     const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
     const { MonacoResolvedKeybinding } = require('@theia/monaco/lib/browser/monaco-resolved-keybinding');
     const { MonacoTextmateService } = require('@theia/monaco/lib/browser/textmate/monaco-textmate-service');
+    const { MonacoThemeRegistry } = require('@theia/monaco/lib/browser/textmate/monaco-theme-registry');
     const { CommandRegistry } = require('@theia/core/lib/common/command');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
     const textmateService = container.get(MonacoTextmateService);
+    const themeRegistry = container.get(MonacoThemeRegistry);
     const commands = container.get(CommandRegistry);
 
     /** @type {MonacoEditor} */
@@ -134,7 +136,7 @@ describe('Monaco API', async function () {
         }
 
         const textMateColorMap = textmateService['grammarRegistry'].getColorMap();
-        assert.notEqual(textMateColorMap.indexOf('#795E26'), -1, 'Expected custom toke colors for the ligth theme to be enabled.');
+        assert.notEqual(textMateColorMap.indexOf('#795E26'), -1, 'Expected custom token colors for the light theme to be enabled.');
 
         const monacoColorMap = (monaco.modes.TokenizationRegistry.getColorMap() || []).
             splice(0, textMateColorMap.length).map(c => c.toString().toUpperCase());
@@ -162,6 +164,46 @@ describe('Monaco API', async function () {
         } finally {
             unregisterCommand.dispose();
         }
+    });
+
+    describe('MonacoThemeRegistry', () => {
+
+        describe('#normalizeColor', () => {
+
+            it('should not normalize invalid colors', () => {
+                assert.equal(themeRegistry['normalizeColor'](undefined), undefined);
+                assert.equal(themeRegistry['normalizeColor']('#F'), undefined);
+                assert.equal(themeRegistry['normalizeColor']('#FFFFFFFFFF'), undefined);
+            });
+
+            it('should normalize RGBA colors', () => {
+                // Conversion assumes r, g, and b are in the set [0, 255].
+                const rgba = new monaco.color.RGBA(255, 0, 0, 1);
+                const color = new monaco.color.Color(rgba);
+                assert.equal(themeRegistry['normalizeColor'](color), '#FF0000', 'Expected color to be red.');
+            });
+
+            it('should normalize HSLA colors', () => {
+                // Conversion assumes h is in the set [0, 360] while s and l are contained in the set [0, 1].
+                const hsla = new monaco.color.HSLA(0, 1, 0.5, 1);
+                const color = new monaco.color.Color(hsla);
+                assert.equal(themeRegistry['normalizeColor'](color), '#FF0000', 'Expected color to be red.');
+            });
+
+            it('should normalize color from a shorthand notation', () => {
+                assert.equal(themeRegistry['normalizeColor']('#FFF'), '#FFFFFF');
+                assert.equal(themeRegistry['normalizeColor']('#FC0'), '#FFCC00');
+                assert.equal(themeRegistry['normalizeColor']('#00F'), '#0000FF');
+            });
+
+            it('should normalize colors with different notations', () => {
+                assert.equal(themeRegistry['normalizeColor']('#FC0'), '#FFCC00');
+                assert.equal(themeRegistry['normalizeColor']('#FC0C'), '#FFCC00CC');
+                assert.equal(themeRegistry['normalizeColor']('#FFCC00'), '#FFCC00');
+            });
+
+        });
+
     });
 
 });
