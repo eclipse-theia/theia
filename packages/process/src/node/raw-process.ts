@@ -128,6 +128,7 @@ export class RawProcess extends Process {
                     typeof exitCode === 'number' ? exitCode : undefined,
                     typeof signal === 'string' ? signal : undefined,
                 );
+                this.processManager.unregister(this);
             });
 
             this.process.on('close', (exitCode, signal) => {

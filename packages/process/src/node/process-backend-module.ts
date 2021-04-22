@@ -17,6 +17,7 @@
 import { ContainerModule, Container } from '@theia/core/shared/inversify';
 import { RawProcess, RawProcessOptions, RawProcessFactory, RawForkOptions } from './raw-process';
 import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from './terminal-process';
+import { TaskTerminalProcess, TaskTerminalProcessFactory } from './task-terminal-process';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
@@ -48,6 +49,15 @@ export default new ContainerModule(bind => {
 
             child.bind(TerminalProcessOptions).toConstantValue(options);
             return child.get(TerminalProcess);
+        }
+    );
+
+    bind(TaskTerminalProcess).toSelf().inTransientScope();
+    bind(TaskTerminalProcessFactory).toFactory(ctx =>
+        (options: TerminalProcessOptions) => {
+            const child = ctx.container.createChild();
+            child.bind(TerminalProcessOptions).toConstantValue(options);
+            return child.get(TaskTerminalProcess);
         }
     );
 
