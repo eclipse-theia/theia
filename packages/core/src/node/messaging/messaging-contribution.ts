@@ -88,10 +88,6 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         this.wsHandlers.push(spec, callback);
     }
 
-    get wsServer(): ws.Server | undefined {
-        return this.webSocketServer;
-    }
-
     protected checkAliveTimeout = 30000;
     onStart(server: http.Server | https.Server): void {
         this.webSocketServer = new ws.Server({
@@ -120,10 +116,6 @@ export class MessagingContribution implements BackendApplicationContribution, Me
                 socket.ping();
             });
         }, this.checkAliveTimeout);
-
-        for (const contribution of this.contributions.getContributions()) {
-            contribution.onStart!();
-        }
     }
 
     /**
