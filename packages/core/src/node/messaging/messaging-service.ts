@@ -44,6 +44,11 @@ export interface MessagingService {
      * and excessive amount can cause performance degradation. All JSON-RPC connections and web socket channels share the single web socket connection.
      */
     ws(path: string, callback: (params: MessagingService.PathParams, socket: ws) => void): void;
+
+    /**
+     * Get a reference to the websocket server once it has been initialised. Will return 'undefined' if the onStart function hasn't been invoked yet.
+     */
+    readonly wsServer: ws.Server | undefined;
 }
 export namespace MessagingService {
     /** Inversify container identifier for the `MessagingService` component. */
@@ -54,6 +59,7 @@ export namespace MessagingService {
     export const Contribution = Symbol('MessagingService.Contribution');
     export interface Contribution {
         configure(service: MessagingService): void;
+        onStart?(): void;
     }
 }
 
