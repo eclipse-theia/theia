@@ -30,8 +30,10 @@ export class PreferenceTreeGenerator {
     readonly onSchemaChanged = this.onSchemaChangedEmitter.event;
 
     @postConstruct()
-    protected init(): void {
+    protected async init(): Promise<void> {
+        await this.schemaProvider.ready;
         this.schemaProvider.onDidPreferenceSchemaChanged(() => this.handleChangedSchema());
+        this.handleChangedSchema();
     }
 
     generateTree = (): CompositeTreeNode => {
