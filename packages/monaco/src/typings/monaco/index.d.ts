@@ -525,7 +525,7 @@ declare module monaco.actions {
          * Retrieves all the registered menu items for the given menu.
          * @param menuId - see https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/platform/actions/common/actions.ts#L67
          */
-        getMenuItems(menuId: 7 /* EditorContext */ | 8 /* EditorContextPeek */ | 25 /* MenubarSelectionMenu */): IMenuItem | ISubmenuItem[];
+        getMenuItems(menuId: 7 /* EditorContext */ | 8 /* EditorContextPeek */ | 25 /* MenubarSelectionMenu */): Iterable<IMenuItem> | Iterable<ISubmenuItem>;
     }
 
     // https://github.com/theia-ide/vscode/blob/standalone/0.20.x/src/vs/platform/actions/common/actions.ts#L51

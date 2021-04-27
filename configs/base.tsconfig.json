@@ -14,7 +14,7 @@
         "resolveJsonModule": true,
         "module": "commonjs",
         "moduleResolution": "node",
-        "target": "es5",
+        "target": "es6",
         "jsx": "react",
         "lib": [
             "es6",
