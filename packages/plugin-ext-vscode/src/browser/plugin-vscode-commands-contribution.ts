@@ -224,7 +224,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             execute: () => this.quickOpen.open('')
         });
         commands.registerCommand({ id: 'workbench.action.openSettings' }, {
-            execute: () => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id)
+            execute: (query?: string) => commands.executeCommand(CommonCommands.OPEN_PREFERENCES.id, query)
         });
         commands.registerCommand({ id: VscodeCommands.INSTALL_FROM_VSIX.id }, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
