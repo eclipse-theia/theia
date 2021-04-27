@@ -32,7 +32,7 @@ import { ConsoleLogger } from './logger';
 import { ConnectionContainerModule } from './connection-container-module';
 import Route = require('route-parser');
 import { WsRequestValidator } from '../ws-request-validators';
-import { WsLifecycleNotifier } from '../ws-lifecycle-notification';
+import { MessagingListener } from '../ws-messaging-listeners';
 
 export const MessagingContainer = Symbol('MessagingContainer');
 
@@ -51,8 +51,8 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     @inject(WsRequestValidator)
     protected readonly wsRequestValidator: WsRequestValidator;
 
-    @inject(WsLifecycleNotifier)
-    protected readonly wsLifecycleNotifier: WsLifecycleNotifier;
+    @inject(MessagingListener)
+    protected readonly messagingListener: MessagingListener;
 
     protected webSocketServer: ws.Server | undefined;
     protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<ws>();
@@ -126,7 +126,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             if (allowed) {
                 this.webSocketServer!.handleUpgrade(request, socket, head, client => {
                     this.webSocketServer!.emit('connection', client, request);
-                    this.wsLifecycleNotifier.websocketWasUpgraded(request, client);
+                    this.messagingListener.websocketWasUpgraded(request, client);
                 });
             } else {
                 console.error(`refused a websocket connection: ${request.connection.remoteAddress}`);

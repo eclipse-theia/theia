@@ -21,32 +21,32 @@ import * as http from 'http';
 import * as ws from 'ws';
 
 /**
- * Bind components to this symbol to subscribe to WebSocket events WebSocket connections.
+ * Bind components to this symbol to subscribe to WebSocket events.
  */
-export const WsLifecycleNotificationContribution = Symbol('WsLifecycleNotificationContribution');
-export interface WsLifecycleNotificationContribution {
+export const MessagingListenerContribution = Symbol('MessagingListenerContribution');
+export interface MessagingListenerContribution {
     /**
-     * Return `false` to prevent the protocol upgrade from going through, blocking the WebSocket connection.
-     *
+     * Function invoked when a HTTP connection is upgraded to a websocket.
+     * 
      * @param request The HTTP connection upgrade request received by the server.
      * @param socket The WebSocket that the connection was upgraded to.
      */
-    socketUpgraded(request: http.IncomingMessage, socket: ws): MaybePromise<void>;
+    websocketDidUpgrade(request: http.IncomingMessage, socket: ws): MaybePromise<void>;
 }
 
 /**
- * Central handler of `WsLifecycleNotificationContribution`.
+ * Central handler of `MessagingListener`.
  */
 @injectable()
-export class WsLifecycleNotifier {
+export class MessagingListener {
 
-    @inject(ContributionProvider) @named(WsLifecycleNotificationContribution)
-    protected readonly wsLifecycleNotifiers: ContributionProvider<WsLifecycleNotificationContribution>;
+    @inject(ContributionProvider) @named(MessagingListenerContribution)
+    protected readonly messagingListenerContributions: ContributionProvider<MessagingListenerContribution>;
 
     /**
-     * Notifiy all the subscribed `WsLifecycleNotificationContributions` that the Websocket was upgraded.
+     * Notifiy all the subscribed `MessagingListenerContribution`s that the Websocket was upgraded.
      */
     async websocketWasUpgraded(request: http.IncomingMessage, socket: ws): Promise<void> {
-        await Promise.all(Array.from(this.wsLifecycleNotifiers.getContributions(), async notifier => notifier.socketUpgraded(request, socket)));
+        await Promise.all(Array.from(this.messagingListenerContributions.getContributions(), async messagingListener => messagingListener.websocketDidUpgrade(request, socket)));
     }
 }
