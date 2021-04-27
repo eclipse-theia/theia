@@ -15,9 +15,7 @@
  ********************************************************************************/
 
 import type { BrowserWindowConstructorOptions } from 'electron';
-
-/** `deepmerge/dist/cjs` */
-export const merge = require('deepmerge/dist/cjs');
+export import deepmerge = require('deepmerge');
 
 export type RequiredRecursive<T> = {
     [K in keyof T]-?: T[K] extends object ? RequiredRecursive<T[K]> : T[K]
