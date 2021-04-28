@@ -18,13 +18,11 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import {
     ContextMenuRenderer,
     ExpandableTreeNode,
-    PreferenceService,
     TreeNode,
     TreeProps,
     TreeWidget,
     TREE_NODE_CONTENT_CLASS,
 } from '@theia/core/lib/browser';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import React = require('@theia/core/shared/react');
 import { PreferenceTreeModel, PreferenceTreeNodeRow, PreferenceTreeNodeProps } from '../preference-tree-model';
 
@@ -35,8 +33,6 @@ export class PreferencesTreeWidget extends TreeWidget {
     protected shouldFireSelectionEvents: boolean = true;
     protected firstVisibleLeafNodeID: string;
 
-    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(PreferenceConfigurations) protected readonly preferenceConfigs: PreferenceConfigurations;
     @inject(PreferenceTreeModel) readonly model: PreferenceTreeModel;
     @inject(TreeProps) protected readonly treeProps: TreeProps;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
@@ -73,13 +69,10 @@ export class PreferencesTreeWidget extends TreeWidget {
         }
 
         const attributes = this.createNodeAttributes(node, props);
-        const printedNameWithVisibleChildren = node.name && this.model.isFiltered
-            ? `${node.name} (${props.visibleChildren})`
-            : node.name;
 
         const content = <div className={TREE_NODE_CONTENT_CLASS}>
             {this.renderExpansionToggle(node, props)}
-            {this.renderCaption({ ...node, name: printedNameWithVisibleChildren }, props)}
+            {this.renderCaption(node, props)}
         </div>;
         return React.createElement('div', attributes, content);
     }
@@ -89,5 +82,14 @@ export class PreferencesTreeWidget extends TreeWidget {
             return <div className='preferences-tree-spacer' />;
         }
         return super.renderExpansionToggle(node, props);
+    }
+
+    protected toNodeName(node: TreeNode): string {
+        const visibleChildren = this.model.currentRows.get(node.id)?.visibleChildren;
+        const baseName = this.labelProvider.getName(node);
+        const printedNameWithVisibleChildren = this.model.isFiltered && visibleChildren !== undefined
+            ? `${baseName} (${visibleChildren})`
+            : baseName;
+        return printedNameWithVisibleChildren;
     }
 }

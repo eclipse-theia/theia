@@ -243,7 +243,7 @@ export class VSXExtensionsModel {
     }
 
     protected getRecommendationsForScope(scope: PreferenceInspectionScope, root?: URI): Required<RecommendedExtensions> {
-        const configuredValue = this.preferences.inspect<RecommendedExtensions>('extensions', root?.toString())?.[scope];
+        const configuredValue = this.preferences.inspect<Required<RecommendedExtensions>>('extensions', root?.toString())?.[scope];
         return {
             recommendations: configuredValue?.recommendations ?? [],
             unwantedRecommendations: configuredValue?.unwantedRecommendations ?? [],

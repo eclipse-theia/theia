@@ -28,65 +28,58 @@ FrontendApplicationConfigProvider.set({
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
 import { PreferenceTreeGenerator } from './preference-tree-generator';
-import { CompositeTreeNode, PreferenceSchemaProvider } from '@theia/core/lib/browser';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { PreferenceTreeLabelProvider } from './preference-tree-label-provider';
+import { Preference } from './preference-types';
+import { SelectableTreeNode } from '@theia/core/src/browser';
 
 disableJSDOM();
 
-describe('preference-tree-generator', () => {
+describe('preference-tree-label-provider', () => {
 
-    let preferenceTreeGenerator: PreferenceTreeGenerator;
+    let preferenceTreeLabelprovider: PreferenceTreeLabelProvider;
 
     beforeEach(() => {
         const container = new Container();
-        container.bind<any>(PreferenceSchemaProvider).toConstantValue({ onDidPreferenceSchemaChanged: () => { } });
-        container.bind<any>(PreferenceConfigurations).toConstantValue(undefined);
-        preferenceTreeGenerator = container.resolve(PreferenceTreeGenerator);
+        container.bind<any>(PreferenceTreeGenerator).toConstantValue({ getCustomLabelFor: () => { } });
+        preferenceTreeLabelprovider = container.resolve(PreferenceTreeLabelProvider);
     });
 
-    it('PreferenceTreeGenerator.split', () => {
-        // We want to ensure that our `split` function emulates the following regex properly:
-        const splitter = /[\W_]|(?<=[^A-Z])(?=[A-Z])/;
-        const testString = 'aaaBbb.Ccc d E fff GGGgg_iiiJ0a';
-        expect(preferenceTreeGenerator['split'](testString)).deep.eq(testString.split(splitter));
-    });
-
-    it('PreferenceTreeGenerator.format', () => {
+    it('PreferenceTreeLabelProvider.format', () => {
         const testString = 'aaaBbbCcc Dddd eee';
-        expect(preferenceTreeGenerator['formatString'](testString)).eq('Aaa Bbb Ccc Dddd eee');
+        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Aaa Bbb Ccc Dddd eee');
     });
 
-    it('PreferenceTreeGenerator.format.chinese', () => {
+    it('PreferenceTreeLabelProvider.format.Chinese', () => {
         const testString = '某個設定/某个设定';
-        expect(preferenceTreeGenerator['formatString'](testString)).eq('某個設定/某个设定');
+        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('某個設定/某个设定');
     });
 
-    it('PreferenceTreeGenerator.format.Danish', () => {
+    it('PreferenceTreeLabelProvider.format.Danish', () => {
         const testString = 'indstillingPåEnØ';
-        expect(preferenceTreeGenerator['formatString'](testString)).eq('Indstilling På En Ø');
+        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Indstilling På En Ø');
     });
 
-    it('PreferenceTreeGenerator.format.Greek', () => {
+    it('PreferenceTreeLabelProvider.format.Greek', () => {
         const testString = 'κάποιαΡύθμιση';
-        expect(preferenceTreeGenerator['formatString'](testString)).eq('Κάποια Ρύθμιση');
+        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Κάποια Ρύθμιση');
     });
 
-    it('PreferenceTreeGenerator.format.Russian', () => {
+    it('PreferenceTreeLabelProvider.format.Russian', () => {
         const testString = 'некоторыеНастройки';
-        expect(preferenceTreeGenerator['formatString'](testString)).eq('Некоторые Настройки');
+        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Некоторые Настройки');
     });
 
-    it('PreferenceTreeGenerator.format.Armenian', () => {
+    it('PreferenceTreeLabelProvider.format.Armenian', () => {
         const testString = 'ինչ-որՊարամետր';
-        expect(preferenceTreeGenerator['formatString'](testString)).eq('Ինչ-որ Պարամետր');
+        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Ինչ-որ Պարամետր');
     });
 
-    it('PreferenceTreeGenerator.format.specialCharacters', () => {
+    it('PreferenceTreeLabelProvider.format.specialCharacters', () => {
         const testString = 'hyphenated-wordC++Setting';
-        expect(preferenceTreeGenerator['formatString'](testString)).eq('Hyphenated-word C++ Setting');
+        expect(preferenceTreeLabelprovider['formatString'](testString)).eq('Hyphenated-word C++ Setting');
     });
 
-    describe('PreferenceTreeGenerator.createLeafNode', () => {
+    describe('PreferenceTreeLabelProvider.createLeafNode', () => {
         it('when property constructs of three parts the third part is the leaf', () => {
             const property = 'category-name.subcategory.leaf';
             const expectedName = 'Leaf';
@@ -100,18 +93,17 @@ describe('preference-tree-generator', () => {
         });
 
         function testLeafName(property: string, expectedName: string): void {
-            const preferencesGroups: CompositeTreeNode[] = [];
-            const root = preferenceTreeGenerator['createRootNode'](preferencesGroups);
-            const preferencesGroup = preferenceTreeGenerator['createPreferencesGroup']('group', root);
 
-            const expectedSelectableTreeNode = {
-                id: property,
-                name: expectedName,
-                parent: preferencesGroup,
+            const expectedSelectableTreeNode: Preference.LeafNode & SelectableTreeNode = {
+                id: `group@${property}`,
+                parent: undefined,
                 visible: true,
                 selected: false,
+                depth: 2,
+                preference: { data: {} }
             };
-            expect(preferenceTreeGenerator['createLeafNode'](property, preferencesGroup)).deep.eq(expectedSelectableTreeNode);
+
+            expect(preferenceTreeLabelprovider['getName'](expectedSelectableTreeNode)).deep.eq(expectedName);
         }
 
     });

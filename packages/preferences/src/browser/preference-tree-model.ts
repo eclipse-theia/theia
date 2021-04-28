@@ -24,23 +24,32 @@ import {
     PreferenceSchemaProvider,
     PreferenceDataProperty,
     NodeProps,
-    ExpandableTreeNode
+    ExpandableTreeNode,
+    SelectableTreeNode,
 } from '@theia/core/lib/browser';
 import { Emitter } from '@theia/core';
 import { PreferencesSearchbarWidget } from './views/preference-searchbar-widget';
-import { PreferenceTreeGenerator } from './util/preference-tree-generator';
+import { PreferenceTreeGenerator, COMMONLY_USED_SECTION_PREFIX } from './util/preference-tree-generator';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { PreferencesScopeTabBar } from './views/preference-scope-tabbar-widget';
 import { Preference } from './util/preference-types';
-import { Event } from '@theia/core/src/common';
+import { Event } from '@theia/core/lib/common';
 
-export interface PreferenceTreeNodeRow extends TreeWidget.NodeRow {
-    visibleChildren: number;
-    isExpansible?: boolean;
-}
 export interface PreferenceTreeNodeProps extends NodeProps {
     visibleChildren: number;
     isExpansible?: boolean;
+}
+
+export interface PreferenceTreeNodeRow extends Readonly<TreeWidget.NodeRow>, PreferenceTreeNodeProps {
+    node: Preference.TreeNode;
+}
+export enum PreferenceFilterChangeSource {
+    Schema,
+    Search,
+    Scope,
+}
+export interface PreferenceFilterChangeEvent {
+    source: PreferenceFilterChangeSource
 }
 
 @injectable()
@@ -51,7 +60,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
     @inject(PreferenceTreeGenerator) protected readonly treeGenerator: PreferenceTreeGenerator;
     @inject(PreferencesScopeTabBar) protected readonly scopeTracker: PreferencesScopeTabBar;
 
-    protected readonly onTreeFilterChangedEmitter = new Emitter<{ filterCleared: boolean; rows: Map<string, PreferenceTreeNodeRow>; }>();
+    protected readonly onTreeFilterChangedEmitter = new Emitter<PreferenceFilterChangeEvent>();
     readonly onFilterChanged = this.onTreeFilterChangedEmitter.event;
 
     protected lastSearchedFuzzy: string = '';
@@ -91,18 +100,20 @@ export class PreferenceTreeModel extends TreeModelImpl {
         this.toDispose.pushAll([
             this.treeGenerator.onSchemaChanged(newTree => {
                 this.root = newTree;
-                this.updateFilteredRows();
+                this.updateFilteredRows(PreferenceFilterChangeSource.Schema);
             }),
             this.scopeTracker.onScopeChanged(scopeDetails => {
-                this._currentScope = Number(scopeDetails.scope);
-                this.updateFilteredRows();
+                this._currentScope = scopeDetails.scope;
+                this.updateFilteredRows(PreferenceFilterChangeSource.Scope);
             }),
             this.filterInput.onFilterChanged(newSearchTerm => {
                 this.lastSearchedLiteral = newSearchTerm;
                 this.lastSearchedFuzzy = newSearchTerm.replace(/\s/g, '');
-                const wasFiltered = this._isFiltered;
                 this._isFiltered = newSearchTerm.length > 2;
-                this.updateFilteredRows(wasFiltered && !this._isFiltered);
+                this.updateFilteredRows(PreferenceFilterChangeSource.Search);
+                if (this.isFiltered) {
+                    this.expandAll();
+                }
             }),
             this.onFilterChanged(() => {
                 this.filterInput.updateResultsCount(this._totalVisibleLeaves);
@@ -123,10 +134,10 @@ export class PreferenceTreeModel extends TreeModelImpl {
                 pruneCollapsed: false,
                 pruneSiblings: true
             })) {
-                if (TreeNode.isVisible(node)) {
-                    if (CompositeTreeNode.is(node) || this.passesCurrentFilters(node.id)) {
+                if (TreeNode.isVisible(node) && Preference.TreeNode.is(node)) {
+                    const { id } = Preference.TreeNode.getGroupAndIdFromNodeId(node.id);
+                    if (CompositeTreeNode.is(node) || this.passesCurrentFilters(node, id)) {
                         const depth = this.getDepthForNode(depths, node);
-
                         this.updateVisibleChildren(node);
 
                         this._currentRows.set(node.id, {
@@ -141,21 +152,27 @@ export class PreferenceTreeModel extends TreeModelImpl {
         }
     }
 
-    protected updateFilteredRows(filterWasCleared: boolean = false): void {
+    protected updateFilteredRows(source: PreferenceFilterChangeSource): void {
         this.updateRows();
-        this.onTreeFilterChangedEmitter.fire({ filterCleared: filterWasCleared, rows: this._currentRows });
+        this.onTreeFilterChangedEmitter.fire({ source });
     }
 
-    protected passesCurrentFilters(nodeID: string): boolean {
-        const currentNodeShouldBeVisible = this.schemaProvider.isValidInScope(nodeID, this._currentScope)
-            && (
-                !this._isFiltered // search too short.
-                || fuzzy.test(this.lastSearchedFuzzy, nodeID || '') // search matches preference name.
-                // search matches description. Fuzzy isn't ideal here because the score depends on the order of discovery.
-                || (this.schemaProvider.getCombinedSchema().properties[nodeID].description || '').includes(this.lastSearchedLiteral)
-            );
-
-        return currentNodeShouldBeVisible;
+    protected passesCurrentFilters(node: Preference.LeafNode, prefID: string): boolean {
+        if (!this.schemaProvider.isValidInScope(prefID, this._currentScope)) {
+            return false;
+        }
+        if (!this._isFiltered) {
+            return true;
+        }
+        // When filtering, VSCode will render an item that is present in the commonly used section only once but render both its possible parents in the left-hand tree.
+        // E.g. searching for editor.renderWhitespace will show one item in the main panel, but both 'Commonly Used' and 'Text Editor' in the left tree.
+        // That seems counterintuitive and introduces a number of special cases, so I prefer to remove the commonly used section entirely when the user searches.
+        if (node.id.startsWith(COMMONLY_USED_SECTION_PREFIX)) {
+            return false;
+        }
+        return fuzzy.test(this.lastSearchedFuzzy, prefID) // search matches preference name.
+            // search matches description. Fuzzy isn't ideal here because the score depends on the order of discovery.
+            || (node.preference.data.description ?? '').includes(this.lastSearchedLiteral);
     }
 
     protected getDepthForNode(depths: Map<CompositeTreeNode | undefined, number>, node: TreeNode): number {
@@ -183,13 +200,38 @@ export class PreferenceTreeModel extends TreeModelImpl {
         }
     }
 
-    collapseAllExcept(openNode: ExpandableTreeNode | undefined): void {
-        this.expandNode(openNode);
-        const children = (this.root as CompositeTreeNode).children as ExpandableTreeNode[];
-        children.forEach(child => {
-            if (child !== openNode && child.expanded) {
-                this.collapseNode(child);
-            }
-        });
+    collapseAllExcept(openNode: TreeNode | undefined): void {
+        if (ExpandableTreeNode.is(openNode)) {
+            this.expandNode(openNode);
+        }
+        if (CompositeTreeNode.is(this.root)) {
+            this.root.children.forEach(child => {
+                if (child !== openNode && ExpandableTreeNode.is(child)) {
+                    this.collapseNode(child);
+                }
+            });
+        }
+    }
+
+    protected expandAll(): void {
+        if (CompositeTreeNode.is(this.root)) {
+            this.root.children.forEach(child => {
+                if (ExpandableTreeNode.is(child)) {
+                    this.expandNode(child);
+                }
+            });
+        }
+    }
+
+    /**
+     * @returns true if selection changed, false otherwise
+     */
+    selectIfNotSelected(node: SelectableTreeNode): boolean {
+        const currentlySelected = this.selectedNodes[0];
+        if (node !== currentlySelected) {
+            this.selectNode(node);
+            return true;
+        }
+        return false;
     }
 }

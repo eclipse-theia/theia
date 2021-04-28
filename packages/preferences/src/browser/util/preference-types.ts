@@ -14,28 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { PreferenceDataProperty, PreferenceItem, Title, PreferenceScope, TreeNode } from '@theia/core/lib/browser';
+import {
+    PreferenceDataProperty,
+    PreferenceScope,
+    TreeNode as BaseTreeNode,
+    CompositeTreeNode as BaseCompositeTreeNode,
+    PreferenceInspection,
+} from '@theia/core/lib/browser';
 import { Command, MenuPath } from '@theia/core';
+import { JSONValue } from '@theia/core/shared/@phosphor/coreutils';
 
 export namespace Preference {
-
-    export interface ValueInSingleScope { value?: PreferenceItem, data: PreferenceDataProperty; }
-    export interface NodeWithValueInSingleScope extends TreeNode {
-        preference: ValueInSingleScope;
-    }
-
-    export interface ValuesInAllScopes {
-        preferenceName: string;
-        defaultValue: PreferenceItem | undefined;
-        globalValue: PreferenceItem | undefined;
-        workspaceValue: PreferenceItem | undefined;
-        workspaceFolderValue: PreferenceItem | undefined;
-    }
-
-    export interface PreferenceWithValueInAllScopes {
-        values?: ValuesInAllScopes;
-        data: PreferenceDataProperty;
-    }
 
     export interface EditorCommandArgs {
         id: string;
@@ -48,11 +37,39 @@ export namespace Preference {
         }
     }
 
-    export interface NodeWithValueInAllScopes extends TreeNode {
-        preference: PreferenceWithValueInAllScopes;
+    export const Node = Symbol('Preference.Node');
+    export type Node = TreeNode;
+
+    export type TreeNode = CompositeTreeNode | LeafNode;
+
+    export namespace TreeNode {
+        export const is = (node: BaseTreeNode | TreeNode): node is TreeNode => 'depth' in node;
+        export const isTopLevel = (node: BaseTreeNode): boolean => {
+            const { group, id } = getGroupAndIdFromNodeId(node.id);
+            return group === id;
+        };
+        export const getGroupAndIdFromNodeId = (nodeId: string): { group: string; id: string } => {
+            const separator = nodeId.indexOf('@');
+            const group = nodeId.substring(0, separator);
+            const id = nodeId.substring(separator + 1, nodeId.length);
+            return { group, id };
+        };
     }
 
-    export const getValueInScope = (preferenceInfo: ValuesInAllScopes | undefined, scope: number): PreferenceItem | undefined => {
+    export interface CompositeTreeNode extends BaseCompositeTreeNode {
+        depth: number;
+    }
+
+    export interface LeafNode extends BaseTreeNode {
+        depth: number;
+        preference: { data: PreferenceDataProperty };
+    }
+
+    export namespace LeafNode {
+        export const is = (node: BaseTreeNode | LeafNode): node is LeafNode => 'preference' in node && !!node.preference.data;
+    }
+
+    export const getValueInScope = <T extends JSONValue>(preferenceInfo: PreferenceInspection<T> | undefined, scope: number): T | undefined => {
         if (!preferenceInfo) {
             return undefined;
         }
@@ -68,16 +85,16 @@ export namespace Preference {
         }
     };
 
-    export interface SelectedScopeDetails extends Title.Dataset {
-        scope: string;
-        uri: string;
-        activeScopeIsFolder: string;
+    export interface SelectedScopeDetails {
+        scope: number;
+        uri: string | undefined;
+        activeScopeIsFolder: boolean;
     };
 
     export const DEFAULT_SCOPE: SelectedScopeDetails = {
-        scope: PreferenceScope.User.toString(),
-        uri: '',
-        activeScopeIsFolder: 'false'
+        scope: PreferenceScope.User,
+        uri: undefined,
+        activeScopeIsFolder: false
     };
 
     export interface ContextMenuCallbacks {

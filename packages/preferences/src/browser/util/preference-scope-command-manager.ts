@@ -32,7 +32,7 @@ export class PreferenceScopeCommandManager {
 
     createFolderWorkspacesMenu(
         folderWorkspaces: FileStat[],
-        currentFolderURI: string,
+        currentFolderURI?: string,
     ): void {
         this.foldersAsCommands.forEach(folderCommand => {
             this.menuModelRegistry.unregisterMenuAction(folderCommand, FOLDER_SCOPE_MENU_PATH);
@@ -56,7 +56,7 @@ export class PreferenceScopeCommandManager {
                 isVisible: (callback, check) => check === 'from-tabbar',
                 isEnabled: (callback, check) => check === 'from-tabbar',
                 execute: (callback: (scopeDetails: Preference.SelectedScopeDetails) => void) => {
-                    callback({ scope: PreferenceScope.Folder.toString(), uri: folderWorkspace.resource.toString(), activeScopeIsFolder: 'true' });
+                    callback({ scope: PreferenceScope.Folder, uri: folderWorkspace.resource.toString(), activeScopeIsFolder: true });
                 }
             });
 

@@ -24,7 +24,7 @@ import { PreferenceSchemaProvider } from './preference-contribution';
 import URI from '../../common/uri';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceConfigurations } from './preference-configurations';
-import { JSONExt } from '@phosphor/coreutils/lib/json';
+import { JSONExt, JSONValue } from '@phosphor/coreutils/lib/json';
 import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
 
 export { PreferenceScope };
@@ -186,7 +186,7 @@ export interface PreferenceService extends Disposable {
      *
      * @return an object containing the value of the given preference for all scopes.
      */
-    inspect<T>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined;
+    inspect<T extends JSONValue>(preferenceName: string, resourceUri?: string): PreferenceInspection<T> | undefined;
     /**
      * Returns a new preference identifier based on the given OverridePreferenceName.
      *
@@ -238,7 +238,7 @@ export interface PreferenceService extends Disposable {
 /**
  * Return type of the {@link PreferenceService.inspect} call.
  */
-export interface PreferenceInspection<T> {
+export interface PreferenceInspection<T = JSONValue> {
     /**
      * The preference identifier.
      */
