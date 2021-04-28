@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, MaybePromise } from '../common';
+import { ContributionProvider, MaybePromise } from '../../common';
 
 import * as http from 'http';
 import * as ws from 'ws';
@@ -27,7 +27,7 @@ export const MessagingListenerContribution = Symbol('MessagingListenerContributi
 export interface MessagingListenerContribution {
     /**
      * Function invoked when a HTTP connection is upgraded to a websocket.
-     * 
+     *
      * @param request The HTTP connection upgrade request received by the server.
      * @param socket The WebSocket that the connection was upgraded to.
      */
@@ -35,7 +35,7 @@ export interface MessagingListenerContribution {
 }
 
 /**
- * Central handler of `MessagingListener`.
+ * Handler of Theia messaging system events, dispatching to MessagingListenerContribution instances.
  */
 @injectable()
 export class MessagingListener {
@@ -44,9 +44,9 @@ export class MessagingListener {
     protected readonly messagingListenerContributions: ContributionProvider<MessagingListenerContribution>;
 
     /**
-     * Notifiy all the subscribed `MessagingListenerContribution`s that the Websocket was upgraded.
+     * Notify all the subscribed `MessagingListenerContribution`s that the Websocket was upgraded.
      */
-    async websocketWasUpgraded(request: http.IncomingMessage, socket: ws): Promise<void> {
+    async websocketDidUpgrade(request: http.IncomingMessage, socket: ws): Promise<void> {
         await Promise.all(Array.from(this.messagingListenerContributions.getContributions(), async messagingListener => messagingListener.websocketDidUpgrade(request, socket)));
     }
 }
