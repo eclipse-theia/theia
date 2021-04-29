@@ -77,6 +77,25 @@ export class Path {
         return resourcePath;
     }
 
+    /**
+     * Untildify path, replacing `~` with `home` if `~` present at the beginning of the path.
+     * This is a non-operation for Windows.
+     *
+     * @param resourcePath
+     * @param home
+     */
+    static untildify(resourcePath: string, home: string): string {
+        if (resourcePath.startsWith('~')) {
+            const untildifiedResource = resourcePath.replace(/^~/, home);
+            const untildifiedPath = new Path(untildifiedResource);
+            const isWindows = untildifiedPath.root && Path.isDrive(untildifiedPath.root.base);
+            if (!isWindows && home && untildifiedResource.startsWith(`${home}`)) {
+                return untildifiedResource;
+            }
+        }
+        return resourcePath;
+    }
+
     readonly isAbsolute: boolean;
     readonly isRoot: boolean;
     readonly root: Path | undefined;

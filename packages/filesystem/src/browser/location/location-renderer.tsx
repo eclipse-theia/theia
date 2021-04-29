@@ -16,11 +16,15 @@
 
 import URI from '@theia/core/lib/common/uri';
 import { LocationService } from './location-service';
-import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
 import * as React from '@theia/core/shared/react';
 import * as ReactDOM from '@theia/core/shared/react-dom';
 import { FileService } from '../file-service';
 import { DisposableCollection, Emitter } from '@theia/core/lib/common';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
+import { FileDialogModel } from '../file-dialog/file-dialog-model';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { ReactRenderer } from '@theia/core/lib/browser/widgets/react-renderer';
+import { Path } from '@theia/core/lib/common';
 
 interface AutoSuggestDataEvent {
     parent: string;
@@ -61,12 +65,31 @@ class ResolvedDirectoryCache {
         });
     }
 }
+
+export const LocationListRendererFactory = Symbol('LocationListRendererFactory');
+export interface LocationListRendererFactory {
+    (options: LocationListRendererOptions): LocationListRenderer;
+}
+
+export const LocationListRendererOptions = Symbol('LocationListRendererOptions');
+export interface LocationListRendererOptions {
+    model: FileDialogModel;
+    host?: HTMLElement;
+}
+
+@injectable()
 export class LocationListRenderer extends ReactRenderer {
 
+    @inject(FileService) protected readonly fileService: FileService;
+    @inject(EnvVariablesServer) protected readonly variablesServer: EnvVariablesServer;
+
     protected directoryCache: ResolvedDirectoryCache;
+    protected service: LocationService;
     protected toDisposeOnNewCache = new DisposableCollection();
     protected _drives: URI[] | undefined;
     protected _doShowTextInput = false;
+    protected homeDir: string;
+
     get doShowTextInput(): boolean {
         return this._doShowTextInput;
     }
@@ -81,12 +104,17 @@ export class LocationListRenderer extends ReactRenderer {
     protected doAttemptAutocomplete = true;
 
     constructor(
-        protected readonly service: LocationService,
-        protected readonly fileService: FileService,
-        host?: HTMLElement
+        @inject(LocationListRendererOptions) readonly options: LocationListRendererOptions
     ) {
-        super(host);
+        super(options.host);
+        this.service = options.model;
         this.doLoadDrives();
+    }
+
+    @postConstruct()
+    async init(): Promise<void> {
+        const homeDirWithPrefix = await this.variablesServer.getHomeDirUri();
+        this.homeDir = (new URI(homeDirWithPrefix)).path.toString();
     }
 
     render(): void {
@@ -98,7 +126,8 @@ export class LocationListRenderer extends ReactRenderer {
         this.directoryCache = new ResolvedDirectoryCache(this.fileService);
         this.toDisposeOnNewCache.push(this.directoryCache.onDirectoryDidResolve(({ parent, children }) => {
             if (this.locationTextInput) {
-                const inputParent = (new URI(this.locationTextInput.value)).path.dir.toString();
+                const expandedPath = Path.untildify(this.locationTextInput.value, this.homeDir);
+                const inputParent = (new URI(expandedPath)).path.dir.toString();
                 if (inputParent === parent) {
                     this.tryRenderFirstMatch(this.locationTextInput, children);
                 }
@@ -278,8 +307,9 @@ export class LocationListRenderer extends ReactRenderer {
         if (this.doAttemptAutocomplete) {
             const inputElement = e.currentTarget;
             const { value } = inputElement;
-            if (value.slice(-1) !== '/') {
-                const valueAsURI = new URI(value);
+            if ((value.startsWith('/') || value.startsWith('~/')) && value.slice(-1) !== '/') {
+                const expandedPath = Path.untildify(value, this.homeDir);
+                const valueAsURI = new URI(expandedPath);
                 const autocompleteDirectories = this.directoryCache.tryResolveChildDirectories(valueAsURI);
                 if (autocompleteDirectories) {
                     this.tryRenderFirstMatch(inputElement, autocompleteDirectories);
@@ -291,9 +321,11 @@ export class LocationListRenderer extends ReactRenderer {
     protected tryRenderFirstMatch(inputElement: HTMLInputElement, children: string[]): void {
         const { value, selectionStart } = inputElement;
         if (this.locationTextInput) {
-            const firstMatch = children?.find(child => child.includes(value));
+            const expandedPath = Path.untildify(value, this.homeDir);
+            const firstMatch = children?.find(child => child.includes(expandedPath));
             if (firstMatch) {
-                this.locationTextInput.value = firstMatch;
+                const contractedPath = value.startsWith('~') ? Path.tildify(firstMatch, this.homeDir) : firstMatch;
+                this.locationTextInput.value = contractedPath;
                 this.locationTextInput.selectionStart = selectionStart;
                 this.locationTextInput.selectionEnd = firstMatch.length;
             }
@@ -305,9 +337,10 @@ export class LocationListRenderer extends ReactRenderer {
         if (e.key === 'Enter') {
             const locationTextInput = this.locationTextInput;
             if (locationTextInput) {
-                // remove extra whitespace and any trailing slashes or periods.
+                // expand '~' if present and remove extra whitespace and any trailing slashes or periods.
                 const sanitizedInput = locationTextInput.value.trim().replace(/[\/\\.]*$/, '');
-                const uri = new URI(sanitizedInput);
+                const untildifiedInput = Path.untildify(sanitizedInput, this.homeDir);
+                const uri = new URI(untildifiedInput);
                 this.trySetNewLocation(uri);
                 this.toggleToSelectInput();
             }

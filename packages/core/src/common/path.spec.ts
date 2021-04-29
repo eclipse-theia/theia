@@ -290,6 +290,30 @@ describe('Path', () => {
             const expected = `${linuxHome}/a/b/theia`;
             expect(Path.tildify(path, '')).eq(expected);
         });
+
+        it('should expand ~ on Linux when path begins with ~', async () => {
+            const path = '~/a/b/theia';
+            const expected = `${linuxHome}/a/b/theia`;
+            expect(Path.untildify(path, linuxHome)).eq(expected);
+        });
+
+        it('should expand ~ on Linux when path starts with ~ duplication', async () => {
+            const path = '~/~/a/b/theia';
+            const expected = `${linuxHome}/~/a/b/theia`;
+            expect(Path.untildify(path, linuxHome)).eq(expected);
+        });
+
+        it('should not expand ~ on Linux when path does not start with ~', async () => {
+            const path = '/test/~/a/b/theia';
+            const expected = '/test/~/a/b/theia';
+            expect(Path.untildify(path, linuxHome)).eq(expected);
+        });
+
+        it('should not expand ~ on Linux when home is empty', async () => {
+            const path = '~/a/b/theia';
+            const expected = '~/a/b/theia';
+            expect(Path.untildify(path, '')).eq(expected);
+        });
     });
 
     describe('Windows', () => {
@@ -303,6 +327,18 @@ describe('Path', () => {
             const path = `${windowsHome}/a/b/theia`;
             const expected = `${windowsHome}/a/b/theia`;
             expect(Path.tildify(path, '')).eq(expected);
+        });
+
+        it('should not expand ~ on Windows', async () => {
+            const path = '~/a/b/theia';
+            const expected = '~/a/b/theia';
+            expect(Path.untildify(path, windowsHome)).eq(expected);
+        });
+
+        it('should not expand ~ on Windows when home is empty', async () => {
+            const path = '~/a/b/theia';
+            const expected = '~/a/b/theia';
+            expect(Path.untildify(path, '')).eq(expected);
         });
     });
 });

@@ -5,10 +5,12 @@
 [1.14.0 Milestone](https://github.com/eclipse-theia/theia/milestone/20)
 
 - [debug] Fix behavior of `Add Configurations` command when empty `launch.json` present. [#9467](https://github.com/eclipse-theia/theia/pull/9467)
+- [filesystem] Allow for ~ substitution in browser's file dialog [#9416](https://github.com/eclipse-theia/theia/pull/9416)
 
 <a name="breaking_changes_1.14.0">[Breaking Changes:](#breaking_changes_1.14.0)</a>
 
 - [debug] `DebugConfigurationManager` no longer `@injects()` the `FileService` and now uses `MonacoTextModelService` instead. [#9467](https://github.com/eclipse-theia/theia/pull/9467)
+- [filesystem] ReactRenderer, LocationListRenderer, and FileDialogTreeFiltersRenderer have been made injectable/factoritized. FileDialog and its children have been updated to use property injection where appropriate and initialization inside constructor has been moved to postConstruct. [#9416](https://github.com/eclipse-theia/theia/pull/9416).
 
 ## v1.13.0 - 4/29/2021
 
