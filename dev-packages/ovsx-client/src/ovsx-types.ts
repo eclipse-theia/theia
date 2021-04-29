@@ -144,6 +144,32 @@ export interface VSXExtensionRaw {
     readonly engines?: { [engine: string]: string };
 }
 
+export interface VSXQueryParam {
+    namespaceName?: string;
+    extensionName?: string;
+    extensionVersion?: string;
+    extensionId?: string;
+    extensionUuid?: string;
+    namespaceUuid?: string;
+    includeAllVersions?: boolean;
+}
+
+export interface VSXQueryResult {
+    extensions?: VSXExtensionRaw[];
+}
+
+export interface VSXResponseError extends Error {
+    statusCode: number
+}
+
+export namespace VSXResponseError {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    export function is(error: any): error is VSXResponseError {
+        return !!error && typeof error === 'object'
+            && 'statusCode' in error && typeof error['statusCode'] === 'number';
+    }
+}
+
 /**
  * Builtin namespaces maintained by the framework.
  */

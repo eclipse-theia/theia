@@ -20,8 +20,6 @@ import * as showdown from 'showdown';
 import * as sanitize from 'sanitize-html';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationToken, CancellationTokenSource } from '@theia/core/lib/common/cancellation';
-import { VSXRegistryAPI, VSXResponseError } from '../common/vsx-registry-api';
-import { VSXSearchParam } from '../common/vsx-registry-types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin';
 import { VSXExtension, VSXExtensionFactory } from './vsx-extension';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
@@ -31,6 +29,8 @@ import { PreferenceInspectionScope, PreferenceService } from '@theia/core/lib/br
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { RecommendedExtensions } from './recommended-extensions/recommended-extensions-preference-contribution';
 import URI from '@theia/core/lib/common/uri';
+import { VSXResponseError, VSXSearchParam } from '@theia/ovsx-client/lib/ovsx-types';
+import { OVSXAsyncClient } from './ovsx-async-client';
 
 @injectable()
 export class VSXExtensionsModel {
@@ -38,8 +38,8 @@ export class VSXExtensionsModel {
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
-    @inject(VSXRegistryAPI)
-    protected readonly api: VSXRegistryAPI;
+    @inject(OVSXAsyncClient)
+    protected client: OVSXAsyncClient;
 
     @inject(HostedPluginSupport)
     protected readonly pluginSupport: HostedPluginSupport;
@@ -63,6 +63,7 @@ export class VSXExtensionsModel {
 
     @postConstruct()
     protected async init(): Promise<void> {
+        await this.client.ready;
         await Promise.all([
             this.initInstalled(),
             this.initSearchResult(),
@@ -166,14 +167,14 @@ export class VSXExtensionsModel {
     }, 150);
     protected doUpdateSearchResult(param: VSXSearchParam, token: CancellationToken): Promise<void> {
         return this.doChange(async () => {
-            const result = await this.api.search(param);
+            const result = await this.client.search(param);
             if (token.isCancellationRequested) {
                 return;
             }
             const searchResult = new Set<string>();
             for (const data of result.extensions) {
                 const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
-                const extension = this.api.getLatestCompatibleVersion(data);
+                const extension = this.client.getLatestCompatibleVersion(data);
                 if (!extension) {
                     continue;
                 }
@@ -259,7 +260,7 @@ export class VSXExtensionsModel {
             }
             if (extension.readmeUrl) {
                 try {
-                    const rawReadme = await this.api.fetchText(extension.readmeUrl);
+                    const rawReadme = await this.client.fetchText(extension.readmeUrl);
                     const readme = this.compileReadme(rawReadme);
                     extension.update({ readme });
                 } catch (e) {
@@ -291,7 +292,7 @@ export class VSXExtensionsModel {
             if (!this.shouldRefresh(extension)) {
                 return extension;
             }
-            const data = await this.api.getLatestCompatibleExtensionVersion(id);
+            const data = await this.client.getLatestCompatibleExtensionVersion(id);
             if (!data) {
                 return;
             }

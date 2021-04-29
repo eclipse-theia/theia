@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "1.14.0",
     "@theia/filesystem": "1.14.0",
+    "@theia/ovsx-client": "1.14.0",
     "@theia/plugin-ext": "1.14.0",
     "@theia/plugin-ext-vscode": "1.14.0",
     "@theia/preferences": "1.14.0",

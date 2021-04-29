@@ -180,6 +180,9 @@
       ],
       "@theia/eslint-plugin/*": [
         "dev-packages/eslint-plugin/*"
+      ],
+      "@theia/ovsx-client/lib/*": [
+        "dev-packages/ovsx-client/src/*"
       ]
     }
   }
