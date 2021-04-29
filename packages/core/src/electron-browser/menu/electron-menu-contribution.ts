@@ -51,6 +51,11 @@ export namespace ElectronCommands {
         id: 'close.window',
         label: 'Close Window'
     };
+    export const TOGGLE_FULL_SCREEN: Command = {
+        id: 'workbench.action.toggleFullScreen',
+        category: 'View',
+        label: 'Toggle Full Screen'
+    };
 }
 
 export namespace ElectronMenus {
@@ -182,6 +187,11 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         registry.registerCommand(ElectronCommands.RESET_ZOOM, {
             execute: () => this.preferenceService.set('window.zoomLevel', ZoomLevel.DEFAULT, PreferenceScope.User)
         });
+        registry.registerCommand(ElectronCommands.TOGGLE_FULL_SCREEN, {
+            isEnabled: () => currentWindow.isFullScreenable(),
+            isVisible: () => currentWindow.isFullScreenable(),
+            execute: () => currentWindow.setFullScreen(!currentWindow.isFullScreen())
+        });
     }
 
     registerKeybindings(registry: KeybindingRegistry): void {
@@ -209,6 +219,10 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
             {
                 command: ElectronCommands.CLOSE_WINDOW.id,
                 keybinding: (isOSX ? 'cmd+shift+w' : (isWindows ? 'ctrl+w' : /* Linux */ 'ctrl+q'))
+            },
+            {
+                command: ElectronCommands.TOGGLE_FULL_SCREEN.id,
+                keybinding: isOSX ? 'ctrl+ctrlcmd+f' : 'f11'
             }
         );
     }
