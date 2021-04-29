@@ -1,10 +1,74 @@
 # Change Log
 
+## v1.13.0 - 4/29/2021
+
+[1.13.0 Milestone](https://github.com/eclipse-theia/theia/milestone/19)
+
+- [console] sanitized HTML content the `ansi-console` [#9339](https://github.com/eclipse-theia/theia/pull/9339)
+- [core] added `isEqual` method for `URI` [#8925](https://github.com/eclipse-theia/theia/pull/8925)
+- [core] added handling to automatically reconnect websocket on offline event [#9299](https://github.com/eclipse-theia/theia/pull/9299)
+- [core] added missing `useCapture` argument to `removeEventListener` [#9273](https://github.com/eclipse-theia/theia/pull/9273)
+- [core] added re-export of common packages strategy [#9124](https://github.com/eclipse-theia/theia/pull/9124)
+- [core] improved handling of `saveAll` by checking if a widget is dirty before saving [#9393](https://github.com/eclipse-theia/theia/pull/9393)
+- [core] updated `nsfw` dependency to `^2.1.2` [#9267](https://github.com/eclipse-theia/theia/pull/9267)
+- [debug] fixed hover issues for the `currentFrame` editor [#9256](https://github.com/eclipse-theia/theia/pull/9256)
+- [debug] improved error messages [#9386](https://github.com/eclipse-theia/theia/pull/9386)
+- [documentation] added roadmap information to the readme [#9308](https://github.com/eclipse-theia/theia/pull/9308)
+- [documentation] updated pre-publishing steps [#9257](https://github.com/eclipse-theia/theia/pull/9257)
+- [editor-preview] updated logic to activate editor-preview editors only if already active [#9346](https://github.com/eclipse-theia/theia/pull/9346)
+- [editor] added support for `reopen closed editor` [#8925](https://github.com/eclipse-theia/theia/pull/8925)
+- [editor] added support to open multiple editors for the same file [#9369](https://github.com/eclipse-theia/theia/pull/9369)
+  - added `split editor` command.
+  - added `split editor up` command.
+  - added `split editor down` command.
+  - added `split editor right` command.
+  - added `split editor left` command.
+  - added `split editor orthogonal` command.
+- [electron] added command and keybinding for `toggle full screen` [#9399](https://github.com/eclipse-theia/theia/pull/9399)
+- [getting-started] fixed the opening of external links in `electron` [#9390](https://github.com/eclipse-theia/theia/pull/9390)
+- [getting-started] updated links to be keyboard operable [#9318](https://github.com/eclipse-theia/theia/pull/9318)
+- [getting-started] updated links to not modify the URL hash [#9318](https://github.com/eclipse-theia/theia/pull/9318)
+- [git] added handling to group context-menu by category [#9324](https://github.com/eclipse-theia/theia/pull/9324)
+- [monaco] fixed regression which did not respect `setContext` [#9343](https://github.com/eclipse-theia/theia/pull/9343)
+- [monaco] improved handling of themes on startup by using `indexedDB` if available [#9303](https://github.com/eclipse-theia/theia/pull/9303)
+- [plugin] added `CodeActionTriggerKind` enum [#9368](https://github.com/eclipse-theia/theia/pull/94039368)
+- [plugin] added handling for empty command `id` with available arguments [#9223](https://github.com/eclipse-theia/theia/pull/9223)
+- [plugin] added support for the `CustomExecution` API [#9189](https://github.com/eclipse-theia/theia/pull/9189)
+- [plugin] added support for the `PluginContext` API [#9276](https://github.com/eclipse-theia/theia/pull/9276)
+- [plugin] added support to read `args` from `keybindings` [#9372](https://github.com/eclipse-theia/theia/pull/9372)
+- [plugin] fixed dialog `canSelectMany` implementation [#9278](https://github.com/eclipse-theia/theia/pull/9278)
+- [plugin] fixed handling for `.focus` view commands [#9364](https://github.com/eclipse-theia/theia/pull/9364)
+- [plugin] refactored the `RPCProtocol` for quality [#8972](https://github.com/eclipse-theia/theia/pull/8972)
+- [plugin] removed unnecessary coupling to `editor-preview` [#9302](https://github.com/eclipse-theia/theia/pull/9302)
+- [plugin] updated `safeStringify` output error [#9223](https://github.com/eclipse-theia/theia/pull/9223)
+- [preferences] added handling to properly re-render view when extensions which provide preferences are uninstalled [#9313](https://github.com/eclipse-theia/theia/pull/9313)
+- [preferences] fixed `preference-array.css` styling due to typos [#9270](https://github.com/eclipse-theia/theia/pull/9270)
+- [preferences] fixed regression for the preferences-view without plugin support [#9403](https://github.com/eclipse-theia/theia/pull/9403)
+- [preferences] updated handling to activate the preferences-view when opened through the `OPEN_PREFERENCES` command [#9355](https://github.com/eclipse-theia/theia/pull/9355)
+- [preferences] updated the formatting of preferences [#9381](https://github.com/eclipse-theia/theia/pull/9381)
+- [task] added handling to update workspace model on workspace location change [#9331](https://github.com/eclipse-theia/theia/pull/9331)
+- [task] added support for task presentation options [#9248](https://github.com/eclipse-theia/theia/pull/9248)
+  - added support for `presentationOptions.clear`.
+  - added support for `presentationOptions.echo`.
+  - added support for `presentationOptions.focus`.
+  - added support for `presentationOptions.panel`.
+  - added support for `presentationOptions.reveal`.
+  - added support for `presentationOptions.showReuseMessage`.
+- [timeline] addef missing `@theia/navigator` dependency [#9267](https://github.com/eclipse-theia/theia/pull/9267)
+- [vsx-registry] added `copy extension id` and `copy` commands to the extension context-menu [#9292](https://github.com/eclipse-theia/theia/pull/9292)
+- [vsx-registry] added handling to preserve recently uninstalled extensions from the extensions-view until reload [#9236](https://github.com/eclipse-theia/theia/pull/9236)
+- [vsx-registry] updated api compatibility handling to improve performance, and check for compatibility when installing builtins from the extensions-view [#9280](https://github.com/eclipse-theia/theia/pull/9280)
+- [workspace] improved `save as...` command behavior [#9022](https://github.com/eclipse-theia/theia/pull/9022)
+
 <a name="breaking_changes_1.13.0">[Breaking Changes:](#breaking_changes_1.13.0)</a>
 
-- [workspace] The `WorkspaceCommands.SAVE_AS` command no longer accepts an `URI` argument. It now uses the currently selected editor to determine the file to be saved [#9022](https://github.com/eclipse-theia/theia/pull/9022)
+- [workspace] `WorkspaceCommands.SAVE_AS` command no longer accepts an `URI` argument. It now uses the currently selected editor to determine the file to be saved [#9022](https://github.com/eclipse-theia/theia/pull/9022)
 
-## v1.12.0 - 3/25/2020
+## v1.12.1 - 3/29/2021
+
+- [core][filesystem] Use `nsfw@^2.1.2` to fix an issue on Windows where file watching did not work at all.
+
+## v1.12.0 - 3/25/2021
 
 [1.12.0 Milestone](https://github.com/eclipse-theia/theia/milestone/17)
 
