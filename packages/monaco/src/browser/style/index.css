@@ -109,3 +109,9 @@
 .monaco-editor .rename-box input {
     color: var(--theia-editor-foreground);
 }
+
+.monaco-editor .rename-box .rename-label {
+    opacity: .8;
+    padding: 3px;
+    font-family: sans-serif;
+}
