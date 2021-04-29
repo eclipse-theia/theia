@@ -21,7 +21,6 @@ import { WidgetFactory, bindViewContribution, FrontendApplicationContribution, V
 import { VSXExtensionsViewContainer } from './vsx-extensions-view-container';
 import { VSXExtensionsContribution } from './vsx-extensions-contribution';
 import { VSXExtensionsSearchBar } from './vsx-extensions-search-bar';
-import { VSXRegistryAPI } from '../common/vsx-registry-api';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { VSXExtensionsWidget, VSXExtensionsWidgetOptions } from './vsx-extensions-widget';
@@ -32,14 +31,22 @@ import { VSXExtensionEditorManager } from './vsx-extension-editor-manager';
 import { VSXExtensionsSourceOptions } from './vsx-extensions-source';
 import { VSXEnvironment } from '../common/vsx-environment';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
-import { VSXApiVersionProviderImpl } from './vsx-api-version-provider-frontend-impl';
-import { VSXApiVersionProvider } from '../common/vsx-api-version-provider';
 import { bindExtensionPreferences } from './recommended-extensions/recommended-extensions-preference-contribution';
 import { bindPreferenceProviderOverrides } from './recommended-extensions/preference-provider-overrides';
+import { OVSXAsyncClient } from './ovsx-async-client';
 
 export default new ContainerModule((bind, unbind) => {
-    bind(VSXEnvironment).toSelf().inRequestScope();
-    bind(VSXRegistryAPI).toSelf().inSingletonScope();
+    bind(VSXEnvironment).toSelf().inSingletonScope();
+    bind(OVSXAsyncClient).toDynamicValue(ctx => {
+        const vsxEnvironment = ctx.container.get(VSXEnvironment);
+        return new OVSXAsyncClient(Promise.all([
+            vsxEnvironment.getVscodeApiVersion(),
+            vsxEnvironment.getRegistryApiUri()
+        ]).then(([apiVersion, apiUri]) => ({
+            apiVersion,
+            apiUrl: apiUri.toString()
+        })));
+    }).inSingletonScope();
 
     bind(VSXExtension).toSelf();
     bind(VSXExtensionFactory).toFactory(ctx => (option: VSXExtensionOptions) => {
@@ -100,9 +107,6 @@ export default new ContainerModule((bind, unbind) => {
     bind(ColorContribution).toService(VSXExtensionsContribution);
     bind(TabBarToolbarContribution).toService(VSXExtensionsContribution);
 
-    bind(VSXApiVersionProviderImpl).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(VSXApiVersionProviderImpl);
-    bind(VSXApiVersionProvider).toService(VSXApiVersionProviderImpl);
     bindExtensionPreferences(bind);
     bindPreferenceProviderOverrides(bind, unbind);
 });

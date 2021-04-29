@@ -23,13 +23,13 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { PluginDeployerResolver, PluginDeployerResolverContext } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { VSXExtensionUri } from '../common/vsx-extension-uri';
-import { VSXRegistryAPI } from '../common/vsx-registry-api';
+import { OVSXClient } from '@theia/ovsx-client/lib/ovsx-client';
 
 @injectable()
 export class VSXExtensionResolver implements PluginDeployerResolver {
 
-    @inject(VSXRegistryAPI)
-    protected readonly api: VSXRegistryAPI;
+    @inject(OVSXClient)
+    protected client: OVSXClient;
 
     protected readonly downloadPath: string;
 
@@ -49,7 +49,7 @@ export class VSXExtensionResolver implements PluginDeployerResolver {
             return;
         }
         console.log(`[${id}]: trying to resolve latest version...`);
-        const extension = await this.api.getLatestCompatibleExtensionVersion(id);
+        const extension = await this.client.getLatestCompatibleExtensionVersion(id);
         if (!extension) {
             return;
         }

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2020 TypeFox and others.
+ * Copyright (C) 2021 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,39 +16,31 @@
 
 import * as bent from 'bent';
 import * as semver from 'semver';
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { VSXExtensionRaw, VSXSearchParam, VSXSearchResult, VSXAllVersions, VSXBuiltinNamespaces, VSXSearchEntry } from './vsx-registry-types';
-import { VSXEnvironment } from './vsx-environment';
-import { VSXApiVersionProvider } from './vsx-api-version-provider';
+import {
+    VSXAllVersions,
+    VSXBuiltinNamespaces,
+    VSXExtensionRaw,
+    VSXQueryParam,
+    VSXQueryResult,
+    VSXSearchEntry,
+    VSXSearchParam,
+    VSXSearchResult
+} from './ovsx-types';
 
 const fetchText = bent('GET', 'string', 200);
-const fetchJson = bent('GET', {
-    'Accept': 'application/json'
-}, 'json', 200);
+const fetchJson = bent('GET', { 'Accept': 'application/json' }, 'json', 200);
 const postJson = bent('POST', {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
 }, 'json', 200);
 
-export interface VSXResponseError extends Error {
-    statusCode: number
+export interface OVSXClientOptions {
+    apiVersion: string
+    apiUrl: string
 }
-export namespace VSXResponseError {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export function is(error: any): error is VSXResponseError {
-        return !!error && typeof error === 'object'
-            && 'statusCode' in error && typeof error['statusCode'] === 'number';
-    }
-}
+export class OVSXClient {
 
-@injectable()
-export class VSXRegistryAPI {
-
-    @inject(VSXApiVersionProvider)
-    protected readonly apiVersionProvider: VSXApiVersionProvider;
-
-    @inject(VSXEnvironment)
-    protected readonly environment: VSXEnvironment;
+    constructor(readonly options: OVSXClientOptions) { }
 
     async search(param?: VSXSearchParam): Promise<VSXSearchResult> {
         const searchUri = await this.buildSearchUri(param);
@@ -56,8 +48,7 @@ export class VSXRegistryAPI {
     }
 
     protected async buildSearchUri(param?: VSXSearchParam): Promise<string> {
-        const apiUri = await this.environment.getRegistryApiUri();
-        let searchUri = apiUri.resolve('-/search').toString();
+        let searchUri = '';
         if (param) {
             const query: string[] = [];
             if (param.query) {
@@ -85,15 +76,15 @@ export class VSXRegistryAPI {
                 searchUri += '?' + query.join('&');
             }
         }
-        return searchUri;
+        return new URL(`api/-/search${searchUri}`, this.options!.apiUrl).toString();
     }
 
     async getExtension(id: string): Promise<VSXExtensionRaw> {
-        const apiUri = await this.environment.getRegistryApiUri();
-        const param: QueryParam = {
+        const apiUri = new URL('api/-/query', this.options!.apiUrl);
+        const param: VSXQueryParam = {
             extensionId: id
         };
-        const result = await this.postJson<QueryParam, QueryResult>(apiUri.resolve('-/query').toString(), param);
+        const result = await this.postJson<VSXQueryParam, VSXQueryResult>(apiUri.toString(), param);
         if (result.extensions && result.extensions.length > 0) {
             return result.extensions[0];
         }
@@ -105,12 +96,12 @@ export class VSXRegistryAPI {
      * @param id the requested extension id.
      */
     async getAllVersions(id: string): Promise<VSXExtensionRaw[]> {
-        const apiUri = await this.environment.getRegistryApiUri();
-        const param: QueryParam = {
+        const apiUri = new URL('api/-/query', this.options!.apiUrl);
+        const param: VSXQueryParam = {
             extensionId: id,
             includeAllVersions: true,
         };
-        const result = await this.postJson<QueryParam, QueryResult>(apiUri.resolve('-/query').toString(), param);
+        const result = await this.postJson<VSXQueryParam, VSXQueryResult>(apiUri.toString(), param);
         if (result.extensions && result.extensions.length > 0) {
             return result.extensions;
         }
@@ -145,7 +136,7 @@ export class VSXRegistryAPI {
 
         const namespace = extensions[0].namespace.toLowerCase();
         if (this.isBuiltinNamespace(namespace)) {
-            const apiVersion = this.apiVersionProvider.getApiVersion();
+            const apiVersion = this.options!.apiVersion;
             for (const extension of extensions) {
                 if (this.isVersionLTE(extension.version, apiVersion)) {
                     return extension;
@@ -170,7 +161,7 @@ export class VSXRegistryAPI {
     getLatestCompatibleVersion(entry: VSXSearchEntry): VSXAllVersions | undefined {
         const extensions = entry.allVersions;
         if (this.isBuiltinNamespace(entry.namespace)) {
-            const apiVersion = this.apiVersionProvider.getApiVersion();
+            const apiVersion = this.options!.apiVersion;
             for (const extension of extensions) {
                 if (this.isVersionLTE(extension.version, apiVersion)) {
                     return extension;
@@ -200,8 +191,7 @@ export class VSXRegistryAPI {
         if (engine === '*') {
             return true;
         } else {
-            const apiVersion = this.apiVersionProvider.getApiVersion();
-            return semver.satisfies(apiVersion, engine);
+            return semver.satisfies(this.options!.apiVersion, engine);
         }
     }
 
@@ -229,18 +219,4 @@ export class VSXRegistryAPI {
         return semver.lte(versionA, versionB);
     }
 
-}
-
-interface QueryParam {
-    namespaceName?: string;
-    extensionName?: string;
-    extensionVersion?: string;
-    extensionId?: string;
-    extensionUuid?: string;
-    namespaceUuid?: string;
-    includeAllVersions?: boolean;
-}
-
-interface QueryResult {
-    extensions?: VSXExtensionRaw[];
 }

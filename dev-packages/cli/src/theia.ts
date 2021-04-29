@@ -162,6 +162,16 @@ function rebuildCommand(command: string, target: ApplicationProps.Target): yargs
                     describe: 'Ignore errors while downloading plugins',
                     boolean: true,
                     default: false,
+                },
+                'api-version': {
+                    alias: 'v',
+                    describe: 'Supported API version for plugins',
+                    default: '1.50.0'
+                },
+                'api-url': {
+                    alias: 'u',
+                    describe: 'Open-VSX Registry API URL',
+                    default: 'https://open-vsx.org/api'
                 }
             },
             handler: async args => {

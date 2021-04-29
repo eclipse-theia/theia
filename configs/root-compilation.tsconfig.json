@@ -144,6 +144,9 @@
     },
     {
       "path": "../packages/property-view/compile.tsconfig.json"
+    },
+    {
+      "path": "../dev-packages/ovsx-client/compile.tsconfig.json"
     }
   ]
 }
