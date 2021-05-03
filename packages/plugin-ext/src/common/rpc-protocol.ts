@@ -85,11 +85,17 @@ export class RPCProtocolImpl implements RPCProtocol {
     private readonly pendingRPCReplies = new Map<string, Deferred<any>>();
     private readonly multiplexer: RPCMultiplexer;
 
+    private replacer: (key: string | undefined, value: any) => any;
+    private reviver: (key: string | undefined, value: any) => any;
+
     private readonly toDispose = new DisposableCollection(
         Disposable.create(() => { /* mark as no disposed */ })
     );
 
-    constructor(connection: MessageConnection) {
+    constructor(connection: MessageConnection, transformations?: {
+        replacer?: (key: string | undefined, value: any) => any,
+        reviver?: (key: string | undefined, value: any) =>  any
+    }) {
         this.toDispose.push(
             this.multiplexer = new RPCMultiplexer(connection)
         );
@@ -101,6 +107,9 @@ export class RPCProtocolImpl implements RPCProtocol {
             }
             this.pendingRPCReplies.clear();
         }));
+
+        this.reviver = transformations?.reviver || ObjectsTransferrer.reviver;
+        this.replacer = transformations?.replacer || ObjectsTransferrer.replacer;
     }
 
     private get isDisposed(): boolean {
@@ -163,12 +172,12 @@ export class RPCProtocolImpl implements RPCProtocol {
         if (cancellationToken) {
             args.push('add.cancellation.token');
             cancellationToken.onCancellationRequested(() =>
-                this.multiplexer.send(MessageFactory.cancel(callId))
+                this.multiplexer.send(this.cancel(callId))
             );
         }
 
         this.pendingRPCReplies.set(callId, result);
-        this.multiplexer.send(MessageFactory.request(callId, proxyId, methodName, args));
+        this.multiplexer.send(this.request(callId, proxyId, methodName, args));
         return result.promise;
     }
 
@@ -177,7 +186,7 @@ export class RPCProtocolImpl implements RPCProtocol {
             return;
         }
         try {
-            const msg = <RPCMessage>JSON.parse(rawmsg, ObjectsTransferrer.reviver);
+            const msg = <RPCMessage>JSON.parse(rawmsg, this.reviver);
 
             switch (msg.type) {
                 case MessageType.Request:
@@ -224,10 +233,10 @@ export class RPCProtocolImpl implements RPCProtocol {
 
         invocation.then(result => {
             this.cancellationTokenSources.delete(callId);
-            this.multiplexer.send(MessageFactory.replyOK(callId, result));
+            this.multiplexer.send(this.replyOK(callId, result));
         }, error => {
             this.cancellationTokenSources.delete(callId);
-            this.multiplexer.send(MessageFactory.replyErr(callId, error));
+            this.multiplexer.send(this.replyErr(callId, error));
         });
     }
 
@@ -277,6 +286,29 @@ export class RPCProtocolImpl implements RPCProtocol {
             throw new Error('Unknown method ' + methodName + ' on actor ' + proxyId);
         }
         return method.apply(actor, args);
+    }
+
+    private cancel(req: string): string {
+        return `{"type":${MessageType.Cancel},"id":"${req}"}`;
+    }
+
+    private request(req: string, rpcId: string, method: string, args: any[]): string {
+        return `{"type":${MessageType.Request},"id":"${req}","proxyId":"${rpcId}","method":"${method}","args":${JSON.stringify(args, this.replacer)}}`;
+    }
+
+    private replyOK(req: string, res: any): string {
+        if (typeof res === 'undefined') {
+            return `{"type":${MessageType.Reply},"id":"${req}"}`;
+        }
+        return `{"type":${MessageType.Reply},"id":"${req}","res":${safeStringify(res, this.replacer)}}`;
+    }
+
+    private replyErr(req: string, err: any): string {
+        err = typeof err === 'string' ? new Error(err) : err;
+        if (err instanceof Error) {
+            return `{"type":${MessageType.ReplyErr},"id":"${req}","err":${safeStringify(transformErrorForSerialization(err))}}`;
+        }
+        return `{"type":${MessageType.ReplyErr},"id":"${req}","err":null}`;
     }
 }
 
@@ -346,32 +378,6 @@ class RPCMultiplexer implements Disposable, MessageConnection {
     }
 }
 
-class MessageFactory {
-
-    static cancel(req: string): string {
-        return `{"type":${MessageType.Cancel},"id":"${req}"}`;
-    }
-
-    public static request(req: string, rpcId: string, method: string, args: any[]): string {
-        return `{"type":${MessageType.Request},"id":"${req}","proxyId":"${rpcId}","method":"${method}","args":${JSON.stringify(args, ObjectsTransferrer.replacer)}}`;
-    }
-
-    public static replyOK(req: string, res: any): string {
-        if (typeof res === 'undefined') {
-            return `{"type":${MessageType.Reply},"id":"${req}"}`;
-        }
-        return `{"type":${MessageType.Reply},"id":"${req}","res":${safeStringify(res, ObjectsTransferrer.replacer)}}`;
-    }
-
-    public static replyErr(req: string, err: any): string {
-        err = typeof err === 'string' ? new Error(err) : err;
-        if (err instanceof Error) {
-            return `{"type":${MessageType.ReplyErr},"id":"${req}","err":${safeStringify(transformErrorForSerialization(err))}}`;
-        }
-        return `{"type":${MessageType.ReplyErr},"id":"${req}","err":null}`;
-    }
-}
-
 /**
  * These functions are responsible for correct transferring objects via rpc channel.
  *
@@ -382,7 +388,7 @@ class MessageFactory {
  * To distinguish between regular and altered objects, field $type is added to altered ones.
  * Also value of that field specifies kind of the object.
  */
-namespace ObjectsTransferrer {
+export namespace ObjectsTransferrer {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     export function replacer(key: string | undefined, value: any): any {
