@@ -16,7 +16,7 @@
 import { PLUGIN_RPC_CONTEXT as Ext, OpenDialogOptionsMain, DialogsMain, SaveDialogOptionsMain, UploadDialogOptionsMain } from '../common/plugin-api-rpc';
 import { OpenDialogOptions, SaveDialogOptions, UploadDialogOptions } from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { URI as Uri } from '@theia/core/shared/vscode-uri';
+import { URI } from './types-impl';
 
 export class DialogsExtImpl {
     private proxy: DialogsMain;
@@ -25,7 +25,7 @@ export class DialogsExtImpl {
         this.proxy = rpc.getProxy(Ext.DIALOGS_MAIN);
     }
 
-    showOpenDialog(options: OpenDialogOptions): PromiseLike<Uri[] | undefined> {
+    showOpenDialog(options: OpenDialogOptions): PromiseLike<URI[] | undefined> {
         const optionsMain = {
             title: options.title,
             openLabel: options.openLabel,
@@ -41,7 +41,7 @@ export class DialogsExtImpl {
                 if (result) {
                     const uris = [];
                     for (let i = 0; i < result.length; i++) {
-                        const uri = Uri.parse('file://' + result[i]);
+                        const uri = URI.parse('file://' + result[i]);
                         uris.push(uri);
                     }
                     resolve(uris);
@@ -54,7 +54,7 @@ export class DialogsExtImpl {
         });
     }
 
-    showSaveDialog(options: SaveDialogOptions): PromiseLike<Uri | undefined> {
+    showSaveDialog(options: SaveDialogOptions): PromiseLike<URI | undefined> {
         const optionsMain = {
             title: options.title,
             saveLabel: options.saveLabel,
@@ -65,7 +65,7 @@ export class DialogsExtImpl {
         return new Promise((resolve, reject) => {
             this.proxy.$showSaveDialog(optionsMain).then(result => {
                 if (result) {
-                    resolve(Uri.parse('file://' + result));
+                    resolve(URI.parse('file://' + result));
                 } else {
                     resolve(undefined);
                 }
@@ -75,7 +75,7 @@ export class DialogsExtImpl {
         });
     }
 
-    showUploadDialog(options: UploadDialogOptions): PromiseLike<Uri[] | undefined> {
+    showUploadDialog(options: UploadDialogOptions): PromiseLike<URI[] | undefined> {
         const optionsMain = {
             defaultUri: options.defaultUri ? options.defaultUri.path : undefined
         } as UploadDialogOptionsMain;
@@ -83,7 +83,7 @@ export class DialogsExtImpl {
         return new Promise((resolve, reject) => {
             this.proxy.$showUploadDialog(optionsMain).then(result => {
                 if (result) {
-                    resolve(result.map(uri => Uri.parse(uri)));
+                    resolve(result.map(uri => URI.parse(uri)));
                 } else {
                     resolve(undefined);
                 }

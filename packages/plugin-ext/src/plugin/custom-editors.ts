@@ -23,7 +23,7 @@ import { CustomEditorsExt, CustomEditorsMain, PLUGIN_RPC_CONTEXT } from '../comm
 import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Plugin } from '../common/plugin-api-rpc';
-import { URI } from '@theia/core/shared/vscode-uri';
+import { URI } from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import { DocumentsExtImpl } from './documents';
 import { WebviewImpl, WebviewsExtImpl } from './webviews';

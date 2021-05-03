@@ -15,7 +15,7 @@
  ********************************************************************************/
 import { Plugin, TimelineCommandArg, TimelineExt, TimelineMain } from '../common';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { Disposable } from './types-impl';
+import { Disposable, URI } from './types-impl';
 import { PLUGIN_RPC_CONTEXT } from '../common';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandRegistryImpl } from './command-registry';
@@ -26,7 +26,6 @@ import type {
     TimelineOptions,
     TimelineProvider
 } from '@theia/timeline/lib/common/timeline-model';
-import { URI } from '@theia/core/shared/vscode-uri';
 import * as theia from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { UriComponents } from '../common/uri-components';
