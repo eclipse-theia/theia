@@ -38,7 +38,7 @@ import { ExtPluginApi } from '../common/plugin-ext-api-contribution';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
 import { WebviewsExtImpl } from './webviews';
-import { URI as Uri } from '@theia/core/shared/vscode-uri';
+import { URI as Uri } from './types-impl';
 
 export interface PluginHost {
 

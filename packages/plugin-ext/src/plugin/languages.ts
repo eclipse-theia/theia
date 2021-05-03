@@ -32,8 +32,7 @@ import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { DocumentsExtImpl } from './documents';
 import { PluginModel } from '../common/plugin-protocol';
-import { Disposable } from './types-impl';
-import { URI } from '@theia/core/shared/vscode-uri';
+import { Disposable, URI } from './types-impl';
 import { UriComponents } from '../common/uri-components';
 import {
     CompletionContext,
@@ -640,11 +639,11 @@ function serializeEnterRules(rules?: theia.OnEnterRule[]): SerializedOnEnterRule
     }
 
     return rules.map(r =>
-    ({
-        action: r.action,
-        beforeText: serializeRegExp(r.beforeText),
-        afterText: serializeRegExp(r.afterText)
-    } as SerializedOnEnterRule));
+        ({
+            action: r.action,
+            beforeText: serializeRegExp(r.beforeText),
+            afterText: serializeRegExp(r.afterText)
+        } as SerializedOnEnterRule));
 }
 
 function serializeRegExp(regexp?: RegExp): SerializedRegExp | undefined {

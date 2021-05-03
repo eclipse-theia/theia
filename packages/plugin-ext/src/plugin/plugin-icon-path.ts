@@ -15,13 +15,13 @@
  ********************************************************************************/
 
 import * as path from 'path';
-import { URI as Uri } from '@theia/core/shared/vscode-uri';
+import { URI } from './types-impl';
 import { IconUrl, PluginPackage } from '../common/plugin-protocol';
 import { Plugin } from '../common/plugin-api-rpc';
 
-export type PluginIconPath = string | Uri | {
-    light: string | Uri,
-    dark: string | Uri
+export type PluginIconPath = string | URI | {
+    light: string | URI,
+    dark: string | URI
 };
 export namespace PluginIconPath {
     export function toUrl(iconPath: PluginIconPath | undefined, plugin: Plugin): IconUrl | undefined {
@@ -36,8 +36,8 @@ export namespace PluginIconPath {
         }
         return asString(iconPath, plugin);
     }
-    export function asString(arg: string | Uri, plugin: Plugin): string {
-        arg = arg instanceof Uri && arg.scheme === 'file' ? arg.fsPath : arg;
+    export function asString(arg: string | URI, plugin: Plugin): string {
+        arg = arg instanceof URI && arg.scheme === 'file' ? arg.fsPath : arg;
         if (typeof arg !== 'string') {
             return arg.toString(true);
         }

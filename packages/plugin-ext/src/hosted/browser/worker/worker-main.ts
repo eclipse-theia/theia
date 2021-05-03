@@ -33,6 +33,7 @@ import { KeyValueStorageProxy } from '../../../plugin/plugin-storage';
 import { WebviewsExtImpl } from '../../../plugin/webviews';
 import { loadManifest } from './plugin-manifest-loader';
 import { TerminalServiceExtImpl } from '../../../plugin/terminal-ext';
+import { reviver } from '../../../plugin/types-impl';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -45,8 +46,12 @@ const rpc = new RPCProtocolImpl({
     onMessage: emitter.event,
     send: (m: string) => {
         ctx.postMessage(m);
-    }
+    },
+},
+{
+    reviver: reviver
 });
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 addEventListener('message', (message: any) => {
     emitter.fire(message.data);

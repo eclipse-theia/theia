@@ -18,7 +18,7 @@ import * as theia from '@theia/plugin';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { CommandRegistryImpl } from './command-registry';
 import { UriComponents } from '../common/uri-components';
-import { URI } from '@theia/core/shared/vscode-uri';
+import { URI } from './types-impl';
 import {
     Range,
     Comment,

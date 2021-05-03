@@ -17,6 +17,8 @@
 import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocolImpl, MessageType, ConnectionClosedError } from '../../common/rpc-protocol';
 import { PluginHostRPC } from './plugin-host-rpc';
+import { reviver } from '../../plugin/types-impl';
+
 console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
 
 // override exit() function, to do not allow plugin kill this node
@@ -80,6 +82,9 @@ const rpc = new RPCProtocolImpl({
             process.send(m);
         }
     }
+},
+{
+    reviver: reviver
 });
 
 process.on('message', async (message: string) => {

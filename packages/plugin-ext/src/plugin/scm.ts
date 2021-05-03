@@ -35,7 +35,7 @@ import { Splice } from '../common/arrays';
 import { UriComponents } from '../common/uri-components';
 import { Command } from '../common/plugin-api-rpc-model';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { URI } from '@theia/core/shared/vscode-uri';
+import { URI } from './types-impl';
 import { ScmCommandArg } from '../common/plugin-api-rpc';
 import { sep } from '@theia/callhierarchy/lib/common/paths';
 type ProviderHandle = number;
