@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import * as React from '@theia/core/shared/react';
+import * as DOMPurify from 'dompurify';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
@@ -419,6 +420,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
         } = this.props.extension;
 
         const { baseStyle, scrollStyle } = this.getSubcomponentStyles();
+        const sanitizedReadme = !!readme ? DOMPurify.sanitize(readme) : undefined;
 
         return <React.Fragment>
             <div className='header' style={baseStyle} ref={ref => this.header = (ref || undefined)}>
@@ -449,7 +451,7 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                 </div>
             </div>
             {
-                readme &&
+                sanitizedReadme &&
                 < div className='scroll-container'
                     style={scrollStyle}
                     ref={ref => this._scrollContainer = (ref || undefined)}>
@@ -457,7 +459,8 @@ export class VSXExtensionEditorComponent extends AbstractVSXExtensionComponent {
                         ref={ref => this.body = (ref || undefined)}
                         onClick={this.openLink}
                         style={baseStyle}
-                        dangerouslySetInnerHTML={{ __html: readme }}
+                        // eslint-disable-next-line react/no-danger
+                        dangerouslySetInnerHTML={{ __html: sanitizedReadme }}
                     />
                 </div>
             }
