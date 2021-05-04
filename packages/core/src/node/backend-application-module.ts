@@ -85,5 +85,4 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(WsRequestValidator).toSelf().inSingletonScope();
     bindContributionProvider(bind, WsRequestValidatorContribution);
-
 });
