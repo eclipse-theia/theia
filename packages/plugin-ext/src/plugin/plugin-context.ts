@@ -959,14 +959,14 @@ export function createAPIFactory(
 class Plugin<T> implements theia.Plugin<T> {
     id: string;
     pluginPath: string;
-    pluginUri: URI;
+    pluginUri: theia.Uri;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     packageJSON: any;
     pluginType: theia.PluginType;
     constructor(private readonly pluginManager: PluginManager, plugin: InternalPlugin) {
         this.id = plugin.model.id;
         this.pluginPath = plugin.pluginFolder;
-        this.pluginUri = URI.file(plugin.pluginFolder);
+        this.pluginUri = URI.parse(plugin.pluginUri);
         this.packageJSON = plugin.rawModel;
         this.pluginType = plugin.model.entryPoint.frontend ? 'frontend' : 'backend';
     }
