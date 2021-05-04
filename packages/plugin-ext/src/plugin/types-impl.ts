@@ -1484,14 +1484,6 @@ export enum ProgressLocation {
     Notification = 15
 }
 
-function computeTaskExecutionId(values: string[]): string {
-    let id: string = '';
-    for (let i = 0; i < values.length; i++) {
-        id += values[i].replace(/,/g, ',,') + ',';
-    }
-    return id;
-}
-
 export class ProcessExecution {
     private executionProcess: string;
     private arguments: string[];
@@ -1547,21 +1539,7 @@ export class ProcessExecution {
         this.executionOptions = value;
     }
 
-    public computeId(): string {
-        const props: string[] = [];
-        props.push('process');
-        if (this.executionProcess !== undefined) {
-            props.push(this.executionProcess);
-        }
-        if (this.arguments && this.arguments.length > 0) {
-            for (const arg of this.arguments) {
-                props.push(arg);
-            }
-        }
-        return computeTaskExecutionId(props);
-    }
-
-    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): boolean {
+    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): value is ProcessExecution {
         const candidate = value as ProcessExecution;
         return candidate && !!candidate.process;
     }
@@ -1652,24 +1630,7 @@ export class ShellExecution {
         this.shellOptions = value;
     }
 
-    public computeId(): string {
-        const props: string[] = [];
-        props.push('shell');
-        if (this.shellCommandLine !== undefined) {
-            props.push(this.shellCommandLine);
-        }
-        if (this.shellCommand !== undefined) {
-            props.push(typeof this.shellCommand === 'string' ? this.shellCommand : this.shellCommand.value);
-        }
-        if (this.arguments && this.arguments.length > 0) {
-            for (const arg of this.arguments) {
-                props.push(typeof arg === 'string' ? arg : arg.value);
-            }
-        }
-        return computeTaskExecutionId(props);
-    }
-
-    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): boolean {
+    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): value is ShellExecution {
         const candidate = value as ShellExecution;
         return candidate && (!!candidate.commandLine || !!candidate.command);
     }
@@ -1680,9 +1641,6 @@ export class CustomExecution {
     constructor(callback: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
         this._callback = callback;
     }
-    public computeId(): string {
-        return 'customExecution' + UUID.uuid4();
-    }
 
     public set callback(value: (resolvedDefintion: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>) {
         this._callback = value;
@@ -1692,7 +1650,7 @@ export class CustomExecution {
         return this._callback;
     }
 
-    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): boolean {
+    public static is(value: theia.ShellExecution | theia.ProcessExecution | theia.CustomExecution): value is CustomExecution {
         const candidate = value as CustomExecution;
         return candidate && (!!candidate._callback);
     }
@@ -1860,7 +1818,6 @@ export class Task {
             value = undefined;
         }
         this.taskExecution = value;
-        this.updateDefinitionBasedOnExecution();
     }
 
     get problemMatchers(): string[] {
@@ -1924,31 +1881,6 @@ export class Task {
             value = Object.create(null);
         }
         this.taskPresentationOptions = value;
-    }
-
-    private updateDefinitionBasedOnExecution(): void {
-        if (this.taskExecution instanceof ProcessExecution) {
-            Object.assign(this.taskDefinition, {
-                id: this.taskExecution.computeId(),
-                taskType: 'process'
-            });
-        } else if (this.taskExecution instanceof ShellExecution) {
-            Object.assign(this.taskDefinition, {
-                id: this.taskExecution.computeId(),
-                taskType: 'shell'
-            });
-        } else if (this.taskExecution instanceof CustomExecution) {
-            Object.assign(this.taskDefinition, {
-                id: this.taskDefinition.id ? this.taskDefinition.id : this.taskExecution.computeId(),
-                taskType: 'customExecution'
-            });
-        } else {
-            Object.assign(this.taskDefinition, {
-                type: '$empty',
-                id: UUID.uuid4(),
-                taskType: this.taskDefinition!.type
-            });
-        }
     }
 }
 

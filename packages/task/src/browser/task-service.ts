@@ -43,7 +43,6 @@ import {
     TaskConfiguration,
     TaskConfigurationScope,
     TaskCustomization,
-    TaskDefinition,
     TaskExitedEvent,
     TaskIdentifier,
     TaskInfo,
@@ -697,18 +696,12 @@ export class TaskService implements TaskConfigurationClient {
             // TaskIdentifier object does not support tasks of type 'shell' (The same behavior as in VS Code).
             // So if we want the 'dependsOn' property to include tasks of type 'shell',
             // then we must mention their labels (in the 'dependsOn' property) and not to create a task identifier object for them.
-            const taskDefinition = this.taskDefinitionRegistry.getDefinition(taskIdentifier);
-            if (taskDefinition) {
-                currentTaskChildConfiguration = this.getTaskByTaskIdentifierAndTaskDefinition(taskDefinition, taskIdentifier, tasks);
-                if (!currentTaskChildConfiguration.type) {
-                    this.messageService.error(notEnoughDataError);
-                    throw new Error(notEnoughDataError);
-                }
-                return currentTaskChildConfiguration;
-            } else {
+            currentTaskChildConfiguration = this.getTaskByTaskIdentifier(taskIdentifier, tasks);
+            if (!currentTaskChildConfiguration.type) {
                 this.messageService.error(notEnoughDataError);
                 throw new Error(notEnoughDataError);
             }
+            return currentTaskChildConfiguration;
         } else {
             currentTaskChildConfiguration = tasks.filter(t => taskIdentifier === this.taskNameResolver.resolve(t))[0];
             return currentTaskChildConfiguration;
@@ -716,41 +709,17 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     /**
-     * Gets the matched task from an array of task configurations by TaskDefinition and TaskIdentifier.
+     * Gets the matched task from an array of task configurations by TaskIdentifier.
      * In case that more than one task configuration matches, we returns the first one.
      *
-     * @param taskDefinition The task definition for the task configuration.
      * @param taskIdentifier The task label (string) or a JSON object which represents a TaskIdentifier (e.g. {"type":"npm", "script":"script1"})
      * @param tasks An array of task configurations.
-     * @returns The correct TaskConfiguration object which matches the taskDefinition and taskIdentifier.
+     * @returns The correct TaskConfiguration object which matches the taskIdentifier.
      */
-    getTaskByTaskIdentifierAndTaskDefinition(taskDefinition: TaskDefinition | undefined, taskIdentifier: TaskIdentifier, tasks: TaskConfiguration[]): TaskConfiguration {
-        const identifierProperties: string[] = [];
-        let relevantTasks = tasks.filter(t =>
-            taskDefinition && t.hasOwnProperty('taskType') &&
-            taskDefinition['taskType'] === t['taskType'] &&
-            t.hasOwnProperty('source') &&
-            taskDefinition['source'] === t['source']);
-
-        Object.keys(taskIdentifier).forEach(key => {
-            identifierProperties.push(key);
-        });
-
-        identifierProperties.forEach(key => {
-            if (key === 'type' || key === 'taskType') {
-                relevantTasks = relevantTasks.filter(t => (t.hasOwnProperty('type') || t.hasOwnProperty('taskType')) &&
-                    ((taskIdentifier[key] === t['type']) || (taskIdentifier[key] === t['taskType'])));
-            } else {
-                relevantTasks = relevantTasks.filter(t => t.hasOwnProperty(key) && taskIdentifier[key] === t[key]);
-            }
-        });
-
-        if (relevantTasks.length > 0) {
-            return relevantTasks[0];
-        } else {
-            // return empty TaskConfiguration
-            return { 'label': '', '_scope': '', 'type': '' };
-        }
+    getTaskByTaskIdentifier(taskIdentifier: TaskIdentifier, tasks: TaskConfiguration[]): TaskConfiguration {
+        const requiredProperties = Object.keys(taskIdentifier);
+        const taskWithAllProperties = tasks.find(task => requiredProperties.every(property => task.hasOwnProperty(property) && task[property] === taskIdentifier[property]));
+        return taskWithAllProperties ?? { label: '', _scope: '', type: '' }; // Fall back to empty TaskConfiguration
     }
 
     async runTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
@@ -804,24 +773,36 @@ export class TaskService implements TaskConfigurationClient {
     }
 
     protected async doRunTask(task: TaskConfiguration, option?: RunTaskOption): Promise<TaskInfo | undefined> {
+        let overridePropertiesFunction: (task: TaskConfiguration) => void = () => { };
         if (option && option.customization) {
             const taskDefinition = this.taskDefinitionRegistry.getDefinition(task);
             if (taskDefinition) { // use the customization object to override the task config
-                Object.keys(option.customization).forEach(customizedProperty => {
-                    // properties used to define the task cannot be customized
-                    if (customizedProperty !== 'type' && !taskDefinition.properties.all.some(pDefinition => pDefinition === customizedProperty)) {
-                        task[customizedProperty] = option.customization![customizedProperty];
-                    }
-                });
+                overridePropertiesFunction = tsk => {
+                    Object.keys(option.customization!).forEach(customizedProperty => {
+                        // properties used to define the task cannot be customized
+                        if (customizedProperty !== 'type' && !taskDefinition.properties.all.some(pDefinition => pDefinition === customizedProperty)) {
+                            tsk[customizedProperty] = option.customization![customizedProperty];
+                        }
+                    });
+                };
             }
         }
+        overridePropertiesFunction(task);
+        this.addRecentTasks(task);
+        try {
+            const resolver = await this.taskResolverRegistry.getTaskResolver(task.type);
+            const resolvedTask = resolver ? await resolver.resolveTask(task) : task;
+            const executionResolver = this.taskResolverRegistry.getExecutionResolver(resolvedTask.taskType || resolvedTask.type);
+            overridePropertiesFunction(resolvedTask);
+            const taskToRun = executionResolver ? await executionResolver.resolveTask(resolvedTask) : resolvedTask;
 
-        const resolvedTask = await this.getResolvedTask(task);
-        if (resolvedTask) {
-            // remove problem markers from the same source before running the task
             await this.removeProblemMarkers(option);
-            return this.runResolvedTask(resolvedTask, option);
+            return this.runResolvedTask(taskToRun, option);
+        } catch (error) {
+            const errMessage = `Error resolving task '${task.label}': ${error}`;
+            this.logger.error(errMessage);
         }
+        return undefined;
     }
 
     /**
@@ -961,21 +942,6 @@ export class TaskService implements TaskConfigurationClient {
                 }
             }
         }
-    }
-
-    protected async getResolvedTask(task: TaskConfiguration): Promise<TaskConfiguration | undefined> {
-        let resolver = undefined;
-        let resolvedTask: TaskConfiguration;
-        try {
-            resolver = await this.taskResolverRegistry.getResolver(task.type);
-            resolvedTask = resolver ? await resolver.resolveTask(task) : task;
-        } catch (error) {
-            const errMessage = `Error resolving task '${task.label}': ${error}`;
-            this.logger.error(errMessage);
-            resolvedTask = task;
-        }
-        this.addRecentTasks(task);
-        return resolvedTask;
     }
 
     /**

@@ -25,7 +25,7 @@ export class ProcessTaskContribution implements TaskContribution {
     protected readonly processTaskResolver: ProcessTaskResolver;
 
     registerResolvers(resolvers: TaskResolverRegistry): void {
-        resolvers.register('process', this.processTaskResolver);
-        resolvers.register('shell', this.processTaskResolver);
+        resolvers.registerExecutionResolver('process', this.processTaskResolver);
+        resolvers.registerExecutionResolver('shell', this.processTaskResolver);
     }
 }

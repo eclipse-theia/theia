@@ -96,27 +96,57 @@ export class TaskResolverRegistry {
      */
     readonly onWillProvideTaskResolver = this.onWillProvideTaskResolverEmitter.event;
 
-    protected resolvers: Map<string, TaskResolver>;
-
-    @postConstruct()
-    protected init(): void {
-        this.resolvers = new Map();
-    }
+    protected taskResolvers: Map<string, TaskResolver> = new Map();
+    protected executionResolvers: Map<string, TaskResolver> = new Map();
 
     /**
      * Registers the given {@link TaskResolver} to resolve the `TaskConfiguration` of the specified type.
      * If there is already a `TaskResolver` registered for the specified type the registration will
      * be overwritten with the new value.
+     *
+     * @deprecated since 1.12.0 use `registerTaskResolver` instead.
+     *
      * @param type the task configuration type for which the given resolver should be registered.
      * @param resolver the task resolver that should be registered.
      *
      * @returns a `Disposable` that can be invoked to unregister the given resolver
      */
     register(type: string, resolver: TaskResolver): Disposable {
-        this.resolvers.set(type, resolver);
+        return this.registerTaskResolver(type, resolver);
+    }
+
+    /**
+     * Registers the given {@link TaskResolver} to resolve the `TaskConfiguration` of the specified type.
+     * If there is already a `TaskResolver` registered for the specified type the registration will
+     * be overwritten with the new value.
+     *
+     * @param type the task configuration type for which the given resolver should be registered.
+     * @param resolver the task resolver that should be registered.
+     *
+     * @returns a `Disposable` that can be invoked to unregister the given resolver
+     */
+
+    registerTaskResolver(type: string, resolver: TaskResolver): Disposable {
+        if (this.taskResolvers.has(type)) {
+            console.warn(`Overriding task resolver for ${type}`);
+        }
+        this.taskResolvers.set(type, resolver);
         return {
-            dispose: () => this.resolvers.delete(type)
+            dispose: () => this.taskResolvers.delete(type)
         };
+    }
+
+    /**
+     * Retrieves the {@link TaskResolver} registered for the given type task configuration type.
+     *
+     * @deprecated since 1.12.0 use `getTaskResolver()` instead.
+     *
+     * @param type the task configuration type
+     *
+     * @returns a promise of the registered `TaskResolver` or `undefined` if no resolver is registered for the given type.
+     */
+    async getResolver(type: string): Promise<TaskResolver | undefined> {
+        return this.getTaskResolver(type);
     }
 
     /**
@@ -125,9 +155,40 @@ export class TaskResolverRegistry {
      *
      * @returns a promise of the registered `TaskResolver` or `undefined` if no resolver is registered for the given type.
      */
-    async getResolver(type: string): Promise<TaskResolver | undefined> {
+    async getTaskResolver(type: string): Promise<TaskResolver | undefined> {
         await WaitUntilEvent.fire(this.onWillProvideTaskResolverEmitter, {});
-        return this.resolvers.get(type);
+        return this.taskResolvers.get(type);
+    }
+
+    /**
+     * Registers the given {@link TaskResolver} to resolve the `TaskConfiguration` for the
+     * specified type of execution ('shell', 'process' or 'customExecution').
+     * If there is already a `TaskResolver` registered for the specified type the registration will
+     * be overwritten with the new value.
+     *
+     * @param type the task execution type for which the given resolver should be registered.
+     * @param resolver the task resolver that should be registered.
+     *
+     * @returns a `Disposable` that can be invoked to unregister the given resolver
+     */
+    registerExecutionResolver(type: string, resolver: TaskResolver): Disposable {
+        if (this.executionResolvers.has(type)) {
+            console.warn(`Overriding execution resolver for ${type}`);
+        }
+        this.executionResolvers.set(type, resolver);
+        return {
+            dispose: () => this.executionResolvers.delete(type)
+        };
+    }
+
+    /**
+     * Retrieves the {@link TaskResolver} registered for the given type of execution ('shell', 'process' or 'customExecution')..
+     * @param type the task configuration type
+     *
+     * @returns a promise of the registered `TaskResolver` or `undefined` if no resolver is registered for the given type.
+     */
+    getExecutionResolver(executionType: string): TaskResolver | undefined {
+        return this.executionResolvers.get(executionType);
     }
 }
 
