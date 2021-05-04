@@ -623,25 +623,40 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderSearchInfo(): React.ReactNode {
-        let message = '';
-        if (this.searchTerm) {
-            if (this.searchInWorkspaceOptions.include && this.searchInWorkspaceOptions.include.length > 0 && this.resultNumber === 0) {
-                message = `No results found in '${this.searchInWorkspaceOptions.include}'`;
-            } else if (this.resultNumber === 0) {
-                message = 'No results found.';
+        const message = this.getSearchResultMessage() || '';
+        return <div className='search-info'>{message}</div>;
+    }
+
+    protected getSearchResultMessage(): string | undefined {
+
+        if (!this.searchTerm) {
+            return undefined;
+        }
+
+        if (this.resultNumber === 0) {
+            const isIncludesPresent = this.searchInWorkspaceOptions.include && this.searchInWorkspaceOptions.include.length > 0;
+            const isExcludesPresent = this.searchInWorkspaceOptions.exclude && this.searchInWorkspaceOptions.exclude.length > 0;
+
+            if (isIncludesPresent && isExcludesPresent) {
+                return `No results found in '${this.searchInWorkspaceOptions.include}' excluding '${this.searchInWorkspaceOptions.exclude}'`;
+            } else if (isIncludesPresent) {
+                return `No results found in '${this.searchInWorkspaceOptions.include}'`;
+            } else if (isExcludesPresent) {
+                return `No results found excluding '${this.searchInWorkspaceOptions.exclude}'`;
             } else {
-                if (this.resultNumber === 1 && this.resultTreeWidget.fileNumber === 1) {
-                    message = `${this.resultNumber} result in ${this.resultTreeWidget.fileNumber} file`;
-                } else if (this.resultTreeWidget.fileNumber === 1) {
-                    message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} file`;
-                } else if (this.resultTreeWidget.fileNumber > 0) {
-                    message = `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} files`;
-                } else {
-                    // if fileNumber === 0, return undefined so that `onUpdateRequest()` would not re-render component
-                    return undefined;
-                }
+                return 'No results found.';
+            }
+        } else {
+            if (this.resultNumber === 1 && this.resultTreeWidget.fileNumber === 1) {
+                return `${this.resultNumber} result in ${this.resultTreeWidget.fileNumber} file`;
+            } else if (this.resultTreeWidget.fileNumber === 1) {
+                return `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} file`;
+            } else if (this.resultTreeWidget.fileNumber > 0) {
+                return `${this.resultNumber} results in ${this.resultTreeWidget.fileNumber} files`;
+            } else {
+                // if fileNumber === 0, return undefined so that `onUpdateRequest()` would not re-render component
+                return undefined;
             }
         }
-        return <div className='search-info'>{message}</div>;
     }
 }
