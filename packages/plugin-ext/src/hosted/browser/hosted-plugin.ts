@@ -489,22 +489,25 @@ export class HostedPluginSupport {
     }
 
     protected initRpc(host: PluginHost, pluginId: string): RPCProtocol {
-        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(pluginId, host);
+        const rpc = host === 'frontend' ? new PluginWorker().rpc : this.createServerRpc(host);
         setUpPluginApi(rpc, this.container);
         this.mainPluginApiProviders.getContributions().forEach(p => p.initialize(rpc, this.container));
         return rpc;
     }
 
-    private createServerRpc(pluginID: string, hostID: string): RPCProtocol {
-        return new RPCProtocolImpl({
-            onMessage: this.watcher.onPostMessageEvent,
-            send: message => {
-                const wrappedMessage: any = {};
-                wrappedMessage['pluginID'] = pluginID;
-                wrappedMessage['content'] = message;
-                this.server.onMessage(JSON.stringify(wrappedMessage));
+    private createServerRpc(pluginHostId: string): RPCProtocol {
+        const emitter = new Emitter<string>();
+        this.watcher.onPostMessageEvent(received => {
+            if (pluginHostId === received.pluginHostId) {
+                emitter.fire(received.message);
             }
-        }, hostID);
+        });
+        return new RPCProtocolImpl({
+            onMessage: emitter.event,
+            send: message => {
+                this.server.onMessage(pluginHostId, message);
+            }
+        });
     }
 
     private async updateStoragePath(): Promise<void> {
