@@ -111,6 +111,7 @@ const pluginManager = new PluginManagerExtImpl({
                 const plugin: Plugin = {
                     pluginPath: pluginModel.entryPoint.frontend!,
                     pluginFolder: pluginModel.packagePath,
+                    pluginUri: pluginModel.packageUri,
                     model: pluginModel,
                     lifecycle: pluginLifecycle,
                     rawModel
@@ -125,6 +126,7 @@ const pluginManager = new PluginManagerExtImpl({
                     plugin: {
                         pluginPath: pluginModel.entryPoint.backend,
                         pluginFolder: pluginModel.packagePath,
+                        pluginUri: pluginModel.packageUri,
                         model: pluginModel,
                         lifecycle: pluginLifecycle,
                         get rawModel(): never {

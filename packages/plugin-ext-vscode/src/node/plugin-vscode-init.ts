@@ -103,6 +103,10 @@ function asExtension(plugin: any | undefined): any | undefined {
     if (plugin.pluginPath) {
         plugin.extensionPath = plugin.pluginPath;
     }
+
+    if (plugin.pluginUri) {
+        plugin.extensionUri = plugin.pluginUri;
+    }
     // stub as a local VS Code extension (not running on a remote workspace)
     plugin.extensionKind = ExtensionKind.UI;
     return plugin;

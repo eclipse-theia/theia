@@ -82,6 +82,11 @@ declare module '@theia/plugin' {
         readonly pluginPath: string;
 
         /**
+         * The uri of the directory containing this plug-in.
+         */
+        readonly pluginUri: Uri;
+
+        /**
          * `true` if the plug-in has been activated.
          */
         readonly isActive: boolean;

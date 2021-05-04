@@ -158,6 +158,7 @@ export class PluginHostRPC {
                             foreign.push({
                                 pluginPath: pluginModel.entryPoint.frontend!,
                                 pluginFolder: pluginModel.packagePath,
+                                pluginUri: pluginModel.packageUri,
                                 model: pluginModel,
                                 lifecycle: pluginLifecycle,
                                 rawModel
@@ -172,6 +173,7 @@ export class PluginHostRPC {
                             const plugin: Plugin = {
                                 pluginPath: pluginModel.entryPoint.backend!,
                                 pluginFolder: pluginModel.packagePath,
+                                pluginUri: pluginModel.packageUri,
                                 model: pluginModel,
                                 lifecycle: pluginLifecycle,
                                 rawModel
