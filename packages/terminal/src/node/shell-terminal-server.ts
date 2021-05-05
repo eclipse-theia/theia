@@ -17,8 +17,8 @@
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
-import { BaseTerminalServer } from '../node/base-terminal-server';
-import { ShellProcessFactory } from '../node/shell-process';
+import { BaseTerminalServer } from './base-terminal-server';
+import { mergeProcessEnv, ShellProcessFactory } from './shell-process';
 import { ProcessManager } from '@theia/process/lib/node';
 import { isWindows } from '@theia/core/lib/common/os';
 import * as cp from 'child_process';
@@ -33,17 +33,26 @@ export class ShellTerminalServer extends BaseTerminalServer {
         super(processManager, logger);
     }
 
-    create(options: IShellTerminalServerOptions): Promise<number> {
+    async create(options: IShellTerminalServerOptions): Promise<number> {
         try {
-            options.env = options.env ? options.env : {};
+            options.env = this.mergeProcessEnv(options.env);
             this.mergedCollection.applyToProcessEnvironment(options.env);
             const term = this.shellFactory(options);
             this.postCreate(term);
-            return Promise.resolve(term.id);
+            return term.id;
         } catch (error) {
             this.logger.error('Error while creating terminal', error);
-            return Promise.resolve(-1);
+            return -1;
         }
+    }
+
+    /**
+     * Empty string values will be removed from the final env.
+     *
+     * @param env desired environment to merge with `process.env`.
+     */
+    protected mergeProcessEnv(env: Record<string, string | null> = {}): Record<string, string> {
+        return mergeProcessEnv(env);
     }
 
     // copied and modified from https://github.com/microsoft/vscode/blob/4636be2b71c87bfb0bfe3c94278b447a5efcc1f1/src/vs/workbench/contrib/debug/node/terminals.ts#L32-L75

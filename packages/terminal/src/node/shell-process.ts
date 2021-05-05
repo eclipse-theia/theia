@@ -39,23 +39,6 @@ export interface ShellProcessOptions {
     isPseudo?: boolean,
 }
 
-function setUpEnvVariables(customEnv?: { [key: string]: string | null }): { [key: string]: string } {
-    const processEnv: { [key: string]: string } = {};
-
-    const prEnv: NodeJS.ProcessEnv = process.env;
-    Object.keys(prEnv).forEach((key: string) => {
-        processEnv[key] = prEnv[key] || '';
-    });
-
-    if (customEnv) {
-        for (const envName of Object.keys(customEnv)) {
-            processEnv[envName] = customEnv[envName] || '';
-        }
-    }
-
-    return processEnv;
-}
-
 function getRootPath(rootURI?: string): string {
     if (rootURI) {
         const uri = new URI(rootURI);
@@ -85,7 +68,7 @@ export class ShellProcess extends TerminalProcess {
                 cols: options.cols || ShellProcess.defaultCols,
                 rows: options.rows || ShellProcess.defaultRows,
                 cwd: getRootPath(options.rootURI),
-                env: setUpEnvVariables(options.env),
+                env: mergeProcessEnv(options.env),
             },
             isPseudo: options.isPseudo,
         }, processManager, ringBuffer, logger);
@@ -118,4 +101,25 @@ export class ShellProcess extends TerminalProcess {
             return [];
         }
     }
+}
+
+/**
+ * Merges a given record of environment variables with the process environment variables.
+ * Empty string values will not be included in the final env.
+ * @param env desired environment to merge with `process.env`.
+ *
+ * @returns a merged record of valid environment variables.
+ */
+ export function mergeProcessEnv(env: Record<string, string | null> = {}): Record<string, string> {
+    // eslint-disable-next-line no-null/no-null
+    const mergedEnv: Record<string, string> = Object.create(null);
+    for (const [key, value] of Object.entries(process.env)) {
+        // Ignore keys from `process.env` that are overridden in `env`. Accept only non-empty strings.
+        if (!(key in env) && value) { mergedEnv[key] = value; }
+    }
+    for (const [key, value] of Object.entries(env)) {
+        // Accept only non-empty strings from the `env` object.
+        if (value) { mergedEnv[key] = value; }
+    }
+    return mergedEnv;
 }
