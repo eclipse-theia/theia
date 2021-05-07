@@ -71,6 +71,7 @@ export class FrontendGenerator extends AbstractGenerator {
         return `// @ts-check
 ${this.ifBrowser("require('es6-promise/auto');")}
 require('reflect-metadata');
+require('setimmediate');
 const { Container } = require('inversify');
 const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/frontend-application-config-provider');
 FrontendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.frontend.config)});
