@@ -115,14 +115,14 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.shell.osx': {
             type: ['string', 'null'],
-            description: `The path of the shell that the terminal uses on macOS (default: ${process.env.SHELL || '/bin/bash'}).`,
-            markdownDescription: `The path of the shell that the terminal uses on macOS (default: ${process.env.SHELL || '/bin/bash'}).`,
+            description: 'The path of the shell that the terminal uses on macOS (default: \'/bin/bash\'}).',
+            markdownDescription: 'The path of the shell that the terminal uses on macOS (default: \'/bin/bash\'}).',
             default: undefined
         },
         'terminal.integrated.shell.linux': {
             type: ['string', 'null'],
-            description: `The path of the shell that the terminal uses on Linux (default: ${process.env.SHELL || '/bin/bash'}).`,
-            markdownDescription: `The path of the shell that the terminal uses on Linux (default: ${process.env.SHELL || '/bin/bash'}).`,
+            description: 'The path of the shell that the terminal uses on Linux (default: \'/bin/bash\'}).',
+            markdownDescription: 'The path of the shell that the terminal uses on Linux (default: \'/bin/bash\'}).',
             default: undefined
         },
         'terminal.integrated.shellArgs.windows': {
