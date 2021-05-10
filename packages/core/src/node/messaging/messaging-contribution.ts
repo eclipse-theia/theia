@@ -126,7 +126,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             if (allowed) {
                 this.webSocketServer!.handleUpgrade(request, socket, head, client => {
                     this.webSocketServer!.emit('connection', client, request);
-                    this.messagingListener.onWebSocketUpgrade(request, client);
+                    this.messagingListener.onDidWebSocketUpgrade(request, client);
                 });
             } else {
                 console.error(`refused a websocket connection: ${request.connection.remoteAddress}`);

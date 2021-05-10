@@ -31,7 +31,7 @@ export interface MessagingListenerContribution {
      * @param request The HTTP connection upgrade request received by the server.
      * @param socket The WebSocket that the connection was upgraded to.
      */
-    onWebSocketUpgrade(request: http.IncomingMessage, socket: ws): MaybePromise<void>;
+    onDidWebSocketUpgrade(request: http.IncomingMessage, socket: ws): MaybePromise<void>;
 }
 
 /**
@@ -46,7 +46,7 @@ export class MessagingListener {
     /**
      * Notify all the subscribed `MessagingListenerContribution`s that the Websocket was upgraded.
      */
-    async onWebSocketUpgrade(request: http.IncomingMessage, socket: ws): Promise<void> {
-        await Promise.all(Array.from(this.messagingListenerContributions.getContributions(), async messagingListener => messagingListener.onWebSocketUpgrade(request, socket)));
+    async onDidWebSocketUpgrade(request: http.IncomingMessage, socket: ws): Promise<void> {
+        await Promise.all(Array.from(this.messagingListenerContributions.getContributions(), async messagingListener => messagingListener.onDidWebSocketUpgrade(request, socket)));
     }
 }
