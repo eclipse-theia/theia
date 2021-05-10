@@ -20,7 +20,7 @@ import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, JsonRpcConnectionHandler,
     CommandService, commandServicePath, messageServicePath
 } from '../common';
-import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
+import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer } from './backend-application';
 import { CliManager, CliContribution } from './cli';
 import { IPCConnectionProvider } from './messaging';
 import { ApplicationServerImpl } from './application-server';
@@ -59,6 +59,16 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(BackendApplication).toSelf().inSingletonScope();
     bindContributionProvider(bind, BackendApplicationContribution);
+    // Bind the BackendApplicationServer as a BackendApplicationContribution
+    // and fallback to an empty contribution if never bound.
+    bind(BackendApplicationContribution).toDynamicValue(ctx => {
+        if (ctx.container.isBound(BackendApplicationServer)) {
+            return ctx.container.get(BackendApplicationServer);
+        } else {
+            console.warn('no BackendApplicationServer is set, frontend might not be available');
+            return {};
+        }
+    }).inSingletonScope();
 
     bind(IPCConnectionProvider).toSelf().inSingletonScope();
 
