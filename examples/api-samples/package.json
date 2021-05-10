@@ -12,7 +12,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/api-samples-frontend-module"
+      "frontend": "lib/browser/api-samples-frontend-module",
+      "backend": "lib/node/api-samples-backend-module"
     },
     {
       "frontend": "lib/browser/menu/sample-browser-menu-module",
