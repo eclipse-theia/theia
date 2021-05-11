@@ -1,5 +1,15 @@
 # Change Log
 
+## v1.14.0 - unreleased
+
+[1.14.0 Milestone](https://github.com/eclipse-theia/theia/milestone/20)
+
+- [debug] Fix behavior of `Add Configurations` command when empty `launch.json` present. [#9467](https://github.com/eclipse-theia/theia/pull/9467)
+
+<a name="breaking_changes_1.14.0">[Breaking Changes:](#breaking_changes_1.14.0)</a>
+
+- [debug] `DebugConfigurationManager` no longer `@injects()` the `FileService` and now uses `MonacoTextModelService` instead. [#9467](https://github.com/eclipse-theia/theia/pull/9467)
+
 ## v1.13.0 - 4/29/2021
 
 [1.13.0 Milestone](https://github.com/eclipse-theia/theia/milestone/19)
