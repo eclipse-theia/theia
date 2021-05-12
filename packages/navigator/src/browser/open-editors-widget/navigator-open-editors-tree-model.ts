@@ -38,6 +38,10 @@ export class OpenEditorsModel extends FileTreeModel {
     @inject(OpenerService) protected readonly openerService: OpenerService;
 
     protected toDisposeOnPreviewWidgetReplaced = new DisposableCollection();
+    protected _editorWidgets: NavigatableWidget[];
+    get editorWidgets(): NavigatableWidget[] {
+        return this._editorWidgets;
+    }
 
     @postConstruct()
     protected init(): void {
@@ -73,10 +77,10 @@ export class OpenEditorsModel extends FileTreeModel {
     protected updateOpenWidgets = debounce(this.doUpdateOpenWidgets, 250);
 
     protected async doUpdateOpenWidgets(): Promise<void> {
-        const editorWidgets = this.applicationShell.widgets.filter((widget): widget is NavigatableWidget => (
+        this._editorWidgets = this.applicationShell.widgets.filter((widget): widget is NavigatableWidget => (
             NavigatableWidget.is(widget) && !ApplicationShell.TrackableWidgetProvider.is(widget) // exclude preview widget
         ));
-        this.root = await this.buildRootFromOpenedWidgets(editorWidgets);
+        this.root = await this.buildRootFromOpenedWidgets(this._editorWidgets);
     }
 
     protected async buildRootFromOpenedWidgets(openWidgets: NavigatableWidget[]): Promise<CompositeTreeNode> {

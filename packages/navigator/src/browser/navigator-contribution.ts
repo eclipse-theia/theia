@@ -394,7 +394,8 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     }
 
     protected get editorWidgets(): NavigatableWidget[] {
-        return this.shell.widgets.filter((widget): widget is NavigatableWidget => NavigatableWidget.is(widget));
+        const openEditorsWidget = this.widgetManager.tryGetWidget<OpenEditorsWidget>(OpenEditorsWidget.ID);
+        return openEditorsWidget?.editorWidgets ?? [];
     }
 
     protected getSelectedFileNodes(): FileNode[] {

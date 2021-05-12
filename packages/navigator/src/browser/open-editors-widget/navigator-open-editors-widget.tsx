@@ -20,6 +20,7 @@ import {
     ApplicationShell,
     ContextMenuRenderer,
     defaultTreeProps,
+    NavigatableWidget,
     NodeProps,
     Saveable,
     TreeDecoratorService,
@@ -89,6 +90,10 @@ export class OpenEditorsWidget extends FileTreeWidget {
         this.title.label = OpenEditorsWidget.LABEL;
         this.addClass(OpenEditorsWidget.ID);
         this.update();
+    }
+
+    get editorWidgets(): NavigatableWidget[] {
+        return this.model.editorWidgets;
     }
 
     // eslint-disable-next-line no-null/no-null
