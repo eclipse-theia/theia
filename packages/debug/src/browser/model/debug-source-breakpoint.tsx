@@ -50,7 +50,8 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         const { uri, raw } = this;
         let shouldUpdate = false;
         let breakpoints = raw && this.doRemove(this.origins.filter(origin => !(origin.raw.line === raw.line && origin.raw.column === raw.column)));
-        if (breakpoints) {
+        // Check for breakpoints array with at least one entry
+        if (breakpoints && breakpoints.length) {
             shouldUpdate = true;
         } else {
             breakpoints = this.breakpoints.getBreakpoints(uri);
