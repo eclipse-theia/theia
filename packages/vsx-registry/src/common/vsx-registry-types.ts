@@ -143,3 +143,18 @@ export interface VSXExtensionRaw {
     readonly qna?: string;
     readonly engines?: { [engine: string]: string };
 }
+
+/**
+ * Builtin namespaces maintained by the framework.
+ */
+export namespace VSXBuiltinNamespaces {
+    /**
+     * Namespace for individual vscode builtin extensions.
+     */
+    export const VSCODE = 'vscode';
+    /**
+     * Namespace for vscode builtin extension packs.
+     * - corresponds to: https://github.com/eclipse-theia/vscode-builtin-extensions/blob/af9cfeb2ea23e1668a8340c1c2fb5afd56be07d7/src/create-extension-pack.js#L45
+     */
+    export const THEIA = 'eclipse-theia';
+}
