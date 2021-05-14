@@ -139,7 +139,7 @@ export class VSXExtensionsModel {
             const searchResult = new Set<string>();
             for (const data of result.extensions) {
                 const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
-                const extension = this.api.getLatestCompatibleVersion(data.allVersions);
+                const extension = this.api.getLatestCompatibleVersion(data);
                 if (!extension) {
                     continue;
                 }

@@ -155,4 +155,14 @@ describe('VSX Registry API', () => {
 
     });
 
+    describe.only('#isVersionLTE', () => {
+
+        it('should determine if v1 is less than or equal to v2', () => {
+            expect(api['isVersionLTE']('1.40.0', '1.50.0')).equal(true, 'should be satisfied since v1 is less than v2');
+            expect(api['isVersionLTE']('1.50.0', '1.50.0')).equal(true, 'should be satisfied since v1 and v2 are equal');
+            expect(api['isVersionLTE']('2.0.2', '2.0.1')).equal(false, 'should not be satisfied since v1 is greater than v2');
+        });
+
+    });
+
 });

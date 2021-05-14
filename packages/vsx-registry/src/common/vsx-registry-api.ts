@@ -17,7 +17,7 @@
 import * as bent from 'bent';
 import * as semver from 'semver';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { VSXExtensionRaw, VSXSearchParam, VSXSearchResult, VSXAllVersions } from './vsx-registry-types';
+import { VSXExtensionRaw, VSXSearchParam, VSXSearchResult, VSXAllVersions, VSXBuiltinNamespaces, VSXSearchEntry } from './vsx-registry-types';
 import { VSXEnvironment } from './vsx-environment';
 import { VSXApiVersionProvider } from './vsx-api-version-provider';
 
@@ -131,6 +131,7 @@ export class VSXRegistryAPI {
 
     /**
      * Get the latest compatible extension version.
+     * - a builtin extension is fetched based on the extension version which matches the API.
      * - an extension satisfies compatibility if its `engines.vscode` version is supported.
      * @param id the extension id.
      *
@@ -138,24 +139,48 @@ export class VSXRegistryAPI {
      */
     async getLatestCompatibleExtensionVersion(id: string): Promise<VSXExtensionRaw | undefined> {
         const extensions = await this.getAllVersions(id);
-        for (let i = 0; i < extensions.length; i++) {
-            const extension: VSXExtensionRaw = extensions[i];
-            if (extension.engines && this.isEngineSupported(extension.engines.vscode)) {
-                return extension;
+        if (extensions.length === 0) {
+            return undefined;
+        }
+
+        const namespace = extensions[0].namespace.toLowerCase();
+        if (this.isBuiltinNamespace(namespace)) {
+            const apiVersion = this.apiVersionProvider.getApiVersion();
+            for (const extension of extensions) {
+                if (this.isVersionLTE(extension.version, apiVersion)) {
+                    return extension;
+                }
+            }
+            console.log(`Skipping: built-in extension "${id}" at version "${apiVersion}" does not exist.`);
+        } else {
+            for (const extension of extensions) {
+                if (this.isEngineSupported(extension.engines?.vscode)) {
+                    return extension;
+                }
             }
         }
     }
 
     /**
      * Get the latest compatible version of an extension.
-     * @param versions the `allVersions` property.
+     * @param entry the extension search entry.
      *
      * @returns the latest compatible version of an extension if it exists, else `undefined`.
      */
-    getLatestCompatibleVersion(versions: VSXAllVersions[]): VSXAllVersions | undefined {
-        for (const version of versions) {
-            if (this.isEngineSupported(version.engines?.vscode)) {
-                return version;
+    getLatestCompatibleVersion(entry: VSXSearchEntry): VSXAllVersions | undefined {
+        const extensions = entry.allVersions;
+        if (this.isBuiltinNamespace(entry.namespace)) {
+            const apiVersion = this.apiVersionProvider.getApiVersion();
+            for (const extension of extensions) {
+                if (this.isVersionLTE(extension.version, apiVersion)) {
+                    return extension;
+                }
+            }
+        } else {
+            for (const extension of extensions) {
+                if (this.isEngineSupported(extension.engines?.vscode)) {
+                    return extension;
+                }
             }
         }
     }
@@ -178,6 +203,30 @@ export class VSXRegistryAPI {
             const apiVersion = this.apiVersionProvider.getApiVersion();
             return semver.satisfies(apiVersion, engine);
         }
+    }
+
+    /**
+     * Determines if the extension namespace is a builtin maintained by the framework.
+     * @param namespace the extension namespace to verify.
+     */
+    protected isBuiltinNamespace(namespace: string): boolean {
+        return namespace === VSXBuiltinNamespaces.VSCODE
+            || namespace === VSXBuiltinNamespaces.THEIA;
+    }
+
+    /**
+     * Determines if the first version is less than or equal the second version.
+     * - v1 <= v2.
+     * @param a the first semver version.
+     * @param b the second semver version.
+     */
+    protected isVersionLTE(a: string, b: string): boolean {
+        const versionA = semver.clean(a);
+        const versionB = semver.clean(b);
+        if (!versionA || !versionB) {
+            return false;
+        }
+        return semver.lte(versionA, versionB);
     }
 
 }
