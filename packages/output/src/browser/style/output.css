@@ -18,10 +18,10 @@
     height: 100%;
 }
 
-.theia-output-error {
+.theia-output .theia-output-error {
     color: var(--theia-errorForeground);
 }
 
-.theia-output-warning {
+.theia-output .theia-output-warning {
     color: var(--theia-editorWarning-foreground);
 }
