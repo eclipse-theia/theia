@@ -110,17 +110,17 @@ export interface FrontendApplicationConfig extends ApplicationConfig {
     /**
      * The default theme for the application. If not given, defaults to `dark`. If invalid theme is given, also defaults to `dark`.
      */
-    readonly defaultTheme: string;
+    readonly defaultTheme?: string;
 
     /**
      * The default icon theme for the application. If not given, defaults to `none`. If invalid theme is given, also defaults to `none`.
      */
-    readonly defaultIconTheme: string;
+    readonly defaultIconTheme?: string;
 
     /**
      * The name of the application. `Eclipse Theia` by default.
      */
-    readonly applicationName: string;
+    readonly applicationName?: string;
 
     /**
      * Electron specific configuration.
