@@ -139,7 +139,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
         } else {
             // Else, ask the server for its suggested workspace (usually the one
             // specified on the CLI, or the most recent).
-            return this.server.getMostRecentlyUsedWorkspace();
+            // return this.server.getMostRecentlyUsedWorkspace();
+            return undefined; // TODO: hack, find proper way to not restore last used for new window.
         }
     }
 

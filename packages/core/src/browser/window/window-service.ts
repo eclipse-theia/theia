@@ -33,6 +33,8 @@ export interface WindowService {
      */
     openNewWindow(url: string, options?: NewWindowOptions): undefined;
 
+    openDefaultNewWindow(): undefined; // TODO: document method.
+
     /**
      * Called when the `window` is about to `unload` its resources.
      * At this point, the `document` is still visible and the [`BeforeUnloadEvent`](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event)
