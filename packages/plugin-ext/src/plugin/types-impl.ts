@@ -1446,6 +1446,30 @@ export class QuickInputButtons {
     };
 }
 
+export class FileDecoration {
+
+    static validate(d: FileDecoration): void {
+        if (d.badge && d.badge.length !== 1 && d.badge.length !== 2) {
+            throw new Error('The \'badge\'-property must be undefined or a short character');
+        }
+        if (!d.color && !d.badge && !d.tooltip) {
+            throw new Error('The decoration is empty');
+        }
+    }
+
+    badge?: string;
+    tooltip?: string;
+    color?: theia.ThemeColor;
+    priority?: number;
+    propagate?: boolean;
+
+    constructor(badge?: string, tooltip?: string, color?: ThemeColor) {
+        this.badge = badge;
+        this.tooltip = tooltip;
+        this.color = color;
+    }
+}
+
 export enum CommentMode {
     Editing = 0,
     Preview = 1

@@ -15,7 +15,7 @@
  ********************************************************************************/
 import {
     DecorationData,
-    DecorationProvider,
+    DecorationRequest,
     DecorationsExt,
     DecorationsMain,
     MAIN_RPC_CONTEXT
@@ -23,57 +23,124 @@ import {
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { Emitter } from '@theia/core/lib/common/event';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Tree, TreeDecoration } from '@theia/core/lib/browser';
+import { Disposable } from '@theia/core/lib/common/disposable';
 import { RPCProtocol } from '../../../common/rpc-protocol';
-import { ScmDecorationsService } from '@theia/scm/lib/browser/decorations/scm-decorations-service';
+import { UriComponents } from '../../../common/uri-components';
+import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
+import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import URI from '@theia/core/lib/common/uri';
+import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
+
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+// some code copied and modified from https://github.com/microsoft/vscode/blob/1.52.1/src/vs/workbench/api/browser/mainThreadDecorations.ts#L85
+
+class DecorationRequestsQueue {
+
+    private idPool = 0;
+    private requests = new Map<number, DecorationRequest>();
+    private resolver = new Map<number, (data: DecorationData) => void>();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private timer: any;
+
+    constructor(
+        private readonly proxy: DecorationsExt,
+        private readonly handle: number
+    ) {
+    }
+
+    enqueue(uri: URI, token: CancellationToken): Promise<DecorationData> {
+        const id = ++this.idPool;
+        const result = new Promise<DecorationData>(resolve => {
+            this.requests.set(id, { id, uri: VSCodeURI.parse(uri.toString()) });
+            this.resolver.set(id, resolve);
+            this.processQueue();
+        });
+        token.onCancellationRequested(() => {
+            this.requests.delete(id);
+            this.resolver.delete(id);
+        });
+        return result;
+    }
+
+    private processQueue(): void {
+        if (typeof this.timer === 'number') {
+            // already queued
+            return;
+        }
+        this.timer = setTimeout(() => {
+            // make request
+            const requests = this.requests;
+            const resolver = this.resolver;
+            this.proxy.$provideDecorations(this.handle, [...requests.values()], CancellationToken.None).then(data => {
+                for (const [id, resolve] of resolver) {
+                    resolve(data[id]);
+                }
+            });
+
+            // reset
+            this.requests = new Map();
+            this.resolver = new Map();
+            this.timer = undefined;
+        }, 0);
+    }
+}
 
 export class DecorationsMainImpl implements DecorationsMain, Disposable {
 
     private readonly proxy: DecorationsExt;
-    // TODO: why it is SCM specific? VS Code apis about any decorations for the explorer
-    private readonly scmDecorationsService: ScmDecorationsService;
-
-    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
-
-    protected readonly toDispose = new DisposableCollection();
+    private readonly providers = new Map<number, [Emitter<URI[]>, Disposable]>();
+    private readonly decorationsService: DecorationsService;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DECORATIONS_EXT);
-        this.scmDecorationsService = container.get(ScmDecorationsService);
+        this.decorationsService = container.get(DecorationsService);
     }
 
     dispose(): void {
-        this.toDispose.dispose();
+        this.providers.forEach(value => value.forEach(v => v.dispose()));
+        this.providers.clear();
     }
 
-    // TODO: why it is never used?
-    protected readonly providers = new Map<number, DecorationProvider>();
-
-    async $dispose(id: number): Promise<void> {
-        // TODO: What about removing decorations when a provider is gone?
-        this.providers.delete(id);
-    }
-
-    async $registerDecorationProvider(id: number, provider: DecorationProvider): Promise<number> {
-        this.providers.set(id, provider);
-        this.toDispose.push(Disposable.create(() => this.$dispose(id)));
-        return id;
-    }
-
-    async $fireDidChangeDecorations(id: number, arg: string | string[] | undefined): Promise<void> {
-        if (Array.isArray(arg)) {
-            const result: Map<string, DecorationData> = new Map();
-            for (const uri of arg) {
-                const data = await this.proxy.$provideDecoration(id, uri);
-                if (data) {
-                    result.set(uri, data);
+    async $registerDecorationProvider(handle: number): Promise<void> {
+        const emitter = new Emitter<URI[]>();
+        const queue = new DecorationRequestsQueue(this.proxy, handle);
+        const registration = this.decorationsService.registerDecorationsProvider({
+            onDidChange: emitter.event,
+            provideDecorations: async (uri, token) => {
+                const data = await queue.enqueue(uri, token);
+                if (!data) {
+                    return undefined;
                 }
+                const [bubble, tooltip, letter, themeColor] = data;
+                return <Decoration>{
+                    weight: 10,
+                    bubble: bubble ?? false,
+                    colorId: themeColor?.id,
+                    tooltip,
+                    letter
+                };
             }
-            this.scmDecorationsService.fireNavigatorDecorationsChanged(result);
-        } else if (arg) {
-            // TODO: why to make a remote call instead of sending decoration to `$fireDidChangeDecorations` in first place?
-            this.proxy.$provideDecoration(id, arg);
+        });
+        this.providers.set(handle, [emitter, registration]);
+    }
+
+    $onDidChange(handle: number, resources: UriComponents[]): void {
+        const providerSet = this.providers.get(handle);
+        if (providerSet) {
+            const [emitter] = providerSet;
+            emitter.fire(resources && resources.map(r => new URI(VSCodeURI.revive(r).toString())));
+        }
+    }
+
+    $unregisterDecorationProvider(handle: number): void {
+        const provider = this.providers.get(handle);
+        if (provider) {
+            provider.forEach(p => p.dispose());
+            this.providers.delete(handle);
         }
     }
 }
