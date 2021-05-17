@@ -20,12 +20,12 @@ export class FrontendApplicationConfigProvider {
 
     private static KEY = Symbol('FrontendApplicationConfigProvider');
 
-    static get(): FrontendApplicationConfig {
+    static get(): FrontendApplicationConfig & typeof FrontendApplicationConfig.DEFAULT {
         const config = FrontendApplicationConfigProvider.doGet();
         if (config === undefined) {
             throw new Error('The configuration is not set. Did you call FrontendApplicationConfigProvider#set?');
         }
-        return config;
+        return Object.assign({ ...FrontendApplicationConfig.DEFAULT }, config);
     }
 
     static set(config: FrontendApplicationConfig): void {
