@@ -37,6 +37,60 @@ export namespace NpmRegistryProps {
 }
 
 /**
+ * Representation of all backend and frontend related Theia extension and application properties.
+ */
+export interface ApplicationProps extends NpmRegistryProps {
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly [key: string]: any;
+
+    /**
+     * Whether the extension targets the browser or electron. Defaults to `browser`.
+     */
+    readonly target: ApplicationProps.Target;
+
+    /**
+     * Frontend related properties.
+     */
+    readonly frontend: Readonly<{ config: FrontendApplicationConfig & typeof FrontendApplicationConfig.DEFAULT }>;
+
+    /**
+     * Backend specific properties.
+     */
+    readonly backend: Readonly<{ config: BackendApplicationConfig }>;
+
+    /**
+     * Generator specific properties.
+     */
+    readonly generator: Readonly<{ config: GeneratorConfig }>;
+}
+export namespace ApplicationProps {
+    export enum ApplicationTarget {
+        browser = 'browser',
+        electron = 'electron'
+    };
+
+    export type Target = keyof typeof ApplicationTarget;
+
+    export const DEFAULT: ApplicationProps = {
+        ...NpmRegistryProps.DEFAULT,
+        target: 'browser',
+        backend: {
+            config: {}
+        },
+        frontend: {
+            config: FrontendApplicationConfig.DEFAULT,
+        },
+        generator: {
+            config: {
+                preloadTemplate: ''
+            }
+        }
+    };
+
+}
+
+/**
  * Base configuration for the Theia application.
  */
 export interface ApplicationConfig {
@@ -78,61 +132,6 @@ export namespace FrontendApplicationConfig {
         defaultTheme: 'dark',
         defaultIconTheme: 'none'
     };
-}
-
-/**
- * Representation of all backend and frontend related Theia extension and application properties.
- */
-export interface ApplicationProps extends NpmRegistryProps {
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    readonly [key: string]: any;
-
-    /**
-     * Whether the extension targets the browser or electron. Defaults to `browser`.
-     */
-    readonly target: ApplicationProps.Target;
-
-    /**
-     * Frontend related properties.
-     */
-    readonly frontend: Readonly<{ config: FrontendApplicationConfig & typeof FrontendApplicationConfig.DEFAULT }>;
-
-    /**
-     * Backend specific properties.
-     */
-    readonly backend: Readonly<{ config: BackendApplicationConfig }>;
-
-    /**
-     * Generator specific properties.
-     */
-    readonly generator: Readonly<{ config: GeneratorConfig }>;
-}
-
-export namespace ApplicationProps {
-    export enum ApplicationTarget {
-        browser = 'browser',
-        electron = 'electron'
-    };
-
-    export type Target = keyof typeof ApplicationTarget;
-
-    export const DEFAULT: ApplicationProps = {
-        ...NpmRegistryProps.DEFAULT,
-        target: 'browser',
-        backend: {
-            config: {}
-        },
-        frontend: {
-            config: FrontendApplicationConfig.DEFAULT,
-        },
-        generator: {
-            config: {
-                preloadTemplate: ''
-            }
-        }
-    };
-
 }
 
 export interface ElectronFrontendApplicationConfig {
