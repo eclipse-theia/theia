@@ -15,25 +15,15 @@
  ********************************************************************************/
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { Emitter, Event, ResourceProvider } from '@theia/core';
+import { ResourceProvider } from '@theia/core';
 import { DirtyDiffDecorator } from '../dirty-diff/dirty-diff-decorator';
 import { DiffComputer } from '../dirty-diff/diff-computer';
 import { ContentLines } from '../dirty-diff/content-lines';
 import { EditorManager, TextEditor } from '@theia/editor/lib/browser';
 import { ScmService } from '../scm-service';
 
-export interface DecorationData {
-    letter?: string;
-    title?: string;
-    color?: { id: string };
-    priority?: number;
-    bubble?: boolean;
-    source?: string;
-}
-
 @injectable()
 export class ScmDecorationsService {
-    private readonly NavigatorDecorationsEmitter = new Emitter<Map<string, DecorationData>>();
     private readonly diffComputer: DiffComputer;
     private dirtyState: boolean = true;
 
@@ -84,13 +74,5 @@ export class ScmDecorationsService {
                 // Scm resource may not be found, do nothing.
             }
         }
-    }
-
-    get onNavigatorDecorationsChanged(): Event<Map<string, DecorationData>> {
-        return this.NavigatorDecorationsEmitter.event;
-    }
-
-    fireNavigatorDecorationsChanged(data: Map<string, DecorationData>): void {
-        this.NavigatorDecorationsEmitter.fire(data);
     }
 }

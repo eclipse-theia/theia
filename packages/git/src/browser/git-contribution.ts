@@ -47,6 +47,8 @@ import { GitPreferences } from './git-preferences';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ScmInputIssueType } from '@theia/scm/lib/browser/scm-input';
+import { DecorationsService } from '@theia/core/lib/browser/decorations-service';
+import { GitDecorationProvider } from './git-decoration-provider';
 
 export namespace GIT_COMMANDS {
     export const CLONE = {
@@ -257,11 +259,14 @@ export class GitContribution implements CommandContribution, MenuContribution, T
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
     @inject(ProgressService) protected readonly progressService: ProgressService;
     @inject(GitPreferences) protected readonly gitPreferences: GitPreferences;
+    @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
+    @inject(GitDecorationProvider) protected readonly gitDecorationProvider: GitDecorationProvider;
 
     onStart(): void {
         this.updateStatusBar();
         this.repositoryTracker.onGitEvent(() => this.updateStatusBar());
         this.syncService.onDidChange(() => this.updateStatusBar());
+        this.decorationsService.registerDecorationsProvider(this.gitDecorationProvider);
     }
 
     registerMenus(menus: MenuModelRegistry): void {

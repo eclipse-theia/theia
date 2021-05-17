@@ -21,23 +21,23 @@ import { Tree } from '@theia/core/lib/browser/tree/tree';
 import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser';
 import { FileStatNode } from '@theia/filesystem/lib/browser';
-import { DecorationData, ScmDecorationsService } from './scm-decorations-service';
 import URI from '@theia/core/lib/common/uri';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
 
 @injectable()
 export class ScmNavigatorDecorator implements TreeDecorator {
 
     readonly id = 'theia-scm-decorator';
-    private decorationsMap: Map<string, DecorationData> | undefined;
+    private decorationsMap: Map<string, Decoration> | undefined;
 
     @inject(ILogger) protected readonly logger: ILogger;
 
     @inject(ColorRegistry)
     protected readonly colors: ColorRegistry;
 
-    constructor(@inject(ScmDecorationsService) protected readonly decorationsService: ScmDecorationsService) {
-        this.decorationsService.onNavigatorDecorationsChanged(data => {
+    constructor(@inject(DecorationsService) protected readonly decorationsService: DecorationsService) {
+        this.decorationsService.onDidChangeDecorations(data => {
             this.decorationsMap = data;
             this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree));
         });
@@ -61,8 +61,8 @@ export class ScmNavigatorDecorator implements TreeDecorator {
         return new Map(Array.from(result.entries()).map(m => [m[0], this.toDecorator(m[1])] as [string, TreeDecoration.Data]));
     }
 
-    protected toDecorator(change: DecorationData): TreeDecoration.Data {
-        const colorVariable = change.color && this.colors.toCssVariableName(change.color.id);
+    protected toDecorator(change: Decoration): TreeDecoration.Data {
+        const colorVariable = change.colorId && this.colors.toCssVariableName(change.colorId);
         return {
             tailDecorations: [
                 {
@@ -70,7 +70,7 @@ export class ScmNavigatorDecorator implements TreeDecorator {
                     fontData: {
                         color: colorVariable && `var(${colorVariable})`
                     },
-                    tooltip: change.title ? change.title : ''
+                    tooltip: change.tooltip ? change.tooltip : ''
                 }
             ]
         };
@@ -86,8 +86,8 @@ export class ScmNavigatorDecorator implements TreeDecorator {
         }
     }
 
-    protected appendContainerChanges(decorationsMap: Map<string, DecorationData>): Map<string, DecorationData> {
-        const result: Map<string, DecorationData> = new Map();
+    protected appendContainerChanges(decorationsMap: Map<string, Decoration>): Map<string, Decoration> {
+        const result: Map<string, Decoration> = new Map();
         for (const [uri, data] of decorationsMap.entries()) {
             const uriString = uri.toString();
             result.set(uriString, data);

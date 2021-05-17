@@ -765,6 +765,14 @@ export interface TimelineCommandArg {
     uri: string;
 }
 
+export interface DecorationRequest {
+    readonly id: number;
+    readonly uri: UriComponents;
+}
+
+export type DecorationData = [boolean, string, string, ThemeColor];
+export interface DecorationReply { [id: number]: DecorationData; }
+
 export namespace CommentsCommandArg {
     export function is(arg: Object | undefined): arg is CommentsCommandArg {
         return !!arg && typeof arg === 'object' && 'commentControlHandle' in arg && 'commentThreadHandle' in arg && 'text' in arg && !('commentUniqueId' in arg);
@@ -800,23 +808,14 @@ export interface CommentsEditCommandArg {
 }
 
 export interface DecorationsExt {
-    registerDecorationProvider(provider: theia.DecorationProvider): theia.Disposable
-    $provideDecoration(id: number, uri: string): Promise<DecorationData | undefined>
+    registerFileDecorationProvider(provider: theia.FileDecorationProvider, pluginInfo: PluginInfo): theia.Disposable
+    $provideDecorations(handle: number, requests: DecorationRequest[], token: CancellationToken): Promise<DecorationReply>;
 }
 
 export interface DecorationsMain {
-    $registerDecorationProvider(id: number, provider: DecorationProvider): Promise<number>;
-    $fireDidChangeDecorations(id: number, arg: undefined | string | string[]): Promise<void>;
-    $dispose(id: number): Promise<void>;
-}
-
-export interface DecorationData {
-    letter?: string;
-    title?: string;
-    color?: ThemeColor;
-    priority?: number;
-    bubble?: boolean;
-    source?: string;
+    $registerDecorationProvider(handle: number): Promise<void>;
+    $unregisterDecorationProvider(handle: number): void;
+    $onDidChange(handle: number, resources: UriComponents[] | null): void;
 }
 
 export interface ScmMain {
@@ -925,10 +924,6 @@ export interface SourceControlResourceDecorations {
      * The icon path for a specific source control resource state.
      */
     readonly iconPath?: string;
-}
-
-export interface DecorationProvider {
-    provideDecoration(uri: string): Promise<DecorationData | undefined>;
 }
 
 export interface NotificationMain {

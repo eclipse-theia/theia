@@ -24,7 +24,7 @@ import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposa
 import { TreeWidget, TreeNode, SelectableTreeNode, TreeModel, TreeProps, NodeProps, TREE_NODE_SEGMENT_CLASS, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
 import { ScmTreeModel } from './scm-tree-model';
 import { MenuModelRegistry, ActionMenuNode, CompositeMenuNode, MenuPath } from '@theia/core/lib/common/menu';
-import { ScmResource, ScmResourceDecorations } from './scm-provider';
+import { ScmResource } from './scm-provider';
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import { ContextMenuRenderer, LabelProvider, CorePreferences, DiffUris } from '@theia/core/lib/browser';
 import { ScmContextKeyService } from './scm-context-key-service';
@@ -33,6 +33,8 @@ import { EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser'
 import { FileStat } from '@theia/filesystem/lib/common';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
 import { ScmFileChangeRootNode, ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
+import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
 
 @injectable()
 export class ScmTreeWidget extends TreeWidget {
@@ -55,6 +57,8 @@ export class ScmTreeWidget extends TreeWidget {
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(DiffNavigatorProvider) protected readonly diffNavigatorProvider: DiffNavigatorProvider;
     @inject(IconThemeService) protected readonly iconThemeService: IconThemeService;
+    @inject(DecorationsService) protected readonly decorationsService: DecorationsService;
+    @inject(ColorRegistry) protected readonly colors: ColorRegistry;
 
     model: ScmTreeModel;
 
@@ -151,7 +155,8 @@ export class ScmTreeWidget extends TreeWidget {
                     ...this.props,
                     parentPath,
                     sourceUri: node.sourceUri,
-                    decorations: node.decorations,
+                    decoration: this.decorationsService.getDecoration(new URI(node.sourceUri), true)[0],
+                    colors: this.colors,
                     renderExpansionToggle: () => this.renderExpansionToggle(node, props),
                 }}
             />;
@@ -515,13 +520,13 @@ export class ScmResourceComponent extends ScmElement<ScmResourceComponent.Props>
 
     render(): JSX.Element | undefined {
         const { hover } = this.state;
-        const { model, treeNode, parentPath, sourceUri, decorations, labelProvider, commands, menus, contextKeys, caption } = this.props;
+        const { model, treeNode, colors, parentPath, sourceUri, decoration, labelProvider, commands, menus, contextKeys, caption } = this.props;
         const resourceUri = new URI(sourceUri);
 
         const icon = labelProvider.getIcon(resourceUri);
-        const color = decorations && decorations.color || '';
-        const letter = decorations && decorations.letter || '';
-        const tooltip = decorations && decorations.tooltip || '';
+        const color = decoration && decoration.colorId ? `var(${colors.toCssVariableName(decoration.colorId)})` : '';
+        const letter = decoration && decoration.letter || '';
+        const tooltip = decoration && decoration.tooltip || '';
         const relativePath = parentPath.relative(resourceUri.parent);
         const path = relativePath ? relativePath.toString() : labelProvider.getLongName(resourceUri.parent);
         return <div key={sourceUri}
@@ -615,7 +620,8 @@ export namespace ScmResourceComponent {
         treeNode: ScmFileChangeNode;
         parentPath: URI;
         sourceUri: string;
-        decorations?: ScmResourceDecorations;
+        decoration: Decoration | undefined;
+        colors: ColorRegistry;
     }
 }
 
