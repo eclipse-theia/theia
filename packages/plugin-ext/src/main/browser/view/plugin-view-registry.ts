@@ -91,7 +91,7 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
     private readonly viewsWelcome = new Map<string, ViewWelcome[]>();
     private readonly viewContainers = new Map<string, [string, ViewContainerTitleOptions]>();
     private readonly containerViews = new Map<string, string[]>();
-    private readonly viewClauseContexts = new Map<string, Set<string>>();
+    private readonly viewClauseContexts = new Map<string, Set<string> | undefined>();
 
     private readonly viewDataProviders = new Map<string, ViewDataProvider>();
     private readonly viewDataState = new Map<string, object>();
@@ -300,8 +300,11 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }));
 
         if (view.when && view.when !== 'false' && view.when !== 'true') {
-            this.viewClauseContexts.set(view.id, this.contextKeyService.parseKeys(view.when));
-            toDispose.push(Disposable.create(() => this.viewClauseContexts.delete(view.id)));
+            const keys = this.contextKeyService.parseKeys(view.when);
+            if (keys) {
+                this.viewClauseContexts.set(view.id, keys);
+                toDispose.push(Disposable.create(() => this.viewClauseContexts.delete(view.id)));
+            }
         }
         toDispose.push(this.quickView?.registerItem({
             label: view.name,

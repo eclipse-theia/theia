@@ -58,7 +58,7 @@ export class ContextKeyService {
     /**
      * It should be implemented by an extension, e.g. by the monaco extension.
      */
-    parseKeys(expression: string): Set<string> {
+    parseKeys(expression: string): Set<string> | undefined {
         return new Set<string>();
     }
 
