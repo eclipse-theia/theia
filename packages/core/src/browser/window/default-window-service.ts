@@ -48,6 +48,10 @@ export class DefaultWindowService implements WindowService, FrontendApplicationC
         return undefined;
     }
 
+    openNewDefaultWindow(): undefined {
+        return undefined;
+    }
+
     canUnload(): boolean {
         const confirmExit = this.corePreferences['application.confirmExit'];
         let preventUnload = confirmExit === 'always';

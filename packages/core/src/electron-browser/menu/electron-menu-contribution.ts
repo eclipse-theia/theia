@@ -25,6 +25,7 @@ import { FrontendApplication, FrontendApplicationContribution, CommonMenus } fro
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
 import { ZoomLevel } from '../window/electron-window-preferences';
+import { WindowService } from '../../browser/window/window-service';
 
 export namespace ElectronCommands {
     export const TOGGLE_DEVELOPER_TOOLS: Command = {
@@ -56,6 +57,10 @@ export namespace ElectronCommands {
         category: 'View',
         label: 'Toggle Full Screen'
     };
+    export const NEW_WINDOW: Command = {
+        id: 'workbench.action.newWindow',
+        label: 'New Window'
+    };
 }
 
 export namespace ElectronMenus {
@@ -79,6 +84,9 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     constructor(
         @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory
@@ -191,6 +199,9 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
             isEnabled: () => currentWindow.isFullScreenable(),
             isVisible: () => currentWindow.isFullScreenable(),
             execute: () => currentWindow.setFullScreen(!currentWindow.isFullScreen())
+        });
+        registry.registerCommand(ElectronCommands.NEW_WINDOW, {
+            execute: () => this.windowService.openNewDefaultWindow()
         });
     }
 

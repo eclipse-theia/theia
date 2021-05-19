@@ -122,6 +122,13 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected async doGetDefaultWorkspaceUri(): Promise<string | undefined> {
+
+        // If an empty is explicitly requested do not restore a previous workspace.
+        if (window.location.hash === '#!empty') {
+            window.location.hash = '';
+            return undefined;
+        }
+
         // Prefer the workspace path specified as the URL fragment, if present.
         if (window.location.hash.length > 1) {
             // Remove the leading # and decode the URI.

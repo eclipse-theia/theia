@@ -34,6 +34,13 @@ export interface WindowService {
     openNewWindow(url: string, options?: NewWindowOptions): undefined;
 
     /**
+     * Opens a new default window.
+     * - the operation is a no-op for browser.
+     * - in electron it will open the default window without pre-defined content.
+     */
+    openNewDefaultWindow(): undefined;
+
+    /**
      * Called when the `window` is about to `unload` its resources.
      * At this point, the `document` is still visible and the [`BeforeUnloadEvent`](https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeunload_event)
      * event will be canceled if the return value of this method is `false`.

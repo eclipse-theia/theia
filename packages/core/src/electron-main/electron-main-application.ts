@@ -247,9 +247,9 @@ export class ElectronMainApplication {
         };
     }
 
-    protected async openDefaultWindow(): Promise<BrowserWindow> {
+    async openDefaultWindow(): Promise<BrowserWindow> {
         const [uri, electronWindow] = await Promise.all([this.createWindowUri(), this.createWindow()]);
-        electronWindow.loadURL(uri.toString(true));
+        electronWindow.loadURL(uri.withFragment('#!empty').toString(true));
         return electronWindow;
     }
 
