@@ -21,21 +21,21 @@
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.47.3/src/vs/workbench/api/browser/mainThreadAuthentication.ts
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { AuthenticationExt, AuthenticationMain, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
+import { AuthenticationExt, AuthenticationMain, PluginManagerExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { StorageService } from '@theia/core/lib/browser';
+import { Dialog, StorageService } from '@theia/core/lib/browser';
 import {
     AuthenticationProvider,
     AuthenticationService,
     readAllowedExtensions
 } from '@theia/core/lib/browser/authentication-service';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
-import {
-    AuthenticationSession,
-    AuthenticationSessionsChangeEvent
-} from '../../common/plugin-api-rpc-model';
+import * as theia from '@theia/plugin';
 import { QuickPickValue } from '@theia/core/lib/browser/quick-input/quick-input-service';
+import { nls } from '@theia/core/lib/common/nls';
+
+export function getAuthenticationProviderActivationEvent(id: string): string { return `onAuthenticationRequest:${id}`; }
 
 export class AuthenticationMainImpl implements AuthenticationMain {
     private readonly proxy: AuthenticationExt;
@@ -43,15 +43,17 @@ export class AuthenticationMainImpl implements AuthenticationMain {
     private readonly storageService: StorageService;
     private readonly authenticationService: AuthenticationService;
     private readonly quickPickService: QuickPickService;
+    private readonly extensionService: PluginManagerExt;
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT);
         this.messageService = container.get(MessageService);
         this.storageService = container.get(StorageService);
         this.authenticationService = container.get(AuthenticationService);
         this.quickPickService = container.get(QuickPickService);
+        this.extensionService = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
 
         this.authenticationService.onDidChangeSessions(e => {
-            this.proxy.$onDidChangeAuthenticationSessions(e.providerId, e.label, e.event);
+            this.proxy.$onDidChangeAuthenticationSessions(e.providerId, e.label);
         });
         this.authenticationService.onDidRegisterAuthenticationProvider(info => {
             this.proxy.$onDidChangeAuthenticationProviders([info], []);
@@ -73,7 +75,7 @@ export class AuthenticationMainImpl implements AuthenticationMain {
         this.authenticationService.unregisterAuthenticationProvider(id);
     }
 
-    async $updateSessions(id: string, event: AuthenticationSessionsChangeEvent): Promise<void> {
+    async $updateSessions(id: string, event: theia.AuthenticationProviderAuthenticationSessionsChangeEvent): Promise<void> {
         this.authenticationService.updateSessions(id, event);
     }
 
@@ -86,75 +88,85 @@ export class AuthenticationMainImpl implements AuthenticationMain {
     }
 
     async $getSession(providerId: string, scopes: string[], extensionId: string, extensionName: string,
-        options: { createIfNone: boolean, clearSessionPreference: boolean }): Promise<AuthenticationSession | undefined> {
-        const orderedScopes = scopes.sort().join(' ');
-        const sessions = (await this.authenticationService.getSessions(providerId)).filter(session => session.scopes.slice().sort().join(' ') === orderedScopes);
-        const label = this.authenticationService.getLabel(providerId);
+        options: theia.AuthenticationGetSessionOptions): Promise<theia.AuthenticationSession | undefined> {
+        const sessions = await this.authenticationService.getSessions(providerId, scopes);
 
-        if (sessions.length) {
-            if (!this.authenticationService.supportsMultipleAccounts(providerId)) {
-                const session = sessions[0];
-                const allowed = await this.getSessionsPrompt(providerId, session.account.label, label, extensionId, extensionName);
-                if (allowed) {
-                    return session;
+        // Error cases
+        if (options.forceNewSession && !sessions.length) {
+            throw new Error('No existing sessions found.');
+        }
+        if (options.forceNewSession && options.createIfNone) {
+            throw new Error('Invalid combination of options. Please remove one of the following: forceNewSession, createIfNone');
+        }
+        if (options.forceNewSession && options.silent) {
+            throw new Error('Invalid combination of options. Please remove one of the following: forceNewSession, silent');
+        }
+        if (options.createIfNone && options.silent) {
+            throw new Error('Invalid combination of options. Please remove one of the following: createIfNone, silent');
+        }
+
+        const supportsMultipleAccounts = this.authenticationService.supportsMultipleAccounts(providerId);
+        // Check if the sessions we have are valid
+        if (!options.forceNewSession && sessions.length) {
+            if (supportsMultipleAccounts) {
+                if (options.clearSessionPreference) {
+                    await this.storageService.setData(`authentication-session-${extensionName}-${providerId}`, undefined);
                 } else {
-                    throw new Error('User did not consent to login.');
+                    const existingSessionPreference = await this.storageService.getData(`authentication-session-${extensionName}-${providerId}`);
+                    if (existingSessionPreference) {
+                        const matchingSession = sessions.find(session => session.id === existingSessionPreference);
+                        if (matchingSession && await this.isAccessAllowed(providerId, matchingSession.account.label, extensionId)) {
+                            return matchingSession;
+                        }
+                    }
                 }
-            }
-
-            // On renderer side, confirm consent, ask user to choose between accounts if multiple sessions are valid
-            const selected = await this.selectSession(providerId, label, extensionId, extensionName, sessions, scopes, !!options.clearSessionPreference);
-            return sessions.find(session => session.id === selected.id);
-        } else {
-            if (options.createIfNone) {
-                const isAllowed = await this.loginPrompt(label, extensionName);
-                if (!isAllowed) {
-                    throw new Error('User did not consent to login.');
-                }
-
-                const session = await this.authenticationService.login(providerId, scopes);
-                await this.setTrustedExtensionAndAccountPreference(providerId, session.account.label, extensionId, extensionName, session.id);
-                return session;
-            } else {
-                await this.requestNewSession(providerId, scopes, extensionId, extensionName);
-                return undefined;
+            } else if (await this.isAccessAllowed(providerId, sessions[0].account.label, extensionId)) {
+                return sessions[0];
             }
         }
+
+        // We may need to prompt because we don't have a valid session modal flows
+        if (options.createIfNone || options.forceNewSession) {
+            const providerName = this.authenticationService.getLabel(providerId);
+            const detail = (typeof options.forceNewSession === 'object') ? options.forceNewSession!.detail : undefined;
+            const isAllowed = await this.loginPrompt(providerName, extensionName, !!options.forceNewSession, detail);
+            if (!isAllowed) {
+                throw new Error('User did not consent to login.');
+            }
+
+            const session = sessions?.length && !options.forceNewSession && supportsMultipleAccounts
+                ? await this.selectSession(providerId, providerName, extensionId, extensionName, sessions, scopes, !!options.clearSessionPreference)
+                : await this.authenticationService.login(providerId, scopes);
+            await this.setTrustedExtensionAndAccountPreference(providerId, session.account.label, extensionId, extensionName, session.id);
+            return session;
+        }
+
+        // passive flows (silent or default)
+        const validSession = sessions.find(s => this.isAccessAllowed(providerId, s.account.label, extensionId));
+        if (!options.silent && !validSession) {
+            this.authenticationService.requestNewSession(providerId, scopes, extensionId, extensionName);
+        }
+        return validSession;
     }
 
     protected async selectSession(providerId: string, providerName: string, extensionId: string, extensionName: string,
-        potentialSessions: AuthenticationSession[], scopes: string[], clearSessionPreference: boolean): Promise<AuthenticationSession> {
+        potentialSessions: Readonly<theia.AuthenticationSession[]>, scopes: string[], clearSessionPreference: boolean): Promise<theia.AuthenticationSession> {
         if (!potentialSessions.length) {
             throw new Error('No potential sessions found');
         }
 
-        if (clearSessionPreference) {
-            await this.storageService.setData(`authentication-session-${extensionName}-${providerId}`, undefined);
-        } else {
-            const existingSessionPreference = await this.storageService.getData(`authentication-session-${extensionName}-${providerId}`);
-            if (existingSessionPreference) {
-                const matchingSession = potentialSessions.find(session => session.id === existingSessionPreference);
-                if (matchingSession) {
-                    const allowed = await this.getSessionsPrompt(providerId, matchingSession.account.label, providerName, extensionId, extensionName);
-                    if (allowed) {
-                        return matchingSession;
-                    }
-                }
-            }
-        }
-
         return new Promise(async (resolve, reject) => {
-            const items: QuickPickValue<{ session?: AuthenticationSession }>[] = potentialSessions.map(session => ({
+            const items: QuickPickValue<{ session?: theia.AuthenticationSession }>[] = potentialSessions.map(session => ({
                 label: session.account.label,
                 value: { session }
             }));
             items.push({
-                label: 'Sign in to another account',
+                label: nls.localizeByDefault('Sign in to another account'),
                 value: { session: undefined }
             });
             const selected = await this.quickPickService.show(items,
                 {
-                    title: `The extension '${extensionName}' wants to access a ${providerName} account`,
+                    title: nls.localizeByDefault("The extension '{0}' wants to access a {1} account", extensionName, providerName),
                     ignoreFocusOut: true
                 });
             if (selected) {
@@ -196,9 +208,17 @@ export class AuthenticationMainImpl implements AuthenticationMain {
         return allow;
     }
 
-    protected async loginPrompt(providerName: string, extensionName: string): Promise<boolean> {
-        const choice = await this.messageService.info(`The extension '${extensionName}' wants to sign in using ${providerName}.`, 'Allow', 'Cancel');
+    protected async loginPrompt(providerName: string, extensionName: string, recreatingSession: boolean, _detail?: string): Promise<boolean> {
+        const message = recreatingSession
+            ? nls.localizeByDefault("The extension '{0}' wants you to sign in again using {1}.", extensionName, providerName)
+            : nls.localizeByDefault("The extension '{0}' wants to sign in using {1}.", extensionName, providerName);
+        const choice = await this.messageService.info(message, 'Allow', 'Cancel');
         return choice === 'Allow';
+    }
+
+    protected async isAccessAllowed(providerId: string, accountName: string, extensionId: string): Promise<boolean> {
+        const allowList = await readAllowedExtensions(this.storageService, providerId, accountName);
+        return !!allowList.find(allowed => allowed.id === extensionId);
     }
 
     protected async setTrustedExtensionAndAccountPreference(providerId: string, accountName: string, extensionId: string, extensionName: string, sessionId: string): Promise<void> {
@@ -207,8 +227,19 @@ export class AuthenticationMainImpl implements AuthenticationMain {
             allowList.push({ id: extensionId, name: extensionName });
             this.storageService.setData(`authentication-trusted-extensions-${providerId}-${accountName}`, JSON.stringify(allowList));
         }
-
         this.storageService.setData(`authentication-session-${extensionName}-${providerId}`, sessionId);
+    }
+
+    $ensureProvider(id: string): Promise<void> {
+        return this.extensionService.$activateByEvent(getAuthenticationProviderActivationEvent(id));
+    }
+
+    $removeSession(providerId: string, sessionId: string): Promise<void> {
+        return this.authenticationService.logout(providerId, sessionId);
+    }
+
+    $sendDidChangeSessions(providerId: string, event: theia.AuthenticationProviderAuthenticationSessionsChangeEvent): void {
+        this.authenticationService.updateSessions(providerId, event);
     }
 }
 
@@ -244,6 +275,8 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
     private accounts = new Map<string, string[]>(); // Map account name to session ids
     private sessions = new Map<string, string>(); // Map account id to name
 
+    readonly onDidChangeSessions: theia.Event<theia.AuthenticationProviderAuthenticationSessionsChangeEvent>;
+
     constructor(
         private readonly proxy: AuthenticationExt,
         public readonly id: string,
@@ -257,7 +290,7 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
         return !!this.sessions.size;
     }
 
-    private registerSession(session: AuthenticationSession): void {
+    private registerSession(session: theia.AuthenticationSession): void {
         this.sessions.set(session.id, session.account.label);
 
         const existingSessionsForAccount = this.accounts.get(session.account.label);
@@ -272,34 +305,41 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
     async signOut(accountName: string): Promise<void> {
         const accountUsages = await readAccountUsages(this.storageService, this.id, accountName);
         const sessionsForAccount = this.accounts.get(accountName);
-        const result = await this.messageService.info(accountUsages.length ? `The account ${accountName} has been used by:
-        ${accountUsages.map(usage => usage.extensionName).join(', ')}. Sign out of these features?` : `Sign out of ${accountName}?`, 'Yes');
+        const result = await this.messageService.info(accountUsages.length
+            ? nls.localizeByDefault("The account '{0}' has been used by: \n\n{1}\n\n Sign out from these extensions?", accountName,
+                accountUsages.map(usage => usage.extensionName).join(', '))
+            : nls.localizeByDefault("Sign out of '{0}'?", accountName),
+            nls.localizeByDefault('Sign Out'),
+            Dialog.CANCEL);
 
-        if (result && result === 'Yes' && sessionsForAccount) {
+        if (result && result === nls.localizeByDefault('Sign Out') && sessionsForAccount) {
             sessionsForAccount.forEach(sessionId => this.logout(sessionId));
             removeAccountUsage(this.storageService, this.id, accountName);
         }
     }
 
-    async getSessions(): Promise<ReadonlyArray<AuthenticationSession>> {
-        return this.proxy.$getSessions(this.id);
+    async getSessions(scopes?: string[]): Promise<ReadonlyArray<theia.AuthenticationSession>> {
+        return this.proxy.$getSessions(this.id, scopes);
     }
 
-    async updateSessionItems(event: AuthenticationSessionsChangeEvent): Promise<void> {
+    async updateSessionItems(event: theia.AuthenticationProviderAuthenticationSessionsChangeEvent): Promise<void> {
         const { added, removed } = event;
         const session = await this.proxy.$getSessions(this.id);
-        const addedSessions = session.filter(s => added.some(id => id === s.id));
+        const addedSessions = session.filter(s => added.some(addedSession => this.getSessionId(addedSession) === s.id));
 
-        removed.forEach(sessionId => {
-            const accountName = this.sessions.get(sessionId);
-            if (accountName) {
-                this.sessions.delete(sessionId);
-                const sessionsForAccount = this.accounts.get(accountName) || [];
-                const sessionIndex = sessionsForAccount.indexOf(sessionId);
-                sessionsForAccount.splice(sessionIndex);
+        removed.forEach(removedSession => {
+            const sessionId = this.getSessionId(removedSession);
+            if (sessionId) {
+                const accountName = this.sessions.get(sessionId);
+                if (accountName) {
+                    this.sessions.delete(sessionId);
+                    const sessionsForAccount = this.accounts.get(accountName) || [];
+                    const sessionIndex = sessionsForAccount.indexOf(sessionId);
+                    sessionsForAccount.splice(sessionIndex);
 
-                if (!sessionsForAccount.length) {
-                    this.accounts.delete(accountName);
+                    if (!sessionsForAccount.length) {
+                        this.accounts.delete(accountName);
+                    }
                 }
             }
         });
@@ -307,13 +347,29 @@ export class AuthenticationProviderImpl implements AuthenticationProvider {
         addedSessions.forEach(s => this.registerSession(s));
     }
 
-    login(scopes: string[]): Promise<AuthenticationSession> {
-        return this.proxy.$login(this.id, scopes);
+    login(scopes: string[]): Promise<theia.AuthenticationSession> {
+        return this.proxy.$createSession(this.id, scopes);
     }
 
     async logout(sessionId: string): Promise<void> {
-        await this.proxy.$logout(this.id, sessionId);
+        await this.proxy.$removeSession(this.id, sessionId);
         this.messageService.info('Successfully signed out.');
+    }
+
+    createSession(scopes: string[]): Thenable<theia.AuthenticationSession> {
+        return this.login(scopes);
+    }
+
+    removeSession(sessionId: string): Thenable<void> {
+        return this.logout(sessionId);
+    }
+
+    // utility method to be backwards compatible with the old AuthenticationProviderAuthenticationSessionsChangeEvent containing only the session id string
+    private getSessionId(obj: string | theia.AuthenticationSession | undefined): string | undefined {
+        if (!obj || typeof obj === 'string') {
+            return obj;
+        }
+        return obj.id;
     }
 }
 

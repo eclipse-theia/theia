@@ -217,14 +217,31 @@ export function createAPIFactory(
 
     return function (plugin: InternalPlugin): typeof theia {
         const authentication: typeof theia.authentication = {
-            registerAuthenticationProvider(provider: theia.AuthenticationProvider): theia.Disposable {
-                return authenticationExt.registerAuthenticationProvider(provider);
+            // support older (< 1.53.0) and newer version of authentication provider registration
+            registerAuthenticationProvider(
+                id: string | theia.AuthenticationProvider, label?: string, provider?: theia.AuthenticationProvider, options?: theia.AuthenticationProviderOptions):
+                theia.Disposable {
+                // collect registration data based on registration type: new (all parameters given) vs old (data stored in provider)
+                const isNewRegistration = typeof id === 'string';
+                const regProvider = isNewRegistration ? provider! : id;
+                const regId = isNewRegistration ? id : regProvider.id;
+                const regLabel = isNewRegistration ? label! : regProvider.label;
+                const regOptions = isNewRegistration ? options : { supportsMultipleAccounts: regProvider.supportsMultipleAccounts };
+
+                // ensure that all methods of the new AuthenticationProvider are available or delegate otherwise
+                if (!regProvider['createSession']) {
+                    regProvider['createSession'] = (scopes: string[]) => regProvider.login(scopes);
+                }
+                if (!regProvider['removeSession']) {
+                    regProvider['removeSession'] = (sessionId: string) => regProvider.logout(sessionId);
+                }
+                return authenticationExt.registerAuthenticationProvider(regId, regLabel, regProvider, regOptions);
             },
             get onDidChangeAuthenticationProviders(): theia.Event<theia.AuthenticationProvidersChangeEvent> {
                 return authenticationExt.onDidChangeAuthenticationProviders;
             },
             getProviderIds(): Thenable<ReadonlyArray<string>> {
-                return authenticationExt.getProviderIds();
+                return Promise.resolve(authenticationExt.providerIds);
             },
             get providerIds(): string[] {
                 return authenticationExt.providerIds;
@@ -240,6 +257,10 @@ export function createAPIFactory(
             },
             get onDidChangeSessions(): theia.Event<theia.AuthenticationSessionsChangeEvent> {
                 return authenticationExt.onDidChangeSessions;
+            },
+            async hasSession(providerId: string, scopes: readonly string[]): Promise<boolean> {
+                const session = await authenticationExt.getSession(plugin, providerId, scopes, { silent: true });
+                return !!session;
             }
         };
         const commands: typeof theia.commands = {

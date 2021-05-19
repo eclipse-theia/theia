@@ -26,26 +26,30 @@ import { StorageService } from '../browser/storage-service';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { ACCOUNTS_MENU, ACCOUNTS_SUBMENU, MenuModelRegistry } from '../common/menu';
 import { Command, CommandRegistry } from '../common/command';
+import { nls } from '../common/nls';
 
-export interface AuthenticationSessionsChangeEvent {
-    added: ReadonlyArray<string>;
-    removed: ReadonlyArray<string>;
-    changed: ReadonlyArray<string>;
+export interface AuthenticationSessionAccountInformation {
+    readonly id: string;
+    readonly label: string;
 }
 
 export interface AuthenticationSession {
     id: string;
     accessToken: string;
-    account: {
-        label: string;
-        id: string;
-    }
+    account: AuthenticationSessionAccountInformation;
     scopes: ReadonlyArray<string>;
 }
 
 export interface AuthenticationProviderInformation {
     id: string;
     label: string;
+}
+
+/** Should match the definition from the theia/vscode types */
+export interface AuthenticationProviderAuthenticationSessionsChangeEvent {
+    readonly added: ReadonlyArray<AuthenticationSession | string | undefined>;
+    readonly removed: ReadonlyArray<AuthenticationSession | string | undefined>;
+    readonly changed: ReadonlyArray<AuthenticationSession | string | undefined>;
 }
 
 export interface SessionRequest {
@@ -57,6 +61,7 @@ export interface SessionRequestInfo {
     [scopes: string]: SessionRequest;
 }
 
+/** Should match the definition from the theia/vscode types */
 export interface AuthenticationProvider {
     id: string;
 
@@ -68,13 +73,40 @@ export interface AuthenticationProvider {
 
     signOut(accountName: string): Promise<void>;
 
-    getSessions(): Promise<ReadonlyArray<AuthenticationSession>>;
+    getSessions(scopes?: string[]): Promise<ReadonlyArray<AuthenticationSession>>;
 
-    updateSessionItems(event: AuthenticationSessionsChangeEvent): Promise<void>;
+    updateSessionItems(event: AuthenticationProviderAuthenticationSessionsChangeEvent): Promise<void>;
 
     login(scopes: string[]): Promise<AuthenticationSession>;
 
     logout(sessionId: string): Promise<void>;
+
+    /**
+     * An [event](#Event) which fires when the array of sessions has changed, or data
+     * within a session has changed.
+     */
+    readonly onDidChangeSessions: Omit<Event<AuthenticationProviderAuthenticationSessionsChangeEvent>, 'maxListeners'>;
+
+    /**
+     * Get a list of sessions.
+     * @param scopes An optional list of scopes. If provided, the sessions returned should match
+     * these permissions, otherwise all sessions should be returned.
+     * @returns A promise that resolves to an array of authentication sessions.
+     */
+    getSessions(scopes?: string[]): Thenable<ReadonlyArray<AuthenticationSession>>;
+
+    /**
+     * Prompts a user to login.
+     * @param scopes A list of scopes, permissions, that the new session should be created with.
+     * @returns A promise that resolves to an authentication session.
+     */
+    createSession(scopes: string[]): Thenable<AuthenticationSession>;
+
+    /**
+     * Removes the session corresponding to session id.
+     * @param sessionId The id of the session to remove.
+     */
+    removeSession(sessionId: string): Thenable<void>;
 }
 export const AuthenticationService = Symbol('AuthenticationService');
 
@@ -84,13 +116,13 @@ export interface AuthenticationService {
     registerAuthenticationProvider(id: string, provider: AuthenticationProvider): void;
     unregisterAuthenticationProvider(id: string): void;
     requestNewSession(id: string, scopes: string[], extensionId: string, extensionName: string): void;
-    updateSessions(providerId: string, event: AuthenticationSessionsChangeEvent): void;
+    updateSessions(providerId: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): void;
 
     readonly onDidRegisterAuthenticationProvider: Event<AuthenticationProviderInformation>;
     readonly onDidUnregisterAuthenticationProvider: Event<AuthenticationProviderInformation>;
 
-    readonly onDidChangeSessions: Event<{ providerId: string, label: string, event: AuthenticationSessionsChangeEvent }>;
-    getSessions(providerId: string): Promise<ReadonlyArray<AuthenticationSession>>;
+    readonly onDidChangeSessions: Event<{ providerId: string, label: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent }>;
+    getSessions(providerId: string, scopes?: string[]): Promise<ReadonlyArray<AuthenticationSession>>;
     getLabel(providerId: string): string;
     supportsMultipleAccounts(providerId: string): boolean;
     login(providerId: string, scopes: string[]): Promise<AuthenticationSession>;
@@ -99,13 +131,20 @@ export interface AuthenticationService {
     signOutOfAccount(providerId: string, accountName: string): Promise<void>;
 }
 
+export interface SessionChangeEvent {
+    providerId: string,
+    label: string,
+    event: AuthenticationProviderAuthenticationSessionsChangeEvent
+}
+
 @injectable()
 export class AuthenticationServiceImpl implements AuthenticationService {
     private noAccountsMenuItem: Disposable | undefined;
     private noAccountsCommand: Command = { id: 'noAccounts' };
     private signInRequestItems = new Map<string, SessionRequestInfo>();
+    private sessionMap = new Map<string, DisposableCollection>();
 
-    private authenticationProviders: Map<string, AuthenticationProvider> = new Map<string, AuthenticationProvider>();
+    protected authenticationProviders: Map<string, AuthenticationProvider> = new Map<string, AuthenticationProvider>();
 
     private onDidRegisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
     readonly onDidRegisterAuthenticationProvider: Event<AuthenticationProviderInformation> = this.onDidRegisterAuthenticationProviderEmitter.event;
@@ -113,9 +152,8 @@ export class AuthenticationServiceImpl implements AuthenticationService {
     private onDidUnregisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
     readonly onDidUnregisterAuthenticationProvider: Event<AuthenticationProviderInformation> = this.onDidUnregisterAuthenticationProviderEmitter.event;
 
-    private onDidChangeSessionsEmitter: Emitter<{ providerId: string, label: string, event: AuthenticationSessionsChangeEvent }> =
-        new Emitter<{ providerId: string, label: string, event: AuthenticationSessionsChangeEvent }>();
-    readonly onDidChangeSessions: Event<{ providerId: string, label: string, event: AuthenticationSessionsChangeEvent }> = this.onDidChangeSessionsEmitter.event;
+    private onDidChangeSessionsEmitter: Emitter<SessionChangeEvent> = new Emitter<SessionChangeEvent>();
+    readonly onDidChangeSessions: Event<SessionChangeEvent> = this.onDidChangeSessionsEmitter.event;
 
     @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry;
     @inject(CommandRegistry) protected readonly commands: CommandRegistry;
@@ -123,46 +161,52 @@ export class AuthenticationServiceImpl implements AuthenticationService {
 
     @postConstruct()
     init(): void {
-        const disposableMap = new Map<string, DisposableCollection>();
-        this.onDidChangeSessions(async e => {
-            if (e.event.added.length > 0) {
-                const sessions = await this.getSessions(e.providerId);
-                sessions.forEach(session => {
-                    if (sessions.find(s => disposableMap.get(s.id))) {
-                        return;
-                    }
-                    const disposables = new DisposableCollection();
-                    const commandId = `account-sign-out-${e.providerId}-${session.id}`;
-                    const command = this.commands.registerCommand({ id: commandId }, {
-                        execute: async () => {
-                            this.signOutOfAccount(e.providerId, session.account.label);
-                        }
-                    });
-                    const subSubMenuPath = [...ACCOUNTS_SUBMENU, 'account-sub-menu'];
-                    this.menus.registerSubmenu(subSubMenuPath, `${session.account.label} (${e.label})`);
-                    const menuAction = this.menus.registerMenuAction(subSubMenuPath, {
-                        label: 'Sign Out',
-                        commandId
-                    });
-                    disposables.push(menuAction);
-                    disposables.push(command);
-                    disposableMap.set(session.id, disposables);
-                });
-            }
-            if (e.event.removed.length > 0) {
-                e.event.removed.forEach(removed => {
-                    const toDispose = disposableMap.get(removed);
-                    if (toDispose) {
-                        toDispose.dispose();
-                        disposableMap.delete(removed);
-                    }
-                });
-            }
-        });
+        this.onDidChangeSessions(event => this.handleSessionChange(event));
         this.commands.registerCommand(this.noAccountsCommand, {
             execute: () => { },
             isEnabled: () => false
         });
+    }
+
+    protected async handleSessionChange(changeEvent: SessionChangeEvent): Promise<void> {
+        if (changeEvent.event.added.length > 0) {
+            const sessions = await this.getSessions(changeEvent.providerId);
+            sessions.forEach(session => {
+                if (!this.sessionMap.get(session.id)) {
+                    this.sessionMap.set(session.id, this.createAccountUi(changeEvent.providerId, changeEvent.label, session));
+                }
+            });
+        }
+        for (const removed of changeEvent.event.removed) {
+            const sessionId = typeof removed === 'string' ? removed : removed?.id;
+            if (sessionId) {
+                this.sessionMap.get(sessionId)?.dispose();
+                this.sessionMap.delete(sessionId);
+            }
+        }
+    }
+
+    protected createAccountUi(providerId: string, providerLabel: string, session: AuthenticationSession): DisposableCollection {
+        // unregister old commands and menus if present (there is only one per account but there may be several sessions per account)
+        const providerAccountId = `account-sign-out-${providerId}-${session.account.id}`;
+        this.commands.unregisterCommand(providerAccountId);
+
+        const providerAccountSubmenu = [...ACCOUNTS_SUBMENU, providerAccountId];
+        this.menus.unregisterMenuAction({ commandId: providerAccountId }, providerAccountSubmenu);
+
+        // register new command and menu entry for the sessions account
+        const disposables = new DisposableCollection();
+        disposables.push(this.commands.registerCommand({ id: providerAccountId }, {
+            execute: async () => {
+                this.signOutOfAccount(providerId, session.account.label);
+            }
+        }));
+        this.menus.registerSubmenu(providerAccountSubmenu, `${session.account.label} (${providerLabel})`);
+        disposables.push(this.menus.registerMenuAction(providerAccountSubmenu, {
+            label: nls.localizeByDefault('Sign Out'),
+            commandId: providerAccountId
+        }));
+        return disposables;
     }
 
     getProviderIds(): string[] {
@@ -219,7 +263,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
-    async updateSessions(id: string, event: AuthenticationSessionsChangeEvent): Promise<void> {
+    async updateSessions(id: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): Promise<void> {
         const provider = this.authenticationProviders.get(id);
         if (provider) {
             await provider.updateSessionItems(event);
@@ -268,7 +312,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
                 this.onDidRegisterAuthenticationProvider(e => {
                     if (e.id === providerId) {
                         provider = this.authenticationProviders.get(providerId);
-                        resolve();
+                        resolve(undefined);
                     }
                 });
             });
@@ -344,10 +388,10 @@ export class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
-    async getSessions(id: string): Promise<ReadonlyArray<AuthenticationSession>> {
+    async getSessions(id: string, scopes?: string[]): Promise<ReadonlyArray<AuthenticationSession>> {
         const authProvider = this.authenticationProviders.get(id);
         if (authProvider) {
-            return authProvider.getSessions();
+            return authProvider.getSessions(scopes);
         } else {
             throw new Error(`No authentication provider '${id}' is currently registered.`);
         }

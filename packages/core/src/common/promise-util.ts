@@ -57,6 +57,22 @@ export function timeout(ms: number, token = CancellationToken.None): Promise<voi
     return deferred.promise;
 }
 
+/**
+ * Creates a promise that is rejected after the given amount of time. A typical use case is to wait for another promise until a specified timeout using:
+ * ```
+ * Promise.race([ promiseToPerform, timeoutReject(timeout, 'Timeout error message') ]);
+ * ```
+ *
+ * @param ms timeout in milliseconds
+ * @param message error message on promise rejection
+ * @returns rejection promise
+ */
+export function timeoutReject<T>(ms: number, message?: string): Promise<T> {
+    const deferred = new Deferred<T>();
+    setTimeout(() => deferred.reject(new Error(message)), ms);
+    return deferred.promise;
+}
+
 export async function retry<T>(task: () => Promise<T>, retryDelay: number, retries: number): Promise<T> {
     let lastError: Error | undefined;
 
