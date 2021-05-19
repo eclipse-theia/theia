@@ -53,6 +53,7 @@ import { UTF8 } from '../common/encodings';
 import { EnvVariablesServer } from '../common/env-variables';
 import { AuthenticationService } from './authentication-service';
 import { FormatType } from './saveable';
+import { ProductIconThemeService } from './product-icon-theme-service';
 
 export namespace CommonMenus {
 
@@ -269,6 +270,11 @@ export namespace CommonCommands {
         label: 'File Icon Theme',
         category: 'Preferences'
     };
+    export const SELECT_PRODUCT_ICON_THEME: Command = {
+        id: 'workbench.action.selectProductIconTheme',
+        label: 'Product Icon Theme',
+        category: 'Preferences'
+    };
 
 }
 
@@ -280,6 +286,7 @@ export const supportCopy = browser.isNative || document.queryCommandSupported('c
 export const supportPaste = browser.isNative || (!browser.isChrome && document.queryCommandSupported('paste'));
 
 export const RECENT_COMMANDS_STORAGE_KEY = 'commands';
+export type ThemeQuickOpenItem = QuickOpenItem & { id: string };
 
 @injectable()
 export class CommonFrontendContribution implements FrontendApplicationContribution, MenuContribution, CommandContribution, KeybindingContribution, ColorContribution {
@@ -312,6 +319,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
 
     @inject(IconThemeService)
     protected readonly iconThemes: IconThemeService;
+
+    @inject(ProductIconThemeService)
+    protected readonly productIconThemes: ProductIconThemeService;
 
     @inject(ThemeService)
     protected readonly themeService: ThemeService;
@@ -552,12 +562,17 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         registry.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_THEME, {
             commandId: CommonCommands.SELECT_ICON_THEME.id
         });
-
+        registry.registerMenuAction(CommonMenus.FILE_SETTINGS_SUBMENU_THEME, {
+            commandId: CommonCommands.SELECT_PRODUCT_ICON_THEME.id
+        });
         registry.registerMenuAction(CommonMenus.SETTINGS__THEME, {
             commandId: CommonCommands.SELECT_COLOR_THEME.id
         });
         registry.registerMenuAction(CommonMenus.SETTINGS__THEME, {
             commandId: CommonCommands.SELECT_ICON_THEME.id
+        });
+        registry.registerMenuAction(CommonMenus.SETTINGS__THEME, {
+            commandId: CommonCommands.SELECT_PRODUCT_ICON_THEME.id
         });
     }
 
@@ -774,6 +789,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         commandRegistry.registerCommand(CommonCommands.SELECT_ICON_THEME, {
             execute: () => this.selectIconTheme()
         });
+        commandRegistry.registerCommand(CommonCommands.SELECT_PRODUCT_ICON_THEME, {
+            execute: () => this.selectProductIconTheme()
+        });
     }
 
     private findTabArea(event?: Event): ApplicationShell.Area | undefined {
@@ -988,10 +1006,11 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
     }
 
     protected selectIconTheme(): void {
+        console.log('SENTINEL ICON THEMES', this.iconThemes.definitions);
         let resetTo: string | undefined = this.iconThemes.current;
         const previewTheme = debounce((id: string) => this.iconThemes.current = id, 200);
 
-        let items: (QuickOpenItem & { id: string })[] = [];
+        let items: ThemeQuickOpenItem[] = [];
         for (const iconTheme of this.iconThemes.definitions) {
             const item = Object.assign(new QuickOpenItem({
                 label: iconTheme.label,
@@ -1027,11 +1046,44 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
     }
 
+    protected selectProductIconTheme(): void {
+        let resetTo: string | undefined = this.productIconThemes.current;
+        const previewTheme = debounce((id: string) => this.productIconThemes.current = id, 200);
+        const items: ThemeQuickOpenItem[] = [];
+        for (const productIconTheme of this.productIconThemes.definitions) {
+            const { label, description, id } = productIconTheme;
+            const quickOpenItem = Object.assign(new QuickOpenItem({
+                label,
+                description,
+                run: (mode: QuickOpenMode) => {
+                    if (mode === QuickOpenMode.OPEN) {
+                        resetTo = undefined;
+                    }
+                    previewTheme(productIconTheme.id);
+                    return true;
+                }
+            }), { id });
+            items.push(quickOpenItem);
+            this.quickOpenService.open({
+                onType: (_, accept) => accept(items)
+            }, {
+                placeholder: 'Select Product Icon Theme',
+                fuzzyMatchLabel: true,
+                selectIndex: () => items.findIndex(item => item.id === this.productIconThemes.current),
+                onClose: () => {
+                    if (resetTo) {
+                        previewTheme.cancel();
+                        this.productIconThemes.current = resetTo;
+                    }
+                }
+            });
+        }
+    }
+
     protected selectColorTheme(): void {
         let resetTo: string | undefined = this.themeService.getCurrentTheme().id;
         const previewTheme = debounce((id: string) => this.themeService.setCurrentTheme(id), 200);
 
-        type ThemeQuickOpenItem = QuickOpenItem & { id: string };
         const itemsByTheme: { light: ThemeQuickOpenItem[], dark: ThemeQuickOpenItem[], hc: ThemeQuickOpenItem[] } = { light: [], dark: [], hc: [] };
         for (const theme of this.themeService.getThemes().sort((a, b) => a.label.localeCompare(b.label))) {
             const themeItems = itemsByTheme[theme.type];
