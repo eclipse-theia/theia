@@ -290,3 +290,30 @@ export class InMemoryResources implements ResourceResolver {
         return new ReferenceMutableResource(reference);
     }
 }
+
+export const MEMORY_TEXT = 'mem-txt';
+
+/**
+ * Resource implementation for 'mem-txt' URI scheme where content is saved in URI query.
+ */
+export class InMemoryTextResource implements Resource {
+    constructor(readonly uri: URI) { }
+
+    async readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
+        return this.uri.query;
+    }
+    dispose(): void { }
+}
+
+/**
+ * ResourceResolver implementation for 'mem-txt' URI scheme.
+ */
+@injectable()
+export class InMemoryTextResourceResolver implements ResourceResolver {
+    resolve(uri: URI): MaybePromise<Resource> {
+        if (uri.scheme !== MEMORY_TEXT) {
+            throw new Error(`Expected a URI with ${MEMORY_TEXT} scheme. Was: ${uri}.`);
+        }
+        return new InMemoryTextResource(uri);
+    }
+}

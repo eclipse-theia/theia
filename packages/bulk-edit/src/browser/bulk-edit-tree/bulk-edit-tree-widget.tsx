@@ -26,7 +26,7 @@ import { FileResourceResolver } from '@theia/filesystem/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { EditorWidget, EditorManager, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser';
-import { MEMORY_TEXT } from './in-memory-text-resource';
+import { MEMORY_TEXT } from '@theia/core/lib/common';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { QuickViewService } from '@theia/core/lib/browser/quick-view-service';
 
