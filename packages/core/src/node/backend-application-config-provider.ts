@@ -28,14 +28,18 @@ export class BackendApplicationConfigProvider {
         return config;
     }
 
-    static set(config: BackendApplicationConfig): void {
+    static set(config: BackendApplicationConfig.Partial): void {
         if (BackendApplicationConfigProvider.doGet() !== undefined) {
             throw new Error('The configuration is already set.');
         }
+        const resolved: BackendApplicationConfig = {
+            ...BackendApplicationConfig.DEFAULT,
+            ...config
+        };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalObject = global as any;
         const key = BackendApplicationConfigProvider.KEY;
-        globalObject[key] = config;
+        globalObject[key] = resolved;
     }
 
     private static doGet(): BackendApplicationConfig | undefined {

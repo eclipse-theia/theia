@@ -28,14 +28,18 @@ export class FrontendApplicationConfigProvider {
         return config;
     }
 
-    static set(config: FrontendApplicationConfig): void {
+    static set(config: FrontendApplicationConfig.Partial): void {
         if (FrontendApplicationConfigProvider.doGet() !== undefined) {
             throw new Error('The configuration is already set.');
         }
+        const resolved: FrontendApplicationConfig = {
+            ...FrontendApplicationConfig.DEFAULT,
+            ...config
+        };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const globalObject = window as any;
         const key = FrontendApplicationConfigProvider.KEY;
-        globalObject[key] = config;
+        globalObject[key] = resolved;
     }
 
     private static doGet(): FrontendApplicationConfig | undefined {
