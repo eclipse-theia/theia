@@ -57,10 +57,6 @@ export namespace ElectronCommands {
         category: 'View',
         label: 'Toggle Full Screen'
     };
-    export const NEW_WINDOW: Command = {
-        id: 'workbench.action.newWindow',
-        label: 'New Window'
-    };
 }
 
 export namespace ElectronMenus {
@@ -199,9 +195,6 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
             isEnabled: () => currentWindow.isFullScreenable(),
             isVisible: () => currentWindow.isFullScreenable(),
             execute: () => currentWindow.setFullScreen(!currentWindow.isFullScreen())
-        });
-        registry.registerCommand(ElectronCommands.NEW_WINDOW, {
-            execute: () => this.windowService.openNewDefaultWindow()
         });
     }
 
