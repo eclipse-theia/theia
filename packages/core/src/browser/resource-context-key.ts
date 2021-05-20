@@ -34,6 +34,8 @@ export class ResourceContextKey {
     protected resourceFileName: ContextKey<string>;
     protected resourceExtname: ContextKey<string>;
     protected resourceLangId: ContextKey<string>;
+    protected resourceDirName: ContextKey<string>;
+    protected resourcePath: ContextKey<string>;
 
     @postConstruct()
     protected init(): void {
@@ -42,6 +44,8 @@ export class ResourceContextKey {
         this.resourceFileName = this.contextKeyService.createKey<string>('resourceFilename', undefined);
         this.resourceExtname = this.contextKeyService.createKey<string>('resourceExtname', undefined);
         this.resourceLangId = this.contextKeyService.createKey<string>('resourceLangId', undefined);
+        this.resourceDirName = this.contextKeyService.createKey<string>('resourceDirName', undefined);
+        this.resourcePath = this.contextKeyService.createKey<string>('resourcePath', undefined);
     }
 
     get(): URI | undefined {
@@ -55,6 +59,8 @@ export class ResourceContextKey {
         this.resourceFileName.set(resourceUri && resourceUri.path.base);
         this.resourceExtname.set(resourceUri && resourceUri.path.ext);
         this.resourceLangId.set(resourceUri && this.getLanguageId(resourceUri));
+        this.resourceDirName.set(resourceUri && Uri.parse(resourceUri.path.dir.toString()).fsPath);
+        this.resourcePath.set(resourceUri && resourceUri['codeUri'].fsPath);
     }
 
     protected getLanguageId(uri: URI | undefined): string | undefined {
@@ -67,5 +73,4 @@ export class ResourceContextKey {
         }
         return undefined;
     }
-
 }
